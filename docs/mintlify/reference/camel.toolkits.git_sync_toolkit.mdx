@@ -1,0 +1,325 @@
+---
+title: GitSyncToolkit
+description: 跨平台Git仓库同步工具包
+sidebar_position: 1
+---
+
+# GitSyncToolkit
+
+GitSyncToolkit是一个强大的跨平台Git仓库同步工具包，支持在GitHub、Gitee、GitLab等不同Git平台之间进行代码同步。它提供了灵活的配置管理、冲突解决策略和同步历史记录功能，可以轻松实现代码的多平台备份和同步。
+
+## 核心功能
+
+- 支持跨平台同步（GitHub、Gitee、GitLab）
+- 灵活的配置管理（创建、保存、删除同步配置）
+- 多种冲突解决策略
+- 增量同步和全量同步支持
+- 同步历史记录追踪
+- 分支和标签同步
+- 安全的凭证管理（环境变量读取）
+
+## 类定义
+
+```python
+class GitSyncToolkit(BaseToolkit):
+    """
+    Git仓库跨平台同步工具包
+    
+    用于在不同Git平台（GitHub、Gitee、GitLab）之间同步仓库，
+    支持配置管理、冲突解决和同步历史记录。
+    """
+    
+    def __init__(self, config_dir: Optional[str] = None):
+        """
+        初始化GitSyncToolkit
+        
+        Args:
+            config_dir: 配置文件存储目录，如果不指定则使用默认目录
+        """
+```
+
+## 枚举类型
+
+### GitPlatformType
+
+```python
+class GitPlatformType(str, Enum):
+    """Git平台类型枚举"""
+    GITHUB = "github"
+    GITEE = "gitee"
+    GITLAB = "gitlab"
+```
+
+### ConflictResolutionStrategy
+
+```python
+class ConflictResolutionStrategy(str, Enum):
+    """冲突解决策略枚举"""
+    SOURCE_WINS = "source_wins"  # 源仓库优先
+    TARGET_WINS = "target_wins"  # 目标仓库优先
+    MERGE = "merge"  # 尝试自动合并
+    TIMESTAMP_BASED = "timestamp_based"  # 基于时间戳决定
+    ASK = "ask"  # 询问用户（在自动化环境中默认使用SOURCE_WINS）
+```
+
+## 数据类
+
+### GitSyncConfig
+
+```python
+@dataclass
+class GitSyncConfig:
+    """Git同步配置数据类"""
+    config_id: str  # 配置ID
+    source_platform: str  # 源平台
+    source_repo: str  # 源仓库
+    target_configs: List[Dict[str, str]]  # 目标仓库配置列表
+    source_credentials: Optional[Dict[str, str]] = None  # 源平台凭证
+    sync_branches: Union[str, List[str]] = "main"  # 需要同步的分支
+    sync_tags: bool = True  # 是否同步标签
+    shallow_clone: bool = True  # 是否使用浅克隆
+    local_repo_path: Optional[str] = None  # 本地仓库路径
+    conflict_resolution: Union[str, ConflictResolutionStrategy] = ConflictResolutionStrategy.SOURCE_WINS  # 冲突解决策略
+    force_push: bool = True  # 是否强制推送
+    sync_prune: bool = False  # 是否清理远程已删除的分支
+    incremental_sync: bool = True  # 是否使用增量同步
+    created_at: float = field(default_factory=time.time)  # 创建时间
+    last_sync_at: Optional[float] = None  # 最后同步时间
+    description: Optional[str] = None  # 配置描述
+```
+
+### SyncResult
+
+```python
+@dataclass
+class SyncResult:
+    """同步结果数据类"""
+    success: bool  # 是否成功
+    config_id: str  # 配置ID
+    message: str  # 结果消息
+    details: Dict[str, Any] = field(default_factory=dict)  # 详细信息
+    error: Optional[str] = None  # 错误信息（如果有）
+```
+
+## 主要方法
+
+### 创建同步配置
+
+```python
+def create_sync_config(
+    self,
+    source_platform: str,
+    source_repo: str,
+    target_configs: List[Dict[str, str]],
+    source_credentials: Optional[Dict[str, str]] = None,
+    sync_branches: Union[str, List[str]] = "main",
+    sync_tags: bool = True,
+    shallow_clone: bool = True,
+    local_repo_path: Optional[str] = None,
+    conflict_resolution: Union[str, ConflictResolutionStrategy] = ConflictResolutionStrategy.SOURCE_WINS,
+    force_push: bool = True,
+    sync_prune: bool = False,
+    incremental_sync: bool = True,
+    description: Optional[str] = None
+) -> str:
+    """
+    创建一个新的Git仓库同步配置
+    
+    Args:
+        source_platform: 源平台类型 (github, gitee, gitlab)
+        source_repo: 源仓库信息 (格式: owner/repo)
+        target_configs: 目标仓库配置列表，每个配置包含platform和repo字段
+        source_credentials: 源平台认证信息（可选）
+        sync_branches: 需要同步的分支，默认为"main"
+        sync_tags: 是否同步标签，默认为True
+        shallow_clone: 是否使用浅克隆，默认为True
+        local_repo_path: 本地仓库路径，如不指定则使用临时目录
+        conflict_resolution: 冲突解决策略，默认为SOURCE_WINS
+        force_push: 是否强制推送，默认为True
+        sync_prune: 是否清理远程已删除的分支，默认为False
+        incremental_sync: 是否使用增量同步，默认为True
+        description: 配置描述（可选）
+        
+    Returns:
+        str: 创建的配置ID
+    """
+```
+
+### 执行同步
+
+```python
+def sync_repositories(self, config_id: str) -> SyncResult:
+    """
+    执行指定配置的Git仓库同步操作
+    
+    Args:
+        config_id: 配置ID
+        
+    Returns:
+        SyncResult: 同步结果
+    """
+```
+
+### 简化同步接口
+
+```python
+def simple_sync_repositories(
+    self,
+    source_platform: str,
+    source_repo: str,
+    target_configs: List[Dict[str, Any]],
+    source_credentials: Optional[Dict[str, str]] = None,
+    sync_branches: Union[str, List[str]] = "main",
+    sync_tags: bool = True,
+    shallow_clone: bool = True,
+    local_repo_path: Optional[str] = None,
+    conflict_resolution: Union[str, ConflictResolutionStrategy] = ConflictResolutionStrategy.SOURCE_WINS,
+    force_push: bool = True
+) -> SyncResult:
+    """
+    提供简化的同步接口，用于一次性同步操作
+    
+    Args:
+        source_platform: 源平台类型 (github, gitee, gitlab)
+        source_repo: 源仓库信息 (格式: owner/repo)
+        target_configs: 目标仓库配置列表，每个配置包含platform和repo字段
+        source_credentials: 源平台认证信息
+        sync_branches: 需要同步的分支
+        sync_tags: 是否同步标签
+        shallow_clone: 是否使用浅克隆
+        local_repo_path: 本地仓库路径
+        conflict_resolution: 冲突解决策略
+        force_push: 是否强制推送
+        
+    Returns:
+        SyncResult: 同步结果
+    """
+```
+
+### 配置管理
+
+```python
+def add_sync_config(self, config: GitSyncConfig) -> bool:
+    """
+    添加同步配置
+    
+    Args:
+        config: GitSyncConfig对象
+        
+    Returns:
+        bool: 是否添加成功
+    """
+
+def remove_sync_config(self, config_id: str) -> bool:
+    """
+    移除指定的同步配置
+    
+    Args:
+        config_id: 配置ID
+        
+    Returns:
+        bool: 是否移除成功
+    """
+
+def get_config_list(self) -> List[Dict[str, Any]]:
+    """
+    获取所有同步配置列表
+    
+    Returns:
+        List[Dict[str, Any]]: 配置列表
+    """
+
+def save_configs(self) -> bool:
+    """
+    保存配置到文件
+    
+    Returns:
+        bool: 是否保存成功
+    """
+```
+
+### 同步历史管理
+
+```python
+def get_sync_history(self, config_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    获取同步历史记录
+    
+    Args:
+        config_id: 配置ID，如果不指定则获取所有配置的历史
+        
+    Returns:
+        List[Dict[str, Any]]: 历史记录列表
+    """
+
+def clear_sync_history(self, config_id: Optional[str] = None) -> bool:
+    """
+    清除同步历史记录
+    
+    Args:
+        config_id: 配置ID，如果不指定则清除所有历史
+        
+    Returns:
+        bool: 是否清除成功
+    """
+```
+
+### 获取工具列表
+
+```python
+def get_tools(self) -> List[FunctionTool]:
+    """
+    获取工具包中的所有工具
+    
+    Returns:
+        List[FunctionTool]: 工具列表
+    """
+```
+
+## 使用示例
+
+```python
+from camel.toolkits.git_sync_toolkit import GitSyncToolkit
+
+# 初始化工具包
+sync_toolkit = GitSyncToolkit()
+
+# 创建同步配置
+config_id = sync_toolkit.create_sync_config(
+    source_platform="github",
+    source_repo="owner/source-repo",
+    target_configs=[
+        {"platform": "gitee", "repo": "owner/target-repo"},
+        {"platform": "gitlab", "repo": "owner/target-repo"}
+    ],
+    sync_branches=["main", "develop"],
+    sync_tags=True,
+    conflict_resolution="source_wins",
+    description="跨平台代码同步配置"
+)
+
+# 执行同步
+result = sync_toolkit.sync_repositories(config_id)
+print(f"同步{'成功' if result.success else '失败'}: {result.message}")
+
+# 使用简化接口进行一次性同步
+result = sync_toolkit.simple_sync_repositories(
+    source_platform="github",
+    source_repo="owner/another-repo",
+    target_configs=[{"platform": "gitee", "repo": "owner/target-repo"}],
+    sync_branches="main"
+)
+```
+
+## 注意事项
+
+1. 确保已设置正确的环境变量以访问各Git平台的API令牌：
+   - GitHub: `GITHUB_API_TOKEN`
+   - Gitee: `GITEE_API_TOKEN`
+   - GitLab: `GITLAB_API_TOKEN`
+
+2. 对于私有仓库，请确保提供的凭证具有适当的访问权限。
+
+3. 在使用增量同步时，建议定期执行全量同步以避免潜在的同步不一致问题。
+
+4. 强制推送可能会覆盖目标仓库中的更改，请谨慎使用，并选择合适的冲突解决策略。
