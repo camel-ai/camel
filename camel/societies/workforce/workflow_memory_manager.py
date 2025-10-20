@@ -233,6 +233,104 @@ class WorkflowMemoryManager:
                 "message": f"Failed to save workflow memories: {e!s}",
             }
 
+    async def save_workflow_async(
+        self, conversation_accumulator: Optional[ChatAgent] = None
+    ) -> Dict[str, Any]:
+        r"""Asynchronously save the worker's current workflow memories using
+        agent summarization.
+
+        This is the async version of save_workflow() that uses asummarize() for
+        non-blocking LLM calls, enabling parallel summarization of multiple
+        workers.
+
+        Args:
+            conversation_accumulator (Optional[ChatAgent]): Optional
+                accumulator agent with collected conversations. If provided,
+                uses this instead of the main worker agent.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Generated workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+        try:
+            # validate requirements
+            if not isinstance(self.worker, ChatAgent):
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": (
+                        "Worker must be a ChatAgent instance to save workflow "
+                        "memories"
+                    ),
+                }
+
+            # setup context utility and agent
+            context_util = self._get_context_utility()
+            self.worker.set_context_utility(context_util)
+
+            # prepare workflow summarization components
+            structured_prompt = self._prepare_workflow_prompt()
+
+            # select agent for summarization
+            agent_to_summarize = self.worker
+            if conversation_accumulator is not None:
+                accumulator_messages, _ = (
+                    conversation_accumulator.memory.get_context()
+                )
+                if accumulator_messages:
+                    conversation_accumulator.set_context_utility(context_util)
+                    agent_to_summarize = conversation_accumulator
+                    logger.info(
+                        f"Using conversation accumulator with "
+                        f"{len(accumulator_messages)} messages for workflow "
+                        f"summary"
+                    )
+
+            # check if we should use role_name or let asummarize extract
+            # task_title
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+            use_role_name_for_filename = role_name.lower() not in {
+                'assistant',
+                'agent',
+                'user',
+                'system',
+            }
+
+            # generate and save workflow summary
+            # if role_name is explicit, use it for filename
+            # if role_name is generic, pass none to let asummarize use
+            # task_title
+            filename = (
+                self._generate_workflow_filename()
+                if use_role_name_for_filename
+                else None
+            )
+
+            # **KEY CHANGE**: Using asummarize() instead of summarize()
+            result = await agent_to_summarize.asummarize(
+                filename=filename,
+                summary_prompt=structured_prompt,
+                response_format=WorkflowSummary,
+            )
+
+            # add worker metadata
+            result["worker_description"] = self.description
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow memories: {e!s}",
+            }
+
     def _select_relevant_workflows(
         self, workflows_metadata: List[Dict[str, Any]], max_files: int
     ) -> List[str]:

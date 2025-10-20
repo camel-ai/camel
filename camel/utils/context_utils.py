@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
@@ -147,6 +148,10 @@ class ContextUtility:
     - Shared session management for workforce workflows
     """
 
+    # maximum filename length for workflow files (chosen for filesystem
+    # compatibility and readability)
+    MAX_WORKFLOW_FILENAME_LENGTH: ClassVar[int] = 50
+
     # Class variables for shared session management
     _shared_sessions: ClassVar[Dict[str, 'ContextUtility']] = {}
     _default_workforce_session: ClassVar[Optional['ContextUtility']] = None
@@ -206,6 +211,54 @@ class ContextUtility:
         current session files from other sessions."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         return f"session_{timestamp}"
+
+    @staticmethod
+    def sanitize_workflow_filename(
+        name: str,
+        max_length: Optional[int] = None,
+    ) -> str:
+        r"""Sanitize a name string for use as a workflow filename.
+
+        Converts the input string to a safe filename by:
+        - converting to lowercase
+        - replacing spaces with underscores
+        - removing special characters (keeping only alphanumeric and
+          underscores)
+        - truncating to maximum length if specified
+
+        Args:
+            name (str): The name string to sanitize (e.g., role_name or
+                task_title).
+            max_length (Optional[int]): Maximum length for the sanitized
+                filename. If None, uses MAX_WORKFLOW_FILENAME_LENGTH.
+                (default: :obj:`None`)
+
+        Returns:
+            str: Sanitized filename string suitable for filesystem use.
+                Returns "agent" if sanitization results in empty string.
+
+        Example:
+            >>> ContextUtility.sanitize_workflow_filename("Data Analyst!")
+            'data_analyst'
+            >>> ContextUtility.sanitize_workflow_filename("Test@123", 5)
+            'test1'
+        """
+        if max_length is None:
+            max_length = ContextUtility.MAX_WORKFLOW_FILENAME_LENGTH
+
+        # sanitize: lowercase, spaces to underscores, remove special chars
+        clean_name = name.lower().replace(" ", "_")
+        clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
+
+        # truncate if too long
+        if len(clean_name) > max_length:
+            clean_name = clean_name[:max_length]
+
+        # ensure it's not empty after sanitization
+        if not clean_name:
+            clean_name = "agent"
+
+        return clean_name
 
     # ========= GENERIC FILE MANAGEMENT METHODS =========
 
