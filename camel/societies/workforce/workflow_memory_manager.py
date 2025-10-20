@@ -118,7 +118,7 @@ class WorkflowMemoryManager:
 
                 # use agent to select most relevant workflows
                 selected_files = self._select_relevant_workflows(
-                    workflows_metadata, max_files_to_load
+                    workflows_metadata, max_files_to_load, session_id
                 )
 
                 if not selected_files:
@@ -332,7 +332,10 @@ class WorkflowMemoryManager:
             }
 
     def _select_relevant_workflows(
-        self, workflows_metadata: List[Dict[str, Any]], max_files: int
+        self,
+        workflows_metadata: List[Dict[str, Any]],
+        max_files: int,
+        session_id: Optional[str] = None,
     ) -> List[str]:
         r"""Use worker agent to select most relevant workflows.
 
@@ -345,6 +348,9 @@ class WorkflowMemoryManager:
                 information dicts (contains title, description, tags,
                 file_path).
             max_files (int): Maximum number of workflows to select.
+            session_id (Optional[str]): Specific workforce session ID to
+                search in for fallback pattern matching. If None, searches
+                across all sessions. (default: :obj:`None`)
 
         Returns:
             List[str]: List of selected workflow file paths.
@@ -405,19 +411,45 @@ class WorkflowMemoryManager:
                 return selected_paths
             else:
                 logger.warning(
-                    "Agent selection failed, falling back to most recent "
-                    "workflows"
+                    "Agent selection failed, falling back to role-based "
+                    "pattern matching"
                 )
-                return [
-                    wf['file_path'] for wf in workflows_metadata[:max_files]
-                ]
+                # fallback to pattern matching by role_name
+                pattern_matched_files = self._find_workflow_files(
+                    pattern=None, session_id=session_id
+                )
+                if pattern_matched_files:
+                    return pattern_matched_files[:max_files]
+                else:
+                    logger.info(
+                        "No role-matched workflows found, using most recent "
+                        "workflows"
+                    )
+                    return [
+                        wf['file_path']
+                        for wf in workflows_metadata[:max_files]
+                    ]
 
         except Exception as e:
             logger.warning(
                 f"Error during workflow selection: {e!s}. "
-                f"Falling back to most recent workflows."
+                f"Falling back to role-based pattern matching."
             )
-            return [wf['file_path'] for wf in workflows_metadata[:max_files]]
+            # fallback to pattern matching by role_name
+            pattern_matched_files = self._find_workflow_files(
+                pattern=None, session_id=session_id
+            )
+            if pattern_matched_files:
+                return pattern_matched_files[:max_files]
+            else:
+                logger.info(
+                    "No role-matched workflows found, using most recent "
+                    "workflows"
+                )
+                return [
+                    wf['file_path']
+                    for wf in workflows_metadata[:max_files]
+                ]
 
     def _format_workflows_for_selection(
         self, workflows_metadata: List[Dict[str, Any]]
@@ -458,7 +490,7 @@ class WorkflowMemoryManager:
 
         Args:
             pattern (Optional[str]): Custom search pattern for workflow files.
-                If None, uses worker description to generate pattern.
+                If None, uses worker role_name to generate pattern.
             session_id (Optional[str]): Specific session ID to search in.
                 If None, searches across all sessions.
 
@@ -466,12 +498,31 @@ class WorkflowMemoryManager:
             List[str]: Sorted list of workflow file paths (empty if
                 validation fails).
         """
-        # generate filename-safe search pattern from worker description
+        # ensure we have a ChatAgent worker
+        if not isinstance(self.worker, ChatAgent):
+            logger.warning(
+                f"Cannot find workflow files: {self.description} worker is "
+                "not a ChatAgent"
+            )
+            return []
+
+        # generate filename-safe search pattern from worker role name
         if pattern is None:
-            # sanitize description: spaces to underscores, remove special chars
-            clean_desc = self.description.lower().replace(" ", "_")
-            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-            pattern = f"{clean_desc}_workflow*.md"
+            from camel.utils.context_utils import ContextUtility
+
+            # get role_name (always available, defaults to "assistant")
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+            clean_name = ContextUtility.sanitize_workflow_filename(role_name)
+
+            # check if role_name is generic
+            generic_names = {'assistant', 'agent', 'user', 'system'}
+            if clean_name in generic_names:
+                # for generic role names, search for all workflow files
+                # since filename is based on task_title
+                pattern = "*_workflow*.md"
+            else:
+                # for explicit role names, search for role-specific files
+                pattern = f"{clean_name}_workflow*.md"
 
         # get the base workforce_workflows directory
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
@@ -492,7 +543,8 @@ class WorkflowMemoryManager:
             logger.info(f"No workflow files found for pattern: {pattern}")
             return []
 
-        # prioritize most recent sessions by session timestamp
+        # prioritize most recent sessions by session timestamp in
+        # directory name
         def extract_session_timestamp(filepath: str) -> str:
             match = re.search(r'session_(\d{8}_\d{6}_\d{6})', filepath)
             return match.group(1) if match else ""
@@ -630,14 +682,21 @@ class WorkflowMemoryManager:
             return 0
 
     def _generate_workflow_filename(self) -> str:
-        r"""Generate a filename for the workflow based on worker description.
+        r"""Generate a filename for the workflow based on worker role name.
+
+        Uses the worker's explicit role_name when available.
 
         Returns:
-            str: Sanitized filename without timestamp.
+            str: Sanitized filename without timestamp and without .md
+                extension. Format: {role_name}_workflow
         """
-        clean_desc = self.description.lower().replace(" ", "_")
-        clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-        return f"{clean_desc}_workflow"
+        from camel.utils.context_utils import ContextUtility
+
+        # get role_name (always available, defaults to "assistant"/"Assistant")
+        role_name = getattr(self.worker, 'role_name', 'assistant')
+        clean_name = ContextUtility.sanitize_workflow_filename(role_name)
+
+        return f"{clean_name}_workflow"
 
     def _prepare_workflow_prompt(self) -> str:
         r"""Prepare the structured prompt for workflow summarization.

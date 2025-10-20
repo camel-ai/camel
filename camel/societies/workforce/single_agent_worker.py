@@ -34,10 +34,7 @@ from camel.societies.workforce.workflow_memory_manager import (
     WorkflowMemoryManager,
 )
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
-from camel.utils.context_utils import (
-    ContextUtility,
-    WorkflowSummary,
-)
+from camel.utils.context_utils import ContextUtility
 
 logger = get_logger(__name__)
 
@@ -610,6 +607,8 @@ class SingleAgentWorker(Worker):
         is based on either the worker's explicit role_name or the generated
         task_title from the summary.
 
+        Delegates to WorkflowMemoryManager for all workflow operations.
+
         Returns:
             Dict[str, Any]: Result dictionary with keys:
                 - status (str): "success" or "error"
@@ -629,67 +628,24 @@ class SingleAgentWorker(Worker):
             DeprecationWarning,
             stacklevel=2,
         )
-        try:
-            # validate requirements
-            validation_error = self._validate_workflow_save_requirements()
-            if validation_error:
-                return validation_error
 
-            # setup context utility and agent
-            context_util = self._get_context_utility()
-            self.worker.set_context_utility(context_util)
+        manager = self._get_workflow_manager()
+        result = manager.save_workflow(
+            conversation_accumulator=self._conversation_accumulator
+        )
 
-            # prepare workflow summarization components
-            structured_prompt = self._prepare_workflow_prompt()
-            agent_to_summarize = self._select_agent_for_summarization(
-                context_util
+        # clean up accumulator after successful save
+        if (
+            result.get("status") == "success"
+            and self._conversation_accumulator is not None
+        ):
+            logger.info(
+                "Cleaning up conversation accumulator after workflow "
+                "summarization"
             )
+            self._conversation_accumulator = None
 
-            # check if we should use role_name or let summarize extract
-            # task_title
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = role_name.lower() not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
-
-            # generate and save workflow summary
-            # if role_name is explicit, use it for filename
-            # if role_name is generic, pass none to let summarize use
-            # task_title
-            filename = (
-                self._generate_workflow_filename()
-                if use_role_name_for_filename
-                else None
-            )
-
-            result = agent_to_summarize.summarize(
-                filename=filename,
-                summary_prompt=structured_prompt,
-                response_format=WorkflowSummary,
-            )
-
-            # add worker metadata and cleanup
-            result["worker_description"] = self.description
-            if self._conversation_accumulator is not None:
-                logger.info(
-                    "Cleaning up conversation accumulator after workflow "
-                    "summarization"
-                )
-                self._conversation_accumulator = None
-
-            return result
-
-        except Exception as e:
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": f"Failed to save workflow memories: {e!s}",
-            }
+        return result
 
     async def save_workflow_memories_async(self) -> Dict[str, Any]:
         r"""Asynchronously save the worker's current workflow memories using
@@ -768,89 +724,3 @@ class SingleAgentWorker(Worker):
             use_smart_selection=use_smart_selection,
         )
 
-    def _validate_workflow_save_requirements(self) -> Optional[Dict[str, Any]]:
-        r"""Validate requirements for workflow saving.
-
-        Returns:
-            Optional[Dict[str, Any]]: Error result dict if validation fails,
-                None if validation passes.
-        """
-        if not isinstance(self.worker, ChatAgent):
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": (
-                    "Worker must be a ChatAgent instance to save workflow "
-                    "memories"
-                ),
-            }
-        return None
-
-    def _generate_workflow_filename(self) -> str:
-        r"""Generate a filename for the workflow based on worker role name.
-
-        Uses the worker's explicit role_name when available.
-
-        Returns:
-            str: Sanitized filename without timestamp and without .md
-                extension. Format: {role_name}_workflow
-        """
-        from camel.utils.context_utils import ContextUtility
-
-        # get role_name (always available, defaults to "assistant"/"Assistant")
-        role_name = getattr(self.worker, 'role_name', 'assistant')
-        clean_name = ContextUtility.sanitize_workflow_filename(role_name)
-
-        return f"{clean_name}_workflow"
-
-    def _prepare_workflow_prompt(self) -> str:
-        r"""Prepare the structured prompt for workflow summarization.
-
-        Returns:
-            str: Structured prompt for workflow summary.
-        """
-        workflow_prompt = WorkflowSummary.get_instruction_prompt()
-        return StructuredOutputHandler.generate_structured_prompt(
-            base_prompt=workflow_prompt, schema=WorkflowSummary
-        )
-
-    def _select_agent_for_summarization(
-        self, context_util: ContextUtility
-    ) -> ChatAgent:
-        r"""Select the best agent for workflow summarization.
-
-        Args:
-            context_util: Context utility to set on selected agent.
-
-        Returns:
-            ChatAgent: Agent to use for summarization.
-        """
-        agent_to_summarize = self.worker
-
-        if self._conversation_accumulator is not None:
-            accumulator_messages, _ = (
-                self._conversation_accumulator.memory.get_context()
-            )
-            if accumulator_messages:
-                self._conversation_accumulator.set_context_utility(
-                    context_util
-                )
-                agent_to_summarize = self._conversation_accumulator
-                logger.info(
-                    f"Using conversation accumulator with "
-                    f"{len(accumulator_messages)} messages for workflow "
-                    f"summary"
-                )
-            else:
-                logger.info(
-                    "Using original worker for workflow summary (no "
-                    "accumulated conversations)"
-                )
-        else:
-            logger.info(
-                "Using original worker for workflow summary (no accumulator)"
-            )
-
-        return agent_to_summarize
