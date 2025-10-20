@@ -15,6 +15,7 @@
 import glob
 import os
 import re
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -26,6 +27,24 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 logger = get_logger(__name__)
+
+
+class WorkflowSelectionMethod(Enum):
+    r"""Enum representing the method used to select workflows.
+
+    Attributes:
+        AGENT_SELECTED: Agent-based intelligent selection using metadata.
+        ROLE_NAME_MATCH: Pattern matching by role_name.
+        MOST_RECENT: Fallback to most recent workflows.
+        ALL_AVAILABLE: Returned all workflows (fewer than max requested).
+        NONE: No workflows available.
+    """
+
+    AGENT_SELECTED = "agent_selected"
+    ROLE_NAME_MATCH = "role_name_match"
+    MOST_RECENT = "most_recent"
+    ALL_AVAILABLE = "all_available"
+    NONE = "none"
 
 
 class WorkflowMemoryManager:
@@ -117,13 +136,23 @@ class WorkflowMemoryManager:
                     return False
 
                 # use agent to select most relevant workflows
-                selected_files = self._select_relevant_workflows(
-                    workflows_metadata, max_files_to_load, session_id
+                selected_files, selection_method = (
+                    self._select_relevant_workflows(
+                        workflows_metadata, max_files_to_load, session_id
+                    )
                 )
 
                 if not selected_files:
-                    logger.info("No workflows selected by agent")
+                    logger.info(
+                        f"No workflows selected "
+                        f"(method: {selection_method.value})"
+                    )
                     return False
+
+                # log selection method used
+                logger.info(
+                    f"Workflow selection method: {selection_method.value}"
+                )
 
                 # load selected workflows
                 loaded_count = self._load_workflow_files(
@@ -336,7 +365,7 @@ class WorkflowMemoryManager:
         workflows_metadata: List[Dict[str, Any]],
         max_files: int,
         session_id: Optional[str] = None,
-    ) -> List[str]:
+    ) -> tuple[List[str], WorkflowSelectionMethod]:
         r"""Use worker agent to select most relevant workflows.
 
         This method creates a prompt with all available workflow information
@@ -353,14 +382,11 @@ class WorkflowMemoryManager:
                 across all sessions. (default: :obj:`None`)
 
         Returns:
-            List[str]: List of selected workflow file paths.
+            tuple[List[str], WorkflowSelectionMethod]: Tuple of (selected
+                workflow file paths, selection method used).
         """
         if not workflows_metadata:
-            return []
-
-        if len(workflows_metadata) <= max_files:
-            # if we have fewer workflows than max, return all
-            return [wf['file_path'] for wf in workflows_metadata]
+            return [], WorkflowSelectionMethod.NONE
 
         # format workflows for selection
         workflows_str = self._format_workflows_for_selection(
@@ -408,48 +434,38 @@ class WorkflowMemoryManager:
                     f"Agent selected {len(selected_paths)} workflow(s) for "
                     f"{self.description}"
                 )
-                return selected_paths
-            else:
-                logger.warning(
-                    "Agent selection failed, falling back to role-based "
-                    "pattern matching"
-                )
-                # fallback to pattern matching by role_name
-                pattern_matched_files = self._find_workflow_files(
-                    pattern=None, session_id=session_id
-                )
-                if pattern_matched_files:
-                    return pattern_matched_files[:max_files]
-                else:
-                    logger.info(
-                        "No role-matched workflows found, using most recent "
-                        "workflows"
-                    )
-                    return [
-                        wf['file_path']
-                        for wf in workflows_metadata[:max_files]
-                    ]
+                return selected_paths, WorkflowSelectionMethod.AGENT_SELECTED
+
+            # agent returned empty results
+            logger.warning(
+                "Agent selection returned no valid workflows, "
+                "falling back to role-based pattern matching"
+            )
 
         except Exception as e:
             logger.warning(
-                f"Error during workflow selection: {e!s}. "
-                f"Falling back to role-based pattern matching."
+                f"Error during agent selection: {e!s}. "
+                f"Falling back to role-based pattern matching"
             )
-            # fallback to pattern matching by role_name
-            pattern_matched_files = self._find_workflow_files(
-                pattern=None, session_id=session_id
+
+        # fallback: try pattern matching by role_name
+        pattern_matched_files = self._find_workflow_files(
+            pattern=None, session_id=session_id
+        )
+        if pattern_matched_files:
+            return (
+                pattern_matched_files[:max_files],
+                WorkflowSelectionMethod.ROLE_NAME_MATCH,
             )
-            if pattern_matched_files:
-                return pattern_matched_files[:max_files]
-            else:
-                logger.info(
-                    "No role-matched workflows found, using most recent "
-                    "workflows"
-                )
-                return [
-                    wf['file_path']
-                    for wf in workflows_metadata[:max_files]
-                ]
+
+        # last resort: return most recent workflows
+        logger.info(
+            "No role-matched workflows found, using most recent workflows"
+        )
+        return (
+            [wf['file_path'] for wf in workflows_metadata[:max_files]],
+            WorkflowSelectionMethod.MOST_RECENT,
+        )
 
     def _format_workflows_for_selection(
         self, workflows_metadata: List[Dict[str, Any]]
