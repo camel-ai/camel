@@ -1,7 +1,7 @@
 name: 🤔 Questions / Help / Support
 description: Do you need support?
 title: "[Question] "
-labels: [question]
+labels: [question, Needs Triage]
 body:
   - type: checkboxes
     id: steps

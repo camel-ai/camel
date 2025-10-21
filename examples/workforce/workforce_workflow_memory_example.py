@@ -14,6 +14,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import asyncio
 import os
 
 from dotenv import load_dotenv
@@ -83,11 +84,12 @@ def create_writer_agent() -> ChatAgent:
     return ChatAgent(system_message=writer_msg, model=model)
 
 
-def demonstrate_first_session():
+async def demonstrate_first_session():
     r"""Demonstrate first workforce session with workflow saving.
 
     Creates a workforce with math and writer agents, processes tasks,
-    and saves the resulting workflows for future use.
+    and saves the resulting workflows for future use using async parallel
+    summarization.
 
     Returns:
         Dict[str, str]: Results of the workflow saving operation.
@@ -127,17 +129,17 @@ def demonstrate_first_session():
 
     for task in tasks:
         try:
-            workforce.process_task(task)
+            await workforce.process_task_async(task)
         except Exception as e:
             logger.warning(f"Failed to process task {task.id}: {e}")
 
-    # Save workflows after completing tasks
-    saved_workflows = workforce.save_workflow_memories()
+    # Save workflows after completing tasks using async parallel version
+    saved_workflows = await workforce.save_workflow_memories_async()
 
     return saved_workflows
 
 
-def demonstrate_second_session():
+async def demonstrate_second_session():
     r"""Demonstrate second workforce session with workflow loading.
 
     Creates a new workforce instance, loads previously saved workflows,
@@ -184,7 +186,7 @@ def demonstrate_second_session():
 
     for task in new_tasks:
         try:
-            workforce.process_task(task)
+            await workforce.process_task_async(task)
         except Exception as e:
             logger.warning(f"Failed to process task {task.id}: {e}")
 
@@ -228,14 +230,14 @@ def demonstrate_workflow_file_management() -> None:
         logger.info("No workflow directory found yet")
 
 
-def main() -> None:
+async def main() -> None:
     try:
         # First session to execute tasks and save workflows
-        saved_results = demonstrate_first_session()
+        saved_results = await demonstrate_first_session()
         print(f"Workflow save results: {saved_results}")
 
         # Second session to load workflows and execute new tasks
-        loaded_results = demonstrate_second_session()
+        loaded_results = await demonstrate_second_session()
         print(f"Workflow load results: {loaded_results}")
 
     except Exception as e:
@@ -244,7 +246,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
 """
 ===============================================================================
