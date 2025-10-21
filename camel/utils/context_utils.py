@@ -809,12 +809,12 @@ class ContextUtility:
         result = '\n'.join(filtered_lines).strip()
         return result
 
-    # ========= WORKFLOW METADATA METHODS =========
+    # ========= WORKFLOW INFO METHODS =========
 
-    def extract_workflow_metadata(self, file_path: str) -> Dict[str, Any]:
-        r"""Extract metadata from a workflow markdown file.
+    def extract_workflow_info(self, file_path: str) -> Dict[str, Any]:
+        r"""Extract info from a workflow markdown file.
 
-        This method reads only the essential metadata from a workflow file
+        This method reads only the essential info from a workflow file
         (title, description, tags) for use in workflow selection without
         loading the entire workflow content.
 
@@ -822,7 +822,7 @@ class ContextUtility:
             file_path (str): Full path to the workflow markdown file.
 
         Returns:
-            Dict[str, Any]: Workflow metadata including title, description,
+            Dict[str, Any]: Workflow info including title, description,
                 tags, and file_path. Returns empty dict on error.
         """
         import re
@@ -873,17 +873,17 @@ class ContextUtility:
 
         except Exception as e:
             logger.warning(
-                f"Error extracting workflow metadata from {file_path}: {e}"
+                f"Error extracting workflow info from {file_path}: {e}"
             )
             return {}
 
-    def get_all_workflows_metadata(
+    def get_all_workflows_info(
         self, session_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        r"""Get metadata from all workflow files in workforce_workflows.
+        r"""Get info from all workflow files in workforce_workflows.
 
         This method scans the workforce_workflows directory for workflow
-        markdown files and extracts their metadata for use in workflow
+        markdown files and extracts their info for use in workflow
         selection.
 
         Args:
@@ -892,7 +892,7 @@ class ContextUtility:
                 all sessions.
 
         Returns:
-            List[Dict[str, Any]]: List of workflow metadata dicts, sorted
+            List[Dict[str, Any]]: List of workflow info dicts, sorted
                 by session timestamp (newest first).
         """
         import glob
@@ -929,14 +929,14 @@ class ContextUtility:
 
         workflow_files.sort(key=extract_session_timestamp, reverse=True)
 
-        # Extract metadata from each file
+        # Extract info from each file
         for file_path in workflow_files:
-            metadata = self.extract_workflow_metadata(file_path)
+            metadata = self.extract_workflow_info(file_path)
             if metadata:  # Only add if extraction succeeded
                 workflows_metadata.append(metadata)
 
         logger.info(
-            f"Found {len(workflows_metadata)} workflow file(s) with metadata"
+            f"Found {len(workflows_metadata)} workflow file(s) with info"
         )
         return workflows_metadata
 

@@ -924,9 +924,9 @@ class TestSmartWorkflowSelection:
             },
         ]
 
-        # Mock context utility to return metadata
+        # Mock context utility to return info
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = (
+        mock_context_utility.get_all_workflows_info.return_value = (
             mock_metadata
         )
         mock_context_utility.load_markdown_file.return_value = (
@@ -956,7 +956,7 @@ class TestSmartWorkflowSelection:
 
             # Verify smart selection was used
             assert result is True
-            mock_context_utility.get_all_workflows_metadata.assert_called_once()
+            mock_context_utility.get_all_workflows_info.assert_called_once()
             worker.worker.step.assert_called_once()
 
             # Verify agent was asked to select workflows
@@ -966,12 +966,12 @@ class TestSmartWorkflowSelection:
             assert "data-analysis" in selection_call.content
 
     def test_smart_selection_no_metadata(self, temp_context_dir):
-        """Test smart selection when no workflow metadata found."""
+        """Test smart selection when no workflow info found."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Mock context utility to return empty metadata
+        # Mock context utility to return empty info
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = []
+        mock_context_utility.get_all_workflows_info.return_value = []
 
         with patch(
             'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
@@ -980,7 +980,7 @@ class TestSmartWorkflowSelection:
             result = worker.load_workflow_memories(use_smart_selection=True)
 
             assert result is False
-            mock_context_utility.get_all_workflows_metadata.assert_called_once()
+            mock_context_utility.get_all_workflows_info.assert_called_once()
 
     def test_smart_selection_fewer_workflows_than_max(self, temp_context_dir):
         """Test smart selection when fewer workflows exist than max_files."""
@@ -1003,7 +1003,7 @@ class TestSmartWorkflowSelection:
         ]
 
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = (
+        mock_context_utility.get_all_workflows_info.return_value = (
             mock_metadata
         )
         mock_context_utility.load_markdown_file.return_value = (
@@ -1053,7 +1053,7 @@ class TestSmartWorkflowSelection:
         ]
 
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = (
+        mock_context_utility.get_all_workflows_info.return_value = (
             mock_metadata
         )
         mock_context_utility.load_markdown_file.return_value = (
@@ -1098,7 +1098,7 @@ class TestSmartWorkflowSelection:
         ]
 
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = (
+        mock_context_utility.get_all_workflows_info.return_value = (
             mock_metadata
         )
         mock_context_utility.load_markdown_file.return_value = (
@@ -1121,8 +1121,8 @@ class TestSmartWorkflowSelection:
             # Should have system message only
             assert len(final_memory) == 1
 
-    def test_extract_workflow_metadata(self, temp_context_dir):
-        """Test metadata extraction from workflow markdown file."""
+    def test_extract_workflow_info(self, temp_context_dir):
+        """Test info extraction from workflow markdown file."""
         from camel.utils.context_utils import ContextUtility
 
         # Create a test workflow file
@@ -1147,9 +1147,9 @@ Analyze sales data and generate comprehensive reports with visualizations.
         with open(workflow_path, 'w') as f:
             f.write(workflow_content)
 
-        # Extract metadata
+        # Extract info
         context_util = ContextUtility.get_workforce_shared()
-        metadata = context_util.extract_workflow_metadata(workflow_path)
+        metadata = context_util.extract_workflow_info(workflow_path)
 
         assert metadata['title'] == "Data Analysis Workflow"
         assert "sales data" in metadata['description']
@@ -1159,8 +1159,8 @@ Analyze sales data and generate comprehensive reports with visualizations.
         assert 'visualization' in metadata['tags']
         assert metadata['file_path'] == workflow_path
 
-    def test_get_all_workflows_metadata(self, temp_context_dir):
-        """Test getting metadata from all workflow files."""
+    def test_get_all_workflows_info(self, temp_context_dir):
+        """Test getting info from all workflow files."""
         # Create test workflow files
         import os
 
@@ -1205,9 +1205,9 @@ Code development
 - coding
 """)
 
-        # Get all metadata
+        # Get all info
         context_util = ContextUtility.get_workforce_shared()
-        all_metadata = context_util.get_all_workflows_metadata()
+        all_metadata = context_util.get_all_workflows_info()
 
         assert len(all_metadata) == 2
         titles = [m['title'] for m in all_metadata]
@@ -1228,7 +1228,7 @@ Code development
         ]
 
         mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_metadata.return_value = (
+        mock_context_utility.get_all_workflows_info.return_value = (
             mock_metadata
         )
         mock_context_utility.load_markdown_file.return_value = (
@@ -1247,8 +1247,8 @@ Code development
             )
 
             assert result is True
-            # Verify session_id was passed to get_all_workflows_metadata
-            mock_context_utility.get_all_workflows_metadata.assert_called_once_with(
+            # Verify session_id was passed to get_all_workflows_info
+            mock_context_utility.get_all_workflows_info.assert_called_once_with(
                 "session_123"
             )
 

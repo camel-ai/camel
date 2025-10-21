@@ -127,7 +127,7 @@ class WorkflowMemoryManager:
                 # smart selection: use workflow information and agent
                 # intelligence
                 context_util = self._get_context_utility()
-                workflows_metadata = context_util.get_all_workflows_metadata(
+                workflows_metadata = context_util.get_all_workflows_info(
                     session_id
                 )
 
