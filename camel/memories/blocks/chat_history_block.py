@@ -233,3 +233,67 @@ class ChatHistoryBlock(MemoryBlock):
             self.storage.save(remaining_dicts)
 
         return [MemoryRecord.from_dict(record) for record in popped_dicts]
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from the memory.
+
+        Args:
+            indices (List[int]): List of indices to remove. Indices are
+                positions in the current record list (0-based).
+                System/developer messages at index 0 are protected and will
+                not be removed.
+
+        Returns:
+            List[MemoryRecord]: The removed records in their original order.
+        """
+        if not indices:
+            return []
+
+        record_dicts = self.storage.load()
+        if not record_dicts:
+            return []
+
+        # Preserve initial system/developer instruction if present.
+        protected_prefix = (
+            1
+            if (
+                record_dicts
+                and record_dicts[0]['role_at_backend']
+                in {
+                    OpenAIBackendRole.SYSTEM.value,
+                    OpenAIBackendRole.DEVELOPER.value,
+                }
+            )
+            else 0
+        )
+
+        # Filter out protected indices and invalid ones
+        valid_indices = sorted(
+            {
+                idx
+                for idx in indices
+                if idx >= protected_prefix and idx < len(record_dicts)
+            }
+        )
+
+        if not valid_indices:
+            return []
+
+        # Extract records to remove (in original order)
+        removed_records = [record_dicts[idx] for idx in valid_indices]
+
+        # Build remaining records by excluding removed indices
+        remaining_dicts = [
+            record
+            for idx, record in enumerate(record_dicts)
+            if idx not in valid_indices
+        ]
+
+        # Save back to storage
+        self.storage.clear()
+        if remaining_dicts:
+            self.storage.save(remaining_dicts)
+
+        return [MemoryRecord.from_dict(record) for record in removed_records]

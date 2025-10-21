@@ -28,7 +28,6 @@ import textwrap
 import threading
 import time
 import uuid
-import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -901,6 +900,96 @@ class ChatAgent(BaseAgent):
             return True
 
         return False
+
+    def _find_indices_to_remove_for_last_tool_pair(
+        self, recent_records: List[ContextRecord]
+    ) -> List[int]:
+        """Find indices of records that should be removed to clean up the most
+        recent incomplete tool interaction pair.
+
+        This method identifies tool call/result pairs by tool_call_id and
+        returns the exact indices to remove, allowing non-contiguous deletions.
+
+        Logic:
+        - If the last record is a tool result (TOOL/FUNCTION) with a
+          tool_call_id, find the matching assistant call anywhere in history
+          and return both indices.
+        - If the last record is an assistant tool call without a result yet,
+          return just that index.
+        - For normal messages (non tool-related): remove just the last one.
+        - Fallback: If no tool_call_id is available, use heuristic (last 2 if
+          tool-related, otherwise last 1).
+
+        Returns:
+            List[int]: Indices to remove (may be non-contiguous).
+        """
+        if not recent_records:
+            return []
+
+        last_idx = len(recent_records) - 1
+        last_record = recent_records[last_idx].memory_record
+
+        # Case A: Last is an ASSISTANT tool call with no result yet
+        if (
+            last_record.role_at_backend == OpenAIBackendRole.ASSISTANT
+            and isinstance(last_record.message, FunctionCallingMessage)
+            and last_record.message.result is None
+        ):
+            return [last_idx]
+
+        # Case B: Last is TOOL/FUNCTION result, try id-based pairing
+        if last_record.role_at_backend in {
+            OpenAIBackendRole.TOOL,
+            OpenAIBackendRole.FUNCTION,
+        }:
+            tool_id = None
+            if isinstance(last_record.message, FunctionCallingMessage):
+                tool_id = last_record.message.tool_call_id
+
+            if tool_id:
+                for idx in range(len(recent_records) - 2, -1, -1):
+                    rec = recent_records[idx].memory_record
+                    if rec.role_at_backend != OpenAIBackendRole.ASSISTANT:
+                        continue
+
+                    # Check if this assistant message contains the tool_call_id
+                    matched = False
+
+                    # Case 1: FunctionCallingMessage (single tool call)
+                    if isinstance(rec.message, FunctionCallingMessage):
+                        if rec.message.tool_call_id == tool_id:
+                            matched = True
+
+                    # Case 2: BaseMessage with multiple tool_calls in meta_dict
+                    elif (
+                        hasattr(rec.message, "meta_dict")
+                        and rec.message.meta_dict
+                    ):
+                        tool_calls_list = rec.message.meta_dict.get(
+                            "tool_calls", []
+                        )
+                        if isinstance(tool_calls_list, list):
+                            for tc in tool_calls_list:
+                                if (
+                                    isinstance(tc, dict)
+                                    and tc.get("id") == tool_id
+                                ):
+                                    matched = True
+                                    break
+
+                    if matched:
+                        # Return both assistant call and tool result indices
+                        return [idx, last_idx]
+
+            # Fallback: no tool_call_id, use heuristic
+            if self._is_tool_related_record(last_record):
+                # Remove last 2 (assume they are paired)
+                return [last_idx - 1, last_idx] if last_idx > 0 else [last_idx]
+            else:
+                return [last_idx]
+
+        # Default: non tool-related tail => remove last one
+        return [last_idx]
 
     @staticmethod
     def _serialize_tool_args(args: Dict[str, Any]) -> str:
@@ -2124,12 +2213,12 @@ class ChatAgent(BaseAgent):
                     except Exception:  # pragma: no cover - defensive guard
                         recent_records = []
 
-                    pop_count = 1
-                    if recent_records:
-                        last_record = recent_records[-1].memory_record
-                        if self._is_tool_related_record(last_record):
-                            pop_count = 2
-                    self.memory.pop_records(pop_count)
+                    indices_to_remove = (
+                        self._find_indices_to_remove_for_last_tool_pair(
+                            recent_records
+                        )
+                    )
+                    self.memory.remove_records_by_indices(indices_to_remove)
 
                     summary = self.summarize()
                     if isinstance(input_message, BaseMessage):
@@ -2441,12 +2530,12 @@ class ChatAgent(BaseAgent):
                     except Exception:  # pragma: no cover - defensive guard
                         recent_records = []
 
-                    pop_count = 1
-                    if recent_records:
-                        last_record = recent_records[-1].memory_record
-                        if self._is_tool_related_record(last_record):
-                            pop_count = 2
-                    self.memory.pop_records(pop_count)
+                    indices_to_remove = (
+                        self._find_indices_to_remove_for_last_tool_pair(
+                            recent_records
+                        )
+                    )
+                    self.memory.remove_records_by_indices(indices_to_remove)
 
                     summary = self.summarize()
                     if isinstance(input_message, BaseMessage):
@@ -2661,6 +2750,8 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
+                if self._is_token_limit_error(e):
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -2678,7 +2769,6 @@ class ChatAgent(BaseAgent):
             except Exception:
                 logger.error(
                     f"Model error: {self.model_backend.model_type}",
-                    exc_info=True,
                 )
                 raise
         else:
@@ -2725,6 +2815,8 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
+                if self._is_token_limit_error(e):
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)

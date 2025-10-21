@@ -133,6 +133,12 @@ class ChatHistoryMemory(AgentMemory):
         r"""Removes the most recent records from chat history memory."""
         return self._chat_history_block.pop_records(count)
 
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from chat history memory."""
+        return self._chat_history_block.remove_records_by_indices(indices)
+
 
 class VectorDBMemory(AgentMemory):
     r"""An agent memory wrapper of :obj:`VectorDBBlock`. This memory queries
@@ -201,6 +207,14 @@ class VectorDBMemory(AgentMemory):
         r"""Rolling back is unsupported for vector database memory."""
         raise NotImplementedError(
             "VectorDBMemory does not support removing historical records."
+        )
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removing by indices is unsupported for vector database memory."""
+        raise NotImplementedError(
+            "VectorDBMemory does not support removing records by indices."
         )
 
 
@@ -291,3 +305,9 @@ class LongtermAgentMemory(AgentMemory):
     def pop_records(self, count: int) -> List[MemoryRecord]:
         r"""Removes recent chat history records while leaving vector memory."""
         return self.chat_history_block.pop_records(count)
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from chat history."""
+        return self.chat_history_block.remove_records_by_indices(indices)
