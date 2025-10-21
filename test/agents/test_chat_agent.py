@@ -560,6 +560,21 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
         system_message=system_msg,
         token_limit=1,
     )
+    
+    # Mock memory.get_context() to raise RuntimeError indicating token limit exceeded
+    original_get_context = assistant.memory.get_context
+    def mock_get_context():
+        messages, _ = original_get_context()
+        # Raise RuntimeError as if context size exceeded limit
+        raise RuntimeError(
+            "Context size exceeded",
+            {
+                "status": "error",
+                "message": "The chat history has exceeded the maximum token limit."
+            }
+        )
+    
+    assistant.memory.get_context = mock_get_context
     assistant.model_backend.run = MagicMock(
         return_value=model_backend_rsp_base
     )
