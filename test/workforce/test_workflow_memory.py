@@ -1639,7 +1639,9 @@ class TestWorkforceMemorySharing:
 
 
 class TestConversationAccumulator:
-    """Test conversation accumulator behavior - critical for workflow memory."""
+    """Test conversation accumulator behavior - critical for workflow
+    memory.
+    """
 
     @pytest.mark.asyncio
     async def test_accumulator_collects_from_multiple_tasks(
@@ -1739,9 +1741,10 @@ class TestConversationAccumulator:
             await worker._process_task(task, [])
 
         # accumulator should NOT be created when disabled
-        assert (
-            worker._conversation_accumulator is None
-        ), "Accumulator should not be created when enable_workflow_memory=False"
+        assert worker._conversation_accumulator is None, (
+            "Accumulator should not be created when "
+            "enable_workflow_memory=False"
+        )
 
     @pytest.mark.asyncio
     async def test_accumulator_cleanup_after_successful_save(
@@ -1792,9 +1795,9 @@ class TestConversationAccumulator:
             result = await worker.save_workflow_memories_async()
 
         # verify save was successful
-        assert result["status"] == "success", (
-            f"Save should succeed, got: {result}"
-        )
+        assert (
+            result["status"] == "success"
+        ), f"Save should succeed, got: {result}"
 
         # accumulator should be None after successful save
         assert worker._conversation_accumulator is None, (
@@ -1977,7 +1980,9 @@ class TestAgentPoolMemoryTransfer:
             )
             await worker_pooled._process_task(task, [])
 
-        pooled_memory = worker_pooled._conversation_accumulator.memory.retrieve()
+        pooled_memory = (
+            worker_pooled._conversation_accumulator.memory.retrieve()
+        )
 
         # test with pool disabled
         worker_no_pool = SingleAgentWorker(
@@ -1993,12 +1998,15 @@ class TestAgentPoolMemoryTransfer:
             )
             await worker_no_pool._process_task(task, [])
 
-        no_pool_memory = worker_no_pool._conversation_accumulator.memory.retrieve()
+        no_pool_memory = (
+            worker_no_pool._conversation_accumulator.memory.retrieve()
+        )
 
         # should accumulate same number of messages
         assert len(pooled_memory) == len(no_pool_memory), (
-            f"Pooled and non-pooled should accumulate same number of messages "
-            f"(pooled: {len(pooled_memory)}, non-pooled: {len(no_pool_memory)})"
+            f"Pooled and non-pooled should accumulate same number of "
+            f"messages (pooled: {len(pooled_memory)}, "
+            f"non-pooled: {len(no_pool_memory)})"
         )
 
     @pytest.mark.asyncio
@@ -2142,9 +2150,6 @@ This workflow analyzes sales data using pandas and matplotlib.
         workflow entries by directly testing the formatting method.
         """
         # test the formatting method directly with mock workflow data
-        from camel.societies.workforce.workflow_memory_manager import (
-            WorkflowMemoryManager,
-        )
 
         worker = MockSingleAgentWorker("test_worker")
         manager = worker._get_workflow_manager()
@@ -2183,12 +2188,11 @@ This is the third workflow.""",
         )
 
         # verify formatting
-        assert "3 previous" in formatted_content.lower() or "3" in formatted_content, (
-            "Should indicate 3 workflows"
-        )
-        assert "Previous Workflows" in formatted_content, (
-            "Should have header"
-        )
+        assert (
+            "3 previous" in formatted_content.lower()
+            or "3" in formatted_content
+        ), "Should indicate 3 workflows"
+        assert "Previous Workflows" in formatted_content, "Should have header"
 
         # each workflow should be numbered
         assert "Workflow 1:" in formatted_content
@@ -2202,9 +2206,9 @@ This is the third workflow.""",
 
         # should have separators
         separator_count = formatted_content.count("=" * 60)
-        assert separator_count >= 3, (
-            f"Should have at least 3 separators, got {separator_count}"
-        )
+        assert (
+            separator_count >= 3
+        ), f"Should have at least 3 separators, got {separator_count}"
 
     def test_metadata_filtered_from_loaded_workflow(self, temp_context_dir):
         """Test that metadata section is not included in system message.
@@ -2306,7 +2310,9 @@ class TestErrorHandlingAndEdgeCases:
 
         try:
             # loading may succeed or fail gracefully, but should not crash
-            result = worker.load_workflow_memories(session_id="session_corrupted")
+            result = worker.load_workflow_memories(
+                session_id="session_corrupted"
+            )
 
             # if it succeeds, verify it handled the content
             if result is True:
@@ -2392,7 +2398,8 @@ class TestErrorHandlingAndEdgeCases:
 
         with patch.object(ChatAgent, 'step') as mock_step:
             mock_step.return_value = BaseMessage.make_assistant_message(
-                role_name="Assistant", content="Task completed with long response " + "y" * 100
+                role_name="Assistant",
+                content="Task completed with long response " + "y" * 100,
             )
 
             # process all tasks
@@ -2403,9 +2410,9 @@ class TestErrorHandlingAndEdgeCases:
         accumulator = worker._conversation_accumulator
         assert accumulator is not None
         records = accumulator.memory.retrieve()
-        assert len(records) > 50, (
-            f"Should have many records (>50), got {len(records)}"
-        )
+        assert (
+            len(records) > 50
+        ), f"Should have many records (>50), got {len(records)}"
 
         # attempt to save - should handle gracefully
         mock_summary_result = {

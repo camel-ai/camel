@@ -723,4 +723,3 @@ class SingleAgentWorker(Worker):
             session_id=session_id,
             use_smart_selection=use_smart_selection,
         )
-
