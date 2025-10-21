@@ -24,6 +24,7 @@ from camel.logger import get_logger
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
+from camel.types import OpenAIBackendRole
 from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 logger = get_logger(__name__)
@@ -210,8 +211,26 @@ class WorkflowMemoryManager:
             self.worker.set_context_utility(context_util)
 
             # prepare workflow summarization components
-            filename = self._generate_workflow_filename()
             structured_prompt = self._prepare_workflow_prompt()
+
+            # check if we should use role_name or let summarize extract
+            # task_title
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+            use_role_name_for_filename = role_name.lower() not in {
+                'assistant',
+                'agent',
+                'user',
+                'system',
+            }
+
+            # if role_name is explicit, use it for filename
+            # if role_name is generic, pass none to let summarize use
+            # task_title
+            filename = (
+                self._generate_workflow_filename()
+                if use_role_name_for_filename
+                else None
+            )
 
             # select agent for summarization
             agent_to_summarize = self.worker
@@ -401,6 +420,11 @@ class WorkflowMemoryManager:
             for idx in selected_indices:
                 if 0 <= idx < len(workflows_metadata):
                     selected_paths.append(workflows_metadata[idx]['file_path'])
+                else:
+                    logger.warning(
+                        f"Agent selected invalid workflow index {idx+1}, "
+                        f"only {len(workflows_metadata)} workflows available"
+                    )
 
             if selected_paths:
                 logger.info(
@@ -420,6 +444,16 @@ class WorkflowMemoryManager:
                 f"Error during agent selection: {e!s}. "
                 f"Falling back to role-based pattern matching"
             )
+
+        finally:
+            # clean up selection conversation from memory to prevent
+            # pollution. this runs whether selection succeeded, failed,
+            # or raised exception
+            self.worker.memory.clear()
+            if self.worker._system_message is not None:
+                self.worker.update_memory(
+                    self.worker._system_message, OpenAIBackendRole.SYSTEM
+                )
 
         # fallback: try pattern matching by role_name
         pattern_matched_files = self._find_workflow_files(
