@@ -1415,6 +1415,20 @@ class Workforce(BaseNode):
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
 
+    def get_main_task_queue(self) -> List[Task]:
+        r"""Get current main task queue for human review.
+        Returns:
+            List[Task]: List of main tasks waiting to be decomposed
+                and executed.
+        """
+        # Return tasks from pending queue that need decomposition
+        return [
+            t
+            for t in self._pending_tasks
+            if t.additional_info
+            and t.additional_info.get('_needs_decomposition')
+        ]
+
     def add_task(
         self,
         content: str,
