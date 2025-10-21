@@ -112,16 +112,18 @@ class TerminalToolkit(BaseToolkit):
 
         if self.use_docker_backend:
             # For Docker backend, working_directory is path inside container
-            if working_directory:
-                self.docker_workdir = working_directory
-            else:
-                self.docker_workdir = "/workspace"
-            # For logs and local file operations, use a local workspace
+            self.docker_workdir = (
+                working_directory if working_directory else None
+            )
+            # Always set self.working_dir for logging and local file operations
             camel_workdir = os.environ.get("CAMEL_WORKDIR")
-            if camel_workdir:
+            if working_directory:
+                self.working_dir = os.path.abspath(working_directory)
+            elif camel_workdir:
                 self.working_dir = os.path.abspath(camel_workdir)
             else:
                 self.working_dir = os.path.abspath("./workspace")
+
         else:
             # For local backend, working_directory is the local path
             if working_directory:
@@ -136,6 +138,7 @@ class TerminalToolkit(BaseToolkit):
         # Only create local directory for logs and local backend operations
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir, exist_ok=True)
+
         self.safe_mode = safe_mode
 
         # Initialize whitelist of allowed commands if provided
@@ -550,9 +553,6 @@ class TerminalToolkit(BaseToolkit):
                     )
                 else:
                     # DOCKER BLOCKING
-                    assert (
-                        self.docker_workdir is not None
-                    )  # Docker backend always has workdir
                     exec_instance = self.docker_api_client.exec_create(
                         self.container.id, command, workdir=self.docker_workdir
                     )
@@ -621,9 +621,6 @@ class TerminalToolkit(BaseToolkit):
                     with self._session_lock:
                         self.shell_sessions[session_id]["process"] = process
                 else:
-                    assert (
-                        self.docker_workdir is not None
-                    )  # Docker backend always has workdir
                     exec_instance = self.docker_api_client.exec_create(
                         self.container.id,
                         command,
