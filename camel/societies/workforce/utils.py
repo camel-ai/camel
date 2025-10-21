@@ -233,7 +233,7 @@ class PipelineTaskBuilder:
         self._last_task_id = None  # Track the last added task for chain inference
         self._last_parallel_tasks = []  # Track the last added parallel tasks for sync
 
-    def add_task(
+    def add(
         self,
         content: str,
         task_id: Optional[str] = None,
@@ -262,7 +262,7 @@ class PipelineTaskBuilder:
             ValueError: If task_id already exists or if any dependency is not found.
             
         Example:
-            >>> builder.add_task("Step 1").add_task("Step 2").add_task("Step 3")
+            >>> builder.add("Step 1").add("Step 2").add("Step 3")
             # Step 2 depends on Step 1, Step 3 depends on Step 2
         """
         # Generate or validate task_id
@@ -324,7 +324,7 @@ class PipelineTaskBuilder:
             ValueError: If any task_id already exists or if any dependency is not found.
             
         Example:
-            >>> builder.add_task("Collect Data").add_parallel_tasks([
+            >>> builder.add("Collect Data").add_parallel_tasks([
             ...     "Technical Analysis", "Fundamental Analysis"
             ... ]).add_sync_task("Generate Report")
         """
@@ -341,7 +341,7 @@ class PipelineTaskBuilder:
         for i, content in enumerate(task_contents):
             task_id = f"{task_id_prefix}_{i}_{base_counter}"
             # Use auto_depend=False since we're manually managing dependencies
-            self.add_task(content, task_id, dependencies, auto_depend=False)
+            self.add(content, task_id, dependencies, auto_depend=False)
             parallel_task_ids.append(task_id)
         
         # Set the last task to None since we have multiple parallel endings
@@ -390,7 +390,7 @@ class PipelineTaskBuilder:
         if not wait_for:
             raise ValueError("wait_for cannot be empty for sync task")
             
-        return self.add_task(content, task_id, dependencies=wait_for, auto_depend=False)
+        return self.add(content, task_id, dependencies=wait_for, auto_depend=False)
 
 
     def build(self) -> List:
@@ -429,7 +429,7 @@ class PipelineTaskBuilder:
             PipelineTaskBuilder: Self for method chaining.
             
         Example:
-            >>> builder.add_task("Collect Data").fork([
+            >>> builder.add("Collect Data").fork([
             ...     "Technical Analysis", "Fundamental Analysis"
             ... ]).join("Generate Report")
         """
