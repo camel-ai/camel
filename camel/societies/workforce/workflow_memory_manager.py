@@ -215,8 +215,8 @@ class WorkflowMemoryManager:
 
             # check if we should use role_name or let summarize extract
             # task_title
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = role_name.lower() not in {
+            clean_name = self._get_sanitized_role_name()
+            use_role_name_for_filename = clean_name not in {
                 'assistant',
                 'agent',
                 'user',
@@ -314,8 +314,8 @@ class WorkflowMemoryManager:
 
             # check if we should use role_name or let asummarize extract
             # task_title
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = role_name.lower() not in {
+            clean_name = self._get_sanitized_role_name()
+            use_role_name_for_filename = clean_name not in {
                 'assistant',
                 'agent',
                 'user',
@@ -422,7 +422,7 @@ class WorkflowMemoryManager:
                     selected_paths.append(workflows_metadata[idx]['file_path'])
                 else:
                     logger.warning(
-                        f"Agent selected invalid workflow index {idx+1}, "
+                        f"Agent selected invalid workflow index {idx + 1}, "
                         f"only {len(workflows_metadata)} workflows available"
                     )
 
@@ -523,11 +523,8 @@ class WorkflowMemoryManager:
         """
         # generate filename-safe search pattern from worker role name
         if pattern is None:
-            from camel.utils.context_utils import ContextUtility
-
-            # get role_name (always available, defaults to "assistant")
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            clean_name = ContextUtility.sanitize_workflow_filename(role_name)
+            # get sanitized role name
+            clean_name = self._get_sanitized_role_name()
 
             # check if role_name is generic
             generic_names = {'assistant', 'agent', 'user', 'system'}
@@ -567,26 +564,20 @@ class WorkflowMemoryManager:
         workflow_files.sort(key=extract_session_timestamp, reverse=True)
         return workflow_files
 
-    def _load_workflow_files(
-        self, workflow_files: List[str], max_files_to_load: int
-    ) -> int:
-        r"""Load workflow files and return count of successful loads.
-
-        Loads all workflows together with a single header to avoid repetition.
+    def _collect_workflow_contents(
+        self, workflow_files: List[str]
+    ) -> List[Dict[str, str]]:
+        r"""Collect and load workflow file contents.
 
         Args:
             workflow_files (List[str]): List of workflow file paths to load.
-            max_files_to_load (int): Maximum number of files to load.
 
         Returns:
-            int: Number of successfully loaded workflow files.
+            List[Dict[str, str]]: List of dicts with 'filename' and
+                'content' keys.
         """
-        if not workflow_files:
-            return 0
-
-        # collect all workflow contents first
         workflows_to_load = []
-        for file_path in workflow_files[:max_files_to_load]:
+        for file_path in workflow_files:
             try:
                 # extract file and session info from full path
                 filename = os.path.basename(file_path).replace('.md', '')
@@ -619,70 +610,122 @@ class WorkflowMemoryManager:
                 )
                 continue
 
+        return workflows_to_load
+
+    def _format_workflows_for_context(
+        self, workflows_to_load: List[Dict[str, str]]
+    ) -> str:
+        r"""Format workflows into a context string for the agent.
+
+        Args:
+            workflows_to_load (List[Dict[str, str]]): List of workflow
+                dicts with 'filename' and 'content' keys.
+
+        Returns:
+            str: Formatted workflow context string with header and all
+                workflows.
+        """
+        # create single header for all workflows
+        if len(workflows_to_load) == 1:
+            prefix_prompt = (
+                "The following is the context from a previous "
+                "session or workflow which might be useful for "
+                "the current task. This information might help you "
+                "understand the background, choose which tools to use, "
+                "and plan your next steps."
+            )
+        else:
+            prefix_prompt = (
+                f"The following are {len(workflows_to_load)} previous "
+                "workflows which might be useful for "
+                "the current task. These workflows provide context about "
+                "similar tasks, tools used, and approaches taken. "
+                "Review them to understand patterns and make informed "
+                "decisions for your current task."
+            )
+
+        # combine all workflows into single content block
+        combined_content = f"\n\n--- Previous Workflows ---\n{prefix_prompt}\n"
+
+        for i, workflow_data in enumerate(workflows_to_load, 1):
+            combined_content += (
+                f"\n\n{'=' * 60}\n"
+                f"Workflow {i}: {workflow_data['filename']}\n"
+                f"{'=' * 60}\n\n"
+                f"{workflow_data['content']}"
+            )
+
+        return combined_content
+
+    def _add_workflows_to_system_message(self, workflow_context: str) -> bool:
+        r"""Add workflow context to agent's system message.
+
+        Args:
+            workflow_context (str): The formatted workflow context to add.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        # check if agent has a system message
+        if self.worker._original_system_message is None:
+            logger.error(
+                f"Agent {self.worker.agent_id} has no system message. "
+                "Cannot append workflow memories."
+            )
+            return False
+
+        # update the current system message
+        current_system_message = self.worker._system_message
+        if current_system_message is not None:
+            new_sys_content = current_system_message.content + workflow_context
+            self.worker._system_message = (
+                current_system_message.create_new_instance(new_sys_content)
+            )
+
+            # replace the system message in memory
+            self.worker.memory.clear()
+            self.worker.update_memory(
+                self.worker._system_message, OpenAIBackendRole.SYSTEM
+            )
+
+        return True
+
+    def _load_workflow_files(
+        self, workflow_files: List[str], max_workflows: int
+    ) -> int:
+        r"""Load workflow files and return count of successful loads.
+
+        Loads all workflows together with a single header to avoid repetition.
+
+        Args:
+            workflow_files (List[str]): List of workflow file paths to load.
+            max_workflows (int): Maximum number of workflows to load.
+
+        Returns:
+            int: Number of successfully loaded workflow files.
+        """
+        if not workflow_files:
+            return 0
+
+        # collect workflow contents from files
+        workflows_to_load = self._collect_workflow_contents(
+            workflow_files[:max_workflows]
+        )
+
         if not workflows_to_load:
             return 0
 
-        # now append all workflows together with a single header
+        # format workflows into context string
         try:
-            from camel.types import OpenAIBackendRole
-
-            # create single header for all workflows
-            if len(workflows_to_load) == 1:
-                prefix_prompt = (
-                    "The following is the context from a previous "
-                    "session or workflow which might be useful for "
-                    "the current task. This information might help you "
-                    "understand the background, choose which tools to use, "
-                    "and plan your next steps."
-                )
-            else:
-                prefix_prompt = (
-                    f"The following are {len(workflows_to_load)} previous "
-                    "workflows which might be useful for "
-                    "the current task. These workflows provide context about "
-                    "similar tasks, tools used, and approaches taken. "
-                    "Review them to understand patterns and make informed "
-                    "decisions for your current task."
-                )
-
-            # combine all workflows into single content block
-            combined_content = (
-                f"\n\n--- Previous Workflows ---\n{prefix_prompt}\n"
+            workflow_context = self._format_workflows_for_context(
+                workflows_to_load
             )
 
-            for i, workflow_data in enumerate(workflows_to_load, 1):
-                combined_content += (
-                    f"\n\n{'='*60}\n"
-                    f"Workflow {i}: {workflow_data['filename']}\n"
-                    f"{'='*60}\n\n"
-                    f"{workflow_data['content']}"
-                )
-
-            # append combined content to system message
-            if self.worker._original_system_message is None:
-                logger.error(
-                    f"Agent {self.worker.agent_id} has no system message. "
-                    "Cannot append workflow memories."
-                )
+            # add workflow context to agent's system message
+            if not self._add_workflows_to_system_message(workflow_context):
                 return 0
 
-            # update the current system message
-            current_system_message = self.worker._system_message
-            if current_system_message is not None:
-                new_sys_content = (
-                    current_system_message.content + combined_content
-                )
-                self.worker._system_message = (
-                    current_system_message.create_new_instance(new_sys_content)
-                )
-
-                # replace the system message in memory
-                self.worker.memory.clear()
-                self.worker.update_memory(
-                    self.worker._system_message, OpenAIBackendRole.SYSTEM
-                )
-
-            char_count = len(combined_content)
+            char_count = len(workflow_context)
             logger.info(
                 f"Appended {len(workflows_to_load)} workflow(s) to agent "
                 f"{self.worker.agent_id} ({char_count} characters)"
@@ -696,6 +739,15 @@ class WorkflowMemoryManager:
             )
             return 0
 
+    def _get_sanitized_role_name(self) -> str:
+        r"""Get the sanitized role name for the worker.
+
+        Returns:
+            str: Sanitized role name suitable for use in filenames.
+        """
+        role_name = getattr(self.worker, 'role_name', 'assistant')
+        return ContextUtility.sanitize_workflow_filename(role_name)
+
     def _generate_workflow_filename(self) -> str:
         r"""Generate a filename for the workflow based on worker role name.
 
@@ -705,12 +757,7 @@ class WorkflowMemoryManager:
             str: Sanitized filename without timestamp and without .md
                 extension. Format: {role_name}_workflow
         """
-        from camel.utils.context_utils import ContextUtility
-
-        # get role_name (always available, defaults to "assistant"/"Assistant")
-        role_name = getattr(self.worker, 'role_name', 'assistant')
-        clean_name = ContextUtility.sanitize_workflow_filename(role_name)
-
+        clean_name = self._get_sanitized_role_name()
         return f"{clean_name}_workflow"
 
     def _prepare_workflow_prompt(self) -> str:
