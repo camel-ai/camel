@@ -1636,3 +1636,795 @@ class TestWorkforceMemorySharing:
         # Coordinator should only receive 1 new record (not all 3)
         coord_memory_after = len(workforce.coordinator_agent.memory.retrieve())
         assert coord_memory_after == coord_memory_before + 1
+
+
+class TestConversationAccumulator:
+    """Test conversation accumulator behavior - critical for workflow memory."""
+
+    @pytest.mark.asyncio
+    async def test_accumulator_collects_from_multiple_tasks(
+        self, temp_context_dir
+    ):
+        """Test that accumulator properly collects conversations from
+        multiple task executions.
+
+        This validates the core accumulation mechanism across multiple
+        tasks, ensuring all conversations are captured before
+        summarization.
+        """
+        # create worker with workflow memory enabled
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=True,
+            use_agent_pool=False,  # disable pooling for simpler test
+        )
+
+        # process multiple tasks
+        task1 = Task(content="Calculate 2+2", id="t1")
+        task2 = Task(content="Analyze data trends", id="t2")
+        task3 = Task(content="Generate summary report", id="t3")
+
+        # mock the step method to simulate task processing
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Task completed"
+            )
+
+            await worker._process_task(task1, [])
+            await worker._process_task(task2, [])
+            await worker._process_task(task3, [])
+
+        # verify accumulator was created
+        assert (
+            worker._conversation_accumulator is not None
+        ), "Accumulator should be created when workflow memory is enabled"
+
+        # verify accumulator has messages from ALL tasks
+        accumulator = worker._conversation_accumulator
+        records = accumulator.memory.retrieve()
+
+        # should contain messages from all 3 tasks
+        # each task creates user message + assistant response
+        assert len(records) >= 6, (
+            f"Expected at least 6 messages (3 tasks * 2 messages each), "
+            f"got {len(records)}"
+        )
+
+        # verify messages are about the tasks we created
+        messages_content = [
+            record.memory_record.message.content for record in records
+        ]
+        assert any(
+            "2+2" in content for content in messages_content
+        ), "Should contain content from task1"
+        assert any(
+            "data trends" in content for content in messages_content
+        ), "Should contain content from task2"
+        assert any(
+            "summary report" in content for content in messages_content
+        ), "Should contain content from task3"
+
+    @pytest.mark.asyncio
+    async def test_workflow_memory_disabled_skips_accumulation(
+        self, temp_context_dir
+    ):
+        """Test that enable_workflow_memory=False prevents accumulation.
+
+        Verifies the feature can be disabled and doesn't impact performance
+        with unnecessary memory operations.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=False,  # explicitly disabled
+            use_agent_pool=False,
+        )
+
+        # process a task
+        task = Task(content="Process this task", id="t1")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Task completed"
+            )
+            await worker._process_task(task, [])
+
+        # accumulator should NOT be created when disabled
+        assert (
+            worker._conversation_accumulator is None
+        ), "Accumulator should not be created when enable_workflow_memory=False"
+
+    @pytest.mark.asyncio
+    async def test_accumulator_cleanup_after_successful_save(
+        self, temp_context_dir
+    ):
+        """Test that accumulator is cleared after successful workflow save.
+
+        Validates cleanup to prevent memory leaks and duplicate content
+        in future saves.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=True,
+            use_agent_pool=False,
+        )
+
+        # process tasks to create accumulator
+        task1 = Task(content="Task 1", id="t1")
+        task2 = Task(content="Task 2", id="t2")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Done"
+            )
+            await worker._process_task(task1, [])
+            await worker._process_task(task2, [])
+
+        # verify accumulator exists
+        assert (
+            worker._conversation_accumulator is not None
+        ), "Accumulator should exist after processing tasks"
+
+        # save workflow with mocked summarization
+        mock_summary_result = {
+            "status": "success",
+            "summary": "Test summary",
+            "file_path": f"{temp_context_dir}/test_workflow.md",
+        }
+
+        with patch.object(
+            ChatAgent, 'asummarize', return_value=mock_summary_result
+        ):
+            result = await worker.save_workflow_memories_async()
+
+        # verify save was successful
+        assert result["status"] == "success", (
+            f"Save should succeed, got: {result}"
+        )
+
+        # accumulator should be None after successful save
+        assert worker._conversation_accumulator is None, (
+            "Accumulator should be cleared after successful save to "
+            "prevent memory leaks and duplicate content in future saves"
+        )
+
+    @pytest.mark.asyncio
+    async def test_accumulator_receives_memory_not_main_worker(
+        self, temp_context_dir
+    ):
+        """Test that conversations go to accumulator, not main worker.
+
+        Validates the design separation - accumulator collects task
+        conversations while main worker memory stays clean.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=True,
+            use_agent_pool=False,  # use cloning instead of pool
+        )
+
+        # get initial main worker memory count
+        main_worker_records_before = len(worker.worker.memory.retrieve())
+
+        # process task
+        task = Task(content="Process this task", id="t1")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Task completed"
+            )
+            await worker._process_task(task, [])
+
+        # main worker should still have same memory (cloned agents are used)
+        main_worker_records_after = len(worker.worker.memory.retrieve())
+        assert main_worker_records_after == main_worker_records_before, (
+            f"Main worker memory should not change "
+            f"(before: {main_worker_records_before}, "
+            f"after: {main_worker_records_after})"
+        )
+
+        # accumulator should have the task conversations
+        accumulator = worker._conversation_accumulator
+        assert accumulator is not None, "Accumulator should exist"
+
+        accumulator_records = accumulator.memory.retrieve()
+        assert len(accumulator_records) > main_worker_records_before, (
+            f"Accumulator should have more records than main worker "
+            f"(accumulator: {len(accumulator_records)}, "
+            f"main: {main_worker_records_before})"
+        )
+
+    @pytest.mark.asyncio
+    async def test_save_workflow_with_no_conversation_history(
+        self, temp_context_dir
+    ):
+        """Test saving workflow when agent has no conversations.
+
+        Should handle gracefully (return error or empty state) rather
+        than crashing.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=True,
+        )
+
+        # don't process any tasks - no conversation history
+        # accumulator should be None
+        assert worker._conversation_accumulator is None
+
+        # mock asummarize to handle the case
+        mock_summary_result = {
+            "status": "error",
+            "message": "No conversation history to summarize",
+        }
+
+        with patch.object(
+            ChatAgent, 'asummarize', return_value=mock_summary_result
+        ):
+            result = await worker.save_workflow_memories_async()
+
+        # should return result with status (either success or error)
+        assert "status" in result, "Result should have 'status' key"
+
+        # if error, should have descriptive message
+        if result["status"] == "error":
+            assert "message" in result, "Error result should have 'message'"
+
+
+class TestAgentPoolMemoryTransfer:
+    """Test agent pool integration with workflow memory system."""
+
+    @pytest.mark.asyncio
+    async def test_pooled_agent_memory_transfers_to_accumulator(
+        self, temp_context_dir
+    ):
+        """Test that conversations from pooled agents are accumulated.
+
+        Validates the memory transfer logic from pooled agents to the
+        accumulator, which is critical for the agent pooling feature.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        base_agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=base_agent,
+            use_agent_pool=True,  # enable agent pooling
+            enable_workflow_memory=True,
+        )
+
+        # process task (will use pooled agent)
+        task = Task(content="Calculate 2+2", id="t1")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="The answer is 4"
+            )
+            await worker._process_task(task, [])
+
+        # verify accumulator received the conversation from pooled agent
+        accumulator = worker._conversation_accumulator
+        assert (
+            accumulator is not None
+        ), "Accumulator should exist when workflow memory is enabled"
+
+        records = accumulator.memory.retrieve()
+        assert len(records) >= 2, (
+            f"Expected at least 2 messages (user + assistant), "
+            f"got {len(records)}"
+        )
+
+        # verify the messages are about the task
+        messages_content = [r.memory_record.message.content for r in records]
+        assert any(
+            "2+2" in msg for msg in messages_content
+        ), "Should contain task content from pooled agent"
+
+    @pytest.mark.asyncio
+    async def test_memory_accumulation_with_and_without_pool(
+        self, temp_context_dir
+    ):
+        """Test that memory accumulation works consistently with/without pool.
+
+        Validates that the feature works identically regardless of
+        pooling configuration.
+        """
+
+        def create_test_agent():
+            sys_msg = BaseMessage.make_assistant_message(
+                role_name="Test Worker", content="You are a test worker."
+            )
+            return ChatAgent(sys_msg)
+
+        # test with pool enabled
+        worker_pooled = SingleAgentWorker(
+            description="test_worker",
+            worker=create_test_agent(),
+            use_agent_pool=True,
+            enable_workflow_memory=True,
+        )
+
+        task = Task(content="Process this data", id="t1")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Data processed"
+            )
+            await worker_pooled._process_task(task, [])
+
+        pooled_memory = worker_pooled._conversation_accumulator.memory.retrieve()
+
+        # test with pool disabled
+        worker_no_pool = SingleAgentWorker(
+            description="test_worker",
+            worker=create_test_agent(),
+            use_agent_pool=False,
+            enable_workflow_memory=True,
+        )
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Data processed"
+            )
+            await worker_no_pool._process_task(task, [])
+
+        no_pool_memory = worker_no_pool._conversation_accumulator.memory.retrieve()
+
+        # should accumulate same number of messages
+        assert len(pooled_memory) == len(no_pool_memory), (
+            f"Pooled and non-pooled should accumulate same number of messages "
+            f"(pooled: {len(pooled_memory)}, non-pooled: {len(no_pool_memory)})"
+        )
+
+    @pytest.mark.asyncio
+    async def test_pooled_agent_reset_after_return(self, temp_context_dir):
+        """Test that pooled agents are properly reset after being returned.
+
+        Validates memory isolation between different task executions
+        using the same pooled agent.
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        base_agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=base_agent,
+            use_agent_pool=True,
+            enable_workflow_memory=True,
+            pool_initial_size=1,  # single agent in pool
+        )
+
+        # process first task
+        task1 = Task(content="First task", id="t1")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="First task done"
+            )
+            await worker._process_task(task1, [])
+
+        # get accumulator state after first task
+        accumulator_after_task1 = len(
+            worker._conversation_accumulator.memory.retrieve()
+        )
+
+        # process second task (should reuse same pooled agent)
+        task2 = Task(content="Second task", id="t2")
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Second task done"
+            )
+            await worker._process_task(task2, [])
+
+        # accumulator should have more messages now
+        accumulator_after_task2 = len(
+            worker._conversation_accumulator.memory.retrieve()
+        )
+
+        assert accumulator_after_task2 > accumulator_after_task1, (
+            "Accumulator should grow after processing second task "
+            f"(after task1: {accumulator_after_task1}, "
+            f"after task2: {accumulator_after_task2})"
+        )
+
+        # verify both tasks are represented in accumulator
+        records = worker._conversation_accumulator.memory.retrieve()
+        messages_content = [r.memory_record.message.content for r in records]
+
+        assert any(
+            "First task" in msg for msg in messages_content
+        ), "Should contain first task content"
+        assert any(
+            "Second task" in msg for msg in messages_content
+        ), "Should contain second task content"
+
+
+class TestWorkflowContentValidation:
+    """Test workflow content loading and formatting."""
+
+    def test_workflow_content_actually_in_system_message(
+        self, temp_context_dir
+    ):
+        """Test that loaded workflow content appears in system message.
+
+        Validates end-to-end file I/O and content parsing to ensure
+        workflows are properly loaded and added to agent context.
+        """
+        # create real workflow file with specific content
+        workflow_content = """### Task Title
+Data Analysis Pipeline
+
+### Task Description
+This workflow analyzes sales data using pandas and matplotlib.
+
+### Tags
+- data-analysis
+- python
+- visualization
+
+### Steps
+1. Load CSV file with pandas
+2. Clean missing values
+3. Generate summary statistics
+4. Create bar chart visualization
+"""
+
+        # save to file in specific session
+        session_dir = os.path.join(
+            temp_context_dir, "workforce_workflows", "session_test_123"
+        )
+        os.makedirs(session_dir, exist_ok=True)
+
+        workflow_file = os.path.join(session_dir, "analyst_workflow.md")
+        with open(workflow_file, 'w') as f:
+            f.write(workflow_content)
+
+        # create worker and load workflow
+        worker = MockSingleAgentWorker("data_analyst")
+        original_system = worker.worker._system_message.content
+
+        # load workflow from the specific session
+        result = worker.load_workflow_memories(session_id="session_test_123")
+        assert result is True, "Workflow load should succeed"
+
+        # verify system message contains workflow content
+        updated_system = worker.worker._system_message.content
+        assert (
+            updated_system != original_system
+        ), "System message should be modified"
+        assert (
+            "Data Analysis Pipeline" in updated_system
+        ), "Should contain task title"
+        assert (
+            "pandas and matplotlib" in updated_system
+        ), "Should contain task description content"
+        assert (
+            "Load CSV file" in updated_system
+        ), "Should contain workflow steps"
+
+        # verify proper formatting with header
+        assert (
+            "Previous Workflows" in updated_system
+        ), "Should have workflows header"
+        assert "=" * 60 in updated_system, "Should have separator lines"
+
+    def test_multiple_workflows_formatted_correctly(self, temp_context_dir):
+        """Test that multiple workflows are formatted with correct headers.
+
+        Validates plural formatting and proper separation of multiple
+        workflow entries by directly testing the formatting method.
+        """
+        # test the formatting method directly with mock workflow data
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+
+        worker = MockSingleAgentWorker("test_worker")
+        manager = worker._get_workflow_manager()
+
+        # create mock workflow data
+        workflows_to_load = [
+            {
+                'filename': 'workflow_1',
+                'content': """### Task Title
+First Workflow
+
+### Description
+This is the first workflow.""",
+            },
+            {
+                'filename': 'workflow_2',
+                'content': """### Task Title
+Second Workflow
+
+### Description
+This is the second workflow.""",
+            },
+            {
+                'filename': 'workflow_3',
+                'content': """### Task Title
+Third Workflow
+
+### Description
+This is the third workflow.""",
+            },
+        ]
+
+        # test the formatting method directly
+        formatted_content = manager._format_workflows_for_context(
+            workflows_to_load
+        )
+
+        # verify formatting
+        assert "3 previous" in formatted_content.lower() or "3" in formatted_content, (
+            "Should indicate 3 workflows"
+        )
+        assert "Previous Workflows" in formatted_content, (
+            "Should have header"
+        )
+
+        # each workflow should be numbered
+        assert "Workflow 1:" in formatted_content
+        assert "Workflow 2:" in formatted_content
+        assert "Workflow 3:" in formatted_content
+
+        # all content should be present
+        assert "First Workflow" in formatted_content
+        assert "Second Workflow" in formatted_content
+        assert "Third Workflow" in formatted_content
+
+        # should have separators
+        separator_count = formatted_content.count("=" * 60)
+        assert separator_count >= 3, (
+            f"Should have at least 3 separators, got {separator_count}"
+        )
+
+    def test_metadata_filtered_from_loaded_workflow(self, temp_context_dir):
+        """Test that metadata section is not included in system message.
+
+        Validates that metadata is properly filtered to avoid polluting
+        agent context with irrelevant session info.
+        """
+        # create workflow with metadata section
+        workflow_with_metadata = """## Metadata
+
+- session_id: test_session_456
+- created_at: 2025-01-01
+- agent_id: test-agent-789
+
+## WorkflowSummary
+
+### Task Title
+Actual Workflow Content
+
+### Description
+This is the actual workflow description that should be loaded.
+
+### Steps
+1. Do important work
+2. Complete the task
+"""
+
+        # save to file
+        session_dir = os.path.join(
+            temp_context_dir, "workforce_workflows", "session_metadata_test"
+        )
+        os.makedirs(session_dir, exist_ok=True)
+
+        workflow_file = os.path.join(session_dir, "test_workflow.md")
+        with open(workflow_file, 'w') as f:
+            f.write(workflow_with_metadata)
+
+        # load workflow
+        worker = MockSingleAgentWorker("test_worker")
+        result = worker.load_workflow_memories(
+            session_id="session_metadata_test"
+        )
+        assert result is True, "Workflow with metadata should load"
+
+        # verify system message
+        system_content = worker.worker._system_message.content
+
+        # should contain actual workflow content
+        assert (
+            "Actual Workflow Content" in system_content
+        ), "Should contain workflow title"
+        assert (
+            "actual workflow description" in system_content
+        ), "Should contain workflow description"
+        assert (
+            "Do important work" in system_content
+        ), "Should contain workflow steps"
+
+        # should NOT contain metadata
+        assert (
+            "session_id: test_session_456" not in system_content
+        ), "Should filter out session_id metadata"
+        assert (
+            "agent_id: test-agent-789" not in system_content
+        ), "Should filter out agent_id metadata"
+        assert (
+            "created_at: 2025-01-01" not in system_content
+        ), "Should filter out created_at metadata"
+
+
+class TestErrorHandlingAndEdgeCases:
+    """Test error handling and edge cases in workflow memory system."""
+
+    def test_load_workflow_with_corrupted_markdown(self, temp_context_dir):
+        """Test loading workflow from corrupted/malformed file.
+
+        Should handle gracefully without crashing.
+        """
+        # create file with malformed content (not valid markdown structure)
+        corrupted_content = """This is just random text
+        with no proper structure
+        ### Missing proper headers
+        No Task Title section
+        Random characters: !@#$%^&*()
+        """
+
+        # save corrupted file
+        session_dir = os.path.join(
+            temp_context_dir, "workforce_workflows", "session_corrupted"
+        )
+        os.makedirs(session_dir, exist_ok=True)
+
+        corrupted_file = os.path.join(session_dir, "corrupted_workflow.md")
+        with open(corrupted_file, 'w') as f:
+            f.write(corrupted_content)
+
+        # attempt to load - should not crash
+        worker = MockSingleAgentWorker("test_worker")
+
+        try:
+            # loading may succeed or fail gracefully, but should not crash
+            result = worker.load_workflow_memories(session_id="session_corrupted")
+
+            # if it succeeds, verify it handled the content
+            if result is True:
+                # system message should be updated even with malformed content
+                system_content = worker.worker._system_message.content
+                # the content might be loaded as-is, which is acceptable
+                assert isinstance(
+                    system_content, str
+                ), "System message should still be a string"
+
+        except Exception as e:
+            # if it raises an exception, it should be a handled one
+            # (not a crash like AttributeError or KeyError)
+            pytest.fail(
+                f"Loading corrupted workflow should handle errors gracefully, "
+                f"but got unhandled exception: {type(e).__name__}: {e}"
+            )
+
+    def test_workflow_operations_without_camel_workdir(self):
+        """Test that workflows work when CAMEL_WORKDIR is not set.
+
+        Should use default "workforce_workflows" directory.
+        """
+        # save current env var if it exists
+        original_workdir = os.environ.get("CAMEL_WORKDIR")
+
+        try:
+            # remove CAMEL_WORKDIR env var
+            if "CAMEL_WORKDIR" in os.environ:
+                del os.environ["CAMEL_WORKDIR"]
+
+            # create worker and test operations
+            worker = MockSingleAgentWorker("test_worker")
+
+            # should be able to create workflow manager without error
+            manager = worker._get_workflow_manager()
+            assert (
+                manager is not None
+            ), "Workflow manager should be created without CAMEL_WORKDIR"
+
+            # context utility should use default directory
+            context_util = manager._get_context_utility()
+            assert (
+                context_util is not None
+            ), "Context utility should be created with default directory"
+
+            # the context directory should use default "workforce_workflows"
+            # (we don't test actual file operations to avoid creating files
+            # in unexpected locations)
+
+        finally:
+            # restore original env var
+            if original_workdir is not None:
+                os.environ["CAMEL_WORKDIR"] = original_workdir
+            elif "CAMEL_WORKDIR" in os.environ:
+                del os.environ["CAMEL_WORKDIR"]
+
+    @pytest.mark.asyncio
+    async def test_save_workflow_with_very_long_conversation(
+        self, temp_context_dir
+    ):
+        """Test workflow saving with very long conversation.
+
+        Should handle large conversations gracefully (may truncate or
+        summarize effectively).
+        """
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Test Worker", content="You are a test worker."
+        )
+        agent = ChatAgent(sys_msg)
+        worker = SingleAgentWorker(
+            description="test_worker",
+            worker=agent,
+            enable_workflow_memory=True,
+            use_agent_pool=False,
+        )
+
+        # create many tasks to generate long conversation
+        tasks = [
+            Task(content=f"Task {i}: " + "x" * 100, id=f"t{i}")
+            for i in range(50)  # 50 tasks with long content
+        ]
+
+        with patch.object(ChatAgent, 'step') as mock_step:
+            mock_step.return_value = BaseMessage.make_assistant_message(
+                role_name="Assistant", content="Task completed with long response " + "y" * 100
+            )
+
+            # process all tasks
+            for task in tasks:
+                await worker._process_task(task, [])
+
+        # verify accumulator has many messages
+        accumulator = worker._conversation_accumulator
+        assert accumulator is not None
+        records = accumulator.memory.retrieve()
+        assert len(records) > 50, (
+            f"Should have many records (>50), got {len(records)}"
+        )
+
+        # attempt to save - should handle gracefully
+        mock_summary_result = {
+            "status": "success",
+            "summary": "Summary of very long conversation",
+            "file_path": f"{temp_context_dir}/long_conversation_workflow.md",
+        }
+
+        with patch.object(
+            ChatAgent, 'asummarize', return_value=mock_summary_result
+        ):
+            result = await worker.save_workflow_memories_async()
+
+        # should succeed or return informative error
+        assert "status" in result, "Result should have status"
+
+        if result["status"] == "success":
+            # successful handling
+            assert "summary" in result
+        elif result["status"] == "error":
+            # graceful error handling
+            assert "message" in result
