@@ -1,0 +1,69 @@
+<a id="camel.toolkits.resend_toolkit"></a>
+
+<a id="camel.toolkits.resend_toolkit.ResendToolkit"></a>
+
+## ResendToolkit
+
+```python
+class ResendToolkit(BaseToolkit):
+```
+
+A toolkit for sending emails using the Resend API.
+
+This toolkit provides functionality to send emails using Resend's
+Python SDK.It supports sending both HTML and plain text emails,
+with options for multiple recipients, CC, BCC, reply-to
+addresses, and custom headers.
+
+<a id="camel.toolkits.resend_toolkit.ResendToolkit.send_email"></a>
+
+### send_email
+
+```python
+def send_email(
+    self,
+    to: List[str],
+    subject: str,
+    from_email: str,
+    html: Optional[str] = None,
+    text: Optional[str] = None,
+    cc: Optional[List[str]] = None,
+    bcc: Optional[List[str]] = None,
+    reply_to: Optional[str] = None,
+    tags: Optional[List[Dict[str, str]]] = None,
+    headers: Optional[Dict[str, str]] = None
+):
+```
+
+Send an email using the Resend API.
+
+**Parameters:**
+
+- **to** (List[str]): List of recipient email addresses.
+- **subject** (str): The email subject line.
+- **from_email** (str): The sender email address. Must be from a verified domain.
+- **html** (Optional[str]): The HTML content of the email. Either html or text must be provided. (default: :obj:`None`)
+- **text** (Optional[str]): The plain text content of the email. Either html or text must be provided. (default: :obj:`None`)
+- **cc** (Optional[List[str]]): List of CC recipient email addresses. (default: :obj:`None`)
+- **bcc** (Optional[List[str]]): List of BCC recipient email addresses. (default: :obj:`None`)
+- **reply_to** (Optional[str]): The reply-to email address. (default: :obj:`None`)
+- **tags** (Optional[List[Dict[str, str]]]): List of tags to attach to the email. Each tag should be a dict with 'name' and 'value' keys. (default: :obj:`None`)
+- **headers** (Optional[Dict[str, str]]): Custom headers to include in the email.(default: :obj:`None`)
+
+**Returns:**
+
+  str: A success message with the email ID if sent successfully,
+or an error message if the send failed.
+
+<a id="camel.toolkits.resend_toolkit.ResendToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

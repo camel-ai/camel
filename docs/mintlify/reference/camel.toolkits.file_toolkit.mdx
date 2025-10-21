@@ -354,7 +354,7 @@ def _write_csv_file(
     self,
     file_path: Path,
     content: Union[str, List[List]],
-    encoding: str = 'utf-8'
+    encoding: str = 'utf-8-sig'
 ):
 ```
 
@@ -364,7 +364,7 @@ Write CSV content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (Union[str, List[List]]): The CSV content as a string or list of lists.
-- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8-sig`)
 
 <a id="camel.toolkits.file_toolkit.FileToolkit._write_json_file"></a>
 

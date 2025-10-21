@@ -224,6 +224,7 @@
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.cometapi_config",
               "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
               "reference/camel.configs.gemini_config",
@@ -306,6 +307,7 @@
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.cometapi_model",
               "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
@@ -430,7 +432,9 @@
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
               "reference/camel.societies.workforce.workforce",
-              "reference/camel.societies.workforce.workforce_logger"
+              "reference/camel.societies.workforce.workforce_callback",
+              "reference/camel.societies.workforce.workforce_logger",
+              "reference/camel.societies.workforce.workforce_metrics"
             ]
           },
           {
@@ -494,6 +498,7 @@
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
               "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.dingtalk",
               "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
               "reference/camel.toolkits.file_toolkit",
@@ -533,6 +538,7 @@
               "reference/camel.toolkits.pulse_mcp_search_toolkit",
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
+              "reference/camel.toolkits.resend_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
               "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
@@ -560,6 +566,7 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
+              "reference/camel.toolkits.hybrid_browser_toolkit.installer",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
               "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
@@ -573,7 +580,9 @@
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
               "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
-              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot",
+              "reference/camel.toolkits.terminal_toolkit.terminal_toolkit",
+              "reference/camel.toolkits.terminal_toolkit.utils"
             ]
           },
           {
@@ -698,6 +707,12 @@
             ]
           },
           {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
+            ]
+          },
+          {
             "group": "Runtimes",
             "pages": [
               "reference/camel.runtimes.base",
@@ -736,6 +751,11 @@
     "socials": {
       "github": "https://github.com/camel-ai/camel ",
       "twitter": "https://x.com/CamelAIOrg "
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-XV5VXFS2RG"
     }
   }
 }

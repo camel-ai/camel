@@ -13,9 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 from camel.logger import get_logger
 
@@ -24,6 +27,93 @@ if TYPE_CHECKING:
     from camel.memories.records import MemoryRecord
 
 logger = get_logger(__name__)
+
+
+class WorkflowSummary(BaseModel):
+    r"""Pydantic model for structured workflow summaries.
+
+    This model defines the schema for workflow memories that can be reused
+    by future agents for similar tasks.
+    """
+
+    task_title: str = Field(
+        description="A short, generic title of the main task (≤ 10 words). "
+        "Avoid product- or case-specific names. "
+        "Example: 'List GitHub stargazers', "
+        "'Remind weekly meetings on Slack', "
+        "'Find best leads and turn them into a table on Notion'."
+    )
+    task_description: str = Field(
+        description="One-paragraph summary of what the user asked for "
+        "(≤ 80 words). "
+        "No implementation details; just the outcome the user wants. "
+        "Example: Find academic professors who might be interested in the "
+        "upcoming research paper on Graph-based Agentic Memory, extract "
+        "their email addresses, affiliations, and research interests, "
+        "and create a table on Notion with this information."
+    )
+    tools: List[str] = Field(
+        description="Bullet list of tool calls or functions calls used. "
+        "For each: name → what it did → why it was useful (one line each). "
+        "This field is explicitly for tool call messages or the MCP "
+        "servers used."
+        "Example: - ArxivToolkit: get authors from a paper title, "
+        "it helped find academic professors who authored a particular "
+        "paper, and then get their email addresses, affiliations, and "
+        "research interests.",
+        default_factory=list,
+    )
+    steps: List[str] = Field(
+        description="Numbered, ordered actions the agent took to complete "
+        "the task. Each step starts with a verb and is generic "
+        "enough to be repeatable. "
+        "Example: 1. Find the upcoming meetings on Google Calendar "
+        " today. 2. Send participants a reminder on Slack...",
+        default_factory=list,
+    )
+    failure_and_recovery_strategies: List[str] = Field(
+        description="[Optional] Bullet each incident with symptom, "
+        " cause (if known), fix/workaround, verification of "
+        "recovery. Leave empty if no failures. "
+        "failures. Example: Running the script for consumer data "
+        "analysis failed since Pandas package was not installed. "
+        "Fixed by running 'pip install pandas'.",
+        default_factory=list,
+    )
+    notes_and_observations: str = Field(
+        description="[Optional] Anything not covered in previous fields "
+        "that is critical to know for future executions of the task. "
+        "Leave empty if no notes. Do not repeat any information, or "
+        "mention trivial details. Only what is essential. "
+        "Example: The user likes to be in the "
+        "loop of the task execution, make sure to check with them the "
+        "plan before starting to work, and ask them for approval "
+        "mid-task by using the HumanToolkit.",
+        default="",
+    )
+
+    @classmethod
+    def get_instruction_prompt(cls) -> str:
+        r"""Get the instruction prompt for this model.
+
+        Returns:
+            str: The instruction prompt that guides agents to produce
+                structured output matching this schema.
+        """
+        return (
+            'You are writing a compact "workflow memory" so future agents '
+            'can reuse what you just did for future tasks. '
+            'Be concise, precise, and action-oriented. Analyze the '
+            'conversation and extract the key workflow information '
+            'following the provided schema structure. If a field has no '
+            'content, still include it per the schema, but keep it empty. '
+            'The length of your workflow must be proportional to the '
+            'complexity of the task. Example: If the task is simply '
+            'about a simple math problem, the workflow must be short, '
+            'e.g. <60 words. By contrast, if the task is complex and '
+            'multi-step, such as finding particular job applications based '
+            'on user CV, the workflow must be longer, e.g. about 120 words.'
+        )
 
 
 class ContextUtility:
@@ -39,23 +129,50 @@ class ContextUtility:
     - Text-based search through files
     - File metadata handling
     - Agent memory record retrieval
+    - Shared session management for workforce workflows
     """
 
-    def __init__(self, working_directory: Optional[str] = None):
+    # maximum filename length for workflow files (chosen for filesystem
+    # compatibility and readability)
+    MAX_WORKFLOW_FILENAME_LENGTH: ClassVar[int] = 50
+
+    # Class variables for shared session management
+    _shared_sessions: ClassVar[Dict[str, 'ContextUtility']] = {}
+    _default_workforce_session: ClassVar[Optional['ContextUtility']] = None
+
+    def __init__(
+        self,
+        working_directory: Optional[str] = None,
+        session_id: Optional[str] = None,
+        create_folder: bool = True,
+    ):
         r"""Initialize the ContextUtility.
 
         Args:
             working_directory (str, optional): The directory path where files
                 will be stored. If not provided, a default directory will be
                 used.
+            session_id (str, optional): The session ID to use. If provided,
+                this instance will use the same session folder as other
+                instances with the same session_id. If not provided, a new
+                session ID will be generated.
+            create_folder (bool): Whether to create the session folder
+                immediately. If False, the folder will be created only when
+                needed (e.g., when saving files). Default is True for
+                backward compatibility.
         """
         self.working_directory_param = working_directory
-        self._setup_storage(working_directory)
+        self._setup_storage(working_directory, session_id, create_folder)
 
-    def _setup_storage(self, working_directory: Optional[str]) -> None:
-        r"""Initialize session-specific storage paths and create directory
-        structure for context file management."""
-        self.session_id = self._generate_session_id()
+    def _setup_storage(
+        self,
+        working_directory: Optional[str],
+        session_id: Optional[str] = None,
+        create_folder: bool = True,
+    ) -> None:
+        r"""Initialize session-specific storage paths and optionally create
+        directory structure for context file management."""
+        self.session_id = session_id or self._generate_session_id()
 
         if working_directory:
             self.working_directory = Path(working_directory).resolve()
@@ -68,7 +185,10 @@ class ContextUtility:
 
         # Create session-specific directory
         self.working_directory = self.working_directory / self.session_id
-        self.working_directory.mkdir(parents=True, exist_ok=True)
+
+        # Only create directory if requested
+        if create_folder:
+            self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def _generate_session_id(self) -> str:
         r"""Create timestamp-based unique identifier for isolating
@@ -76,7 +196,59 @@ class ContextUtility:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         return f"session_{timestamp}"
 
+    @staticmethod
+    def sanitize_workflow_filename(
+        name: str,
+        max_length: Optional[int] = None,
+    ) -> str:
+        r"""Sanitize a name string for use as a workflow filename.
+
+        Converts the input string to a safe filename by:
+        - converting to lowercase
+        - replacing spaces with underscores
+        - removing special characters (keeping only alphanumeric and
+          underscores)
+        - truncating to maximum length if specified
+
+        Args:
+            name (str): The name string to sanitize (e.g., role_name or
+                task_title).
+            max_length (Optional[int]): Maximum length for the sanitized
+                filename. If None, uses MAX_WORKFLOW_FILENAME_LENGTH.
+                (default: :obj:`None`)
+
+        Returns:
+            str: Sanitized filename string suitable for filesystem use.
+                Returns "agent" if sanitization results in empty string.
+
+        Example:
+            >>> ContextUtility.sanitize_workflow_filename("Data Analyst!")
+            'data_analyst'
+            >>> ContextUtility.sanitize_workflow_filename("Test@123", 5)
+            'test1'
+        """
+        if max_length is None:
+            max_length = ContextUtility.MAX_WORKFLOW_FILENAME_LENGTH
+
+        # sanitize: lowercase, spaces to underscores, remove special chars
+        clean_name = name.lower().replace(" ", "_")
+        clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
+
+        # truncate if too long
+        if len(clean_name) > max_length:
+            clean_name = clean_name[:max_length]
+
+        # ensure it's not empty after sanitization
+        if not clean_name:
+            clean_name = "agent"
+
+        return clean_name
+
     # ========= GENERIC FILE MANAGEMENT METHODS =========
+
+    def _ensure_directory_exists(self) -> None:
+        r"""Ensure the working directory exists, creating it if necessary."""
+        self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def _create_or_update_note(self, note_name: str, content: str) -> str:
         r"""Write content to markdown file, creating new file or
@@ -90,6 +262,8 @@ class ContextUtility:
             str: Success message.
         """
         try:
+            # Ensure directory exists before writing
+            self._ensure_directory_exists()
             file_path = self.working_directory / f"{note_name}.md"
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
@@ -114,7 +288,8 @@ class ContextUtility:
             metadata (Dict, optional): Additional metadata to include.
 
         Returns:
-            str: Success message or error message.
+            str: "success" on success, error message starting with "Error:"
+                on failure.
         """
         try:
             markdown_content = ""
@@ -135,14 +310,99 @@ class ContextUtility:
 
             self._create_or_update_note(filename, markdown_content)
             logger.info(
-                f"Markdown file saved to "
+                f"Markdown file '{filename}.md' saved successfully to "
                 f"{self.working_directory / f'{filename}.md'}"
             )
-            return f"Markdown file '{filename}.md' saved successfully"
+            return "success"
 
         except Exception as e:
             logger.error(f"Error saving markdown file {filename}: {e}")
-            return f"Error saving markdown file: {e}"
+            return f"Error: {e}"
+
+    def structured_output_to_markdown(
+        self,
+        structured_data: BaseModel,
+        metadata: Optional[Dict[str, Any]] = None,
+        title: Optional[str] = None,
+        field_mappings: Optional[Dict[str, str]] = None,
+    ) -> str:
+        r"""Convert any Pydantic BaseModel instance to markdown format.
+
+        Args:
+            structured_data: Any Pydantic BaseModel instance
+            metadata: Optional metadata to include in the markdown
+            title: Optional custom title, defaults to model class name
+            field_mappings: Optional mapping of field names to custom
+                section titles
+
+        Returns:
+            str: Markdown formatted content
+        """
+        markdown_content = []
+
+        # Add metadata if provided
+        if metadata:
+            markdown_content.append("## Metadata\n")
+            for key, value in metadata.items():
+                markdown_content.append(f"- {key}: {value}")
+            markdown_content.append("")
+
+        # Add title
+        if title:
+            markdown_content.extend([f"## {title}", ""])
+        else:
+            model_name = structured_data.__class__.__name__
+            markdown_content.extend([f"## {model_name}", ""])
+
+        # Get model fields and values
+        model_dict = structured_data.model_dump()
+
+        for field_name, field_value in model_dict.items():
+            # Use custom mapping or convert field name to title case
+            if field_mappings and field_name in field_mappings:
+                section_title = field_mappings[field_name]
+            else:
+                # Convert snake_case to Title Case
+                section_title = field_name.replace('_', ' ').title()
+
+            markdown_content.append(f"### {section_title}")
+
+            # Handle different data types
+            if isinstance(field_value, list):
+                if field_value:
+                    for i, item in enumerate(field_value):
+                        if isinstance(item, str):
+                            # Check if it looks like a numbered item already
+                            if item.strip() and not item.strip()[0].isdigit():
+                                # For steps or numbered lists, add numbers
+                                if 'step' in field_name.lower():
+                                    markdown_content.append(f"{i + 1}. {item}")
+                                else:
+                                    markdown_content.append(f"- {item}")
+                            else:
+                                markdown_content.append(f"- {item}")
+                        else:
+                            markdown_content.append(f"- {item!s}")
+                else:
+                    markdown_content.append(
+                        f"(No {section_title.lower()} recorded)"
+                    )
+            elif isinstance(field_value, str):
+                if field_value.strip():
+                    markdown_content.append(field_value)
+                else:
+                    markdown_content.append(
+                        f"(No {section_title.lower()} provided)"
+                    )
+            elif isinstance(field_value, dict):
+                for k, v in field_value.items():
+                    markdown_content.append(f"- **{k}**: {v}")
+            else:
+                markdown_content.append(str(field_value))
+
+            markdown_content.append("")
+
+        return "\n".join(markdown_content)
 
     def load_markdown_file(self, filename: str) -> str:
         r"""Generic method to load any markdown file.
@@ -394,15 +654,40 @@ class ContextUtility:
         """
         return self.session_id
 
+    def set_session_id(self, session_id: str) -> None:
+        r"""Set a new session ID and update the working directory accordingly.
+
+        This allows sharing session directories between multiple ContextUtility
+        instances by using the same session_id.
+
+        Args:
+            session_id (str): The session ID to use.
+        """
+        self.session_id = session_id
+
+        # Update working directory with new session_id
+        if self.working_directory_param:
+            base_dir = Path(self.working_directory_param).resolve()
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = Path(camel_workdir) / "context_files"
+            else:
+                base_dir = Path("context_files")
+
+        self.working_directory = base_dir / self.session_id
+        self.working_directory.mkdir(parents=True, exist_ok=True)
+
     def load_markdown_context_to_memory(
-        self, agent: "ChatAgent", filename: str
+        self, agent: "ChatAgent", filename: str, include_metadata: bool = False
     ) -> str:
         r"""Load context from a markdown file and append it to agent memory.
-        Preserves existing conversation history without wiping it.
 
         Args:
             agent (ChatAgent): The agent to append context to.
             filename (str): Name of the markdown file (without .md extension).
+            include_metadata (bool): Whether to include metadata section in the
+                loaded content. Defaults to False.
 
         Returns:
             str: Status message indicating success or failure with details.
@@ -413,24 +698,52 @@ class ContextUtility:
             if not content.strip():
                 return f"Context file not found or empty: {filename}"
 
-            from camel.messages import BaseMessage
+            # Filter out metadata section if not requested
+            if not include_metadata:
+                content = self._filter_metadata_from_content(content)
+
             from camel.types import OpenAIBackendRole
 
             prefix_prompt = (
                 "The following is the context from a previous "
-                "session or workflow. This information might help you "
+                "session or workflow which might be useful for "
+                "to the current task. This information might help you "
                 "understand the background, choose which tools to use, "
                 "and plan your next steps."
             )
 
-            # TODO: change to system message once multi-system-message
-            # is supported
-            context_message = BaseMessage.make_assistant_message(
-                role_name="Assistant",
-                content=f"{prefix_prompt}\n\n{content}",
+            # Append workflow content to the agent's system message
+            # This ensures the context persists when agents are cloned
+            workflow_content = (
+                f"\n\n--- Workflow Memory ---\n{prefix_prompt}\n\n{content}"
             )
 
-            agent.update_memory(context_message, OpenAIBackendRole.USER)
+            # Update the original system message to include workflow
+            if agent._original_system_message is None:
+                logger.error(
+                    f"Agent {agent.agent_id} has no system message. "
+                    "Cannot append workflow memory to system message."
+                )
+                return (
+                    "Error: Agent has no system message to append workflow to"
+                )
+
+            # Update the current system message
+            current_system_message = agent._system_message
+            if current_system_message is not None:
+                new_sys_content = (
+                    current_system_message.content + workflow_content
+                )
+                agent._system_message = (
+                    current_system_message.create_new_instance(new_sys_content)
+                )
+
+                # Replace the system message in memory
+                # Clear and re-initialize with updated system message
+                agent.memory.clear()
+                agent.update_memory(
+                    agent._system_message, OpenAIBackendRole.SYSTEM
+                )
 
             char_count = len(content)
             log_msg = (
@@ -445,3 +758,100 @@ class ContextUtility:
             error_msg = f"Failed to load markdown context to memory: {e}"
             logger.error(error_msg)
             return error_msg
+
+    def _filter_metadata_from_content(self, content: str) -> str:
+        r"""Filter out metadata section from markdown content.
+
+        Args:
+            content (str): The full markdown content including metadata.
+
+        Returns:
+            str: Content with metadata section removed.
+        """
+        lines = content.split('\n')
+        filtered_lines = []
+        skip_metadata = False
+
+        for line in lines:
+            # Check if we're starting a metadata section
+            if line.strip() == "## Metadata":
+                skip_metadata = True
+                continue
+
+            # Check if we're starting a new section after metadata
+            if (
+                skip_metadata
+                and line.startswith("## ")
+                and "Metadata" not in line
+            ):
+                skip_metadata = False
+
+            # Add line if we're not in metadata section
+            if not skip_metadata:
+                filtered_lines.append(line)
+
+        # Clean up any extra whitespace at the beginning
+        result = '\n'.join(filtered_lines).strip()
+        return result
+
+    # ========= SHARED SESSION MANAGEMENT METHODS =========
+
+    @classmethod
+    def get_workforce_shared(
+        cls, session_id: Optional[str] = None
+    ) -> 'ContextUtility':
+        r"""Get or create shared workforce context utility with lazy init.
+
+        This method provides a centralized way to access shared context
+        utilities for workforce workflows, ensuring all workforce components
+        use the same session directory.
+
+        Args:
+            session_id (str, optional): Custom session ID. If None, uses the
+                default workforce session.
+
+        Returns:
+            ContextUtility: Shared context utility instance for workforce.
+        """
+        if session_id is None:
+            # Use default workforce session
+            if cls._default_workforce_session is None:
+                camel_workdir = os.environ.get("CAMEL_WORKDIR")
+                if camel_workdir:
+                    base_path = os.path.join(
+                        camel_workdir, "workforce_workflows"
+                    )
+                else:
+                    base_path = "workforce_workflows"
+
+                cls._default_workforce_session = cls(
+                    working_directory=base_path,
+                    create_folder=False,  # Don't create folder until needed
+                )
+            return cls._default_workforce_session
+
+        # Use specific session
+        if session_id not in cls._shared_sessions:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_path = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_path = "workforce_workflows"
+
+            cls._shared_sessions[session_id] = cls(
+                working_directory=base_path,
+                session_id=session_id,
+                create_folder=False,  # Don't create folder until needed
+            )
+        return cls._shared_sessions[session_id]
+
+    @classmethod
+    def reset_shared_sessions(cls) -> None:
+        r"""Reset shared sessions (useful for testing).
+
+        This method clears all shared session instances, forcing new ones
+        to be created on next access. Primarily used for testing to ensure
+        clean state between tests.
+        """
+        cls._shared_sessions.clear()
+        cls._default_workforce_session = None

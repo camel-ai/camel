@@ -41,6 +41,7 @@ from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
 from .wechat_official_toolkit import WeChatOfficialToolkit
+from .dingtalk import DingtalkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -76,6 +77,7 @@ from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .resend_toolkit import ResendToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
@@ -107,6 +109,7 @@ __all__ = [
     'SlackToolkit',
     'WhatsAppToolkit',
     'WeChatOfficialToolkit',
+    'DingtalkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -155,6 +158,7 @@ __all__ = [
     'KlavisToolkit',
     'ACIToolkit',
     'PlaywrightMCPToolkit',
+    'ResendToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
     'OpenAIImageToolkit',  # Backward compatibility

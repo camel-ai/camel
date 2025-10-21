@@ -318,6 +318,8 @@ def api_keys_required(
                 key_way = "https://aimlapi.com/"
             elif env_var_name == 'COHERE_API_KEY':
                 key_way = "https://cohere.com/"
+            elif env_var_name == 'COMETAPI_KEY':
+                key_way = "https://api.cometapi.com/console/token"
             elif env_var_name == 'DEEPSEEK_API_KEY':
                 key_way = "https://www.deepseek.com/"
             elif env_var_name == 'AZURE_OPENAI_API_KEY':
@@ -1011,6 +1013,19 @@ def with_timeout(timeout=None):
 
                 # If no timeout value is provided, execute function normally
                 if effective_timeout is None:
+                    return func(*args, **kwargs)
+
+                # If current thread has a running asyncio event loop, avoid
+                # switching threads to preserve asyncio context (e.g., for
+                # asyncio.create_task). Execute inline without enforcing a
+                # sync timeout to keep event loop semantics intact.
+                try:
+                    asyncio.get_running_loop()
+                    loop_running = True
+                except RuntimeError:
+                    loop_running = False
+
+                if loop_running:
                     return func(*args, **kwargs)
 
                 # Container to hold the result of the function call
