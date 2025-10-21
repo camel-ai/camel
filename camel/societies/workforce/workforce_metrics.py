@@ -11,28 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from abc import ABC, abstractmethod
+from typing import Any, Dict
 
-from .agent_memories import (
-    ChatHistoryMemory,
-    LongtermAgentMemory,
-    VectorDBMemory,
-)
-from .base import AgentMemory, BaseContextCreator, MemoryBlock
-from .blocks.chat_history_block import ChatHistoryBlock
-from .blocks.vectordb_block import VectorDBBlock
-from .context_creators.score_based import ScoreBasedContextCreator
-from .records import ContextRecord, MemoryRecord
 
-__all__ = [
-    'MemoryRecord',
-    'ContextRecord',
-    'MemoryBlock',
-    "AgentMemory",
-    'BaseContextCreator',
-    'ScoreBasedContextCreator',
-    'ChatHistoryMemory',
-    'VectorDBMemory',
-    'ChatHistoryBlock',
-    'VectorDBBlock',
-    'LongtermAgentMemory',
-]
+class WorkforceMetrics(ABC):
+    @abstractmethod
+    def reset_task_data(self) -> None:
+        pass
+
+    @abstractmethod
+    def dump_to_json(self, file_path: str) -> None:
+        pass
+
+    @abstractmethod
+    def get_ascii_tree_representation(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_kpis(self) -> Dict[str, Any]:
+        pass

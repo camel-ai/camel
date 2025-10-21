@@ -1,7 +1,7 @@
 name: 🐛 Bug Report
 description: File an issue about a bug.
 title: "[BUG] "
-labels: [bug]
+labels: [bug, Needs Triage]
 body:
   - type: markdown
     attributes:
