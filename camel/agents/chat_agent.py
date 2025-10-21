@@ -1005,18 +1005,7 @@ class ChatAgent(BaseAgent):
                     existing_summaries.append(msg)
 
         # Clear memory
-        self.memory.clear()
-
-        # Re-add system message if it exists
-        if self.system_message is not None:
-            self.memory.write_record(
-                MemoryRecord(
-                    message=self.system_message,
-                    role_at_backend=OpenAIBackendRole.SYSTEM,
-                    timestamp=time.time_ns() / 1_000_000_000,
-                    agent_id=self.agent_id,
-                )
-            )
+        self.clear_memory()
 
         # Restore old summaries (for progressive compression)
         for old_summary in existing_summaries:
@@ -1863,7 +1852,14 @@ class ChatAgent(BaseAgent):
         self.memory.clear()
 
         if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
 
     def _generate_system_message_for_output_language(
         self,
@@ -1898,17 +1894,7 @@ class ChatAgent(BaseAgent):
         message.
         """
         self._reset_summary_state()
-        self.memory.clear()
-        # Write system message to memory if provided
-        if self.system_message is not None:
-            self.memory.write_record(
-                MemoryRecord(
-                    message=self.system_message,
-                    role_at_backend=OpenAIBackendRole.SYSTEM,
-                    timestamp=time.time_ns() / 1_000_000_000,
-                    agent_id=self.agent_id,
-                )
-            )
+        self.clear_memory()
 
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
