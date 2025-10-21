@@ -1326,8 +1326,7 @@ class ChatAgent(BaseAgent):
         message: BaseMessage,
         role: OpenAIBackendRole,
         timestamp: Optional[float] = None,
-        return_records: bool = False,
-    ) -> Optional[List[MemoryRecord]]:
+    ) -> None:
         r"""Updates the agent memory with a new message.
 
         Args:
@@ -1339,17 +1338,15 @@ class ChatAgent(BaseAgent):
                 (default: :obj:`None`)
                     (default: obj:`None`)
         """
-
-        self.memory.write_record(
-            MemoryRecord(
-                message=message,
-                role_at_backend=role,
-                timestamp=timestamp
-                if timestamp is not None
-                else time.time_ns() / 1_000_000_000,  # Nanosecond precision
-                agent_id=self.agent_id,
-            )
+        record = MemoryRecord(
+            message=message,
+            role_at_backend=role,
+            timestamp=timestamp
+            if timestamp is not None
+            else time.time_ns() / 1_000_000_000,  # Nanosecond precision
+            agent_id=self.agent_id,
         )
+        self.memory.write_record(record)
         self._register_record_addition(role)
 
     def load_memory(self, memory: AgentMemory) -> None:
