@@ -991,7 +991,7 @@ class ChatAgent(BaseAgent):
         summary_with_prefix = summary.get("summary_with_prefix")
         if not summary_with_prefix:
             return
-
+        summary_status = summary.get("status", "")
         include_summaries = summary.get("include_summaries", False)
 
         existing_summaries = []
@@ -1019,7 +1019,7 @@ class ChatAgent(BaseAgent):
 
         # Add new summary
         new_summary_msg = BaseMessage.make_assistant_message(
-            role_name="Assistant", content=summary_with_prefix
+            role_name="Assistant", content=summary_with_prefix + " " + summary_status
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
 
@@ -2395,16 +2395,6 @@ class ChatAgent(BaseAgent):
                         "Token limit exceeded error detected. "
                         "Summarizing context."
                     )
-                    camel_workdir = os.environ.get("CAMEL_WORKDIR")
-                    context_dir = (
-                        Path(camel_workdir) / "context_files"
-                        if camel_workdir
-                        else Path("context_files")
-                    )
-                    context_dir.mkdir(parents=True, exist_ok=True)
-                    full_context_file_path = context_dir / "full_context.json"
-
-                    self.save_memory(path=str(full_context_file_path))
 
                     recent_records: List[ContextRecord]
                     try:
@@ -2435,8 +2425,8 @@ class ChatAgent(BaseAgent):
                         + "\n\n"
                         "[Context Summary]\n\n"
                         + summary.get("summary", "")
-                        + "\n\n[Full Context file path is]\n\n"
-                        + str(full_context_file_path)
+                        + "\n\n[Summary status]\n\n"
+                        + str(summary.get("status", ""))
                         + "\n\nThe following is the user's original input. "
                         "Please continue based on existing information."
                     )
@@ -2740,17 +2730,6 @@ class ChatAgent(BaseAgent):
                         "Summarizing context."
                     )
 
-                    camel_workdir = os.environ.get("CAMEL_WORKDIR")
-                    context_dir = (
-                        Path(camel_workdir) / "context_files"
-                        if camel_workdir
-                        else Path("context_files")
-                    )
-                    context_dir.mkdir(parents=True, exist_ok=True)
-                    full_context_file_path = context_dir / "full_context.json"
-
-                    self.save_memory(path=str(full_context_file_path))
-
                     recent_records: List[ContextRecord]
                     try:
                         recent_records = self.memory.retrieve()
@@ -2779,8 +2758,8 @@ class ChatAgent(BaseAgent):
                         + "\n\n"
                         "[Context Summary]\n\n"
                         + summary.get("summary", "")
-                        + "\n\n[Full Context file path is]\n\n"
-                        + str(full_context_file_path)
+                        + "\n\n[Summary status]\n\n"
+                        + str(summary.get("status", ""))
                         + "\n\nThe following is the user's original input. "
                         "Please continue based on existing information."
                     )
