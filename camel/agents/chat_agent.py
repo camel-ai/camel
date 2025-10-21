@@ -524,7 +524,13 @@ class ChatAgent(BaseAgent):
         )
         self.init_messages()
 
-        # Set up summarize threshold
+        # Set up summarize threshold with validation
+        if summarize_threshold is not None:
+            if not (0 < summarize_threshold <= 100):
+                raise ValueError(
+                    f"summarize_threshold must be between 0 and 100, "
+                    f"got {summarize_threshold}"
+                )
         self.summarize_threshold = summarize_threshold
         self._reset_summary_state()
 
@@ -1019,7 +1025,8 @@ class ChatAgent(BaseAgent):
 
         # Add new summary
         new_summary_msg = BaseMessage.make_assistant_message(
-            role_name="Assistant", content=summary_with_prefix + " " + summary_status
+            role_name="Assistant",
+            content=summary_with_prefix + " " + summary_status,
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
 
@@ -2325,25 +2332,26 @@ class ChatAgent(BaseAgent):
                     )
                     token_limit = self.model_backend.token_limit
 
-                    # Check if summary tokens exceed 60% of limit
-                    # If so, perform full compression (including summaries)
-                    if summary_token_count > token_limit * 0.6:
-                        logger.info(
-                            f"Summary tokens ({summary_token_count}) exceed "
-                            f"60% of limit ({token_limit * 0.6}). "
-                            "Performing full compression."
-                        )
-                        # Summarize everything (including summaries)
-                        summary = self.summarize(include_summaries=True)
-                        self._update_memory_with_summary(summary)
-                    elif num_tokens > threshold:
-                        logger.info(
-                            f"Token count ({num_tokens}) exceeds threshold "
-                            f"({threshold}). Triggering summarization."
-                        )
-                        # Only summarize non-summary content
-                        summary = self.summarize(include_summaries=False)
-                        self._update_memory_with_summary(summary)
+                    if num_tokens <= token_limit:
+                        # Check if summary tokens exceed 60% of limit
+                        # If so, perform full compression (including summaries)
+                        if summary_token_count > token_limit * 0.6:
+                            logger.info(
+                                f"Summary tokens ({summary_token_count}) "
+                                f"exceed 60% of limit ({token_limit * 0.6}). "
+                                f"Performing full compression."
+                            )
+                            # Summarize everything (including summaries)
+                            summary = self.summarize(include_summaries=True)
+                            self._update_memory_with_summary(summary)
+                        elif num_tokens > threshold:
+                            logger.info(
+                                f"Token count ({num_tokens}) exceed threshold "
+                                f"({threshold}). Triggering summarization."
+                            )
+                            # Only summarize non-summary content
+                            summary = self.summarize(include_summaries=False)
+                            self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2659,27 +2667,30 @@ class ChatAgent(BaseAgent):
                     )
                     token_limit = self.model_backend.token_limit
 
-                    # Check if summary tokens exceed 60% of limit
-                    # If so, perform full compression (including summaries)
-                    if summary_token_count > token_limit * 0.6:
-                        logger.info(
-                            f"Summary tokens ({summary_token_count}) exceed "
-                            f"60% of limit ({token_limit * 0.6}). "
-                            "Performing full compression."
-                        )
-                        # Summarize everything (including summaries)
-                        summary = await self.asummarize(include_summaries=True)
-                        self._update_memory_with_summary(summary)
-                    elif num_tokens > threshold:
-                        logger.info(
-                            f"Token count ({num_tokens}) exceeds threshold "
-                            f"({threshold}). Triggering summarization."
-                        )
-                        # Only summarize non-summary content
-                        summary = await self.asummarize(
-                            include_summaries=False
-                        )
-                        self._update_memory_with_summary(summary)
+                    if num_tokens <= token_limit:
+                        # Check if summary tokens exceed 60% of limit
+                        # If so, perform full compression (including summaries)
+                        if summary_token_count > token_limit * 0.6:
+                            logger.info(
+                                f"Summary tokens ({summary_token_count}) "
+                                f"exceed 60% of limit ({token_limit * 0.6}). "
+                                f"Full compression."
+                            )
+                            # Summarize everything (including summaries)
+                            summary = await self.asummarize(
+                                include_summaries=True
+                            )
+                            self._update_memory_with_summary(summary)
+                        elif num_tokens > threshold:
+                            logger.info(
+                                f"Token count ({num_tokens}) exceed threshold "
+                                "({threshold}). Triggering summarization."
+                            )
+                            # Only summarize non-summary content
+                            summary = await self.asummarize(
+                                include_summaries=False
+                            )
+                            self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
