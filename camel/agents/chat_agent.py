@@ -367,8 +367,9 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        token_limit (int, optional): Deprecated. Configure context limits via
-            the model configuration instead. Passing a value raises an error.
+        summarize_threshold (int, optional): The percentage of the context
+            window that triggers summarization. If `None`, will trigger
+            summarization when the context window is full.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
@@ -448,6 +449,7 @@ class ChatAgent(BaseAgent):
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
+        summarize_threshold: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
@@ -522,6 +524,8 @@ class ChatAgent(BaseAgent):
         )
         self.init_messages()
 
+        # Set up summarize threshold
+        self.summarize_threshold = summarize_threshold
         self._reset_summary_state()
 
         # Set up role name and role type
@@ -930,13 +934,130 @@ class ChatAgent(BaseAgent):
         return "[Tool Call Causing Token Limit]\n" f"{description}"
 
     def _reset_summary_state(self) -> None:
-        self._summary_state = {
+        self._summary_state: Dict[str, Any] = {
             "depth": 0,
             "last_summary_log_length": 0,
             "last_summary_user_signature": None,
             "record_count_since_summary": 0,
             "user_count_since_summary": 0,
+            "summary_token_count": 0,  # Total tokens in summary messages
+            "last_summary_threshold": 0,  # Last calculated threshold
+            "is_summary_message": set(),  # Set of message  that are summaries
         }
+
+    def _calculate_next_summary_threshold(self) -> int:
+        r"""Calculate the next token threshold that should trigger
+        summarization.
+
+        The threshold calculation follows a progressive strategy:
+        - First time: token_limit * (summarize_threshold / 100)
+        - Subsequent times: (limit - summary_token) / 2 + summary_token
+
+        This ensures that as summaries accumulate, the threshold adapts
+        to maintain a reasonable balance between context and summaries.
+
+        Returns:
+            int: The token count threshold for next summarization.
+        """
+        if self.summarize_threshold is None:
+            return 0
+
+        token_limit = self.model_backend.token_limit
+        summary_token_count = self._summary_state.get("summary_token_count", 0)
+
+        # First summarization: use the percentage threshold
+        if summary_token_count == 0:
+            threshold = int(token_limit * self.summarize_threshold / 100)
+        else:
+            # Subsequent summarizations: adaptive threshold
+            threshold = int(
+                (token_limit - summary_token_count)
+                * self.summarize_threshold
+                / 100
+                + summary_token_count
+            )
+
+        return threshold
+
+    def _update_memory_with_summary(self, summary: Dict[str, Any]) -> None:
+        r"""Update memory with summary result.
+
+        This method handles memory clearing and restoration of summaries based
+        on whether it's a progressive or full compression.
+        """
+        if not summary or self.summarize_threshold is None:
+            return
+
+        summary_with_prefix = summary.get("summary_with_prefix")
+        if not summary_with_prefix:
+            return
+
+        include_summaries = summary.get("include_summaries", False)
+
+        existing_summaries = []
+        if not include_summaries:
+            messages, _ = self.memory.get_context()
+            for msg in messages:
+                content = msg.get('content', '')
+                if isinstance(content, str) and content.startswith(
+                    '[CAMEL_SUMMARY]'
+                ):
+                    existing_summaries.append(msg)
+
+        # Clear memory
+        self.memory.clear()
+
+        # Re-add system message if it exists
+        if self.system_message is not None:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+
+        # Restore old summaries (for progressive compression)
+        for old_summary in existing_summaries:
+            content = old_summary.get('content', '')
+            if not isinstance(content, str):
+                content = str(content)
+            summary_msg = BaseMessage.make_assistant_message(
+                role_name="Assistant", content=content
+            )
+            self.update_memory(summary_msg, OpenAIBackendRole.ASSISTANT)
+
+        # Add new summary
+        new_summary_msg = BaseMessage.make_assistant_message(
+            role_name="Assistant", content=summary_with_prefix
+        )
+        self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
+
+        # Update token count
+        try:
+            summary_tokens = (
+                self.model_backend.token_counter.count_tokens_from_messages(
+                    [{"role": "assistant", "content": summary_with_prefix}]
+                )
+            )
+
+            if include_summaries:  # Full compression - reset count
+                self._summary_state["summary_token_count"] = summary_tokens
+                logger.info(
+                    f"Full compression: Summary with {summary_tokens} tokens. "
+                    f"Total summary tokens reset to: {summary_tokens}"
+                )
+            else:  # Progressive compression - accumulate
+                self._summary_state["summary_token_count"] += summary_tokens
+                logger.info(
+                    f"Progressive compression: New summary "
+                    f"with {summary_tokens} tokens. "
+                    f"Total summary tokens: "
+                    f"{self._summary_state['summary_token_count']}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to count summary tokens: {e}")
 
     def _register_record_addition(self, role: OpenAIBackendRole) -> None:
         state = getattr(self, "_summary_state", None)
@@ -1170,6 +1291,7 @@ class ChatAgent(BaseAgent):
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
+        include_summaries: bool = False,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1189,6 +1311,11 @@ class ChatAgent(BaseAgent):
                 defining the expected structure of the response. If provided,
                 the summary will be generated as structured output and included
                 in the result.
+            include_summaries (bool): Whether to include previously generated
+                summaries in the content to be summarized. If False (default),
+                only non-summary messages will be summarized. If True, all
+                messages including previous summaries will be summarized
+                (full compression). (default: :obj:`False`)
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
@@ -1241,6 +1368,12 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
+
+                # Skip summary messages if include_summaries is False
+                if not include_summaries and isinstance(content, str):
+                    # Check if this is a summary message by looking for marker
+                    if content.startswith('[CAMEL_SUMMARY]'):
+                        continue
 
                 # Handle tool call messages (assistant calling tools)
                 tool_calls = message.get('tool_calls')
@@ -1421,6 +1554,13 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
+
+            # Add prefix to summary content in result
+            if self.summarize_threshold is not None:
+                summary_with_prefix = f"[CAMEL_SUMMARY] {summary_content}"
+                result["summary_with_prefix"] = summary_with_prefix
+                result["include_summaries"] = include_summaries
+
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1436,6 +1576,7 @@ class ChatAgent(BaseAgent):
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
+        include_summaries: bool = False,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -1458,6 +1599,11 @@ class ChatAgent(BaseAgent):
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
+            include_summaries (bool): Whether to include previously generated
+                summaries in the content to be summarized. If False (default),
+                only non-summary messages will be summarized. If True, all
+                messages including previous summaries will be summarized
+                (full compression). (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -1497,6 +1643,12 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
+
+                # Skip summary messages if include_summaries is False
+                if not include_summaries and isinstance(content, str):
+                    # Check if this is a summary message by looking for marker
+                    if content.startswith('[CAMEL_SUMMARY]'):
+                        continue
 
                 # Handle tool call messages (assistant calling tools)
                 tool_calls = message.get('tool_calls')
@@ -1686,6 +1838,13 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
+
+            # Add prefix to summary content in result
+            if self.summarize_threshold is not None:
+                summary_with_prefix = f"[CAMEL_SUMMARY] {summary_content}"
+                result["summary_with_prefix"] = summary_with_prefix
+                result["include_summaries"] = include_summaries
+
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -2173,6 +2332,32 @@ class ChatAgent(BaseAgent):
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if self.summarize_threshold is not None:
+                    threshold = self._calculate_next_summary_threshold()
+                    summary_token_count = self._summary_state.get(
+                        "summary_token_count", 0
+                    )
+                    token_limit = self.model_backend.token_limit
+
+                    # Check if summary tokens exceed 60% of limit
+                    # If so, perform full compression (including summaries)
+                    if summary_token_count > token_limit * 0.6:
+                        logger.info(
+                            f"Summary tokens ({summary_token_count}) exceed "
+                            f"60% of limit ({token_limit * 0.6}). "
+                            "Performing full compression."
+                        )
+                        # Summarize everything (including summaries)
+                        summary = self.summarize(include_summaries=True)
+                        self._update_memory_with_summary(summary)
+                    elif num_tokens > threshold:
+                        logger.info(
+                            f"Token count ({num_tokens}) exceeds threshold "
+                            f"({threshold}). Triggering summarization."
+                        )
+                        # Only summarize non-summary content
+                        summary = self.summarize(include_summaries=False)
+                        self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2271,7 +2456,7 @@ class ChatAgent(BaseAgent):
                     )
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
-                    self.memory.clear()
+                    self.clear_memory()
                     summary_messages = BaseMessage.make_assistant_message(
                         role_name="Assistant", content=summary_messages
                     )
@@ -2491,6 +2676,34 @@ class ChatAgent(BaseAgent):
                     await loop.run_in_executor(None, self.pause_event.wait)
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if self.summarize_threshold is not None:
+                    threshold = self._calculate_next_summary_threshold()
+                    summary_token_count = self._summary_state.get(
+                        "summary_token_count", 0
+                    )
+                    token_limit = self.model_backend.token_limit
+
+                    # Check if summary tokens exceed 60% of limit
+                    # If so, perform full compression (including summaries)
+                    if summary_token_count > token_limit * 0.6:
+                        logger.info(
+                            f"Summary tokens ({summary_token_count}) exceed "
+                            f"60% of limit ({token_limit * 0.6}). "
+                            "Performing full compression."
+                        )
+                        # Summarize everything (including summaries)
+                        summary = await self.asummarize(include_summaries=True)
+                        self._update_memory_with_summary(summary)
+                    elif num_tokens > threshold:
+                        logger.info(
+                            f"Token count ({num_tokens}) exceeds threshold "
+                            f"({threshold}). Triggering summarization."
+                        )
+                        # Only summarize non-summary content
+                        summary = await self.asummarize(
+                            include_summaries=False
+                        )
+                        self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2565,7 +2778,7 @@ class ChatAgent(BaseAgent):
                     )
                     self.memory.remove_records_by_indices(indices_to_remove)
 
-                    summary = self.summarize()
+                    summary = await self.asummarize()
                     if isinstance(input_message, BaseMessage):
                         input_message = input_message.content
 
@@ -2588,8 +2801,7 @@ class ChatAgent(BaseAgent):
 
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
-
-                    self.memory.clear()
+                    self.clear_memory()
                     summary_messages = BaseMessage.make_assistant_message(
                         role_name="Assistant", content=summary_messages
                     )
