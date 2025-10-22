@@ -489,26 +489,31 @@ class TerminalToolkit(BaseToolkit):
         r"""Execute a shell command in either blocking or non-blocking mode.
         ---
         **Usage Modes**
-        - `block=True`: Runs synchronously and returns all output after completion.  
+        - `block=True`: Runs synchronously and returns all output after
+        completion.
         Use for short tasks or setup commands (e.g. `ls`, `pip install ...`).
-        - `block=False`: Runs asynchronously in the background.  
-        Output is collected gradually and can be read later using `shell_view(id)`  
-        or `shell_wait(id, seconds)`.
+        - `block=False`: Runs asynchronously in the background.
+        Output is collected gradually and can be read later using `
+        shell_view(id)`or `shell_wait(id, seconds)`.
 
         ---
         **Environment Notes**
-        - The command runs inside a subprocess with stdout connected via a pipe.  
-        Python programs run in this mode may buffer their output.  
-        If the command is a Python script, consider running it with `python -u script.py`  
-        or using `print(..., flush=True)` to ensure immediate output visibility.
-        - Some shell commands like `cat > file <<EOF ... EOF` do not produce stdout output;  
-        this is expected and not an error.
+        - The command runs inside a subprocess with stdout connected
+        via a pipe.
+        Python programs run in this mode may buffer their output.
+        If the command is a Python script, consider running it
+        with `python -u script.py`
+        or using `print(..., flush=True)` to ensure immediate
+        output visibility.
+        - Some shell commands like `cat > file <<EOF ... EOF` do not
+        produce stdout output; this is expected and not an error.
 
         ---
         **Agent Hint**
-        If you see no output after executing a Python script, it likely means output is
-        being buffered. You can fix this by rerunning the command with `-u` or using
-        `shell_wait` to give the process more time to flush.
+        If you see no output after executing a Python script,
+        it likely means output is being buffered. You can fix this
+        by rerunning the command with `-u` or using `shell_wait` to
+        give the process more time to flush.
 
 
         Args:
