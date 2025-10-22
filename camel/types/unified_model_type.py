@@ -96,6 +96,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether the model is a Nebius AI Studio served model."""
+        return True
+
+    @property
     def is_openrouter(self) -> bool:
         r"""Returns whether the model is a OpenRouter served model."""
         return True
@@ -138,6 +143,11 @@ class UnifiedModelType(str):
     @property
     def is_cohere(self) -> bool:
         r"""Returns whether the model is a Cohere model."""
+        return True
+
+    @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether the model is a CometAPI served model."""
         return True
 
     @property

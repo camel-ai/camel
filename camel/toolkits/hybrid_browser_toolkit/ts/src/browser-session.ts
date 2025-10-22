@@ -1,10 +1,11 @@
-import { Page, Browser, BrowserContext, chromium, ConsoleMessage } from 'playwright';
+import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
+  private contextOwnedByUs: boolean = false;
   private pages: Map<string, Page> = new Map();
   private consoleLogs: Map<string, ConsoleMessage[]> = new Map();
   private currentTabId: string | null = null;
@@ -50,8 +51,8 @@ export class HybridBrowserSession {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stealthConfig = this.configLoader.getStealthConfig();
     
-    // Check if CDP connection is requested
-    if (browserConfig.connectOverCdp && browserConfig.cdpUrl) {
+    // Check if CDP URL is provided
+    if (browserConfig.cdpUrl) {
       // Connect to existing browser via CDP
       this.browser = await chromium.connectOverCDP(browserConfig.cdpUrl);
       
@@ -59,44 +60,94 @@ export class HybridBrowserSession {
       const contexts = this.browser.contexts();
       if (contexts.length > 0) {
         this.context = contexts[0];
+        this.contextOwnedByUs = false;
+        
+        // Apply stealth headers to existing context if configured
+        // Note: userAgent cannot be changed on an existing context
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            await this.context.setExtraHTTPHeaders(stealthConfig.extraHTTPHeaders);
+          }
+          if (stealthConfig.userAgent) {
+            console.warn('[HybridBrowserSession] Cannot apply userAgent to existing context. Consider creating a new context if userAgent customization is required.');
+          }
+        }
       } else {
         const contextOptions: any = {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
-        }
-        
-        this.context = await this.browser.newContext(contextOptions);
-      }
-      
-      // Handle existing pages
-      const pages = this.context.pages();
-      if (pages.length > 0) {
-        // Map existing pages - for CDP, only use pages with about:blank URL
-        let availablePageFound = false;
-        for (const page of pages) {
-          const pageUrl = page.url();
-          // In CDP mode, only consider pages with about:blank as available
-          if (pageUrl === 'about:blank') {
-            const tabId = this.generateTabId();
-            this.registerNewPage(tabId, page);
-            if (!this.currentTabId) {
-              this.currentTabId = tabId;
-              availablePageFound = true;
-            }
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
           }
         }
         
-        // If no available blank pages found in CDP mode, we cannot create new ones
-        if (!availablePageFound) {
-          throw new Error('No available blank tabs found in CDP mode. The frontend should have pre-created blank tabs.');
+        this.context = await this.browser.newContext(contextOptions);
+        this.contextOwnedByUs = true;
+        this.browser = this.context.browser();
+      }
+      
+      const pages = this.context.pages();
+      console.log(`[CDP] cdpKeepCurrentPage: ${browserConfig.cdpKeepCurrentPage}, pages count: ${pages.length}`);
+      if (browserConfig.cdpKeepCurrentPage) {
+        // Use existing page without creating new ones
+        if (pages.length > 0) {
+          // Find first non-closed page
+          let validPage: Page | null = null;
+          for (const page of pages) {
+            if (!page.isClosed()) {
+              validPage = page;
+              break;
+            }
+          }
+          
+          if (validPage) {
+            const tabId = this.generateTabId();
+            this.registerNewPage(tabId, validPage);
+            this.currentTabId = tabId;
+            console.log(`[CDP] cdpKeepCurrentPage mode: using existing page as initial tab: ${tabId}, URL: ${validPage.url()}`);
+          } else {
+            throw new Error('No active pages available in CDP mode with cdpKeepCurrentPage=true (all pages are closed)');
+          }
+        } else {
+          throw new Error('No pages available in CDP mode with cdpKeepCurrentPage=true');
         }
       } else {
-        // In CDP mode, newPage is not supported
-        throw new Error('No pages available in CDP mode and newPage() is not supported. Ensure the frontend has pre-created blank tabs.');
+        // Look for blank pages or create new ones
+        if (pages.length > 0) {
+          // Find one available blank page
+          let availablePageFound = false;
+          for (const page of pages) {
+            const pageUrl = page.url();
+            if (this.isBlankPageUrl(pageUrl)) {
+              const tabId = this.generateTabId();
+              this.registerNewPage(tabId, page);
+              this.currentTabId = tabId;
+              availablePageFound = true;
+              console.log(`[CDP] Registered blank page as initial tab: ${tabId}, URL: ${pageUrl}`);
+              break;
+            }
+          }
+          
+          if (!availablePageFound) {
+            console.log('[CDP] No blank pages found, creating new page');
+            const newPage = await this.context.newPage();
+            const tabId = this.generateTabId();
+            this.registerNewPage(tabId, newPage);
+            this.currentTabId = tabId;
+          }
+        } else {
+          console.log('[CDP] No existing pages, creating initial page');
+          const newPage = await this.context.newPage();
+          const tabId = this.generateTabId();
+          this.registerNewPage(tabId, newPage);
+          this.currentTabId = tabId;
+        }
       }
     } else {
       // Original launch logic
@@ -107,18 +158,24 @@ export class HybridBrowserSession {
       if (stealthConfig.enabled) {
         launchOptions.args = stealthConfig.args || [];
         
-        // Apply stealth user agent if configured
+        // Apply stealth user agent/headers if configured
         if (stealthConfig.userAgent) {
           launchOptions.userAgent = stealthConfig.userAgent;
+        }
+        if (stealthConfig.extraHTTPHeaders) {
+          launchOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
         }
       }
 
       if (browserConfig.userDataDir) {
+        // Ensure viewport is honored in persistent context
+        launchOptions.viewport = browserConfig.viewport;
         this.context = await chromium.launchPersistentContext(
           browserConfig.userDataDir,
           launchOptions
         );
-        
+        this.contextOwnedByUs = true;
+        this.browser = this.context.browser();
         const pages = this.context.pages();
         if (pages.length > 0) {
           const initialTabId = this.generateTabId();
@@ -131,12 +188,18 @@ export class HybridBrowserSession {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
+          }
         }
         
         this.context = await this.browser.newContext(contextOptions);
+        this.contextOwnedByUs = true;
         
         const initialPage = await this.context.newPage();
         const initialTabId = this.generateTabId();
@@ -157,9 +220,75 @@ export class HybridBrowserSession {
     return `${browserConfig.tabIdPrefix}${String(++this.tabCounter).padStart(browserConfig.tabCounterPadding, '0')}`;
   }
 
+  private isBlankPageUrl(url: string): boolean {
+    // Unified blank page detection logic used across the codebase
+    const browserConfig = this.configLoader.getBrowserConfig();
+    return (
+      // Standard about:blank variations (prefix match for query params)
+      url === 'about:blank' || 
+      url.startsWith('about:blank?') ||
+      // Configured blank page URLs (exact match for compatibility)
+      browserConfig.blankPageUrls.includes(url) ||
+      // Empty URL
+      url === '' ||
+      // Data URLs (often used for blank pages)
+      url.startsWith(browserConfig.dataUrlPrefix || 'data:')
+    );
+  }
+
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
-      throw new Error('No active page available');
+      const browserConfig = this.configLoader.getBrowserConfig();
+      
+      // In CDP keep-current-page mode, find existing page
+      if (browserConfig.cdpKeepCurrentPage && browserConfig.cdpUrl && this.context) {
+        const allPages = this.context.pages();
+        console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Looking for existing page, found ${allPages.length} pages`);
+        
+        if (allPages.length > 0) {
+          // Try to find a page that's not already tracked
+          for (const page of allPages) {
+            const isTracked = Array.from(this.pages.values()).includes(page);
+            if (!isTracked && !page.isClosed()) {
+              const tabId = this.generateTabId();
+              this.registerNewPage(tabId, page);
+              this.currentTabId = tabId;
+              console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Found and registered untracked page: ${tabId}`);
+              return page;
+            }
+          }
+          
+          // If all pages are tracked, use the first available one
+          const firstPage = allPages[0];
+          if (!firstPage.isClosed()) {
+            // Find the tab ID for this page
+            for (const [tabId, page] of this.pages.entries()) {
+              if (page === firstPage) {
+                this.currentTabId = tabId;
+                console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Using existing tracked page: ${tabId}`);
+                return page;
+              }
+            }
+          }
+        }
+        
+        throw new Error('No active page available in CDP mode with cdpKeepCurrentPage=true');
+      }
+      
+      // Normal mode: create new page
+      if (this.context) {
+        console.log('[getCurrentPage] No active page, creating new page');
+        const newPage = await this.context.newPage();
+        const tabId = this.generateTabId();
+        this.registerNewPage(tabId, newPage);
+        this.currentTabId = tabId;
+        
+        newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
+        newPage.setDefaultTimeout(browserConfig.navigationTimeout);
+        
+        return newPage;
+      }
+      throw new Error('No browser context available');
     }
     return this.pages.get(this.currentTabId)!;
   }
@@ -200,6 +329,36 @@ export class HybridBrowserSession {
     return this.getSnapshotForAINative(includeCoordinates, viewportLimit);
   }
 
+  private parseElementFromSnapshot(snapshotText: string, ref: string): { role?: string; text?: string } {
+    const lines = snapshotText.split('\n');
+    for (const line of lines) {
+      if (line.includes(`[ref=${ref}]`)) {
+        const typeMatch = line.match(/^\s*-?\s*([\w-]+)/);
+        const role = typeMatch ? typeMatch[1] : undefined;
+        const textMatch = line.match(/"([^"]*)"/);
+        const text = textMatch ? textMatch[1] : undefined;
+        return { role, text };
+      }
+    }
+    return {};
+  }
+
+  private buildSnapshotIndex(snapshotText: string): Map<string, { role?: string; text?: string }> {
+    const index = new Map<string, { role?: string; text?: string }>();
+    const refRe = /\[ref=([^\]]+)\]/i;
+    for (const line of snapshotText.split('\n')) {
+      const m = line.match(refRe);
+      if (!m) continue;
+      const ref = m[1];
+      const roleMatch = line.match(/^\s*-?\s*([a-z0-9_-]+)/i);
+      const role = roleMatch ? roleMatch[1].toLowerCase() : undefined;
+      const textMatch = line.match(/"([^"]*)"/);
+      const text = textMatch ? textMatch[1] : undefined;
+      index.set(ref, { role, text });
+    }
+    return index;
+  }
+
   private async getSnapshotForAINative(includeCoordinates = false, viewportLimit = false): Promise<SnapshotResult & { timing: DetailedTiming }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -222,6 +381,17 @@ export class HybridBrowserSession {
       const mappingStart = Date.now();
       const playwrightMapping: Record<string, any> = {};
       
+      // Parse element info in a single pass
+      const snapshotIndex = this.buildSnapshotIndex(snapshotText);
+      for (const ref of refs) {
+        const elementInfo = snapshotIndex.get(ref) || {};
+        playwrightMapping[ref] = {
+          ref,
+          role: elementInfo.role || 'unknown',
+          text: elementInfo.text || '',
+        };
+      }
+      
       if (includeCoordinates) {
         // Get coordinates for each ref using aria-ref selector
         for (const ref of refs) {
@@ -235,8 +405,9 @@ export class HybridBrowserSession {
               const boundingBox = await element.boundingBox();
               
               if (boundingBox) {
+                // Add coordinates to existing element info
                 playwrightMapping[ref] = {
-                  ref,
+                  ...playwrightMapping[ref],
                   coordinates: {
                     x: Math.round(boundingBox.x),
                     y: Math.round(boundingBox.y),
@@ -309,7 +480,7 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
     
     try {
       //  Ensure we have the latest snapshot and mapping
@@ -324,6 +495,17 @@ export class HybridBrowserSession {
       
       if (!exists) {
         return { success: false, error: `Element with ref ${ref} not found` };
+      }
+      
+      const role = await element.getAttribute('role');
+      const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
+      const isCombobox = role === 'combobox' || elementTagName === 'combobox';
+      const isTextbox = role === 'textbox' || elementTagName === 'input' || elementTagName === 'textarea';
+      const shouldCheckDiff = isCombobox || isTextbox;
+      
+      let snapshotBefore: string | null = null;
+      if (shouldCheckDiff) {
+        snapshotBefore = await (page as any)._snapshotForAI();
       }
       
       //  Check element properties
@@ -353,7 +535,6 @@ export class HybridBrowserSession {
       
       if (shouldOpenNewTab) {
         //  Handle new tab opening
-        
         // If it's a link that doesn't naturally open in new tab, force it
         if (isNavigableLink && !naturallyOpensNewTab) {
           await element.evaluate((el, blankTarget) => {
@@ -396,13 +577,17 @@ export class HybridBrowserSession {
         }
       } else {
         //  Add options to prevent scrolling issues
-        try {
-          // First try normal click
-          const browserConfig = this.configLoader.getBrowserConfig();
-          await element.click({ timeout: browserConfig.clickTimeout });
-        } catch (clickError) {
-          // If normal click fails due to scrolling, try force click
-          await element.click({ force: browserConfig.forceClick });
+        const browserConfig = this.configLoader.getBrowserConfig();
+        await element.click({ force: browserConfig.forceClick });
+        
+        if (shouldCheckDiff && snapshotBefore) {
+          await page.waitForTimeout(300);
+          const snapshotAfter = await (page as any)._snapshotForAI();
+          const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+          
+          if (diffSnapshot && diffSnapshot.trim() !== '') {
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+          }
         }
         
         return { success: true, method: 'playwright-aria-ref' };
@@ -415,26 +600,374 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Simplified type implementation using Playwright's aria-ref selector
+   * Extract diff between two snapshots, returning only new elements of specified types
    */
-  private async performType(page: Page, ref: string, text: string): Promise<{ success: boolean; error?: string }> {
+  private getSnapshotDiff(snapshotBefore: string, snapshotAfter: string, targetRoles: string[]): string {
+    const refsBefore = new Set<string>();
+    const refPattern = /\[ref=([^\]]+)\]/g;
+    let match;
+    while ((match = refPattern.exec(snapshotBefore)) !== null) {
+      refsBefore.add(match[1]);
+    }
+    
+    const lines = snapshotAfter.split('\n');
+    const newElements: string[] = [];
+    
+    for (const line of lines) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch && !refsBefore.has(refMatch[1])) {
+        const hasTargetRole = targetRoles.some(role => {
+          const rolePattern = new RegExp(`\\b${role}\\b`, 'i');
+          return rolePattern.test(line);
+        });
+        
+        if (hasTargetRole) {
+          newElements.push(line.trim());
+        }
+      }
+    }
+    
+    if (newElements.length > 0) {
+      return newElements.join('\n');
+    } else {
+      return '';
+    }
+  }
+
+  /**
+   *  Simplified type implementation using Playwright's aria-ref selector
+   *  Supports both single and multiple input operations
+   */
+  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any>; diffSnapshot?: string }> {
     try {
       // Ensure we have the latest snapshot
       await (page as any)._snapshotForAI();
       
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      // Handle multiple inputs if provided
+      if (inputs && inputs.length > 0) {
+        const results: Record<string, { success: boolean; error?: string }> = {};
+        
+        for (const input of inputs) {
+          const singleResult = await this.performType(page, input.ref, input.text);
+          results[input.ref] = {
+            success: singleResult.success,
+            error: singleResult.error
+          };
+        }
+        
+        // Check if all inputs were successful
+        const allSuccess = Object.values(results).every(r => r.success);
+        const errors = Object.entries(results)
+          .filter(([_, r]) => !r.success)
+          .map(([ref, r]) => `${ref}: ${r.error}`)
+          .join('; ');
+        
+        return {
+          success: allSuccess,
+          error: allSuccess ? undefined : `Some inputs failed: ${errors}`,
+          details: results
+        };
       }
       
-      // Type text using Playwright's built-in fill method
-      await element.fill(text);
+      // Handle single input (backward compatibility)
+      if (ref && text !== undefined) {
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Get element attributes to check if it's readonly or a special input type
+        let originalPlaceholder: string | null = null;
+        let isReadonly = false;
+        let elementType: string | null = null;
+        let isCombobox = false;
+        let isTextbox = false;
+        let shouldCheckDiff = false;
+        
+        try {
+          // Get element info in one evaluation to minimize interactions
+          const elementInfo = await element.evaluate((el: any) => {
+            return {
+              placeholder: el.placeholder || null,
+              readonly: el.readOnly || el.hasAttribute('readonly'),
+              type: el.type || null,
+              tagName: el.tagName.toLowerCase(),
+              disabled: el.disabled || false,
+              role: el.getAttribute('role'),
+              ariaHaspopup: el.getAttribute('aria-haspopup')
+            };
+          });
+          
+          originalPlaceholder = elementInfo.placeholder;
+          isReadonly = elementInfo.readonly;
+          elementType = elementInfo.type;
+          isCombobox = elementInfo.role === 'combobox' || 
+                       elementInfo.tagName === 'combobox' ||
+                       elementInfo.ariaHaspopup === 'listbox';
+          isTextbox = elementInfo.role === 'textbox' || 
+                      elementInfo.tagName === 'input' || 
+                      elementInfo.tagName === 'textarea';
+          shouldCheckDiff = isCombobox || isTextbox;
+          
+        } catch (e) {
+          console.log(`Warning: Failed to get element attributes: ${e}`);
+        }
+        
+        // Get snapshot before action to record existing elements
+        const snapshotBefore = await (page as any)._snapshotForAI();
+        const existingRefs = new Set<string>();
+        const refPattern = /\[ref=([^\]]+)\]/g;
+        let match;
+        while ((match = refPattern.exec(snapshotBefore)) !== null) {
+          existingRefs.add(match[1]);
+        }
+        console.log(`Found ${existingRefs.size} total elements before action`);
+        
+        // If element is readonly or a date/time input, skip fill attempt and go directly to click
+        if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
+          console.log(`Element ref=${ref} is readonly or date/time input, skipping direct fill attempt`);
+          
+          // Click with force option to avoid scrolling
+          try {
+            await element.click({ force: true });
+            console.log(`Clicked readonly/special element ref=${ref} to trigger dynamic content`);
+            // Wait for potential dynamic content to appear
+            await page.waitForTimeout(500);
+          } catch (clickError) {
+            console.log(`Warning: Failed to click element: ${clickError}`);
+          }
+        } else {
+          // For normal inputs, click first then try to fill
+          try {
+            await element.click({ force: true });
+            console.log(`Clicked element ref=${ref} before typing`);
+          } catch (clickError) {
+            console.log(`Warning: Failed to click element before typing: ${clickError}`);
+          }
+          
+          // Try to fill the element directly
+          try {
+            // Use force option to avoid scrolling during fill
+            await element.fill(text, { timeout: 3000, force: true });
+            
+            // If this element might show dropdown, wait and check for new elements
+            if (shouldCheckDiff) {
+              await page.waitForTimeout(300);
+              const snapshotAfter = await (page as any)._snapshotForAI();
+              const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+              
+              if (diffSnapshot && diffSnapshot.trim() !== '') {
+                return { success: true, diffSnapshot };
+              }
+            }
+            
+            return { success: true };
+          } catch (fillError: any) {
+            // Log the error for debugging
+            console.log(`Fill error for ref ${ref}: ${fillError.message}`);
+            
+            // Check for various error messages that indicate the element is not fillable
+            const errorMessage = fillError.message.toLowerCase();
+            if (errorMessage.includes('not an <input>') || 
+              errorMessage.includes('not have a role allowing') ||
+              errorMessage.includes('element is not') ||
+              errorMessage.includes('cannot type') ||
+              errorMessage.includes('readonly') ||
+              errorMessage.includes('not editable') ||
+              errorMessage.includes('timeout') ||
+              errorMessage.includes('timeouterror')) {
+            
+            // Click the element again to trigger dynamic content (like date pickers)
+            try {
+              await element.click({ force: true });
+              console.log(`Clicked element ref=${ref} again to trigger dynamic content`);
+              // Wait for potential dynamic content to appear
+              await page.waitForTimeout(500);
+            } catch (clickError) {
+              console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
+            }
+            
+            // Step 1: Try to find input elements within the clicked element
+            const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
+            const inputElement = await element.locator(inputSelector).first();
+            
+            const inputExists = await inputElement.count() > 0;
+            if (inputExists) {
+              console.log(`Found input element within ref ${ref}, attempting to fill`);
+              try {
+                await inputElement.fill(text, { force: true });
+                
+                // If element might show dropdown, check for new elements
+                if (shouldCheckDiff) {
+                  await page.waitForTimeout(300);
+                  const snapshotFinal = await (page as any)._snapshotForAI();
+                  const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                  
+                  if (diffSnapshot && diffSnapshot.trim() !== '') {
+                    return { success: true, diffSnapshot };
+                  }
+                }
+                
+                return { success: true };
+              } catch (innerError) {
+                console.log(`Failed to fill child element: ${innerError}`);
+              }
+            }
+            
+            // Step 2: Look for new elements that appeared after the action
+            console.log(`Looking for new elements that appeared after action...`);
+            
+            // Get snapshot after action to find new elements
+            const snapshotAfter = await (page as any)._snapshotForAI();
+            const newRefs = new Set<string>();
+            const afterRefPattern = /\[ref=([^\]]+)\]/g;
+            let afterMatch;
+            while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
+              const refId = afterMatch[1];
+              if (!existingRefs.has(refId)) {
+                newRefs.add(refId);
+              }
+            }
+            
+            console.log(`Found ${newRefs.size} new elements after action`);
+            
+            // If we have a placeholder, try to find new input elements with that placeholder
+            if (originalPlaceholder && newRefs.size > 0) {
+              console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+              
+              // Try each new ref to see if it's an input with our placeholder
+              for (const newRef of newRefs) {
+                try {
+                  const newElement = await page.locator(`aria-ref=${newRef}`).first();
+                  const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
+                  
+                  if (tagName === 'input' || tagName === 'textarea') {
+                    const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
+                    if (placeholder === originalPlaceholder) {
+                      console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+                      
+                      // Check if it's visible and fillable
+                      const elementInfo = await newElement.evaluate((el: any) => {
+                        return {
+                          tagName: el.tagName,
+                          id: el.id,
+                          className: el.className,
+                          placeholder: el.placeholder,
+                          isVisible: el.offsetParent !== null,
+                          isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                        };
+                      });
+                      console.log(`New element details:`, JSON.stringify(elementInfo));
+                      
+                      // Try to fill it with force to avoid scrolling
+                      await newElement.fill(text, { force: true });
+                      
+                      // If element might show dropdown, check for new elements
+                      if (shouldCheckDiff) {
+                        await page.waitForTimeout(300);
+                        const snapshotFinal = await (page as any)._snapshotForAI();
+                        const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                        
+                        if (diffSnapshot && diffSnapshot.trim() !== '') {
+                          return { success: true, diffSnapshot };
+                        }
+                      }
+                      
+                      return { success: true };
+                    }
+                  }
+                } catch (e) {
+                  // Ignore errors for non-input elements
+                }
+              }
+            }
+            
+            console.log(`No suitable input element found for ref ${ref}`);
+            }
+            // Re-throw the original error if we couldn't find an input element
+            throw fillError;
+          }
+        }
+        
+        // If we skipped the fill attempt (readonly elements), look for new elements directly
+        if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
+          // Look for new elements that appeared after clicking
+          console.log(`Looking for new elements that appeared after clicking readonly element...`);
+          
+          // Get snapshot after action to find new elements
+          const snapshotAfter = await (page as any)._snapshotForAI();
+          const newRefs = new Set<string>();
+          const afterRefPattern = /\[ref=([^\]]+)\]/g;
+          let afterMatch;
+          while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
+            const refId = afterMatch[1];
+            if (!existingRefs.has(refId)) {
+              newRefs.add(refId);
+            }
+          }
+          
+          console.log(`Found ${newRefs.size} new elements after clicking readonly element`);
+          
+          // If we have a placeholder, try to find new input elements with that placeholder
+          if (originalPlaceholder && newRefs.size > 0) {
+            console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+            
+            // Try each new ref to see if it's an input with our placeholder
+            for (const newRef of newRefs) {
+              try {
+                const newElement = await page.locator(`aria-ref=${newRef}`).first();
+                const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
+                
+                if (tagName === 'input' || tagName === 'textarea') {
+                  const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
+                  if (placeholder === originalPlaceholder) {
+                    console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+                    
+                    // Check if it's visible and fillable
+                    const elementInfo = await newElement.evaluate((el: any) => {
+                      return {
+                        tagName: el.tagName,
+                        id: el.id,
+                        className: el.className,
+                        placeholder: el.placeholder,
+                        isVisible: el.offsetParent !== null,
+                        isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                      };
+                    });
+                    console.log(`New element details:`, JSON.stringify(elementInfo));
+                    
+                    // Try to fill it with force to avoid scrolling
+                    await newElement.fill(text, { force: true });
+                    
+                    // If element might show dropdown, check for new elements
+                    if (shouldCheckDiff) {
+                      await page.waitForTimeout(300);
+                      const snapshotFinal = await (page as any)._snapshotForAI();
+                      const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                      
+                      if (diffSnapshot && diffSnapshot.trim() !== '') {
+                        return { success: true, diffSnapshot };
+                      }
+                    }
+                    
+                    return { success: true };
+                  }
+                }
+              } catch (e) {
+                // Ignore errors for non-input elements
+              }
+            }
+          }
+          
+          console.log(`No suitable input element found for readonly ref ${ref}`);
+          return { success: false, error: `Element ref=${ref} is readonly and no suitable input was found` };
+        }
+      }
       
-      return { success: true };
+      return { success: false, error: 'No valid input provided' };
     } catch (error) {
       return { success: false, error: `Type failed: ${error}` };
     }
@@ -572,6 +1105,8 @@ export class HybridBrowserSession {
       //  No need to pre-fetch snapshot - each action method handles this
       
       let newTabId: string | undefined;
+      let customMessage: string | undefined;
+      let actionDetails: Record<string, any> | undefined;
       
       switch (action.type) {
         case 'click': {
@@ -588,6 +1123,11 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
           
+          // Capture diff snapshot if present
+          if (clickResult.diffSnapshot) {
+            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          }
+          
           actionExecutionTime = Date.now() - clickStart;
           break;
         }
@@ -596,10 +1136,26 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const typeStart = Date.now();
 
-          const typeResult = await this.performType(page, action.ref, action.text);
+          const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
           
           if (!typeResult.success) {
             throw new Error(`Type failed: ${typeResult.error}`);
+          }
+          
+          // Set custom message and details if multiple inputs were used
+          if (typeResult.details) {
+            const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
+            const totalCount = Object.keys(typeResult.details).length;
+            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            actionDetails = typeResult.details;
+          }
+          
+          // Capture diff snapshot if present
+          if (typeResult.diffSnapshot) {
+            if (!actionDetails) {
+              actionDetails = {};
+            }
+            actionDetails.diffSnapshot = typeResult.diffSnapshot;
           }
           
           actionExecutionTime = Date.now() - typeStart;
@@ -689,7 +1245,7 @@ export class HybridBrowserSession {
       
       return {
         success: true,
-        message: `Action ${action.type} executed successfully`,
+        message: customMessage || `Action ${action.type} executed successfully`,
         timing: {
           total_time_ms: totalTime,
           element_search_time_ms: elementSearchTime,
@@ -699,6 +1255,7 @@ export class HybridBrowserSession {
           network_idle_time_ms: stabilityResult.networkIdleTime,
         },
         ...(newTabId && { newTabId }), //  Include new tab ID if present
+        ...(actionDetails && { details: actionDetails }), // Include action details if present
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -712,6 +1269,55 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
         },
       };
+    }
+  }
+
+  /**
+   * Wait for DOM to stop changing for a specified duration
+   */
+  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
+    const startTime = Date.now();
+    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
+    let lastChangeTime = Date.now();
+    
+    try {
+      // Monitor DOM changes
+      await page.evaluate(() => {
+        let changeCount = 0;
+        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+        
+        const observer = new MutationObserver(() => {
+          (window as any).__domStabilityCheck.changeCount++;
+          (window as any).__domStabilityCheck.lastChange = Date.now();
+        });
+        
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
+        
+        (window as any).__domStabilityObserver = observer;
+      });
+      
+      // Wait until no changes for stabilityThreshold or timeout
+      await page.waitForFunction(
+        (threshold) => {
+          const check = (window as any).__domStabilityCheck;
+          return check && (Date.now() - check.lastChange) > threshold;
+        },
+        stabilityThreshold,
+        { timeout: Math.max(0, maxWaitTime) }
+      ).catch(() => {});
+    } finally {
+      // Cleanup
+      await page.evaluate(() => {
+        const observer = (window as any).__domStabilityObserver;
+        if (observer) observer.disconnect();
+        delete (window as any).__domStabilityObserver;
+        delete (window as any).__domStabilityCheck;
+      }).catch(() => {});
     }
   }
 
@@ -740,16 +1346,23 @@ export class HybridBrowserSession {
     
     try {
       // Get current page to check if it's blank
-      const currentPage = await this.getCurrentPage();
-      const currentUrl = currentPage.url();
+      let currentPage: Page;
+      let currentUrl: string;
+      
+      try {
+        currentPage = await this.getCurrentPage();
+        currentUrl = currentPage.url();
+      } catch (error: any) {
+        // If no active page is available, getCurrentPage() will create one in CDP mode
+        console.log('[visitPage] Failed to get current page:', error);
+        throw new Error(`No active page available: ${error?.message || error}`);
+      }
       
       //  Check if current page is blank or if this is the first navigation
       const browserConfig = this.configLoader.getBrowserConfig();
-      const isBlankPage = (
-        browserConfig.blankPageUrls.includes(currentUrl) ||
-        currentUrl === browserConfig.defaultStartUrl ||
-        currentUrl.startsWith(browserConfig.dataUrlPrefix) // data URLs are often used for blank pages
-      );
+      
+      // Use unified blank page detection
+      const isBlankPage = this.isBlankPageUrl(currentUrl) || currentUrl === browserConfig.defaultStartUrl;
       
       const shouldUseCurrentTab = isBlankPage || !this.hasNavigatedBefore;
       
@@ -797,14 +1410,14 @@ export class HybridBrowserSession {
         let newTabId: string | null = null;
         
         const browserConfig = this.configLoader.getBrowserConfig();
-        if (browserConfig.connectOverCdp) {
+        if (browserConfig.cdpUrl) {
           // CDP mode: find an available blank tab
           const allPages = this.context.pages();
           for (const page of allPages) {
             const pageUrl = page.url();
             // Check if this page is not already tracked and is blank
             const isTracked = Array.from(this.pages.values()).includes(page);
-            if (!isTracked && pageUrl === 'about:blank') {
+            if (!isTracked && this.isBlankPageUrl(pageUrl)) {
               newPage = page;
               newTabId = this.generateTabId();
               this.registerNewPage(newTabId, newPage);
@@ -813,7 +1426,10 @@ export class HybridBrowserSession {
           }
           
           if (!newPage || !newTabId) {
-            throw new Error('No available blank tabs in CDP mode. Frontend should create more blank tabs when half are used.');
+            console.log('[CDP] No available blank tabs, creating new page');
+            newPage = await this.context.newPage();
+            newTabId = this.generateTabId();
+            this.registerNewPage(newTabId, newPage);
           }
         } else {
           // Non-CDP mode: create new page as usual
@@ -1012,17 +1628,25 @@ export class HybridBrowserSession {
     this.pages.clear();
     this.currentTabId = null;
     
-    if (this.context) {
+    // Handle context cleanup separately for CDP mode
+    if (!browserConfig.cdpUrl && this.context && this.contextOwnedByUs) {
+      // For non-CDP mode, close context here
       await this.context.close();
       this.context = null;
+      this.contextOwnedByUs = false;
     }
     
     if (this.browser) {
-      if (browserConfig.connectOverCdp) {
-        // For CDP connections, just disconnect without closing the browser
-        await this.browser.close();
+      if (browserConfig.cdpUrl) {
+        // In CDP mode: tear down only our context, then disconnect
+        if (this.context && this.contextOwnedByUs) {
+          await this.context.close().catch(() => {});
+          this.context = null;
+          this.contextOwnedByUs = false;
+        }
+        await this.browser.close(); // disconnect
       } else {
-        // For launched browsers, close completely
+        // Local launch: close everything
         await this.browser.close();
       }
       this.browser = null;
@@ -1037,12 +1661,12 @@ export class HybridBrowserSession {
     const filtered: Record<string, SnapshotElement> = {};
     
     
-    // Apply viewport filtering with scroll position adjustment
-    const browserConfig = this.configLoader.getBrowserConfig();
-    const adjustedScrollPos = {
-      x: scrollPos.x * browserConfig.scrollPositionScale,
-      y: scrollPos.y * browserConfig.scrollPositionScale
-    };
+    // Apply viewport filtering
+    // boundingBox() returns viewport-relative coordinates, so we don't need to add scroll offsets
+    const viewportLeft = 0;
+    const viewportTop = 0;
+    const viewportRight = viewport.width;
+    const viewportBottom = viewport.height;
     
     for (const [ref, element] of Object.entries(elements)) {
       // If element has no coordinates, include it (fallback)
@@ -1053,14 +1677,9 @@ export class HybridBrowserSession {
       
       const { x, y, width, height } = element.coordinates;
       
-      // Calculate viewport bounds using adjusted scroll position
-      const viewportLeft = adjustedScrollPos.x;
-      const viewportTop = adjustedScrollPos.y;
-      const viewportRight = adjustedScrollPos.x + viewport.width;
-      const viewportBottom = adjustedScrollPos.y + viewport.height;
-      
       // Check if element is visible in current viewport
       // Element is visible if it overlaps with viewport bounds
+      // Since boundingBox() coords are viewport-relative, we compare directly
       const isVisible = (
         x < viewportRight &&              // Left edge is before viewport right
         y < viewportBottom &&             // Top edge is before viewport bottom  

@@ -67,6 +67,9 @@ capabilities
 - **task_timeout_seconds** (Optional[float], optional): The timeout in seconds for waiting for tasks to be returned by workers. If None, uses the global TASK_TIMEOUT_SECONDS value (600.0 seconds). Increase this value for tasks that require more processing time. (default: :obj:`None`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
 - **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
+- **callbacks** (Optional[List[WorkforceCallback]], optional): A list of callback handlers to observe and record workforce lifecycle events and metrics (e.g., task creation/assignment/start/completion/ failure, worker creation/deletion, all-tasks-completed). All items must be instances of :class:`WorkforceCallback`, otherwise
+- **a**: class:`ValueError` is raised. If none of the provided callbacks implement :class:`WorkforceMetrics`, a built-in :class:`WorkforceLogger` (implements both callback and metrics) is added automatically. If at least one provided callback
+- **implements**: class:`WorkforceMetrics`, no default logger is added. (default: :obj:`None`)
 
 **Note:**
 
@@ -92,9 +95,51 @@ def __init__(
     graceful_shutdown_timeout: float = 15.0,
     share_memory: bool = False,
     use_structured_output_handler: bool = True,
-    task_timeout_seconds: Optional[float] = None
+    task_timeout_seconds: Optional[float] = None,
+    callbacks: Optional[List[WorkforceCallback]] = None
 ):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce._initialize_callbacks"></a>
+
+### _initialize_callbacks
+
+```python
+def _initialize_callbacks(self, callbacks: Optional[List[WorkforceCallback]]):
+```
+
+Validate, register, and prime workforce callbacks.
+
+<a id="camel.societies.workforce.workforce.Workforce._notify_worker_created"></a>
+
+### _notify_worker_created
+
+```python
+def _notify_worker_created(self, worker_node: BaseNode):
+```
+
+Emit a worker-created event to all registered callbacks.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_or_create_shared_context_utility"></a>
+
+### _get_or_create_shared_context_utility
+
+```python
+def _get_or_create_shared_context_utility(self, session_id: Optional[str] = None):
+```
+
+Get or create the shared context utility for workflow management.
+
+This method creates the context utility only when needed, avoiding
+unnecessary session folder creation during initialization.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): Custom session ID to use. If None, auto-generates a timestamped session ID. (default: :obj:`None`)
+
+**Returns:**
+
+  ContextUtility: The shared context utility instance.
 
 <a id="camel.societies.workforce.workforce.Workforce._validate_agent_compatibility"></a>
 
@@ -242,24 +287,29 @@ def _decompose_task(self, task: Task):
   Union[List[Task], Generator[List[Task], None, None]]:
 The subtasks or generator of subtasks.
 
-<a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
+<a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
 
-### _analyze_failure
+### _analyze_task
 
 ```python
-def _analyze_failure(self, task: Task, error_message: str):
+def _analyze_task(self, task: Task):
 ```
 
-Analyze a task failure and decide on the best recovery strategy.
+Unified task analysis for both failures and quality evaluation.
+
+This method consolidates the logic for analyzing task failures and
+evaluating task quality, using the unified TASK_ANALYSIS_PROMPT.
 
 **Parameters:**
 
-- **task** (Task): The failed task
-- **error_message** (str): The error message from the failure
+- **task** (Task): The task to analyze
+- **for_failure** (bool): True for failure analysis, False for quality evaluation
+- **error_message** (Optional[str]): Error message, required when for_failure=True
 
 **Returns:**
 
-  RecoveryDecision: The decided recovery strategy with reasoning
+  TaskAnalysisResult: Unified analysis result with recovery strategy
+and optional quality metrics
 
 <a id="camel.societies.workforce.workforce.Workforce.pause"></a>
 
@@ -300,6 +350,22 @@ Works both when the internal event-loop is alive and when it has not
 yet been started.  In the latter case we simply mark the stop flag so
 that the loop (when it eventually starts) will exit immediately after
 initialisation.
+
+<a id="camel.societies.workforce.workforce.Workforce.skip_gracefully"></a>
+
+### skip_gracefully
+
+```python
+def skip_gracefully(self):
+```
+
+Request workforce to skip current pending tasks and move to next
+main task from the queue. If no main tasks exist, acts like
+stop_gracefully.
+
+This method clears the current pending subtasks and moves to the next
+main task in the queue if available. Works both when the internal
+event-loop is alive and when it has not yet been started.
 
 <a id="camel.societies.workforce.workforce.Workforce.save_snapshot"></a>
 
@@ -361,11 +427,84 @@ def add_task(
     content: str,
     task_id: Optional[str] = None,
     additional_info: Optional[Dict[str, Any]] = None,
+    as_subtask: bool = False,
     insert_position: int = -1
 ):
 ```
 
-Add a new task to the pending queue.
+Add a new task to the workforce.
+
+By default, this method adds a main task that will be decomposed into
+subtasks. Set `as_subtask=True` to add a task directly to the pending
+subtask queue without decomposition.
+
+**Parameters:**
+
+- **content** (str): The content of the task.
+- **task_id** (Optional[str], optional): Optional ID for the task. If not provided, a unique ID will be generated.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata for the task.
+- **as_subtask** (bool, optional): If True, adds the task directly to the pending subtask queue. If False, adds as a main task that will be decomposed. Defaults to False.
+- **insert_position** (int, optional): Position to insert the task in the pending queue. Only applies when as_subtask=True. Defaults to -1 (append to end).
+
+**Returns:**
+
+  Task: The created task object.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_main_task"></a>
+
+### add_main_task
+
+```python
+def add_main_task(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    additional_info: Optional[Dict[str, Any]] = None
+):
+```
+
+Add a new main task that will be decomposed into subtasks.
+
+This is an alias for :meth:`add_task` with `as_subtask=False`.
+
+**Parameters:**
+
+- **content** (str): The content of the main task.
+- **task_id** (Optional[str], optional): Optional ID for the task.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata.
+
+**Returns:**
+
+  Task: The created main task object.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_subtask"></a>
+
+### add_subtask
+
+```python
+def add_subtask(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    additional_info: Optional[Dict[str, Any]] = None,
+    insert_position: int = -1
+):
+```
+
+Add a new subtask to the current pending queue.
+
+This is an alias for :meth:`add_task` with `as_subtask=True`.
+
+**Parameters:**
+
+- **content** (str): The content of the subtask.
+- **task_id** (Optional[str], optional): Optional ID for the task.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata.
+- **insert_position** (int, optional): Position to insert the task. Defaults to -1 (append to end).
+
+**Returns:**
+
+  Task: The created subtask object.
 
 <a id="camel.societies.workforce.workforce.Workforce.remove_task"></a>
 
@@ -375,7 +514,15 @@ Add a new task to the pending queue.
 def remove_task(self, task_id: str):
 ```
 
-Remove a task from the pending queue.
+Remove a task from the pending queue or main task queue.
+
+**Parameters:**
+
+- **task_id** (str): The ID of the task to remove.
+
+**Returns:**
+
+  bool: True if task was found and removed, False otherwise.
 
 <a id="camel.societies.workforce.workforce.Workforce.reorder_tasks"></a>
 
@@ -491,7 +638,8 @@ def add_single_agent_worker(
     self,
     description: str,
     worker: ChatAgent,
-    pool_max_size: int = DEFAULT_WORKER_POOL_SIZE
+    pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
+    enable_workflow_memory: bool = False
 ):
 ```
 
@@ -503,6 +651,7 @@ Can be called when workforce is paused to dynamically add workers.
 - **description** (str): Description of the worker node.
 - **worker** (ChatAgent): The agent to be added.
 - **pool_max_size** (int): Maximum size of the agent pool. (default: :obj:`10`)
+- **enable_workflow_memory** (bool): Whether to enable workflow memory accumulation. Set to True if you plan to call save_workflow_memories(). (default: :obj:`False`)
 
 **Returns:**
 
@@ -571,6 +720,103 @@ def reset(self):
 
 Reset the workforce and all the child nodes under it. Can only
 be called when the workforce is not running.
+
+<a id="camel.societies.workforce.workforce.Workforce.save_workflow_memories"></a>
+
+### save_workflow_memories
+
+```python
+def save_workflow_memories(self, session_id: Optional[str] = None):
+```
+
+Save workflow memories for all SingleAgentWorker instances in the
+workforce.
+
+.. deprecated:: 0.2.80
+This synchronous method processes workers sequentially, which can
+be slow for multiple agents. Use
+:meth:`save_workflow_memories_async`
+instead for parallel processing and significantly better
+performance.
+
+This method iterates through all child workers and triggers workflow
+saving for SingleAgentWorker instances using their
+save_workflow_memories()
+method.
+Other worker types are skipped.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): Custom session ID to use for saving workflows. If None, auto-generates a timestamped session ID. Useful for organizing workflows by project or context. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, str]: Dictionary mapping worker node IDs to save results.
+Values are either file paths (success) or error messages
+(failure).
+
+**Note:**
+
+For better performance with multiple workers, use the async
+version::
+
+results = await workforce.save_workflow_memories_async()
+
+See Also:
+:meth:`save_workflow_memories_async`: Async version with parallel
+processing for significantly better performance.
+
+<a id="camel.societies.workforce.workforce.Workforce.load_workflow_memories"></a>
+
+### load_workflow_memories
+
+```python
+def load_workflow_memories(
+    self,
+    max_files_to_load: int = 3,
+    session_id: Optional[str] = None
+):
+```
+
+Load workflow memories for all SingleAgentWorker instances in the
+workforce.
+
+This method iterates through all child workers and loads relevant
+workflow files for SingleAgentWorker instances using their
+load_workflow_memories()
+method. Workers match files based on their description names.
+
+**Parameters:**
+
+- **max_files_to_load** (int): Maximum number of workflow files to load per worker. (default: :obj:`3`)
+- **session_id** (Optional[str]): Specific workforce session ID to load from. If None, searches across all sessions. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, bool]: Dictionary mapping worker node IDs to load
+success status.
+True indicates successful loading, False indicates failure.
+
+<a id="camel.societies.workforce.workforce.Workforce._load_management_agent_workflows"></a>
+
+### _load_management_agent_workflows
+
+```python
+def _load_management_agent_workflows(self, max_files_to_load: int, session_id: Optional[str] = None):
+```
+
+Load workflow summaries for coordinator and task planning agents.
+
+This method loads aggregated workflow summaries to help:
+- Coordinator agent: understand task assignment patterns and worker
+capabilities
+- Task agent: understand task decomposition patterns and
+successful strategies
+
+**Parameters:**
+
+- **max_files_to_load** (int): Maximum number of workflow files to load.
+- **session_id** (Optional[str]): Specific session ID to load from. If None, searches across all sessions.
 
 <a id="camel.societies.workforce.workforce.Workforce.set_channel"></a>
 

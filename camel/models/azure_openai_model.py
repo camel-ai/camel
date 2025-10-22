@@ -247,9 +247,6 @@ class AzureOpenAIModel(BaseModelBackend):
         )
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
-            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
-                self._request_parse(messages, response_format, tools)
-            )
             if is_streaming:
                 return self._request_stream_parse(
                     messages, response_format, tools
@@ -308,9 +305,6 @@ class AzureOpenAIModel(BaseModelBackend):
         )
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
-            result: Union[
-                ChatCompletion, AsyncStream[ChatCompletionChunk]
-            ] = await self._arequest_parse(messages, response_format, tools)
             if is_streaming:
                 return await self._arequest_stream_parse(
                     messages, response_format, tools

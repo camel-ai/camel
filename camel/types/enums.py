@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-5-mini")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -64,6 +64,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
 
+    AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
+
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -86,6 +88,51 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_LLAMA_3_70B = "llama3-70b-8192"
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
+
+    # Nebius AI Studio platform models
+    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
+    NEBIUS_GLM_4_5 = "GLM-4.5"
+    NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    NEBIUS_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NEBIUS_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    NEBIUS_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.3"
+
+    # CometAPI platform models
+    COMETAPI_GPT_5_CHAT_LATEST = "gpt-5-chat-latest"
+    COMETAPI_CHATGPT_4O_LATEST = "chatgpt-4o-latest"
+    COMETAPI_GPT_5_MINI = "gpt-5-mini"
+    COMETAPI_GPT_5_NANO = "gpt-5-nano"
+    COMETAPI_GPT_5 = "gpt-5"
+    COMETAPI_GPT_4_1 = "gpt-4.1"
+    COMETAPI_GPT_4O_MINI = "gpt-4o-mini"
+    COMETAPI_O4_MINI_2025_04_16 = "o4-mini-2025-04-16"
+    COMETAPI_O3_PRO_2025_06_10 = "o3-pro-2025-06-10"
+    COMETAPI_CLAUDE_OPUS_4_1_20250805 = "claude-opus-4-1-20250805"
+    COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING = (
+        "claude-opus-4-1-20250805-thinking"
+    )
+    COMETAPI_CLAUDE_SONNET_4_20250514 = "claude-sonnet-4-20250514"
+    COMETAPI_CLAUDE_SONNET_4_20250514_THINKING = (
+        "claude-sonnet-4-20250514-thinking"
+    )
+    COMETAPI_CLAUDE_3_7_SONNET_LATEST = "claude-3-7-sonnet-latest"
+    COMETAPI_CLAUDE_3_5_HAIKU_LATEST = "claude-3-5-haiku-latest"
+    COMETAPI_GEMINI_2_5_PRO = "gemini-2.5-pro"
+    COMETAPI_GEMINI_2_5_FLASH = "gemini-2.5-flash"
+    COMETAPI_GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
+    COMETAPI_GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    COMETAPI_GROK_4_0709 = "grok-4-0709"
+    COMETAPI_GROK_3 = "grok-3"
+    COMETAPI_GROK_3_MINI = "grok-3-mini"
+    COMETAPI_GROK_2_IMAGE_1212 = "grok-2-image-1212"
+    COMETAPI_DEEPSEEK_V3_1 = "deepseek-v3.1"
+    COMETAPI_DEEPSEEK_V3 = "deepseek-v3"
+    COMETAPI_DEEPSEEK_R1_0528 = "deepseek-r1-0528"
+    COMETAPI_DEEPSEEK_CHAT = "deepseek-chat"
+    COMETAPI_DEEPSEEK_REASONER = "deepseek-reasoner"
+    COMETAPI_QWEN3_30B_A3B = "qwen3-30b-a3b"
+    COMETAPI_QWEN3_CODER_PLUS_2025_07_22 = "qwen3-coder-plus-2025-07-22"
 
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
@@ -160,6 +207,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
@@ -213,9 +261,10 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
-    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
-    MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
+    MAGISTRAL_SMALL_1_2 = "magistral-small-1.2"
+    MAGISTRAL_MEDIUM_1_2 = "magistral-medium-1.2"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -509,6 +558,13 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_amd(self) -> bool:
+        r"""Returns whether this type of models is a AMD model."""
+        return self in {
+            ModelType.AMD_GPT4,
+        }
+
+    @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this type of models is an AWS Bedrock model."""
         return self in {
@@ -586,6 +642,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
@@ -602,6 +659,56 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether this type of models is served by Nebius AI
+        Studio."""
+        return self in {
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether this type of models is served by CometAPI."""
+        return self in {
+            ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+            ModelType.COMETAPI_CHATGPT_4O_LATEST,
+            ModelType.COMETAPI_GPT_5_MINI,
+            ModelType.COMETAPI_GPT_5_NANO,
+            ModelType.COMETAPI_GPT_5,
+            ModelType.COMETAPI_GPT_4_1,
+            ModelType.COMETAPI_GPT_4O_MINI,
+            ModelType.COMETAPI_O4_MINI_2025_04_16,
+            ModelType.COMETAPI_O3_PRO_2025_06_10,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514_THINKING,
+            ModelType.COMETAPI_CLAUDE_3_7_SONNET_LATEST,
+            ModelType.COMETAPI_CLAUDE_3_5_HAIKU_LATEST,
+            ModelType.COMETAPI_GEMINI_2_5_PRO,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH_LITE,
+            ModelType.COMETAPI_GEMINI_2_0_FLASH,
+            ModelType.COMETAPI_GROK_4_0709,
+            ModelType.COMETAPI_GROK_3,
+            ModelType.COMETAPI_GROK_3_MINI,
+            ModelType.COMETAPI_GROK_2_IMAGE_1212,
+            ModelType.COMETAPI_DEEPSEEK_V3_1,
+            ModelType.COMETAPI_DEEPSEEK_V3,
+            ModelType.COMETAPI_DEEPSEEK_R1_0528,
+            ModelType.COMETAPI_DEEPSEEK_CHAT,
+            ModelType.COMETAPI_DEEPSEEK_REASONER,
+            ModelType.COMETAPI_QWEN3_30B_A3B,
+            ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
         }
 
     @property
@@ -663,9 +770,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.MISTRAL_MEDIUM_3,
-            ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
         }
 
     @property
@@ -1140,6 +1248,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1192,6 +1301,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
             ModelType.QWEN_2_5_CODER_32B,
             ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
@@ -1225,10 +1335,46 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
-            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+            ModelType.COMETAPI_CHATGPT_4O_LATEST,
+            ModelType.COMETAPI_GPT_5_MINI,
+            ModelType.COMETAPI_GPT_5_NANO,
+            ModelType.COMETAPI_GPT_5,
+            ModelType.COMETAPI_GPT_4_1,
+            ModelType.COMETAPI_GPT_4O_MINI,
+            ModelType.COMETAPI_O4_MINI_2025_04_16,
+            ModelType.COMETAPI_O3_PRO_2025_06_10,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514_THINKING,
+            ModelType.COMETAPI_CLAUDE_3_7_SONNET_LATEST,
+            ModelType.COMETAPI_CLAUDE_3_5_HAIKU_LATEST,
+            ModelType.COMETAPI_GEMINI_2_5_PRO,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH_LITE,
+            ModelType.COMETAPI_GEMINI_2_0_FLASH,
+            ModelType.COMETAPI_GROK_4_0709,
+            ModelType.COMETAPI_GROK_3,
+            ModelType.COMETAPI_GROK_3_MINI,
+            ModelType.COMETAPI_GROK_2_IMAGE_1212,
+            ModelType.COMETAPI_DEEPSEEK_V3_1,
+            ModelType.COMETAPI_DEEPSEEK_V3,
+            ModelType.COMETAPI_DEEPSEEK_R1_0528,
+            ModelType.COMETAPI_DEEPSEEK_CHAT,
+            ModelType.COMETAPI_DEEPSEEK_REASONER,
+            ModelType.COMETAPI_QWEN3_30B_A3B,
+            ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
         }:
             return 128_000
         elif self in {
@@ -1263,6 +1409,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
         }:
             return 131_072
         elif self in {
@@ -1276,6 +1423,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
@@ -1321,6 +1469,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.AMD_GPT4,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
@@ -1336,10 +1485,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        elif self in {
-            ModelType.MAGISTRAL_MEDIUM,
-        }:
-            return 40_000
 
         else:
             logger.warning(
@@ -1538,6 +1683,8 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    NEBIUS = "nebius"
+    COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
@@ -1554,6 +1701,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AMD = "amd"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     PPIO = "ppio"

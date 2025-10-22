@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import warnings
 from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
@@ -39,7 +38,7 @@ class ChatHistoryBlock(MemoryBlock):
             last message is 1.0, and with each step taken backward, the score
             of the message is multiplied by the `keep_rate`. Higher `keep_rate`
             leads to high possibility to keep history messages during context
-            creation.
+            creation. (default: :obj:`0.9`)
     """
 
     def __init__(
@@ -70,7 +69,8 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            warnings.warn("The `ChatHistoryMemory` is empty.")
+            # Empty memory is a valid state (e.g., during initialization).
+            # Users can check if memory is empty by checking the returned list.
             return list()
 
         if window_size is not None and window_size >= 0:
@@ -81,7 +81,10 @@ class ChatHistoryBlock(MemoryBlock):
                 if (
                     record_dicts
                     and record_dicts[0]['role_at_backend']
-                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                    in {
+                        OpenAIBackendRole.SYSTEM.value,
+                        OpenAIBackendRole.DEVELOPER.value,
+                    }
                 )
                 else 0
             )

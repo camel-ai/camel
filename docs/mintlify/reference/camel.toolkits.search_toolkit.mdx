@@ -236,12 +236,12 @@ Example image result:
 'height': 600
 \}`
 
-<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_tavily"></a>
 
-### tavily_search
+### search_tavily
 
 ```python
-def tavily_search(
+def search_tavily(
     self,
     query: str,
     number_of_result_pages: int = 10,
@@ -484,3 +484,13 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects
 representing the functions in the toolkit.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+
+### tavily_search
+
+```python
+def tavily_search(self, *args, **kwargs):
+```
+
+Deprecated: Use search_tavily instead for consistency with other search methods.

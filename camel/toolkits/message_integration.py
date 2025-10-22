@@ -464,6 +464,9 @@ class ToolkitMessageIntegration:
         # Apply the new signature to the wrapper
         wrapper.__signature__ = new_sig  # type: ignore[attr-defined]
 
+        # Mark this function as enhanced by message integration
+        wrapper.__message_integration_enhanced__ = True  # type: ignore[attr-defined]
+
         # Create a hybrid approach:
         # store toolkit instance info but preserve calling behavior
         # We'll use a property-like

@@ -17,7 +17,7 @@ from camel.toolkits import GithubToolkit
 gt = GithubToolkit()
 
 # Retrieve a list of all file paths within the camel GitHub repository
-paths = gt.get_all_file_paths(repo_name="camel-ai/camel")
+paths = gt.github_get_all_file_paths(repo_name="camel-ai/camel")
 print(paths)
 """
 ===============================================================================
@@ -46,7 +46,7 @@ agents/base.py', 'camel/agents/chat_agent.py', 'camel/agents/critic_agent.py',
 """
 
 # Retrieve the content of a specific file in the repository
-content = gt.retrieve_file_content(
+content = gt.github_retrieve_file_content(
     repo_name="camel-ai/camel", file_path="camel/agents/chat_agent.py"
 )
 print(content[:1000])

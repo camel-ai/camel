@@ -12,10 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
+from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
+from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
@@ -26,6 +28,7 @@ from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
+from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
 from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
 from .novita_config import NOVITA_API_PARAMS, NovitaConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
@@ -58,6 +61,8 @@ __all__ = [
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
     'GroqConfig',
+    'NEBIUS_API_PARAMS',
+    'NebiusConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
     'NetmindConfig',
@@ -86,6 +91,8 @@ __all__ = [
     'TOGETHERAI_API_PARAMS',
     'CohereConfig',
     'COHERE_API_PARAMS',
+    'CometAPIConfig',
+    'COMETAPI_API_PARAMS',
     'YiConfig',
     'YI_API_PARAMS',
     'QwenConfig',
@@ -108,6 +115,8 @@ __all__ = [
     'SILICONFLOW_API_PARAMS',
     'AIMLConfig',
     'AIML_API_PARAMS',
+    'AMDConfig',
+    'AMD_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
     'LMSTUDIO_API_PARAMS',

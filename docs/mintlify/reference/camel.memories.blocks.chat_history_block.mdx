@@ -20,7 +20,7 @@ like to fetch.
 **Parameters:**
 
 - **storage** (BaseKeyValueStorage, optional): A storage mechanism for storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage` will be used. (default: :obj:`None`)
-- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation.
+- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation. (default: :obj:`0.9`)
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.__init__"></a>
 

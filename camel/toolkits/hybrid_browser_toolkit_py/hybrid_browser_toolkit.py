@@ -92,11 +92,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: str = "tmp/",
+        cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
-        default_start_url: str = "https://google.com/",
+        default_start_url: Optional[str] = None,
         default_timeout: Optional[int] = None,
         short_timeout: Optional[int] = None,
         navigation_timeout: Optional[int] = None,
@@ -144,6 +145,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 and page loading times.
                 Logs are saved to an auto-generated timestamped file.
                 Defaults to `False`.
+            log_dir (Optional[str]): Custom directory path for log files.
+                If None, defaults to "browser_log". Defaults to `None`.
             session_id (Optional[str]): A unique identifier for this browser
                 session. When multiple HybridBrowserToolkit instances are
                 used
@@ -199,9 +202,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._user_data_dir = user_data_dir
         self._stealth = stealth
         self._web_agent_model = web_agent_model
-        self._cache_dir = cache_dir
+        self._cache_dir = cache_dir or "tmp/"
         self._browser_log_to_file = browser_log_to_file
-        self._default_start_url = default_start_url
+        self._log_dir = log_dir
+        self._default_start_url = default_start_url or "https://google.com/"
         self._session_id = session_id or "default"
         self._viewport_limit = viewport_limit
 
@@ -237,7 +241,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         # Set up log file if needed
         if self.log_to_file:
             # Create log directory if it doesn't exist
-            log_dir = "browser_log"
+            log_dir = self._log_dir if self._log_dir else "browser_log"
             os.makedirs(log_dir, exist_ok=True)
 
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

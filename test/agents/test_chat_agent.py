@@ -19,10 +19,10 @@ from typing import List
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from openai.types.chat import ChatCompletionMessageFunctionToolCall
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
-    ChatCompletionMessageFunctionToolCall,
     Function,
 )
 from openai.types.completion_usage import CompletionUsage
@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ToolCallingRecord
+from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_5_MINI,
+            model_type=ModelType.DEFAULT,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_5_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_5_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.DEFAULT)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -317,7 +317,8 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -364,7 +365,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -448,7 +449,8 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -507,7 +509,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -742,6 +744,55 @@ def test_chat_agent_stream_output(step_call_count=3):
 
 
 @pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_accumulated():
+    """Verify accumulated streaming behavior (stream_accumulate=True)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent()
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "acc", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert len(outputs) == 3
+    assert outputs[0] == "Hello"
+    assert outputs[1] == "Hello "
+    assert outputs[2] == "Hello world"
+    assert accumulator.get_full_content() == "Hello world"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_delta():
+    """Verify delta streaming behavior (stream_accumulate=False)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent(stream_accumulate=False)
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "delta", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert outputs == chunks
+    assert accumulator.get_full_content() == "Hello world"
+
+
+@pytest.mark.model_backend
 def test_set_output_language():
     system_message = BaseMessage(
         role_name="assistant",
@@ -863,14 +914,15 @@ def test_tool_calling_sync(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         ),
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
-                                arguments='{"a": 0, "b": 10}', name='sub'
+                                arguments='{"a": 0, "b": 10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         ),
@@ -903,7 +955,8 @@ def test_tool_calling_sync(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_kIJby7Y6As6gAbWoxDqxD6HG',
                             function=Function(
-                                arguments='{"a":16,"b":10}', name='sub'
+                                arguments='{"a":16,"b":10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -967,7 +1020,7 @@ def test_tool_calling_sync(step_call_count=3):
             "Tool Execution"
         ), f"Error in calling round {i+1}"
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -987,7 +1040,9 @@ async def test_tool_calling_math_async(step_call_count=3):
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0)
-    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
+    math_funcs = sync_funcs_to_async(
+        [FunctionTool(MathToolkit().math_multiply)]
+    )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_5_MINI,
@@ -1032,7 +1087,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         )
@@ -1088,7 +1143,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
