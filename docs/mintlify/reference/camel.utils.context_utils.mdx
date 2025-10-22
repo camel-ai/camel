@@ -96,6 +96,33 @@ def _generate_session_id(self):
 Create timestamp-based unique identifier for isolating
 current session files from other sessions.
 
+<a id="camel.utils.context_utils.ContextUtility.sanitize_workflow_filename"></a>
+
+### sanitize_workflow_filename
+
+```python
+def sanitize_workflow_filename(name: str, max_length: Optional[int] = None):
+```
+
+Sanitize a name string for use as a workflow filename.
+
+Converts the input string to a safe filename by:
+- converting to lowercase
+- replacing spaces with underscores
+- removing special characters (keeping only alphanumeric and
+underscores)
+- truncating to maximum length if specified
+
+**Parameters:**
+
+- **name** (str): The name string to sanitize (e.g., role_name or task_title).
+- **max_length** (Optional[int]): Maximum length for the sanitized filename. If None, uses MAX_WORKFLOW_FILENAME_LENGTH. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Sanitized filename string suitable for filesystem use.
+Returns "agent" if sanitization results in empty string.
+
 <a id="camel.utils.context_utils.ContextUtility._ensure_directory_exists"></a>
 
 ### _ensure_directory_exists
