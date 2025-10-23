@@ -895,6 +895,9 @@ async def test_basegenerator_reset_reproducibility_with_identical_seed():
     env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
     await env.setup()
 
+    # Pre-populate dataset with all data to ensure sampling from full pool
+    await dataset.generate_new(PREDEFINED_DATA_SIZE)
+
     # First reset with seed=42
     observations1 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=42)
     questions1 = [obs.question for obs in observations1]
@@ -904,7 +907,6 @@ async def test_basegenerator_reset_reproducibility_with_identical_seed():
     questions2 = [obs.question for obs in observations2]
 
     # Same seed should produce same sampling order
-    # given the large batch size)
     assert (
         questions1 == questions2
     ), "Same seed should produce same sampling order"
@@ -920,10 +922,13 @@ async def test_basegenerator_reset_variability_with_different_seeds():
     RESET_BATCH_SIZE = 64
 
     predefined_data = get_dummy_predefined_data(PREDEFINED_DATA_SIZE)
-
+    mock_verifier = create_mock_verifier()
     dataset = MockGenerator(predefined_data, seed=42)
-    env = MockSingleStepEnv(dataset=dataset, verifier=create_mock_verifier())
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
     await env.setup()
+
+    # Pre-populate dataset with all data to ensure sampling from full pool
+    await dataset.generate_new(PREDEFINED_DATA_SIZE)
 
     observations1 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=42)
     questions1 = [obs.question for obs in observations1]
@@ -932,7 +937,6 @@ async def test_basegenerator_reset_variability_with_different_seeds():
     questions2 = [obs.question for obs in observations2]
 
     # Different seeds should produce different orders
-    # given the large batch size
     assert (
         questions1 != questions2
     ), "Different seeds should produce different sampling orders"
