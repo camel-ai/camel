@@ -88,8 +88,19 @@ class AzureOpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous AzureOpenAI
+            client instance. If provided, this client will be used instead of
+            creating a new one. Useful for RL frameworks like AReaL or rLLM
+            that provide Azure OpenAI-compatible clients. The client should
+            implement the AzureOpenAI client interface with
+            `.chat.completions.create()` and `.beta.chat.completions.parse()`
+            methods. (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous
+            AzureOpenAI client instance. If provided, this client will be
+            used instead of creating a new one. The client should implement
+            the AsyncAzureOpenAI client interface. (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the client
-            initialization.
+            initialization. Ignored if custom clients are provided.
 
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
@@ -108,6 +119,8 @@ class AzureOpenAIModel(BaseModelBackend):
         azure_ad_token_provider: Optional["AzureADTokenProvider"] = None,
         azure_ad_token: Optional[str] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -138,56 +151,72 @@ class AzureOpenAIModel(BaseModelBackend):
                 "or `AZURE_DEPLOYMENT_NAME` environment variable."
             )
 
-        if is_langfuse_available():
-            from langfuse.openai import AsyncAzureOpenAI as LangfuseAsyncOpenAI
-            from langfuse.openai import AzureOpenAI as LangfuseOpenAI
-
-            self._client = LangfuseOpenAI(
-                azure_endpoint=str(self._url),
-                azure_deployment=self._azure_deployment_name,
-                api_version=self.api_version,
-                api_key=self._api_key,
-                azure_ad_token=self._azure_ad_token,
-                azure_ad_token_provider=self.azure_ad_token_provider,
-                timeout=self._timeout,
-                max_retries=max_retries,
-                **kwargs,
-            )
-            self._async_client = LangfuseAsyncOpenAI(
-                azure_endpoint=str(self._url),
-                azure_deployment=self._azure_deployment_name,
-                api_version=self.api_version,
-                api_key=self._api_key,
-                azure_ad_token=self._azure_ad_token,
-                azure_ad_token_provider=self.azure_ad_token_provider,
-                timeout=self._timeout,
-                max_retries=max_retries,
-                **kwargs,
-            )
+        # Use custom clients if provided, otherwise create new ones
+        if client is not None:
+            # Use the provided custom sync client
+            self._client = client
         else:
-            self._client = AzureOpenAI(
-                azure_endpoint=str(self._url),
-                azure_deployment=self._azure_deployment_name,
-                api_version=self.api_version,
-                api_key=self._api_key,
-                azure_ad_token=self._azure_ad_token,
-                azure_ad_token_provider=self.azure_ad_token_provider,
-                timeout=self._timeout,
-                max_retries=max_retries,
-                **kwargs,
-            )
+            # Create default sync client
+            if is_langfuse_available():
+                from langfuse.openai import AzureOpenAI as LangfuseOpenAI
 
-            self._async_client = AsyncAzureOpenAI(
-                azure_endpoint=str(self._url),
-                azure_deployment=self._azure_deployment_name,
-                api_version=self.api_version,
-                api_key=self._api_key,
-                azure_ad_token=self._azure_ad_token,
-                azure_ad_token_provider=self.azure_ad_token_provider,
-                timeout=self._timeout,
-                max_retries=max_retries,
-                **kwargs,
-            )
+                self._client = LangfuseOpenAI(
+                    azure_endpoint=str(self._url),
+                    azure_deployment=self._azure_deployment_name,
+                    api_version=self.api_version,
+                    api_key=self._api_key,
+                    azure_ad_token=self._azure_ad_token,
+                    azure_ad_token_provider=self.azure_ad_token_provider,
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    **kwargs,
+                )
+            else:
+                self._client = AzureOpenAI(
+                    azure_endpoint=str(self._url),
+                    azure_deployment=self._azure_deployment_name,
+                    api_version=self.api_version,
+                    api_key=self._api_key,
+                    azure_ad_token=self._azure_ad_token,
+                    azure_ad_token_provider=self.azure_ad_token_provider,
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    **kwargs,
+                )
+
+        if async_client is not None:
+            # Use the provided custom async client
+            self._async_client = async_client
+        else:
+            # Create default async client
+            if is_langfuse_available():
+                from langfuse.openai import (
+                    AsyncAzureOpenAI as LangfuseAsyncOpenAI,
+                )
+
+                self._async_client = LangfuseAsyncOpenAI(
+                    azure_endpoint=str(self._url),
+                    azure_deployment=self._azure_deployment_name,
+                    api_version=self.api_version,
+                    api_key=self._api_key,
+                    azure_ad_token=self._azure_ad_token,
+                    azure_ad_token_provider=self.azure_ad_token_provider,
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    **kwargs,
+                )
+            else:
+                self._async_client = AsyncAzureOpenAI(
+                    azure_endpoint=str(self._url),
+                    azure_deployment=self._azure_deployment_name,
+                    api_version=self.api_version,
+                    api_key=self._api_key,
+                    azure_ad_token=self._azure_ad_token,
+                    azure_ad_token_provider=self.azure_ad_token_provider,
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    **kwargs,
+                )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
