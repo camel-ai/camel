@@ -750,7 +750,7 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: The new output from the process's stdout and stderr. Returns
-                 an empty string if there is no new output.
+                 a helpful status message if there is no new output.
         """
         with self._session_lock:
             if id not in self.shell_sessions:
@@ -777,7 +777,14 @@ class TerminalToolkit(BaseToolkit):
         except Empty:
             pass
 
-        return "".join(output)
+        combined_output = "".join(output)
+        if combined_output:
+            return combined_output
+
+        return (
+            "[No new output available. Process is still running; "
+            "output may be buffered.]"
+        )
 
     def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
         r"""This function waits for a specified duration for a
