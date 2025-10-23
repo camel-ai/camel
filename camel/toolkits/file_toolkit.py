@@ -1257,7 +1257,11 @@ class FileToolkit(BaseToolkit):
         try:
             # resolve search path
             if path:
-                search_path = self._resolve_filepath(path)
+                path_obj = Path(path)
+                if not path_obj.is_absolute():
+                    search_path = (self.working_directory / path_obj).resolve()
+                else:
+                    search_path = path_obj.resolve()
             else:
                 search_path = self.working_directory
 
@@ -1284,9 +1288,14 @@ class FileToolkit(BaseToolkit):
                 if file_types is None:
                     file_types = ["md"]
 
+                # normalize and deduplicate file types
+                normalized_types = set()
                 for file_type in file_types:
-                    # ensure file type doesn't start with a dot
                     file_type = file_type.lstrip('.')
+                    if file_type:  # skip empty strings
+                        normalized_types.add(file_type)
+
+                for file_type in normalized_types:
                     # use rglob for recursive search
                     pattern_glob = f"**/*.{file_type}"
                     matching_files.extend(search_path.rglob(pattern_glob))
@@ -1342,7 +1351,9 @@ class FileToolkit(BaseToolkit):
             if file_pattern:
                 result["file_pattern"] = file_pattern
             else:
-                result["file_types"] = file_types if file_types else ["md"]
+                result["file_types"] = (
+                    sorted(normalized_types) if normalized_types else ["md"]
+                )
 
             logger.info(
                 f"Search completed: found {len(matches)} matches "

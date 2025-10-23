@@ -513,7 +513,7 @@ def test_search_files_with_file_pattern(file_write_toolkit):
     assert result_data["files_searched"] == 2
 
 
-def test_search_files_case_sensitive(file_write_toolkit):
+def test_search_files_case_insensitive(file_write_toolkit):
     r"""Test that search is case-insensitive."""
     # create test file
     file_write_toolkit.write_to_file(
@@ -582,3 +582,83 @@ def test_search_files_nested_directory(file_write_toolkit):
     # verify recursive search works
     assert result_data["total_matches"] == 2
     assert result_data["files_searched"] == 2
+
+
+def test_search_files_duplicate_file_types(file_write_toolkit):
+    r"""Test that duplicate file types are handled correctly."""
+    # create test file
+    file_write_toolkit.write_to_file("Test", "Python code", "test.py")
+
+    # search with duplicate file types (including with dot prefix)
+    result = file_write_toolkit.search_files(
+        "Python", file_types=["py", "py", ".py"]
+    )
+    result_data = json.loads(result)
+
+    # verify no duplicates in results (file searched only once)
+    assert result_data["total_matches"] == 1
+    assert result_data["files_searched"] == 1
+    assert len(result_data["matches"]) == 1
+    # verify normalized file types in result
+    assert result_data["file_types"] == ["py"]
+
+
+def test_search_files_empty_file_types(file_write_toolkit):
+    r"""Test that empty strings in file_types are filtered out."""
+    # create test files
+    file_write_toolkit.write_to_file("Test", "Content", "test.py")
+    file_write_toolkit.write_to_file("Test", "Content", "test.txt")
+
+    # search with empty strings in file_types
+    result = file_write_toolkit.search_files(
+        "Content", file_types=["py", "", "txt"]
+    )
+    result_data = json.loads(result)
+
+    # verify empty strings are filtered out
+    assert "" not in result_data["file_types"]
+    assert set(result_data["file_types"]) == {"py", "txt"}
+    assert result_data["total_matches"] == 2
+
+
+def test_search_files_path_with_special_chars(file_write_toolkit):
+    r"""Test search in directory with special characters in name."""
+    # create directory with special characters
+    special_dir = "test-dir with spaces!"
+    file_write_toolkit.write_to_file(
+        "Test", "Content", f"{special_dir}/test.md"
+    )
+
+    # search in the directory with special characters
+    result = file_write_toolkit.search_files("Content", path=special_dir)
+    result_data = json.loads(result)
+
+    # verify search succeeded
+    assert "error" not in result_data
+    assert result_data["total_matches"] == 1
+    assert result_data["files_searched"] == 1
+
+
+def test_search_files_invalid_path(file_write_toolkit):
+    r"""Test search with non-existent directory path."""
+    # search in non-existent directory
+    result = file_write_toolkit.search_files("Content", path="nonexistent/dir")
+    result_data = json.loads(result)
+
+    # verify error is returned
+    assert "error" in result_data
+    assert "does not exist" in result_data["error"]
+
+
+def test_search_files_path_is_file(file_write_toolkit):
+    r"""Test search when path points to a file instead of directory."""
+    # create a file
+    file_write_toolkit.write_to_file("Test", "Content", "test.py")
+
+    # try to search with path pointing to the file
+    result = file_write_toolkit.search_files("Content", path="test.py")
+    result_data = json.loads(result)
+
+    # verify error is returned
+    assert "error" in result_data
+    assert "not a directory" in result_data["error"]
