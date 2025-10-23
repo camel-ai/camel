@@ -22,7 +22,9 @@ Azure OpenAI API in a unified BaseModelBackend interface.
 - **azure_ad_token_provider** (Optional[AzureADTokenProvider], optional): A function that returns an Azure Active Directory token, will be invoked on every request. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
-- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide Azure OpenAI-compatible clients. The client should implement the AzureOpenAI client interface with `.chat.completions.create()` and `.beta.chat.completions.parse()` methods. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncAzureOpenAI client interface. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
 - **References**: 
 - **https**: //learn.microsoft.com/en-us/azure/ai-services/openai/
 
@@ -44,6 +46,8 @@ def __init__(
     azure_ad_token_provider: Optional['AzureADTokenProvider'] = None,
     azure_ad_token: Optional[str] = None,
     max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
     **kwargs: Any
 ):
 ```
