@@ -4239,10 +4239,9 @@ class Workforce(BaseNode):
                         if len(self.get_main_task_queue()) > 0:
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times "
-                                f"after insufficient results, skipping "
-                                f"that task. Final error: "
-                                f"{returned_task.result or 'Unknown err'}"
+                                f"failed for {MAX_TASK_RETRIES} times, "
+                                f"skipping that task. Final error: "
+                                f"{returned_task.result or 'Unknown error'}"
                                 f"{Fore.RESET}"
                             )
                             self._skip_requested = True
