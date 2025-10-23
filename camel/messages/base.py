@@ -178,6 +178,29 @@ class BaseMessage:
             OpenAIVisionDetailType(video_detail).value,
         )
 
+    @classmethod
+    def make_system_message(
+        cls,
+        role_name: str,
+        content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+    ) -> "BaseMessage":
+        r"""Create a new system message.
+        Args:
+            role_name (str): The name of the system role.
+            content (str): The content of the new system message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+        Returns:
+            BaseMessage: The new system message.
+        """
+        return cls(
+            role_name,
+            RoleType.DEFAULT,
+            meta_dict,
+            content,
+        )
+
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.

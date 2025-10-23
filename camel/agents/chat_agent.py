@@ -491,8 +491,8 @@ class ChatAgent(BaseAgent):
 
         # Set up system message and initialize messages
         self._original_system_message = (
-            BaseMessage.make_assistant_message(
-                role_name="Assistant", content=system_message
+            BaseMessage.make_system_message(
+                role_name="System", content=system_message
             )
             if isinstance(system_message, str)
             else system_message
@@ -1629,8 +1629,8 @@ class ChatAgent(BaseAgent):
             content = self._original_system_message.content + language_prompt
             return self._original_system_message.create_new_instance(content)
         else:
-            return BaseMessage.make_assistant_message(
-                role_name="Assistant",
+            return BaseMessage.make_system_message(
+                role_name="System",
                 content=language_prompt,
             )
 
@@ -1649,6 +1649,40 @@ class ChatAgent(BaseAgent):
                     agent_id=self.agent_id,
                 )
             )
+
+    def update_system_message(
+        self, system_message: Optional[Union[BaseMessage, str]] = None
+    ) -> None:
+        r"""Update the system message.
+        It will reset conversation with new system message.
+
+        Args:
+            system_message (Optional[Union[BaseMessage, str]]):
+                Can be either a BaseMessage object or a string.
+                If a string is provided, it will be converted
+                into a BaseMessage object.
+        """
+        self._original_system_message = (
+            BaseMessage.make_system_message(
+                role_name="System", content=system_message
+            )
+            if isinstance(system_message, str)
+            else system_message
+        )
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        self.init_messages()
+
+    def append_to_system_message(self, content: str) -> None:
+        new_system_message = self._original_system_message.content + content
+        self._original_system_message = BaseMessage.make_system_message(
+            role_name="System", content=new_system_message
+        )
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        self.init_messages()
 
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
