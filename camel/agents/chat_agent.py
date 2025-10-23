@@ -1676,8 +1676,9 @@ class ChatAgent(BaseAgent):
 
     def append_to_system_message(self, content: str) -> None:
         original_content = (
-            self._original_system_message.content 
-            if self._original_system_message else ""
+            self._original_system_message.content
+            if self._original_system_message
+            else ""
         )
         new_system_message = original_content + content
         self._original_system_message = BaseMessage.make_system_message(
