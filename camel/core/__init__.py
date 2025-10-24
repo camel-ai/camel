@@ -11,14 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Unified response abstractions and adapters.
+"""Core abstractions for CAMEL runtime.
 
-This package contains agent-visible response containers and provider-agnostic
-response models/adapters used across CAMEL.
+This package hosts model-agnostic message types that can be adapted to
+either legacy Chat Completions or the newer OpenAI Responses API.
 """
 
-from .agent_responses import ChatAgentResponse
-
-__all__ = [
-    'ChatAgentResponse',
-]
+__all__: list[str] = []

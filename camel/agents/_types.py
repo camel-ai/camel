@@ -11,14 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from openai import AsyncStream, Stream
-from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, ConfigDict
 
 from camel.messages import BaseMessage
-from camel.types import ChatCompletion
 
 
 class ToolCallRequest(BaseModel):
@@ -33,11 +30,11 @@ class ModelResponse(BaseModel):
     r"""The response from the model."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    response: Union[
-        ChatCompletion,
-        Stream[ChatCompletionChunk],
-        AsyncStream[ChatCompletionChunk],
-    ]
+    # Phase 1: relax the annotation to decouple from provider schemas.
+    # Existing call sites do not rely on static typing here and tests
+    # often pass MagicMock; this change avoids tight coupling to
+    # ChatCompletion when adapters introduce unified responses.
+    response: Any
     tool_call_requests: Optional[List[ToolCallRequest]]
     output_messages: List[BaseMessage]
     finish_reasons: List[str]
