@@ -2923,9 +2923,6 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
 
-        # Record start time for execution tracking
-        start_time = time.time()
-
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
@@ -2946,15 +2943,11 @@ class ChatAgent(BaseAgent):
             mask_flag = False
             logger.warning(f"{error_msg} with result: {result}")
 
-        # Calculate execution time
-        execution_time_ms = int((time.time() - start_time) * 1000)
-
         return self._record_tool_calling(
             func_name,
             args,
             result,
             tool_call_id,
-            execution_time_ms,
             mask_output=mask_flag,
         )
 
@@ -2967,10 +2960,6 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         import asyncio
-        import time
-
-        # Record start time for execution tracking
-        start_time = time.time()
 
         try:
             # Try different invocation paths in order of preference
@@ -3002,12 +2991,7 @@ class ChatAgent(BaseAgent):
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
 
-        # Calculate execution time
-        execution_time_ms = int((time.time() - start_time) * 1000)
-
-        return self._record_tool_calling(
-            func_name, args, result, tool_call_id, execution_time_ms
-        )
+        return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
         self,
@@ -3015,7 +2999,6 @@ class ChatAgent(BaseAgent):
         args: Dict[str, Any],
         result: Any,
         tool_call_id: str,
-        execution_time_ms: Optional[int] = None,
         mask_output: bool = False,
     ):
         r"""Record the tool calling information in the memory, and return the
@@ -3026,7 +3009,6 @@ class ChatAgent(BaseAgent):
             args (Dict[str, Any]): The arguments passed to the tool.
             result (Any): The result returned by the tool execution.
             tool_call_id (str): A unique identifier for the tool call.
-            execution_time_ms (Optional[int]): Execution time in milliseconds.
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
@@ -3075,7 +3057,7 @@ class ChatAgent(BaseAgent):
 
         # Calculate tool cost and token usage
         cost_info = self._tool_cost_calculator.estimate_tool_cost(
-            func_name, args, result, execution_time_ms
+            func_name, args, result
         )
 
         # Record information about this tool call with cost tracking

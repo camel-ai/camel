@@ -53,12 +53,6 @@ class ToolCostProfile:
 
     category: ToolCategory
     base_tokens: int  # Base token consumption
-    input_token_multiplier: float = 1.0  # Multiplier based on input size
-    output_token_multiplier: float = 1.0  # Multiplier based on output size
-    cost_per_token_usd: float = (
-        0.00001  # Cost per token in USD (default: $0.00001)
-    )
-    execution_overhead_ms: int = 0  # Additional execution time overhead
 
 
 class ToolCostInfo(TypedDict):
@@ -92,77 +86,41 @@ class ToolCostCalculator:
             "search_google": ToolCostProfile(
                 category=ToolCategory.SEARCH_API,
                 base_tokens=50,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.2,
-                # cost_per_token_usd=0.000005,
-                # execution_overhead_ms=500,
             ),
             "search_bing": ToolCostProfile(
                 category=ToolCategory.SEARCH_API,
                 base_tokens=50,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.2,
-                # cost_per_token_usd=0.000005,
-                # execution_overhead_ms=500,
             ),
             "search_exa": ToolCostProfile(
                 category=ToolCategory.SEARCH_API,
                 base_tokens=50,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.2,
-                # cost_per_token_usd=0.000005,
-                # execution_overhead_ms=500,
             ),
             # Browser tools - high cost
             "browser_visit_page": ToolCostProfile(
                 category=ToolCategory.BROWSER_AUTOMATION,
                 base_tokens=200,
-                # input_token_multiplier=0.05,
-                # output_token_multiplier=0.1,
-                # cost_per_token_usd=0.00002,
-                # execution_overhead_ms=2000,
             ),
             "browser_get_som_screenshot": ToolCostProfile(
                 category=ToolCategory.BROWSER_AUTOMATION,
                 base_tokens=500,
-                # input_token_multiplier=0.0,
-                # output_token_multiplier=0.0,
-                # cost_per_token_usd=0.00005,
-                # execution_overhead_ms=3000,
             ),
             "browser_click": ToolCostProfile(
                 category=ToolCategory.BROWSER_AUTOMATION,
                 base_tokens=100,
-                # input_token_multiplier=0.05,
-                # output_token_multiplier=0.05,
-                # cost_per_token_usd=0.00002,
-                # execution_overhead_ms=1000,
             ),
             "browser_type": ToolCostProfile(
                 category=ToolCategory.BROWSER_AUTOMATION,
                 base_tokens=100,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.05,
-                # cost_per_token_usd=0.00002,
-                # execution_overhead_ms=1000,
             ),
             # Terminal tools - medium cost
             "shell_exec": ToolCostProfile(
                 category=ToolCategory.CODE_EXECUTION,
                 base_tokens=100,
-                # input_token_multiplier=0.2,
-                # output_token_multiplier=0.3,
-                # cost_per_token_usd=0.00001,
-                # execution_overhead_ms=1000,
             ),
             # Note-taking tools - low cost
             "create_note": ToolCostProfile(
                 category=ToolCategory.SIMPLE_UTILITY,
                 base_tokens=50,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.0,
-                # cost_per_token_usd=0.000005,
-                # execution_overhead_ms=100,
             ),
         }
 
@@ -171,7 +129,6 @@ class ToolCostCalculator:
         tool_name: str,
         args: Dict[str, Any],
         result: Any,
-        execution_time_ms: Optional[int] = None,
     ) -> ToolCostInfo:
         """Estimate the token usage and cost for a tool call.
 
@@ -179,7 +136,6 @@ class ToolCostCalculator:
             tool_name: Name of the tool being called.
             args: Arguments passed to the tool.
             result: Result returned by the tool.
-            execution_time_ms: Actual execution time in milliseconds.
 
         Returns:
             Dictionary containing token usage and cost estimates.
@@ -190,10 +146,6 @@ class ToolCostCalculator:
             profile = ToolCostProfile(
                 category=ToolCategory.SIMPLE_UTILITY,
                 base_tokens=100,
-                # input_token_multiplier=0.1,
-                # output_token_multiplier=0.1,
-                # cost_per_token_usd=0.00001,
-                # execution_overhead_ms=500,
             )
 
         # Calculate input tokens
