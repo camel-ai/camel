@@ -1558,7 +1558,10 @@ class ChatAgent(BaseAgent):
 
             # Add prefix to summary content in result
             if self.summarize_threshold is not None:
-                summary_with_prefix = f"[CONTEXT_SUMMARY] {summary_content}"
+                summary_with_prefix = (
+                    f"[CONTEXT_SUMMARY] The following is a summary of our "
+                    f"conversation from a previous session: {summary_content}"
+                )
                 result["summary_with_prefix"] = summary_with_prefix
                 result["include_summaries"] = include_summaries
 
