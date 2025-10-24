@@ -551,6 +551,13 @@ class ChatAgent(BaseAgent):
         self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
 
+        # Initialize tool cost calculator
+        from camel.utils.tool_cost_calculator import ToolCostCalculator
+
+        self._tool_cost_calculator = ToolCostCalculator(
+            token_counter=self.model_backend.token_counter
+        )
+
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
@@ -2915,6 +2922,10 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+
+        # Record start time for execution tracking
+        start_time = time.time()
+
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
@@ -2935,8 +2946,16 @@ class ChatAgent(BaseAgent):
             mask_flag = False
             logger.warning(f"{error_msg} with result: {result}")
 
+        # Calculate execution time
+        execution_time_ms = int((time.time() - start_time) * 1000)
+
         return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            execution_time_ms,
+            mask_output=mask_flag,
         )
 
     async def _aexecute_tool(
@@ -2948,6 +2967,10 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         import asyncio
+        import time
+
+        # Record start time for execution tracking
+        start_time = time.time()
 
         try:
             # Try different invocation paths in order of preference
@@ -2978,7 +3001,13 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+
+        # Calculate execution time
+        execution_time_ms = int((time.time() - start_time) * 1000)
+
+        return self._record_tool_calling(
+            func_name, args, result, tool_call_id, execution_time_ms
+        )
 
     def _record_tool_calling(
         self,
@@ -2986,6 +3015,7 @@ class ChatAgent(BaseAgent):
         args: Dict[str, Any],
         result: Any,
         tool_call_id: str,
+        execution_time_ms: Optional[int] = None,
         mask_output: bool = False,
     ):
         r"""Record the tool calling information in the memory, and return the
@@ -2996,6 +3026,7 @@ class ChatAgent(BaseAgent):
             args (Dict[str, Any]): The arguments passed to the tool.
             result (Any): The result returned by the tool execution.
             tool_call_id (str): A unique identifier for the tool call.
+            execution_time_ms (Optional[int]): Execution time in milliseconds.
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
@@ -3042,12 +3073,22 @@ class ChatAgent(BaseAgent):
             timestamp=base_timestamp + 1e-6,
         )
 
-        # Record information about this tool call
+        # Calculate tool cost and token usage
+        cost_info = self._tool_cost_calculator.estimate_tool_cost(
+            func_name, args, result, execution_time_ms
+        )
+
+        # Record information about this tool call with cost tracking
         tool_record = ToolCallingRecord(
             tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            token_usage={
+                "prompt_tokens": int(cost_info["prompt_tokens"]),
+                "completion_tokens": int(cost_info["completion_tokens"]),
+                "total_tokens": int(cost_info["total_tokens"]),
+            },
         )
 
         return tool_record
