@@ -1662,6 +1662,8 @@ class ChatAgent(BaseAgent):
                 If a string is provided, it will be converted
                 into a BaseMessage object.
         """
+        if system_message is None:
+            return
         self._original_system_message = (
             BaseMessage.make_system_message(
                 role_name="System", content=system_message
@@ -1675,12 +1677,17 @@ class ChatAgent(BaseAgent):
         self.init_messages()
 
     def append_to_system_message(self, content: str) -> None:
+        """Append additional context to existing system message.
+
+        Args:
+            content (str): The additional system message.
+        """
         original_content = (
             self._original_system_message.content
             if self._original_system_message
             else ""
         )
-        new_system_message = original_content + content
+        new_system_message = original_content + '\n' + content
         self._original_system_message = BaseMessage.make_system_message(
             role_name="System", content=new_system_message
         )
