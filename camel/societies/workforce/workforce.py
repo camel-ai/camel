@@ -1415,6 +1415,20 @@ class Workforce(BaseNode):
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
 
+    def get_main_task_queue(self) -> List[Task]:
+        r"""Get current main task queue for human review.
+        Returns:
+            List[Task]: List of main tasks waiting to be decomposed
+                and executed.
+        """
+        # Return tasks from pending queue that need decomposition
+        return [
+            t
+            for t in self._pending_tasks
+            if t.additional_info
+            and t.additional_info.get('_needs_decomposition')
+        ]
+
     def add_task(
         self,
         content: str,
@@ -3910,8 +3924,7 @@ class Workforce(BaseNode):
                 # Reset in-flight counter to prevent hanging
                 self._in_flight_tasks = 0
 
-        # Check if there are any pending tasks (including those needing
-        # decomposition)
+        # Check if there are any main pending tasks after filtering
         if self._pending_tasks:
             # Check if the first pending task needs decomposition
             next_task = self._pending_tasks[0]
@@ -4120,6 +4133,20 @@ class Workforce(BaseNode):
                             )
                             if not halt:
                                 continue
+
+                            # Do not halt if we have main tasks in queue
+                            if len(self.get_main_task_queue()) > 0:
+                                print(
+                                    f"{Fore.RED}Task {returned_task.id} has "
+                                    f"failed for {MAX_TASK_RETRIES} times "
+                                    f"after insufficient results, skipping "
+                                    f"that task. Final error: "
+                                    f"{returned_task.result or 'Unknown err'}"
+                                    f"{Fore.RESET}"
+                                )
+                                self._skip_requested = True
+                                continue
+
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
                                 f"failed for {MAX_TASK_RETRIES} times after "
@@ -4225,6 +4252,19 @@ class Workforce(BaseNode):
                         halt = await self._handle_failed_task(returned_task)
                         if not halt:
                             continue
+
+                        # Do not halt if we have main tasks in queue
+                        if len(self.get_main_task_queue()) > 0:
+                            print(
+                                f"{Fore.RED}Task {returned_task.id} has "
+                                f"failed for {MAX_TASK_RETRIES} times, "
+                                f"skipping that task. Final error: "
+                                f"{returned_task.result or 'Unknown error'}"
+                                f"{Fore.RESET}"
+                            )
+                            self._skip_requested = True
+                            continue
+
                         print(
                             f"{Fore.RED}Task {returned_task.id} has failed "
                             f"for {MAX_TASK_RETRIES} times, halting "
