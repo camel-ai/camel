@@ -170,7 +170,6 @@ class DeepSeekModel(OpenAICompatibleModel):
     ) -> ChatCompletion:
         r"""Handle reasoning content with <think> tags at the beginning."""
         if isinstance(response, (Stream, AsyncStream)):
-            # Streaming responses are handled incrementally elsewhere; leave as-is.
             return response
         if (
             self.model_type in [ModelType.DEEPSEEK_REASONER]
