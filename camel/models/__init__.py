@@ -42,6 +42,7 @@ from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
+from .openai_responses_model import OpenAIResponsesModel
 from .openrouter_model import OpenRouterModel
 from .ppio_model import PPIOModel
 from .qianfan_model import QianfanModel
@@ -75,6 +76,7 @@ __all__ = [
     'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
+    'OpenAIResponsesModel',
     'NetmindModel',
     'NemotronModel',
     'NovitaModel',

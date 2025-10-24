@@ -39,6 +39,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Set,
@@ -67,7 +68,9 @@ from camel.agents.base import BaseAgent
 from camel.core import (
     CamelMessage,
     CamelModelResponse,
+    CamelStreamChunk,
     CamelToolCall,
+    CamelToolCallDelta,
     CamelUsage,
 )
 from camel.logger import get_logger
@@ -200,6 +203,31 @@ class StreamContentAccumulator:
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
         self.current_content = []
+
+    def reset(self):
+        self.base_content = ""
+        self.current_content = []
+        self.tool_status_messages = []
+
+
+def _coerce_delta_text(content: Any) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: List[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if text:
+                    parts.append(str(text))
+            elif hasattr(item, "text"):
+                parts.append(item.text)
+        return "".join(parts)
+    return str(content)
 
 
 class StreamingChatAgentResponse:
@@ -3139,6 +3167,149 @@ class ChatAgent(BaseAgent):
         else:
             return len(content.split())
 
+    def _to_camel_stream_chunk(self, chunk: Any) -> CamelStreamChunk:
+        if isinstance(chunk, CamelStreamChunk):
+            return chunk
+
+        camel_chunk = CamelStreamChunk(raw=chunk)
+
+        choices = getattr(chunk, "choices", None)
+        if choices:
+            choice = choices[0]
+            delta = getattr(choice, "delta", None)
+            if delta is not None:
+                text_delta = _coerce_delta_text(
+                    getattr(delta, "content", None)
+                )
+                if text_delta:
+                    camel_chunk.content_delta = text_delta
+
+                tool_call_deltas: List[CamelToolCallDelta] = []
+                for tool_delta in getattr(delta, "tool_calls", []) or []:
+                    if isinstance(tool_delta, dict):
+                        function = tool_delta.get("function", {})
+                        tool_call_deltas.append(
+                            CamelToolCallDelta(
+                                index=tool_delta.get("index"),
+                                tool_call_id=tool_delta.get("id"),
+                                name_delta=function.get("name"),
+                                arguments_delta=function.get("arguments"),
+                                raw=tool_delta,
+                            )
+                        )
+                    else:
+                        function = getattr(tool_delta, "function", None)
+                        tool_call_deltas.append(
+                            CamelToolCallDelta(
+                                index=getattr(tool_delta, "index", None),
+                                tool_call_id=getattr(tool_delta, "id", None),
+                                name_delta=getattr(function, "name", None),
+                                arguments_delta=getattr(
+                                    function, "arguments", None
+                                ),
+                                raw=tool_delta,
+                            )
+                        )
+                if tool_call_deltas:
+                    camel_chunk.tool_call_deltas = tool_call_deltas
+
+            finish_reason = getattr(choice, "finish_reason", None)
+            if finish_reason:
+                camel_chunk.finish_reason = str(finish_reason)
+
+        usage = getattr(chunk, "usage", None)
+        if usage is not None:
+            if isinstance(usage, CamelUsage):
+                camel_chunk.usage = usage
+            else:
+                camel_chunk.usage = CamelUsage(
+                    prompt_tokens=getattr(usage, "prompt_tokens", None),
+                    completion_tokens=getattr(
+                        usage, "completion_tokens", None
+                    ),
+                    total_tokens=getattr(usage, "total_tokens", None),
+                    raw=usage,
+                )
+
+        if camel_chunk.finish_reason is None:
+            finish_reason = getattr(chunk, "finish_reason", None)
+            if finish_reason:
+                camel_chunk.finish_reason = str(finish_reason)
+
+        return camel_chunk
+
+    def _iter_camel_chunks_from_stream(
+        self, stream: Stream[ChatCompletionChunk]
+    ) -> Iterable[CamelStreamChunk]:
+        for chunk in stream:
+            yield self._to_camel_stream_chunk(chunk)
+
+    async def _iter_camel_chunks_from_async_stream(
+        self, stream: AsyncStream[ChatCompletionChunk]
+    ) -> AsyncGenerator[CamelStreamChunk, None]:
+        async for chunk in stream:
+            yield self._to_camel_stream_chunk(chunk)
+
+    def _build_camel_response_from_stream(
+        self,
+        content: str,
+        finish_reasons: List[str],
+        usage_dict: Dict[str, int],
+        tool_call_records: Optional[List[ToolCallingRecord]] = None,
+        response_id: Optional[str] = None,
+        parsed: Optional[Any] = None,
+        pending_tool_calls: Optional[Dict[str, Any]] = None,
+    ) -> CamelModelResponse:
+        tool_calls: List[CamelToolCall] = []
+        if tool_call_records:
+            for record in tool_call_records:
+                args_str = (
+                    record.args
+                    if isinstance(record.args, str)
+                    else json.dumps(record.args)
+                )
+                tool_calls.append(
+                    CamelToolCall(
+                        name=record.tool_name,
+                        arguments=args_str,
+                        id=record.tool_call_id,
+                        raw=record,
+                    )
+                )
+
+        if pending_tool_calls:
+            for data in pending_tool_calls.values():
+                function_block = data.get("function", {})
+                tool_calls.append(
+                    CamelToolCall(
+                        name=function_block.get("name"),
+                        arguments=function_block.get("arguments"),
+                        id=data.get("id"),
+                        raw=data,
+                    )
+                )
+
+        camel_message = CamelMessage(
+            role=self.role_name,
+            content=content,
+            tool_calls=tool_calls,
+            parsed=parsed,
+        )
+
+        usage = CamelUsage(
+            prompt_tokens=usage_dict.get("prompt_tokens"),
+            completion_tokens=usage_dict.get("completion_tokens"),
+            total_tokens=usage_dict.get("total_tokens"),
+            raw=usage_dict,
+        )
+
+        return CamelModelResponse(
+            messages=[camel_message],
+            finish_reasons=finish_reasons,
+            usage=usage,
+            response_id=response_id,
+        )
+
     def _stream_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -3186,7 +3357,7 @@ class ChatAgent(BaseAgent):
                     stream_completed,
                     tool_calls_complete,
                 ) = yield from self._process_stream_chunks_with_accumulator(
-                    response,
+                    self._iter_camel_chunks_from_stream(response),
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -3328,7 +3499,7 @@ class ChatAgent(BaseAgent):
 
     def _process_stream_chunks_with_accumulator(
         self,
-        stream: Stream[ChatCompletionChunk],
+        stream: Iterable[CamelStreamChunk],
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
@@ -3339,83 +3510,62 @@ class ChatAgent(BaseAgent):
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         for chunk in stream:
-            # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
-                choice = chunk.choices[0]
-                delta = choice.delta
+            response_id = ""
+            if chunk.raw is not None:
+                response_id = getattr(chunk.raw, "id", "") or ""
+                if response_id:
+                    last_response_id = response_id
 
-                # Handle content streaming
-                if delta.content:
-                    # Use accumulator for proper content management
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            delta.content,
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                        )
+            if chunk.content_delta:
+                partial_response = (
+                    self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        chunk.content_delta,
+                        step_token_usage,
+                        response_id or last_response_id,
+                        tool_call_records.copy(),
+                        pending_tool_calls=accumulated_tool_calls.copy(),
                     )
-                    yield partial_response
-
-                # Handle tool calls streaming
-                if delta.tool_calls:
-                    tool_calls_complete = self._accumulate_tool_calls(
-                        delta.tool_calls, accumulated_tool_calls
-                    )
-
-                # Check if stream is complete
-                if choice.finish_reason:
-                    stream_completed = True
-
-                    # If we have complete tool calls, execute them with
-                    # sync status updates
-                    if accumulated_tool_calls:
-                        # Execute tools synchronously with
-                        # optimized status updates
-                        for (
-                            status_response
-                        ) in self._execute_tools_sync_with_status_accumulator(
-                            accumulated_tool_calls,
-                            tool_call_records,
-                        ):
-                            yield status_response
-
-                        # Log sending status instead of adding to content
-                        if tool_call_records:
-                            logger.info("Sending back result to model")
-
-                    # Record final message only if we have content AND no tool
-                    # calls. If there are tool calls, _record_tool_calling
-                    # will handle message recording.
-                    final_content = content_accumulator.get_full_content()
-                    if final_content.strip() and not accumulated_tool_calls:
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                        )
-
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
                 )
+                yield partial_response
 
-                # Create final response with final usage
+            if chunk.tool_call_deltas:
+                if self._accumulate_tool_calls(
+                    chunk.tool_call_deltas, accumulated_tool_calls
+                ):
+                    tool_calls_complete = True
+
+            if chunk.usage:
+                usage_dict = {
+                    k: v
+                    for k, v in chunk.usage.to_dict().items()
+                    if v is not None
+                }
+                if usage_dict:
+                    self._update_token_usage_tracker(
+                        step_token_usage, usage_dict
+                    )
+
+            if chunk.finish_reason:
+                stream_completed = True
+
+                if accumulated_tool_calls:
+                    for (
+                        status_response
+                    ) in self._execute_tools_sync_with_status_accumulator(
+                        accumulated_tool_calls,
+                        tool_call_records,
+                    ):
+                        yield status_response
+
+                    if tool_call_records:
+                        logger.info("Sending back result to model")
+
                 final_content = content_accumulator.get_full_content()
-                if final_content.strip():
+                if final_content.strip() and not accumulated_tool_calls:
                     final_message = BaseMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -3428,97 +3578,80 @@ class ChatAgent(BaseAgent):
                             final_message, response_format
                         )
 
-                    # Create final response with final usage (not partial)
+                    self.record_message(final_message)
+
+                    finish_reasons = [chunk.finish_reason]
+                    camel_response = self._build_camel_response_from_stream(
+                        content=final_content,
+                        finish_reasons=finish_reasons,
+                        usage_dict=step_token_usage.copy(),
+                        tool_call_records=tool_call_records,
+                        response_id=response_id or last_response_id,
+                    )
+
                     final_response = ChatAgentResponse(
                         msgs=[final_message],
                         terminated=False,
                         info={
-                            "id": getattr(chunk, 'id', ''),
+                            "id": response_id or last_response_id,
                             "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
+                            "finish_reasons": finish_reasons,
                             "num_tokens": self._get_token_count(final_content),
                             "tool_calls": tool_call_records or [],
                             "external_tool_requests": None,
                             "streaming": False,
                             "partial": False,
+                            "camel_response": camel_response,
                         },
                     )
                     yield final_response
-                break
-            elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
                 break
 
         return stream_completed, tool_calls_complete
 
     def _accumulate_tool_calls(
         self,
-        tool_call_deltas: List[Any],
+        tool_call_deltas: List[CamelToolCallDelta],
         accumulated_tool_calls: Dict[str, Any],
     ) -> bool:
         r"""Accumulate tool call chunks and return True when
-        any tool call is complete.
+        any tool call is complete."""
 
-        Args:
-            tool_call_deltas (List[Any]): List of tool call deltas.
-            accumulated_tool_calls (Dict[str, Any]): Dictionary of accumulated
-                tool calls.
-
-        Returns:
-            bool: True if any tool call is complete, False otherwise.
-        """
-
-        for delta_tool_call in tool_call_deltas:
-            index = delta_tool_call.index
-            tool_call_id = getattr(delta_tool_call, 'id', None)
-
-            # Initialize tool call entry if not exists
-            if index not in accumulated_tool_calls:
-                accumulated_tool_calls[index] = {
-                    'id': '',
+        for delta in tool_call_deltas:
+            key = delta.tool_call_id or f"index_{delta.index}"
+            if key not in accumulated_tool_calls:
+                accumulated_tool_calls[key] = {
+                    'id': delta.tool_call_id or '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
                     'complete': False,
                 }
 
-            tool_call_entry = accumulated_tool_calls[index]
+            entry = accumulated_tool_calls[key]
 
-            # Accumulate tool call data
-            if tool_call_id:
-                tool_call_entry['id'] = (
-                    tool_call_id  # Set full ID, don't append
-                )
+            if delta.tool_call_id:
+                entry['id'] = delta.tool_call_id
 
-            if (
-                hasattr(delta_tool_call, 'function')
-                and delta_tool_call.function
-            ):
-                if delta_tool_call.function.name:
-                    tool_call_entry['function']['name'] += (
-                        delta_tool_call.function.name
-                    )  # Append incremental name
-                if delta_tool_call.function.arguments:
-                    tool_call_entry['function']['arguments'] += (
-                        delta_tool_call.function.arguments
-                    )
+            if delta.name_delta:
+                entry['function']['name'] += delta.name_delta
 
-        # Check if any tool calls are complete
+            if delta.arguments_delta:
+                entry['function']['arguments'] += delta.arguments_delta
+
         any_complete = False
-        for _index, tool_call_entry in accumulated_tool_calls.items():
+        for entry in accumulated_tool_calls.values():
             if (
-                tool_call_entry['id']
-                and tool_call_entry['function']['name']
-                and tool_call_entry['function']['arguments']
-                and tool_call_entry['function']['name'] in self._internal_tools
+                entry['id']
+                and entry['function']['name']
+                and entry['function']['arguments']
+                and entry['function']['name'] in self._internal_tools
             ):
                 try:
-                    # Try to parse arguments to check completeness
-                    json.loads(tool_call_entry['function']['arguments'])
-                    tool_call_entry['complete'] = True
+                    json.loads(entry['function']['arguments'])
+                    entry['complete'] = True
                     any_complete = True
                 except json.JSONDecodeError:
-                    # Arguments not complete yet
-                    tool_call_entry['complete'] = False
+                    entry['complete'] = False
 
         return any_complete
 
@@ -3829,6 +3962,13 @@ class ChatAgent(BaseAgent):
             content=f"Error: {error_message}",
         )
 
+        camel_response = self._build_camel_response_from_stream(
+            content=error_msg.content,
+            finish_reasons=["error"],
+            usage_dict={},
+            tool_call_records=tool_call_records,
+        )
+
         return ChatAgentResponse(
             msgs=[error_msg],
             terminated=True,
@@ -3836,6 +3976,7 @@ class ChatAgent(BaseAgent):
                 "error": error_message,
                 "tool_calls": tool_call_records,
                 "streaming": True,
+                "camel_response": camel_response,
             },
         )
 
@@ -3928,7 +4069,7 @@ class ChatAgent(BaseAgent):
                 async for (
                     item
                 ) in self._aprocess_stream_chunks_with_accumulator(
-                    response,
+                    self._iter_camel_chunks_from_async_stream(response),
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -4115,7 +4256,7 @@ class ChatAgent(BaseAgent):
 
     async def _aprocess_stream_chunks_with_accumulator(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: AsyncGenerator[CamelStreamChunk, None],
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
@@ -4123,90 +4264,65 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
         r"""Async version of process streaming chunks with
-        content accumulator.
-        """
+        content accumulator."""
 
         tool_calls_complete = False
         stream_completed = False
+        last_response_id = ""
 
         async for chunk in stream:
-            # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
-                choice = chunk.choices[0]
-                delta = choice.delta
+            response_id = ""
+            if chunk.raw is not None:
+                response_id = getattr(chunk.raw, "id", "") or ""
+                if response_id:
+                    last_response_id = response_id
 
-                # Handle content streaming
-                if delta.content:
-                    # Use accumulator for proper content management
-                    partial_response = (
-                        self._create_streaming_response_with_accumulator(
-                            content_accumulator,
-                            delta.content,
-                            step_token_usage,
-                            getattr(chunk, 'id', ''),
-                            tool_call_records.copy(),
-                        )
+            if chunk.content_delta:
+                partial_response = (
+                    self._create_streaming_response_with_accumulator(
+                        content_accumulator,
+                        chunk.content_delta,
+                        step_token_usage,
+                        response_id or last_response_id,
+                        tool_call_records.copy(),
+                        pending_tool_calls=accumulated_tool_calls.copy(),
                     )
-                    yield partial_response
-
-                # Handle tool calls streaming
-                if delta.tool_calls:
-                    tool_calls_complete = self._accumulate_tool_calls(
-                        delta.tool_calls, accumulated_tool_calls
-                    )
-
-                # Check if stream is complete
-                if choice.finish_reason:
-                    stream_completed = True
-
-                    # If we have complete tool calls, execute them with
-                    # async status updates
-                    if accumulated_tool_calls:
-                        # Execute tools asynchronously with real-time
-                        # status updates
-                        async for (
-                            status_response
-                        ) in self._execute_tools_async_with_status_accumulator(
-                            accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
-                            tool_call_records,
-                        ):
-                            yield status_response
-
-                        # Log sending status instead of adding to content
-                        if tool_call_records:
-                            logger.info("Sending back result to model")
-
-                    # Record final message only if we have content AND no tool
-                    # calls. If there are tool calls, _record_tool_calling
-                    # will handle message recording.
-                    final_content = content_accumulator.get_full_content()
-                    if final_content.strip() and not accumulated_tool_calls:
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                        )
-
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
-                # This happens when stream_options={"include_usage": True}
-                # Update the final usage from this chunk
-                self._update_token_usage_tracker(
-                    step_token_usage, safe_model_dump(chunk.usage)
                 )
+                yield partial_response
 
-                # Create final response with final usage
+            if chunk.tool_call_deltas:
+                if self._accumulate_tool_calls(
+                    chunk.tool_call_deltas, accumulated_tool_calls
+                ):
+                    tool_calls_complete = True
+
+            if chunk.usage:
+                usage_dict = {
+                    k: v
+                    for k, v in chunk.usage.to_dict().items()
+                    if v is not None
+                }
+                if usage_dict:
+                    self._update_token_usage_tracker(
+                        step_token_usage, usage_dict
+                    )
+
+            if chunk.finish_reason:
+                stream_completed = True
+
+                if accumulated_tool_calls:
+                    async for (
+                        status_response
+                    ) in self._execute_tools_async_with_status_accumulator(
+                        accumulated_tool_calls,
+                        content_accumulator,
+                        step_token_usage,
+                        tool_call_records,
+                    ):
+                        yield status_response
+
                 final_content = content_accumulator.get_full_content()
-                if final_content.strip():
+                if final_content.strip() and not accumulated_tool_calls:
                     final_message = BaseMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -4219,28 +4335,35 @@ class ChatAgent(BaseAgent):
                             final_message, response_format
                         )
 
-                    # Create final response with final usage (not partial)
+                    self.record_message(final_message)
+
+                    finish_reasons = [chunk.finish_reason]
+                    camel_response = self._build_camel_response_from_stream(
+                        content=final_content,
+                        finish_reasons=finish_reasons,
+                        usage_dict=step_token_usage.copy(),
+                        tool_call_records=tool_call_records,
+                        response_id=response_id or last_response_id,
+                    )
+
                     final_response = ChatAgentResponse(
                         msgs=[final_message],
                         terminated=False,
                         info={
-                            "id": getattr(chunk, 'id', ''),
+                            "id": response_id or last_response_id,
                             "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
+                            "finish_reasons": finish_reasons,
                             "num_tokens": self._get_token_count(final_content),
                             "tool_calls": tool_call_records or [],
                             "external_tool_requests": None,
                             "streaming": False,
                             "partial": False,
+                            "camel_response": camel_response,
                         },
                     )
                     yield final_response
                 break
-            elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
 
-        # Yield the final status as a tuple
         yield (stream_completed, tool_calls_complete)
 
     async def _execute_tools_async_with_status_accumulator(
@@ -4328,6 +4451,7 @@ class ChatAgent(BaseAgent):
         step_token_usage: Dict[str, int],
         response_id: str = "",
         tool_call_records: Optional[List[ToolCallingRecord]] = None,
+        pending_tool_calls: Optional[Dict[str, Any]] = None,
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
@@ -4345,6 +4469,15 @@ class ChatAgent(BaseAgent):
             content=message_content,
         )
 
+        camel_response = self._build_camel_response_from_stream(
+            content=message_content,
+            finish_reasons=["streaming"],
+            usage_dict=step_token_usage,
+            tool_call_records=tool_call_records or [],
+            response_id=response_id,
+            pending_tool_calls=pending_tool_calls,
+        )
+
         return ChatAgentResponse(
             msgs=[message],
             terminated=False,
@@ -4357,6 +4490,7 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
+                "camel_response": camel_response,
             },
         )
 

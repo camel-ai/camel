@@ -24,10 +24,12 @@ from camel.configs import (
     OllamaConfig,
 )
 from camel.models import ModelFactory
+from camel.models.base_model import BaseModelBackend
 from camel.models.stub_model import StubTokenCounter
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
+    BaseTokenCounter,
     OpenAITokenCounter,
 )
 
@@ -124,6 +126,59 @@ parameterize_token_counter = pytest.mark.parametrize(
         ),
     ],
 )
+
+
+class _DummyTokenCounter(BaseTokenCounter):
+    def count_tokens_from_messages(self, messages):
+        return 0
+
+    def encode(self, text):
+        return []
+
+    def decode(self, token_ids):
+        return ""
+
+
+class _DummyBackend(BaseModelBackend):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._dummy_counter = _DummyTokenCounter()
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        return self._dummy_counter
+
+    def _run(self, messages, response_format=None, tools=None):
+        raise RuntimeError("not implemented in dummy backend")
+
+    async def _arun(self, messages, response_format=None, tools=None):
+        raise RuntimeError("not implemented in dummy backend")
+
+
+def _patch_openai_backends(monkeypatch):
+    call_counts = {"openai": 0, "responses": 0}
+
+    class _OpenAIStub(_DummyBackend):
+        def __init__(self, *args, **kwargs):
+            call_counts["openai"] += 1
+            super().__init__(*args, **kwargs)
+
+    class _ResponsesStub(_DummyBackend):
+        def __init__(self, *args, **kwargs):
+            call_counts["responses"] += 1
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setitem(
+        ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP,
+        ModelPlatformType.OPENAI,
+        _OpenAIStub,
+    )
+    monkeypatch.setitem(
+        ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP,
+        ModelPlatformType.OPENAI_RESPONSES,
+        _ResponsesStub,
+    )
+    return _OpenAIStub, _ResponsesStub, call_counts
 
 
 @parametrize
@@ -268,3 +323,53 @@ def test_model_factory_yaml(mock_run, config_file):
     assert response["choices"][0]["message"]["content"] == "Hello, test!"
 
     print(f" YAML file {config_file} loaded successfully.")
+
+
+def test_model_factory_routes_openai_responses_when_env_flag(monkeypatch):
+    _, responses_cls, call_counts = _patch_openai_backends(monkeypatch)
+    monkeypatch.delenv("CAMEL_OPENAI_USE_RESPONSES", raising=False)
+    monkeypatch.setenv("CAMEL_OPENAI_USE_RESPONSES", "true")
+
+    backend = ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        ModelType.O1,
+        {},
+    )
+
+    assert isinstance(backend, responses_cls)
+    assert call_counts["responses"] == 1
+    assert call_counts["openai"] == 0
+
+
+def test_model_factory_env_flag_ignores_non_responses_models(monkeypatch):
+    openai_cls, responses_cls, call_counts = _patch_openai_backends(
+        monkeypatch
+    )
+    monkeypatch.delenv("CAMEL_OPENAI_USE_RESPONSES", raising=False)
+    monkeypatch.setenv("CAMEL_OPENAI_USE_RESPONSES", "1")
+
+    backend = ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        ModelType.GPT_4O_MINI,
+        {},
+    )
+
+    assert isinstance(backend, openai_cls)
+    assert call_counts["openai"] == 1
+    assert call_counts["responses"] == 0
+
+
+def test_model_factory_config_flag_routes_responses(monkeypatch):
+    _, responses_cls, call_counts = _patch_openai_backends(monkeypatch)
+    monkeypatch.delenv("CAMEL_OPENAI_USE_RESPONSES", raising=False)
+
+    backend = ModelFactory.create(
+        ModelPlatformType.OPENAI,
+        ModelType.GPT_4O_MINI,
+        {"use_responses_api": True, "temperature": 0.2},
+    )
+
+    assert isinstance(backend, responses_cls)
+    assert backend.model_config_dict == {"temperature": 0.2}
+    assert call_counts["responses"] == 1
+    assert call_counts["openai"] == 0

@@ -15,7 +15,7 @@ import abc
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from openai.lib.streaming.chat import (
@@ -24,6 +24,7 @@ from openai.lib.streaming.chat import (
 )
 from pydantic import BaseModel
 
+from camel.core import CamelModelResponse
 from camel.logger import get_logger as camel_get_logger
 from camel.messages import OpenAIMessage
 from camel.types import (
@@ -307,7 +308,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             log_data = json.load(f)
 
             log_data["response_timestamp"] = datetime.now().isoformat()
-            if isinstance(response, BaseModel):
+            if isinstance(response, CamelModelResponse):
+                log_data["response"] = response.to_dict(include_raw=False)
+            elif isinstance(response, BaseModel):
                 log_data["response"] = response.model_dump()
             else:
                 try:
@@ -327,7 +330,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion,
+        CamelModelResponse,
         Stream[ChatCompletionChunk],
         ChatCompletionStreamManager[BaseModel],
     ]:
@@ -387,7 +390,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion,
+        CamelModelResponse,
         Stream[ChatCompletionChunk],
         ChatCompletionStreamManager[BaseModel],
     ]:
@@ -404,8 +407,8 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
-                `ChatCompletion` in the non-stream mode,
+            Union[CamelModelResponse, Stream[ChatCompletionChunk], Any]:
+                `CamelModelResponse` in the non-stream mode,
                 `Stream[ChatCompletionChunk]` in the stream mode, or
                 `ChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
@@ -425,7 +428,16 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
-        result = self._run(messages, response_format, tools)
+        result = cast(
+            Union[
+                CamelModelResponse,
+                Stream[ChatCompletionChunk],
+                ChatCompletionStreamManager[BaseModel],
+            ],
+            self._normalize_response(
+                self._run(messages, response_format, tools)
+            ),
+        )
         logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
@@ -441,7 +453,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion,
+        CamelModelResponse,
         AsyncStream[ChatCompletionChunk],
         AsyncChatCompletionStreamManager[BaseModel],
     ]:
@@ -458,8 +470,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
-                `ChatCompletion` in the non-stream mode,
+            Union[CamelModelResponse, AsyncStream[ChatCompletionChunk], Any]:
+                `CamelModelResponse` (wrapping the legacy ChatCompletion
+                payload) in the non-stream mode,
                 `AsyncStream[ChatCompletionChunk]` in the stream mode, or
                 `AsyncChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
@@ -477,7 +490,16 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Response format: %s", response_format)
         logger.info("Tools: %s", tools)
 
-        result = await self._arun(messages, response_format, tools)
+        result = cast(
+            Union[
+                CamelModelResponse,
+                AsyncStream[ChatCompletionChunk],
+                AsyncChatCompletionStreamManager[BaseModel],
+            ],
+            self._normalize_response(
+                await self._arun(messages, response_format, tools)
+            ),
+        )
         logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
@@ -498,6 +520,29 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             int: Number of tokens in the messages.
         """
         return self.token_counter.count_tokens_from_messages(messages)
+
+    def _normalize_response(
+        self,
+        response: Union[
+            CamelModelResponse,
+            ChatCompletion,
+            Stream[ChatCompletionChunk],
+            AsyncStream[ChatCompletionChunk],
+            ChatCompletionStreamManager[BaseModel],
+            AsyncChatCompletionStreamManager[BaseModel],
+        ],
+    ) -> Union[
+        CamelModelResponse,
+        Stream[ChatCompletionChunk],
+        AsyncStream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
+        if isinstance(response, CamelModelResponse):
+            return response
+        if isinstance(response, ChatCompletion):
+            return CamelModelResponse.from_chat_completion(response)
+        return response
 
     def _to_chat_completion(
         self, response: ParsedChatCompletion

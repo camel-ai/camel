@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
-from typing import Any, ClassVar, Dict, Optional, Type, Union
+from typing import Any, ClassVar, Dict, Optional, Tuple, Type, Union
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
@@ -40,6 +40,7 @@ from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.openai_responses_model import OpenAIResponsesModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
 from camel.models.qianfan_model import QianfanModel
@@ -66,6 +67,17 @@ class ModelFactory:
         ValueError: in case the provided model type is unknown.
     """
 
+    _OPENAI_RESPONSES_ENV_FLAG: ClassVar[str] = "CAMEL_OPENAI_USE_RESPONSES"
+    _OPENAI_RESPONSES_CONFIG_KEYS: ClassVar[Tuple[str, ...]] = (
+        "use_responses_api",
+        "prefer_responses_api",
+    )
+    _OPENAI_RESPONSES_DEFAULT_PREFIXES: ClassVar[Tuple[str, ...]] = (
+        "o",
+        "gpt-4.1",
+        "gpt-5",
+    )
+
     _MODEL_PLATFORM_TO_CLASS_MAP: ClassVar[
         Dict[ModelPlatformType, Type[BaseModelBackend]]
     ] = {
@@ -84,6 +96,7 @@ class ModelFactory:
         ModelPlatformType.VOLCANO: VolcanoModel,
         ModelPlatformType.NETMIND: NetmindModel,
         ModelPlatformType.OPENAI: OpenAIModel,
+        ModelPlatformType.OPENAI_RESPONSES: OpenAIResponsesModel,
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
@@ -108,6 +121,38 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
     }
+
+    @staticmethod
+    def _as_bool(value: Any) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.lower() in {"1", "true", "yes", "on"}
+        return bool(value)
+
+    @classmethod
+    def _env_flag_enabled(cls, var_name: str) -> bool:
+        value = os.environ.get(var_name)
+        if value is None:
+            return False
+        return cls._as_bool(value)
+
+    @classmethod
+    def _model_prefers_responses(cls, model_type: UnifiedModelType) -> bool:
+        model_name = str(model_type)
+        return model_name.startswith(cls._OPENAI_RESPONSES_DEFAULT_PREFIXES)
+
+    @classmethod
+    def _should_route_openai_to_responses(
+        cls,
+        model_type: UnifiedModelType,
+        config_requests_responses: bool,
+    ) -> bool:
+        if config_requests_responses:
+            return True
+        if not cls._env_flag_enabled(cls._OPENAI_RESPONSES_ENV_FLAG):
+            return False
+        return cls._model_prefers_responses(model_type)
 
     @staticmethod
     def create(
@@ -190,9 +235,34 @@ class ModelFactory:
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
+        sanitized_model_config: Optional[Dict] = None
+        config_requests_responses = False
+        if model_config_dict is not None:
+            sanitized_model_config = dict(model_config_dict)
+            if model_platform in {
+                ModelPlatformType.OPENAI,
+                ModelPlatformType.OPENAI_RESPONSES,
+            }:
+                for key in ModelFactory._OPENAI_RESPONSES_CONFIG_KEYS:
+                    value = sanitized_model_config.pop(key, None)
+                    if value is not None and not config_requests_responses:
+                        config_requests_responses = ModelFactory._as_bool(
+                            value
+                        )
+
         model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(
             model_platform
         )
+
+        if (
+            model_platform == ModelPlatformType.OPENAI
+            and ModelFactory._should_route_openai_to_responses(
+                model_type, config_requests_responses
+            )
+        ):
+            model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(
+                ModelPlatformType.OPENAI_RESPONSES
+            )
 
         if model_type == ModelType.STUB:
             model_class = StubModel
@@ -206,9 +276,15 @@ class ModelFactory:
         if async_client is not None:
             kwargs['async_client'] = async_client
 
+        config_for_backend = (
+            sanitized_model_config
+            if sanitized_model_config is not None
+            else model_config_dict
+        )
+
         return model_class(
             model_type=model_type,
-            model_config_dict=model_config_dict,
+            model_config_dict=config_for_backend,
             api_key=api_key,
             url=url,
             token_counter=token_counter,

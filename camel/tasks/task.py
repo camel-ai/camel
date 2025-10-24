@@ -465,7 +465,13 @@ class Task(BaseModel):
 
         # Process streaming response
         for chunk in response:
-            accumulated_content = chunk.msg.content
+            camel_resp = response.camel_response
+            if camel_resp:
+                message = camel_resp.messages[0]
+                if isinstance(message.content, str):
+                    accumulated_content = message.content
+            else:
+                accumulated_content = chunk.msg.content
 
             # Try to parse partial tasks from accumulated content
             try:
@@ -485,7 +491,17 @@ class Task(BaseModel):
                 continue
 
         # Final complete parsing
-        final_tasks = task_parser(accumulated_content, self.id)
+        final_camel_resp = response.camel_response
+        if final_camel_resp and final_camel_resp.messages:
+            final_content = (
+                final_camel_resp.messages[0].content
+                if isinstance(final_camel_resp.messages[0].content, str)
+                else accumulated_content
+            )
+        else:
+            final_content = accumulated_content
+
+        final_tasks = task_parser(final_content, self.id)
         for task in final_tasks:
             task.additional_info = self.additional_info
             task.parent = self

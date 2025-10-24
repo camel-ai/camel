@@ -1679,6 +1679,7 @@ class ModelPlatformType(Enum):
     DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
+    OPENAI_RESPONSES = "openai-responses"
     AWS_BEDROCK = "aws-bedrock"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
@@ -1729,7 +1730,10 @@ class ModelPlatformType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
-        return self is ModelPlatformType.OPENAI
+        return self in (
+            ModelPlatformType.OPENAI,
+            ModelPlatformType.OPENAI_RESPONSES,
+        )
 
     @property
     def is_aws_bedrock(self) -> bool:

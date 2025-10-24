@@ -23,13 +23,17 @@ that decouple high-level agent logic from vendor-specific payload schemas.
 from .chat_types import (
     CamelMessage,
     CamelModelResponse,
+    CamelStreamChunk,
     CamelToolCall,
+    CamelToolCallDelta,
     CamelUsage,
 )
 
 __all__ = [
     "CamelMessage",
     "CamelModelResponse",
+    "CamelStreamChunk",
     "CamelToolCall",
+    "CamelToolCallDelta",
     "CamelUsage",
 ]

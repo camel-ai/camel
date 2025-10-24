@@ -18,4 +18,7 @@ The request for tool calling.
 class ModelResponse(BaseModel):
 ```
 
-The response from the model.
+The response from the model. `response` retains the provider-specific payload
+returned by the backend (for example a raw OpenAI `ChatCompletion` or a stream
+manager), while `camel_response` exposes the normalized
+`CamelModelResponse` representation CAMEL agents consume downstream.

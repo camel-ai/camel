@@ -77,6 +77,14 @@ class CamelToolCall:
             raw=tool_call,
         )
 
+    def to_dict(self) -> JsonDict:
+        return {
+            "name": self.name,
+            "arguments": self.arguments,
+            "id": self.id,
+            "type": self.type,
+        }
+
 
 @dataclass
 class CamelMessage:
@@ -124,6 +132,18 @@ class CamelMessage:
             return len(self.content) > 0
         return False
 
+    def to_dict(self) -> JsonDict:
+        return {
+            "role": self.role,
+            "content": self.content,
+            "name": self.name,
+            "tool_calls": [
+                tool_call.to_dict() for tool_call in self.tool_calls
+            ],
+            "function_call": self.function_call,
+            "parsed": self.parsed,
+        }
+
 
 @dataclass
 class CamelUsage:
@@ -147,6 +167,13 @@ class CamelUsage:
             total_tokens=data.get("total_tokens"),
             raw=usage,
         )
+
+    def to_dict(self) -> JsonDict:
+        return {
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.total_tokens,
+        }
 
 
 @dataclass
@@ -190,3 +217,54 @@ class CamelModelResponse:
         for message in self.messages:
             for tool_call in message.tool_calls:
                 yield tool_call
+
+    def to_dict(self, include_raw: bool = False) -> JsonDict:
+        data: JsonDict = {
+            "messages": [message.to_dict() for message in self.messages],
+            "finish_reasons": self.finish_reasons,
+            "usage": self.usage.to_dict() if self.usage else None,
+            "response_id": self.response_id,
+        }
+        if include_raw and self.raw is not None:
+            data["raw"] = str(self.raw)
+        return data
+
+    def __getattr__(self, item: str) -> Any:
+        raw = object.__getattribute__(self, "raw")
+        if raw is not None and hasattr(raw, item):
+            return getattr(raw, item)
+        raise AttributeError(
+            f"{self.__class__.__name__} has no attribute {item!r}"
+        )
+
+
+@dataclass
+class CamelToolCallDelta:
+    """Incremental update emitted while a tool call is being streamed."""
+
+    index: Optional[int] = None
+    tool_call_id: Optional[str] = None
+    name_delta: Optional[str] = None
+    arguments_delta: Optional[str] = None
+    raw: Any = None
+
+
+@dataclass
+class CamelStreamChunk:
+    """Vendor-neutral streaming delta used by CAMEL agents."""
+
+    content_delta: Optional[str] = None
+    tool_call_deltas: List[CamelToolCallDelta] = field(default_factory=list)
+    finish_reason: Optional[str] = None
+    usage: Optional[CamelUsage] = None
+    parsed_delta: Optional[Any] = None
+    raw: Any = None
+
+    def has_payload(self) -> bool:
+        return bool(
+            (self.content_delta and self.content_delta.strip())
+            or self.tool_call_deltas
+            or self.finish_reason
+            or self.usage
+            or self.parsed_delta is not None
+        )

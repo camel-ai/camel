@@ -23,6 +23,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
+from camel.core import CamelModelResponse
 from camel.logger import get_logger
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
@@ -439,17 +440,27 @@ class SingleAgentWorker(Worker):
             if isinstance(response, AsyncStreamingChatAgentResponse):
                 # For streaming responses, get the final response info
                 final_response = await response
+                camel_response = final_response.info.get("camel_response")
                 usage_info = final_response.info.get(
                     "usage"
                 ) or final_response.info.get("token_usage")
             else:
+                camel_response = response.info.get("camel_response")
                 final_response = response
                 usage_info = response.info.get("usage") or response.info.get(
                     "token_usage"
                 )
-            total_tokens = (
-                usage_info.get("total_tokens", 0) if usage_info else 0
-            )
+
+            if (
+                isinstance(camel_response, CamelModelResponse)
+                and camel_response.usage is not None
+            ):
+                usage_model = camel_response.usage
+                total_tokens = usage_model.total_tokens or 0
+            else:
+                total_tokens = (
+                    usage_info.get("total_tokens", 0) if usage_info else 0
+                )
 
             # collect conversation from working agent to
             # accumulator for workflow memory
