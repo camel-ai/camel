@@ -82,9 +82,12 @@ class ToolCostCalculator:
     def _initialize_default_profiles(self) -> Dict[str, ToolCostProfile]:
         """Initialize default cost profiles for common tool types."""
         return {
-            # Search tools - low cost
             "search_google": ToolCostProfile(
                 category=ToolCategory.SEARCH_API,
+                # base_tokens: tools naturally consume some tokens
+                # for each query.
+                # Here are estimated values for base_tokens.
+                # May need more precise values.
                 base_tokens=50,
             ),
             "search_bing": ToolCostProfile(
