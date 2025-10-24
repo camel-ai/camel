@@ -26,25 +26,52 @@ from camel.responses.model_response import (
 from camel.types import ChatCompletion, RoleType
 
 
+def _get(obj: Any, key: str, default: Any = None) -> Any:
+    """Get attribute or dict item uniformly."""
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _json_loads_safe(val: Any) -> Dict[str, Any]:
+    if isinstance(val, dict):
+        return val
+    if isinstance(val, str):
+        try:
+            import json
+
+            return json.loads(val)
+        except Exception:
+            return {}
+    return {}
+
+
 def _choice_tool_calls_to_camel(
     choice_msg: Any,
 ) -> Optional[List[CamelToolCall]]:
-    tool_calls = getattr(choice_msg, "tool_calls", None)
+    tool_calls = _get(choice_msg, "tool_calls", None)
     if not tool_calls:
         return None
     result: List[CamelToolCall] = []
     for tc in tool_calls:
-        func = getattr(tc, "function", None)
-        name = getattr(func, "name", None) if func else None
-        args_str = getattr(func, "arguments", "{}") if func else "{}"
-        try:
-            import json
-
-            args = json.loads(args_str) if isinstance(args_str, str) else {}
-        except Exception:
-            args = {}
+        func = _get(tc, "function", None)
+        # Prefer nested function fields; fall back to flat keys if present
+        name = (
+            _get(func, "name", None)
+            if func is not None
+            else _get(tc, "name", None)
+        )
+        args_src = (
+            _get(func, "arguments", None)
+            if func is not None
+            else _get(tc, "arguments", None)
+        )
+        args = _json_loads_safe(args_src)
+        call_id = _get(tc, "id", "")
         result.append(
-            CamelToolCall(id=getattr(tc, "id", ""), name=name or "", args=args)
+            CamelToolCall(
+                id=str(call_id or ""), name=str(name or ""), args=args
+            )
         )
     return result
 
