@@ -427,6 +427,10 @@ class ChatAgent(BaseAgent):
             updates return accumulated content (current behavior). When False,
             partial updates return only the incremental delta. (default:
             :obj:`True`)
+        summary_window_ratio (float, optional): Maximum fraction of the total 
+            context window that can be occupied by summary information. Used 
+            to limit how much of the model’s context is reserved for 
+            summarization results. (default: :obj:`0.6`)
     """
 
     def __init__(
@@ -472,6 +476,7 @@ class ChatAgent(BaseAgent):
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
         stream_accumulate: bool = True,
+        summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -584,7 +589,7 @@ class ChatAgent(BaseAgent):
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
         self._last_token_limit_tool_signature: Optional[str] = None
-
+        self.summary_window_ratio = summary_window_ratio
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
@@ -1006,7 +1011,7 @@ class ChatAgent(BaseAgent):
             for msg in messages:
                 content = msg.get('content', '')
                 if isinstance(content, str) and content.startswith(
-                    '[CAMEL_SUMMARY]'
+                    '[CONTEXT_SUMMARY]'
                 ):
                     existing_summaries.append(msg)
 
@@ -1368,7 +1373,7 @@ class ChatAgent(BaseAgent):
                 # Skip summary messages if include_summaries is False
                 if not include_summaries and isinstance(content, str):
                     # Check if this is a summary message by looking for marker
-                    if content.startswith('[CAMEL_SUMMARY]'):
+                    if content.startswith('[CONTEXT_SUMMARY]'):
                         continue
 
                 # Handle tool call messages (assistant calling tools)
@@ -1553,7 +1558,7 @@ class ChatAgent(BaseAgent):
 
             # Add prefix to summary content in result
             if self.summarize_threshold is not None:
-                summary_with_prefix = f"[CAMEL_SUMMARY] {summary_content}"
+                summary_with_prefix = f"[CONTEXT_SUMMARY] {summary_content}"
                 result["summary_with_prefix"] = summary_with_prefix
                 result["include_summaries"] = include_summaries
 
@@ -1643,7 +1648,7 @@ class ChatAgent(BaseAgent):
                 # Skip summary messages if include_summaries is False
                 if not include_summaries and isinstance(content, str):
                     # Check if this is a summary message by looking for marker
-                    if content.startswith('[CAMEL_SUMMARY]'):
+                    if content.startswith('[CONTEXT_SUMMARY]'):
                         continue
 
                 # Handle tool call messages (assistant calling tools)
@@ -1837,7 +1842,7 @@ class ChatAgent(BaseAgent):
 
             # Add prefix to summary content in result
             if self.summarize_threshold is not None:
-                summary_with_prefix = f"[CAMEL_SUMMARY] {summary_content}"
+                summary_with_prefix = f"[CONTEXT_SUMMARY] {summary_content}"
                 result["summary_with_prefix"] = summary_with_prefix
                 result["include_summaries"] = include_summaries
 
@@ -2333,12 +2338,11 @@ class ChatAgent(BaseAgent):
                     token_limit = self.model_backend.token_limit
 
                     if num_tokens <= token_limit:
-                        # Check if summary tokens exceed 60% of limit
-                        # If so, perform full compression (including summaries)
-                        if summary_token_count > token_limit * 0.6:
+                        if summary_token_count > token_limit * self.summary_window_ratio:
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed 60% of limit ({token_limit * 0.6}). "
+                                f"exceed {self.summary_window_ratio} of "
+                                f"limit ({token_limit * self.summary_window_ratio}). "
                                 f"Performing full compression."
                             )
                             # Summarize everything (including summaries)
@@ -2668,12 +2672,11 @@ class ChatAgent(BaseAgent):
                     token_limit = self.model_backend.token_limit
 
                     if num_tokens <= token_limit:
-                        # Check if summary tokens exceed 60% of limit
-                        # If so, perform full compression (including summaries)
-                        if summary_token_count > token_limit * 0.6:
+                        if summary_token_count > token_limit * self.summary_window_ratio:
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed 60% of limit ({token_limit * 0.6}). "
+                                f"exceed {self.summary_window_ratio} of "
+                                f"limit ({token_limit * self.summary_window_ratio}). "
                                 f"Full compression."
                             )
                             # Summarize everything (including summaries)
@@ -2709,6 +2712,8 @@ class ChatAgent(BaseAgent):
                     prev_num_openai_messages=prev_num_openai_messages,
                 )
             except Exception as exc:
+                logger.exception("Model error: %s", exc)
+
                 if self._is_token_limit_error(exc):
                     tool_signature = self._last_tool_call_signature
                     if (
