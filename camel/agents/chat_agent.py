@@ -1651,7 +1651,9 @@ class ChatAgent(BaseAgent):
             )
 
     def update_system_message(
-        self, system_message: Optional[Union[BaseMessage, str]] = None
+        self,
+        system_message: Optional[Union[BaseMessage, str]] = None,
+        reset_memory: bool = True,
     ) -> None:
         r"""Update the system message.
         It will reset conversation with new system message.
@@ -1661,6 +1663,9 @@ class ChatAgent(BaseAgent):
                 Can be either a BaseMessage object or a string.
                 If a string is provided, it will be converted
                 into a BaseMessage object.
+            reset_memory (bool):
+                Whether to reinitialize conversation messages after updating
+                the system message. Defaults to True.
         """
         if system_message is None:
             return
@@ -1674,13 +1679,19 @@ class ChatAgent(BaseAgent):
         self._system_message = (
             self._generate_system_message_for_output_language()
         )
-        self.init_messages()
+        if reset_memory:
+            self.init_messages()
 
-    def append_to_system_message(self, content: str) -> None:
+    def append_to_system_message(
+        self, content: str, reset_memory: bool = True
+    ) -> None:
         """Append additional context to existing system message.
 
         Args:
             content (str): The additional system message.
+            reset_memory (bool):
+                Whether to reinitialize conversation messages after appending
+                additional context. Defaults to True.
         """
         original_content = (
             self._original_system_message.content
@@ -1694,7 +1705,8 @@ class ChatAgent(BaseAgent):
         self._system_message = (
             self._generate_system_message_for_output_language()
         )
-        self.init_messages()
+        if reset_memory:
+            self.init_messages()
 
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
