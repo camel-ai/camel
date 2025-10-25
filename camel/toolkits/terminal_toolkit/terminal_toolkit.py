@@ -486,35 +486,10 @@ class TerminalToolkit(BaseToolkit):
         return "".join(output_parts) + warning_message
 
     def shell_exec(self, id: str, command: str, block: bool = True) -> str:
-        r"""Execute a shell command in either blocking or non-blocking mode.
-        ---
-        **Usage Modes**
-        - `block=True`: Runs synchronously and returns all output after
-        completion.
-        Use for short tasks or setup commands (e.g. `ls`, `pip install ...`).
-        - `block=False`: Runs asynchronously in the background.
-        Output is collected gradually and can be read later using `
-        shell_view(id)`or `shell_wait(id, seconds)`.
-
-        ---
-        **Environment Notes**
-        - The command runs inside a subprocess with stdout connected
-        via a pipe.
-        Python programs run in this mode may buffer their output.
-        If the command is a Python script, consider running it
-        with `python -u script.py`
-        or using `print(..., flush=True)` to ensure immediate
-        output visibility.
-        - Some shell commands like `cat > file <<EOF ... EOF` do not
-        produce stdout output; this is expected and not an error.
-
-        ---
-        **Agent Hint**
-        If you see no output after executing a Python script,
-        it likely means output is being buffered. You can fix this
-        by rerunning the command with `-u` or using `shell_wait` to
-        give the process more time to flush.
-
+        r"""This function executes a shell command. The command can run in
+        blocking mode (waits for completion) or non-blocking mode
+        (runs in the background). A unique session ID is created for
+        each session.
 
         Args:
             command (str): The command to execute.
@@ -526,10 +501,10 @@ class TerminalToolkit(BaseToolkit):
                 a unique ID is generated for non-blocking sessions.
 
         Returns:
-            str: If block is True, returns the complete stdout and stderr.
-                 If block is False, returns a message containing the new
-                 session ID and the initial output from the command after
-                 it goes idle.
+            str: For blocking mode, the combined stdout/stderr. For
+                non-blocking mode, a confirmation message containing the
+                session ID and any initial output collected before the process
+                went idle.
         """
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
@@ -618,6 +593,13 @@ class TerminalToolkit(BaseToolkit):
                 f"> {command}\n",
             )
 
+            env_vars = None
+            docker_env = None
+            if not block:
+                env_vars = os.environ.copy()
+                env_vars.setdefault("PYTHONUNBUFFERED", "1")
+                docker_env = {"PYTHONUNBUFFERED": "1"}
+
             with self._session_lock:
                 self.shell_sessions[session_id] = {
                     "id": session_id,
@@ -642,6 +624,7 @@ class TerminalToolkit(BaseToolkit):
                         text=True,
                         cwd=self.working_dir,
                         encoding="utf-8",
+                        env=env_vars,
                     )
                     with self._session_lock:
                         self.shell_sessions[session_id]["process"] = process
@@ -655,6 +638,7 @@ class TerminalToolkit(BaseToolkit):
                         stdin=True,
                         tty=True,
                         workdir=self.docker_workdir,
+                        environment=docker_env,
                     )
                     exec_id = exec_instance['Id']
                     exec_socket = self.docker_api_client.exec_start(
@@ -777,14 +761,7 @@ class TerminalToolkit(BaseToolkit):
         except Empty:
             pass
 
-        combined_output = "".join(output)
-        if combined_output:
-            return combined_output
-
-        return (
-            "[No new output available. Process is still running; "
-            "output may be buffered.]"
-        )
+        return "".join(output)
 
     def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
         r"""This function waits for a specified duration for a
