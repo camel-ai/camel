@@ -1,0 +1,85 @@
+<a id="camel.societies.workforce.workforce_callback"></a>
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback"></a>
+
+## WorkforceCallback
+
+```python
+class WorkforceCallback(ABC):
+```
+
+Interface for recording workforce lifecycle events.
+
+Implementations should persist or stream events as appropriate.
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_created"></a>
+
+### log_task_created
+
+```python
+def log_task_created(self, event: TaskCreatedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_decomposed"></a>
+
+### log_task_decomposed
+
+```python
+def log_task_decomposed(self, event: TaskDecomposedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_assigned"></a>
+
+### log_task_assigned
+
+```python
+def log_task_assigned(self, event: TaskAssignedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_started"></a>
+
+### log_task_started
+
+```python
+def log_task_started(self, event: TaskStartedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_completed"></a>
+
+### log_task_completed
+
+```python
+def log_task_completed(self, event: TaskCompletedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_task_failed"></a>
+
+### log_task_failed
+
+```python
+def log_task_failed(self, event: TaskFailedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_worker_created"></a>
+
+### log_worker_created
+
+```python
+def log_worker_created(self, event: WorkerCreatedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_worker_deleted"></a>
+
+### log_worker_deleted
+
+```python
+def log_worker_deleted(self, event: WorkerDeletedEvent):
+```
+
+<a id="camel.societies.workforce.workforce_callback.WorkforceCallback.log_all_tasks_completed"></a>
+
+### log_all_tasks_completed
+
+```python
+def log_all_tasks_completed(self, event: AllTasksCompletedEvent):
+```

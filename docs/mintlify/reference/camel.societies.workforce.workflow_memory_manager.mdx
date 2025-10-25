@@ -1,0 +1,302 @@
+<a id="camel.societies.workforce.workflow_memory_manager"></a>
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowSelectionMethod"></a>
+
+## WorkflowSelectionMethod
+
+```python
+class WorkflowSelectionMethod(Enum):
+```
+
+Enum representing the method used to select workflows.
+
+**Parameters:**
+
+- **AGENT_SELECTED**: Agent-based intelligent selection using metadata.
+- **ROLE_NAME_MATCH**: Pattern matching by role_name.
+- **MOST_RECENT**: Fallback to most recent workflows.
+- **ALL_AVAILABLE**: Returned all workflows (fewer than max requested).
+- **NONE**: No workflows available.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager"></a>
+
+## WorkflowMemoryManager
+
+```python
+class WorkflowMemoryManager:
+```
+
+Manages workflow memory operations for workforce workers.
+
+This class encapsulates all workflow memory functionality including
+intelligent loading, saving, and selection of workflows. It separates
+workflow management concerns from the core worker task processing logic.
+
+**Parameters:**
+
+- **worker** (ChatAgent): The worker agent that will use workflows.
+- **description** (str): Description of the worker's role.
+- **context_utility** (Optional[ContextUtility]): Shared context utility for workflow operations. If None, creates a new instance.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    worker: ChatAgent,
+    description: str,
+    context_utility: Optional[ContextUtility] = None
+):
+```
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._get_context_utility"></a>
+
+### _get_context_utility
+
+```python
+def _get_context_utility(self):
+```
+
+Get context utility with lazy initialization.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager.load_workflows"></a>
+
+### load_workflows
+
+```python
+def load_workflows(
+    self,
+    pattern: Optional[str] = None,
+    max_files_to_load: int = 3,
+    session_id: Optional[str] = None,
+    use_smart_selection: bool = True
+):
+```
+
+Load workflow memories using intelligent agent-based selection.
+
+This method uses the worker agent to intelligently select the most
+relevant workflows based on workflow information (title, description,
+tags) rather than simple filename pattern matching.
+
+**Parameters:**
+
+- **pattern** (Optional[str]): Legacy parameter for backward compatibility. When use_smart_selection=False, uses this pattern for file matching. Ignored when smart selection is enabled.
+- **max_files_to_load** (int): Maximum number of workflow files to load. (default: :obj:`3`)
+- **session_id** (Optional[str]): Specific workforce session ID to load from. If None, searches across all sessions. (default: :obj:`None`)
+- **use_smart_selection** (bool): Whether to use agent-based intelligent workflow selection. When True, uses workflow information and LLM to select most relevant workflows. When False, falls back to pattern matching. (default: :obj:`True`)
+
+**Returns:**
+
+  bool: True if workflow memories were successfully loaded, False
+otherwise.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager.save_workflow"></a>
+
+### save_workflow
+
+```python
+def save_workflow(self, conversation_accumulator: Optional[ChatAgent] = None):
+```
+
+Save the worker's current workflow memories using agent
+summarization.
+
+This method generates a workflow summary from the worker agent's
+conversation history and saves it to a markdown file.
+
+**Parameters:**
+
+- **conversation_accumulator** (Optional[ChatAgent]): Optional accumulator agent with collected conversations. If provided, uses this instead of the main worker agent.
+
+**Returns:**
+
+  Dict[str, Any]: Result dictionary with keys:
+- status (str): "success" or "error"
+- summary (str): Generated workflow summary
+- file_path (str): Path to saved file
+- worker_description (str): Worker description used
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._select_relevant_workflows"></a>
+
+### _select_relevant_workflows
+
+```python
+def _select_relevant_workflows(
+    self,
+    workflows_metadata: List[Dict[str, Any]],
+    max_files: int,
+    session_id: Optional[str] = None
+):
+```
+
+Use worker agent to select most relevant workflows.
+
+This method creates a prompt with all available workflow information
+and uses the worker agent to intelligently select the most relevant
+workflows based on the worker's role and description.
+
+**Parameters:**
+
+- **workflows_metadata** (List[Dict[str, Any]]): List of workflow information dicts (contains title, description, tags, file_path).
+- **max_files** (int): Maximum number of workflows to select.
+- **session_id** (Optional[str]): Specific workforce session ID to search in for fallback pattern matching. If None, searches across all sessions. (default: :obj:`None`)
+
+**Returns:**
+
+  tuple[List[str], WorkflowSelectionMethod]: Tuple of (selected
+workflow file paths, selection method used).
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._format_workflows_for_selection"></a>
+
+### _format_workflows_for_selection
+
+```python
+def _format_workflows_for_selection(self, workflows_metadata: List[Dict[str, Any]]):
+```
+
+Format workflow information into a readable prompt for selection.
+
+**Parameters:**
+
+- **workflows_metadata** (List[Dict[str, Any]]): List of workflow information dicts (contains title, description, tags, file_path).
+
+**Returns:**
+
+  str: Formatted string presenting workflows for LLM selection.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._find_workflow_files"></a>
+
+### _find_workflow_files
+
+```python
+def _find_workflow_files(self, pattern: Optional[str], session_id: Optional[str] = None):
+```
+
+Find and return sorted workflow files matching the pattern.
+
+**Parameters:**
+
+- **pattern** (Optional[str]): Custom search pattern for workflow files. If None, uses worker role_name to generate pattern.
+- **session_id** (Optional[str]): Specific session ID to search in. If None, searches across all sessions.
+
+**Returns:**
+
+  List[str]: Sorted list of workflow file paths (empty if
+validation fails).
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._collect_workflow_contents"></a>
+
+### _collect_workflow_contents
+
+```python
+def _collect_workflow_contents(self, workflow_files: List[str]):
+```
+
+Collect and load workflow file contents.
+
+**Parameters:**
+
+- **workflow_files** (List[str]): List of workflow file paths to load.
+
+**Returns:**
+
+  List[Dict[str, str]]: List of dicts with 'filename' and
+'content' keys.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._format_workflows_for_context"></a>
+
+### _format_workflows_for_context
+
+```python
+def _format_workflows_for_context(self, workflows_to_load: List[Dict[str, str]]):
+```
+
+Format workflows into a context string for the agent.
+
+**Parameters:**
+
+- **workflows_to_load** (List[Dict[str, str]]): List of workflow dicts with 'filename' and 'content' keys.
+
+**Returns:**
+
+  str: Formatted workflow context string with header and all
+workflows.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._add_workflows_to_system_message"></a>
+
+### _add_workflows_to_system_message
+
+```python
+def _add_workflows_to_system_message(self, workflow_context: str):
+```
+
+Add workflow context to agent's system message.
+
+**Parameters:**
+
+- **workflow_context** (str): The formatted workflow context to add.
+
+**Returns:**
+
+  bool: True if successful, False otherwise.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._load_workflow_files"></a>
+
+### _load_workflow_files
+
+```python
+def _load_workflow_files(self, workflow_files: List[str], max_workflows: int):
+```
+
+Load workflow files and return count of successful loads.
+
+Loads all workflows together with a single header to avoid repetition.
+
+**Parameters:**
+
+- **workflow_files** (List[str]): List of workflow file paths to load.
+- **max_workflows** (int): Maximum number of workflows to load.
+
+**Returns:**
+
+  int: Number of successfully loaded workflow files.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._get_sanitized_role_name"></a>
+
+### _get_sanitized_role_name
+
+```python
+def _get_sanitized_role_name(self):
+```
+
+**Returns:**
+
+  str: Sanitized role name suitable for use in filenames.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._generate_workflow_filename"></a>
+
+### _generate_workflow_filename
+
+```python
+def _generate_workflow_filename(self):
+```
+
+**Returns:**
+
+  str: Sanitized filename without timestamp and without .md
+extension. Format: \{role_name\}_workflow
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._prepare_workflow_prompt"></a>
+
+### _prepare_workflow_prompt
+
+```python
+def _prepare_workflow_prompt(self):
+```
+
+**Returns:**
+
+  str: Structured prompt for workflow summary.

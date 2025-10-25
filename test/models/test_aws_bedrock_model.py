@@ -37,7 +37,11 @@ from camel.utils import OpenAITokenCounter
 )
 def test_aws_bedrock_model(model_type: ModelType):
     r"""Test AWSBedrockModel initialization with different model types."""
-    model = AWSBedrockModel(model_type)
+    model = AWSBedrockModel(
+        model_type,
+        api_key="dummy_key",
+        url="http://dummy.url",
+    )
     assert model.model_type == model_type
     assert model.model_config_dict == BedrockConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -47,12 +51,23 @@ def test_aws_bedrock_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 @pytest.mark.asyncio
-async def test_aws_bedrock_async_not_implemented():
-    r"""Test AWSBedrockModel async method raising NotImplementedError."""
-    model = AWSBedrockModel(ModelType.AWS_CLAUDE_3_HAIKU)
+async def test_aws_bedrock_async_supported():
+    r"""Test AWSBedrockModel async method is now supported.
 
-    with pytest.raises(
-        NotImplementedError,
-        match="AWS Bedrock does not support async inference.",
-    ):
-        await model._arun("Test message")
+    This test verifies that async inference is supported by ensuring
+    it doesn't raise NotImplementedError. Instead, it should attempt
+    to make a connection and fail with APIConnectionError due to
+    invalid credentials in the test environment.
+    """
+    from openai import APIConnectionError
+
+    model = AWSBedrockModel(
+        ModelType.AWS_CLAUDE_3_HAIKU,
+        api_key="dummy_key",
+        url="http://dummy.url",
+    )
+
+    # Async should now be supported, so it should attempt to connect
+    # and fail with a connection error (not NotImplementedError)
+    with pytest.raises(APIConnectionError):
+        await model._arun([{"role": "user", "content": "Test message"}])

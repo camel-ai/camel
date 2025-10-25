@@ -11,14 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from abc import ABC, abstractmethod
+from typing import Any, Dict
 
-from camel.logger import disable_logging, enable_logging, set_log_level
 
-__version__ = '0.2.79a0'
+class WorkforceMetrics(ABC):
+    @abstractmethod
+    def reset_task_data(self) -> None:
+        pass
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+    @abstractmethod
+    def dump_to_json(self, file_path: str) -> None:
+        pass
+
+    @abstractmethod
+    def get_ascii_tree_representation(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_kpis(self) -> Dict[str, Any]:
+        pass

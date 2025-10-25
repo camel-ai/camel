@@ -13,17 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncStream
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import BedrockConfig
-from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
     ModelType,
 )
 from camel.utils import BaseTokenCounter, api_keys_required
@@ -92,14 +86,4 @@ class AWSBedrockModel(OpenAICompatibleModel):
             timeout=timeout,
             max_retries=max_retries,
             **kwargs,
-        )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        raise NotImplementedError(
-            "AWS Bedrock does not support async inference."
         )
