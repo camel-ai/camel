@@ -20,7 +20,6 @@ import concurrent.futures
 import hashlib
 import inspect
 import json
-import math
 import os
 import random
 import re
@@ -68,6 +67,7 @@ from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
+    ContextRecord,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
@@ -101,6 +101,19 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+
+TOKEN_LIMIT_ERROR_MARKERS = (
+    "context_length_exceeded",
+    "prompt is too long",
+    "exceeded your current quota",
+    "tokens must be reduced",
+    "context length",
+    "token count",
+    "context limit",
+)
+
+SUMMARY_MAX_DEPTH = 3
+SUMMARY_PROGRESS_RECORD_THRESHOLD = 2
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -354,9 +367,9 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        token_limit (int, optional): The maximum number of tokens in a context.
-            The context will be automatically pruned to fulfill the limitation.
-            If `None`, it will be set according to the backend model.
+        summarize_threshold (int, optional): The percentage of the context
+            window that triggers summarization. If `None`, will trigger
+            summarization when the context window is full.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
@@ -414,6 +427,10 @@ class ChatAgent(BaseAgent):
             updates return accumulated content (current behavior). When False,
             partial updates return only the incremental delta. (default:
             :obj:`True`)
+        summary_window_ratio (float, optional): Maximum fraction of the total 
+            context window that can be occupied by summary information. Used 
+            to limit how much of the model’s context is reserved for 
+            summarization results. (default: :obj:`0.6`)
     """
 
     def __init__(
@@ -436,6 +453,7 @@ class ChatAgent(BaseAgent):
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
+        summarize_threshold: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
@@ -458,6 +476,7 @@ class ChatAgent(BaseAgent):
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
         stream_accumulate: bool = True,
+        summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -473,10 +492,17 @@ class ChatAgent(BaseAgent):
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
+        if token_limit is not None:
+            logger.warning(
+                "`token_limit` parameter is deprecated and will be ignored. "
+                "Configure the model's token limit in the backend settings "
+                "instead."
+            )
+
         # Set up memory
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            token_limit or self.model_backend.token_limit,
+            self.model_backend.token_limit,
         )
 
         self._memory: AgentMemory = memory or ChatHistoryMemory(
@@ -502,6 +528,16 @@ class ChatAgent(BaseAgent):
             self._generate_system_message_for_output_language()
         )
         self.init_messages()
+
+        # Set up summarize threshold with validation
+        if summarize_threshold is not None:
+            if not (0 < summarize_threshold <= 100):
+                raise ValueError(
+                    f"summarize_threshold must be between 0 and 100, "
+                    f"got {summarize_threshold}"
+                )
+        self.summarize_threshold = summarize_threshold
+        self._reset_summary_state()
 
         # Set up role name and role type
         self.role_name: str = (
@@ -550,7 +586,10 @@ class ChatAgent(BaseAgent):
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
-
+        self._last_tool_call_record: Optional[ToolCallingRecord] = None
+        self._last_tool_call_signature: Optional[str] = None
+        self._last_token_limit_tool_signature: Optional[str] = None
+        self.summary_window_ratio = summary_window_ratio
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
@@ -761,6 +800,334 @@ class ChatAgent(BaseAgent):
             for func_tool in self._internal_tools.values()
         ]
 
+    @staticmethod
+    def _is_token_limit_error(error: Exception) -> bool:
+        r"""Return True when the exception message indicates a token limit."""
+        error_message = str(error).lower()
+        return any(
+            marker in error_message for marker in TOKEN_LIMIT_ERROR_MARKERS
+        )
+
+    @staticmethod
+    def _is_tool_related_record(record: MemoryRecord) -> bool:
+        r"""Determine whether the given memory record
+        belongs to a tool call."""
+        if record.role_at_backend in {
+            OpenAIBackendRole.TOOL,
+            OpenAIBackendRole.FUNCTION,
+        }:
+            return True
+
+        if (
+            record.role_at_backend == OpenAIBackendRole.ASSISTANT
+            and isinstance(record.message, FunctionCallingMessage)
+        ):
+            return True
+
+        return False
+
+    def _find_indices_to_remove_for_last_tool_pair(
+        self, recent_records: List[ContextRecord]
+    ) -> List[int]:
+        """Find indices of records that should be removed to clean up the most
+        recent incomplete tool interaction pair.
+
+        This method identifies tool call/result pairs by tool_call_id and
+        returns the exact indices to remove, allowing non-contiguous deletions.
+
+        Logic:
+        - If the last record is a tool result (TOOL/FUNCTION) with a
+          tool_call_id, find the matching assistant call anywhere in history
+          and return both indices.
+        - If the last record is an assistant tool call without a result yet,
+          return just that index.
+        - For normal messages (non tool-related): remove just the last one.
+        - Fallback: If no tool_call_id is available, use heuristic (last 2 if
+          tool-related, otherwise last 1).
+
+        Returns:
+            List[int]: Indices to remove (may be non-contiguous).
+        """
+        if not recent_records:
+            return []
+
+        last_idx = len(recent_records) - 1
+        last_record = recent_records[last_idx].memory_record
+
+        # Case A: Last is an ASSISTANT tool call with no result yet
+        if (
+            last_record.role_at_backend == OpenAIBackendRole.ASSISTANT
+            and isinstance(last_record.message, FunctionCallingMessage)
+            and last_record.message.result is None
+        ):
+            return [last_idx]
+
+        # Case B: Last is TOOL/FUNCTION result, try id-based pairing
+        if last_record.role_at_backend in {
+            OpenAIBackendRole.TOOL,
+            OpenAIBackendRole.FUNCTION,
+        }:
+            tool_id = None
+            if isinstance(last_record.message, FunctionCallingMessage):
+                tool_id = last_record.message.tool_call_id
+
+            if tool_id:
+                for idx in range(len(recent_records) - 2, -1, -1):
+                    rec = recent_records[idx].memory_record
+                    if rec.role_at_backend != OpenAIBackendRole.ASSISTANT:
+                        continue
+
+                    # Check if this assistant message contains the tool_call_id
+                    matched = False
+
+                    # Case 1: FunctionCallingMessage (single tool call)
+                    if isinstance(rec.message, FunctionCallingMessage):
+                        if rec.message.tool_call_id == tool_id:
+                            matched = True
+
+                    # Case 2: BaseMessage with multiple tool_calls in meta_dict
+                    elif (
+                        hasattr(rec.message, "meta_dict")
+                        and rec.message.meta_dict
+                    ):
+                        tool_calls_list = rec.message.meta_dict.get(
+                            "tool_calls", []
+                        )
+                        if isinstance(tool_calls_list, list):
+                            for tc in tool_calls_list:
+                                if (
+                                    isinstance(tc, dict)
+                                    and tc.get("id") == tool_id
+                                ):
+                                    matched = True
+                                    break
+
+                    if matched:
+                        # Return both assistant call and tool result indices
+                        return [idx, last_idx]
+
+            # Fallback: no tool_call_id, use heuristic
+            if self._is_tool_related_record(last_record):
+                # Remove last 2 (assume they are paired)
+                return [last_idx - 1, last_idx] if last_idx > 0 else [last_idx]
+            else:
+                return [last_idx]
+
+        # Default: non tool-related tail => remove last one
+        return [last_idx]
+
+    @staticmethod
+    def _serialize_tool_args(args: Dict[str, Any]) -> str:
+        try:
+            return json.dumps(args, ensure_ascii=False, sort_keys=True)
+        except TypeError:
+            return str(args)
+
+    @classmethod
+    def _build_tool_signature(
+        cls, func_name: str, args: Dict[str, Any]
+    ) -> str:
+        args_repr = cls._serialize_tool_args(args)
+        return f"{func_name}:{args_repr}"
+
+    def _describe_tool_call(
+        self, record: Optional[ToolCallingRecord]
+    ) -> Optional[str]:
+        if record is None:
+            return None
+        args_repr = self._serialize_tool_args(record.args)
+        return f"Tool `{record.tool_name}` invoked with arguments {args_repr}."
+
+    def _format_tool_limit_notice(self) -> Optional[str]:
+        description = self._describe_tool_call(self._last_tool_call_record)
+        if description is None:
+            return None
+        return "[Tool Call Causing Token Limit]\n" f"{description}"
+
+    def _reset_summary_state(self) -> None:
+        self._summary_state: Dict[str, Any] = {
+            "depth": 0,
+            "last_summary_log_length": 0,
+            "last_summary_user_signature": None,
+            "record_count_since_summary": 0,
+            "user_count_since_summary": 0,
+            "summary_token_count": 0,  # Total tokens in summary messages
+            "last_summary_threshold": 0,  # Last calculated threshold
+            "is_summary_message": set(),  # Set of message  that are summaries
+        }
+
+    def _calculate_next_summary_threshold(self) -> int:
+        r"""Calculate the next token threshold that should trigger
+        summarization.
+
+        The threshold calculation follows a progressive strategy:
+        - First time: token_limit * (summarize_threshold / 100)
+        - Subsequent times: (limit - summary_token) / 2 + summary_token
+
+        This ensures that as summaries accumulate, the threshold adapts
+        to maintain a reasonable balance between context and summaries.
+
+        Returns:
+            int: The token count threshold for next summarization.
+        """
+        if self.summarize_threshold is None:
+            return 0
+
+        token_limit = self.model_backend.token_limit
+        summary_token_count = self._summary_state.get("summary_token_count", 0)
+
+        # First summarization: use the percentage threshold
+        if summary_token_count == 0:
+            threshold = int(token_limit * self.summarize_threshold / 100)
+        else:
+            # Subsequent summarizations: adaptive threshold
+            threshold = int(
+                (token_limit - summary_token_count)
+                * self.summarize_threshold
+                / 100
+                + summary_token_count
+            )
+
+        return threshold
+
+    def _update_memory_with_summary(self, summary: Dict[str, Any]) -> None:
+        r"""Update memory with summary result.
+
+        This method handles memory clearing and restoration of summaries based
+        on whether it's a progressive or full compression.
+        """
+        if not summary or self.summarize_threshold is None:
+            return
+
+        summary_with_prefix = summary.get("summary_with_prefix")
+        if not summary_with_prefix:
+            return
+        summary_status = summary.get("status", "")
+        include_summaries = summary.get("include_summaries", False)
+
+        existing_summaries = []
+        if not include_summaries:
+            messages, _ = self.memory.get_context()
+            for msg in messages:
+                content = msg.get('content', '')
+                if isinstance(content, str) and content.startswith(
+                    '[CONTEXT_SUMMARY]'
+                ):
+                    existing_summaries.append(msg)
+
+        # Clear memory
+        self.clear_memory()
+
+        # Restore old summaries (for progressive compression)
+        for old_summary in existing_summaries:
+            content = old_summary.get('content', '')
+            if not isinstance(content, str):
+                content = str(content)
+            summary_msg = BaseMessage.make_assistant_message(
+                role_name="Assistant", content=content
+            )
+            self.update_memory(summary_msg, OpenAIBackendRole.ASSISTANT)
+
+        # Add new summary
+        new_summary_msg = BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content=summary_with_prefix + " " + summary_status,
+        )
+        self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
+
+        # Update token count
+        try:
+            summary_tokens = (
+                self.model_backend.token_counter.count_tokens_from_messages(
+                    [{"role": "assistant", "content": summary_with_prefix}]
+                )
+            )
+
+            if include_summaries:  # Full compression - reset count
+                self._summary_state["summary_token_count"] = summary_tokens
+                logger.info(
+                    f"Full compression: Summary with {summary_tokens} tokens. "
+                    f"Total summary tokens reset to: {summary_tokens}"
+                )
+            else:  # Progressive compression - accumulate
+                self._summary_state["summary_token_count"] += summary_tokens
+                logger.info(
+                    f"Progressive compression: New summary "
+                    f"with {summary_tokens} tokens. "
+                    f"Total summary tokens: "
+                    f"{self._summary_state['summary_token_count']}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to count summary tokens: {e}")
+
+    def _register_record_addition(self, role: OpenAIBackendRole) -> None:
+        state = getattr(self, "_summary_state", None)
+        if not state:
+            return
+
+        state["record_count_since_summary"] = (
+            state.get("record_count_since_summary", 0) + 1
+        )
+
+        if role == OpenAIBackendRole.USER:
+            state["user_count_since_summary"] = (
+                state.get("user_count_since_summary", 0) + 1
+            )
+
+    def _can_attempt_summary(self) -> Tuple[bool, Optional[str]]:
+        state = getattr(self, "_summary_state", None)
+        if not state:
+            return True, None
+
+        depth = state.get("depth", 0)
+
+        if depth >= SUMMARY_MAX_DEPTH:
+            return (
+                False,
+                "Maximum number of summaries reached for this session.",
+            )
+
+        if depth == 0:
+            return True, None
+
+        if (
+            state.get("record_count_since_summary", 0)
+            >= SUMMARY_PROGRESS_RECORD_THRESHOLD
+        ):
+            return True, None
+
+        return (
+            False,
+            "Context was summarized recently but the conversation did not add "
+            "enough new exchanges to summarize again.",
+        )
+
+    def _on_summary(self, records_before_summary: List[ContextRecord]) -> None:
+        state = getattr(self, "_summary_state", None)
+        if state is None:
+            return
+
+        state["depth"] = state.get("depth", 0) + 1
+        state["last_summary_log_length"] = len(records_before_summary)
+        state["record_count_since_summary"] = 0
+        state["user_count_since_summary"] = 0
+        state["last_summary_user_signature"] = (
+            self._extract_last_user_signature(records_before_summary)
+        )
+
+    @staticmethod
+    def _extract_last_user_signature(
+        records: List[ContextRecord],
+    ) -> Optional[str]:
+        for context_record in reversed(records):
+            memory_record = context_record.memory_record
+            if memory_record.role_at_backend == OpenAIBackendRole.USER:
+                content = getattr(memory_record.message, "content", None)
+                if isinstance(content, str):
+                    return content
+                return None
+        return None
+
     def _get_external_tool_names(self) -> Set[str]:
         r"""Returns a set of external tool names."""
         return set(self._external_tool_schemas.keys())
@@ -822,16 +1189,6 @@ class ChatAgent(BaseAgent):
     ) -> None:
         r"""Updates the agent memory with a new message.
 
-        If the single *message* exceeds the model's context window, it will
-        be **automatically split into multiple smaller chunks** before being
-        written into memory. This prevents later failures in
-        `ScoreBasedContextCreator` where an over-sized message cannot fit
-        into the available token budget at all.
-
-        This slicing logic handles both regular text messages (in the
-        `content` field) and long tool call results (in the `result` field of
-        a `FunctionCallingMessage`).
-
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
@@ -841,151 +1198,16 @@ class ChatAgent(BaseAgent):
                 (default: :obj:`None`)
                     (default: obj:`None`)
         """
-
-        # 1. Helper to write a record to memory
-        def _write_single_record(
-            message: BaseMessage, role: OpenAIBackendRole, timestamp: float
-        ):
-            self.memory.write_record(
-                MemoryRecord(
-                    message=message,
-                    role_at_backend=role,
-                    timestamp=timestamp,
-                    agent_id=self.agent_id,
-                )
-            )
-
-        base_ts = (
-            timestamp
+        record = MemoryRecord(
+            message=message,
+            role_at_backend=role,
+            timestamp=timestamp
             if timestamp is not None
-            else time.time_ns() / 1_000_000_000
+            else time.time_ns() / 1_000_000_000,  # Nanosecond precision
+            agent_id=self.agent_id,
         )
-
-        # 2. Get token handling utilities, fallback if unavailable
-        try:
-            context_creator = self.memory.get_context_creator()
-            token_counter = context_creator.token_counter
-            token_limit = context_creator.token_limit
-        except AttributeError:
-            _write_single_record(message, role, base_ts)
-            return
-
-        # 3. Check if slicing is necessary
-        try:
-            current_tokens = token_counter.count_tokens_from_messages(
-                [message.to_openai_message(role)]
-            )
-
-            _, ctx_tokens = self.memory.get_context()
-
-            remaining_budget = max(0, token_limit - ctx_tokens)
-
-            if current_tokens <= remaining_budget:
-                _write_single_record(message, role, base_ts)
-                return
-        except Exception as e:
-            logger.warning(
-                f"Token calculation failed before chunking, "
-                f"writing message as-is. Error: {e}"
-            )
-            _write_single_record(message, role, base_ts)
-            return
-
-        # 4. Perform slicing
-        logger.warning(
-            f"Message with {current_tokens} tokens exceeds remaining budget "
-            f"of {remaining_budget}. Slicing into smaller chunks."
-        )
-
-        text_to_chunk: Optional[str] = None
-        is_function_result = False
-
-        if isinstance(message, FunctionCallingMessage) and isinstance(
-            message.result, str
-        ):
-            text_to_chunk = message.result
-            is_function_result = True
-        elif isinstance(message.content, str):
-            text_to_chunk = message.content
-
-        if not text_to_chunk or not text_to_chunk.strip():
-            _write_single_record(message, role, base_ts)
-            return
-        # Encode the entire text to get a list of all token IDs
-        try:
-            all_token_ids = token_counter.encode(text_to_chunk)
-        except Exception as e:
-            logger.error(f"Failed to encode text for chunking: {e}")
-            _write_single_record(message, role, base_ts)  # Fallback
-            return
-
-        if not all_token_ids:
-            _write_single_record(message, role, base_ts)  # Nothing to chunk
-            return
-
-        # 1.  Base chunk size: one-tenth of the smaller of (a) total token
-        # limit and (b) current remaining budget.  This prevents us from
-        # creating chunks that are guaranteed to overflow the
-        # immediate context window.
-        base_chunk_size = max(1, remaining_budget) // 10
-
-        # 2.  Each chunk gets a textual prefix such as:
-        #        "[chunk 3/12 of a long message]\n"
-        #     The prefix itself consumes tokens, so if we do not subtract its
-        #     length the *total* tokens of the outgoing message (prefix + body)
-        #     can exceed the intended bound.  We estimate the prefix length
-        #     with a representative example that is safely long enough for the
-        #     vast majority of cases (three-digit indices).
-        sample_prefix = "[chunk 1/1000 of a long message]\n"
-        prefix_token_len = len(token_counter.encode(sample_prefix))
-
-        # 3.  The real capacity for the message body is therefore the base
-        #     chunk size minus the prefix length.  Fallback to at least one
-        #     token to avoid zero or negative sizes.
-        chunk_body_limit = max(1, base_chunk_size - prefix_token_len)
-
-        # 4.  Calculate how many chunks we will need with this body size.
-        num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
-        group_id = str(uuid.uuid4())
-
-        for i in range(num_chunks):
-            start_idx = i * chunk_body_limit
-            end_idx = start_idx + chunk_body_limit
-            chunk_token_ids = all_token_ids[start_idx:end_idx]
-
-            chunk_body = token_counter.decode(chunk_token_ids)
-
-            prefix = f"[chunk {i + 1}/{num_chunks} of a long message]\n"
-            new_body = prefix + chunk_body
-
-            if is_function_result and isinstance(
-                message, FunctionCallingMessage
-            ):
-                new_msg: BaseMessage = FunctionCallingMessage(
-                    role_name=message.role_name,
-                    role_type=message.role_type,
-                    meta_dict=message.meta_dict,
-                    content=message.content,
-                    func_name=message.func_name,
-                    args=message.args,
-                    result=new_body,
-                    tool_call_id=message.tool_call_id,
-                )
-            else:
-                new_msg = message.create_new_instance(new_body)
-
-            meta = (new_msg.meta_dict or {}).copy()
-            meta.update(
-                {
-                    "chunk_idx": i + 1,
-                    "chunk_total": num_chunks,
-                    "chunk_group_id": group_id,
-                }
-            )
-            new_msg.meta_dict = meta
-
-            # Increment timestamp slightly to maintain order
-            _write_single_record(new_msg, role, base_ts + i * 1e-6)
+        self.memory.write_record(record)
+        self._register_record_addition(role)
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -1070,6 +1292,7 @@ class ChatAgent(BaseAgent):
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
+        include_summaries: bool = False,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1089,6 +1312,11 @@ class ChatAgent(BaseAgent):
                 defining the expected structure of the response. If provided,
                 the summary will be generated as structured output and included
                 in the result.
+            include_summaries (bool): Whether to include previously generated
+                summaries in the content to be summarized. If False (default),
+                only non-summary messages will be summarized. If True, all
+                messages including previous summaries will be summarized
+                (full compression). (default: :obj:`False`)
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
@@ -1141,6 +1369,12 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
+
+                # Skip summary messages if include_summaries is False
+                if not include_summaries and isinstance(content, str):
+                    # Check if this is a summary message by looking for marker
+                    if content.startswith('[CONTEXT_SUMMARY]'):
+                        continue
 
                 # Handle tool call messages (assistant calling tools)
                 tool_calls = message.get('tool_calls')
@@ -1321,6 +1555,16 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
+
+            # Add prefix to summary content in result
+            if self.summarize_threshold is not None:
+                summary_with_prefix = (
+                    f"[CONTEXT_SUMMARY] The following is a summary of our "
+                    f"conversation from a previous session: {summary_content}"
+                )
+                result["summary_with_prefix"] = summary_with_prefix
+                result["include_summaries"] = include_summaries
+
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1336,6 +1580,7 @@ class ChatAgent(BaseAgent):
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
+        include_summaries: bool = False,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -1358,6 +1603,11 @@ class ChatAgent(BaseAgent):
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
+            include_summaries (bool): Whether to include previously generated
+                summaries in the content to be summarized. If False (default),
+                only non-summary messages will be summarized. If True, all
+                messages including previous summaries will be summarized
+                (full compression). (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -1397,6 +1647,12 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
+
+                # Skip summary messages if include_summaries is False
+                if not include_summaries and isinstance(content, str):
+                    # Check if this is a summary message by looking for marker
+                    if content.startswith('[CONTEXT_SUMMARY]'):
+                        continue
 
                 # Handle tool call messages (assistant calling tools)
                 tool_calls = message.get('tool_calls')
@@ -1586,6 +1842,13 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
+
+            # Add prefix to summary content in result
+            if self.summarize_threshold is not None:
+                summary_with_prefix = f"[CONTEXT_SUMMARY] {summary_content}"
+                result["summary_with_prefix"] = summary_with_prefix
+                result["include_summaries"] = include_summaries
+
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1604,7 +1867,14 @@ class ChatAgent(BaseAgent):
         self.memory.clear()
 
         if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
 
     def _generate_system_message_for_output_language(
         self,
@@ -1638,17 +1908,8 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
-        self.memory.clear()
-        # Write system message to memory if provided
-        if self.system_message is not None:
-            self.memory.write_record(
-                MemoryRecord(
-                    message=self.system_message,
-                    role_at_backend=OpenAIBackendRole.SYSTEM,
-                    timestamp=time.time_ns() / 1_000_000_000,
-                    agent_id=self.agent_id,
-                )
-            )
+        self._reset_summary_state()
+        self.clear_memory()
 
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
@@ -2072,22 +2333,135 @@ class ChatAgent(BaseAgent):
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if self.summarize_threshold is not None:
+                    threshold = self._calculate_next_summary_threshold()
+                    summary_token_count = self._summary_state.get(
+                        "summary_token_count", 0
+                    )
+                    token_limit = self.model_backend.token_limit
+
+                    if num_tokens <= token_limit:
+                        if summary_token_count > token_limit * self.summary_window_ratio:
+                            logger.info(
+                                f"Summary tokens ({summary_token_count}) "
+                                f"exceed {self.summary_window_ratio} of "
+                                f"limit ({token_limit * self.summary_window_ratio}). "
+                                f"Performing full compression."
+                            )
+                            # Summarize everything (including summaries)
+                            summary = self.summarize(include_summaries=True)
+                            self._update_memory_with_summary(summary)
+                        elif num_tokens > threshold:
+                            logger.info(
+                                f"Token count ({num_tokens}) exceed threshold "
+                                f"({threshold}). Triggering summarization."
+                            )
+                            # Only summarize non-summary content
+                            summary = self.summarize(include_summaries=False)
+                            self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = self._get_model_response(
-                openai_messages,
-                num_tokens=num_tokens,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend with token limit error handling
+            try:
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens=num_tokens,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
+            except Exception as exc:
+                logger.exception("Model error: %s", exc)
+
+                if self._is_token_limit_error(exc):
+                    tool_signature = self._last_tool_call_signature
+                    if (
+                        tool_signature is not None
+                        and tool_signature
+                        == self._last_token_limit_tool_signature
+                    ):
+                        description = self._describe_tool_call(
+                            self._last_tool_call_record
+                        )
+                        repeated_msg = (
+                            "Context exceeded again by the same tool call."
+                        )
+                        if description:
+                            repeated_msg += f" {description}"
+                        raise RuntimeError(repeated_msg) from exc
+
+                    allowed, reason = self._can_attempt_summary()
+                    if not allowed:
+                        error_message = (
+                            "Context limit exceeded and further summarization "
+                            "is not possible."
+                        )
+                        if reason:
+                            error_message += f" {reason}"
+                        raise RuntimeError(error_message) from exc
+
+                    logger.warning(
+                        "Token limit exceeded error detected. "
+                        "Summarizing context."
+                    )
+
+                    recent_records: List[ContextRecord]
+                    try:
+                        recent_records = self.memory.retrieve()
+                    except Exception:  # pragma: no cover - defensive guard
+                        recent_records = []
+
+                    indices_to_remove = (
+                        self._find_indices_to_remove_for_last_tool_pair(
+                            recent_records
+                        )
+                    )
+                    self.memory.remove_records_by_indices(indices_to_remove)
+
+                    summary = self.summarize()
+                    if isinstance(input_message, BaseMessage):
+                        input_message = input_message.content
+
+                    tool_notice = self._format_tool_limit_notice()
+                    summary_messages = (
+                        "Due to token limit being exceeded in this request, "
+                        "the conversation has been summarized."
+                        "the content after [Input Message] is the summary "
+                        "of [Input Message]"
+                        + "<Input Message>"
+                        + str(input_message)
+                        + "</Input Message>"
+                        + "\n\n"
+                        "[Context Summary]\n\n"
+                        + summary.get("summary", "")
+                        + "\n\n[Summary status]\n\n"
+                        + str(summary.get("status", ""))
+                        + "\n\nThe following is the user's original input. "
+                        "Please continue based on existing information."
+                    )
+                    if tool_notice:
+                        summary_messages += "\n\n" + tool_notice
+                    self.clear_memory()
+                    summary_messages = BaseMessage.make_assistant_message(
+                        role_name="Assistant", content=summary_messages
+                    )
+                    self.update_memory(
+                        summary_messages, OpenAIBackendRole.ASSISTANT
+                    )
+                    self._on_summary(recent_records)
+
+                    self._last_token_limit_tool_signature = tool_signature
+
+                    return self._step_impl(input_message, response_format)
+
+                raise
+
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
@@ -2282,6 +2656,7 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
+
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 if isinstance(self.pause_event, asyncio.Event):
@@ -2292,21 +2667,141 @@ class ChatAgent(BaseAgent):
                     await loop.run_in_executor(None, self.pause_event.wait)
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if self.summarize_threshold is not None:
+                    threshold = self._calculate_next_summary_threshold()
+                    summary_token_count = self._summary_state.get(
+                        "summary_token_count", 0
+                    )
+                    token_limit = self.model_backend.token_limit
+
+                    if num_tokens <= token_limit:
+                        if summary_token_count > token_limit * self.summary_window_ratio:
+                            logger.info(
+                                f"Summary tokens ({summary_token_count}) "
+                                f"exceed {self.summary_window_ratio} of "
+                                f"limit ({token_limit * self.summary_window_ratio}). "
+                                f"Full compression."
+                            )
+                            # Summarize everything (including summaries)
+                            summary = await self.asummarize(
+                                include_summaries=True
+                            )
+                            self._update_memory_with_summary(summary)
+                        elif num_tokens > threshold:
+                            logger.info(
+                                f"Token count ({num_tokens}) exceed threshold "
+                                "({threshold}). Triggering summarization."
+                            )
+                            # Only summarize non-summary content
+                            summary = await self.asummarize(
+                                include_summaries=False
+                            )
+                            self._update_memory_with_summary(summary)
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            response = await self._aget_model_response(
-                openai_messages,
-                num_tokens=num_tokens,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend with token limit error handling
+            try:
+                response = await self._aget_model_response(
+                    openai_messages,
+                    num_tokens=num_tokens,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
+            except Exception as exc:
+                logger.exception("Model error: %s", exc)
+
+                if self._is_token_limit_error(exc):
+                    tool_signature = self._last_tool_call_signature
+                    if (
+                        tool_signature is not None
+                        and tool_signature
+                        == self._last_token_limit_tool_signature
+                    ):
+                        description = self._describe_tool_call(
+                            self._last_tool_call_record
+                        )
+                        repeated_msg = (
+                            "Context exceeded again by the same tool call."
+                        )
+                        if description:
+                            repeated_msg += f" {description}"
+                        raise RuntimeError(repeated_msg) from exc
+
+                    allowed, reason = self._can_attempt_summary()
+                    if not allowed:
+                        error_message = (
+                            "Context limit exceeded and further summarization "
+                            "is not possible."
+                        )
+                        if reason:
+                            error_message += f" {reason}"
+                        raise RuntimeError(error_message) from exc
+
+                    logger.warning(
+                        "Token limit exceeded error detected. "
+                        "Summarizing context."
+                    )
+
+                    recent_records: List[ContextRecord]
+                    try:
+                        recent_records = self.memory.retrieve()
+                    except Exception:  # pragma: no cover - defensive guard
+                        recent_records = []
+
+                    indices_to_remove = (
+                        self._find_indices_to_remove_for_last_tool_pair(
+                            recent_records
+                        )
+                    )
+                    self.memory.remove_records_by_indices(indices_to_remove)
+
+                    summary = await self.asummarize()
+                    if isinstance(input_message, BaseMessage):
+                        input_message = input_message.content
+
+                    tool_notice = self._format_tool_limit_notice()
+                    summary_messages = (
+                        "Due to token limit being exceeded in this request, "
+                        "the conversation has been summarized."
+                        "the content after [Input Message] is the summary"
+                        + "<Input Message>"
+                        + str(input_message)
+                        + "</Input Message>"
+                        + "\n\n"
+                        "[Context Summary]\n\n"
+                        + summary.get("summary", "")
+                        + "\n\n[Summary status]\n\n"
+                        + str(summary.get("status", ""))
+                        + "\n\nThe following is the user's original input. "
+                        "Please continue based on existing information."
+                    )
+
+                    if tool_notice:
+                        summary_messages += "\n\n" + tool_notice
+                    self.clear_memory()
+                    summary_messages = BaseMessage.make_assistant_message(
+                        role_name="Assistant", content=summary_messages
+                    )
+                    self.update_memory(
+                        summary_messages, OpenAIBackendRole.ASSISTANT
+                    )
+                    self._on_summary(recent_records)
+
+                    self._last_token_limit_tool_signature = tool_signature
+
+                    return await self._astep_non_streaming_task(
+                        input_message, response_format
+                    )
+
+                raise
+
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
@@ -2479,6 +2974,8 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
+                if self._is_token_limit_error(e):
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -2496,7 +2993,6 @@ class ChatAgent(BaseAgent):
             except Exception:
                 logger.error(
                     f"Model error: {self.model_backend.model_type}",
-                    exc_info=True,
                 )
                 raise
         else:
@@ -2543,6 +3039,8 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
+                if self._is_token_limit_error(e):
+                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
