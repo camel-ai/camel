@@ -169,6 +169,8 @@ class DeepSeekModel(OpenAICompatibleModel):
         self, response: ChatCompletion
     ) -> ChatCompletion:
         r"""Handle reasoning content with <think> tags at the beginning."""
+        if isinstance(response, (Stream, AsyncStream)):
+            return response
         if (
             self.model_type in [ModelType.DEEPSEEK_REASONER]
             and os.environ.get("GET_REASONING_CONTENT", "false").lower()
