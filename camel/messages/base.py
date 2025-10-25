@@ -181,22 +181,25 @@ class BaseMessage:
     @classmethod
     def make_system_message(
         cls,
-        role_name: str,
         content: str,
+        role_name: str = "System",
         meta_dict: Optional[Dict[str, str]] = None,
     ) -> "BaseMessage":
         r"""Create a new system message.
+
         Args:
+            content (str): The content of the system message.
             role_name (str): The name of the system role.
-            content (str): The content of the new system message.
+                (default: :obj:`"System"`)
             meta_dict (Optional[Dict[str, str]]): Additional metadata
                 dictionary for the message.
+
         Returns:
             BaseMessage: The new system message.
         """
         return cls(
             role_name,
-            RoleType.DEFAULT,
+            RoleType.SYSTEM,
             meta_dict,
             content,
         )

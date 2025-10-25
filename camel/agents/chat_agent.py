@@ -491,9 +491,7 @@ class ChatAgent(BaseAgent):
 
         # Set up system message and initialize messages
         self._original_system_message = (
-            BaseMessage.make_system_message(
-                role_name="System", content=system_message
-            )
+            BaseMessage.make_system_message(system_message)
             if isinstance(system_message, str)
             else system_message
         )
@@ -1629,10 +1627,7 @@ class ChatAgent(BaseAgent):
             content = self._original_system_message.content + language_prompt
             return self._original_system_message.create_new_instance(content)
         else:
-            return BaseMessage.make_system_message(
-                role_name="System",
-                content=language_prompt,
-            )
+            return BaseMessage.make_system_message(language_prompt)
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the current system
@@ -1652,14 +1647,14 @@ class ChatAgent(BaseAgent):
 
     def update_system_message(
         self,
-        system_message: Optional[Union[BaseMessage, str]] = None,
+        system_message: Union[BaseMessage, str],
         reset_memory: bool = True,
     ) -> None:
         r"""Update the system message.
         It will reset conversation with new system message.
 
         Args:
-            system_message (Optional[Union[BaseMessage, str]]):
+            system_message (Union[BaseMessage, str]): The new system message.
                 Can be either a BaseMessage object or a string.
                 If a string is provided, it will be converted
                 into a BaseMessage object.
@@ -1668,11 +1663,9 @@ class ChatAgent(BaseAgent):
                 the system message. Defaults to True.
         """
         if system_message is None:
-            return
+            raise ValueError("system_message is required and cannot be None. ")
         self._original_system_message = (
-            BaseMessage.make_system_message(
-                role_name="System", content=system_message
-            )
+            BaseMessage.make_system_message(system_message)
             if isinstance(system_message, str)
             else system_message
         )
@@ -1700,7 +1693,7 @@ class ChatAgent(BaseAgent):
         )
         new_system_message = original_content + '\n' + content
         self._original_system_message = BaseMessage.make_system_message(
-            role_name="System", content=new_system_message
+            new_system_message
         )
         self._system_message = (
             self._generate_system_message_for_output_language()
