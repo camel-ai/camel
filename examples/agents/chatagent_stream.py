@@ -32,9 +32,7 @@ agent_accumulated = ChatAgent(
 )
 
 # Example user message
-user_message = (
-    "How many Rs are there in the word 'strawberry'?"
-)
+user_message = "How many Rs are there in the word 'strawberry'?"
 
 # Accumulated streaming mode (default)
 streaming_response = agent_accumulated.step(user_message)

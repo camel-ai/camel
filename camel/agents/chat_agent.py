@@ -176,7 +176,9 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
-        self.is_reasoning_phase = False  # Once we get content, we're past reasoning
+        self.is_reasoning_phase = (
+            False  # Once we get content, we're past reasoning
+        )
 
     def add_reasoning_content(self, new_reasoning: str):
         r"""Add new reasoning content."""
@@ -3320,8 +3322,13 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
-                    content_accumulator.add_reasoning_content(delta.reasoning_content)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
                     # Yield partial response with reasoning content
                     partial_response = (
                         self._create_streaming_response_with_accumulator(
@@ -4125,8 +4132,13 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
-                    content_accumulator.add_reasoning_content(delta.reasoning_content)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
                     # Yield partial response with reasoning content
                     partial_response = (
                         self._create_streaming_response_with_accumulator(
@@ -4352,7 +4364,11 @@ class ChatAgent(BaseAgent):
         # Add reasoning content info
         full_reasoning = accumulator.get_full_reasoning_content()
         if full_reasoning:
-            meta_dict["reasoning_content"] = full_reasoning if self.stream_accumulate else reasoning_delta or ""
+            meta_dict["reasoning_content"] = (
+                full_reasoning
+                if self.stream_accumulate
+                else reasoning_delta or ""
+            )
             meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
 
         message = BaseMessage(
