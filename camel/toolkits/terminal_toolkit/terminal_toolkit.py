@@ -501,10 +501,10 @@ class TerminalToolkit(BaseToolkit):
                 a unique ID is generated for non-blocking sessions.
 
         Returns:
-            str: If block is True, returns the complete stdout and stderr.
-                 If block is False, returns a message containing the new
-                 session ID and the initial output from the command after
-                 it goes idle.
+            str: For blocking mode, the combined stdout/stderr. For
+                non-blocking mode, a confirmation message containing the
+                session ID and any initial output collected before the process
+                went idle.
         """
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
@@ -593,6 +593,13 @@ class TerminalToolkit(BaseToolkit):
                 f"> {command}\n",
             )
 
+            env_vars = None
+            docker_env = None
+            if not block:
+                env_vars = os.environ.copy()
+                env_vars.setdefault("PYTHONUNBUFFERED", "1")
+                docker_env = {"PYTHONUNBUFFERED": "1"}
+
             with self._session_lock:
                 self.shell_sessions[session_id] = {
                     "id": session_id,
@@ -617,6 +624,7 @@ class TerminalToolkit(BaseToolkit):
                         text=True,
                         cwd=self.working_dir,
                         encoding="utf-8",
+                        env=env_vars,
                     )
                     with self._session_lock:
                         self.shell_sessions[session_id]["process"] = process
@@ -630,6 +638,7 @@ class TerminalToolkit(BaseToolkit):
                         stdin=True,
                         tty=True,
                         workdir=self.docker_workdir,
+                        environment=docker_env,
                     )
                     exec_id = exec_instance['Id']
                     exec_socket = self.docker_api_client.exec_start(
@@ -725,7 +734,7 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: The new output from the process's stdout and stderr. Returns
-                 an empty string if there is no new output.
+                 a helpful status message if there is no new output.
         """
         with self._session_lock:
             if id not in self.shell_sessions:
