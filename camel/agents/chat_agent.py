@@ -166,6 +166,8 @@ class StreamContentAccumulator:
         self.base_content = ""  # Content before tool calls
         self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
+        self.reasoning_content = []  # Accumulated reasoning content
+        self.is_reasoning_phase = True  # Track if we're in reasoning phase
 
     def set_base_content(self, content: str):
         r"""Set the base content (usually empty or pre-tool content)."""
@@ -174,6 +176,11 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
+        self.is_reasoning_phase = False  # Once we get content, we're past reasoning
+
+    def add_reasoning_content(self, new_reasoning: str):
+        r"""Add new reasoning content."""
+        self.reasoning_content.append(new_reasoning)
 
     def add_tool_status(self, status_message: str):
         r"""Add a tool status message."""
@@ -185,6 +192,10 @@ class StreamContentAccumulator:
         current = "".join(self.current_content)
         return self.base_content + tool_messages + current
 
+    def get_full_reasoning_content(self) -> str:
+        r"""Get the complete accumulated reasoning content."""
+        return "".join(self.reasoning_content)
+
     def get_content_with_new_status(self, status_message: str) -> str:
         r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
@@ -194,6 +205,8 @@ class StreamContentAccumulator:
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
         self.current_content = []
+        self.reasoning_content = []
+        self.is_reasoning_phase = True
 
 
 class StreamingChatAgentResponse:
@@ -3306,6 +3319,22 @@ class ChatAgent(BaseAgent):
                 choice = chunk.choices[0]
                 delta = choice.delta
 
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                    content_accumulator.add_reasoning_content(delta.reasoning_content)
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
+
                 # Handle content streaming
                 if delta.content:
                     # Use accumulator for proper content management
@@ -4095,6 +4124,22 @@ class ChatAgent(BaseAgent):
                 choice = chunk.choices[0]
                 delta = choice.delta
 
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                    content_accumulator.add_reasoning_content(delta.reasoning_content)
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
+
                 # Handle content streaming
                 if delta.content:
                     # Use accumulator for proper content management
@@ -4288,20 +4333,32 @@ class ChatAgent(BaseAgent):
         step_token_usage: Dict[str, int],
         response_id: str = "",
         tool_call_records: Optional[List[ToolCallingRecord]] = None,
+        reasoning_delta: Optional[str] = None,
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
         # Add new content; only build full content when needed
-        accumulator.add_streaming_content(new_content)
+        if new_content:
+            accumulator.add_streaming_content(new_content)
+
         if self.stream_accumulate:
             message_content = accumulator.get_full_content()
         else:
             message_content = new_content
 
+        # Build meta_dict with reasoning information
+        meta_dict: Dict[str, Any] = {}
+
+        # Add reasoning content info
+        full_reasoning = accumulator.get_full_reasoning_content()
+        if full_reasoning:
+            meta_dict["reasoning_content"] = full_reasoning if self.stream_accumulate else reasoning_delta or ""
+            meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
+
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
-            meta_dict={},
+            meta_dict=meta_dict,
             content=message_content,
         )
 

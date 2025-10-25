@@ -15,7 +15,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-# Create a streaming model
+# Create a streaming-capable model backend
 streaming_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.GPT_4O_MINI,
@@ -32,33 +32,46 @@ agent_accumulated = ChatAgent(
 )
 
 # Example user message
-user_message = "Tell me about the benefits of renewable energy and how "
-"it impacts the environment."
+user_message = (
+    "How many Rs are there in the word 'strawberry'?"
+)
 
-# Get streaming response
+# Accumulated streaming mode (default)
 streaming_response = agent_accumulated.step(user_message)
 
-# Stream the response chunks
 for chunk_response in streaming_response:
-    # Each chunk_response is a ChatAgentResponse with incremental content
-    chunk_content = chunk_response.msgs[0].content
-    print(chunk_content, end="", flush=True)
+    message = chunk_response.msgs[0]
+    meta = message.meta_dict or {}
+
+    reasoning_text = meta.get("reasoning_content")
+    if reasoning_text:
+        print(reasoning_text, end="", flush=True)
+
+    content_text = message.content
+    if content_text:
+        print(content_text, end="", flush=True)
 
 print("\n\n---\nDelta streaming mode (stream_accumulate=False):\n")
 
-# Create an agent that yields delta chunks instead of accumulated content
+# Delta streaming mode (only new content per chunk)
 agent_delta = ChatAgent(
     system_message="You are a helpful assistant that provides concise "
     "and informative responses.",
     model=streaming_model,
-    stream_accumulate=False,  # Only yield the delta part per chunk
+    stream_accumulate=False,
 )
 
-# Get streaming response (delta chunks)
 streaming_response_delta = agent_delta.step(user_message)
 
-# Stream only the delta content per chunk; printing reconstructs the full text
 for chunk_response in streaming_response_delta:
-    delta_content = chunk_response.msgs[0].content
-    print(delta_content, end="", flush=True)
+    message = chunk_response.msgs[0]
+    meta = message.meta_dict or {}
+
+    reasoning_delta = meta.get("reasoning_content") or ""
+    if reasoning_delta:
+        print(reasoning_delta, end="", flush=True)
+
+    if message.content:
+        print(message.content, end="", flush=True)
+
 print()
