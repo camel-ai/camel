@@ -88,6 +88,31 @@ Create a new assistant message.
 
   BaseMessage: The new assistant message.
 
+<a id="camel.messages.base.BaseMessage.make_system_message"></a>
+
+### make_system_message
+
+```python
+def make_system_message(
+    cls,
+    content: str,
+    role_name: str = 'System',
+    meta_dict: Optional[Dict[str, str]] = None
+):
+```
+
+Create a new system message.
+
+**Parameters:**
+
+- **content** (str): The content of the system message.
+- **role_name** (str): The name of the system role. (default: :obj:`"System"`)
+- **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
+
+**Returns:**
+
+  BaseMessage: The new system message.
+
 <a id="camel.messages.base.BaseMessage.create_new_instance"></a>
 
 ### create_new_instance

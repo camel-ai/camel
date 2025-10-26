@@ -82,16 +82,12 @@ def get_message_tool(self):
 ### register_toolkits
 
 ```python
-def register_toolkits(
-    self,
-    toolkit: BaseToolkit,
-    tool_names: Optional[List[str]] = None
-):
+def register_toolkits(self, toolkit: BaseToolkit):
 ```
 
-Add messaging capabilities to toolkit methods.
+Add messaging capabilities to all toolkit methods.
 
-This method modifies a toolkit so that specified tools can send
+This method modifies a toolkit so that all its tools can send
 status messages to users while executing their primary function.
 The tools will accept optional messaging parameters:
 - message_title: Title of the status message
@@ -101,11 +97,11 @@ The tools will accept optional messaging parameters:
 **Parameters:**
 
 - **toolkit**: The toolkit to add messaging capabilities to
-- **tool_names**: List of specific tool names to modify. If None, messaging is added to all tools.
 
 **Returns:**
 
-  The toolkit with messaging capabilities added
+  The same toolkit instance with messaging capabilities added to
+all methods.
 
 <a id="camel.toolkits.message_integration.ToolkitMessageIntegration._create_bound_method_wrapper"></a>
 
