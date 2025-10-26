@@ -148,12 +148,10 @@ class ToolkitMessageIntegration:
         """
         return FunctionTool(self.send_message_to_user)
 
-    def register_toolkits(
-        self, toolkit: BaseToolkit, tool_names: Optional[List[str]] = None
-    ) -> BaseToolkit:
-        r"""Add messaging capabilities to toolkit methods.
+    def register_toolkits(self, toolkit: BaseToolkit) -> BaseToolkit:
+        r"""Add messaging capabilities to all toolkit methods.
 
-        This method modifies a toolkit so that specified tools can send
+        This method modifies a toolkit so that all its tools can send
         status messages to users while executing their primary function.
         The tools will accept optional messaging parameters:
         - message_title: Title of the status message
@@ -162,20 +160,18 @@ class ToolkitMessageIntegration:
 
         Args:
             toolkit: The toolkit to add messaging capabilities to
-            tool_names: List of specific tool names to modify.
-                       If None, messaging is added to all tools.
 
         Returns:
-            The toolkit with messaging capabilities added
+            The same toolkit instance with messaging capabilities added to
+                all methods.
         """
         original_tools = toolkit.get_tools()
         enhanced_methods = {}
         for tool in original_tools:
             method_name = tool.func.__name__
-            if tool_names is None or method_name in tool_names:
-                enhanced_func = self._add_messaging_to_tool(tool.func)
-                enhanced_methods[method_name] = enhanced_func
-                setattr(toolkit, method_name, enhanced_func)
+            enhanced_func = self._add_messaging_to_tool(tool.func)
+            enhanced_methods[method_name] = enhanced_func
+            setattr(toolkit, method_name, enhanced_func)
         original_get_tools_method = toolkit.get_tools
 
         def enhanced_get_tools() -> List[FunctionTool]:
@@ -201,7 +197,7 @@ class ToolkitMessageIntegration:
             def enhanced_clone_for_new_session(new_session_id=None):
                 cloned_toolkit = original_clone_method(new_session_id)
                 return message_integration_instance.register_toolkits(
-                    cloned_toolkit, tool_names
+                    cloned_toolkit
                 )
 
             toolkit.clone_for_new_session = enhanced_clone_for_new_session
@@ -283,26 +279,8 @@ class ToolkitMessageIntegration:
 
             # Check if this function should be enhanced
             if function_names is None or func.__name__ in function_names:
-                # If func is a bound toolkit method, route to register_toolkits
-                if hasattr(func, '__self__') and isinstance(
-                    func.__self__, BaseToolkit
-                ):
-                    toolkit_instance = func.__self__
-                    method_name = func.__name__
-
-                    # Enhance the specific method on the toolkit instance
-                    enhanced_toolkit = self.register_toolkits(
-                        toolkit_instance, tool_names=[method_name]
-                    )
-
-                    # Fetch the enhanced method back
-                    enhanced_method = getattr(enhanced_toolkit, method_name)
-
-                    enhanced_tools.append(FunctionTool(enhanced_method))
-                else:
-                    # Standalone function: add messaging wrapper directly
-                    enhanced_func = self._add_messaging_to_tool(func)
-                    enhanced_tools.append(FunctionTool(enhanced_func))
+                enhanced_func = self._add_messaging_to_tool(func)
+                enhanced_tools.append(FunctionTool(enhanced_func))
             else:
                 # Return as FunctionTool regardless of input type
                 if isinstance(item, FunctionTool):
