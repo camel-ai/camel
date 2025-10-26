@@ -42,12 +42,10 @@ logger = get_logger(__name__)
 try:
     import docker
     from docker.errors import APIError, NotFound
-    from docker.models.containers import Container
 except ImportError:
     docker = None
     NotFound = None
     APIError = None
-    Container = None
 
 
 def _to_plain(text: str) -> str:
@@ -400,9 +398,11 @@ class TerminalToolkit(BaseToolkit):
                     with self._session_lock:
                         if session_id in self.shell_sessions:
                             self.shell_sessions[session_id]["error"] = str(e)
-                except Exception:
-                    # Swallow any secondary errors during cleanup
-                    pass
+                except Exception as cleanup_error:
+                    logger.warning(
+                        f"[SESSION {session_id}] Failed to store error state: "
+                        f"{cleanup_error}"
+                    )
             finally:
                 try:
                     with self._session_lock:
@@ -514,8 +514,6 @@ class TerminalToolkit(BaseToolkit):
             if not is_safe:
                 return f"Error: {message}"
             command = message
-        else:
-            command = command
 
         if self.use_docker_backend:
             # For Docker, we always run commands in a shell
@@ -573,7 +571,10 @@ class TerminalToolkit(BaseToolkit):
                 log_entry += f"--- Error ---\n{error_msg}\n"
                 return error_msg
             except Exception as e:
-                if "Read timed out" in str(e):
+                if (
+                    isinstance(e, (subprocess.TimeoutExpired, TimeoutError))
+                    or "timed out" in str(e).lower()
+                ):
                     error_msg = (
                         f"Error: Command timed out after "
                         f"{self.timeout} seconds."
@@ -617,6 +618,8 @@ class TerminalToolkit(BaseToolkit):
                     else "local",
                 }
 
+            process = None
+            exec_socket = None
             try:
                 if not self.use_docker_backend:
                     process = subprocess.Popen(
@@ -667,6 +670,18 @@ class TerminalToolkit(BaseToolkit):
                 )
 
             except Exception as e:
+                # Clean up resources on failure
+                if process is not None:
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+                if exec_socket is not None:
+                    try:
+                        exec_socket.close()
+                    except Exception:
+                        pass
+
                 with self._session_lock:
                     if session_id in self.shell_sessions:
                         self.shell_sessions[session_id]["running"] = False
@@ -890,8 +905,17 @@ class TerminalToolkit(BaseToolkit):
             except EOFError:
                 return f"User input interrupted for session '{id}'."
 
-    def __del__(self):
-        # Clean up any sessions
+    def __enter__(self):
+        r"""Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        r"""Context manager exit - clean up all sessions."""
+        self.cleanup()
+        return False
+
+    def cleanup(self):
+        r"""Clean up all active sessions."""
         with self._session_lock:
             session_ids = list(self.shell_sessions.keys())
         for session_id in session_ids:
@@ -900,7 +924,20 @@ class TerminalToolkit(BaseToolkit):
                     "running", False
                 )
             if is_running:
-                self.shell_kill_process(session_id)
+                try:
+                    self.shell_kill_process(session_id)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to kill session '{session_id}' "
+                        f"during cleanup: {e}"
+                    )
+
+    def __del__(self):
+        r"""Fallback cleanup in destructor."""
+        try:
+            self.cleanup()
+        except Exception:
+            pass
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
