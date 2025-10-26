@@ -480,31 +480,34 @@ class TerminalToolkit(BaseToolkit):
 
         warning_message = (
             "\n--- WARNING: Process is still actively outputting "
-            "after max wait time. Consider using shell_wait() "
-            "before sending the next command. ---"
+            "after max wait time. Consider waiting before "
+            "sending the next command. ---"
         )
         return "".join(output_parts) + warning_message
 
     def shell_exec(self, id: str, command: str, block: bool = True) -> str:
-        r"""This function executes a shell command. The command can run in
-        blocking mode (waits for completion) or non-blocking mode
-        (runs in the background). A unique session ID is created for
-        each session.
+        r"""Executes a shell command in blocking or non-blocking mode.
 
         Args:
-            command (str): The command to execute.
-            block (bool): If True, the command runs synchronously,
-                waiting for it to complete or time out, and returns
-                its full output. If False, the command runs
-                asynchronously in the background.
-            id (Optional[str]): A specific ID for the session. If not provided,
-                a unique ID is generated for non-blocking sessions.
+            id (str): A unique identifier for the command's session. This ID is
+                used to interact with non-blocking processes.
+            command (str): The shell command to execute.
+            block (bool, optional): Determines the execution mode. Defaults to
+                True. If `True` (blocking mode), the function waits for the
+                command to complete and returns the full output. Use this for
+                most commands . If `False` (non-blocking mode), the function
+                starts the command in the background. Use this only for
+                interactive sessions or long-running tasks, or servers.
 
         Returns:
-            str: For blocking mode, the combined stdout/stderr. For
-                non-blocking mode, a confirmation message containing the
-                session ID and any initial output collected before the process
-                went idle.
+            str: The output of the command execution, which varies by mode.
+                In blocking mode, returns the complete standard output and
+                standard error from the command.
+                In non-blocking mode, returns a confirmation message with the
+                session `id`. To interact with the background process, use
+                other functions: `shell_view(id)` to see output,
+                `shell_write_to_process(id, "input")` to send input, and
+                `shell_kill_process(id)` to terminate.
         """
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
@@ -593,12 +596,13 @@ class TerminalToolkit(BaseToolkit):
                 f"> {command}\n",
             )
 
-            env_vars = None
-            docker_env = None
-            if not block:
-                env_vars = os.environ.copy()
-                env_vars.setdefault("PYTHONUNBUFFERED", "1")
-                docker_env = {"PYTHONUNBUFFERED": "1"}
+            # PYTHONUNBUFFERED=1 for real-time output
+            # Without this, Python subprocesses buffer output (4KB buffer)
+            # and shell_view() won't see output until buffer fills or process
+            # exits
+            env_vars = os.environ.copy()
+            env_vars["PYTHONUNBUFFERED"] = "1"
+            docker_env = {"PYTHONUNBUFFERED": "1"}
 
             with self._session_lock:
                 self.shell_sessions[session_id] = {
@@ -652,12 +656,14 @@ class TerminalToolkit(BaseToolkit):
 
                 self._start_output_reader_thread(session_id)
 
-                # time.sleep(0.1)
-                initial_output = self._collect_output_until_idle(session_id)
-
+                # Return immediately with session ID and instructions
                 return (
-                    f"Session started with ID: {session_id}\n\n"
-                    f"[Initial Output]:\n{initial_output}"
+                    f"Session '{session_id}' started.\n\n"
+                    f"You could use:\n"
+                    f"  - shell_view('{session_id}') - get output\n"
+                    f"  - shell_write_to_process('{session_id}', '<input>')"
+                    f" - send input\n"
+                    f"  - shell_kill_process('{session_id}') - terminate"
                 )
 
             except Exception as e:
@@ -723,18 +729,16 @@ class TerminalToolkit(BaseToolkit):
             return f"Error writing to session '{id}': {e}"
 
     def shell_view(self, id: str) -> str:
-        r"""This function retrieves any new output from a non-blocking session
-        since the last time this function was called. If the process has
-        terminated, it drains the output queue and appends a termination
-        message. If the process is still running, it simply returns any
-        new output.
+        r"""Retrieves new output from a non-blocking session.
+
+        This function returns only NEW output since the last call. It does NOT
+        wait or block - it returns immediately with whatever is available.
 
         Args:
             id (str): The unique session ID of the non-blocking process.
 
         Returns:
-            str: The new output from the process's stdout and stderr. Returns
-                 a helpful status message if there is no new output.
+            str: New output if available, or a status message.
         """
         with self._session_lock:
             if id not in self.shell_sessions:
@@ -743,7 +747,6 @@ class TerminalToolkit(BaseToolkit):
             is_running = session["running"]
 
         # If session is terminated, drain the queue and return
-        # with a status message.
         if not is_running:
             final_output = []
             try:
@@ -751,9 +754,13 @@ class TerminalToolkit(BaseToolkit):
                     final_output.append(session["output_stream"].get_nowait())
             except Empty:
                 pass
-            return "".join(final_output) + "\n--- SESSION TERMINATED ---"
 
-        # Otherwise, just drain the queue for a live session.
+            if final_output:
+                return "".join(final_output) + "\n\n--- SESSION TERMINATED ---"
+            else:
+                return "--- SESSION TERMINATED (no new output) ---"
+
+        # For running session, check for new output
         output = []
         try:
             while True:
@@ -761,38 +768,18 @@ class TerminalToolkit(BaseToolkit):
         except Empty:
             pass
 
-        return "".join(output)
-
-    def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
-        r"""This function waits for a specified duration for a
-        non-blocking process to produce more output or terminate.
-
-        Args:
-            id (str): The unique session ID of the non-blocking process.
-            wait_seconds (float): The maximum number of seconds to wait.
-
-        Returns:
-            str: All output collected during the wait period.
-        """
-        with self._session_lock:
-            if id not in self.shell_sessions:
-                return f"Error: No session found with ID '{id}'."
-            session = self.shell_sessions[id]
-            if not session["running"]:
-                return (
-                    "Session is no longer running. "
-                    "Use shell_view to get final output."
-                )
-
-        output_collected = []
-        end_time = time.time() + wait_seconds
-        while time.time() < end_time and session["running"]:
-            new_output = self.shell_view(id)
-            if new_output:
-                output_collected.append(new_output)
-            time.sleep(0.2)
-
-        return "".join(output_collected)
+        if output:
+            return "".join(output)
+        else:
+            # No new output - guide the agent
+            return (
+                "[No new output]\n"
+                "Session is running but idle. Actions could take:\n"
+                "  - For interactive sessions: Send input "
+                "with shell_write_to_process()\n"
+                "  - For long tasks: Check again later (don't poll "
+                "too frequently)"
+            )
 
     def shell_kill_process(self, id: str) -> str:
         r"""This function forcibly terminates a running non-blocking process.
@@ -926,7 +913,6 @@ class TerminalToolkit(BaseToolkit):
         return [
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
-            FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.shell_ask_user_for_help),
