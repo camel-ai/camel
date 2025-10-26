@@ -2045,12 +2045,6 @@ class Workforce(BaseNode):
         
         return task
 
-    async def _process_task_with_hybrid(self, task: Task) -> Task:
-        """Process task using hybrid approach (partial auto-decomposition)."""
-        # For now, fall back to auto-decompose mode
-        # This can be extended to support more sophisticated hybrid logic
-        return await self._process_task_with_auto_decompose(task)
-
     def _collect_pipeline_results(self) -> str:
         """Collect results from all completed pipeline tasks."""
         results = []
@@ -2060,16 +2054,43 @@ class Workforce(BaseNode):
         return "\n\n".join(results) if results else "Pipeline completed"
 
     def _all_pipeline_tasks_successful(self) -> bool:
-        """Check if all pipeline tasks completed successfully."""
-        expected_task_ids = {task.id for task in self._pending_tasks}
-        expected_task_ids.update(task.id for task in self._completed_tasks)
+        """Check if all pipeline tasks completed successfully.
         
-        completed_successful_ids = {
-            task.id for task in self._completed_tasks 
-            if task.state == TaskState.DONE
-        }
+        This method determines the FINAL STATE of the entire pipeline but does 
+        NOT affect task execution flow. In PIPELINE mode:
         
-        return expected_task_ids.issubset(completed_successful_ids)
+        - Failed tasks still pass their results (including errors) to dependent 
+          tasks, allowing join tasks to execute even when upstream tasks fail.
+        - This is handled in _post_ready_tasks() where dependencies are checked.
+        
+        This method only runs AFTER all tasks have been processed to determine 
+        whether the overall pipeline should be marked as DONE or FAILED.
+        
+        Returns:
+            bool: True if all tasks completed successfully (DONE state), 
+                  False if any tasks failed or are still pending.
+        
+        Example:
+            Fork-Join pattern with one failed branch:
+            - Task A (search) → DONE
+            - Task B (parallel summary 1) → DONE  
+            - Task C (parallel summary 2) → FAILED
+            - Task D (join/synthesis) → DONE (receives B's result + C's error)
+            
+            Result: _all_pipeline_tasks_successful() returns False
+                    Main pipeline task marked as FAILED
+                    But Task D still executed and got all information
+        """
+        # 1. If there are still pending tasks, pipeline is not complete
+        if self._pending_tasks:
+            return False
+        
+        # 2. If no tasks were completed, consider it a failure
+        if not self._completed_tasks:
+            return False
+        
+        # 3. Check if all completed tasks succeeded
+        return all(task.state == TaskState.DONE for task in self._completed_tasks)
 
     def process_task(self, task: Task) -> Task:
         r"""Synchronous wrapper for process_task that handles async operations

@@ -380,10 +380,10 @@ class PipelineTaskBuilder:
         """
         # Auto-infer wait_for from last parallel tasks
         if wait_for is None:
-            if hasattr(self, '_last_parallel_tasks') and self._last_parallel_tasks:
+            if self._last_parallel_tasks:
                 wait_for = self._last_parallel_tasks
                 # Clear the parallel tasks after using them
-                delattr(self, '_last_parallel_tasks')
+                self._last_parallel_tasks = []
             else:
                 raise ValueError("wait_for cannot be empty for sync task and no parallel tasks found")
         
@@ -416,8 +416,7 @@ class PipelineTaskBuilder:
         self._task_registry.clear()
         self.task_counter = 0
         self._last_task_id = None
-        if hasattr(self, '_last_parallel_tasks'):
-            delattr(self, '_last_parallel_tasks')
+        self._last_parallel_tasks = []
     
     def fork(self, task_contents: List[str]) -> 'PipelineTaskBuilder':
         """Create parallel branches from the current task (alias for add_parallel_tasks).
