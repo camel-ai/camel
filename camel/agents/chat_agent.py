@@ -4523,8 +4523,25 @@ class ChatAgent(BaseAgent):
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
 
+                # Check if toolkit was actually cloned or just reused
+                toolkit_was_cloned = toolkit is not toolkit_instance
+
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
+
+                    # If toolkit wasn't cloned (stateless), preserve the
+                    # original function to maintain any enhancements/wrappers
+                    if not toolkit_was_cloned:
+                        # Toolkit is stateless, safe to reuse original function
+                        cloned_tools.append(
+                            FunctionTool(
+                                func=tool.func,
+                                openai_tool_schema=tool.get_openai_tool_schema(),
+                            )
+                        )
+                        continue
+
+                    # Toolkit was cloned, use the new method
                     # Wrap cloned method into a new FunctionTool,
                     # preserving schema
                     try:
