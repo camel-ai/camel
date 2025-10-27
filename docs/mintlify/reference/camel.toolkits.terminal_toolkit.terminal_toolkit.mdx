@@ -158,23 +158,24 @@ def shell_exec(
 ):
 ```
 
-This function executes a shell command. The command can run in
-blocking mode (waits for completion) or non-blocking mode
-(runs in the background). A unique session ID is created for
-each session.
+Executes a shell command in blocking or non-blocking mode.
 
 **Parameters:**
 
-- **command** (str): The command to execute.
-- **block** (bool): If True, the command runs synchronously, waiting for it to complete or time out, and returns its full output. If False, the command runs asynchronously in the background.
-- **id** (Optional[str]): A specific ID for the session. If not provided, a unique ID is generated for non-blocking sessions.
+- **id** (str): A unique identifier for the command's session. This ID is used to interact with non-blocking processes.
+- **command** (str): The shell command to execute.
+- **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands . If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
 
 **Returns:**
 
-  str: If block is True, returns the complete stdout and stderr.
-If block is False, returns a message containing the new
-session ID and the initial output from the command after
-it goes idle.
+  str: The output of the command execution, which varies by mode.
+In blocking mode, returns the complete standard output and
+standard error from the command.
+In non-blocking mode, returns a confirmation message with the
+session `id`. To interact with the background process, use
+other functions: `shell_view(id)` to see output,
+`shell_write_to_process(id, "input")` to send input, and
+`shell_kill_process(id)` to terminate.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_write_to_process"></a>
 
@@ -206,11 +207,10 @@ to the input command.
 def shell_view(self, id: str):
 ```
 
-This function retrieves any new output from a non-blocking session
-since the last time this function was called. If the process has
-terminated, it drains the output queue and appends a termination
-message. If the process is still running, it simply returns any
-new output.
+Retrieves new output from a non-blocking session.
+
+This function returns only NEW output since the last call. It does NOT
+wait or block - it returns immediately with whatever is available.
 
 **Parameters:**
 
@@ -218,28 +218,7 @@ new output.
 
 **Returns:**
 
-  str: The new output from the process's stdout and stderr. Returns
-an empty string if there is no new output.
-
-<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_wait"></a>
-
-### shell_wait
-
-```python
-def shell_wait(self, id: str, wait_seconds: float = 5.0):
-```
-
-This function waits for a specified duration for a
-non-blocking process to produce more output or terminate.
-
-**Parameters:**
-
-- **id** (str): The unique session ID of the non-blocking process.
-- **wait_seconds** (float): The maximum number of seconds to wait.
-
-**Returns:**
-
-  str: All output collected during the wait period.
+  str: New output if available, or a status message.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_kill_process"></a>
 
@@ -284,6 +263,41 @@ This method can handle different scenarios:
   str: The output from the shell session after the user's command has
 been executed, or help information for general queries.
 
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+Context manager entry.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc_val,
+    exc_tb
+):
+```
+
+Context manager exit - clean up all sessions.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Clean up all active sessions.
+
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__del__"></a>
 
 ### __del__
@@ -291,6 +305,8 @@ been executed, or help information for general queries.
 ```python
 def __del__(self):
 ```
+
+Fallback cleanup in destructor.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.get_tools"></a>
 

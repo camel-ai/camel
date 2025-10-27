@@ -90,16 +90,16 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             self.assertIn('message_attachment', params)
 
     def test_register_specific_tools(self):
-        r"""Test adding messaging to specific tools only."""
-        enhanced_toolkit = self.message_integration.register_toolkits(
-            self.toolkit, tool_names=['search_web']
+        r"""Test adding messaging to specific tools only using
+        register_functions."""
+        # Use register_functions to enhance only one method
+        enhanced_tools = self.message_integration.register_functions(
+            [self.toolkit.search_web]
         )
 
-        tools = enhanced_toolkit.get_tools()
-        search_tool = next(t for t in tools if t.func.__name__ == 'search_web')
-        analyze_tool = next(
-            t for t in tools if t.func.__name__ == 'analyze_data'
-        )
+        # Should get one enhanced tool
+        self.assertEqual(len(enhanced_tools), 1)
+        search_tool = enhanced_tools[0]
 
         # Check search_web has message parameters
         search_schema = search_tool.get_openai_tool_schema()
@@ -108,7 +108,12 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             search_schema['function']['parameters']['properties'],
         )
 
-        # Check analyze_data doesn't have message parameters
+        # Check the original toolkit's analyze_data doesn't have message
+        # parameters
+        original_tools = self.toolkit.get_tools()
+        analyze_tool = next(
+            t for t in original_tools if t.func.__name__ == 'analyze_data'
+        )
         analyze_schema = analyze_tool.get_openai_tool_schema()
         self.assertNotIn(
             'message_title',

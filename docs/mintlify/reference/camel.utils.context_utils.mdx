@@ -458,6 +458,52 @@ Filter out metadata section from markdown content.
 
   str: Content with metadata section removed.
 
+<a id="camel.utils.context_utils.ContextUtility.extract_workflow_info"></a>
+
+### extract_workflow_info
+
+```python
+def extract_workflow_info(self, file_path: str):
+```
+
+Extract info from a workflow markdown file.
+
+This method reads only the essential info from a workflow file
+(title, description, tags) for use in workflow selection without
+loading the entire workflow content.
+
+**Parameters:**
+
+- **file_path** (str): Full path to the workflow markdown file.
+
+**Returns:**
+
+  Dict[str, Any]: Workflow info including title, description,
+tags, and file_path. Returns empty dict on error.
+
+<a id="camel.utils.context_utils.ContextUtility.get_all_workflows_info"></a>
+
+### get_all_workflows_info
+
+```python
+def get_all_workflows_info(self, session_id: Optional[str] = None):
+```
+
+Get info from all workflow files in workforce_workflows.
+
+This method scans the workforce_workflows directory for workflow
+markdown files and extracts their info for use in workflow
+selection.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): If provided, only return workflows from this specific session. If None, returns workflows from all sessions.
+
+**Returns:**
+
+  List[Dict[str, Any]]: List of workflow info dicts, sorted
+by session timestamp (newest first).
+
 <a id="camel.utils.context_utils.ContextUtility.get_workforce_shared"></a>
 
 ### get_workforce_shared

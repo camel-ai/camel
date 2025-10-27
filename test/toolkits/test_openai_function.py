@@ -104,6 +104,7 @@ def test_get_openai_tool_schema():
                         'enum': [
                             'assistant',
                             'user',
+                            'system',
                             'critic',
                             'embodiment',
                             'default',
@@ -126,6 +127,7 @@ def test_get_openai_tool_schema():
                         'enum': [
                             'assistant',
                             'user',
+                            'system',
                             'critic',
                             'embodiment',
                             'default',

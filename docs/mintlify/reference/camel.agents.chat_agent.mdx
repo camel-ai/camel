@@ -672,6 +672,41 @@ def init_messages(self):
 Initializes the stored messages list with the current system
 message.
 
+<a id="camel.agents.chat_agent.ChatAgent.update_system_message"></a>
+
+### update_system_message
+
+```python
+def update_system_message(
+    self,
+    system_message: Union[BaseMessage, str],
+    reset_memory: bool = True
+):
+```
+
+Update the system message.
+It will reset conversation with new system message.
+
+**Parameters:**
+
+- **system_message** (Union[BaseMessage, str]): The new system message. Can be either a BaseMessage object or a string. If a string is provided, it will be converted into a BaseMessage object.
+- **reset_memory** (bool): Whether to reinitialize conversation messages after updating the system message. Defaults to True.
+
+<a id="camel.agents.chat_agent.ChatAgent.append_to_system_message"></a>
+
+### append_to_system_message
+
+```python
+def append_to_system_message(self, content: str, reset_memory: bool = True):
+```
+
+Append additional context to existing system message.
+
+**Parameters:**
+
+- **content** (str): The additional system message.
+- **reset_memory** (bool): Whether to reinitialize conversation messages after appending additional context. Defaults to True.
+
 <a id="camel.agents.chat_agent.ChatAgent.reset_to_original_system_message"></a>
 
 ### reset_to_original_system_message

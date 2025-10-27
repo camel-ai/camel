@@ -16,6 +16,7 @@ from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
 from .utils import PipelineTaskBuilder
 from .workforce import Workforce, WorkforceMode
+from .workflow_memory_manager import WorkflowSelectionMethod
 
 __all__ = [
     "Workforce",
@@ -23,4 +24,5 @@ __all__ = [
     "PipelineTaskBuilder",
     "SingleAgentWorker",
     "RolePlayingWorker",
+    "WorkflowSelectionMethod",
 ]
