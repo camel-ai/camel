@@ -506,9 +506,7 @@ class ChatAgent(BaseAgent):
 
         # Set up system message and initialize messages
         self._original_system_message = (
-            BaseMessage.make_assistant_message(
-                role_name="Assistant", content=system_message
-            )
+            BaseMessage.make_system_message(system_message)
             if isinstance(system_message, str)
             else system_message
         )
@@ -1644,10 +1642,7 @@ class ChatAgent(BaseAgent):
             content = self._original_system_message.content + language_prompt
             return self._original_system_message.create_new_instance(content)
         else:
-            return BaseMessage.make_assistant_message(
-                role_name="Assistant",
-                content=language_prompt,
-            )
+            return BaseMessage.make_system_message(language_prompt)
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the current system
@@ -1664,6 +1659,62 @@ class ChatAgent(BaseAgent):
                     agent_id=self.agent_id,
                 )
             )
+
+    def update_system_message(
+        self,
+        system_message: Union[BaseMessage, str],
+        reset_memory: bool = True,
+    ) -> None:
+        r"""Update the system message.
+        It will reset conversation with new system message.
+
+        Args:
+            system_message (Union[BaseMessage, str]): The new system message.
+                Can be either a BaseMessage object or a string.
+                If a string is provided, it will be converted
+                into a BaseMessage object.
+            reset_memory (bool):
+                Whether to reinitialize conversation messages after updating
+                the system message. Defaults to True.
+        """
+        if system_message is None:
+            raise ValueError("system_message is required and cannot be None. ")
+        self._original_system_message = (
+            BaseMessage.make_system_message(system_message)
+            if isinstance(system_message, str)
+            else system_message
+        )
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        if reset_memory:
+            self.init_messages()
+
+    def append_to_system_message(
+        self, content: str, reset_memory: bool = True
+    ) -> None:
+        """Append additional context to existing system message.
+
+        Args:
+            content (str): The additional system message.
+            reset_memory (bool):
+                Whether to reinitialize conversation messages after appending
+                additional context. Defaults to True.
+        """
+        original_content = (
+            self._original_system_message.content
+            if self._original_system_message
+            else ""
+        )
+        new_system_message = original_content + '\n' + content
+        self._original_system_message = BaseMessage.make_system_message(
+            new_system_message
+        )
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        if reset_memory:
+            self.init_messages()
 
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
@@ -4541,23 +4592,29 @@ class ChatAgent(BaseAgent):
                         # Toolkit doesn't support cloning, use original
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
-                if getattr(
-                    tool.func, "__message_integration_enhanced__", False
-                ):
-                    cloned_tools.append(
-                        FunctionTool(
-                            func=tool.func,
-                            openai_tool_schema=tool.get_openai_tool_schema(),
-                        )
-                    )
-                    continue
-
                 # Get the method from the cloned (or original) toolkit
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
 
+                # Check if toolkit was actually cloned or just reused
+                toolkit_was_cloned = toolkit is not toolkit_instance
+
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
+
+                    # If toolkit wasn't cloned (stateless), preserve the
+                    # original function to maintain any enhancements/wrappers
+                    if not toolkit_was_cloned:
+                        # Toolkit is stateless, safe to reuse original function
+                        cloned_tools.append(
+                            FunctionTool(
+                                func=tool.func,
+                                openai_tool_schema=tool.get_openai_tool_schema(),
+                            )
+                        )
+                        continue
+
+                    # Toolkit was cloned, use the new method
                     # Wrap cloned method into a new FunctionTool,
                     # preserving schema
                     try:
