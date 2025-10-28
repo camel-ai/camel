@@ -42,8 +42,9 @@ from camel.types import ModelPlatformType, ModelType
 research_agent = ChatAgent(
     system_message=BaseMessage.make_assistant_message(
         role_name="Researcher",
-        content="You are a research specialist who gathers and analyzes information. "
-        "You focus on finding facts and providing detailed context.",
+        content="You are a research specialist who gathers and "
+        "analyzes information. You focus on finding facts and "
+        "providing detailed context.",
     ),
     model=ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -54,8 +55,9 @@ research_agent = ChatAgent(
 writer_agent = ChatAgent(
     system_message=BaseMessage.make_assistant_message(
         role_name="Writer",
-        content="You are a professional writer who creates clear, concise responses. "
-        "You synthesize information into well-structured answers.",
+        content="You are a professional writer who creates clear, "
+        "concise responses. You synthesize information into "
+        "well-structured answers.",
     ),
     model=ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -72,9 +74,8 @@ workforce.add_single_agent_worker(
     worker=writer_agent,
 )
 
-# Initialize conversation history
-previous_task = None
-previous_summary = None
+# Initialize conversation history for all rounds
+conversation_history = []
 turn_number = 0
 
 print("=== Multi-turn Workforce Conversation ===")
@@ -97,14 +98,19 @@ while True:
         print("Please enter a valid task or question.")
         continue
 
-    # Build task content with context from previous turn
-    task_content = user_input
-    if previous_task and previous_summary:
-        task_content = (
-            f"Previous task: {previous_task}\n"
-            f"Previous summary: {previous_summary}\n\n"
-            f"New task: {user_input}"
-        )
+    # Build task content with context from previous rounds
+    history_context = ""
+    for i in range(len(conversation_history)):
+        item = conversation_history[i]
+        history_context += f"Round {i+1}:\n"
+        history_context += f"Task: {item['task']}\n"
+        history_context += f"Result: {item['result']}\n\n"
+
+    task_content = (
+        f"{history_context}{'='*50}\nNew task: {user_input}"
+        if history_context
+        else user_input
+    )
 
     # Create and process task
     task = Task(content=task_content, id=str(turn_number))
@@ -113,9 +119,13 @@ while True:
     # Display response
     print(f"\nAssistant: {task_result.result}")
 
-    # Store for next turn
-    previous_task = user_input
-    previous_summary = task_result.result
+    # Store all information from this round for future context
+    round_info = {
+        'task': user_input,
+        'result': task_result.result,
+    }
+
+    conversation_history.append(round_info)
 
 print("\n--- Conversation Complete ---")
 print(f"Total turns: {turn_number}")
