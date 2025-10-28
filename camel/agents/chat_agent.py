@@ -112,9 +112,6 @@ TOKEN_LIMIT_ERROR_MARKERS = (
     "context limit",
 )
 
-SUMMARY_MAX_DEPTH = 3
-SUMMARY_PROGRESS_RECORD_THRESHOLD = 2
-
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
@@ -427,9 +424,9 @@ class ChatAgent(BaseAgent):
             updates return accumulated content (current behavior). When False,
             partial updates return only the incremental delta. (default:
             :obj:`True`)
-        summary_window_ratio (float, optional): Maximum fraction of the total 
-            context window that can be occupied by summary information. Used 
-            to limit how much of the model’s context is reserved for 
+        summary_window_ratio (float, optional): Maximum fraction of the total
+            context window that can be occupied by summary information. Used
+            to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
     """
 
@@ -491,13 +488,6 @@ class ChatAgent(BaseAgent):
 
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
-
-        if token_limit is not None:
-            logger.warning(
-                "`token_limit` parameter is deprecated and will be ignored. "
-                "Configure the model's token limit in the backend settings "
-                "instead."
-            )
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
@@ -590,10 +580,12 @@ class ChatAgent(BaseAgent):
         self._last_tool_call_signature: Optional[str] = None
         self._last_token_limit_tool_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
+
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        self._reset_summary_state()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -938,23 +930,61 @@ class ChatAgent(BaseAgent):
         args_repr = self._serialize_tool_args(record.args)
         return f"Tool `{record.tool_name}` invoked with arguments {args_repr}."
 
+    def _update_last_tool_call_state(
+        self, record: Optional[ToolCallingRecord]
+    ) -> None:
+        """Track the most recent tool call and its identifying signature."""
+        self._last_tool_call_record = record
+        if record is None:
+            self._last_tool_call_signature = None
+            return
+
+        args = (
+            record.args
+            if isinstance(record.args, dict)
+            else {"_raw": record.args}
+        )
+        try:
+            signature = self._build_tool_signature(record.tool_name, args)
+        except Exception:  # pragma: no cover - defensive guard
+            signature = None
+        self._last_tool_call_signature = signature
+
     def _format_tool_limit_notice(self) -> Optional[str]:
-        description = self._describe_tool_call(self._last_tool_call_record)
+        record = self._last_tool_call_record
+        description = self._describe_tool_call(record)
         if description is None:
             return None
-        return "[Tool Call Causing Token Limit]\n" f"{description}"
+        notice_lines = [
+            "[Tool Call Causing Token Limit]",
+            description,
+        ]
+
+        if record is not None:
+            result = record.result
+            if isinstance(result, bytes):
+                result_repr = result.decode(errors="replace")
+            elif isinstance(result, str):
+                result_repr = result
+            else:
+                try:
+                    result_repr = json.dumps(
+                        result, ensure_ascii=False, sort_keys=True
+                    )
+                except (TypeError, ValueError):
+                    result_repr = str(result)
+
+            result_length = len(result_repr)
+            notice_lines.append(f"Tool result length: {result_length}")
+            if self.model_backend.token_limit != 999999999:
+                notice_lines.append(
+                    f"Token limit: {self.model_backend.token_limit}"
+                )
+
+        return "\n".join(notice_lines)
 
     def _reset_summary_state(self) -> None:
-        self._summary_state: Dict[str, Any] = {
-            "depth": 0,
-            "last_summary_log_length": 0,
-            "last_summary_user_signature": None,
-            "record_count_since_summary": 0,
-            "user_count_since_summary": 0,
-            "summary_token_count": 0,  # Total tokens in summary messages
-            "last_summary_threshold": 0,  # Last calculated threshold
-            "is_summary_message": set(),  # Set of message  that are summaries
-        }
+        self._summary_token_count = 0  # Total tokens in summary messages
 
     def _calculate_next_summary_threshold(self) -> int:
         r"""Calculate the next token threshold that should trigger
@@ -974,7 +1004,7 @@ class ChatAgent(BaseAgent):
             return 0
 
         token_limit = self.model_backend.token_limit
-        summary_token_count = self._summary_state.get("summary_token_count", 0)
+        summary_token_count = self._summary_token_count
 
         # First summarization: use the percentage threshold
         if summary_token_count == 0:
@@ -990,20 +1020,16 @@ class ChatAgent(BaseAgent):
 
         return threshold
 
-    def _update_memory_with_summary(self, summary: Dict[str, Any]) -> None:
+    def _update_memory_with_summary(
+        self, summary: Dict[str, Any], include_summaries: bool = False
+    ) -> None:
         r"""Update memory with summary result.
 
         This method handles memory clearing and restoration of summaries based
         on whether it's a progressive or full compression.
         """
-        if not summary or self.summarize_threshold is None:
-            return
 
-        summary_with_prefix = summary.get("summary_with_prefix")
-        if not summary_with_prefix:
-            return
-        summary_status = summary.get("status", "")
-        include_summaries = summary.get("include_summaries", False)
+        summary_content: str = summary.get("summary_content", "")
 
         existing_summaries = []
         if not include_summaries:
@@ -1023,110 +1049,50 @@ class ChatAgent(BaseAgent):
             content = old_summary.get('content', '')
             if not isinstance(content, str):
                 content = str(content)
-            summary_msg = BaseMessage.make_assistant_message(
-                role_name="Assistant", content=content
+            summary_msg = BaseMessage.make_user_message(
+                role_name="assistant", content=content
             )
             self.update_memory(summary_msg, OpenAIBackendRole.ASSISTANT)
 
         # Add new summary
-        new_summary_msg = BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content=summary_with_prefix + " " + summary_status,
+        new_summary_msg = BaseMessage.make_user_message(
+            role_name="assistant", content=summary_content
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
-
+        input_message = BaseMessage.make_user_message(
+            role_name="user",
+            content=(
+                "Please continue the conversation from "
+                "where we left it off without asking the user any further "
+                "questions. Continue with the last task that you were "
+                "asked to work on."
+            ),
+        )
+        self.update_memory(input_message, OpenAIBackendRole.USER)
         # Update token count
         try:
             summary_tokens = (
                 self.model_backend.token_counter.count_tokens_from_messages(
-                    [{"role": "assistant", "content": summary_with_prefix}]
+                    [{"role": "assistant", "content": summary_content}]
                 )
             )
 
             if include_summaries:  # Full compression - reset count
-                self._summary_state["summary_token_count"] = summary_tokens
+                self._summary_token_count = summary_tokens
                 logger.info(
                     f"Full compression: Summary with {summary_tokens} tokens. "
                     f"Total summary tokens reset to: {summary_tokens}"
                 )
             else:  # Progressive compression - accumulate
-                self._summary_state["summary_token_count"] += summary_tokens
+                self._summary_token_count += summary_tokens
                 logger.info(
                     f"Progressive compression: New summary "
                     f"with {summary_tokens} tokens. "
                     f"Total summary tokens: "
-                    f"{self._summary_state['summary_token_count']}"
+                    f"{self._summary_token_count}"
                 )
         except Exception as e:
             logger.warning(f"Failed to count summary tokens: {e}")
-
-    def _register_record_addition(self, role: OpenAIBackendRole) -> None:
-        state = getattr(self, "_summary_state", None)
-        if not state:
-            return
-
-        state["record_count_since_summary"] = (
-            state.get("record_count_since_summary", 0) + 1
-        )
-
-        if role == OpenAIBackendRole.USER:
-            state["user_count_since_summary"] = (
-                state.get("user_count_since_summary", 0) + 1
-            )
-
-    def _can_attempt_summary(self) -> Tuple[bool, Optional[str]]:
-        state = getattr(self, "_summary_state", None)
-        if not state:
-            return True, None
-
-        depth = state.get("depth", 0)
-
-        if depth >= SUMMARY_MAX_DEPTH:
-            return (
-                False,
-                "Maximum number of summaries reached for this session.",
-            )
-
-        if depth == 0:
-            return True, None
-
-        if (
-            state.get("record_count_since_summary", 0)
-            >= SUMMARY_PROGRESS_RECORD_THRESHOLD
-        ):
-            return True, None
-
-        return (
-            False,
-            "Context was summarized recently but the conversation did not add "
-            "enough new exchanges to summarize again.",
-        )
-
-    def _on_summary(self, records_before_summary: List[ContextRecord]) -> None:
-        state = getattr(self, "_summary_state", None)
-        if state is None:
-            return
-
-        state["depth"] = state.get("depth", 0) + 1
-        state["last_summary_log_length"] = len(records_before_summary)
-        state["record_count_since_summary"] = 0
-        state["user_count_since_summary"] = 0
-        state["last_summary_user_signature"] = (
-            self._extract_last_user_signature(records_before_summary)
-        )
-
-    @staticmethod
-    def _extract_last_user_signature(
-        records: List[ContextRecord],
-    ) -> Optional[str]:
-        for context_record in reversed(records):
-            memory_record = context_record.memory_record
-            if memory_record.role_at_backend == OpenAIBackendRole.USER:
-                content = getattr(memory_record.message, "content", None)
-                if isinstance(content, str):
-                    return content
-                return None
-        return None
 
     def _get_external_tool_names(self) -> Set[str]:
         r"""Returns a set of external tool names."""
@@ -1207,7 +1173,6 @@ class ChatAgent(BaseAgent):
             agent_id=self.agent_id,
         )
         self.memory.write_record(record)
-        self._register_record_addition(role)
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -1459,8 +1424,9 @@ class ChatAgent(BaseAgent):
             else:
                 prompt_text = (
                     "Summarize the context information in concise markdown "
-                    "bullet points highlighting key decisions, action items.\n"
-                    f"Context information:\n{conversation_text}"
+                    "bullet points highlighting key decisions, action items, "
+                    "user's intent.\n\nContext information:\n"
+                    f"{conversation_text}"
                 )
 
             try:
@@ -1545,7 +1511,10 @@ class ChatAgent(BaseAgent):
             file_path = (
                 context_util.get_working_directory() / f"{base_filename}.md"
             )
-
+            summary_content = (
+                f"[CONTEXT_SUMMARY] The following is a summary of our "
+                f"conversation from a previous session: {summary_content}"
+            )
             # Prepare result dictionary
             result_dict = {
                 "summary": summary_content,
@@ -1555,16 +1524,6 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
-
-            # Add prefix to summary content in result
-            if self.summarize_threshold is not None:
-                summary_with_prefix = (
-                    f"[CONTEXT_SUMMARY] The following is a summary of our "
-                    f"conversation from a previous session: {summary_content}"
-                )
-                result["summary_with_prefix"] = summary_with_prefix
-                result["include_summaries"] = include_summaries
-
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1737,8 +1696,9 @@ class ChatAgent(BaseAgent):
             else:
                 prompt_text = (
                     "Summarize the context information in concise markdown "
-                    "bullet points highlighting key decisions, action items.\n"
-                    f"Context information:\n{conversation_text}"
+                    "bullet points highlighting key decisions, action items, "
+                    "user's intent.\n\nContext information:\n"
+                    f"{conversation_text}"
                 )
 
             try:
@@ -1833,6 +1793,11 @@ class ChatAgent(BaseAgent):
                 context_util.get_working_directory() / f"{base_filename}.md"
             )
 
+            summary_content = (
+                f"[CONTEXT_SUMMARY] The following is a summary of our "
+                f"conversation from a previous session: {summary_content}"
+            )
+
             # Prepare result dictionary
             result_dict = {
                 "summary": summary_content,
@@ -1842,13 +1807,6 @@ class ChatAgent(BaseAgent):
             }
 
             result.update(result_dict)
-
-            # Add prefix to summary content in result
-            if self.summarize_threshold is not None:
-                summary_with_prefix = f"[CONTEXT_SUMMARY] {summary_content}"
-                result["summary_with_prefix"] = summary_with_prefix
-                result["include_summaries"] = include_summaries
-
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -2335,22 +2293,23 @@ class ChatAgent(BaseAgent):
                 openai_messages, num_tokens = self.memory.get_context()
                 if self.summarize_threshold is not None:
                     threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_state.get(
-                        "summary_token_count", 0
-                    )
+                    summary_token_count = self._summary_token_count
                     token_limit = self.model_backend.token_limit
 
                     if num_tokens <= token_limit:
-                        if summary_token_count > token_limit * self.summary_window_ratio:
+                        if (
+                            summary_token_count
+                            > token_limit * self.summary_window_ratio
+                        ):
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed {self.summary_window_ratio} of "
-                                f"limit ({token_limit * self.summary_window_ratio}). "
-                                f"Performing full compression."
+                                f"exceed, full compression."
                             )
                             # Summarize everything (including summaries)
                             summary = self.summarize(include_summaries=True)
-                            self._update_memory_with_summary(summary)
+                            self._update_memory_with_summary(
+                                summary, include_summaries=True
+                            )
                         elif num_tokens > threshold:
                             logger.info(
                                 f"Token count ({num_tokens}) exceed threshold "
@@ -2358,7 +2317,9 @@ class ChatAgent(BaseAgent):
                             )
                             # Only summarize non-summary content
                             summary = self.summarize(include_summaries=False)
-                            self._update_memory_with_summary(summary)
+                            self._update_memory_with_summary(
+                                summary, include_summaries=False
+                            )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2396,15 +2357,20 @@ class ChatAgent(BaseAgent):
                             repeated_msg += f" {description}"
                         raise RuntimeError(repeated_msg) from exc
 
-                    allowed, reason = self._can_attempt_summary()
-                    if not allowed:
-                        error_message = (
-                            "Context limit exceeded and further summarization "
-                            "is not possible."
-                        )
-                        if reason:
-                            error_message += f" {reason}"
-                        raise RuntimeError(error_message) from exc
+                    user_message_count = sum(
+                        1
+                        for msg in openai_messages
+                        if getattr(msg, "role", None) == "user"
+                    )
+                    if (
+                        user_message_count == 1
+                        and getattr(openai_messages[-1], "role", None)
+                        == "user"
+                    ):
+                        raise RuntimeError(
+                            "The provided user input alone exceeds the "
+                            "context window. Please shorten the input."
+                        ) from exc
 
                     logger.warning(
                         "Token limit exceeded error detected. "
@@ -2425,39 +2391,26 @@ class ChatAgent(BaseAgent):
                     self.memory.remove_records_by_indices(indices_to_remove)
 
                     summary = self.summarize()
-                    if isinstance(input_message, BaseMessage):
-                        input_message = input_message.content
-
                     tool_notice = self._format_tool_limit_notice()
-                    summary_messages = (
-                        "Due to token limit being exceeded in this request, "
-                        "the conversation has been summarized."
-                        "the content after [Input Message] is the summary "
-                        "of [Input Message]"
-                        + "<Input Message>"
-                        + str(input_message)
-                        + "</Input Message>"
-                        + "\n\n"
-                        "[Context Summary]\n\n"
-                        + summary.get("summary", "")
-                        + "\n\n[Summary status]\n\n"
-                        + str(summary.get("status", ""))
-                        + "\n\nThe following is the user's original input. "
-                        "Please continue based on existing information."
-                    )
+                    summary_messages = summary.get("summary", "")
+
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
+                    help_message = (
+                        "Please continue the conversation from "
+                        "where we left it off without asking the user any "
+                        "further questions. Continue with the last task "
+                        "that you were asked to work on."
+                    )
+                    summary_messages += "\n\n" + help_message
                     self.clear_memory()
                     summary_messages = BaseMessage.make_assistant_message(
-                        role_name="Assistant", content=summary_messages
+                        role_name="assistant", content=summary_messages
                     )
                     self.update_memory(
                         summary_messages, OpenAIBackendRole.ASSISTANT
                     )
-                    self._on_summary(recent_records)
-
                     self._last_token_limit_tool_signature = tool_signature
-
                     return self._step_impl(input_message, response_format)
 
                 raise
@@ -2669,24 +2622,25 @@ class ChatAgent(BaseAgent):
                 openai_messages, num_tokens = self.memory.get_context()
                 if self.summarize_threshold is not None:
                     threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_state.get(
-                        "summary_token_count", 0
-                    )
+                    summary_token_count = self._summary_token_count
                     token_limit = self.model_backend.token_limit
 
                     if num_tokens <= token_limit:
-                        if summary_token_count > token_limit * self.summary_window_ratio:
+                        if (
+                            summary_token_count
+                            > token_limit * self.summary_window_ratio
+                        ):
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed {self.summary_window_ratio} of "
-                                f"limit ({token_limit * self.summary_window_ratio}). "
-                                f"Full compression."
+                                f"exceed, full compression."
                             )
                             # Summarize everything (including summaries)
                             summary = await self.asummarize(
                                 include_summaries=True
                             )
-                            self._update_memory_with_summary(summary)
+                            self._update_memory_with_summary(
+                                summary, include_summaries=True
+                            )
                         elif num_tokens > threshold:
                             logger.info(
                                 f"Token count ({num_tokens}) exceed threshold "
@@ -2696,7 +2650,9 @@ class ChatAgent(BaseAgent):
                             summary = await self.asummarize(
                                 include_summaries=False
                             )
-                            self._update_memory_with_summary(summary)
+                            self._update_memory_with_summary(
+                                summary, include_summaries=False
+                            )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2734,15 +2690,20 @@ class ChatAgent(BaseAgent):
                             repeated_msg += f" {description}"
                         raise RuntimeError(repeated_msg) from exc
 
-                    allowed, reason = self._can_attempt_summary()
-                    if not allowed:
-                        error_message = (
-                            "Context limit exceeded and further summarization "
-                            "is not possible."
-                        )
-                        if reason:
-                            error_message += f" {reason}"
-                        raise RuntimeError(error_message) from exc
+                    user_message_count = sum(
+                        1
+                        for msg in openai_messages
+                        if getattr(msg, "role", None) == "user"
+                    )
+                    if (
+                        user_message_count == 1
+                        and getattr(openai_messages[-1], "role", None)
+                        == "user"
+                    ):
+                        raise RuntimeError(
+                            "The provided user input alone exceeds the"
+                            "context window. Please shorten the input."
+                        ) from exc
 
                     logger.warning(
                         "Token limit exceeded error detected. "
@@ -2763,39 +2724,27 @@ class ChatAgent(BaseAgent):
                     self.memory.remove_records_by_indices(indices_to_remove)
 
                     summary = await self.asummarize()
-                    if isinstance(input_message, BaseMessage):
-                        input_message = input_message.content
 
                     tool_notice = self._format_tool_limit_notice()
-                    summary_messages = (
-                        "Due to token limit being exceeded in this request, "
-                        "the conversation has been summarized."
-                        "the content after [Input Message] is the summary"
-                        + "<Input Message>"
-                        + str(input_message)
-                        + "</Input Message>"
-                        + "\n\n"
-                        "[Context Summary]\n\n"
-                        + summary.get("summary", "")
-                        + "\n\n[Summary status]\n\n"
-                        + str(summary.get("status", ""))
-                        + "\n\nThe following is the user's original input. "
-                        "Please continue based on existing information."
-                    )
+                    summary_messages = summary.get("summary", "")
 
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
+                    help_message = (
+                        "Please continue the conversation from "
+                        "where we left it off without asking the user any "
+                        "further questions. Continue with the last task "
+                        "that you were asked to work on."
+                    )
+                    summary_messages += "\n\n" + help_message
                     self.clear_memory()
                     summary_messages = BaseMessage.make_assistant_message(
-                        role_name="Assistant", content=summary_messages
+                        role_name="assistant", content=summary_messages
                     )
                     self.update_memory(
                         summary_messages, OpenAIBackendRole.ASSISTANT
                     )
-                    self._on_summary(recent_records)
-
                     self._last_token_limit_tool_signature = tool_signature
-
                     return await self._astep_non_streaming_task(
                         input_message, response_format
                     )
@@ -2877,6 +2826,8 @@ class ChatAgent(BaseAgent):
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
             self.memory.clean_tool_calls()
+
+        self._last_token_limit_user_signature = None
 
         return self._convert_to_chatagent_response(
             response,
@@ -3548,6 +3499,7 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
+        self._update_last_tool_call_state(tool_record)
         return tool_record
 
     def _stream(
@@ -4109,12 +4061,14 @@ class ChatAgent(BaseAgent):
                         timestamp=base_timestamp + 1e-6,
                     )
 
-                    return ToolCallingRecord(
+                    tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
                     )
+                    self._update_last_tool_call_state(tool_record)
+                    return tool_record
 
                 except Exception as e:
                     error_msg = (
@@ -4136,12 +4090,14 @@ class ChatAgent(BaseAgent):
 
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
-                    return ToolCallingRecord(
+                    tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
                     )
+                    self._update_last_tool_call_state(tool_record)
+                    return tool_record
             else:
                 logger.warning(
                     f"Tool '{function_name}' not found in internal tools"
@@ -4232,12 +4188,14 @@ class ChatAgent(BaseAgent):
                         timestamp=base_timestamp + 1e-6,
                     )
 
-                    return ToolCallingRecord(
+                    tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
                     )
+                    self._update_last_tool_call_state(tool_record)
+                    return tool_record
 
                 except Exception as e:
                     error_msg = (
@@ -4259,12 +4217,14 @@ class ChatAgent(BaseAgent):
 
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
-                    return ToolCallingRecord(
+                    tool_record = ToolCallingRecord(
                         tool_name=function_name,
                         args=args,
                         result=result,
                         tool_call_id=tool_call_id,
                     )
+                    self._update_last_tool_call_state(tool_record)
+                    return tool_record
             else:
                 logger.warning(
                     f"Tool '{function_name}' not found in internal tools"
