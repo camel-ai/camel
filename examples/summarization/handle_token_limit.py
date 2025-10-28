@@ -48,7 +48,7 @@ camel_agent = ChatAgent(
     model=model,
     tools=tools,
     summarize_threshold=1,
-    summary_window_ratio=0.02
+    summary_window_ratio=0.02,
 )
 camel_agent.reset()
 
@@ -58,13 +58,11 @@ usr_msg = (
 )
 
 # simulate a long conversation
-for i in range(20):
+for _i in range(20):
     response = camel_agent.step(usr_msg)
     print(camel_agent._summary_token_count)
 
-#handle a large file
-usr_msg = (
-    f"../../uv.lock,read this file"
-)
+# handle a large file
+usr_msg = "../../uv.lock,read this file"
 
 response = camel_agent.step(usr_msg)
