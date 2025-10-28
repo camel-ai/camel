@@ -1029,7 +1029,7 @@ class ChatAgent(BaseAgent):
         on whether it's a progressive or full compression.
         """
 
-        summary_content: str = summary.get("summary_content", "")
+        summary_content: str = summary.get("summary", "")
 
         existing_summaries = []
         if not include_summaries:
