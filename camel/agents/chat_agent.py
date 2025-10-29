@@ -1002,13 +1002,7 @@ class ChatAgent(BaseAgent):
         )
         user_section = f"{section_title}\n{bullet_block}"
 
-        pattern_existing = re.compile(
-            r"(?:\n\n)?- \*\*All User Messages\*\*:"
-            r"(?:\n- .*)*(?=\n\n- \*\*|\Z)",
-            re.DOTALL,
-        )
-        summary_clean = pattern_existing.sub("", summary_content).rstrip()
-
+        summary_clean = summary_content.rstrip()
         separator = "\n\n" if summary_clean else ""
         return f"{summary_clean}{separator}{user_section}"
 
