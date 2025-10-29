@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
+    SYSTEM = "system"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
