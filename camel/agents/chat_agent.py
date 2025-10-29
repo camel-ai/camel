@@ -56,6 +56,7 @@ from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
+    build_default_summary_prompt,
     convert_to_function_tool,
     convert_to_schema,
     get_info_dict,
@@ -981,6 +982,36 @@ class ChatAgent(BaseAgent):
 
         return "\n".join(notice_lines)
 
+    @staticmethod
+    def _append_user_messages_section(
+        summary_content: str, user_messages: List[str]
+    ) -> str:
+        section_title = "- **All User Messages**:"
+        sanitized_messages: List[str] = []
+        for msg in user_messages:
+            if not isinstance(msg, str):
+                msg = str(msg)
+            cleaned = " ".join(msg.strip().splitlines())
+            if cleaned:
+                sanitized_messages.append(cleaned)
+
+        bullet_block = (
+            "\n".join(f"- {m}" for m in sanitized_messages)
+            if sanitized_messages
+            else "- None noted"
+        )
+        user_section = f"{section_title}\n{bullet_block}"
+
+        pattern_existing = re.compile(
+            r"(?:\n\n)?- \*\*All User Messages\*\*:"
+            r"(?:\n- .*)*(?=\n\n- \*\*|\Z)",
+            re.DOTALL,
+        )
+        summary_clean = pattern_existing.sub("", summary_content).rstrip()
+
+        separator = "\n\n" if summary_clean else ""
+        return f"{summary_clean}{separator}{user_section}"
+
     def _reset_summary_state(self) -> None:
         self._summary_token_count = 0  # Total tokens in summary messages
 
@@ -1019,7 +1050,7 @@ class ChatAgent(BaseAgent):
         return threshold
 
     def _update_memory_with_summary(
-        self, summary: Dict[str, Any], include_summaries: bool = False
+        self, summary: str, include_summaries: bool = False
     ) -> None:
         r"""Update memory with summary result.
 
@@ -1027,7 +1058,7 @@ class ChatAgent(BaseAgent):
         on whether it's a progressive or full compression.
         """
 
-        summary_content: str = summary.get("summary", "")
+        summary_content: str = summary
 
         existing_summaries = []
         if not include_summaries:
@@ -1047,18 +1078,18 @@ class ChatAgent(BaseAgent):
             content = old_summary.get('content', '')
             if not isinstance(content, str):
                 content = str(content)
-            summary_msg = BaseMessage.make_user_message(
+            summary_msg = BaseMessage.make_assistant_message(
                 role_name="assistant", content=content
             )
             self.update_memory(summary_msg, OpenAIBackendRole.ASSISTANT)
 
         # Add new summary
-        new_summary_msg = BaseMessage.make_user_message(
+        new_summary_msg = BaseMessage.make_assistant_message(
             role_name="assistant", content=summary_content
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
-        input_message = BaseMessage.make_user_message(
-            role_name="user",
+        input_message = BaseMessage.make_assistant_message(
+            role_name="assistant",
             content=(
                 "Please continue the conversation from "
                 "where we left it off without asking the user any further "
@@ -1066,7 +1097,7 @@ class ChatAgent(BaseAgent):
                 "asked to work on."
             ),
         )
-        self.update_memory(input_message, OpenAIBackendRole.USER)
+        self.update_memory(input_message, OpenAIBackendRole.ASSISTANT)
         # Update token count
         try:
             summary_tokens = (
@@ -1256,6 +1287,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
+        add_user_messages: bool = True,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1283,7 +1315,8 @@ class ChatAgent(BaseAgent):
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
-
+            add_user_messages (bool): Whether add user messages to summary.
+                (default: :obj:`True`)
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
@@ -1329,6 +1362,7 @@ class ChatAgent(BaseAgent):
 
             # Convert messages to conversation text
             conversation_lines = []
+            user_messages: List[str] = []
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
@@ -1390,6 +1424,9 @@ class ChatAgent(BaseAgent):
 
                 # Handle regular content messages (user/assistant/system)
                 elif content:
+                    content = str(content)
+                    if role == 'user':
+                        user_messages.append(content)
                     conversation_lines.append(f"{role}: {content}")
 
             conversation_text = "\n".join(conversation_lines).strip()
@@ -1420,12 +1457,7 @@ class ChatAgent(BaseAgent):
                     f"{conversation_text}"
                 )
             else:
-                prompt_text = (
-                    "Summarize the context information in concise markdown "
-                    "bullet points highlighting key decisions, action items, "
-                    "user's intent.\n\nContext information:\n"
-                    f"{conversation_text}"
-                )
+                prompt_text = build_default_summary_prompt(conversation_text)
 
             try:
                 # Use structured output if response_format is provided
@@ -1495,6 +1527,10 @@ class ChatAgent(BaseAgent):
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output, metadata=metadata
                 )
+            if add_user_messages:
+                summary_content = self._append_user_messages_section(
+                    summary_content, user_messages
+                )
 
             # Save the markdown (either custom structured or default)
             save_status = context_util.save_markdown_file(
@@ -1538,6 +1574,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
+        add_user_messages: bool = True,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -1565,7 +1602,8 @@ class ChatAgent(BaseAgent):
                 only non-summary messages will be summarized. If True, all
                 messages including previous summaries will be summarized
                 (full compression). (default: :obj:`False`)
-
+            add_user_messages (bool): Whether add user messages to summary.
+                (default: :obj:`True`)
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
@@ -1601,6 +1639,7 @@ class ChatAgent(BaseAgent):
 
             # Convert messages to conversation text
             conversation_lines = []
+            user_messages: List[str] = []
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
@@ -1662,6 +1701,9 @@ class ChatAgent(BaseAgent):
 
                 # Handle regular content messages (user/assistant/system)
                 elif content:
+                    content = str(content)
+                    if role == 'user':
+                        user_messages.append(content)
                     conversation_lines.append(f"{role}: {content}")
 
             conversation_text = "\n".join(conversation_lines).strip()
@@ -1692,12 +1734,7 @@ class ChatAgent(BaseAgent):
                     f"{conversation_text}"
                 )
             else:
-                prompt_text = (
-                    "Summarize the context information in concise markdown "
-                    "bullet points highlighting key decisions, action items, "
-                    "user's intent.\n\nContext information:\n"
-                    f"{conversation_text}"
-                )
+                prompt_text = build_default_summary_prompt(conversation_text)
 
             try:
                 # Use structured output if response_format is provided
@@ -1775,6 +1812,10 @@ class ChatAgent(BaseAgent):
                 # convert structured output to custom markdown
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output, metadata=metadata
+                )
+            if add_user_messages:
+                summary_content = self._append_user_messages_section(
+                    summary_content, user_messages
                 )
 
             # Save the markdown (either custom structured or default)
@@ -2359,7 +2400,8 @@ class ChatAgent(BaseAgent):
                             # Summarize everything (including summaries)
                             summary = self.summarize(include_summaries=True)
                             self._update_memory_with_summary(
-                                summary, include_summaries=True
+                                summary.get("summary", ""),
+                                include_summaries=True,
                             )
                         elif num_tokens > threshold:
                             logger.info(
@@ -2369,7 +2411,8 @@ class ChatAgent(BaseAgent):
                             # Only summarize non-summary content
                             summary = self.summarize(include_summaries=False)
                             self._update_memory_with_summary(
-                                summary, include_summaries=False
+                                summary.get("summary", ""),
+                                include_summaries=False,
                             )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
@@ -2441,25 +2484,15 @@ class ChatAgent(BaseAgent):
                     )
                     self.memory.remove_records_by_indices(indices_to_remove)
 
-                    summary = self.summarize()
+                    summary = self.summarize(include_summaries=False)
                     tool_notice = self._format_tool_limit_notice()
                     summary_messages = summary.get("summary", "")
 
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
-                    help_message = (
-                        "Please continue the conversation from "
-                        "where we left it off without asking the user any "
-                        "further questions. Continue with the last task "
-                        "that you were asked to work on."
-                    )
-                    summary_messages += "\n\n" + help_message
-                    self.clear_memory()
-                    summary_messages = BaseMessage.make_assistant_message(
-                        role_name="assistant", content=summary_messages
-                    )
-                    self.update_memory(
-                        summary_messages, OpenAIBackendRole.ASSISTANT
+
+                    self._update_memory_with_summary(
+                        summary_messages, include_summaries=False
                     )
                     self._last_token_limit_tool_signature = tool_signature
                     return self._step_impl(input_message, response_format)
@@ -2690,7 +2723,8 @@ class ChatAgent(BaseAgent):
                                 include_summaries=True
                             )
                             self._update_memory_with_summary(
-                                summary, include_summaries=True
+                                summary.get("summary", ""),
+                                include_summaries=True,
                             )
                         elif num_tokens > threshold:
                             logger.info(
@@ -2702,7 +2736,8 @@ class ChatAgent(BaseAgent):
                                 include_summaries=False
                             )
                             self._update_memory_with_summary(
-                                summary, include_summaries=False
+                                summary.get("summary", ""),
+                                include_summaries=False,
                             )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
@@ -2781,19 +2816,8 @@ class ChatAgent(BaseAgent):
 
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
-                    help_message = (
-                        "Please continue the conversation from "
-                        "where we left it off without asking the user any "
-                        "further questions. Continue with the last task "
-                        "that you were asked to work on."
-                    )
-                    summary_messages += "\n\n" + help_message
-                    self.clear_memory()
-                    summary_messages = BaseMessage.make_assistant_message(
-                        role_name="assistant", content=summary_messages
-                    )
-                    self.update_memory(
-                        summary_messages, OpenAIBackendRole.ASSISTANT
+                    self._update_memory_with_summary(
+                        summary_messages, include_summaries=False
                     )
                     self._last_token_limit_tool_signature = tool_signature
                     return await self._astep_non_streaming_task(
