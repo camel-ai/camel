@@ -3716,6 +3716,23 @@ class ChatAgent(BaseAgent):
             tool_call_id = tool_call_data['id']
 
             if function_name in self._internal_tools:
+                # Create the tool call message
+                assist_msg = FunctionCallingMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=function_name,
+                    args=args,
+                    tool_call_id=tool_call_id,
+                )
+                assist_ts = time.time_ns() / 1_000_000_000
+                self.update_memory(
+                    assist_msg,
+                    OpenAIBackendRole.ASSISTANT,
+                    timestamp=assist_ts,
+                )
+
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
@@ -3744,19 +3761,8 @@ class ChatAgent(BaseAgent):
                     else:
                         # Fallback: synchronous call
                         result = tool(**args)
-                    # First, create and record the assistant message with tool
-                    # call
-                    assist_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        args=args,
-                        tool_call_id=tool_call_id,
-                    )
 
-                    # Then create the tool response message
+                    # Create the tool response message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -3766,23 +3772,11 @@ class ChatAgent(BaseAgent):
                         result=result,
                         tool_call_id=tool_call_id,
                     )
-
-                    # Record both messages with precise timestamps to ensure
-                    # correct ordering
-                    current_time_ns = time.time_ns()
-                    base_timestamp = (
-                        current_time_ns / 1_000_000_000
-                    )  # Convert to seconds
-
-                    self.update_memory(
-                        assist_msg,
-                        OpenAIBackendRole.ASSISTANT,
-                        timestamp=base_timestamp,
-                    )
+                    func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
                         func_msg,
                         OpenAIBackendRole.FUNCTION,
-                        timestamp=base_timestamp + 1e-6,
+                        timestamp=func_ts,
                     )
 
                     return ToolCallingRecord(
@@ -3809,8 +3803,12 @@ class ChatAgent(BaseAgent):
                         result=result,
                         tool_call_id=tool_call_id,
                     )
-
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+                    func_ts = time.time_ns() / 1_000_000_000
+                    self.update_memory(
+                        func_msg,
+                        OpenAIBackendRole.FUNCTION,
+                        timestamp=func_ts,
+                    )
 
                     return ToolCallingRecord(
                         tool_name=function_name,
