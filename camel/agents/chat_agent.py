@@ -2161,7 +2161,7 @@ class ChatAgent(BaseAgent):
         if self.prune_tool_calls_from_memory and tool_call_records:
             self.memory.clean_tool_calls()
 
-        chatagent_response = self._convert_to_chatagent_response(
+        return self._convert_to_chatagent_response(
             response,
             tool_call_records,
             accumulated_context_tokens,
@@ -2170,11 +2170,6 @@ class ChatAgent(BaseAgent):
             step_token_usage["completion_tokens"],
             step_token_usage["total_tokens"],
         )
-        print(
-            f"""_STEP_IMPL info (shourld include tool cost): 
-                {chatagent_response.info}"""
-        )  # debug
-        return chatagent_response
 
     @property
     def chat_history(self) -> List[OpenAIMessage]:
@@ -3055,7 +3050,6 @@ class ChatAgent(BaseAgent):
 
         # Calculate tool cost and token usage
         cost_info = self._calculate_tool_cost(assist_msg, func_msg)
-        print(f"_CALCULATE_TOOL_COST: {cost_info}")  # debug
         # Record information about this tool call with cost tracking
         tool_record = ToolCallingRecord(
             tool_name=func_name,
@@ -3068,8 +3062,6 @@ class ChatAgent(BaseAgent):
                 "total_tokens": int(cost_info["total_tokens"]),
             },
         )
-
-        print(f"_RECORD_TOOL_CALLING: {tool_record}")  # debug
 
         return tool_record
 
