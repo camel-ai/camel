@@ -26,6 +26,9 @@ from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.responses.adapters.chat_completions import (
+    adapt_chat_to_camel_response,
+)
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -336,11 +339,30 @@ class OpenAIModel(BaseModelBackend):
                 )
             else:
                 # Use non-streaming parse for structured output
-                return self._request_parse(messages, response_format, tools)
+                result = self._request_parse(messages, response_format, tools)
+                if (
+                    os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                    == "true"
+                ):
+                    try:
+                        return adapt_chat_to_camel_response(result)  # type: ignore[return-value]
+                    except Exception:
+                        pass
+                return result
         else:
-            result = self._request_chat_completion(messages, tools)
+            resp_or_stream = self._request_chat_completion(messages, tools)
+            if (
+                os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                == "true"
+            ):
+                try:
+                    from camel.types import ChatCompletion as _CC
 
-        return result
+                    if isinstance(resp_or_stream, _CC):
+                        return adapt_chat_to_camel_response(resp_or_stream)  # type: ignore[return-value]
+                except Exception:
+                    pass
+            return resp_or_stream
 
     @observe()
     async def _arun(
@@ -407,13 +429,34 @@ class OpenAIModel(BaseModelBackend):
                 )
             else:
                 # Use non-streaming parse for structured output
-                return await self._arequest_parse(
+                result = await self._arequest_parse(
                     messages, response_format, tools
                 )
+                if (
+                    os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                    == "true"
+                ):
+                    try:
+                        return adapt_chat_to_camel_response(result)  # type: ignore[return-value]
+                    except Exception:
+                        pass
+                return result
         else:
-            result = await self._arequest_chat_completion(messages, tools)
+            resp_or_stream = await self._arequest_chat_completion(
+                messages, tools
+            )
+            if (
+                os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                == "true"
+            ):
+                try:
+                    from camel.types import ChatCompletion as _CC
 
-        return result
+                    if isinstance(resp_or_stream, _CC):
+                        return adapt_chat_to_camel_response(resp_or_stream)  # type: ignore[return-value]
+                except Exception:
+                    pass
+            return resp_or_stream
 
     def _request_chat_completion(
         self,

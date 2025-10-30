@@ -84,6 +84,10 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
+from camel.responses.adapters.chat_completions import (
+    adapt_chat_to_camel_response,
+)
+from camel.responses.model_response import CamelModelResponse
 from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
@@ -2566,12 +2570,8 @@ class ChatAgent(BaseAgent):
             f"[{current_iteration}]: {sanitized}"
         )
 
-        if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
-
-        return self._handle_batch_response(response)
+        camel_resp = self._normalize_to_camel_response(response)
+        return self._handle_camel_response(camel_resp)
 
     @observe()
     async def _aget_model_response(
@@ -2631,12 +2631,8 @@ class ChatAgent(BaseAgent):
             f"[{current_iteration}]: {sanitized}"
         )
 
-        if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
-
-        return self._handle_batch_response(response)
+        camel_resp = self._normalize_to_camel_response(response)
+        return self._handle_camel_response(camel_resp)
 
     def _sanitize_messages_for_logging(
         self, messages, prev_num_openai_messages: int
@@ -2905,6 +2901,93 @@ class ChatAgent(BaseAgent):
             finish_reasons=finish_reasons,
             usage_dict=usage,
             response_id=response.id or "",
+        )
+
+    def _normalize_to_camel_response(self, resp: Any) -> CamelModelResponse:
+        """Normalize backend response into CamelModelResponse.
+
+        Accepts ChatCompletion (legacy) or already-normalized
+        CamelModelResponse.
+        """
+        if isinstance(resp, CamelModelResponse):
+            return resp
+        # Best-effort detect ChatCompletion without tight import coupling
+        try:
+            from camel.types import (
+                ChatCompletion as _CC,  # local import to avoid cycles
+            )
+
+            if isinstance(resp, _CC):
+                return adapt_chat_to_camel_response(resp)
+        except Exception:
+            pass
+        raise TypeError(
+            f"Unsupported response type for normalization: {type(resp).__name__}"  # noqa:E501
+        )
+
+    def _handle_camel_response(
+        self, response: CamelModelResponse
+    ) -> ModelResponse:
+        """Process a CamelModelResponse and build the legacy ModelResponse.
+
+        Mirrors _handle_batch_response semantics to keep behavior identical.
+        """
+        output_messages: List[BaseMessage] = []
+        for msg in response.output_messages:
+            # Re-wrap to preserve agent role naming convention
+            chat_message = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=msg.meta_dict,
+                content=msg.content,
+                parsed=msg.parsed,
+            )
+            output_messages.append(chat_message)
+
+        finish_reasons = response.finish_reasons or []
+
+        usage: Dict[str, Any] = {}
+        if response.usage and response.usage.raw:
+            usage = dict(response.usage.raw)
+        else:
+            # Synthesize from normalized fields if raw missing
+            usage = {
+                "prompt_tokens": response.usage.input_tokens
+                if response.usage
+                else 0,
+                "completion_tokens": response.usage.output_tokens
+                if response.usage
+                else 0,
+                "total_tokens": response.usage.total_tokens
+                if response.usage
+                else 0,
+            }
+
+        tool_call_requests: Optional[List[ToolCallRequest]] = None
+        if response.tool_call_requests:
+            tool_call_requests = []
+            for tc in response.tool_call_requests:
+                tool_call_requests.append(
+                    ToolCallRequest(
+                        tool_name=tc.name,
+                        args=tc.args,
+                        tool_call_id=tc.id,
+                    )
+                )
+
+        # For compatibility, return original provider payload when available
+        provider_payload = getattr(response, "raw", None)
+        response_id = response.id or ""
+
+        return ModelResponse(
+            response=provider_payload
+            if provider_payload is not None
+            else response,
+            tool_call_requests=tool_call_requests,
+            output_messages=output_messages,
+            finish_reasons=finish_reasons,
+            usage_dict=usage,
+            response_id=response_id,
         )
 
     def _step_terminate(
