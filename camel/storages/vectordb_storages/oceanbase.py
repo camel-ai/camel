@@ -121,10 +121,11 @@ class OceanBaseStorage(BaseVectorStorage):
             )
 
             # Get the first index parameter
-            first_index_param = next(iter(index_params))
-            self._client.create_vidx_with_vec_index_param(
-                table_name=self.table_name, vidx_param=first_index_param
-            )
+            first_index_param = next(iter(index_params), None)
+            if first_index_param is not None:
+                self._client.create_vidx_with_vec_index_param(
+                    table_name=self.table_name, vidx_param=first_index_param
+                )
 
             logger.info(f"Created table {self.table_name} with vector index")
         else:
