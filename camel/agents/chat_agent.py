@@ -451,7 +451,7 @@ class ChatAgent(BaseAgent):
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
-        summarize_threshold: Optional[int] = None,
+        summarize_threshold: Optional[int] = 50,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
@@ -525,6 +525,11 @@ class ChatAgent(BaseAgent):
                     f"summarize_threshold must be between 0 and 100, "
                     f"got {summarize_threshold}"
                 )
+            logger.info(
+                f"Automatic context compression is enabled. Will trigger "
+                f"summarization when context window exceeds "
+                f"{summarize_threshold}% of the total token limit."
+            )
         self.summarize_threshold = summarize_threshold
         self._reset_summary_state()
 
@@ -1023,9 +1028,6 @@ class ChatAgent(BaseAgent):
         Returns:
             int: The token count threshold for next summarization.
         """
-        if self.summarize_threshold is None:
-            return 0
-
         token_limit = self.model_backend.token_limit
         summary_token_count = self._summary_token_count
 
@@ -2389,7 +2391,7 @@ class ChatAgent(BaseAgent):
                         ):
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed, full compression."
+                                f"exceed limit, full compression."
                             )
                             # Summarize everything (including summaries)
                             summary = self.summarize(include_summaries=True)
@@ -2710,7 +2712,7 @@ class ChatAgent(BaseAgent):
                         ):
                             logger.info(
                                 f"Summary tokens ({summary_token_count}) "
-                                f"exceed, full compression."
+                                f"exceed limit, full compression."
                             )
                             # Summarize everything (including summaries)
                             summary = await self.asummarize(
