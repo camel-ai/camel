@@ -1,0 +1,90 @@
+---
+title: Gitee Toolkit
+description: A toolkit for interacting with Gitee repositories and features.
+---
+
+# Gitee Toolkit
+
+The `gitee_toolkit.py` module provides functionality for interacting with Gitee repositories, allowing users to manage issues, pull requests, repositories, and perform various Gitee operations.
+
+## Features
+
+- Repository management (create, list, delete repositories)
+- Issue tracking (create, update, close issues)
+- Pull request handling
+- Branch operations
+- File management (upload, download, update files)
+- Authentication and authorization
+- API integration with Gitee
+
+## Usage Example
+
+```python
+from camel.toolkits.gitee_toolkit import GiteeToolkit
+
+# Initialize the toolkit with Gitee credentials
+gitee_toolkit = GiteeToolkit(
+    access_token="your_access_token"
+)
+
+# Create a new issue
+issue = gitee_toolkit.create_issue(
+    owner="your-username",
+    repo="your-repository",
+    title="Bug report: dashboard loading error",
+    body="Dashboard fails to load after login."
+)
+print(f"Created issue: {issue}")
+
+# List repositories
+repos = gitee_toolkit.list_repositories()
+print(f"Found {len(repos)} repositories")
+```
+
+## Key Methods
+
+### Repository Operations
+
+- `create_repository()`: Create a new Gitee repository
+- `list_repositories()`: List repositories with optional filtering
+- `get_repository()`: Get details of a specific repository
+- `delete_repository()`: Delete a repository
+
+### Issue Management
+
+- `create_issue()`: Create a new issue in a repository
+- `list_issues()`: List issues with filters
+- `update_issue()`: Update an existing issue
+- `close_issue()`: Close an issue
+
+### Pull Requests
+
+- `create_pull_request()`: Create a new pull request
+- `list_pull_requests()`: List pull requests
+- `merge_pull_request()`: Merge a pull request
+
+### File Operations
+
+- `upload_file()`: Upload a file to a repository
+- `get_file()`: Download a file from a repository
+- `update_file()`: Update an existing file
+
+## Configuration
+
+The toolkit requires Gitee credentials for authentication. These can be provided directly to the constructor or through environment variables:
+
+```python
+# Using environment variables
+gitee_toolkit = GiteeToolkit()
+# Expects GITEE_ACCESS_TOKEN environment variable
+```
+
+## Error Handling
+
+The toolkit includes comprehensive error handling for common Gitee API errors, including rate limiting, authentication failures, and resource not found errors.
+
+## Security Considerations
+
+- Store access tokens securely
+- Avoid hardcoding credentials in source code
+- Use appropriate API permissions
