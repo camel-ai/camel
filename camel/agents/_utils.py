@@ -25,6 +25,44 @@ from camel.types.agents import ToolCallingRecord
 logger = logging.getLogger(__name__)
 
 
+def build_default_summary_prompt(conversation_text: str) -> str:
+    r"""Create the default prompt used for conversation summarization.
+
+    Args:
+        conversation_text (str): The conversation to be summarized.
+
+    Returns:
+        str: A formatted prompt instructing the model to produce a structured
+            markdown summary.
+    """
+    template = textwrap.dedent(
+        """\
+        Summarize the conversation below.
+        Produce markdown that strictly follows this outline and numbering:
+
+        Summary:
+        1. **Primary Request and Intent**:
+        2. **Key Concepts**:
+        3. **Errors and Fixes**:
+        4. **Problem Solving**:
+        5. **Pending Tasks**:
+        6. **Current Work**:
+        7. **Optional Next Step**:
+
+        Requirements:
+        - Use bullet lists under each section (`- item`). If a section has no
+          information, output `- None noted`.
+        - Keep the ordering, headings, and formatting as written above.
+        - Focus on concrete actions, findings, and decisions.
+        - Do not invent details that are not supported by the conversation.
+
+        Conversation:
+        {conversation_text}
+        """
+    )
+    return template.format(conversation_text=conversation_text)
+
+
 def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]) -> str:
     r"""Generates a tool prompt based on the provided tool schema list.
 
