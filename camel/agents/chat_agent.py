@@ -551,13 +551,6 @@ class ChatAgent(BaseAgent):
         self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
 
-        # Initialize tool cost calculator
-        from camel.utils.tool_cost_calculator import ToolCostCalculator
-
-        self._tool_cost_calculator = ToolCostCalculator(
-            token_counter=self.model_backend.token_counter
-        )
-
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
@@ -2168,7 +2161,7 @@ class ChatAgent(BaseAgent):
         if self.prune_tool_calls_from_memory and tool_call_records:
             self.memory.clean_tool_calls()
 
-        return self._convert_to_chatagent_response(
+        chatagent_response = self._convert_to_chatagent_response(
             response,
             tool_call_records,
             accumulated_context_tokens,
@@ -2177,6 +2170,11 @@ class ChatAgent(BaseAgent):
             step_token_usage["completion_tokens"],
             step_token_usage["total_tokens"],
         )
+        print(
+            f"""_STEP_IMPL info (shourld include tool cost): 
+                {chatagent_response.info}"""
+        )  # debug
+        return chatagent_response
 
     @property
     def chat_history(self) -> List[OpenAIMessage]:
@@ -3056,10 +3054,8 @@ class ChatAgent(BaseAgent):
         )
 
         # Calculate tool cost and token usage
-        cost_info = self._tool_cost_calculator.estimate_tool_cost(
-            func_name, args, result
-        )
-
+        cost_info = self._calculate_tool_cost(assist_msg, func_msg)
+        print(f"_CALCULATE_TOOL_COST: {cost_info}")  # debug
         # Record information about this tool call with cost tracking
         tool_record = ToolCallingRecord(
             tool_name=func_name,
@@ -3073,7 +3069,60 @@ class ChatAgent(BaseAgent):
             },
         )
 
+        print(f"_RECORD_TOOL_CALLING: {tool_record}")  # debug
+
         return tool_record
+
+    def _calculate_tool_cost(
+        self, assist_msg: OpenAIMessage, func_msg: OpenAIMessage
+    ) -> Dict[str, int]:
+        r"""Calculate the tool cost and token usage for a tool call.
+
+        Args:
+            assist_msg (OpenAIMessage): The assistant message 
+                as tool call input.
+            func_msg (OpenAIMessage): The function message 
+                as tool call output.
+
+        Returns:
+            Dictionary containing token usage and cost estimates.
+        """
+
+        if hasattr(self.model_backend, 'token_counter'):
+            try:
+                input_messages = assist_msg.to_openai_message(
+                    OpenAIBackendRole.ASSISTANT
+                )
+                output_messages = func_msg.to_openai_message(
+                    OpenAIBackendRole.FUNCTION
+                )
+                input_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [input_messages]
+                    )
+                output_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [output_messages]
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Error calculating tool call token usage tokens: {e}"
+                )
+                input_tokens = len(assist_msg.content.split())
+                output_tokens = len(func_msg.content.split())
+        else:
+            logger.warning(
+                "Token counter not available. "
+                "Using contexnt words count to estimate token usage."
+            )
+            input_tokens = len(assist_msg.content.split())
+            output_tokens = len(func_msg.content.split())
+
+        return {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
 
     def _stream(
         self,
