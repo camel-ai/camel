@@ -61,7 +61,7 @@ class OpenAIResponsesModel(BaseModelBackend):
         if model_config_dict is None:
             model_config_dict = {}
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        url = url or os.environ.get("OPENAI_BASE_URL")
+        url = url or os.environ.get("OPENAI_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
 
         super().__init__(
