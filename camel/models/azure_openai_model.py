@@ -179,7 +179,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
                 self._client = LangfuseOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self.model_type,
+                    azure_deployment=str(self.model_type),
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -191,7 +191,7 @@ class AzureOpenAIModel(BaseModelBackend):
             else:
                 self._client = AzureOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self.model_type,
+                    azure_deployment=str(self.model_type),
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -213,7 +213,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
                 self._async_client = LangfuseAsyncOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self.model_type,
+                    azure_deployment=str(self.model_type),
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -225,7 +225,7 @@ class AzureOpenAIModel(BaseModelBackend):
             else:
                 self._async_client = AsyncAzureOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self.model_type,
+                    azure_deployment=str(self.model_type),
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -376,7 +376,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             **request_config,
         )
 
@@ -392,7 +392,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return await self._async_client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             **request_config,
         )
 
@@ -413,7 +413,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             **request_config,
         )
 
@@ -434,7 +434,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             **request_config,
         )
 
@@ -460,7 +460,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Use the beta streaming API for structured outputs
         return self._client.beta.chat.completions.stream(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             response_format=response_format,
             **request_config,
         )
@@ -487,7 +487,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Use the beta streaming API for structured outputs
         return self._async_client.beta.chat.completions.stream(
             messages=messages,
-            model=self.model_type,
+            model=str(self.model_type),
             response_format=response_format,
             **request_config,
         )
