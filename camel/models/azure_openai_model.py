@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import copy
 import os
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
@@ -60,7 +61,8 @@ class AzureOpenAIModel(BaseModelBackend):
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
-            created, one of GPT_* series.
+            created, Should be the deployment name you chose when you deployed
+            an azure model.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
@@ -71,8 +73,6 @@ class AzureOpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         api_version (Optional[str], optional): The api version for the model.
             (default: :obj:`None`)
-        azure_deployment_name (Optional[str], optional): The deployment name
-            you chose when you deployed an azure model. (default: :obj:`None`)
         azure_ad_token (Optional[str], optional): Your Azure Active Directory
             token, https://www.microsoft.com/en-us/security/business/
             identity-access/microsoft-entra-id. (default: :obj:`None`)
@@ -99,6 +99,10 @@ class AzureOpenAIModel(BaseModelBackend):
             AzureOpenAI client instance. If provided, this client will be
             used instead of creating a new one. The client should implement
             the AsyncAzureOpenAI client interface. (default: :obj:`None`)
+        azure_deployment_name (Optional[str], optional): **Deprecated**.
+            Use `model_type` parameter instead. This parameter is kept for
+            backward compatibility and will be removed in a future version.
+            (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization. Ignored if custom clients are provided.
 
@@ -115,14 +119,35 @@ class AzureOpenAIModel(BaseModelBackend):
         timeout: Optional[float] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
-        azure_deployment_name: Optional[str] = None,
         azure_ad_token_provider: Optional["AzureADTokenProvider"] = None,
         azure_ad_token: Optional[str] = None,
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
+        azure_deployment_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        # Handle deprecated azure_deployment_name parameter
+        if azure_deployment_name is not None:
+            warnings.warn(
+                "The 'azure_deployment_name' parameter is deprecated. "
+                "Please use 'model_type' parameter instead. "
+                "The 'azure_deployment_name' parameter is being ignored.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        # Handle deprecated AZURE_DEPLOYMENT_NAME environment variable
+        if os.environ.get("AZURE_DEPLOYMENT_NAME") is not None:
+            warnings.warn(
+                "The 'AZURE_DEPLOYMENT_NAME' environment variable is "
+                "deprecated. Please use the 'model_type' parameter "
+                "instead. The 'AZURE_DEPLOYMENT_NAME' environment "
+                "variable is being ignored.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
@@ -133,9 +158,6 @@ class AzureOpenAIModel(BaseModelBackend):
         )
 
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
-        self._azure_deployment_name = azure_deployment_name or os.environ.get(
-            "AZURE_DEPLOYMENT_NAME"
-        )
         self._azure_ad_token = azure_ad_token or os.environ.get(
             "AZURE_AD_TOKEN"
         )
@@ -144,11 +166,6 @@ class AzureOpenAIModel(BaseModelBackend):
             raise ValueError(
                 "Must provide either the `api_version` argument "
                 "or `AZURE_API_VERSION` environment variable."
-            )
-        if self._azure_deployment_name is None:
-            raise ValueError(
-                "Must provide either the `azure_deployment_name` argument "
-                "or `AZURE_DEPLOYMENT_NAME` environment variable."
             )
 
         # Use custom clients if provided, otherwise create new ones
@@ -162,7 +179,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
                 self._client = LangfuseOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self._azure_deployment_name,
+                    azure_deployment=self.model_type,
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -174,7 +191,7 @@ class AzureOpenAIModel(BaseModelBackend):
             else:
                 self._client = AzureOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self._azure_deployment_name,
+                    azure_deployment=self.model_type,
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -196,7 +213,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
                 self._async_client = LangfuseAsyncOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self._azure_deployment_name,
+                    azure_deployment=self.model_type,
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -208,7 +225,7 @@ class AzureOpenAIModel(BaseModelBackend):
             else:
                 self._async_client = AsyncAzureOpenAI(
                     azure_endpoint=str(self._url),
-                    azure_deployment=self._azure_deployment_name,
+                    azure_deployment=self.model_type,
                     api_version=self.api_version,
                     api_key=self._api_key,
                     azure_ad_token=self._azure_ad_token,
@@ -359,7 +376,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return self._client.chat.completions.create(
             messages=messages,
-            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            model=self.model_type,
             **request_config,
         )
 
@@ -375,7 +392,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return await self._async_client.chat.completions.create(
             messages=messages,
-            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            model=self.model_type,
             **request_config,
         )
 
@@ -396,7 +413,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
-            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            model=self.model_type,
             **request_config,
         )
 
@@ -417,7 +434,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
-            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            model=self.model_type,
             **request_config,
         )
 
