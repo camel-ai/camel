@@ -1957,6 +1957,26 @@ class ChatAgent(BaseAgent):
         if reset_memory:
             self.init_messages()
 
+    def reset_system_message(
+        self, content: str, reset_memory: bool = True
+    ) -> None:
+        """Reset context to new system message.
+
+        Args:
+            content (str): The new system message.
+            reset_memory (bool):
+                Whether to reinitialize conversation messages after appending
+                additional context. Defaults to True.
+        """
+        self._original_system_message = BaseMessage.make_system_message(
+            content
+        )
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        if reset_memory:
+            self.init_messages()
+
     def reset_to_original_system_message(self) -> None:
         r"""Reset system message to original, removing any appended context.
 
@@ -5278,15 +5298,29 @@ class ChatAgent(BaseAgent):
                                 current_user_message, OpenAIBackendRole.USER
                             )
                         current_user_message = user_msg
+                    elif msg_role == "system":
+                        sys_msg = BaseMessage.make_system_message(
+                            role_name="System", content=msg_content
+                        )
+                        self.update_memory(sys_msg, OpenAIBackendRole.SYSTEM)
+                        self.reset_system_message(msg_content, True)
                     elif msg_role == "assistant":
                         # Record previous assistant messages
                         assistant_msg = BaseMessage.make_assistant_message(
                             role_name="Assistant", content=msg_content
                         )
-                        self.record_message(assistant_msg)
+                        self.update_memory(
+                            assistant_msg, OpenAIBackendRole.ASSISTANT
+                        )
                     elif msg_role == "tool":
                         # Handle tool response messages if needed
-                        pass
+                        tool_call_id = msg.get("tool_call_id", "")
+                        tool_msg = FunctionCallingMessage.make_tool_message(
+                            role_name="Tool",
+                            content=msg_content,
+                            tool_call_id=tool_call_id,
+                        )
+                        self.update_memory(tool_msg, OpenAIBackendRole.TOOL)
 
                 # Process tools/functions if provided
                 if tools or functions:
@@ -5307,6 +5341,9 @@ class ChatAgent(BaseAgent):
                         )
                     else:
                         agent_response = await self.astep(current_user_message)
+
+                        print(f"agent_response.info {agent_response.info}")
+                        print(f"agent_response.msgs {agent_response.msgs}")
 
                         # Convert CAMEL response to OpenAI format
                         if not agent_response.msgs:
@@ -5342,7 +5379,7 @@ class ChatAgent(BaseAgent):
                                 )
                             finish_reason = "tool_calls"
 
-                        usage = agent_response.info.get("token_usage") or {
+                        usage = agent_response.info.get("usage") or {
                             "prompt_tokens": agent_response.info.get(
                                 "prompt_tokens", 0
                             ),
@@ -5356,7 +5393,7 @@ class ChatAgent(BaseAgent):
 
                         response = {
                             "id": agent_response.info.get(
-                                "response_id", f"chatcmpl-{int(time.time())}"
+                                "id", f"chatcmpl-{int(time.time())}"
                             ),
                             "object": "chat.completion",
                             "created": int(time.time()),
