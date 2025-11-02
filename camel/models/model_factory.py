@@ -15,6 +15,7 @@ import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
 
+from camel.models.aihubmix_model import AihubMixModel
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
@@ -23,7 +24,6 @@ from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
-from camel.models.aihubmix_model import AihubMixModel
 from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel

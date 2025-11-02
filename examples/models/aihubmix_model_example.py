@@ -26,7 +26,7 @@ from camel.types import ModelPlatformType, ModelType
 
 def test_aihubmix_model() -> None:
     r"""Test AIHubMix model using ModelFactory."""
-    
+
     # Set up the model
     # You need to set AIHUBMIX_API_KEY in your environment variables
     # or directly pass it as api_key parameter
@@ -58,7 +58,7 @@ def test_aihubmix_model() -> None:
 
 def test_aihubmix_with_custom_model() -> None:
     r"""Test AIHubMix model with a custom model name."""
-    
+
     # Set up the model
     api_key = os.environ.get("AIHUBMIX_API_KEY")
     if not api_key:
@@ -90,7 +90,7 @@ def main():
     r"""Main function to test AIHubMix models."""
     print("Testing AIHubMix models:")
     print("=" * 40)
-    
+
     test_aihubmix_model()
     print("-" * 40)
     test_aihubmix_with_custom_model()
