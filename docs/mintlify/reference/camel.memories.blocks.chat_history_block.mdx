@@ -78,3 +78,39 @@ def clear(self):
 ```
 
 Clears all chat messages from the memory.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes the most recent records from the memory.
+
+**Parameters:**
+
+- **count** (int): Number of records to remove from the end of the conversation history. A value of 0 results in no changes.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in chronological order.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from the memory.
+
+**Parameters:**
+
+- **indices** (List[int]): List of indices to remove. Indices are positions in the current record list (0-based). System/developer messages at index 0 are protected and will not be removed.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in their original order.
