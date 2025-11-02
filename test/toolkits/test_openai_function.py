@@ -129,6 +129,7 @@ def test_get_openai_tool_schema():
                             'assistant',
                             'user',
                             'system',
+                            'tool',
                             'critic',
                             'embodiment',
                             'default',
