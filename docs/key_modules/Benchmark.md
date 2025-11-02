@@ -135,6 +135,7 @@ To create a custom benchmark, inherit from `BaseBenchmark` and implement:
 - **APIBank**: https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank
 - **APIBench (Gorilla)**: https://huggingface.co/datasets/gorilla-llm/APIBench
 - **Nexus**: https://huggingface.co/collections/Nexusflow/nexusraven-v2
+- **BrowseComp**: https://openai.com/index/browsecomp/
 - **RAGBench**: https://arxiv.org/abs/2407.11005
 
 ## Other Resources
