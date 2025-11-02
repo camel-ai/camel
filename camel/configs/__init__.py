@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
+from .aihubmix_config import AIHUBMIX_API_PARAMS, AihubMixConfig
 from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
@@ -57,6 +58,8 @@ __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
     'OPENAI_API_PARAMS',
+    'AihubMixConfig',
+    'AIHUBMIX_API_PARAMS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
