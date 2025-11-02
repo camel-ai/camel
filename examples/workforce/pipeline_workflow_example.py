@@ -229,155 +229,136 @@ Running literature analysis pipeline example...
 ============================================================
 Example 1: Literature Analysis with Parallel Processing
 ============================================================
-Literature analysis pipeline built: 1 search → 5 parallel summaries → 1 synthesis    
+Literature analysis pipeline built: 1 search → 5 parallel summaries → 1 synthesis
 Mode: WorkforceMode.PIPELINE
-Worker node f6cd7177-2d02-4398-bd78-3116b0807db4 (Literature Researcher) get task pipeline_task_0: Generate 5 representative recent AI/ML papers with titles, authors, and brief descriptions. Format as [Paper 1] to [Paper 5]
+Worker node a17f1759-8729-4986-9842-8de8646ff1f0 (Literature Researcher) get task pipeline_task_0: Generate 5 representative recent AI/ML papers with titles, authors, and brief descriptions. Format as [Paper 1] to [Paper 5]
 ======
-Response from Worker node f6cd7177-2d02-4398-bd78-3116b0807db4 (Literature Researcher):
+Response from Worker node a17f1759-8729-4986-9842-8de8646ff1f0 (Literature Researcher):
 
 [Paper 1]
-"Gemini: A Family of Highly Capable Multimodal Models"
-Authors: Google DeepMind (Peter Barham, Jeff Dean, et al.)
-Description: Introduces the Gemini family of large language models designed for multimodal reasoning across text, images, audio, and video. Highlights performance surpassing prior state-of-the-art on multiple multimodal and language understanding benchmarks.
+Title: "Scaling Laws for Generative Language Models Revisited"
+Authors: Ethan Dyer, Xuezhi Wang, Jeffrey Wu, et al.
+Description: This paper provides an updated empirical analysis of scaling laws for large transformer-based language models, exploring how model performance improves with increased data and parameters, and offering new insights for efficient model training.
 
 [Paper 2]
-"LLM-Augmented Learning: Enhancing Data Quality via Iterative Refinement"
-Authors: Kaixuan Zhang, Luyu Wang, Wenjuan Han, et al. (Microsoft Research)
-Description: Explores the use of large language models (LLMs) for data cleaning and augmentation via iterative refinement, showing improved downstream model performance on NLP tasks with noisy data.
+Title: "Aligning Language Models to Follow Instructions"
+Authors: Long Ouyang, Jeffrey Wu, Xu Jiang, et al.
+Description: The authors propose novel methods for instruction tuning large language models using reinforcement learning from human feedback (RLHF), improving alignment and helpfulness in conversational AI systems.
 
 [Paper 3]
-"MEGAVERSE: Benchmarking Foundation Models for Autonomous Agents"
-Authors: Jun Shern Chan, Kevin F. Le, Yilun Du, et al. (MIT, Stanford, Google DeepMind)
-Description: Presents MEGAVERSE, a new benchmark suite for evaluating how well foundation models can power general autonomous agents, across virtual environments and tasks.
+Title: "EfficientViT: Memory Efficient Vision Transformers with Cascaded Group Attention"        
+Authors: Ziyu Guo, Zhiqiang Shen, Zhijian Liu, et al.
+Description: EfficientViT introduces a new vision transformer architecture employing cascaded group attention, significantly reducing memory usage and computational cost while maintaining competitive performance on image classification benchmarks.
 
 [Paper 4]
-"Qwen-VL: A Versatile Vision-Language Model based on Large Language Models"
-Authors: Alibaba DAMO Academy (Jianfei Chen, Yuheng Xie, et al.)
-Description: Introduces Qwen-VL, a powerful open-source multimodal model capable of advanced image and document understanding, outperforming previous vision-language models of similar scale.
+Title: "GraphGPT: Enhancing Graph Neural Networks with Generative Pre-training"
+Authors: Yuanhao Xiong, Junchi Yan, Xiaokang Yang, et al.
+Description: GraphGPT integrates generative pre-training strategies into graph neural networks, enabling better performance on graph-level tasks and transfer learning scenarios commonly found in molecular property prediction and social network analysis.
 
 [Paper 5]
-"Eagle: Layer-wise Fine-tuning of Foundation Models"
-Authors: Xinyi Xu, Jindong Wang, Wenxin Hou, et al. (Microsoft Research)
-Description: Proposes a new fine-tuning approach for large foundation models, showing that targeted layer-wise updates can achieve high performance with lower computational cost, and improving knowledge transfer across tasks.
+Title: "Self-Rewarding Language Models"
+Authors: Daniel Fried, John Thickstun, Tatsunori Hashimoto, et al.
+Description: This work introduces a self-supervised learning strategy where language models assign their own rewards during training, effectively improving instruction following and generalization without extensive human-annotated data.
 ======
 Task pipeline_task_0 completed successfully (quality score: 100).
-Worker node 5d4ea69d-eb97-4091-8ebb-c073ca555048 (Summary Specialist 2) get task parallel_1_1: Summarize [Paper 2] core insights, methodology and contributions
-Worker node cbf6bda1-c9c2-42f2-a9e3-115010772117 (Summary Specialist 4) get task parallel_3_1: Summarize [Paper 4] core insights, methodology and contributions
-Worker node 5299ade7-751b-4037-9b64-cfc134a3347c (Summary Specialist 1) get task parallel_0_1: Summarize [Paper 1] core insights, methodology and contributions
-Worker node e28830f2-3ee7-43ca-b2b6-30b2d287f329 (Summary Specialist 5) get task parallel_4_1: Summarize [Paper 5] core insights, methodology and contributions
-Worker node d71aeebb-93bb-4c87-9990-826b5ccf97e3 (Summary Specialist 3) get task parallel_2_1: Summarize [Paper 3] core insights, methodology and contributions
+Worker node 8a8e68ae-1cd9-480f-9dd2-c5d59d04ce0b (Summary Specialist 2) get task parallel_1_1: Summarize [Paper 2] core insights, methodology and contributions
+Worker node 25cd87e6-253f-46de-be00-1e5c4cb0c6a7 (Summary Specialist 5) get task parallel_4_1: Summarize [Paper 5] core insights, methodology and contributions
+Worker node c3c5898e-690e-4c8a-b94c-4e9fe706058b (Summary Specialist 4) get task parallel_3_1: Summarize [Paper 4] core insights, methodology and contributions
+Worker node ba2d3ca5-14e2-49ac-a0d0-36a937c58fdc (Summary Specialist 3) get task parallel_2_1: Summarize [Paper 3] core insights, methodology and contributions
+Worker node 85b0aaba-1df5-47fa-8997-5f1a0e30e127 (Summary Specialist 1) get task parallel_0_1: Summarize [Paper 1] core insights, methodology and contributions
 ======
-Response from Worker node cbf6bda1-c9c2-42f2-a9e3-115010772117 (Summary Specialist 4):
+Response from Worker node 8a8e68ae-1cd9-480f-9dd2-c5d59d04ce0b (Summary Specialist 2):
 
-Core Insights: Qwen-VL introduces a highly capable open-source vision-language model that demonstrates advanced performance in both image and document understanding tasks. It outperforms previous vision-language models of similar scale, showcasing strong generalization and multimodal reasoning abilities.
+Core Insights: "Aligning Language Models to Follow Instructions" demonstrates that large language models can be substantially improved to follow natural language instructions by incorporating reinforcement learning from human feedback (RLHF). The paper reveals that instruction tuning with human preference data significantly enhances the alignment, helpfulness, and safety of conversational AI systems.
 
-Methodology: The authors design Qwen-VL by building on large language model (LLM) architectures and augmenting them to handle multimodal inputs (images and text). The model is trained on large-scale, carefully curated vision-language datasets, utilizing both supervised and self-supervised objectives. Key methodological advances include the alignment of visual and textual representations, multimodal attention mechanisms, and strategies for robust cross-modal understanding such as unified embedding spaces and task-specific fine-tuning.
+Methodology: The authors propose a two-stage approach. First, they fine-tune pre-trained language models on datasets of instruction-following demonstrations created by human annotators. Second, they employ RLHF: they collect human preferences over model outputs, train a reward model to predict these preferences, and optimize the language model using reinforcement learning (often Proximal Policy Optimization) to maximize expected human-derived rewards.
 
-Contributions: (1) The introduction of a versatile and powerful open-source multimodal model (Qwen-VL) tailored for vision-language understanding; (2) Comprehensive evaluation showing the model outperforms previous state-of-the-art vision-language models of comparable scale on a variety of image and document understanding benchmarks; (3) Release of model weights and code, contributing valuable resources for the research community and enabling further advancements in multimodal AI.
+Contributions: (1) Introduced a scalable method for aligning large language models with human intention and values, (2) conducted thorough empirical studies demonstrating improvements in model helpfulness and safety via RLHF, (3) released training protocols and insights that advance practical instruction-following conversational agents.
 ======
-Task parallel_3_1 completed successfully (quality score: 98).
+Task parallel_1_1 completed successfully (quality score: 98).
 ======
-Response from Worker node e28830f2-3ee7-43ca-b2b6-30b2d287f329 (Summary Specialist 5):
+Response from Worker node 25cd87e6-253f-46de-be00-1e5c4cb0c6a7 (Summary Specialist 5):
 
-Core Insights: [Paper 5] "Eagle: Layer-wise Fine-tuning of Foundation Models" introduces a novel approach to fine-tuning large foundation models by updating selected layers rather than the whole model. The core insight is that targeted, layer-wise updates can retain or surpass the performance of full-model fine-tuning while significantly reducing computational cost and memory requirements. This strategy also improves knowledge transfer across multiple tasks, making adaptation more efficient.
+Core Insights: 'Self-Rewarding Language Models' introduces a novel self-supervised learning approach whereby language models (LMs) generate their own reward signals during training, rather than relying heavily on human-annotated data or external reward models. The key insight is that enabling LMs to internally assess and reward their generated responses can lead to improved instruction following and better generalization to new tasks.
 
-Methodology: The authors design an algorithm that identifies and fine-tunes specific layers of a foundation model, based on task requirements. Through empirical studies, they compare their method against full-model and other parameter-efficient fine-tuning approaches across various NLP tasks. Metrics such as task accuracy, training time, and resource consumption are thoroughly assessed.
-
-Contributions: 1) Proposes a systematic, layer-wise fine-tuning method for large models. 2) Demonstrates that this approach substantially reduces computational overhead. 3) Shows improved or matched performance in multi-task scenarios compared to prior methods. 4) Provides comprehensive benchmarks and analysis, establishing a new practical avenue for efficient and effective model adaptation.
-======
-======
-Response from Worker node 5d4ea69d-eb97-4091-8ebb-c073ca555048 (Summary Specialist 2):
-
-Paper 2, titled "LLM-Augmented Learning: Enhancing Data Quality via Iterative Refinement" by Kaixuan Zhang, Luyu Wang, Wenjuan Han, et al. (Microsoft Research), explores the use of large language models (LLMs) to improve data quality for NLP tasks, with a particular emphasis on handling noisy datasets.
-
-Core Insights: The key insight of the paper is that LLMs can be leveraged not just for downstream inference tasks, but as intelligent agents for data cleaning and augmentation. By iteratively refining the training data using LLM-generated suggestions, the quality of the dataset improves, which in turn leads to better model performance on downstream tasks, especially in the presence of noise or imperfect data.
-
-Methodology: The authors introduce a framework where an LLM is employed to identify errors, inconsistencies, or ambiguities in training datasets. The LLM proposes corrections or improvements in an iterative loop, with human oversight or additional automated validation ensuring changes maintain or increase data integrity. This process is repeated, resulting in progressively cleaner datasets. The refined data is then used to train standard NLP models, and performance is evaluated on benchmark tasks to assess gains from the approach.
-
-Contributions: The main contributions of this work are: (1) Proposing a novel use-case for LLMs as data quality improvers, not just as end-task predictors; (2) Demonstrating through experiments that iterative LLM-driven data refinement can lead to measurable improvements in downstream NLP model accuracy and robustness, particularly with initially noisy data; (3) Providing a framework adaptable to various NLP scenarios where data quality is a bottleneck. The paper offers empirical results that support these claims and discusses implications for scalable automated data curation.
-======
-Task parallel_4_1 completed successfully (quality score: 97).
-Task parallel_1_1 completed successfully (quality score: 97).
-======
-Response from Worker node d71aeebb-93bb-4c87-9990-826b5ccf97e3 (Summary Specialist 3):
-
-Core Insights: 'MEGAVERSE: Benchmarking Foundation Models for Autonomous Agents' introduces MEGAVERSE—a comprehensive benchmark suite aimed at systematically evaluating how foundation models (such as large language or multimodal models) serve as the backbone for general autonomous agents. The core insight is the need for a standardized, rigorous evaluation environment to measure the capabilities and limitations of foundation models when deployed in agentic, multi-domain scenarios.
-
-Methodology: The paper constructs a varied suite of simulated virtual environments and tasks designed to reflect real-world agent challenges, encompassing navigation, manipulation, multi-step reasoning, and adaptation. It defines standardized tasks with clear, reproducible metrics for evaluation. Foundation models are integrated as the central reasoning or decision-making module for agents, whose behaviors are then assessed across diverse environments and task types. The benchmark measures factors such as generalization, instruction following, task completion, transfer learning, and emergent behaviors. Extensive experiments are conducted with multiple state-of-the-art foundation models (including LLMs and vision-language models) to ensure comprehensive coverage.
+Methodology: The authors develop a framework where the LM evaluates its own outputs and assigns self-generated rewards, which are then used to optimize model behavior through reinforcement learning. This involves designing mechanisms for the language model to estimate reward signals based on internal metrics or performance proxies, without requiring direct human feedback or large-scale manual labeling.
 
 Contributions:
-1. Proposes MEGAVERSE as the first broad benchmark tailored to test the agentic capabilities of foundation models.
-2. Provides an open, extensible set of tasks and virtual worlds enabling systematic, reproducible evaluation and comparison.
-3. Reveals critical strengths and limitations of existing foundation models when deployed as autonomous agents, informing future research directions on improving real-world agent generality.
-4. Delivers thorough experimental results, establishing initial baselines and highlighting emergent patterns and performance gaps.
+1. Proposes a self-rewarding training paradigm for language models, reducing reliance on costly human feedback.
+2. Demonstrates empirically that self-rewarding can improve instruction-following capabilities and generalization to unseen instructions.
+3. Shows that self-rewarding strategies yield competitive or improved performance compared to methods relying on human-annotated rewards, supporting more scalable and autonomous model development.
 ======
 ======
-Response from Worker node 5299ade7-751b-4037-9b64-cfc134a3347c (Summary Specialist 1):
+Response from Worker node c3c5898e-690e-4c8a-b94c-4e9fe706058b (Summary Specialist 4):
 
-Paper: "Gemini: A Family of Highly Capable Multimodal Models"
+Core Insights: 'GraphGPT: Enhancing Graph Neural Networks with Generative Pre-training' demonstrates that leveraging generative pre-training strategies—previously successful in language domains—can significantly improve the performance and transferability of graph neural networks (GNNs). The paper finds that pre-trained GNNs excel in graph-level tasks, notably in fields like molecular property prediction and social network analysis, by better capturing underlying graph structures and patterns.
 
-Core Insights:
-- The Gemini models represent a new generation of large-scale multimodal AI systems developed by Google DeepMind, designed to process and reason across multiple input modalities including text, images, audio, and video. These models achieve strong performance, surpassing previous state-of-the-art results on various multimodal and language understanding benchmarks.
+Methodology: The authors adapt generative pre-training approaches for application to graph data, constructing a large-scale graph corpus for pre-training. The model is first trained to perform generative tasks on unlabeled graphs, such as graph completion or node feature prediction. After this pre-training phase, the GNN is fine-tuned on downstream, task-specific, and often smaller datasets. Extensive experiments compare GraphGPT to standard GNNs and other transfer learning methods on multiple benchmarks.
 
-Methodology:
-- Gemini comprises a family of models trained using large-scale datasets spanning diverse modalities, enabling integrated vision, language, and audio understanding. Training leverages cross-modal objectives and alignment techniques, allowing the models to interpret, synthesize, and generate outputs across different types of inputs.       
-- Rigorous benchmarking is conducted against prior state-of-the-art models, using standardized multimodal datasets and tasks to demonstrate capabilities in reasoning, comprehension, and generation.
-
-Key Contributions:
-1. Introduction of a scalable family of multimodal models (Gemini) capable of unified reasoning across text, image, audio, and video domains.
-2. Empirical evidence showing Gemini’s superior performance on a wide range of multimodal and language benchmarks, establishing new performance records in several categories.
-3. Advancements in multimodal training and alignment techniques, demonstrating how large language model principles can be generalized beyond text to rich, multi-sensory data.
-4. An extensive evaluation framework and analysis that highlights both strengths and limitations, setting a new standard for multimodal model assessment.
+Contributions:
+1. Proposes a novel framework—GraphGPT—that embeds generative pre-training into GNNs.
+2. Demonstrates significant improvements in transfer learning and generalization across diverse graph-based tasks compared to conventional supervised training.
+3. Provides empirical results showing state-of-the-art performance in key applications such as molecular property prediction, highlighting the power and flexibility of generative graph pre-training.
 ======
-Task parallel_2_1 completed successfully (quality score: 97).
-Task parallel_0_1 completed successfully (quality score: 96).
-Worker node c7d22a97-4127-4248-a818-a625c0f50862 (Research Synthesizer) get task pipeline_task_6: Analyze AI/ML research trends based on the 5 paper summaries
 ======
-Response from Worker node c7d22a97-4127-4248-a818-a625c0f50862 (Research Synthesizer):
+Response from Worker node ba2d3ca5-14e2-49ac-a0d0-36a937c58fdc (Summary Specialist 3):
 
-Analysis of recent AI/ML research trends based on the five paper summaries reveals several converging themes and emerging directions:
+Core Insights: 'EfficientViT: Memory Efficient Vision Transformers with Cascaded Group Attention' presents an innovative architecture for vision transformers that drastically reduces memory consumption and computational requirements, while preserving high accuracy on image classification tasks. The key insight is the introduction of 'cascaded group attention', which hierarchically structures attention computation to lessen redundancy and enhance efficiency.
 
-1. Multimodal Foundation Models: Two papers (Gemini, Qwen-VL) highlight rapid advancements in large-scale multimodal models capable of processing and reasoning across text, images, audio, and video. Researchers are pursuing unified architectures and alignment techniques to extend the capabilities of foundation models beyond single modalities, resulting in superior performance on a variety of benchmarks and tasks.
+Methodology: The authors design a vision transformer where the standard global self-attention is replaced with cascaded group attention mechanisms. This approach divides the attention computation into multi-stage groups, allowing the model to focus attention efficiently within local and progressively broader regions before aggregating global context. The architecture is evaluated on standard image classification datasets, and its performance is compared against conventional vision transformer baselines in terms of accuracy, memory usage, and speed.
 
-2. Systematic Benchmarking and Evaluation: The introduction of benchmark suites such as MEGAVERSE signals an increased emphasis on objective, reproducible assessment of AI models, particularly in evaluating general agentic capabilities across diverse and complex tasks. There is a clear trend towards establishing broad, flexible, and extensible benchmarks for both understanding and comparing the performance of foundation models in autonomous settings.
+Contributions:
+1. Proposing the cascaded group attention mechanism, enabling significant memory and computation reduction in vision transformers.
+2. Delivering a transformer model (EfficientViT) that consistently matches or outperforms existing models while using less memory and computational resources.
+3. Providing comprehensive empirical analysis demonstrating competitive benchmark performance alongside resource savings, making vision transformers more practical for resource-constrained environments.
+======
+Task parallel_4_1 completed successfully (quality score: 97).
+Task parallel_3_1 completed successfully (quality score: 95).
+======
+Response from Worker node 85b0aaba-1df5-47fa-8997-5f1a0e30e127 (Summary Specialist 1):
 
-3. Efficient Model Adaptation and Fine-tuning: Resource-efficient techniques are gaining traction, as evidenced by the Eagle paper's focus on layer-wise fine-tuning. The goal is to maximize adaptability and knowledge transfer of large models while minimizing computational and memory costs, which has important implications for scaling and deploying AI systems in practice.
+Paper 1, titled "Scaling Laws for Generative Language Models Revisited" by Ethan Dyer, Xuezhi Wang, Jeffrey Wu, et al., revisits and updates empirical scaling laws for large transformer-based language models.
 
-4. Data Quality and Model Robustness: The LLM-Augmented Learning paper introduces an innovative use of LLMs for iterative data refinement and cleaning, highlighting a growing recognition that high-quality data remains critical, especially as models become larger. Using advanced models to improve the data they learn from creates a virtuous cycle that enhances downstream robustness and reliability.
+Core Insights: The paper identifies how model performance continues to improve predictably with greater model parameters and data sizes. It provides refined understanding of the functional relationships between model scale, data scale, and achieved model loss, confirming and updating previously observed power-law patterns. The findings highlight diminishing returns at extreme scales and underscore the importance of balancing data and parameter count for efficient training.        
 
-Research Trends:
-- Unification and scalability of models across modalities is a major thrust, with both commercial (Gemini) and open-source (Qwen-VL) efforts driving the field forward.   
-- Comprehensive, agent-centric benchmarking (MEGAVERSE) reflects the community's recognition of the need for systematic, real-world relevant evaluation tools.
-- Methodological innovations targeting the efficiency of adaptation (Eagle) and data curation (LLM-Augmented Learning) strive to make large models more practical and accessible.
-- There is a move toward openness, with the release of models and code (Qwen-VL) expected to accelerate research progress.
-In summary, the current landscape is characterized by rapid progress in multimodal modeling, a maturing focus on standardization and reproducibility, and practical innovations addressing efficiency and data quality. These trends point toward more capable, robust, and accessible AI systems in the near future.
+Methodology: The authors conduct extensive empirical experiments by training transformer-based generative language models at various scales, systematically varying both the amount of data and the number of model parameters. They then measure performance metrics (such as loss and downstream task performance) and fit empirical models to quantify and analyze the scaling relationships. The study also includes comparisons across different datasets and training regimens to test the robustness of the observed scaling laws.
+
+Contributions: This work provides updated, large-scale empirical evidence for scaling laws in generative language models, offering practical guidelines on model size and data requirements for efficient training. The analysis informs strategies for resource allocation and helps guide future training of even larger models. Additionally, the refined scaling law equations and adjusted empirical constants contribute to the research community's ability to anticipate and plan the development of new, larger language models.
+======
+Task parallel_2_1 completed successfully (quality score: 95).
+Task parallel_0_1 completed successfully (quality score: 98).
+Worker node f60b0634-4e23-4f4f-8240-c8c63b4c98aa (Research Synthesizer) get task pipeline_task_6: Analyze AI/ML research trends based on the 5 paper summaries
+======
+Response from Worker node f60b0634-4e23-4f4f-8240-c8c63b4c98aa (Research Synthesizer):
+
+Analyzing the summaries of the five AI/ML research papers reveals several major trends and directions currently shaping the field:
+
+1. Model Scaling and Efficiency:
+Papers 1 and 3 focus on the scaling of models (both language and vision) and efficient architecture design. Paper 1 refines empirical scaling laws in large language models, highlighting predictable performance improvements with increased model/data size and providing practical guidelines for resource allocation. Paper 3 introduces memory-efficient vision transformers with cascaded group attention, demonstrating a strong trend toward creating architectures that offer both high performance and lower computational requirements for broader accessibility and deployment.
+
+2. Advancing Model Alignment and Autonomy:
+Paper 2 emphasizes aligning language models to better follow human instructions using RLHF, while Paper 5 proposes a shift towards autonomy, enabling language models to generate and optimize their own rewards (self-rewarding LMs). This represents a key trajectory in AI safety, alignment, and scalability—first leveraging human feedback for grounded alignment, and then exploring self-guided reward mechanisms to reduce dependency on costly human annotation and enable more scalable training.
+
+3. Transfer Learning and Pre-training Across Modalities:
+Paper 4 extends generative pre-training strategies from the NLP domain to graph neural networks (GNNs), showing significant improvements in generalizability and performance on graph-structured data. This highlights a maturing trend of adapting successful pre-training/transfer learning paradigms across diverse data modalities beyond text or images, such as graphs, for specialized tasks and improved efficiency.
+
+4. Diminishing Reliance on Human Supervision:
+Both Paper 2 (with RLHF) and Paper 5 (self-rewarding LMs) tackle the cost and scalability limits of human-in-the-loop systems, the latter pushing further toward models that can autonomously shape their learning objectives. This shift has implications for economic scalability, as well as potential risks around model alignment and oversight.
+
+5. Empirical Rigor and Benchmarks:
+All papers emphasize large-scale empirical evaluation, thorough benchmarking against existing baselines, and practical implications (e.g., resource tradeoffs, real-world tasks). The field is moving toward more grounded, reproducible research that informs not only theoretical development but decisions around model deployment and development lifecycles.
+
+In summary, contemporary AI/ML research is converging on scalable model development, architectural efficiency, improved alignment (both human-guided and self-supervised), and bridging successful learning frameworks between modalities. There is an ongoing move toward reducing training costs—both computational and human—while maintaining or advancing model performance, safety, and generalizability.
 ======
 Task pipeline_task_6 completed successfully (quality score: 97).
 Task literature_analysis completed:
 Result: --- Task pipeline_task_0 Result ---
 [Paper 1]
-"Gemini: A Family of Highly Capable Multimodal Models"
-Authors: Google DeepMind (Peter Barham, Jeff Dean, et al.)
-Description: Introduces the Gemini famil...
+Title: "Scaling Laws for Generative Language Models Revisited"
+Authors: Ethan Dyer, Xuezhi Wang, Jeffrey Wu, et al.
+Description: This paper provides an up...
 
-[TIME] Execution time: 56.37 seconds
-
-============================================================
-Pipeline Example Summary
-============================================================
-Pipeline pattern demonstrated:
-  ✓ FORK-JOIN: Single task → 5 parallel processing → 1 synthesis
-  ✓ PARALLEL SCALING: Easy adjustment of parallel worker count
-  ✓ DEPENDENCY CHAINS: Automatic synchronization and dependency resolution
-  ✓ STRUCTURED OUTPUT: Using [markers] for smart task distribution
-
-Technical features:
-  • Pipeline mode with pipeline_fork() and pipeline_join()
-  • Automatic worker assignment and task routing
-  • Multi-agent parallel coordination
-  • Structured task dependencies
-
-[TIME] Execution time: 56.37 seconds
+[TIME] Execution time: 66.42 seconds
 
 ============================================================
 Pipeline Example Summary
@@ -393,26 +374,6 @@ Technical features:
   • Automatic worker assignment and task routing
   • Multi-agent parallel coordination
   • Structured task dependencies
-
-
-============================================================
-Pipeline Example Summary
-============================================================
-Pipeline pattern demonstrated:
-  ✓ FORK-JOIN: Single task → 5 parallel processing → 1 synthesis
-  ✓ PARALLEL SCALING: Easy adjustment of parallel worker count
-  ✓ DEPENDENCY CHAINS: Automatic synchronization and dependency resolution
-  ✓ STRUCTURED OUTPUT: Using [markers] for smart task distribution
-
-Technical features:
-  • Pipeline mode with pipeline_fork() and pipeline_join()
-  • Automatic worker assignment and task routing
-  • Multi-agent parallel coordination
-  • Structured task dependencies
-
-  • Multi-agent parallel coordination
-  • Structured task dependencies
-
 
 Pipeline example completed successfully!
 """
