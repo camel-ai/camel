@@ -83,7 +83,6 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
-        trap 'jobs -p | xargs -r kill 2>/dev/null || true' EXIT
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
         pytest --fast-test-mode -m "not heavy_dependency" \
@@ -171,7 +170,6 @@ jobs:
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
-        trap 'jobs -p | xargs -r kill 2>/dev/null || true' EXIT
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
         pytest --llm-test-only -m "not heavy_dependency" \
@@ -257,7 +255,6 @@ jobs:
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
-        trap 'jobs -p | xargs -r kill 2>/dev/null || true' EXIT
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
         pytest --very-slow-test-only -m "not heavy_dependency" \
