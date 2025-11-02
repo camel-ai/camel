@@ -790,7 +790,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.79a1"
+version = "0.2.79a2"
 source = { editable = "." }
 dependencies = [
     { name = "astor" },
@@ -2710,7 +2710,7 @@ wheels = [
 
 [[package]]
 name = "environs"
-version = "14.4.0"
+version = "14.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "marshmallow", version = "3.26.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
@@ -2718,9 +2718,9 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/81/2f/e5b6f9a260165328edccd773e38923f71da5862bab2402630d8cb82cd29d/environs-14.4.0.tar.gz", hash = "sha256:7d9151d0710fc1b02f68bec6863d804ed10121925fb658bbdcb9fc7ddf704f62", size = 35070, upload-time = "2025-10-29T16:48:35.63Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/75/06801d5beeb398ed3903167af9376bb81c4ac41c44a53d45193065ebb1a8/environs-14.5.0.tar.gz", hash = "sha256:f7b8f6fcf3301bc674bc9c03e39b5986d116126ffb96764efd34c339ed9464ee", size = 35426, upload-time = "2025-11-02T21:30:36.78Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/e9/da61e470fb463bbc244ea76a26a0f4afa5e86b4aa5697d816cdd1b90708a/environs-14.4.0-py3-none-any.whl", hash = "sha256:fcd1b0259a2ac1f9ce6e2d2bdbbd51483b83533c37cea1524d5d4abde611270a", size = 17104, upload-time = "2025-10-29T16:48:34.206Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/f3/6961beb9a1e77d01dee1dd48f00fb3064429c8abcfa26aa863eb7cb2b6dd/environs-14.5.0-py3-none-any.whl", hash = "sha256:1abd3e3a5721fb09797438d6c902bc2f35d4580dfaffe68b8ee588b67b504e13", size = 17202, upload-time = "2025-11-02T21:30:35.186Z" },
 ]
 
 [[package]]
@@ -6784,7 +6784,7 @@ wheels = [
 
 [[package]]
 name = "posthog"
-version = "6.7.11"
+version = "6.7.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -6794,9 +6794,9 @@ dependencies = [
     { name = "six" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cb/32/3668d5e0f8b852fad81770743ee17893854fd8e5f7cea897a0a9199b0370/posthog-6.7.11.tar.gz", hash = "sha256:62db3e97cbd95351fe081c1ea8805393293de6fabad6d2e9024bf940aca4ddbf", size = 120407, upload-time = "2025-10-28T13:06:18.335Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/ef/43a74ea78144a6ffacda600c0f2dbb2eb586a623973abcd8b066f3820bf3/posthog-6.7.13.tar.gz", hash = "sha256:fe31c3d2694683acdfeb2e2af148aaa3659a8c87cf1ccdc6c0d0c2dec4a55842", size = 120924, upload-time = "2025-11-02T18:58:29.532Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/00/bf284e0aae5dec7c217c176f291867cfac2f7bfd5692c9ce041e80986fa7/posthog-6.7.11-py3-none-any.whl", hash = "sha256:31421a88437cef2ce20f60c14ee8d298b2e765a6de0617cb95d1fcef54170749", size = 138713, upload-time = "2025-10-28T13:06:17.018Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/fe/623f14bd647a5a15cb451eb992291346c81524617d977d2548820e264d24/posthog-6.7.13-py3-none-any.whl", hash = "sha256:7572dba3c0516297611399ebdc4e4db268be02922c2c896cc9c7683b13b17f30", size = 139183, upload-time = "2025-11-02T18:58:27.967Z" },
 ]
 
 [[package]]
