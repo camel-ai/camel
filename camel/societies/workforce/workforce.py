@@ -303,6 +303,7 @@ class Workforce(BaseNode):
             task_timeout_seconds or TASK_TIMEOUT_SECONDS
         )
         self.mode = mode
+        self._initial_mode = mode  # Store initial mode for reset()
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self._task: Optional[Task] = None
@@ -638,6 +639,37 @@ class Workforce(BaseNode):
             f"State: {self._state.value} - Mode: {self.mode.value}"
         )
 
+    def set_mode(self, mode: WorkforceMode) -> Workforce:
+        """Set the execution mode of the workforce.
+        
+        This allows switching between AUTO_DECOMPOSE and PIPELINE modes.
+        Useful when you want to reuse the same workforce instance for 
+        different task processing strategies.
+        
+        Args:
+            mode (WorkforceMode): The desired execution mode.
+                - AUTO_DECOMPOSE: Intelligent task decomposition with recovery
+                - PIPELINE: Predefined task pipeline with simple retry logic
+                
+        Returns:
+            Workforce: Self for method chaining.
+            
+        Example:
+            >>> # Run a pipeline
+            >>> workforce.set_mode(WorkforceMode.PIPELINE)
+            >>> workforce.pipeline_add("Step 1").pipeline_build()
+            >>> workforce.process_task(task)
+            >>> 
+            >>> # Reset to original mode
+            >>> workforce.reset()  # Automatically resets to initial mode
+            >>> # Or manually switch mode
+            >>> workforce.set_mode(WorkforceMode.AUTO_DECOMPOSE)
+            >>> workforce.process_task(another_task)
+        """
+        self.mode = mode
+        logger.info(f"Workforce mode changed to {mode.value}")
+        return self
+    
     def _ensure_pipeline_builder(self):
         """Ensure pipeline builder is initialized and switch to pipeline mode."""
         if self._pipeline_builder is None:
@@ -646,27 +678,38 @@ class Workforce(BaseNode):
         
         # Auto-switch to pipeline mode
         if self.mode != WorkforceMode.PIPELINE:
+            logger.info(
+                f"Auto-switching workforce mode from {self.mode.value} to "
+                f"PIPELINE. Use workforce.set_mode() to manually control mode."
+            )
             self.mode = WorkforceMode.PIPELINE
 
     def pipeline_add(
         self,
-        content: str,
+        content: Union[str, Task],
         task_id: Optional[str] = None,
         dependencies: Optional[List[str]] = None,
         additional_info: Optional[Dict[str, Any]] = None,
         auto_depend: bool = True,
-    ) -> 'Workforce':
+    ) -> Workforce:
         """Add a task to the pipeline with support for chaining.
 
+        Accepts either a string for simple tasks or a Task object for 
+        advanced usage with metadata, images, or custom configurations.
+
         Args:
-            content (str): The content/description of the task.
+            content (Union[str, Task]): The task content string or a Task 
+                object. If a Task object is provided, task_id and 
+                additional_info parameters are ignored.
             task_id (str, optional): Unique identifier for the task. If None,
-                a unique ID will be generated. (default: :obj:`None`)
+                a unique ID will be generated. Only used when content is a 
+                string. (default: :obj:`None`)
             dependencies (List[str], optional): List of task IDs that this
                 task depends on. If None and auto_depend=True, will depend on
                 the last added task. (default: :obj:`None`)
             additional_info (Dict[str, Any], optional): Additional information
-                for the task. (default: :obj:`None`)
+                for the task. Only used when content is a string. 
+                (default: :obj:`None`)
             auto_depend (bool, optional): If True and dependencies is None,
                 automatically depend on the last added task. (default: :obj:`True`)
 
@@ -674,95 +717,219 @@ class Workforce(BaseNode):
             Workforce: Self for method chaining.
             
         Example:
-            >>> workforce.pipeline_add("Step 1").pipeline_add("Step 2").pipeline_add("Step 3")
+            >>> # Simple usage with strings
+            >>> workforce.pipeline_add("Step 1").pipeline_add("Step 2")
+            >>> 
+            >>> # Advanced usage with Task objects
+            >>> task = Task(
+            ...     content="Complex Task",
+            ...     additional_info={"priority": "high"},
+            ...     image_list=["path/to/image.png"]
+            ... )
+            >>> workforce.pipeline_add(task)
         """
         self._ensure_pipeline_builder()
-        self._pipeline_builder.add(content, task_id, dependencies, additional_info, auto_depend)
+        
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+            task_additional_info = content.additional_info
+        else:
+            task_content = content
+            task_additional_info = additional_info
+            
+        self._pipeline_builder.add(
+            task_content, task_id, dependencies, task_additional_info, auto_depend
+        )
         return self
 
     def add_parallel_pipeline_tasks(
         self,
-        task_contents: List[str],
+        task_contents: Union[List[str], List[Task]],
         dependencies: Optional[List[str]] = None,
         task_id_prefix: str = "parallel",
         auto_depend: bool = True,
-    ) -> 'Workforce':
+    ) -> Workforce:
         """Add multiple parallel tasks to the pipeline.
 
+        Accepts either a list of strings for simple tasks or a list of Task 
+        objects for advanced usage with metadata, images, or custom 
+        configurations.
+
         Args:
-            task_contents (List[str]): List of task content strings.
+            task_contents (Union[List[str], List[Task]]): List of task content 
+                strings or Task objects. If Task objects are provided, 
+                task_id_prefix is ignored.
             dependencies (List[str], optional): Common dependencies for all
                 parallel tasks. (default: :obj:`None`)
             task_id_prefix (str, optional): Prefix for generated task IDs.
+                Only used when task_contents contains strings. 
                 (default: :obj:`"parallel"`)
             auto_depend (bool, optional): If True and dependencies is None,
                 automatically depend on the last added task. (default: :obj:`True`)
 
         Returns:
             Workforce: Self for method chaining.
+            
+        Example:
+            >>> # Simple usage with strings
+            >>> workforce.add_parallel_pipeline_tasks([
+            ...     "Task A", "Task B", "Task C"
+            ... ])
+            >>> 
+            >>> # Advanced usage with Task objects
+            >>> tasks = [
+            ...     Task(content="Analysis 1", additional_info={"type": "tech"}),
+            ...     Task(content="Analysis 2", additional_info={"type": "biz"})
+            ... ]
+            >>> workforce.add_parallel_pipeline_tasks(tasks)
         """
         self._ensure_pipeline_builder()
-        self._pipeline_builder.add_parallel_tasks(task_contents, dependencies, task_id_prefix, auto_depend)
+        
+        # Convert Task objects to content strings if needed
+        if task_contents and isinstance(task_contents[0], Task):
+            # Extract content from Task objects
+            content_list = [task.content for task in task_contents]
+            self._pipeline_builder.add_parallel_tasks(
+                content_list, dependencies, task_id_prefix, auto_depend
+            )
+        else:
+            self._pipeline_builder.add_parallel_tasks(
+                task_contents, dependencies, task_id_prefix, auto_depend
+            )
         return self
 
     def add_sync_pipeline_task(
         self,
-        content: str,
+        content: Union[str, Task],
         wait_for: Optional[List[str]] = None,
         task_id: Optional[str] = None,
-    ) -> 'Workforce':
+    ) -> Workforce:
         """Add a synchronization task that waits for multiple tasks.
 
+        Accepts either a string for simple tasks or a Task object for 
+        advanced usage with metadata, images, or custom configurations.
+
         Args:
-            content (str): Content of the synchronization task.
+            content (Union[str, Task]): Content of the synchronization task
+                or a Task object. If a Task object is provided, task_id 
+                parameter is ignored.
             wait_for (List[str], optional): List of task IDs to wait for.
                 If None, will automatically wait for the last parallel tasks.
-            task_id (str, optional): ID for the sync task.
+                (default: :obj:`None`)
+            task_id (str, optional): ID for the sync task. Only used when 
+                content is a string. (default: :obj:`None`)
 
         Returns:
             Workforce: Self for method chaining.
+            
+        Example:
+            >>> # Simple usage
+            >>> workforce.add_sync_pipeline_task("Merge Results")
+            >>> 
+            >>> # Advanced usage with Task object
+            >>> sync_task = Task(
+            ...     content="Combine outputs",
+            ...     additional_info={"type": "aggregation"}
+            ... )
+            >>> workforce.add_sync_pipeline_task(sync_task)
         """
         self._ensure_pipeline_builder()
-        self._pipeline_builder.add_sync_task(content, wait_for, task_id)
+        
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+        else:
+            task_content = content
+            
+        self._pipeline_builder.add_sync_task(task_content, wait_for, task_id)
         return self
 
-    def pipeline_fork(self, task_contents: List[str]) -> 'Workforce':
+    def pipeline_fork(
+        self, task_contents: Union[List[str], List[Task]]
+    ) -> Workforce:
         """Create parallel branches from the current task.
         
+        Accepts either a list of strings for simple tasks or a list of Task 
+        objects for advanced usage with metadata, images, or custom 
+        configurations.
+        
         Args:
-            task_contents (List[str]): List of task content strings for parallel execution.
+            task_contents (Union[List[str], List[Task]]): List of task content 
+                strings or Task objects for parallel execution.
             
         Returns:
             Workforce: Self for method chaining.
             
         Example:
+            >>> # Simple usage with strings
             >>> workforce.pipeline_add("Collect Data").pipeline_fork([
             ...     "Technical Analysis", "Fundamental Analysis"
             ... ]).pipeline_join("Generate Report")
+            >>> 
+            >>> # Advanced usage with Task objects
+            >>> tasks = [
+            ...     Task(content="Parse JSON", additional_info={"format": "json"}),
+            ...     Task(content="Parse XML", additional_info={"format": "xml"})
+            ... ]
+            >>> workforce.pipeline_add("Fetch Data").pipeline_fork(tasks)
         """
         self._ensure_pipeline_builder()
-        self._pipeline_builder.fork(task_contents)
+        
+        # Convert Task objects to content strings if needed
+        if task_contents and isinstance(task_contents[0], Task):
+            # Extract content from Task objects
+            content_list = [task.content for task in task_contents]
+            self._pipeline_builder.fork(content_list)
+        else:
+            self._pipeline_builder.fork(task_contents)
         return self
     
-    def pipeline_join(self, content: str, task_id: Optional[str] = None) -> 'Workforce':
+    def pipeline_join(
+        self, content: Union[str, Task], task_id: Optional[str] = None
+    ) -> Workforce:
         """Join parallel branches with a synchronization task.
         
+        Accepts either a string for simple tasks or a Task object for 
+        advanced usage with metadata, images, or custom configurations.
+        
         Args:
-            content (str): Content of the join/sync task.
-            task_id (str, optional): ID for the sync task.
+            content (Union[str, Task]): Content of the join/sync task or a 
+                Task object. If a Task object is provided, task_id parameter 
+                is ignored.
+            task_id (str, optional): ID for the sync task. Only used when 
+                content is a string. (default: :obj:`None`)
             
         Returns:
             Workforce: Self for method chaining.
             
         Example:
+            >>> # Simple usage
             >>> workforce.pipeline_fork(["Task A", "Task B"]).pipeline_join("Merge Results")
+            >>> 
+            >>> # Advanced usage with Task object
+            >>> join_task = Task(
+            ...     content="Aggregate analysis",
+            ...     additional_info={"aggregation_type": "mean"}
+            ... )
+            >>> workforce.pipeline_fork(["A", "B"]).pipeline_join(join_task)
         """
         self._ensure_pipeline_builder()
-        self._pipeline_builder.join(content, task_id)
+        
+        # Convert Task object to parameters if needed
+        if isinstance(content, Task):
+            task_content = content.content
+            task_id = content.id
+        else:
+            task_content = content
+            
+        self._pipeline_builder.join(task_content, task_id)
         return self
     
 
-    def pipeline_build(self) -> 'Workforce':
+    def pipeline_build(self) -> Workforce:
         """Build the pipeline and set up the tasks for execution.
         
         Returns:
@@ -1073,10 +1240,12 @@ class Workforce(BaseNode):
         if self.mode == WorkforceMode.PIPELINE:
             return []
         
-        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        decompose_prompt = str(
+            TASK_DECOMPOSE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         self.task_agent.reset()
         result = task.decompose(self.task_agent, decompose_prompt)
@@ -1203,16 +1372,18 @@ class Workforce(BaseNode):
             ]
 
         # Format the unified analysis prompt
-        analysis_prompt = TASK_ANALYSIS_PROMPT.format(
-            task_id=task.id,
-            task_content=task.content,
-            task_result=task_result,
-            failure_count=task.failure_count,
-            task_depth=task.get_depth(),
-            assigned_worker=task.assigned_worker_id or "unknown",
-            issue_type=issue_type,
-            issue_specific_analysis=issue_analysis,
-            response_format=response_format,
+        analysis_prompt = str(
+            TASK_ANALYSIS_PROMPT.format(
+                task_id=task.id,
+                task_content=task.content,
+                task_result=task_result,
+                failure_count=task.failure_count,
+                task_depth=task.get_depth(),
+                assigned_worker=task.assigned_worker_id or "unknown",
+                issue_type=issue_type,
+                issue_specific_analysis=issue_analysis,
+                response_format=response_format,
+            )
         )
 
         try:
@@ -1624,6 +1795,20 @@ class Workforce(BaseNode):
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
+
+    def get_main_task_queue(self) -> List[Task]:
+        r"""Get current main task queue for human review.
+        Returns:
+            List[Task]: List of main tasks waiting to be decomposed
+                and executed.
+        """
+        # Return tasks from pending queue that need decomposition
+        return [
+            t
+            for t in self._pending_tasks
+            if t.additional_info
+            and t.additional_info.get('_needs_decomposition')
+        ]
 
     def add_task(
         self,
@@ -2041,6 +2226,13 @@ class Workforce(BaseNode):
         task.state = (
             TaskState.DONE if self._all_pipeline_tasks_successful() 
             else TaskState.FAILED
+        )
+        
+        # Log completion and mode info
+        logger.info(
+            f"Pipeline execution completed. Current mode: {self.mode.value}. "
+            f"Use workforce.reset() to reset mode to {self._initial_mode.value}, "
+            f"or workforce.set_mode() to manually change mode."
         )
         
         return task
@@ -2497,6 +2689,10 @@ class Workforce(BaseNode):
         # Reset pipeline building state
         self._pipeline_builder = None
         
+        # Reset mode to initial value
+        self.mode = self._initial_mode
+        logger.debug(f"Workforce mode reset to {self._initial_mode.value}")
+        
         for child in self._children:
             child.reset()
 
@@ -2736,8 +2932,10 @@ class Workforce(BaseNode):
 
     def load_workflow_memories(
         self,
-        max_files_to_load: int = 3,
         session_id: Optional[str] = None,
+        worker_max_workflows: int = 3,
+        coordinator_max_workflows: int = 5,
+        task_agent_max_workflows: int = 3,
     ) -> Dict[str, bool]:
         r"""Load workflow memories for all SingleAgentWorker instances in the
         workforce.
@@ -2748,11 +2946,15 @@ class Workforce(BaseNode):
         method. Workers match files based on their description names.
 
         Args:
-            max_files_to_load (int): Maximum number of workflow files to load
-                per worker. (default: :obj:`3`)
             session_id (Optional[str]): Specific workforce session ID to load
                 from. If None, searches across all sessions.
                 (default: :obj:`None`)
+            worker_max_workflows (int): Maximum number of workflow files to
+                load per worker agent. (default: :obj:`3`)
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent. (default: :obj:`5`)
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent. (default: :obj:`3`)
 
         Returns:
             Dict[str, bool]: Dictionary mapping worker node IDs to load
@@ -2764,7 +2966,11 @@ class Workforce(BaseNode):
             >>> workforce.add_single_agent_worker(
             ...     "data_analyst", analyst_agent
             ... )
-            >>> success_status = workforce.load_workflows()
+            >>> success_status = workforce.load_workflow_memories(
+            ...     worker_max_workflows=5,
+            ...     coordinator_max_workflows=10,
+            ...     task_agent_max_workflows=5
+            ... )
             >>> print(success_status)
             {'worker_123': True}  # Successfully loaded workflows for
             # data_analyst
@@ -2782,7 +2988,7 @@ class Workforce(BaseNode):
                     # For loading, don't set shared context utility
                     # Let each worker search across existing sessions
                     success = child.load_workflow_memories(
-                        max_files_to_load=max_files_to_load,
+                        max_workflows=worker_max_workflows,
                         session_id=session_id,
                     )
                     results[child.node_id] = success
@@ -2797,13 +3003,18 @@ class Workforce(BaseNode):
                 results[child.node_id] = False
 
         # Load aggregated workflow summaries for coordinator and task agents
-        self._load_management_agent_workflows(max_files_to_load, session_id)
+        self._load_management_agent_workflows(
+            coordinator_max_workflows, task_agent_max_workflows, session_id
+        )
 
         logger.info(f"Workflow load completed for {len(results)} workers")
         return results
 
     def _load_management_agent_workflows(
-        self, max_files_to_load: int, session_id: Optional[str] = None
+        self,
+        coordinator_max_workflows: int,
+        task_agent_max_workflows: int,
+        session_id: Optional[str] = None,
     ) -> None:
         r"""Load workflow summaries for coordinator and task planning agents.
 
@@ -2814,7 +3025,10 @@ class Workforce(BaseNode):
           successful strategies
 
         Args:
-            max_files_to_load (int): Maximum number of workflow files to load.
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent.
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent.
             session_id (Optional[str]): Specific session ID to load from.
                 If None, searches across all sessions.
         """
@@ -2852,9 +3066,9 @@ class Workforce(BaseNode):
                 key=lambda x: os.path.getmtime(x), reverse=True
             )
 
-            # Load workflows for coordinator agent (up to 5 most recent)
+            # Load workflows for coordinator agent
             coordinator_loaded = 0
-            for file_path in workflow_files[:max_files_to_load]:
+            for file_path in workflow_files[:coordinator_max_workflows]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -2875,9 +3089,9 @@ class Workforce(BaseNode):
                         f"Failed to load coordinator workflow {file_path}: {e}"
                     )
 
-            # Load workflows for task agent (up to 3 most recent)
+            # Load workflows for task agent
             task_agent_loaded = 0
-            for file_path in workflow_files[:max_files_to_load]:
+            for file_path in workflow_files[:task_agent_max_workflows]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -3386,10 +3600,12 @@ class Workforce(BaseNode):
         Returns:
             Worker: The created worker node.
         """
-        prompt = CREATE_NODE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        prompt = str(
+            CREATE_NODE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         # Check if we should use structured handler
         if self.use_structured_output_handler:
@@ -3596,7 +3812,15 @@ class Workforce(BaseNode):
             tasks_to_assign = [
                 task
                 for task in self._pending_tasks
-                if task.id not in self._task_dependencies
+                if (
+                    task.id not in self._task_dependencies
+                    and (
+                        task.additional_info is None
+                        or not task.additional_info.get(
+                            "_needs_decomposition", False
+                        )
+                    )
+                )
             ]
         if tasks_to_assign:
             logger.debug(
@@ -4234,8 +4458,7 @@ class Workforce(BaseNode):
                 # Reset in-flight counter to prevent hanging
                 self._in_flight_tasks = 0
 
-        # Check if there are any pending tasks (including those needing
-        # decomposition)
+        # Check if there are any main pending tasks after filtering
         if self._pending_tasks:
             # Check if the first pending task needs decomposition
             next_task = self._pending_tasks[0]
@@ -4444,6 +4667,20 @@ class Workforce(BaseNode):
                             )
                             if not halt:
                                 continue
+
+                            # Do not halt if we have main tasks in queue
+                            if len(self.get_main_task_queue()) > 0:
+                                print(
+                                    f"{Fore.RED}Task {returned_task.id} has "
+                                    f"failed for {MAX_TASK_RETRIES} times "
+                                    f"after insufficient results, skipping "
+                                    f"that task. Final error: "
+                                    f"{returned_task.result or 'Unknown err'}"
+                                    f"{Fore.RESET}"
+                                )
+                                self._skip_requested = True
+                                continue
+
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
                                 f"failed for {MAX_TASK_RETRIES} times after "
@@ -4549,6 +4786,19 @@ class Workforce(BaseNode):
                         halt = await self._handle_failed_task(returned_task)
                         if not halt:
                             continue
+
+                        # Do not halt if we have main tasks in queue
+                        if len(self.get_main_task_queue()) > 0:
+                            print(
+                                f"{Fore.RED}Task {returned_task.id} has "
+                                f"failed for {MAX_TASK_RETRIES} times, "
+                                f"skipping that task. Final error: "
+                                f"{returned_task.result or 'Unknown error'}"
+                                f"{Fore.RESET}"
+                            )
+                            self._skip_requested = True
+                            continue
+
                         print(
                             f"{Fore.RED}Task {returned_task.id} has failed "
                             f"for {MAX_TASK_RETRIES} times, halting "

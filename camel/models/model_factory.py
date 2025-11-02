@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
-from typing import ClassVar, Dict, Optional, Type, Union
+from typing import Any, ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
@@ -119,6 +119,8 @@ class ModelFactory:
         url: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
@@ -145,6 +147,14 @@ class ModelFactory:
                 for API calls. (default: :obj:`None`)
             max_retries (int, optional): Maximum number of retries
                 for API calls. (default: :obj:`3`)
+            client (Optional[Any], optional): A custom synchronous client
+                instance. Supported by models that use OpenAI-compatible APIs
+                . The client should implement the appropriate client interface
+                for the platform. (default: :obj:`None`)
+            async_client (Optional[Any], optional): A custom asynchronous
+                client instance. Supported by models that use OpenAI-compatible
+                APIs. The client should implement the appropriate async client
+                interface for the platform. (default: :obj:`None`)
             **kwargs: Additional model-specific parameters that will be passed
                 to the model constructor. For example, Azure OpenAI models may
                 require `api_version`, `azure_deployment_name`,
@@ -189,6 +199,12 @@ class ModelFactory:
 
         if model_class is None:
             raise ValueError(f"Unknown model platform `{model_platform}`")
+
+        # Pass client and async_client via kwargs if provided
+        if client is not None:
+            kwargs['client'] = client
+        if async_client is not None:
+            kwargs['async_client'] = async_client
 
         return model_class(
             model_type=model_type,
