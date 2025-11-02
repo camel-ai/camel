@@ -13,9 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Type, Union
-
-from pydantic import BaseModel
+from typing import Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -41,7 +39,7 @@ class AihubMixConfig(BaseConfig):
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
-            likelihood to repeat the same line verbatim. 
+            likelihood to repeat the same line verbatim.
             (default: :obj:`0`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
