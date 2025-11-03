@@ -67,7 +67,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         if event_type == 'worker_created':
             self._initial_worker_logs.append(log_entry)
 
-    def log_task_created(
+    async def log_task_created(
         self,
         event: TaskCreatedEvent,
     ) -> None:
@@ -96,7 +96,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                 event.task_id
             )
 
-    def log_task_decomposed(
+    async def log_task_decomposed(
         self,
         event: TaskDecomposedEvent,
     ) -> None:
@@ -110,7 +110,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         if event.parent_task_id in self._task_hierarchy:
             self._task_hierarchy[event.parent_task_id]['status'] = "decomposed"
 
-    def log_task_assigned(
+    async def log_task_assigned(
         self,
         event: TaskAssignedEvent,
     ) -> None:
@@ -137,7 +137,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             )
             self._worker_information[event.worker_id]['status'] = 'busy'
 
-    def log_task_started(
+    async def log_task_started(
         self,
         event: TaskStartedEvent,
     ) -> None:
@@ -151,7 +151,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         if event.task_id in self._task_hierarchy:
             self._task_hierarchy[event.task_id]['status'] = 'processing'
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         r"""Logs the successful completion of a task."""
         self._log_event(
             event_type=event.event_type,
@@ -185,7 +185,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                 + 1
             )
 
-    def log_task_failed(
+    async def log_task_failed(
         self,
         event: TaskFailedEvent,
     ) -> None:
@@ -211,7 +211,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                 + 1
             )
 
-    def log_worker_created(
+    async def log_worker_created(
         self,
         event: WorkerCreatedEvent,
     ) -> None:
@@ -233,7 +233,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             **(event.metadata or {}),
         }
 
-    def log_worker_deleted(
+    async def log_worker_deleted(
         self,
         event: WorkerDeletedEvent,
     ) -> None:
@@ -248,7 +248,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             self._worker_information[event.worker_id]['status'] = 'deleted'
             # Or del self._worker_information[worker_id]
 
-    def log_queue_status(
+    async def log_queue_status(
         self,
         event: QueueStatusEvent,
     ) -> None:
@@ -261,10 +261,12 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             metadata=event.metadata or {},
         )
 
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         pass
 
-    def reset_task_data(self) -> None:
+    async def reset_task_data(self) -> None:
         r"""Resets logs and data related to tasks, preserving worker
         information.
         """
@@ -283,7 +285,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             f"{self.workforce_id}"
         )
 
-    def dump_to_json(self, file_path: str) -> None:
+    async def dump_to_json(self, file_path: str) -> None:
         r"""Dumps all log entries to a JSON file.
 
         Args:
@@ -447,7 +449,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             )
         return tree_str
 
-    def get_ascii_tree_representation(self) -> str:
+    async def get_ascii_tree_representation(self) -> str:
         r"""Generates an ASCII tree representation of the current task
         hierarchy and worker status.
         """
@@ -480,7 +482,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                 )
         return output_str
 
-    def get_kpis(self) -> Dict[str, Any]:
+    async def get_kpis(self) -> Dict[str, Any]:
         r"""Calculates and returns key performance indicators from the logs."""
         kpis: Dict[str, Any] = {
             'total_tasks_created': 0,

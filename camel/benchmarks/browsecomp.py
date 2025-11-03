@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
+import asyncio
 import base64
 import hashlib
 import json
@@ -593,7 +593,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                 elif isinstance(pipeline_template, Workforce):
                     pipeline = pipeline_template.clone()  # type: ignore[assignment]
                     task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
+                    task = asyncio.run(pipeline.process_task_async(task))  # type: ignore[attr-defined]
                     if task_json_formatter:
                         formatter_in_process = task_json_formatter.clone()
                     else:

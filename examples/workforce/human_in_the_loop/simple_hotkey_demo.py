@@ -25,7 +25,7 @@ from camel.toolkits import FileWriteToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
-def create_simple_workforce():
+async def create_simple_workforce():
     r"""Create a simple workforce for demonstration."""
     thinking_toolkit = ThinkingToolkit()
     file_write_toolkit = FileWriteToolkit()
@@ -60,8 +60,10 @@ def create_simple_workforce():
     )
 
     workforce = Workforce('Simple Demo Workforce')
-    workforce.add_single_agent_worker("Poet Agent", poet_agent)
-    workforce.add_single_agent_worker("File Write Agent", file_write_agent)
+    await workforce.add_single_agent_worker("Poet Agent", poet_agent)
+    await workforce.add_single_agent_worker(
+        "File Write Agent", file_write_agent
+    )
 
     return workforce
 
@@ -138,11 +140,11 @@ def simple_intervention_menu(workforce: Workforce):
             print("\n🔄 Enter 4 to resume or 5 to stop")
 
 
-def main():
+async def main():
     r"""Main demo function."""
 
     # Create workforce and task
-    workforce = create_simple_workforce()
+    workforce = await create_simple_workforce()
     task = Task(
         content=(
             "write a poem about the sun and the moon" "then write the md file"
@@ -224,4 +226,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

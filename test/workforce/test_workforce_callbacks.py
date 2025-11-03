@@ -45,33 +45,35 @@ class _NonMetricsCallback(WorkforceCallback):
         self.events: list[WorkforceEvent] = []
 
     # Task events
-    def log_task_created(self, event: TaskCreatedEvent) -> None:
+    async def log_task_created(self, event: TaskCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         self.events.append(event)
 
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         self.events.append(event)
 
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         self.events.append(event)
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         self.events.append(event)
 
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         self.events.append(event)
 
     # Worker events
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         self.events.append(event)
 
     # Terminal event
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         self.events.append(event)
 
 
@@ -80,53 +82,54 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
 
     def __init__(self) -> None:
         self.events: list[WorkforceEvent] = []
-        self.reset_task_data()
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
 
     # WorkforceMetrics interface
-    def reset_task_data(self) -> None:
+    async def reset_task_data(self) -> None:
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
 
-    def dump_to_json(self, file_path: str) -> None:
+    async def dump_to_json(self, file_path: str) -> None:
         self.dump_to_json_called = True
 
-    def get_ascii_tree_representation(self) -> str:
+    async def get_ascii_tree_representation(self) -> str:
         self.get_ascii_tree_called = True
         return "Stub ASCII Tree"
 
-    def get_kpis(self) -> Dict[str, Any]:
+    async def get_kpis(self) -> Dict[str, Any]:
         self.get_kpis_called = True
         return {}
 
-    def log_task_created(self, event: TaskCreatedEvent) -> None:
+    async def log_task_created(self, event: TaskCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         self.events.append(event)
 
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         self.events.append(event)
 
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         self.events.append(event)
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         self.events.append(event)
 
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         self.events.append(event)
 
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         self.events.append(event)
 
 
@@ -139,7 +142,8 @@ def _build_stub_agent() -> ChatAgent:
     return ChatAgent(model=model)
 
 
-def test_workforce_callback_registration_and_metrics_handling():
+@pytest.mark.asyncio
+async def test_workforce_callback_registration_and_metrics_handling():
     """Verify default logger addition and metrics-callback skip logic.
 
     - When no metrics callback is provided, WorkforceLogger is added.
@@ -157,7 +161,7 @@ def test_workforce_callback_registration_and_metrics_handling():
 
     # Add a worker and ensure our callback saw the event
     agent = _build_stub_agent()
-    wf1.add_single_agent_worker("UnitTest Worker", agent)
+    await wf1.add_single_agent_worker("UnitTest Worker", agent)
     assert any(isinstance(e, WorkerCreatedEvent) for e in cb.events)
 
     # 2) Metrics-capable callback present -> no default WorkforceLogger
@@ -251,7 +255,8 @@ def assert_event_sequence(events: list[str], min_worker_count: int):
         assert e in allowed_events, f"Unexpected event type at {i}: {e}"
 
 
-def test_workforce_emits_expected_event_sequence():
+@pytest.mark.asyncio
+async def test_workforce_emits_expected_event_sequence():
     # Use STUB model to avoid real API calls and ensure fast,
     # deterministic execution
     search_agent = ChatAgent(
@@ -316,12 +321,15 @@ def test_workforce_emits_expected_event_sequence():
         task_agent=task_agent,
     )
 
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         "A researcher who can search online for information.",
         worker=search_agent,
-    ).add_single_agent_worker(
-        "An analyst who can process research findings.", worker=analyst_agent
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker(
+        "An analyst who can process research findings.",
+        worker=analyst_agent,
+    )
+    await workforce.add_single_agent_worker(
         "A writer who can create a final report from the analysis.",
         worker=writer_agent,
     )
@@ -338,7 +346,7 @@ def test_workforce_emits_expected_event_sequence():
         id='0',
     )
 
-    workforce.process_task(human_task)
+    await workforce.process_task_async(human_task)
 
     # test that the event sequence is as expected
     actual_events = [e.__class__.__name__ for e in cb.events]
@@ -348,19 +356,19 @@ def test_workforce_emits_expected_event_sequence():
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    workforce.dump_workforce_logs("foo.log")
+    await workforce.dump_workforce_logs("foo.log")
     assert cb.dump_to_json_called
 
-    workforce.reset()
+    await workforce.reset()
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    workforce.get_workforce_kpis()
+    await workforce.get_workforce_kpis()
     assert cb.get_kpis_called
 
-    workforce.reset()
+    await workforce.reset()
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    workforce.get_workforce_log_tree()
+    await workforce.get_workforce_log_tree()
     assert cb.get_ascii_tree_called
