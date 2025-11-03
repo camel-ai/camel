@@ -1718,6 +1718,7 @@ class ModelPlatformType(Enum):
     WATSONX = "watsonx"
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
+    AIHUBMIX = "aihubmix"
 
     @classmethod
     def from_name(cls, name):
@@ -1897,6 +1898,11 @@ class ModelPlatformType(Enum):
     def is_crynux(self) -> bool:
         r"""Returns whether this platform is Crynux."""
         return self is ModelPlatformType.CRYNUX
+
+    @property
+    def is_aihubmix(self) -> bool:
+        r"""Returns whether this platform is AihubMix."""
+        return self is ModelPlatformType.AIHUBMIX
 
 
 class AudioModelType(Enum):
