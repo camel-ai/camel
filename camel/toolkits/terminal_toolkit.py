@@ -249,15 +249,15 @@ class TerminalToolkit(BaseToolkit):
     def shell_exec(self, id: str, command: str, block: bool = True) -> str:
         r"""
         This function executes a shell command. The command can run in blocking mode (waits for completion)
-        or non-blocking mode (runs in the background). A unique session ID is created for each session.
+        or non-blocking mode (runs in the background). A unique session ID is required for each session. The non-blocking
+        sessions can be accessed and controlled using other functions in this toolkit.
 
         Args:
+            id (str): A specific ID for the session. Must be unique for each non-blocking session.
             command (str): The command to execute.
             block (bool): If True, the command runs synchronously, waiting for it
                 to complete or time out, and returns its full output. If False,
                 the command runs asynchronously in the background.
-            id (Optional[str]): A specific ID for the session. If not provided,
-                a unique ID is generated for non-blocking sessions.
 
         Returns:
             str: If block is True, returns the complete stdout and stderr.
@@ -365,7 +365,8 @@ class TerminalToolkit(BaseToolkit):
         appended to the input command.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
+            id (str): The unique session ID of the non-blocking process that will receive the command.
+                        This session ID must have been created previously using shell_exec() with block=False.
             command (str): The text to write to the process's standard input.
 
         Returns:
@@ -410,7 +411,8 @@ class TerminalToolkit(BaseToolkit):
         is still running, it simply returns any new output.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
+            id (str): The unique session ID of the non-blocking process. This session ID
+                        must have been created previously using shell_exec() with block=False.
 
         Returns:
             str: The new output from the process's stdout and stderr. Returns
@@ -448,7 +450,8 @@ class TerminalToolkit(BaseToolkit):
         more output or terminate.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
+            id (str): The unique session ID of the non-blocking process. This session ID
+                        must have been created previously using shell_exec() with block=False.
             wait_seconds (float): The maximum number of seconds to wait.
 
         Returns:
