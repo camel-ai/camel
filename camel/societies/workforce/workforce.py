@@ -863,10 +863,12 @@ class Workforce(BaseNode):
             Union[List[Task], Generator[List[Task], None, None]]:
             The subtasks or generator of subtasks.
         """
-        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        decompose_prompt = str(
+            TASK_DECOMPOSE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         self.task_agent.reset()
         result = task.decompose(self.task_agent, decompose_prompt)
@@ -993,16 +995,18 @@ class Workforce(BaseNode):
             ]
 
         # Format the unified analysis prompt
-        analysis_prompt = TASK_ANALYSIS_PROMPT.format(
-            task_id=task.id,
-            task_content=task.content,
-            task_result=task_result,
-            failure_count=task.failure_count,
-            task_depth=task.get_depth(),
-            assigned_worker=task.assigned_worker_id or "unknown",
-            issue_type=issue_type,
-            issue_specific_analysis=issue_analysis,
-            response_format=response_format,
+        analysis_prompt = str(
+            TASK_ANALYSIS_PROMPT.format(
+                task_id=task.id,
+                task_content=task.content,
+                task_result=task_result,
+                failure_count=task.failure_count,
+                task_depth=task.get_depth(),
+                assigned_worker=task.assigned_worker_id or "unknown",
+                issue_type=issue_type,
+                issue_specific_analysis=issue_analysis,
+                response_format=response_format,
+            )
         )
 
         try:
@@ -1414,6 +1418,20 @@ class Workforce(BaseNode):
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
+
+    def get_main_task_queue(self) -> List[Task]:
+        r"""Get current main task queue for human review.
+        Returns:
+            List[Task]: List of main tasks waiting to be decomposed
+                and executed.
+        """
+        # Return tasks from pending queue that need decomposition
+        return [
+            t
+            for t in self._pending_tasks
+            if t.additional_info
+            and t.additional_info.get('_needs_decomposition')
+        ]
 
     def add_task(
         self,
@@ -2439,8 +2457,10 @@ class Workforce(BaseNode):
 
     def load_workflow_memories(
         self,
-        max_files_to_load: int = 3,
         session_id: Optional[str] = None,
+        worker_max_workflows: int = 3,
+        coordinator_max_workflows: int = 5,
+        task_agent_max_workflows: int = 3,
     ) -> Dict[str, bool]:
         r"""Load workflow memories for all SingleAgentWorker instances in the
         workforce.
@@ -2451,11 +2471,15 @@ class Workforce(BaseNode):
         method. Workers match files based on their description names.
 
         Args:
-            max_files_to_load (int): Maximum number of workflow files to load
-                per worker. (default: :obj:`3`)
             session_id (Optional[str]): Specific workforce session ID to load
                 from. If None, searches across all sessions.
                 (default: :obj:`None`)
+            worker_max_workflows (int): Maximum number of workflow files to
+                load per worker agent. (default: :obj:`3`)
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent. (default: :obj:`5`)
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent. (default: :obj:`3`)
 
         Returns:
             Dict[str, bool]: Dictionary mapping worker node IDs to load
@@ -2467,7 +2491,11 @@ class Workforce(BaseNode):
             >>> workforce.add_single_agent_worker(
             ...     "data_analyst", analyst_agent
             ... )
-            >>> success_status = workforce.load_workflows()
+            >>> success_status = workforce.load_workflow_memories(
+            ...     worker_max_workflows=5,
+            ...     coordinator_max_workflows=10,
+            ...     task_agent_max_workflows=5
+            ... )
             >>> print(success_status)
             {'worker_123': True}  # Successfully loaded workflows for
             # data_analyst
@@ -2485,7 +2513,7 @@ class Workforce(BaseNode):
                     # For loading, don't set shared context utility
                     # Let each worker search across existing sessions
                     success = child.load_workflow_memories(
-                        max_files_to_load=max_files_to_load,
+                        max_workflows=worker_max_workflows,
                         session_id=session_id,
                     )
                     results[child.node_id] = success
@@ -2500,13 +2528,18 @@ class Workforce(BaseNode):
                 results[child.node_id] = False
 
         # Load aggregated workflow summaries for coordinator and task agents
-        self._load_management_agent_workflows(max_files_to_load, session_id)
+        self._load_management_agent_workflows(
+            coordinator_max_workflows, task_agent_max_workflows, session_id
+        )
 
         logger.info(f"Workflow load completed for {len(results)} workers")
         return results
 
     def _load_management_agent_workflows(
-        self, max_files_to_load: int, session_id: Optional[str] = None
+        self,
+        coordinator_max_workflows: int,
+        task_agent_max_workflows: int,
+        session_id: Optional[str] = None,
     ) -> None:
         r"""Load workflow summaries for coordinator and task planning agents.
 
@@ -2517,7 +2550,10 @@ class Workforce(BaseNode):
           successful strategies
 
         Args:
-            max_files_to_load (int): Maximum number of workflow files to load.
+            coordinator_max_workflows (int): Maximum number of workflow files
+                to load for the coordinator agent.
+            task_agent_max_workflows (int): Maximum number of workflow files
+                to load for the task planning agent.
             session_id (Optional[str]): Specific session ID to load from.
                 If None, searches across all sessions.
         """
@@ -2555,9 +2591,9 @@ class Workforce(BaseNode):
                 key=lambda x: os.path.getmtime(x), reverse=True
             )
 
-            # Load workflows for coordinator agent (up to 5 most recent)
+            # Load workflows for coordinator agent
             coordinator_loaded = 0
-            for file_path in workflow_files[:max_files_to_load]:
+            for file_path in workflow_files[:coordinator_max_workflows]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -2578,9 +2614,9 @@ class Workforce(BaseNode):
                         f"Failed to load coordinator workflow {file_path}: {e}"
                     )
 
-            # Load workflows for task agent (up to 3 most recent)
+            # Load workflows for task agent
             task_agent_loaded = 0
-            for file_path in workflow_files[:max_files_to_load]:
+            for file_path in workflow_files[:task_agent_max_workflows]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -3089,10 +3125,12 @@ class Workforce(BaseNode):
         Returns:
             Worker: The created worker node.
         """
-        prompt = CREATE_NODE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        prompt = str(
+            CREATE_NODE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         # Check if we should use structured handler
         if self.use_structured_output_handler:
@@ -3892,8 +3930,7 @@ class Workforce(BaseNode):
                 # Reset in-flight counter to prevent hanging
                 self._in_flight_tasks = 0
 
-        # Check if there are any pending tasks (including those needing
-        # decomposition)
+        # Check if there are any main pending tasks after filtering
         if self._pending_tasks:
             # Check if the first pending task needs decomposition
             next_task = self._pending_tasks[0]
@@ -4102,6 +4139,20 @@ class Workforce(BaseNode):
                             )
                             if not halt:
                                 continue
+
+                            # Do not halt if we have main tasks in queue
+                            if len(self.get_main_task_queue()) > 0:
+                                print(
+                                    f"{Fore.RED}Task {returned_task.id} has "
+                                    f"failed for {MAX_TASK_RETRIES} times "
+                                    f"after insufficient results, skipping "
+                                    f"that task. Final error: "
+                                    f"{returned_task.result or 'Unknown err'}"
+                                    f"{Fore.RESET}"
+                                )
+                                self._skip_requested = True
+                                continue
+
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
                                 f"failed for {MAX_TASK_RETRIES} times after "
@@ -4207,6 +4258,19 @@ class Workforce(BaseNode):
                         halt = await self._handle_failed_task(returned_task)
                         if not halt:
                             continue
+
+                        # Do not halt if we have main tasks in queue
+                        if len(self.get_main_task_queue()) > 0:
+                            print(
+                                f"{Fore.RED}Task {returned_task.id} has "
+                                f"failed for {MAX_TASK_RETRIES} times, "
+                                f"skipping that task. Final error: "
+                                f"{returned_task.result or 'Unknown error'}"
+                                f"{Fore.RESET}"
+                            )
+                            self._skip_requested = True
+                            continue
+
                         print(
                             f"{Fore.RED}Task {returned_task.id} has failed "
                             f"for {MAX_TASK_RETRIES} times, halting "

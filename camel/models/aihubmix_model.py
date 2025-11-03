@@ -11,32 +11,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import BedrockConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import (
-    ModelType,
+from camel.types import ModelType
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class AWSBedrockModel(OpenAICompatibleModel):
-    r"""AWS Bedrock API in a unified OpenAICompatibleModel interface.
+class AihubMixModel(OpenAICompatibleModel):
+    r"""AihubMix API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
-        model_config_dict (Dict[str, Any], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`BedrockConfig().as_dict()` will be used.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into OpenAI client. If :obj:`None`,
+            :obj:`{}` will be used.
             (default: :obj:`None`)
-        api_key (str, optional): The API key for authenticating with
-            the AWS Bedrock service. (default: :obj:`None`)
-        url (str, optional): The url to the AWS Bedrock service.
-        token_counter (BaseTokenCounter, optional): Token counter to
+        api_key (Optional[str], optional): The API key for authenticating with
+            AihubMix service. (default: :obj:`None`)
+        url (Optional[str], optional): The URL to AihubMix service. If
+            not provided, :obj:`https://aihubmix.com/v1` will be used.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
@@ -48,17 +49,9 @@ class AWSBedrockModel(OpenAICompatibleModel):
             (default: :obj:`3`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
-
-    References:
-        https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
 
-    @api_keys_required(
-        [
-            ("url", "BEDROCK_API_BASE_URL"),
-            ("api_key", "BEDROCK_API_KEY"),
-        ]
-    )
+    @api_keys_required([("api_key", "AIHUBMIX_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -71,10 +64,11 @@ class AWSBedrockModel(OpenAICompatibleModel):
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = BedrockConfig().as_dict()
-        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
+            model_config_dict = {}
+        api_key = api_key or os.environ.get("AIHUBMIX_API_KEY")
         url = url or os.environ.get(
-            "BEDROCK_API_BASE_URL",
+            "AIHUBMIX_API_BASE_URL",
+            "https://aihubmix.com/v1",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
