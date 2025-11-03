@@ -339,6 +339,9 @@ class Workforce(BaseNode):
         self.snapshot_interval: float = 30.0
         # Shared memory UUID tracking to prevent re-sharing duplicates
         self._shared_memory_uuids: Set[str] = set()
+        # Defer initial worker-created callbacks until an event loop is
+        # available in async context.
+        self._pending_worker_created: Deque[BaseNode] = deque(self._children)
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -532,10 +535,7 @@ class Workforce(BaseNode):
                 "WorkforceLogger addition."
             )
 
-        for child in self._children:
-            self._notify_worker_created(child)
-
-    def _notify_worker_created(
+    async def _notify_worker_created(
         self,
         worker_node: BaseNode,
         *,
@@ -551,7 +551,19 @@ class Workforce(BaseNode):
             metadata=metadata,
         )
         for cb in self._callbacks:
-            cb.log_worker_created(event)
+            await cb.log_worker_created(event)
+
+    async def _flush_initial_worker_created_callbacks(self) -> None:
+        r"""Flush pending worker-created callbacks that were queued during
+        initialization before an event loop was available."""
+        if not self._pending_worker_created:
+            return
+
+        pending = list(self._pending_worker_created)
+        self._pending_worker_created.clear()
+
+        for child in pending:
+            await self._notify_worker_created(child)
 
     def _get_or_create_shared_context_utility(
         self,
@@ -1659,7 +1671,7 @@ class Workforce(BaseNode):
                         subtask_ids=[st.id for st in subtasks],
                     )
                     for cb in self._callbacks:
-                        cb.log_task_decomposed(task_decomposed_event)
+                        await cb.log_task_decomposed(task_decomposed_event)
                     for subtask in subtasks:
                         task_created_event = TaskCreatedEvent(
                             task_id=subtask.id,
@@ -1669,7 +1681,7 @@ class Workforce(BaseNode):
                             metadata=subtask.additional_info,
                         )
                         for cb in self._callbacks:
-                            cb.log_task_created(task_created_event)
+                            await cb.log_task_created(task_created_event)
 
                 # Insert subtasks at the head of the queue
                 self._pending_tasks.extendleft(reversed(subtasks))
@@ -2188,7 +2200,7 @@ class Workforce(BaseNode):
             )
             return [task]
 
-        self.reset()
+        await self.reset()
         self._task = task
         task.state = TaskState.FAILED
 
@@ -2199,7 +2211,7 @@ class Workforce(BaseNode):
             metadata=task.additional_info,
         )
         for cb in self._callbacks:
-            cb.log_task_created(task_created_event)
+            await cb.log_task_created(task_created_event)
 
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
@@ -2220,7 +2232,7 @@ class Workforce(BaseNode):
                 subtask_ids=[st.id for st in subtasks],
             )
             for cb in self._callbacks:
-                cb.log_task_decomposed(task_decomposed_event)
+                await cb.log_task_decomposed(task_decomposed_event)
             for subtask in subtasks:
                 task_created_event = TaskCreatedEvent(
                     task_id=subtask.id,
@@ -2230,7 +2242,7 @@ class Workforce(BaseNode):
                     metadata=subtask.additional_info,
                 )
                 for cb in self._callbacks:
-                    cb.log_task_created(task_created_event)
+                    await cb.log_task_created(task_created_event)
 
         if subtasks:
             # _pending_tasks will contain both undecomposed
@@ -2258,6 +2270,9 @@ class Workforce(BaseNode):
         Returns:
             Task: The updated task.
         """
+        # Emit worker-created callbacks lazily once an event loop is present.
+        await self._flush_initial_worker_created_callbacks()
+
         # Delegate to intervention pipeline when requested to keep
         # backward-compat.
         if interactive:
@@ -2606,7 +2621,7 @@ class Workforce(BaseNode):
             # Close the coroutine to prevent RuntimeWarning
             start_coroutine.close()
 
-    def add_single_agent_worker(
+    async def add_single_agent_worker(
         self,
         description: str,
         worker: ChatAgent,
@@ -2662,13 +2677,13 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        self._notify_worker_created(
+        await self._notify_worker_created(
             worker_node,
             worker_type='SingleAgentWorker',
         )
         return self
 
-    def add_role_playing_worker(
+    async def add_role_playing_worker(
         self,
         description: str,
         assistant_role_name: str,
@@ -2739,7 +2754,7 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        self._notify_worker_created(
+        await self._notify_worker_created(
             worker_node,
             worker_type='RolePlayingWorker',
         )
@@ -2781,7 +2796,7 @@ class Workforce(BaseNode):
         self._pause_event.set()
 
     @check_if_running(False)
-    def reset(self) -> None:
+    async def reset(self) -> None:
         r"""Reset the workforce and all the child nodes under it. Can only
         be called when the workforce is not running.
         """
@@ -2816,9 +2831,7 @@ class Workforce(BaseNode):
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
             try:
-                asyncio.run_coroutine_threadsafe(
-                    self._async_reset(), self._loop
-                ).result()
+                await self._async_reset()
             except RuntimeError as e:
                 logger.warning(f"Failed to reset via existing loop: {e}")
                 # Fallback to direct event manipulation
@@ -2829,7 +2842,7 @@ class Workforce(BaseNode):
 
         for cb in self._callbacks:
             if isinstance(cb, WorkforceMetrics):
-                cb.reset_task_data()
+                await cb.reset_task_data()
 
     def save_workflow_memories(
         self,
@@ -3697,7 +3710,7 @@ class Workforce(BaseNode):
             task_id=task.id, worker_id=assignee_id
         )
         for cb in self._callbacks:
-            cb.log_task_started(task_started_event)
+            await cb.log_task_started(task_started_event)
 
         try:
             await self._channel.post_task(task, self.node_id, assignee_id)
@@ -3844,7 +3857,7 @@ class Workforce(BaseNode):
 
         self._children.append(new_node)
 
-        self._notify_worker_created(
+        await self._notify_worker_created(
             new_node,
             worker_type='SingleAgentWorker',
             role=new_node_conf.role,
@@ -3982,7 +3995,7 @@ class Workforce(BaseNode):
                 for cb in self._callbacks:
                     # queue_time_seconds can be derived by logger if task
                     # creation time is logged
-                    cb.log_task_assigned(task_assigned_event)
+                    await cb.log_task_assigned(task_assigned_event)
 
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
@@ -4140,7 +4153,7 @@ class Workforce(BaseNode):
                                 },
                             )
                             for cb in self._callbacks:
-                                cb.log_task_failed(task_failed_event)
+                                await cb.log_task_failed(task_failed_event)
 
                             self._completed_tasks.append(task)
                             self._cleanup_task_tracking(task.id)
@@ -4203,7 +4216,7 @@ class Workforce(BaseNode):
             },
         )
         for cb in self._callbacks:
-            cb.log_task_failed(task_failed_event)
+            await cb.log_task_failed(task_failed_event)
 
         # Check for immediate halt conditions after max retries.
         if task.failure_count >= MAX_TASK_RETRIES:
@@ -4390,7 +4403,7 @@ class Workforce(BaseNode):
             metadata={'current_state': task.state.value},
         )
         for cb in self._callbacks:
-            cb.log_task_completed(task_completed_event)
+            await cb.log_task_completed(task_completed_event)
 
         # Find and remove the completed task from pending tasks
         tasks_list = list(self._pending_tasks)
@@ -4506,7 +4519,7 @@ class Workforce(BaseNode):
         # Wait for the full timeout period
         await asyncio.sleep(self.graceful_shutdown_timeout)
 
-    def get_workforce_log_tree(self) -> str:
+    async def get_workforce_log_tree(self) -> str:
         r"""Returns an ASCII tree representation of the task hierarchy and
         worker status.
         """
@@ -4516,9 +4529,9 @@ class Workforce(BaseNode):
         if len(metrics_cb) == 0:
             return "Metrics Callback not initialized."
         else:
-            return metrics_cb[0].get_ascii_tree_representation()
+            return await metrics_cb[0].get_ascii_tree_representation()
 
-    def get_workforce_kpis(self) -> Dict[str, Any]:
+    async def get_workforce_kpis(self) -> Dict[str, Any]:
         r"""Returns a dictionary of key performance indicators."""
         metrics_cb: List[WorkforceMetrics] = [
             cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
@@ -4526,9 +4539,9 @@ class Workforce(BaseNode):
         if len(metrics_cb) == 0:
             return {"error": "Metrics Callback not initialized."}
         else:
-            return metrics_cb[0].get_kpis()
+            return await metrics_cb[0].get_kpis()
 
-    def dump_workforce_logs(self, file_path: str) -> None:
+    async def dump_workforce_logs(self, file_path: str) -> None:
         r"""Dumps all collected logs to a JSON file.
 
         Args:
@@ -4540,7 +4553,7 @@ class Workforce(BaseNode):
         if len(metrics_cb) == 0:
             print("Logger not initialized. Cannot dump logs.")
             return
-        metrics_cb[0].dump_to_json(file_path)
+        await metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
@@ -5016,7 +5029,7 @@ class Workforce(BaseNode):
             logger.info("All tasks completed.")
             all_tasks_completed_event = AllTasksCompletedEvent()
             for cb in self._callbacks:
-                cb.log_all_tasks_completed(all_tasks_completed_event)
+                await cb.log_all_tasks_completed(all_tasks_completed_event)
 
         # shut down the whole workforce tree
         self.stop()
@@ -5104,7 +5117,7 @@ class Workforce(BaseNode):
 
         self._running = False
 
-    def clone(self, with_memory: bool = False) -> 'Workforce':
+    async def clone(self, with_memory: bool = False) -> 'Workforce':
         r"""Creates a new instance of Workforce with the same configuration.
 
         Args:
@@ -5136,13 +5149,13 @@ class Workforce(BaseNode):
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
                 cloned_worker = child.worker.clone(with_memory)
-                new_instance.add_single_agent_worker(
+                await new_instance.add_single_agent_worker(
                     child.description,
                     cloned_worker,
                     pool_max_size=10,
                 )
             elif isinstance(child, RolePlayingWorker):
-                new_instance.add_role_playing_worker(
+                await new_instance.add_role_playing_worker(
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
@@ -5152,7 +5165,7 @@ class Workforce(BaseNode):
                     child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
-                new_instance.add_workforce(child.clone(with_memory))
+                new_instance.add_workforce(await child.clone(with_memory))
             else:
                 logger.warning(f"{type(child)} is not being cloned.")
                 continue
@@ -5387,7 +5400,7 @@ class Workforce(BaseNode):
             return children_info
 
         # Add single agent worker
-        def add_single_agent_worker(
+        async def add_single_agent_worker(
             description,
             system_message=None,
             role_name="Assistant",
@@ -5451,7 +5464,9 @@ class Workforce(BaseNode):
                         "message": str(e),
                     }
 
-                workforce_instance.add_single_agent_worker(description, agent)
+                await workforce_instance.add_single_agent_worker(
+                    description, agent
+                )
 
                 return {
                     "status": "success",
@@ -5462,7 +5477,7 @@ class Workforce(BaseNode):
                 return {"status": "error", "message": str(e)}
 
         # Add role playing worker
-        def add_role_playing_worker(
+        async def add_role_playing_worker(
             description,
             assistant_role_name,
             user_role_name,
@@ -5519,7 +5534,7 @@ class Workforce(BaseNode):
                         "message": "Cannot add workers while workforce is running",  # noqa: E501
                     }
 
-                workforce_instance.add_role_playing_worker(
+                await workforce_instance.add_role_playing_worker(
                     description=description,
                     assistant_role_name=assistant_role_name,
                     user_role_name=user_role_name,

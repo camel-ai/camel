@@ -100,7 +100,7 @@ async def demonstrate_first_session():
 
     # Add math agent with math tools
     math_agent = create_math_agent()
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         description="math_expert",
         worker=math_agent,
         enable_workflow_memory=True,  # Enable to save workflows later
@@ -108,7 +108,7 @@ async def demonstrate_first_session():
 
     # Add writer agent without tools
     writer_agent = create_writer_agent()
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         description="content_writer",
         worker=writer_agent,
         enable_workflow_memory=True,  # Enable to save workflows later
@@ -154,7 +154,7 @@ async def demonstrate_second_session():
 
     # Add workers with same descriptive names as before
     math_agent = create_math_agent()
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         description="math_expert",  # Same description = loads matching
         # workflow
         worker=math_agent,
@@ -162,7 +162,7 @@ async def demonstrate_second_session():
     )
 
     writer_agent = create_writer_agent()
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         description="content_writer",  # Same description = loads
         # matching workflow
         worker=writer_agent,

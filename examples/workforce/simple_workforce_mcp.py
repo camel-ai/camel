@@ -27,12 +27,14 @@ Example MCP client usage:
 - Call add_single_agent_worker to add new workers
 """
 
+import asyncio
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.societies.workforce import Workforce
 
 
-def main():
+async def main():
     """Create and run a simple workforce MCP server."""
 
     # Create a basic workforce
@@ -44,7 +46,7 @@ def main():
         content="You are a helpful analyst who can process various tasks.",
     )
     analyst = ChatAgent(system_message=analyst_msg)
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         description="General purpose analyst", worker=analyst
     )
 
@@ -61,10 +63,10 @@ def main():
 
     try:
         # This will start the server and block
-        mcp_server.run()
+        await mcp_server.run_stdio_async()
     except KeyboardInterrupt:
         print("\nServer stopped.")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
