@@ -245,8 +245,12 @@ async def test_pipeline_failed_task_continues_workflow():
     success_worker = SuccessfulWorker("Success Worker")
     fail_worker = FailingWorker("Fail Worker")
 
-    workforce.add_single_agent_worker("Success Worker", success_worker.worker)
-    workforce.add_single_agent_worker("Fail Worker", fail_worker.worker)
+    await workforce.add_single_agent_worker_async(
+        "Success Worker", success_worker.worker
+    )
+    await workforce.add_single_agent_worker_async(
+        "Fail Worker", fail_worker.worker
+    )
 
     # Build pipeline where middle task will fail
     workforce.pipeline_add("Task 1").pipeline_add(
@@ -295,7 +299,9 @@ async def test_pipeline_fork_with_one_branch_failing():
 
     # Add workers
     success_worker = SuccessfulWorker("Success Worker")
-    workforce.add_single_agent_worker("Success Worker", success_worker.worker)
+    await workforce.add_single_agent_worker_async(
+        "Success Worker", success_worker.worker
+    )
 
     # Build fork-join
     workforce.pipeline_add("Task A").pipeline_fork(
@@ -426,7 +432,8 @@ def test_all_pipeline_tasks_successful_with_pending():
     ), "Pipeline should not be marked successful with pending tasks"
 
 
-def test_pipeline_reset_clears_state():
+@pytest.mark.asyncio
+async def test_pipeline_reset_clears_state():
     """Test that reset() clears pipeline state correctly."""
     workforce = Workforce("Test Workforce")
 
@@ -438,7 +445,7 @@ def test_pipeline_reset_clears_state():
     assert workforce.mode == WorkforceMode.PIPELINE
 
     # Reset workforce
-    workforce.reset()
+    await workforce.reset_async()
 
     # Verify state was cleared
     assert len(workforce._pending_tasks) == 0
