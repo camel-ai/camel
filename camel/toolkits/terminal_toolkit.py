@@ -75,6 +75,7 @@ class TerminalToolkit(BaseToolkit):
         safe_mode: bool = True,
         need_terminal: bool = False,
     ):
+        super().__init__(timeout=timeout)
         self.use_docker_backend = use_docker_backend
         self.docker_container_name = docker_container_name
         self.timeout = timeout
