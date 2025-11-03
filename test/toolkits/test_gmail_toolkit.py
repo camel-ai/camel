@@ -581,7 +581,7 @@ def test_get_contacts(gmail_toolkit, mock_people_service):
         'nextPageToken': 'next_token',
     }
 
-    result = gmail_toolkit.get_contacts(query='John', max_results=10)
+    result = gmail_toolkit.get_contacts(max_results=10)
 
     assert result['success'] is True
     assert len(result['contacts']) == 1
@@ -711,7 +711,7 @@ def test_extract_attachments_regular_attachment(gmail_toolkit):
         }
     }
 
-    attachments = gmail_toolkit._extract_attachments(message)
+    attachments = gmail_toolkit._extract_attachments(message, include_inline=True)
 
     assert len(attachments) == 1
     assert attachments[0]['attachment_id'] == 'ANGjdJ123'
@@ -757,7 +757,7 @@ def test_extract_attachments_inline_image(gmail_toolkit):
         }
     }
 
-    attachments = gmail_toolkit._extract_attachments(message)
+    attachments = gmail_toolkit._extract_attachments(message, include_inline=True)
 
     assert len(attachments) == 2
     # First inline image (Content-ID)

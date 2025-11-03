@@ -24,7 +24,6 @@ from camel.utils import MCPServer
 logger = get_logger(__name__)
 
 SCOPES = [
-    'https://mail.google.com/',
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.modify',
@@ -59,7 +58,19 @@ class GmailToolkit(BaseToolkit):
         self._credentials = self._authenticate()
 
         self.gmail_service: Any = self._get_gmail_service()
-        self.people_service: Any = self._get_people_service()
+        self._people_service: Any = None
+
+    @property
+    def people_service(self) -> Any:
+        r"""Lazily initialize and return the Google People service."""
+        if self._people_service is None:
+            self._people_service = self._get_people_service()
+        return self._people_service
+
+    @people_service.setter
+    def people_service(self, service: Any) -> None:
+        r"""Allow overriding/injecting the People service (e.g., in tests)."""
+        self._people_service = service
 
     def send_email(
         self,
@@ -136,7 +147,8 @@ class GmailToolkit(BaseToolkit):
         r"""Reply to an email message.
 
         Args:
-            message_id (str): The ID of the message to reply to.
+            message_id (str): The ID of the message to reply to (found in
+                send_email/list_drafts results or users.messages.get).
             reply_body (str): The reply message body.
             reply_all (bool): Whether to reply to all recipients.
             is_html (bool): Whether the body is HTML format. Set to True when
@@ -156,12 +168,34 @@ class GmailToolkit(BaseToolkit):
                 .execute()
             )
 
-            # Extract headers
+            # Extract headers (single pass, case-insensitive)
             headers = original_message['payload'].get('headers', [])
-            subject = self._get_header_value(headers, 'Subject')
-            from_email = self._get_header_value(headers, 'From')
-            to_emails = self._get_header_value(headers, 'To')
-            cc_emails = self._get_header_value(headers, 'Cc')
+            subject = from_email = to_emails = cc_emails = None
+            missing = {'subject', 'from', 'to', 'cc'}
+
+            for header in headers:
+                name = (header.get('name') or '').lower()
+                if name not in missing:
+                    continue
+                value = header.get('value')
+                if name == 'subject':
+                    subject = value
+                elif name == 'from':
+                    from_email = value
+                elif name == 'to':
+                    to_emails = value
+                elif name == 'cc':
+                    cc_emails = value
+                missing.discard(name)
+                if not missing:
+                    break
+
+            # Extract identifiers for reply context
+            message_id_header = (
+                self._get_header_value(headers, 'Message-Id')
+                or self._get_header_value(headers, 'Message-ID')
+            )
+            thread_id = original_message.get('threadId')
 
             # Prepare reply subject
             if not subject.startswith('Re: '):
@@ -205,16 +239,21 @@ class GmailToolkit(BaseToolkit):
             else:
                 recipients = [from_email]
 
-            # Create reply message
+            # Create reply message with reply headers
             message = self._create_message(
-                recipients, subject, reply_body, is_html=is_html
+                recipients,
+                subject,
+                reply_body,
+                is_html=is_html,
+                in_reply_to=message_id_header or original_message.get('id'),
+                references=[message_id_header] if message_id_header else None,
             )
 
-            # Send reply
+            # Send reply in the same thread
             sent_message = (
                 self.gmail_service.users()
                 .messages()
-                .send(userId='me', body=message)
+                .send(userId='me', body={**message, 'threadId': thread_id})
                 .execute()
             )
 
@@ -241,7 +280,8 @@ class GmailToolkit(BaseToolkit):
         r"""Forward an email message.
 
         Args:
-            message_id (str): The ID of the message to forward.
+            message_id (str): The ID of the message to forward (found in
+                send_email/list_drafts results or users.messages.get).
             to (Union[str, List[str]]): Recipient email address(es).
             forward_body (Optional[str]): Additional message to include.
             cc (Optional[Union[str, List[str]]]): CC recipient email
@@ -267,11 +307,25 @@ class GmailToolkit(BaseToolkit):
                 .execute()
             )
 
-            # Extract headers
+            # Extract headers (single pass, case-insensitive)
             headers = original_message['payload'].get('headers', [])
-            subject = self._get_header_value(headers, 'Subject')
-            from_email = self._get_header_value(headers, 'From')
-            date = self._get_header_value(headers, 'Date')
+            subject = from_email = date = None
+            missing = {'subject', 'from', 'date'}
+
+            for header in headers:
+                name = (header.get('name') or '').lower()
+                if name not in missing:
+                    continue
+                value = header.get('value')
+                if name == 'subject':
+                    subject = value
+                elif name == 'from':
+                    from_email = value
+                elif name == 'date':
+                    date = value
+                missing.discard(name)
+                if not missing:
+                    break
 
             # Prepare forward subject
             if not subject.startswith('Fwd: '):
@@ -350,7 +404,7 @@ class GmailToolkit(BaseToolkit):
                     os.unlink(temp_file_path)
                 except Exception as e:
                     logger.warning(
-                        f"Failed to delete temp file {temp_file}: {e}"
+                        f"Failed to delete temp file {temp_file_path}: {e}"
                     )
 
             return {
@@ -466,6 +520,7 @@ class GmailToolkit(BaseToolkit):
         max_results: int = 10,
         include_spam_trash: bool = False,
         label_ids: Optional[List[str]] = None,
+        page_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Fetch emails with filters and pagination.
 
@@ -480,6 +535,8 @@ class GmailToolkit(BaseToolkit):
                 - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
                   'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
                 - Custom label IDs: Retrieved from list_gmail_labels() method.
+            page_token (Optional[str]): Pagination token from a previous
+                response. If provided, fetches the next page of results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the fetched emails.
@@ -501,7 +558,7 @@ class GmailToolkit(BaseToolkit):
             messages_result = (
                 self.gmail_service.users()
                 .messages()
-                .list(**request_params)
+                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
                 .execute()
             )
 
@@ -568,7 +625,8 @@ class GmailToolkit(BaseToolkit):
         r"""Modify labels on an email message.
 
         Args:
-            message_id (str): The ID of the message to modify.
+            message_id (str): The ID of the message to modify (found in
+                send_email/list_drafts results or users.messages.get).
             add_labels (Optional[List[str]]): List of label IDs to add to
                 the message.
                 Label IDs can be:
@@ -617,7 +675,9 @@ class GmailToolkit(BaseToolkit):
         r"""Move a message to trash.
 
         Args:
-            message_id (str): The ID of the message to move to trash.
+            message_id (str): The ID of the message to move to trash
+            (found in send_email/list_drafts results or 
+            users.messages.get).
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -651,7 +711,9 @@ class GmailToolkit(BaseToolkit):
         r"""Get an attachment from a message.
 
         Args:
-            message_id (str): The ID of the message containing the attachment.
+            message_id (str): The ID of the message containing the 
+                attachment (found in send_email/list_drafts results 
+                or users.messages.get).
             attachment_id (str): The ID of the attachment.
             save_path (Optional[str]): Path to save the attachment file.
 
@@ -698,6 +760,7 @@ class GmailToolkit(BaseToolkit):
         max_results: int = 10,
         include_spam_trash: bool = False,
         label_ids: Optional[List[str]] = None,
+        page_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""List email threads.
 
@@ -712,6 +775,8 @@ class GmailToolkit(BaseToolkit):
                 - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
                   'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
                 - Custom label IDs: Retrieved from list_gmail_labels() method.
+            page_token (Optional[str]): Pagination token from a previous
+                response. If provided, fetches the next page of results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the thread list.
@@ -733,7 +798,7 @@ class GmailToolkit(BaseToolkit):
             threads_result = (
                 self.gmail_service.users()
                 .threads()
-                .list(**request_params)
+                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
                 .execute()
             )
 
@@ -760,11 +825,13 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to list threads: %s", e)
             return {"error": f"Failed to list threads: {e!s}"}
 
-    def list_drafts(self, max_results: int = 10) -> Dict[str, Any]:
+    def list_drafts(self, max_results: int = 10, page_token: Optional[str] = None) -> Dict[str, Any]:
         r"""List email drafts.
 
         Args:
             max_results (int): Maximum number of drafts to fetch.
+            page_token (Optional[str]): Pagination token from a previous
+                response. If provided, fetches the next page of results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the draft list.
@@ -773,7 +840,11 @@ class GmailToolkit(BaseToolkit):
             drafts_result = (
                 self.gmail_service.users()
                 .drafts()
-                .list(userId='me', maxResults=max_results)
+                .list(
+                    userId='me',
+                    maxResults=max_results,
+                    **({"pageToken": page_token} if page_token else {})
+                )
                 .execute()
             )
 
@@ -882,12 +953,11 @@ class GmailToolkit(BaseToolkit):
         r"""Delete a Gmail label.
 
         Args:
-            label_id (str): List of label IDs to filter emails by.
-                Only emails with ALL of the specified labels will be returned.
-                Label IDs can be:
-                - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
-                  'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
-                - Custom label IDs: Retrieved from list_gmail_labels() method.
+            label_id (str): The ID of the user-created label to delete.
+                Retrieve the label ID from `list_gmail_labels()`.
+                Note: System labels (e.g., 'INBOX', 'SENT', 'DRAFT', 'SPAM',
+                'TRASH', 'UNREAD', 'STARRED', 'IMPORTANT',
+                'CATEGORY_PERSONAL', etc.) cannot be deleted.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -990,14 +1060,15 @@ class GmailToolkit(BaseToolkit):
 
     def get_contacts(
         self,
-        query: str = "",
         max_results: int = 100,
+        page_token: Optional[str] = None,
     ) -> Dict[str, Any]:
-        r"""Get contacts from Google People API.
+        r"""List connections from Google People API.
 
         Args:
-            query (str): Search query for contacts.
             max_results (int): Maximum number of contacts to fetch.
+            page_token (Optional[str]): Pagination token from a previous
+                response. If provided, fetches the next page of results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the contacts.
@@ -1012,14 +1083,11 @@ class GmailToolkit(BaseToolkit):
                 'pageSize': max_results,
             }
 
-            if query:
-                request_params['query'] = query
-
             # Search contacts
             contacts_result = (
                 self.people_service.people()
                 .connections()
-                .list(**request_params)
+                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
                 .execute()
             )
 
@@ -1140,6 +1208,17 @@ class GmailToolkit(BaseToolkit):
         client_id = os.environ.get('GOOGLE_CLIENT_ID')
         client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
 
+        if not client_id or not client_secret:
+            missing_vars = []
+            if not client_id:
+                missing_vars.append('GOOGLE_CLIENT_ID')
+            if not client_secret:
+                missing_vars.append('GOOGLE_CLIENT_SECRET')
+            raise ValueError(
+                f"Missing required environment variables: {', '.join(missing_vars)}. "
+                "Please set these in your .env file or environment variables."
+            )
+
         token_file = Path.home() / '.camel' / 'gmail_token.json'
         creds = None
 
@@ -1167,6 +1246,28 @@ class GmailToolkit(BaseToolkit):
             try:
                 creds.refresh(Request())
                 logger.info("Access token refreshed")
+                
+                # Save refreshed credentials to disk
+                token_file.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    with open(token_file, 'w') as f:
+                        json.dump(
+                            {
+                                'token': creds.token,
+                                'refresh_token': creds.refresh_token,
+                                'token_uri': creds.token_uri,
+                                'scopes': creds.scopes,
+                            },
+                            f,
+                        )
+                    os.chmod(token_file, 0o600)
+                    logger.info(f"Refreshed credentials saved to {token_file}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to save refreshed credentials to {token_file}: {e}. "
+                        "Token refreshed but not persisted."
+                    )
+                
                 return creds
             except Exception as e:
                 logger.warning(f"Token refresh failed: {e}")
@@ -1222,6 +1323,8 @@ class GmailToolkit(BaseToolkit):
         bcc_list: Optional[List[str]] = None,
         attachments: Optional[List[str]] = None,
         is_html: bool = False,
+        in_reply_to: Optional[str] = None,
+        references: Optional[List[str]] = None,
     ) -> Dict[str, str]:
         r"""Create a message object for sending."""
 
@@ -1239,6 +1342,12 @@ class GmailToolkit(BaseToolkit):
             message['cc'] = ', '.join(cc_list)
         if bcc_list:
             message['bcc'] = ', '.join(bcc_list)
+
+        # Set reply headers when provided
+        if in_reply_to:
+            message['In-Reply-To'] = in_reply_to
+        if references:
+            message['References'] = ' '.join(references)
 
         # Add body
         if is_html:
@@ -1280,19 +1389,25 @@ class GmailToolkit(BaseToolkit):
             )
 
             headers = message['payload'].get('headers', [])
+            # Build a name->value map in one pass (case-insensitive)
+            header_map = {}
+            for header in headers:
+                name = header.get('name')
+                if name:
+                    header_map[name.lower()] = header.get('value', '')
 
             return {
                 "message_id": message['id'],
                 "thread_id": message['threadId'],
                 "snippet": message.get('snippet', ''),
-                "subject": self._get_header_value(headers, 'Subject'),
-                "from": self._get_header_value(headers, 'From'),
-                "to": self._get_header_value(headers, 'To'),
-                "cc": self._get_header_value(headers, 'Cc'),
-                "bcc": self._get_header_value(headers, 'Bcc'),
-                "date": self._get_header_value(headers, 'Date'),
+                "subject": header_map.get('subject', ''),
+                "from": header_map.get('from', ''),
+                "to": header_map.get('to', ''),
+                "cc": header_map.get('cc', ''),
+                "bcc": header_map.get('bcc', ''),
+                "date": header_map.get('date', ''),
                 "body": self._extract_message_body(message),
-                "attachments": self._extract_attachments(message),
+                "attachments": self._extract_attachments(message, include_inline=True),
                 "label_ids": message.get('labelIds', []),
                 "size_estimate": message.get('sizeEstimate', 0),
             }
@@ -1494,7 +1609,6 @@ class GmailToolkit(BaseToolkit):
                 if text:
                     text_parts.append(text)
 
-            # Lines 1458-1462
             elif mime_type == 'text/html':
                 data = part.get('body', {}).get('data', '')
                 html_text = decode_text_data(data, 'HTML body')
@@ -1514,7 +1628,7 @@ class GmailToolkit(BaseToolkit):
         return '\n\n'.join(text_parts)
 
     def _extract_attachments(
-        self, message: Dict[str, Any]
+        self, message: Dict[str, Any], include_inline: bool = False
     ) -> List[Dict[str, Any]]:
         r"""Extract attachment information from message payload.
 
@@ -1577,7 +1691,10 @@ class GmailToolkit(BaseToolkit):
         if payload:
             find_attachments(payload)
 
-        return attachments
+        # Return based on include_inline toggle
+        if include_inline:
+            return attachments
+        return [att for att in attachments if not att['is_inline']]
 
     def _is_valid_email(self, email: str) -> bool:
         r"""Validate email address format."""
