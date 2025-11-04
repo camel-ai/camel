@@ -94,6 +94,7 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .zoominfo_toolkit import ZoomInfoToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -178,4 +179,5 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+     "ZoomInfoToolkit",
 ]
