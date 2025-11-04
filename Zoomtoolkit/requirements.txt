@@ -1,0 +1,10 @@
+# ZoomInfo Toolkit Dependencies
+requests>=2.25.0
+zi-api-auth-client>=1.0.0
+pyjwt>=2.8.0
+cryptography>=3.4.0
+
+# CAMEL-AI Framework Dependencies (for development)
+camel-ai>=0.1.0
+pytest>=7.0.0
+pytest-mock>=3.10.0
