@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aihubmix_model import AihubmixModel
 from .aiml_model import AIMLModel
 from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
@@ -106,4 +107,5 @@ __all__ = [
     'WatsonXModel',
     'QianfanModel',
     'CrynuxModel',
+    'AihubmixModel',
 ]

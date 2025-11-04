@@ -1084,6 +1084,11 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_aihubmix(self) -> bool:
+        r"""Returns whether this type of models is an aihubmix model."""
+        return self.value.startswith("aihubmix")
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -1718,6 +1723,7 @@ class ModelPlatformType(Enum):
     WATSONX = "watsonx"
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
+    AIHUBMIX = "aihubmix"
 
     @classmethod
     def from_name(cls, name):
