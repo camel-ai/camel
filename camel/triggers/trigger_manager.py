@@ -14,7 +14,7 @@
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
-from camel.societies.workforce.workforce import Workforce, WorkforceMode
+from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task
 from camel.triggers.adapters.database_adapter import DatabaseAdapter
 from camel.triggers.base_trigger import BaseTrigger, TriggerEvent
@@ -63,14 +63,10 @@ class TriggerManager:
             task = self._event_to_task(event)
 
             # Submit to workforce
-            if self.workforce.mode == WorkforceMode.PIPELINE:
-                # Add to pipeline
-                self.workforce._pending_tasks.append(task)
-            else:
+            if self.workforce:
                 # Process through normal workforce flow
-                await self.workforce.handle_decompose_append_task(
-                    task, reset=False
-                )
+                await self.workforce.process_task_async(task)
+                self.workforce.stop_gracefully()
 
             # Save execution record
             if self.database_adapter:

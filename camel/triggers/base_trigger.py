@@ -20,8 +20,6 @@ from typing import Any, Callable, Dict, List, Optional
 from pydantic import BaseModel
 
 from camel.logger import get_logger
-from camel.societies.workforce.task_channel import TaskChannel
-from camel.societies.workforce.workforce import Workforce
 
 logger = get_logger(__name__)
 
@@ -61,15 +59,11 @@ class BaseTrigger(ABC):
         name: str,
         description: str,
         config: Dict[str, Any],
-        workforce_instance: Optional[Workforce] = None,
-        task_channel: Optional[TaskChannel] = None,
     ):
         self.trigger_id = trigger_id
         self.name = name
         self.description = description
         self.config = config
-        self.workforce = workforce_instance
-        self.task_channel = task_channel
         self.state = TriggerState.INACTIVE
         self._callbacks: List[Callable[[TriggerEvent], None]] = []
         self._execution_history: List[Dict[str, Any]] = []
@@ -115,15 +109,6 @@ class BaseTrigger(ABC):
 
     async def _emit_trigger_event(self, event: TriggerEvent):
         """Emit trigger event to all callbacks"""
-        # Save to execution history
-        self._execution_history.append(
-            {
-                "timestamp": event.timestamp,
-                "trigger_id": event.trigger_id,
-                "payload_size": len(str(event.payload)),
-                "success": True,
-            }
-        )
 
         # Execute callbacks
         for callback in self._callbacks:
@@ -131,6 +116,17 @@ class BaseTrigger(ABC):
                 await callback(event) if asyncio.iscoroutinefunction(
                     callback
                 ) else callback(event)
+
+                # Save to execution history
+                self._execution_history.append(
+                    {
+                        "timestamp": event.timestamp,
+                        "trigger_id": event.trigger_id,
+                        "payload_size": len(str(event.payload)),
+                        "callback": callback.__name__,
+                        "success": True,
+                    }
+                )
             except Exception as e:
                 logger.error(f"Error in trigger callback: {e}")
 

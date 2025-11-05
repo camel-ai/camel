@@ -17,8 +17,13 @@ import asyncio
 from camel.societies.workforce.workforce import Workforce
 
 # from camel.triggers.schedule_trigger import ScheduleTrigger
+from camel.triggers.schedule_trigger import ScheduleTrigger, TimeUnit
 from camel.triggers.trigger_manager import TriggerManager
 from camel.triggers.webhook_trigger import WebhookTrigger
+
+
+async def say_hello(event):
+    print(f"Hello! In {event.timestamp} with payload: {event.payload}")
 
 
 async def setup_trigger_system():
@@ -33,20 +38,21 @@ async def setup_trigger_system():
         config={"port": 8085, "path": "/webhook/external", "host": "0.0.0.0"},
     )
 
-    # Setup schedule trigger
-    # schedule_trigger = ScheduleTrigger(
-    #     trigger_id="schedule_001",
-    #     name="Daily Report",
-    #     description="Generate daily reports",
-    #     config={
-    #         "interval": {"unit": "hours", "value": 24},
-    #         "task_content": "Generate daily analytics report"
-    #     }
-    # )
+    webhook_trigger.add_callback(say_hello)
+
+    # Create an interval trigger (every 30 seconds)
+    schedule_trigger = ScheduleTrigger.create_interval_trigger(
+        trigger_id="interval_001",
+        name="30 Second Interval",
+        description="Triggers every 30 seconds",
+        unit=TimeUnit.SECONDS,
+        value=30,
+    )
+    schedule_trigger.add_callback(say_hello)
 
     # Register triggers
     await trigger_manager.register_trigger(webhook_trigger)
-    # await trigger_manager.register_trigger(schedule_trigger)
+    await trigger_manager.register_trigger(schedule_trigger)
 
     # keep alive
     while True:
