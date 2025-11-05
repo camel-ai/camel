@@ -11,13 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aihubmix_model import AihubMixModel
 from .aiml_model import AIMLModel
+from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .cometapi_model import CometAPIModel
+from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
@@ -30,6 +34,7 @@ from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
+from .nebius_model import NebiusModel
 from .nemotron_model import NemotronModel
 from .netmind_model import NetmindModel
 from .novita_model import NovitaModel
@@ -40,6 +45,7 @@ from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
 from .ppio_model import PPIOModel
+from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -59,11 +65,13 @@ __all__ = [
     'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
+    'AMDModel',
     'MistralModel',
     'GroqModel',
     'StubModel',
     'ZhipuAIModel',
     'CohereModel',
+    'CometAPIModel',
     'ModelFactory',
     'ModelManager',
     'LiteLLMModel',
@@ -85,6 +93,7 @@ __all__ = [
     'QwenModel',
     'AWSBedrockModel',
     'ModelProcessingError',
+    'NebiusModel',
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',
@@ -96,4 +105,7 @@ __all__ = [
     'VolcanoModel',
     'LMStudioModel',
     'WatsonXModel',
+    'QianfanModel',
+    'CrynuxModel',
+    'AihubMixModel',
 ]

@@ -1,17 +1,17 @@
 <a id="camel.toolkits.dalle_toolkit"></a>
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit"></a>
 
-## DalleToolkit
+## OpenAIImageToolkit
 
 ```python
-class DalleToolkit(BaseToolkit):
+class OpenAIImageToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for image generation using OpenAI's
 DALL-E model.
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.__init__"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.__init__"></a>
 
 ### __init__
 
@@ -19,13 +19,13 @@ DALL-E model.
 def __init__(self, timeout: Optional[float] = None):
 ```
 
-Initializes a new instance of the DalleToolkit class.
+Initializes a new instance of the OpenAIImageToolkit class.
 
 **Parameters:**
 
 - **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.base64_to_image"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.base64_to_image"></a>
 
 ### base64_to_image
 
@@ -44,7 +44,7 @@ Converts a base64 encoded string into a PIL Image object.
   Optional[Image.Image]: The PIL Image object or None if conversion
 fails.
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.image_path_to_base64"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.image_path_to_base64"></a>
 
 ### image_path_to_base64
 
@@ -63,7 +63,7 @@ Converts the file path of an image to a Base64 encoded string.
   str: A Base64 encoded string representing the content of the image
 file.
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.image_to_base64"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.image_to_base64"></a>
 
 ### image_to_base64
 
@@ -86,7 +86,7 @@ message and returns None.
 
   str: A base64-encoded string of the image.
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.get_dalle_img"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.get_dalle_img"></a>
 
 ### get_dalle_img
 
@@ -106,7 +106,7 @@ The generated image is saved to the specified directory.
 
   str: The path to the saved image.
 
-<a id="camel.toolkits.dalle_toolkit.DalleToolkit.get_tools"></a>
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.get_tools"></a>
 
 ### get_tools
 

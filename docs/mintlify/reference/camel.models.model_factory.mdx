@@ -21,6 +21,9 @@ def create(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     timeout: Optional[float] = None,
+    max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
     **kwargs
 ):
 ```
@@ -35,7 +38,10 @@ Creates an instance of `BaseModelBackend` of the specified type.
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter(ModelType.GPT_4O_MINI)` will be used if the model platform didn't provide official token counter. (default: :obj:`None`)
 - **api_key** (Optional[str], optional): The API key for authenticating with the model service. (default: :obj:`None`)
 - **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
-- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. (default: :obj:`None`) **kwargs: Additional model-specific parameters that will be passed to the model constructor. For example, Azure OpenAI models may require `api_version`, `azure_deployment_name`, `azure_ad_token_provider`, and `azure_ad_token`.
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous client instance. Supported by models that use OpenAI-compatible APIs . The client should implement the appropriate client interface for the platform. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous client instance. Supported by models that use OpenAI-compatible APIs. The client should implement the appropriate async client interface for the platform. (default: :obj:`None`) **kwargs: Additional model-specific parameters that will be passed to the model constructor. For example, Azure OpenAI models may require `api_version`, `azure_deployment_name`, `azure_ad_token_provider`, and `azure_ad_token`.
 
 **Returns:**
 

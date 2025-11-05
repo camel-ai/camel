@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -24,12 +24,15 @@ class ToolCallingRecord(BaseModel):
         args (Dict[str, Any]): The dictionary of arguments passed to the tool.
         result (Any): The execution result of calling this tool.
         tool_call_id (str): The ID of the tool call, if available.
+        images (Optional[List[str]]): List of base64-encoded images returned
+            by the tool, if any.
     """
 
     tool_name: str
     args: Dict[str, Any]
     result: Any
     tool_call_id: str
+    images: Optional[List[str]] = None
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.

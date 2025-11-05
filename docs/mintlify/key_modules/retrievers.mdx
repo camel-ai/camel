@@ -1,115 +1,133 @@
 ---
 title: "Retrievers"
+icon: code-compare
 ---
 
-For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/advanced_features/agents_with_rag.ipynb)
+## What Are Retrievers?
 
-## 1. Concept
-The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
+<Card title="Concept" icon="laptop-file">
+Retrievers are your AI search engine for large text collections or knowledge bases. They let you find the most relevant information based on a query—using either advanced embeddings (semantic search) or classic keyword matching.
+</Card>
 
+<Tip>
+Want a deep dive? Check out the <a href="/cookbooks/advanced_features/agents_with_rag">RAG Cookbook</a> for advanced agent + retrieval use cases.
+</Tip>
 
-## 2. Types
+## Types of Retrievers
 
-### 2.1. Vector Retriever
-Vector Retriever typically refers to a method or system used in information retrieval and machine learning that utilizes vector representations of data. This approach is based on converting data, like text, images, or other forms of information, into numerical vectors in a high-dimensional space.
+<CardGroup cols={2}>
+  <Card title="Vector Retriever" icon="box">
+    Converts documents into vectors using an embedding model, stores them, and retrieves by semantic similarity. Best for “meaning-based” search, RAG, and LLM workflows.
+    <ul>
+      <li>Chunks data, embeds with OpenAI or custom model</li>
+      <li>Stores in vector DB (like Qdrant)</li>
+      <li>Finds the most relevant info even with different wording</li>
+    </ul>
+  </Card>
+  <Card title="Keyword Retriever" icon="hashtag">
+    Classic keyword search! Breaks documents and queries into tokens/keywords, and matches on those.
+    <ul>
+      <li>Tokenizes documents</li>
+      <li>Indexes by keyword</li>
+      <li>Fast, transparent, great for exact matches</li>
+    </ul>
+  </Card>
+</CardGroup>
 
-Here's a brief overview of how it works:
+## How To Use
 
-- Embedding Model: First, it uses an embedding model. This model turns text into a mathematical form (vectors).
+<Card title="Semantic Retrieval with VectorRetriever" icon="box">
+This example uses OpenAI embeddings and Qdrant vector storage for semantic search.
 
-- Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a vector storage.
-
-- Retrieving Information: When we ask a question or make a query, the embedding model translates our question into vector and then searches in this vector storage for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
-
-
-### 2.2. Keyword Retriever
-The Keyword Retriever is designed to retrieve relevant information based on keyword matching. Unlike the Vector Retriever that works with vector representations of data, the Keyword Retriever operates by identifying keywords or specific terms within documents and queries to find matches.
-
-Here's a brief overview of how it works:
-
-- Document Preprocessing: Before using the retriever, the documents are preprocessed to tokenize and index the keywords within them. Tokenization is the process of splitting text into individual words or phrases, making it easier to identify keywords.
-
-- Query Parsing: When we input a question or query, the retriever parses the query to extract relevant keywords. This involves breaking down the query into its constituent terms.
-
-- Keyword Matching: Once the keywords from the query are identified, the retriever searches the preprocessed documents for occurrences of these keywords. It checks for exact matches of the keywords within the documents.
-
-- Ranking and Retrieval: After finding documents that contain the queried keywords, the retriever ranks these documents based on various factors, such as the frequency of keyword matches, document relevance, or other scoring methods. The top-ranked documents are then retrieved as the most relevant results.
-
-## 3. Get Started
-
-### 3.1. Using Vector Retriever
-
-**Initialize VectorRetrieve:**
-To get started, we need to initialize the `VectorRetriever` with an optional embedding model and storage. If we don't provide an embedding model, it will use the default `OpenAIEmbedding`. Here's how to do it:
-```python
+<CodeGroup>
+```python vector_retriever_setup.py
 from camel.embeddings import OpenAIEmbedding
 from camel.retrievers import VectorRetriever
-
-# Initialize the VectorRetriever with an embedding model
-# Create or initialize a vector storage (e.g., QdrantStorage)
 from camel.storages.vectordb_storages import QdrantStorage
 
+# Set up vector DB for embeddings
 vector_storage = QdrantStorage(
     vector_dim=OpenAIEmbedding().get_output_dim(),
     collection_name="my first collection",
     path="storage_customized_run",
 )
-
 vr = VectorRetriever(embedding_model=OpenAIEmbedding(), storage=vector_storage)
 ```
+</CodeGroup>
 
-**Embed and Store Data:**
-Before we can retrieve information, we need to prepare the data and store it in vector storage. The `process` method takes care of this for us. It processes content from a file or URL, divides it into chunks, and stores their embeddings in the specified vector storage.
-```python
-# Provide the path to our content input (can be a file or URL)
+<CodeGroup>
+```python vector_retriever_ingest.py
+# Embed and store your data (URL or file)
 content_input_path = "https://www.camel-ai.org/"
-
-# Embed and store chunks of data in the vector storage
 vr.process(content=content_input_path)
 ```
+</CodeGroup>
 
-**Execute a Query:**
-Now that our data is stored, we can execute a query to retrieve information based on a search string. The `query` method executes the query and compiles the retrieved results into a string.
-```python
-# Specify our query string
+<CodeGroup>
+```python vector_retriever_query.py
+# Run a query for semantic search
 query = "What is CAMEL"
-
-# Execute the query and retrieve results
 results = vr.query(query=query, similarity_threshold=0)
 print(results)
 ```
-```markdown
->>>  [{'similarity score': '0.812884257383057', 'content path': 'https://www.camel-ai.org/', 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.camel-ai.org/', 'link_urls': ['/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', 'https://github.com/camel-ai/camel'], 'link_texts': [None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None], 'emphasized_text_contents': ['Skip to main content', 'Skip to navigation', 'CAMEL-AI', 'CAMEL-AI', 'CAMEL:\xa0 Communicative Agents for "Mind" Exploration of Large Language Model Society', 'https://github.com/camel-ai/camel'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span']}, 'text': 'Search this site\n\nSkip to main content\n\nSkip to navigation\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nMoreHomeResearchAgentTrustAgent AppData Explorer AppChatBotDocsGithub RepoTeamSponsors\n\nCAMEL:\xa0 Communicative Agents for "Mind" Exploration of Large Language Model Society\n\nhttps://github.com/camel-ai/camel'}]
+```markdown vector_retriever_output.md
+>>>  [{'similarity score': '0.81...', 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': '...CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}]
 ```
+</CodeGroup>
+</Card>
 
-### 3.2. Using Auto Retriever
+<Card title="AutoRetriever: Quick RAG with One Call" icon="zap">
+AutoRetriever simplifies everything: just specify storage and content, and it handles embedding, storage, and querying.
 
-To simplify the retrieval process further, we can use the `AutoRetriever` method. This method handles both embedding and storing data and executing queries. It's particularly useful when dealing with multiple content input paths.
-```python
+<CodeGroup>
+```python auto_retriever.py
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
-# Set the vector storage local path and the storage type
-ar = AutoRetriever(vector_storage_local_path="camel/retrievers",storage_type=StorageType.QDRANT)
-
-# Run the auto vector retriever
-retrieved_info = ar.run_vector_retriever(
-    contents=[
-        "https://www.camel-ai.org/",  # Example remote url
-    ],
-    query="What is CAMEL-AI",
-    return_detailed_info=True, # Set this as true is we want to get detailed info including metadata
+ar = AutoRetriever(
+    vector_storage_local_path="camel/retrievers",
+    storage_type=StorageType.QDRANT,
 )
 
+retrieved_info = ar.run_vector_retriever(
+    contents=["https://www.camel-ai.org/"],   # One or many URLs/files
+    query="What is CAMEL-AI",
+    return_detailed_info=True,
+)
 print(retrieved_info)
 ```
-```markdown
->>>  Original Query:
->>>  {What is CAMEL-AI}
->>>  Retrieved Context:
->>>  {'similarity score': '0.8380731206379989', 'content path': 'https://www.camel-ai.org/', 'metadata': {'emphasized_text_contents': ['Mission', 'CAMEL-AI.org', 'is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.', 'Join us via', 'Slack', 'Discord', 'or'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span', 'span'], 'filetype': 'text/html', 'languages': ['eng'], 'link_texts': [None, None, None], 'link_urls': ['#h.3f4tphhd9pn8', 'https://join.slack.com/t/camel-ai/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA', 'https://discord.gg/CNcNpquyDc'], 'page_number': 1, 'url': 'https://www.camel-ai.org/'}, 'text': 'Mission\n\nCAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.\n\nJoin us via\n\nSlack\n\nDiscord\n\nor'}
+```markdown auto_retriever_output.md
+>>> Original Query: {What is CAMEL-AI}
+>>> Retrieved Context:
+>>> {'similarity score': '0.83...', 'content path': 'https://www.camel-ai.org/', 'metadata': {...}, 'text': 'Mission\n\nCAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents...'}
 ```
+</CodeGroup>
 
-That's it! We've successfully set up and used the Retriever Module to retrieve information based on queries from our data collection.
+<Tip>
+Use AutoRetriever for fast experiments and RAG workflows; for advanced control, use VectorRetriever directly.
+</Tip>
+</Card>
 
-Feel free to customize the code according to your specific use case and data sources!
+<Card title="KeywordRetriever (Classic Search)" icon="hashtag">
+For simple, blazing-fast search by keyword—use KeywordRetriever.  
+Great for small data, transparency, or keyword-driven tasks.  
+*(API and code example coming soon—see RAG Cookbook for details.)*
+</Card>
+
+<CardGroup cols={2}>
+  <Card
+    title="See RAG Agents in Action"
+    icon="rocket"
+    href="../cookbooks/advanced_features/agents_with_rag.ipynb"
+  >
+    Build retrieval-augmented agents using these retrievers.
+  </Card>
+  <Card
+    title="Reference API"
+    icon="book"
+    href="/reference/#retrievers"
+  >
+    Full configuration and options for all retriever classes.
+  </Card>
+</CardGroup>
+

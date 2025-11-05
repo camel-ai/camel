@@ -15,7 +15,6 @@
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -25,15 +24,9 @@ from camel.utils import print_text_animated
 toolkit = CodeExecutionToolkit(verbose=True)
 tools = toolkit.get_tools()
 
-# set up LLM model
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 
@@ -84,12 +77,17 @@ Weng earned $10.20 for babysitting for 51 minutes at a rate of $12 per hour.
 ===============================================================================
 """
 
+# Example 3: Using E2B Code Interpreter (Cloud-based)
+# Note: Requires E2B_API_KEY environment variable to be set
 agent_with_e2b = ChatAgent(
     assistant_sys_msg,
     model,
     tools=CodeExecutionToolkit(verbose=True, sandbox="e2b").get_tools(),
 )
-agent_with_e2b.reset()
+
+# Configure E2B with environment variables:
+# export E2B_API_KEY="your_api_key_here"
+# export E2B_DOMAIN="your-custom-e2b-provider.com"  # Optional, for custom E2B-compatible providers
 
 print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 

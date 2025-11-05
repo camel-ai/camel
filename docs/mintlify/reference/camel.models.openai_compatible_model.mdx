@@ -18,6 +18,9 @@ Constructor for model backend supporting OpenAI compatibility.
 - **url** (str): The url to the model service.
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide OpenAI-compatible clients (e.g., ArealOpenAI). The client should implement the OpenAI client interface with `.chat.completions.create()` and `.beta.chat. completions.parse()` methods. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncOpenAI client interface. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the OpenAI client initialization. These can include parameters like 'organization', 'default_headers', 'http_client', etc. Ignored if custom clients are provided.
 
 <a id="camel.models.openai_compatible_model.OpenAICompatibleModel.__init__"></a>
 
@@ -31,7 +34,11 @@ def __init__(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
+    **kwargs: Any
 ):
 ```
 
@@ -61,6 +68,8 @@ Runs inference of OpenAI chat completion.
   Union[ChatCompletion, Stream[ChatCompletionChunk]]:
 `ChatCompletion` in the non-stream mode, or
 `Stream[ChatCompletionChunk]` in the stream mode.
+`ChatCompletionStreamManager[BaseModel]` for
+structured output streaming.
 
 <a id="camel.models.openai_compatible_model.OpenAICompatibleModel._request_chat_completion"></a>
 
@@ -87,6 +96,21 @@ def _request_parse(
 ):
 ```
 
+<a id="camel.models.openai_compatible_model.OpenAICompatibleModel._request_stream_parse"></a>
+
+### _request_stream_parse
+
+```python
+def _request_stream_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Request streaming structured output parsing.
+
 <a id="camel.models.openai_compatible_model.OpenAICompatibleModel.token_counter"></a>
 
 ### token_counter
@@ -111,11 +135,3 @@ def stream(self):
 **Returns:**
 
   bool: Whether the model is in stream mode.
-
-<a id="camel.models.openai_compatible_model.OpenAICompatibleModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```

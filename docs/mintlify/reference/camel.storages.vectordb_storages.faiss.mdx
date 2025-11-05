@@ -23,7 +23,16 @@ The detailed information about FAISS is available at:
 - **distance** (VectorDistance, optional): The distance metric for vector comparison (default: :obj:`VectorDistance.COSINE`)
 - **nlist** (int, optional): Number of cluster centroids for IVF indexes. Only used if index_type includes 'IVF'. (default: :obj:`100`)
 - **m** (int, optional): HNSW parameter. Number of connections per node. Only used if index_type includes 'HNSW'. (default: :obj:`16`) **kwargs (Any): Additional keyword arguments.
-- **Notes**: - FAISS offers various index types optimized for different use cases: - 'Flat': Exact search, but slowest for large datasets - 'IVF': Inverted file index, good balance of speed and recall - 'HNSW': Hierarchical Navigable Small World, fast with high recall - 'PQ': Product Quantization for memory-efficient storage - The choice of index should be based on your specific requirements for search speed, memory usage, and accuracy.
+
+**Note:**
+
+- FAISS offers various index types optimized for different use cases:
+- 'Flat': Exact search, but slowest for large datasets
+- 'IVF': Inverted file index, good balance of speed and recall
+- 'HNSW': Hierarchical Navigable Small World, fast with high recall
+- 'PQ': Product Quantization for memory-efficient storage
+- The choice of index should be based on your specific requirements
+for search speed, memory usage, and accuracy.
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage.__init__"></a>
 
@@ -181,6 +190,14 @@ filters.
 
 - **ids** (Optional[List[str]], optional): List of unique identifiers for the vectors to be deleted.
 - **payload_filter** (Optional[Dict[str, Any]], optional): A filter for the payload to delete points matching specific conditions. **kwargs (Any): Additional keyword arguments.
+
+**Note:**
+
+- FAISS does not support efficient single vector removal for most
+index types. This implementation recreates the index without the
+deleted vectors, which can be inefficient for large datasets.
+- If both `ids` and `payload_filter` are provided, both filters
+will be applied (vectors matching either will be deleted).
 
 <a id="camel.storages.vectordb_storages.faiss.FaissStorage.status"></a>
 

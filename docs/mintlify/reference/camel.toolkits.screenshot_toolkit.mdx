@@ -1,0 +1,99 @@
+<a id="camel.toolkits.screenshot_toolkit"></a>
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit"></a>
+
+## ScreenshotToolkit
+
+```python
+class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
+```
+
+A toolkit for taking screenshots.
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the ScreenshotToolkit.
+
+**Parameters:**
+
+- **working_directory** (str, optional): The directory path where notes will be stored. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `camel_working_dir`.
+- **timeout** (Optional[float]): Timeout for API requests in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.read_image"></a>
+
+### read_image
+
+```python
+def read_image(self, image_path: str, instruction: str = ''):
+```
+
+Analyzes an image from a local file path.
+
+This function enables you to "see" and interpret an image from a
+file. It's useful for tasks where you need to understand visual
+information, such as reading a screenshot of a webpage or a diagram.
+
+**Parameters:**
+
+- **image_path** (str): The local file path to the image. For example: 'screenshots/login_page.png'.
+- **instruction** (str, optional): Specific instructions for what to look for or what to do with the image. For example: "What is the main headline on this page?" or "Find the 'Submit' button.".
+
+**Returns:**
+
+  str: The response after analyzing the image, which could be a
+description, an answer, or a confirmation of an action.
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.take_screenshot_and_read_image"></a>
+
+### take_screenshot_and_read_image
+
+```python
+def take_screenshot_and_read_image(
+    self,
+    filename: str,
+    save_to_file: bool = True,
+    read_image: bool = True,
+    instruction: Optional[str] = None
+):
+```
+
+Captures a screenshot of the entire screen.
+
+This function can save the screenshot to a file and optionally analyze
+it. It's useful for capturing the current state of the UI for
+documentation, analysis, or to guide subsequent actions.
+
+**Parameters:**
+
+- **filename** (str): The name for the screenshot file (e.g., "homepage.png"). The file is saved in a `screenshots` subdirectory within the working directory. Must end with `.png`. (default: :obj:`None`)
+- **save_to_file** (bool, optional): If `True`, saves the screenshot to a file. (default: :obj:`True`)
+- **read_image** (bool, optional): If `True`, the agent will analyze the screenshot. `save_to_file` must also be `True`. (default: :obj:`True`)
+- **instruction** (Optional[str], optional): A specific question or command for the agent regarding the screenshot, used only if `read_image` is `True`. For example: "Confirm that the user is logged in.".
+
+**Returns:**
+
+  str: A confirmation message indicating success or failure,
+including the file path if saved, and the agent's response
+if `read_image` is `True`.
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of screenshot functions.

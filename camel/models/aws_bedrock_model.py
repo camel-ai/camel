@@ -13,17 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Optional, Union
 
-from openai import AsyncStream
-from pydantic import BaseModel
-
-from camel.configs import BEDROCK_API_PARAMS, BedrockConfig
-from camel.messages import OpenAIMessage
+from camel.configs import BedrockConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
     ModelType,
 )
 from camel.utils import BaseTokenCounter, api_keys_required
@@ -50,6 +44,10 @@ class AWSBedrockModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
@@ -69,6 +67,8 @@ class AWSBedrockModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = BedrockConfig().as_dict()
@@ -84,29 +84,6 @@ class AWSBedrockModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        raise NotImplementedError(
-            "AWS Bedrock does not support async inference."
-        )
-
-    def check_model_config(self):
-        r"""Check whether the input model configuration contains unexpected
-        arguments.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected argument for this model class.
-        """
-        for param in self.model_config_dict:
-            if param not in BEDROCK_API_PARAMS:
-                raise ValueError(
-                    f"Invalid parameter '{param}' in model_config_dict. "
-                    f"Valid parameters are: {BEDROCK_API_PARAMS}"
-                )

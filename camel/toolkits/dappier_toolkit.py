@@ -126,22 +126,22 @@ class DappierToolkit(BaseToolkit):
             query (str): The user query for retrieving recommendations.
             data_model_id (str, optional): The data model ID to use for
                 recommendations. Data model IDs always start with the prefix
-                "dm_". (default: :obj: `dm_01j0pb465keqmatq9k83dthx34`)
+                "dm_". (default: :obj:`dm_01j0pb465keqmatq9k83dthx34`)
             similarity_top_k (int, optional): The number of top documents to
-                retrieve based on similarity. (default: :obj: `9`)
+                retrieve based on similarity. (default: :obj:`9`)
             ref (Optional[str], optional): The site domain where AI
-                recommendations should be displayed. (default: :obj: `None`)
+                recommendations should be displayed. (default: :obj:`None`)
             num_articles_ref (int, optional): The minimum number of articles
                 to return from the specified reference domain (`ref`). The
                 remaining articles will come from other sites in the RAG
-                model. (default: :obj: `0`)
+                model. (default: :obj:`0`)
             search_algorithm (Literal[
                 "most_recent",
                 "semantic",
                 "most_recent_semantic",
                 "trending",
                 ], optional): The search algorithm to use for retrieving
-                articles. (default: :obj: `most_recent`)
+                articles. (default: :obj:`most_recent`)
 
         Returns:
             List[Dict[str, str]]: A list of recommended articles or content

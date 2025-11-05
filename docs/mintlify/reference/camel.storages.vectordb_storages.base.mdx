@@ -12,12 +12,11 @@ Encapsulates information about a vector's unique identifier and its
 payload, which is primarily used as a data transfer object when saving
 to vector storage.
 
-Attributes:
-vector (List[float]): The numerical representation of the vector.
-id (str, optional): A unique identifier for the vector. If not
-provided, an random uuid will be assigned.
-payload (Optional[Dict[str, Any]], optional): Any additional metadata
-or information related to the vector. (default: :obj:`None`)
+**Parameters:**
+
+- **vector** (List[float]): The numerical representation of the vector.
+- **id** (str, optional): A unique identifier for the vector. If not provided, an random uuid will be assigned.
+- **payload** (Optional[Dict[str, Any]], optional): Any additional metadata or information related to the vector. (default: :obj:`None`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQuery"></a>
 
@@ -29,11 +28,10 @@ class VectorDBQuery(BaseModel):
 
 Represents a query to a vector database.
 
-Attributes:
-query_vector (List[float]): The numerical representation of the query
-vector.
-top_k (int, optional): The number of top similar vectors to retrieve
-from the database. (default: :obj:`1`)
+**Parameters:**
+
+- **query_vector** (List[float]): The numerical representation of the query vector.
+- **top_k** (int, optional): The number of top similar vectors to retrieve from the database. (default: :obj:`1`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQuery.__init__"></a>
 
@@ -65,10 +63,10 @@ class VectorDBQueryResult(BaseModel):
 
 Encapsulates the result of a query against a vector database.
 
-Attributes:
-record (VectorRecord): The target vector record.
-similarity (float): The similarity score between the query vector and
-the record.
+**Parameters:**
+
+- **record** (VectorRecord): The target vector record.
+- **similarity** (float): The similarity score between the query vector and the record.
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQueryResult.create"></a>
 
@@ -96,9 +94,10 @@ class VectorDBStatus(BaseModel):
 
 Vector database status.
 
-Attributes:
-vector_dim (int): The dimension of stored vectors.
-vector_count (int): The number of stored vectors.
+**Parameters:**
+
+- **vector_dim** (int): The dimension of stored vectors.
+- **vector_count** (int): The number of stored vectors.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage"></a>
 

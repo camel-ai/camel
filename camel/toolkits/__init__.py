@@ -23,7 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
-from .dalle_toolkit import DalleToolkit
+from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -31,7 +31,7 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -40,6 +40,8 @@ from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
+from .wechat_official_toolkit import WeChatOfficialToolkit
+from .dingtalk import DingtalkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -61,22 +63,37 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_write_toolkit import FileWriteToolkit
+from .file_toolkit import FileToolkit, FileWriteToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
-from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
+from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .resend_toolkit import ResendToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
-
+from .task_planning_toolkit import TaskPlanningToolkit
+from .hybrid_browser_toolkit import HybridBrowserToolkit
+from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
+from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
+from .craw4ai_toolkit import Crawl4AIToolkit
+from .markitdown_toolkit import MarkItDownToolkit
+from .note_taking_toolkit import NoteTakingToolkit
+from .message_agent_toolkit import AgentCommunicationToolkit
+from .web_deploy_toolkit import WebDeployToolkit
+from .screenshot_toolkit import ScreenshotToolkit
+from .message_integration import ToolkitMessageIntegration
+from .context_summarizer_toolkit import ContextSummarizerToolkit
+from .notion_mcp_toolkit import NotionMCPToolkit
+from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
+from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -91,7 +108,9 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'DalleToolkit',
+    'WeChatOfficialToolkit',
+    'DingtalkToolkit',
+    'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
@@ -124,20 +143,39 @@ __all__ = [
     'ImageAnalysisToolkit',
     'BrowserToolkit',
     'AsyncBrowserToolkit',
-    'FileWriteToolkit',
+    'FileToolkit',
+    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
     'DataCommonsToolkit',
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
-    'OpenAIAgentToolkit',
     'SearxNGToolkit',
     'JinaRerankerToolkit',
+    'OrigeneToolkit',
     'PulseMCPSearchToolkit',
     'KlavisToolkit',
     'ACIToolkit',
     'PlaywrightMCPToolkit',
+    'ResendToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
+    'OpenAIImageToolkit',  # Backward compatibility
+    'TaskPlanningToolkit',
+    'HybridBrowserToolkit',
+    'EdgeOnePagesMCPToolkit',
+    'GoogleDriveMCPToolkit',
+    'Crawl4AIToolkit',
+    'MarkItDownToolkit',
+    'NoteTakingToolkit',
+    'AgentCommunicationToolkit',
+    'WebDeployToolkit',
+    'ScreenshotToolkit',
+    'RegisteredAgentToolkit',
+    'ToolkitMessageIntegration',
+    'ContextSummarizerToolkit',
+    'NotionMCPToolkit',
+    'VertexAIVeoToolkit',
+    'MinimaxMCPToolkit',
 ]

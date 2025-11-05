@@ -13,17 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Create a Model
-model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=model_config_dict,
 )
 
 # Initialize the ThinkingToolkit

@@ -13,15 +13,25 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from camel.configs import ZHIPUAI_API_PARAMS, ZhipuAIConfig
+from pydantic import BaseModel
+
+from camel.configs import ZhipuAIConfig
+from camel.logger import get_logger
+from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import (
+    ChatCompletion,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
+
+logger = get_logger(__name__)
 
 
 class ZhipuAIModel(OpenAICompatibleModel):
@@ -46,6 +56,10 @@ class ZhipuAIModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -61,6 +75,8 @@ class ZhipuAIModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ZhipuAIConfig().as_dict()
@@ -76,19 +92,55 @@ class ZhipuAIModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
 
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to ZhipuAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in ZHIPUAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into ZhipuAI model backend."
-                )
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise

@@ -123,6 +123,7 @@ class AsyncBaseBrowser:
         cache_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         cookie_json_path: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
     ):
         r"""
         Initialize the asynchronous browser core.
@@ -136,7 +137,11 @@ class AsyncBaseBrowser:
             cookie_json_path (Optional[str]): Path to a JSON file containing
                 authentication cookies and browser storage state. If provided
                 and the file exists, the browser will load this state to
-                maintain authenticated sessions without requiring manual login.
+                maintain authenticated sessions. This is primarily used when
+                `user_data_dir` is not set.
+            user_data_dir (Optional[str]): The directory to store user data
+                for persistent context. If None, a fresh browser instance
+                is used without saving data. (default: :obj:`None`)
 
         Returns:
             None
@@ -151,6 +156,7 @@ class AsyncBaseBrowser:
         self.playwright = async_playwright()
         self.page_history: list[Any] = []
         self.cookie_json_path = cookie_json_path
+        self.user_data_dir = user_data_dir
         self.playwright_server: Any = None
         self.playwright_started: bool = False
         self.browser: Any = None
@@ -162,6 +168,10 @@ class AsyncBaseBrowser:
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
+
+        # Create user data directory only if specified
+        if self.user_data_dir:
+            os.makedirs(self.user_data_dir, exist_ok=True)
 
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -183,23 +193,56 @@ class AsyncBaseBrowser:
             await self._ensure_browser_installed()
             self.playwright_server = await self.playwright.start()
             self.playwright_started = True
-        # Launch the browser asynchronously.
-        self.browser = await self.playwright_server.chromium.launch(
-            headless=self.headless, channel=self.channel
+
+        browser_launch_args = [
+            "--disable-blink-features=AutomationControlled",  # Basic stealth
+        ]
+
+        user_agent_string = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
         )
-        # Check if cookie file exists before using it to maintain
-        # authenticated sessions. This prevents errors when the cookie file
-        # doesn't exist
-        if self.cookie_json_path and os.path.exists(self.cookie_json_path):
-            self.context = await self.browser.new_context(
-                accept_downloads=True, storage_state=self.cookie_json_path
+
+        if self.user_data_dir:
+            self.context = await (
+                self.playwright_server.chromium.launch_persistent_context(
+                    user_data_dir=self.user_data_dir,
+                    headless=self.headless,
+                    channel=self.channel,
+                    accept_downloads=True,
+                    user_agent=user_agent_string,
+                    java_script_enabled=True,
+                    args=browser_launch_args,
+                )
             )
+            self.browser = None  # Not using a separate browser instance
+            if len(self.context.pages) > 0:  # Persistent context might
+                # reopen pages
+                self.page = self.context.pages[0]
+            else:
+                self.page = await self.context.new_page()
         else:
-            self.context = await self.browser.new_context(
-                accept_downloads=True,
+            # Launch a fresh browser instance
+            self.browser = await self.playwright_server.chromium.launch(
+                headless=self.headless,
+                channel=self.channel,
+                args=browser_launch_args,
             )
-        # Create a new page asynchronously.
-        self.page = await self.context.new_page()
+
+            new_context_kwargs: Dict[str, Any] = {
+                "accept_downloads": True,
+                "user_agent": user_agent_string,
+                "java_script_enabled": True,
+            }
+            if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+                new_context_kwargs["storage_state"] = self.cookie_json_path
+
+            self.context = await self.browser.new_context(**new_context_kwargs)
+            self.page = await self.context.new_page()
+
+        assert self.context is not None
+        assert self.page is not None
 
     def init(self) -> Coroutine[Any, Any, None]:
         r"""Initialize the browser asynchronously."""
@@ -827,7 +870,14 @@ class AsyncBaseBrowser:
 
     async def async_close(self) -> None:
         r"""Asynchronously close the browser."""
-        await self.browser.close()
+        if self.context is not None:
+            await self.context.close()
+        if self.browser is not None:  # Only close browser if it was
+            # launched separately
+            await self.browser.close()
+        if self.playwright_server and self.playwright_started:
+            await self.playwright_server.stop()
+            self.playwright_started = False
 
     def close(self) -> Coroutine[Any, Any, None]:
         r"""Close the browser."""
@@ -943,6 +993,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
         cookie_json_path: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -966,6 +1017,8 @@ class AsyncBrowserToolkit(BaseToolkit):
                 maintain authenticated sessions without requiring manual
                 login.
                 (default: :obj:`None`)
+            user_data_dir (Optional[str]): The directory to store user data
+                for persistent context. (default: :obj:`"user_data_dir/"`)
         """
         super().__init__()
         self.browser = AsyncBaseBrowser(
@@ -973,6 +1026,7 @@ class AsyncBrowserToolkit(BaseToolkit):
             cache_dir=cache_dir,
             channel=channel,
             cookie_json_path=cookie_json_path,
+            user_data_dir=user_data_dir,
         )
 
         self.history_window = history_window
@@ -991,7 +1045,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
-        r"""Initialize the agent."""
+        r"""Initialize the planning and web agents."""
         from camel.agents.chat_agent import ChatAgent
 
         if self.web_agent_model is None:
@@ -1060,7 +1114,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         )
         # Reset the history message of web_agent.
         self.web_agent.reset()
-        resp = self.web_agent.step(message)
+        resp = await self.web_agent.astep(message)
 
         resp_content = resp.msgs[0].content
 
@@ -1196,43 +1250,29 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 f"correct identifier.",
             )
 
-    def _get_final_answer(self, task_prompt: str) -> str:
-        r"""Get the final answer based on the task prompt and current browser
-        state. It is used when the agent thinks that the task can be completed
-        without any further action, and answer can be directly found in the
-        current viewport.
-        """
-
-        prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=self.history, task_prompt=task_prompt
+    async def _async_get_final_answer(self, task_prompt: str) -> str:
+        r"""Generate the final answer based on the task prompt."""
+        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
+            task_prompt=task_prompt, history=self.history
         )
+        response = await self.planning_agent.astep(final_answer_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty final answer from planning agent.")
+        return response.msgs[0].content
 
-        message = BaseMessage.make_user_message(
-            role_name='user',
-            content=prompt,
-        )
-
-        resp = self.web_agent.step(message)
-        return resp.msgs[0].content
-
-    def _task_planning(self, task_prompt: str, start_url: str) -> str:
-        r"""Plan the task based on the given task prompt."""
-
-        # Here are the available browser functions we can
-        # use: {AVAILABLE_ACTIONS_PROMPT}
-
+    async def _async_task_planning(
+        self, task_prompt: str, start_url: str
+    ) -> str:
+        r"""Generate a detailed plan for the given task."""
         planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt, start_url=start_url
         )
+        response = await self.planning_agent.astep(planning_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty plan from planning agent.")
+        return response.msgs[0].content
 
-        message = BaseMessage.make_user_message(
-            role_name='user', content=planning_prompt
-        )
-
-        resp = self.planning_agent.step(message)
-        return resp.msgs[0].content
-
-    def _task_replanning(
+    async def _async_task_replanning(
         self, task_prompt: str, detailed_plan: str
     ) -> Tuple[bool, str]:
         r"""Replan the task based on the given task prompt.
@@ -1252,12 +1292,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
-            history_window=self.history_window,
             history=self.history[-self.history_window :],
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
-        resp = self.planning_agent.step(replanning_prompt)
+        resp = await self.planning_agent.astep(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content, logger)
 
         if_need_replan = resp_dict.get("if_need_replan", False)
@@ -1287,7 +1326,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         self._reset()
         task_completed = False
-        detailed_plan = self._task_planning(task_prompt, start_url)
+        detailed_plan = await self._async_task_planning(task_prompt, start_url)
         logger.debug(f"Detailed plan: {detailed_plan}")
 
         await self.browser.async_init()
@@ -1331,7 +1370,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 self.history.append(trajectory_info)
 
                 # replan the task if necessary
-                if_need_replan, replanned_schema = self._task_replanning(
+                (
+                    if_need_replan,
+                    replanned_schema,
+                    # ruff: noqa: E501
+                ) = await self._async_task_replanning(
                     task_prompt, detailed_plan
                 )
                 if if_need_replan:
@@ -1343,11 +1386,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 The task is not completed within the round limit. Please check 
                 the last round {self.history_window} information to see if 
                 there is any useful information:
-                <history>{self.history[-self.history_window :]}</history>
+                <history>{self.history[-self.history_window:]}</history>
             """
 
         else:
-            simulation_result = self._get_final_answer(task_prompt)
+            simulation_result = await self._async_get_final_answer(task_prompt)
 
         await self.browser.close()
         return simulation_result

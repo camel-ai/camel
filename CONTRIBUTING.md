@@ -195,6 +195,25 @@ Examples:
 
 By adhering to this principle, we ensure that CAMEL remains accessible and unambiguous for both developers and AI agents.
 
+#### Toolkit Function Naming Principle: Use Toolkit-Specific Prefixes
+
+All public functions in CAMEL toolkits MUST include a toolkit-specific prefix to prevent naming conflicts and improve code clarity.
+
+**Naming Pattern:**
+```
+<toolkit_prefix>_<action>_<resource>
+```
+
+**Examples:**
+- Good: `github_create_issue()`, `twitter_delete_tweet()`, `excel_create_workbook()`
+- Bad: `create_issue()`, `delete_tweet()`, `create_workbook()`
+
+**Key Requirements:**
+1. **Consistent Prefixes**: All public methods in a toolkit must use the same prefix
+2. **No Built-in Shadowing**: Never use names that shadow Python built-ins (e.g., avoid `round()`, use `math_round()`)
+3. **Clear Association**: The prefix should clearly identify which toolkit the function belongs to
+4. **Backward Compatibility**: When renaming functions, provide deprecated aliases with warnings for at least 2 minor versions
+
 #### Logging Principle: Use `logger` Instead of `print`
 
 Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensure consistent, configurable, and professional logging.

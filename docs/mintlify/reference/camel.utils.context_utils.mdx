@@ -1,0 +1,541 @@
+<a id="camel.utils.context_utils"></a>
+
+<a id="camel.utils.context_utils.WorkflowSummary"></a>
+
+## WorkflowSummary
+
+```python
+class WorkflowSummary(BaseModel):
+```
+
+Pydantic model for structured workflow summaries.
+
+This model defines the schema for workflow memories that can be reused
+by future agents for similar tasks.
+
+<a id="camel.utils.context_utils.WorkflowSummary.get_instruction_prompt"></a>
+
+### get_instruction_prompt
+
+```python
+def get_instruction_prompt(cls):
+```
+
+**Returns:**
+
+  str: The instruction prompt that guides agents to produce
+structured output matching this schema.
+
+<a id="camel.utils.context_utils.ContextUtility"></a>
+
+## ContextUtility
+
+```python
+class ContextUtility:
+```
+
+Utility class for context management and file operations.
+
+This utility provides generic functionality for managing context files,
+markdown generation, and session management that can be used by
+context-related features.
+
+Key features:
+- Session-based directory management
+- Generic markdown file operations
+- Text-based search through files
+- File metadata handling
+- Agent memory record retrieval
+- Shared session management for workforce workflows
+
+<a id="camel.utils.context_utils.ContextUtility.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    session_id: Optional[str] = None,
+    create_folder: bool = True
+):
+```
+
+Initialize the ContextUtility.
+
+**Parameters:**
+
+- **working_directory** (str, optional): The directory path where files will be stored. If not provided, a default directory will be used.
+- **session_id** (str, optional): The session ID to use. If provided, this instance will use the same session folder as other instances with the same session_id. If not provided, a new session ID will be generated.
+- **create_folder** (bool): Whether to create the session folder immediately. If False, the folder will be created only when needed (e.g., when saving files). Default is True for backward compatibility.
+
+<a id="camel.utils.context_utils.ContextUtility._setup_storage"></a>
+
+### _setup_storage
+
+```python
+def _setup_storage(
+    self,
+    working_directory: Optional[str],
+    session_id: Optional[str] = None,
+    create_folder: bool = True
+):
+```
+
+Initialize session-specific storage paths and optionally create
+directory structure for context file management.
+
+<a id="camel.utils.context_utils.ContextUtility._generate_session_id"></a>
+
+### _generate_session_id
+
+```python
+def _generate_session_id(self):
+```
+
+Create timestamp-based unique identifier for isolating
+current session files from other sessions.
+
+<a id="camel.utils.context_utils.ContextUtility.sanitize_workflow_filename"></a>
+
+### sanitize_workflow_filename
+
+```python
+def sanitize_workflow_filename(name: str, max_length: Optional[int] = None):
+```
+
+Sanitize a name string for use as a workflow filename.
+
+Converts the input string to a safe filename by:
+- converting to lowercase
+- replacing spaces with underscores
+- removing special characters (keeping only alphanumeric and
+underscores)
+- truncating to maximum length if specified
+
+**Parameters:**
+
+- **name** (str): The name string to sanitize (e.g., role_name or task_title).
+- **max_length** (Optional[int]): Maximum length for the sanitized filename. If None, uses MAX_WORKFLOW_FILENAME_LENGTH. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Sanitized filename string suitable for filesystem use.
+Returns "agent" if sanitization results in empty string.
+
+<a id="camel.utils.context_utils.ContextUtility._ensure_directory_exists"></a>
+
+### _ensure_directory_exists
+
+```python
+def _ensure_directory_exists(self):
+```
+
+Ensure the working directory exists, creating it if necessary.
+
+<a id="camel.utils.context_utils.ContextUtility._create_or_update_note"></a>
+
+### _create_or_update_note
+
+```python
+def _create_or_update_note(self, note_name: str, content: str):
+```
+
+Write content to markdown file, creating new file or
+overwriting existing one with UTF-8 encoding.
+
+**Parameters:**
+
+- **note_name** (str): Name of the note (without .md extension).
+- **content** (str): Content to write to the note.
+
+**Returns:**
+
+  str: Success message.
+
+<a id="camel.utils.context_utils.ContextUtility.save_markdown_file"></a>
+
+### save_markdown_file
+
+```python
+def save_markdown_file(
+    self,
+    filename: str,
+    content: str,
+    title: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+):
+```
+
+Generic method to save any markdown content to a file.
+
+**Parameters:**
+
+- **filename** (str): Name without .md extension.
+- **content** (str): Main content to save.
+- **title** (str, optional): Title for the markdown file.
+- **metadata** (Dict, optional): Additional metadata to include.
+
+**Returns:**
+
+  str: "success" on success, error message starting with "Error:"
+on failure.
+
+<a id="camel.utils.context_utils.ContextUtility.structured_output_to_markdown"></a>
+
+### structured_output_to_markdown
+
+```python
+def structured_output_to_markdown(
+    self,
+    structured_data: BaseModel,
+    metadata: Optional[Dict[str, Any]] = None,
+    title: Optional[str] = None,
+    field_mappings: Optional[Dict[str, str]] = None
+):
+```
+
+Convert any Pydantic BaseModel instance to markdown format.
+
+**Parameters:**
+
+- **structured_data**: Any Pydantic BaseModel instance
+- **metadata**: Optional metadata to include in the markdown
+- **title**: Optional custom title, defaults to model class name (default: model class name)
+- **field_mappings**: Optional mapping of field names to custom section titles
+
+**Returns:**
+
+  str: Markdown formatted content
+
+<a id="camel.utils.context_utils.ContextUtility.load_markdown_file"></a>
+
+### load_markdown_file
+
+```python
+def load_markdown_file(self, filename: str):
+```
+
+Generic method to load any markdown file.
+
+**Parameters:**
+
+- **filename** (str): Name without .md extension.
+
+**Returns:**
+
+  str: File content or empty string if not found.
+
+<a id="camel.utils.context_utils.ContextUtility.file_exists"></a>
+
+### file_exists
+
+```python
+def file_exists(self, filename: str):
+```
+
+Verify presence of markdown file in current session directory.
+
+**Parameters:**
+
+- **filename** (str): Name without .md extension.
+
+**Returns:**
+
+  bool: True if file exists, False otherwise.
+
+<a id="camel.utils.context_utils.ContextUtility.list_markdown_files"></a>
+
+### list_markdown_files
+
+```python
+def list_markdown_files(self):
+```
+
+**Returns:**
+
+  List[str]: List of filenames without .md extension.
+
+<a id="camel.utils.context_utils.ContextUtility.get_agent_memory_records"></a>
+
+### get_agent_memory_records
+
+```python
+def get_agent_memory_records(self, agent: 'ChatAgent'):
+```
+
+Retrieve conversation history from agent's memory system.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to extract memory records from.
+
+**Returns:**
+
+  List[MemoryRecord]: List of memory records from the agent.
+
+<a id="camel.utils.context_utils.ContextUtility.format_memory_as_conversation"></a>
+
+### format_memory_as_conversation
+
+```python
+def format_memory_as_conversation(self, memory_records: List['MemoryRecord']):
+```
+
+Transform structured memory records into human-readable
+conversation format with role labels and message content.
+
+**Parameters:**
+
+- **memory_records** (List[MemoryRecord]): Memory records to format.
+
+**Returns:**
+
+  str: Formatted conversation text.
+
+<a id="camel.utils.context_utils.ContextUtility.create_session_directory"></a>
+
+### create_session_directory
+
+```python
+def create_session_directory(
+    self,
+    base_dir: Optional[str] = None,
+    session_id: Optional[str] = None
+):
+```
+
+Create a session-specific directory.
+
+**Parameters:**
+
+- **base_dir** (str, optional): Base directory. If None, uses current working directory.
+- **session_id** (str, optional): Custom session ID. If None, generates new one.
+
+**Returns:**
+
+  Path: The created session directory path.
+
+<a id="camel.utils.context_utils.ContextUtility.get_session_metadata"></a>
+
+### get_session_metadata
+
+```python
+def get_session_metadata(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Session metadata including ID, timestamp,
+directory.
+
+<a id="camel.utils.context_utils.ContextUtility.list_sessions"></a>
+
+### list_sessions
+
+```python
+def list_sessions(self, base_dir: Optional[str] = None):
+```
+
+Discover all available session directories for browsing
+historical conversations and context files.
+
+**Parameters:**
+
+- **base_dir** (str, optional): Base directory to search. If None, uses parent of working directory.
+
+**Returns:**
+
+  List[str]: List of session directory names.
+
+<a id="camel.utils.context_utils.ContextUtility.search_in_file"></a>
+
+### search_in_file
+
+```python
+def search_in_file(
+    self,
+    file_path: Path,
+    keywords: List[str],
+    top_k: int = 4
+):
+```
+
+Perform keyword-based search through file sections,
+ranking results by keyword frequency and returning top matches.
+
+**Parameters:**
+
+- **file_path** (Path): Path to the file to search.
+- **keywords** (List[str]): Keywords to search for.
+- **top_k** (int): Maximum number of results to return.
+
+**Returns:**
+
+  str: Formatted search results.
+
+<a id="camel.utils.context_utils.ContextUtility.get_working_directory"></a>
+
+### get_working_directory
+
+```python
+def get_working_directory(self):
+```
+
+**Returns:**
+
+  Path: The working directory path.
+
+<a id="camel.utils.context_utils.ContextUtility.get_session_id"></a>
+
+### get_session_id
+
+```python
+def get_session_id(self):
+```
+
+**Returns:**
+
+  str: The session ID.
+
+<a id="camel.utils.context_utils.ContextUtility.set_session_id"></a>
+
+### set_session_id
+
+```python
+def set_session_id(self, session_id: str):
+```
+
+Set a new session ID and update the working directory accordingly.
+
+This allows sharing session directories between multiple ContextUtility
+instances by using the same session_id.
+
+**Parameters:**
+
+- **session_id** (str): The session ID to use.
+
+<a id="camel.utils.context_utils.ContextUtility.load_markdown_context_to_memory"></a>
+
+### load_markdown_context_to_memory
+
+```python
+def load_markdown_context_to_memory(
+    self,
+    agent: 'ChatAgent',
+    filename: str,
+    include_metadata: bool = False
+):
+```
+
+Load context from a markdown file and append it to agent memory.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to append context to.
+- **filename** (str): Name of the markdown file (without .md extension).
+- **include_metadata** (bool): Whether to include metadata section in the loaded content. Defaults to False.
+
+**Returns:**
+
+  str: Status message indicating success or failure with details.
+
+<a id="camel.utils.context_utils.ContextUtility._filter_metadata_from_content"></a>
+
+### _filter_metadata_from_content
+
+```python
+def _filter_metadata_from_content(self, content: str):
+```
+
+Filter out metadata section from markdown content.
+
+**Parameters:**
+
+- **content** (str): The full markdown content including metadata.
+
+**Returns:**
+
+  str: Content with metadata section removed.
+
+<a id="camel.utils.context_utils.ContextUtility.extract_workflow_info"></a>
+
+### extract_workflow_info
+
+```python
+def extract_workflow_info(self, file_path: str):
+```
+
+Extract info from a workflow markdown file.
+
+This method reads only the essential info from a workflow file
+(title, description, tags) for use in workflow selection without
+loading the entire workflow content.
+
+**Parameters:**
+
+- **file_path** (str): Full path to the workflow markdown file.
+
+**Returns:**
+
+  Dict[str, Any]: Workflow info including title, description,
+tags, and file_path. Returns empty dict on error.
+
+<a id="camel.utils.context_utils.ContextUtility.get_all_workflows_info"></a>
+
+### get_all_workflows_info
+
+```python
+def get_all_workflows_info(self, session_id: Optional[str] = None):
+```
+
+Get info from all workflow files in workforce_workflows.
+
+This method scans the workforce_workflows directory for workflow
+markdown files and extracts their info for use in workflow
+selection.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): If provided, only return workflows from this specific session. If None, returns workflows from all sessions.
+
+**Returns:**
+
+  List[Dict[str, Any]]: List of workflow info dicts, sorted
+by session timestamp (newest first).
+
+<a id="camel.utils.context_utils.ContextUtility.get_workforce_shared"></a>
+
+### get_workforce_shared
+
+```python
+def get_workforce_shared(cls, session_id: Optional[str] = None):
+```
+
+Get or create shared workforce context utility with lazy init.
+
+This method provides a centralized way to access shared context
+utilities for workforce workflows, ensuring all workforce components
+use the same session directory.
+
+**Parameters:**
+
+- **session_id** (str, optional): Custom session ID. If None, uses the default workforce session.
+
+**Returns:**
+
+  ContextUtility: Shared context utility instance for workforce.
+
+<a id="camel.utils.context_utils.ContextUtility.reset_shared_sessions"></a>
+
+### reset_shared_sessions
+
+```python
+def reset_shared_sessions(cls):
+```
+
+Reset shared sessions (useful for testing).
+
+This method clears all shared session instances, forcing new ones
+to be created on next access. Primarily used for testing to ensure
+clean state between tests.

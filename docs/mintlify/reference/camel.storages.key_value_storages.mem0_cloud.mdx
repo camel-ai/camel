@@ -61,31 +61,6 @@ Helper method to prepare options for Mem0 API calls.
 
   Dict[str, Any]: Prepared options dictionary for API calls.
 
-<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage._prepare_filters"></a>
-
-### _prepare_filters
-
-```python
-def _prepare_filters(
-    self,
-    agent_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    filters: Optional[Dict[str, Any]] = None
-):
-```
-
-Helper method to prepare filters for Mem0 API calls.
-
-**Parameters:**
-
-- **agent_id** (Optional[str], optional): Agent ID to filter by (default: :obj:`None`).
-- **user_id** (Optional[str], optional): User ID to filter by (default: :obj:`None`).
-- **filters** (Optional[Dict[str, Any]], optional): Additional filters (default: :obj:`None`).
-
-**Returns:**
-
-  Dict[str, Any]: Prepared filters dictionary for API calls.
-
 <a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage._prepare_messages"></a>
 
 ### _prepare_messages
@@ -136,7 +111,16 @@ represents a stored record.
 ### clear
 
 ```python
-def clear(self):
+def clear(
+    self,
+    agent_id: Optional[str] = None,
+    user_id: Optional[str] = None
+):
 ```
 
 Removes all records from the Mem0 storage system.
+
+**Parameters:**
+
+- **agent_id** (Optional[str]): Specific agent ID to clear memories for.
+- **user_id** (Optional[str]): Specific user ID to clear memories for.

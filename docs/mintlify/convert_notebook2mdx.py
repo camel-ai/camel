@@ -378,6 +378,11 @@ def convert_ipynb_to_mdx(
     """Convert Jupyter Notebook to MDX format."""
     print(f"Converting IPYNB file: {ipynb_file}")
 
+    if nbformat is None:
+        raise RuntimeError(
+            "nbformat/nbconvert is not installed. Cannot process .ipynb files."
+        )
+
     # Read Jupyter Notebook
     with open(ipynb_file, 'r', encoding='utf-8') as f:
         notebook = nbformat.read(f, as_version=4)
@@ -646,7 +651,7 @@ def process_directory(
         for root, _dirs, files in os.walk(directory):
             root_path = Path(root)
             for file in files:
-                if file.endswith(('.ipynb', '.md')):
+                if file.endswith(('.ipynb', '.md', '.mdx')):
                     files_to_process.append(root_path / file)
 
     # Process the determined files
@@ -688,6 +693,54 @@ def process_directory(
                 converted_files.append((file_path, output_file))
                 total_md += 1
                 print(f"  Converted MD: {file_path.name} -> {output_file}")
+            elif file_path.suffix == '.mdx':
+                # If an explicit output directory is provided and differs from the current
+                # file location, copy the mdx file to the expected output location to keep
+                # folder structures in sync. Otherwise, just reference the existing file.
+                if (
+                    current_output_dir
+                    and file_path.parent != current_output_dir
+                ):
+                    dest_path = current_output_dir / file_path.name
+                    try:
+                        import shutil
+
+                        shutil.copy2(file_path, dest_path)
+                        output_file = dest_path
+                    except Exception as copy_err:
+                        print(
+                            f"Error copying MDX file {file_path} -> {dest_path}: {copy_err}"
+                        )
+                        output_file = file_path  # Fallback to original path
+                else:
+                    output_file = file_path
+
+                converted_files.append((file_path, output_file))
+                print(f"  Detected modified MDX: {file_path.name}")
+
+                # Reverse sync: copy the modified MDX back to the corresponding
+                # source docs directory (docs/...) as a .md file so changes made
+                # in Mintlify output become the new canonical docs source.
+                try:
+                    if 'mintlify' in file_path.parts:
+                        mintlify_idx = list(file_path.parts).index('mintlify')
+                        rel_parts = file_path.parts[mintlify_idx + 1 :]
+
+                        dest_md_path = (
+                            Path('docs')
+                            .joinpath(*rel_parts)
+                            .with_suffix('.md')
+                        )
+                        dest_md_path.parent.mkdir(parents=True, exist_ok=True)
+
+                        import shutil
+
+                        shutil.copy2(file_path, dest_md_path)
+                        print(f"    ↳ Synced MDX back to {dest_md_path}")
+                except Exception as sync_err:
+                    print(
+                        f"Warning: failed to sync MDX back to docs folder: {sync_err}"
+                    )
         except Exception as e:
             print(f"Error converting {file_path}: {e}")
 
@@ -924,7 +977,7 @@ def merge_navigation_groups(existing_nav, new_nav):
 def get_changed_files(directory, since_hours=24, file_extensions=None):
     """Get recently modified files in the directory"""
     if file_extensions is None:
-        file_extensions = ['.ipynb', '.md']
+        file_extensions = ['.ipynb', '.md', '.mdx']
 
     changed_files = []
     directory = Path(directory)
@@ -951,7 +1004,7 @@ def get_git_changed_files(
 ):
     """Get files changed in git compared to base branch"""
     if file_extensions is None:
-        file_extensions = ['.ipynb', '.md']
+        file_extensions = ['.ipynb', '.md', '.mdx']
 
     try:
         # Find the git repository root

@@ -10,10 +10,11 @@ class GitHubFile(BaseModel):
 
 Model to hold GitHub file information.
 
-Attributes:
-content (str): The content of the GitHub text.
-file_path (str): The path of the file.
-html_url (str): The actual url of the file.
+**Parameters:**
+
+- **content** (str): The content of the GitHub text.
+- **file_path** (str): The path of the file.
+- **html_url** (str): The actual url of the file.
 
 <a id="camel.agents.repo_agent.RepositoryInfo"></a>
 
@@ -25,10 +26,11 @@ class RepositoryInfo(BaseModel):
 
 Model to hold GitHub repository information.
 
-Attributes:
-repo_name (str): The full name of the repository.
-repo_url (str): The URL of the repository.
-contents (list): A list to hold the repository contents.
+**Parameters:**
+
+- **repo_name** (str): The full name of the repository.
+- **repo_url** (str): The URL of the repository.
+- **contents** (list): A list to hold the repository contents.
 
 <a id="camel.agents.repo_agent.RepoAgent"></a>
 
@@ -48,35 +50,21 @@ prompt.
 code/documentation chunks using a vector store when context
 length exceeds a specified token limit.
 
-Attributes:
-vector_retriever (VectorRetriever): Retriever used to
-perform semantic search in RAG mode. Required if repo content
-exceeds context limit.
-system_message (Optional[str]): The system message
-for the chat agent. (default: :str:`"You are a code assistant
-with repo context."`)
-repo_paths (Optional[List[str]]): List of GitHub repository URLs to
-load during initialization. (default: :obj:`None`)
-model (BaseModelBackend): The model backend to use for generating
-responses. (default: :obj:`ModelPlatformType.DEFAULT`
-with `ModelType.DEFAULT`)
-max_context_tokens (Optional[int]): Maximum number of tokens allowed
-before switching to RAG mode. (default: :obj:`2000`)
-github_auth_token (Optional[str]): GitHub personal access token
-for accessing private or rate-limited repositories. (default:
-:obj:`None`)
-chunk_size (Optional[int]): Maximum number of characters per code chunk
-when indexing files for RAG. (default: :obj:`8192`)
-top_k (int): Number of top-matching chunks to retrieve from the vector
-store in RAG mode. (default: :obj:`5`)
-similarity (Optional[float]): Minimum similarity score required to
-include a chunk in the RAG context. (default: :obj:`0.6`)
-collection_name (Optional[str]): Name of the vector database
-collection to use for storing and retrieving chunks. (default:
-:obj:`None`)
-**kwargs: Inherited from ChatAgent
+**Parameters:**
 
-Note:
+- **vector_retriever** (VectorRetriever): Retriever used to perform semantic search in RAG mode. Required if repo content exceeds context limit.
+- **system_message** (Optional[str]): The system message for the chat agent. (default: :str:`"You are a code assistant with repo context."`)
+- **repo_paths** (Optional[List[str]]): List of GitHub repository URLs to load during initialization. (default: :obj:`None`)
+- **model** (BaseModelBackend): The model backend to use for generating responses. (default: :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
+- **max_context_tokens** (Optional[int]): Maximum number of tokens allowed before switching to RAG mode. (default: :obj:`2000`)
+- **github_auth_token** (Optional[str]): GitHub personal access token for accessing private or rate-limited repositories. (default: :obj:`None`)
+- **chunk_size** (Optional[int]): Maximum number of characters per code chunk when indexing files for RAG. (default: :obj:`8192`)
+- **top_k** (int): Number of top-matching chunks to retrieve from the vector store in RAG mode. (default: :obj:`5`)
+- **similarity** (Optional[float]): Minimum similarity score required to include a chunk in the RAG context. (default: :obj:`0.6`)
+- **collection_name** (Optional[str]): Name of the vector database collection to use for storing and retrieving chunks. (default: :obj:`None`) **kwargs: Inherited from ChatAgent
+
+**Note:**
+
 The current implementation of RAG mode requires using Qdrant as the
 vector storage backend. The VectorRetriever defaults to QdrantStorage
 if no storage is explicitly provided. Other vector storage backends

@@ -31,6 +31,8 @@ from camel.models.base_model import BaseModelBackend
 from camel.models.stub_model import StubModel
 from camel.verifiers import BaseVerifier
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 # ruff: noqa: RUF001
 def test_datapoint_creation():

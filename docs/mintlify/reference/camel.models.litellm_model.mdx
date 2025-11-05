@@ -17,7 +17,7 @@ Constructor for LiteLLM backend with OpenAI compatibility.
 - **api_key** (Optional[str], optional): The API key for authenticating with the model service. (default: :obj:`None`)
 - **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`LiteLLMTokenCounter` will be used. (default: :obj:`None`)
-- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization.
 
 <a id="camel.models.litellm_model.LiteLLMModel.__init__"></a>
 
@@ -31,7 +31,8 @@ def __init__(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
+    **kwargs: Any
 ):
 ```
 
@@ -88,11 +89,3 @@ Runs inference of LiteLLM chat completion.
 **Returns:**
 
   ChatCompletion
-
-<a id="camel.models.litellm_model.LiteLLMModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```
