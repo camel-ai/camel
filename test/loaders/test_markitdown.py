@@ -17,7 +17,21 @@ from unittest.mock import patch
 
 import pytest
 
-from camel.loaders import MarkItDownLoader
+# Try importing markitdown, skip tests if not available
+try:
+    import markitdown  # noqa: F401
+
+    from camel.loaders import MarkItDownLoader
+
+    markitdown_available = True
+except ImportError:
+    markitdown_available = False
+
+# Skip all tests in this module if markitdown isn't available
+pytestmark = pytest.mark.skipif(
+    not markitdown_available,
+    reason="markitdown is not installed (only available for Python >= 3.13)",
+)
 
 
 @pytest.fixture

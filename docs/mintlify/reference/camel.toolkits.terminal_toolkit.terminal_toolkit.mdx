@@ -1,0 +1,322 @@
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit"></a>
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit._to_plain"></a>
+
+## _to_plain
+
+```python
+def _to_plain(text: str):
+```
+
+Convert ANSI text to plain text using rich if available.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit"></a>
+
+## TerminalToolkit
+
+```python
+class TerminalToolkit(BaseToolkit):
+```
+
+A toolkit for LLM agents to execute and interact with terminal commands
+in either a local or a sandboxed Docker environment.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The default timeout in seconds for blocking commands. Defaults to 20.0.
+- **working_directory** (Optional[str]): The base directory for operations. For the local backend, this acts as a security sandbox. For the Docker backend, this sets the working directory inside the container. If not specified, defaults to "./workspace" for local and "/workspace" for Docker.
+- **use_docker_backend** (bool): If True, all commands are executed in a Docker container. Defaults to False.
+- **docker_container_name** (Optional[str]): The name of the Docker container to use. Required if use_docker_backend is True.
+- **session_logs_dir** (Optional[str]): The directory to store session logs. Defaults to a 'terminal_logs' subfolder in the working directory.
+- **safe_mode** (bool): Whether to apply security checks to commands. Defaults to True.
+- **allowed_commands** (Optional[List[str]]): List of allowed commands when safe_mode is True. If None, uses default safety rules.
+- **clone_current_env** (bool): Whether to clone the current Python environment for local execution. Defaults to False.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = 20.0,
+    working_directory: Optional[str] = None,
+    use_docker_backend: bool = False,
+    docker_container_name: Optional[str] = None,
+    session_logs_dir: Optional[str] = None,
+    safe_mode: bool = True,
+    allowed_commands: Optional[List[str]] = None,
+    clone_current_env: bool = False
+):
+```
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._setup_cloned_environment"></a>
+
+### _setup_cloned_environment
+
+```python
+def _setup_cloned_environment(self):
+```
+
+Set up a cloned Python environment.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._setup_initial_environment"></a>
+
+### _setup_initial_environment
+
+```python
+def _setup_initial_environment(self):
+```
+
+Set up an initial environment with Python 3.10.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._adapt_command_for_environment"></a>
+
+### _adapt_command_for_environment
+
+```python
+def _adapt_command_for_environment(self, command: str):
+```
+
+Adapt command to use virtual environment if available.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._write_to_log"></a>
+
+### _write_to_log
+
+```python
+def _write_to_log(self, log_file: str, content: str):
+```
+
+Write content to log file with optional ANSI stripping.
+
+**Parameters:**
+
+- **log_file** (str): Path to the log file
+- **content** (str): Content to write
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._sanitize_command"></a>
+
+### _sanitize_command
+
+```python
+def _sanitize_command(self, command: str):
+```
+
+A comprehensive command sanitizer for both local and
+Docker backends.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._start_output_reader_thread"></a>
+
+### _start_output_reader_thread
+
+```python
+def _start_output_reader_thread(self, session_id: str):
+```
+
+Starts a thread to read stdout from a non-blocking process.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._collect_output_until_idle"></a>
+
+### _collect_output_until_idle
+
+```python
+def _collect_output_until_idle(
+    self,
+    id: str,
+    idle_duration: float = 0.5,
+    check_interval: float = 0.1,
+    max_wait: float = 5.0
+):
+```
+
+Collects output from a session until it's idle or a max wait time
+is reached.
+
+**Parameters:**
+
+- **id** (str): The session ID.
+- **idle_duration** (float): How long the stream must be empty to be considered idle.(default: 0.5)
+- **check_interval** (float): The time to sleep between checks. (default: 0.1)
+- **max_wait** (float): The maximum total time to wait for the process to go idle. (default: 5.0)
+
+**Returns:**
+
+  str: The collected output. If max_wait is reached while
+the process is still outputting, a warning is appended.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_exec"></a>
+
+### shell_exec
+
+```python
+def shell_exec(
+    self,
+    id: str,
+    command: str,
+    block: bool = True
+):
+```
+
+Executes a shell command in blocking or non-blocking mode.
+
+**Parameters:**
+
+- **id** (str): A unique identifier for the command's session. This ID is used to interact with non-blocking processes.
+- **command** (str): The shell command to execute.
+- **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands . If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
+
+**Returns:**
+
+  str: The output of the command execution, which varies by mode.
+In blocking mode, returns the complete standard output and
+standard error from the command.
+In non-blocking mode, returns a confirmation message with the
+session `id`. To interact with the background process, use
+other functions: `shell_view(id)` to see output,
+`shell_write_to_process(id, "input")` to send input, and
+`shell_kill_process(id)` to terminate.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_write_to_process"></a>
+
+### shell_write_to_process
+
+```python
+def shell_write_to_process(self, id: str, command: str):
+```
+
+This function sends command to a running non-blocking
+process and returns the resulting output after the process
+becomes idle again. A newline \n is automatically appended
+to the input command.
+
+**Parameters:**
+
+- **id** (str): The unique session ID of the non-blocking process.
+- **command** (str): The text to write to the process's standard input.
+
+**Returns:**
+
+  str: The output from the process after the command is sent.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_view"></a>
+
+### shell_view
+
+```python
+def shell_view(self, id: str):
+```
+
+Retrieves new output from a non-blocking session.
+
+This function returns only NEW output since the last call. It does NOT
+wait or block - it returns immediately with whatever is available.
+
+**Parameters:**
+
+- **id** (str): The unique session ID of the non-blocking process.
+
+**Returns:**
+
+  str: New output if available, or a status message.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_kill_process"></a>
+
+### shell_kill_process
+
+```python
+def shell_kill_process(self, id: str):
+```
+
+This function forcibly terminates a running non-blocking process.
+
+**Parameters:**
+
+- **id** (str): The unique session ID of the process to kill.
+
+**Returns:**
+
+  str: A confirmation message indicating the process was terminated.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_ask_user_for_help"></a>
+
+### shell_ask_user_for_help
+
+```python
+def shell_ask_user_for_help(self, id: str, prompt: str):
+```
+
+This function pauses execution and asks a human for help
+with an interactive session.
+
+This method can handle different scenarios:
+1. If session exists: Shows session output and allows interaction
+2. If session doesn't exist: Creates a temporary session for help
+
+**Parameters:**
+
+- **id** (str): The session ID of the interactive process needing help. Can be empty string for general help without session context.
+- **prompt** (str): The question or instruction from the LLM to show the human user (e.g., "The program is asking for a filename. Please enter 'config.json'.").
+
+**Returns:**
+
+  str: The output from the shell session after the user's command has
+been executed, or help information for general queries.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+Context manager entry.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc_val,
+    exc_tb
+):
+```
+
+Context manager exit - clean up all sessions.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Clean up all active sessions.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Fallback cleanup in destructor.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing the
+functions in the toolkit.

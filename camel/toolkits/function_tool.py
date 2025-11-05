@@ -156,7 +156,12 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if (name := param.arg_name) in parameters_dict["properties"] and (
             description := param.description
         ):
-            parameters_dict["properties"][name]["description"] = description
+            # OpenAI does not allow descriptions on properties that use $ref.
+            # To avoid schema errors, we only add the description if "$ref" is
+            # not present.
+            prop = parameters_dict["properties"][name]
+            if "$ref" not in prop:
+                prop["description"] = description
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
@@ -477,10 +482,15 @@ class FunctionTool:
                 result = self.func(*args, **kwargs)
                 return result
             except Exception as e:
+                parts = []
+                if args:
+                    parts.append(f"args={args}")
+                if kwargs:
+                    parts.append(f"kwargs={kwargs}")
+                args_str = ", ".join(parts) if parts else "no arguments"
                 raise ValueError(
                     f"Execution of function {self.func.__name__} failed with "
-                    f"arguments {args} and {kwargs}. "
-                    f"Error: {e}"
+                    f"{args_str}. Error: {e}"
                 )
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:

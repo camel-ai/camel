@@ -120,7 +120,7 @@ def simple_intervention_menu(workforce: Workforce):
             elif choice == "3":
                 content = input("New task content: ")
                 if content.strip():
-                    task = workforce.add_task(content)
+                    task = workforce.add_task(content, as_subtask=True)
                     print(f"✅ Added task: {task.id}")
 
             elif choice == "4":

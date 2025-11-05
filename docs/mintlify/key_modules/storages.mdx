@@ -45,7 +45,7 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - High scalability, real-time search
 
     **TiDBStorage**
-    - For [TiDB](https://ai.pingcap.com/) (hybrid vector/relational database)
+    - For [TiDB](https://pingcap.com/ai) (hybrid vector/relational database)
     - Handles embeddings, knowledge graphs, ops data
 
     **QdrantStorage**
@@ -61,8 +61,12 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - Schema-based, semantic search, hybrid queries
 
     **ChromaStorage**
-    - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)  
+    - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)
     - Simple API, scales from notebook to production
+
+    **SurrealStorage**
+    - For [SurrealDB](https://surrealdb.com/) (scalable, distributed database with WebSocket support)
+    - Efficient vector storage and similarity search with real-time updates
 
     **PgVectorStorage**
     - For [PostgreSQL with pgvector](https://github.com/pgvector/pgvector) (open-source vector engine)
@@ -291,6 +295,56 @@ Here are practical usage patterns for each storage type—pick the ones you need
     <Tab title="Output">
       ```markdown
       >>> {'key2': 'value2'} 0.7834733426570892
+      ```
+    </Tab>
+  </Tabs>
+</Card>
+
+---
+
+<Card title="SurrealDB Vector Storage" icon="database">
+  <b>Use for:</b> Scalable, distributed vector storage with WebSocket support.
+  <b>Perfect for:</b> Real-time vector search with distributed deployments and SQL-like querying.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      import os
+      from camel.storages import SurrealStorage, VectorDBQuery, VectorRecord
+
+      # Set environment variables for SurrealDB connection
+      os.environ["SURREAL_URL"] = "ws://localhost:8000/rpc"
+      os.environ["SURREAL_PASSWORD"] = "your_password"
+
+      # Create SurrealStorage instance with WebSocket connection
+      surreal_storage = SurrealStorage(
+          url=os.getenv("SURREAL_URL"),
+          table="camel_vectors",
+          namespace="ns",
+          database="db",
+          user="root",
+          password=os.getenv("SURREAL_PASSWORD"),
+          vector_dim=4,
+      )
+
+      # Add vector records
+      surreal_storage.add([
+          VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={'key1': 'value1'}),
+          VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={'key2': 'value2'}),
+      ])
+
+      # Query similar vectors
+      query_results = surreal_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+      for result in query_results:
+          print(result.record.payload, result.similarity)
+
+      # Clear all vectors
+      surreal_storage.clear()
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> {'key2': 'value2'} 0.5669467095138407
       ```
     </Tab>
   </Tabs>

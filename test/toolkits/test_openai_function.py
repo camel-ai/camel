@@ -104,6 +104,7 @@ def test_get_openai_tool_schema():
                         'enum': [
                             'assistant',
                             'user',
+                            'system',
                             'critic',
                             'embodiment',
                             'default',
@@ -126,6 +127,7 @@ def test_get_openai_tool_schema():
                         'enum': [
                             'assistant',
                             'user',
+                            'system',
                             'critic',
                             'embodiment',
                             'default',
@@ -160,10 +162,7 @@ def test_get_openai_tool_schema():
                         'type': 'string',
                         'description': 'datatime_para desc',
                     },
-                    'default_enum_para': {
-                        '$ref': '#/$defs/RoleType',
-                        'description': 'default_enum_para desc',
-                    },
+                    'default_enum_para': {'$ref': '#/$defs/RoleType'},
                 },
                 'required': [
                     'any_para',

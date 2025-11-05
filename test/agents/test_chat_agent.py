@@ -19,10 +19,10 @@ from typing import List
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from openai.types.chat import ChatCompletionMessageFunctionToolCall
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
-    ChatCompletionMessageFunctionToolCall,
     Function,
 )
 from openai.types.completion_usage import CompletionUsage
@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ToolCallingRecord
+from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_5_MINI,
+            model_type=ModelType.DEFAULT,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_5_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_5_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.DEFAULT)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -560,6 +560,21 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
         system_message=system_msg,
         token_limit=1,
     )
+
+    original_get_context = assistant.memory.get_context
+
+    def mock_get_context():
+        messages, _ = original_get_context()
+        # Raise RuntimeError as if context size exceeded limit
+        raise RuntimeError(
+            "Context size exceeded",
+            {
+                "status": "error",
+                "message": "The context has exceeded the maximum token limit.",
+            },
+        )
+
+    assistant.memory.get_context = mock_get_context
     assistant.model_backend.run = MagicMock(
         return_value=model_backend_rsp_base
     )
@@ -741,6 +756,55 @@ def test_chat_agent_stream_output(step_call_count=3):
             == stream_usage["completion_tokens"]
             + stream_usage["prompt_tokens"]
         ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_accumulated():
+    """Verify accumulated streaming behavior (stream_accumulate=True)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent()
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "acc", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert len(outputs) == 3
+    assert outputs[0] == "Hello"
+    assert outputs[1] == "Hello "
+    assert outputs[2] == "Hello world"
+    assert accumulator.get_full_content() == "Hello world"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_delta():
+    """Verify delta streaming behavior (stream_accumulate=False)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent(stream_accumulate=False)
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "delta", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert outputs == chunks
+    assert accumulator.get_full_content() == "Hello world"
 
 
 @pytest.mark.model_backend

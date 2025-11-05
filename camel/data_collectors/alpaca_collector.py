@@ -70,16 +70,25 @@ class AlpacaDataCollector(BaseDataCollector):
         if not history:
             raise ValueError("No data collected.")
 
-        # Validate and process history
-        if len(history) == 3 and history[0].role == "system":
-            history = history[1:]  # Ignore the system message.
-        elif len(history) != 2:
+        # Filter out system and tool-related messages
+        # Keep only user and final assistant messages
+        filtered_history = []
+        for msg in history:
+            if msg.role == "user":
+                filtered_history.append(msg)
+            elif msg.role == "assistant" and msg.message:
+                # Keep assistant messages with actual content
+                # (skip empty ones that only contain tool calls)
+                filtered_history.append(msg)
+
+        # Validate filtered history
+        if len(filtered_history) != 2:
             raise ValueError(
                 f"AlpacaDataCollector only supports one message pair, but "
-                f"got {len(history)}"
+                f"got {len(filtered_history)} after filtering tool messages"
             )
 
-        input_message, output_message = history
+        input_message, output_message = filtered_history
         instruction = (
             self.system_message.content if self.system_message else ""
         ) + str(input_message.message)

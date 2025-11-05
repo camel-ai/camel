@@ -195,18 +195,24 @@ class VideoAnalysisToolkit(BaseToolkit):
         destroyed.
         """
         # Clean up temporary files
-        for temp_file in self._temp_files:
-            if os.path.exists(temp_file):
-                try:
-                    os.remove(temp_file)
-                    logger.debug(f"Removed temporary file: {temp_file}")
-                except OSError as e:
-                    logger.warning(
-                        f"Failed to remove temporary file {temp_file}: {e}"
-                    )
+        if hasattr(self, '_temp_files'):
+            for temp_file in self._temp_files:
+                if os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                        logger.debug(f"Removed temporary file: {temp_file}")
+                    except OSError as e:
+                        logger.warning(
+                            f"Failed to remove temporary file {temp_file}: {e}"
+                        )
 
         # Clean up temporary directory if needed
-        if self._cleanup and os.path.exists(self._working_directory):
+        if (
+            hasattr(self, '_cleanup')
+            and self._cleanup
+            and hasattr(self, '_working_directory')
+            and os.path.exists(self._working_directory)
+        ):
             try:
                 import sys
 
@@ -594,7 +600,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             msg = BaseMessage.make_user_message(
                 role_name="User",
                 content=prompt,
-                image_list=video_frames,
+                image_list=video_frames,  # type: ignore[arg-type]
             )
             # Reset the agent to clear previous state
             self.vl_agent.reset()
