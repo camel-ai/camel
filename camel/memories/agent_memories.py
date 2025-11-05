@@ -118,15 +118,23 @@ class ChatHistoryMemory(AgentMemory):
                 indices_to_remove.append(i)
             # Mark ASSISTANT messages with tool_calls for removal
             elif role == OpenAIBackendRole.ASSISTANT.value:
-                meta_dict = record.get('meta_dict', {})
-                if meta_dict and 'tool_calls' in meta_dict:
+                message_dict = record.get('message', {})
+                # Check for tool_calls in message
+                has_tool_calls = 'tool_calls' in message_dict
+                is_func_calling = (
+                    message_dict.get('__class__') == 'FunctionCallingMessage'
+                    and 'args' in message_dict
+                )
+
+                if has_tool_calls or is_func_calling:
                     indices_to_remove.append(i)
 
         # Remove records in-place
         for i in reversed(indices_to_remove):
             del record_dicts[i]
 
-        # Save the modified records back to storage
+        # Clear storage and save the modified records back
+        self._chat_history_block.storage.clear()
         self._chat_history_block.storage.save(record_dicts)
 
     def pop_records(self, count: int) -> List[MemoryRecord]:
