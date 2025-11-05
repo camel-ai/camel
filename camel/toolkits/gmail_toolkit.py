@@ -198,8 +198,14 @@ class GmailToolkit(BaseToolkit):
             thread_id = original_message.get('threadId')
 
             # Prepare reply subject
-            if not subject.startswith('Re: '):
+            if subject and not subject.startswith('Re: '):
                 subject = f"Re: {subject}"
+            elif not subject:
+                subject = "Re: (No Subject)"
+
+            # Validate from_email
+            if not from_email:
+                return {"error": "Original message has no sender address"}
 
             # Prepare recipients
             if reply_all:
@@ -212,8 +218,8 @@ class GmailToolkit(BaseToolkit):
                     recipients.extend(
                         [email.strip() for email in cc_emails.split(',')]
                     )
-                # Remove duplicates
-                recipients = list(set(recipients))
+                # Remove duplicates and None values
+                recipients = [r for r in list(set(recipients)) if r]
 
                 # Get current user's email and remove it from recipients
                 try:
@@ -328,8 +334,10 @@ class GmailToolkit(BaseToolkit):
                     break
 
             # Prepare forward subject
-            if not subject.startswith('Fwd: '):
+            if subject and not subject.startswith('Fwd: '):
                 subject = f"Fwd: {subject}"
+            elif not subject:
+                subject = "Fwd: (No Subject)"
 
             # Prepare forward body
             if forward_body:
@@ -555,10 +563,13 @@ class GmailToolkit(BaseToolkit):
                 request_params['labelIds'] = label_ids
 
             # List messages
+            if page_token:
+                request_params['pageToken'] = page_token
+
             messages_result = (
                 self.gmail_service.users()
                 .messages()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -795,10 +806,13 @@ class GmailToolkit(BaseToolkit):
                 request_params['labelIds'] = label_ids
 
             # List threads
+            if page_token:
+                request_params['pageToken'] = page_token
+
             threads_result = (
                 self.gmail_service.users()
                 .threads()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -1084,10 +1098,13 @@ class GmailToolkit(BaseToolkit):
             }
 
             # Search contacts
+            if page_token:
+                request_params['pageToken'] = page_token
+
             contacts_result = (
                 self.people_service.people()
                 .connections()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -1448,7 +1465,7 @@ class GmailToolkit(BaseToolkit):
 
         text_parts = []
 
-        def decode_text_data(data: str, mime_type: str) -> str | None:
+        def decode_text_data(data: str, mime_type: str) -> Optional[str]:
             """Helper to decode base64 text data.
 
             Args:
@@ -1541,7 +1558,7 @@ class GmailToolkit(BaseToolkit):
 
         def find_text_recursive(
             part: Dict[str, Any], target_mime: str
-        ) -> str | None:
+        ) -> Optional[str]:
             """Recursively search for text content of a specific MIME type.
 
             Args:
