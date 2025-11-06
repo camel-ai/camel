@@ -18,7 +18,7 @@ import json
 import requests
 import logging
 from typing import Any, Dict, List, Optional, Literal
-# Try to import from CAMEL framework, fallback to local implementation
+from camel.toolkits.base import BaseToolkit
 try:
     from camel.toolkits.base import BaseToolkit
     from camel.toolkits import FunctionTool
