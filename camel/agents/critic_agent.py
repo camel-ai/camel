@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import random
 import warnings
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from colorama import Fore
 
@@ -22,6 +22,7 @@ from camel.memories import AgentMemory
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_first_int, print_text_animated
 
 # AgentOps decorator setting
@@ -41,11 +42,18 @@ class CriticAgent(ChatAgent):
     r"""A class for the critic agent that assists in selecting an option.
 
     Args:
-        system_message (BaseMessage): The system message for the critic
-            agent.
-        model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_4O_MINI`)
+        system_message (Union[BaseMessage, str], optional): The system message
+            for the chat agent. (default: :obj:`None`)
+        model (Union[BaseModelBackend, Tuple[str, str], str, ModelType,
+            Tuple[ModelPlatformType, ModelType], List[BaseModelBackend],
+            List[str], List[ModelType], List[Tuple[str, str]],
+            List[Tuple[ModelPlatformType, ModelType]]], optional):
+            The model backend(s) to use. Can be a single instance,
+            a specification (string, enum, tuple), or a list of instances
+            or specifications to be managed by `ModelManager`. If a list of
+            specifications (not `BaseModelBackend` instances) is provided,
+            they will be instantiated using `ModelFactory`. (default:
+            :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`6`)
@@ -58,8 +66,21 @@ class CriticAgent(ChatAgent):
 
     def __init__(
         self,
-        system_message: BaseMessage,
-        model: Optional[BaseModelBackend] = None,
+        system_message: Optional[Union[BaseMessage, str]] = None,
+        model: Optional[
+            Union[
+                BaseModelBackend,
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
+            ]
+        ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
@@ -200,3 +221,47 @@ class CriticAgent(ChatAgent):
             terminated=False,
             info={},
         )
+
+    def clone(self, with_memory: bool = False) -> 'CriticAgent':
+        r"""Creates a new instance of :obj:`CriticAgent` with the same
+        configuration as the current instance.
+
+        Args:
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
+
+        Returns:
+            CriticAgent: A new instance of :obj:`CriticAgent` with the same
+                configuration.
+        """
+        # Create a new instance with the same configuration
+        # If with_memory is True, set system_message to None
+        # If with_memory is False, use the original system message
+        # To avoid duplicated system memory.
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = CriticAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # clone memory later
+            message_window_size=getattr(self.memory, "window_size", 6),
+            retry_attempts=self.retry_attempts,
+            verbose=self.verbose,
+            logger_color=self.logger_color,
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+
+        # Copy CriticAgent-specific attributes
+        new_agent.options_dict = self.options_dict.copy()
+
+        return new_agent

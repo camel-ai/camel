@@ -1,0 +1,413 @@
+---
+title: "Agent Generate Structured Output Examples"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1DioOS4t0L4Lb3rPKAnIjCl-IyvkW6fOr?usp=sharing)
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to use CAMEL agents to generate structured outputs from language models. You'll learn to create AI agents that produce consistent, well-formatted responses that can be directly used in your applications.
+
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+* **Structured Outputs**: How to define and enforce specific response schemas using Pydantic models, ensuring consistent and reliable model outputs.
+* **Tool Integration**: Techniques for combining structured responses with CAMEL's tool system to create powerful, interactive AI applications.
+* **Cross-Model Compatibility**: Strategies for achieving structured outputs even with models that don't natively support function calling or structured responses.
+
+## 📦 Installation
+
+First, install the CAMEL package with all its dependencies:
+
+
+```python
+!pip install "camel-ai[all]==0.2.70"
+```
+
+## 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI. This ensures that the tools can interact with external services securely.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the AgentOps API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+## 1. Basic Structured Response
+
+
+The simplest way to get structured responses is by defining a Pydantic model and using it as the `response_format` parameter. This ensures the model's output matches your expected structure。
+
+Lets create a simple agent that returns a Joke with Structured Response
+
+
+1. **Model Initialization**:
+   - We create a chat agent with a default model
+   - The system message sets the assistant's behavior
+
+
+
+```python
+from pydantic import BaseModel, Field
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+# Define system message
+assistant_sys_msg = "You are a helpful assistant."
+
+# Initialize model and agent
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+)
+agent = ChatAgent(assistant_sys_msg, model=model)
+```
+
+2. **Response Structure**:
+   - We define a [JokeResponse](camel/examples/structured_response/json_format_response.py:33:0-35:69) class using Pydantic's `BaseModel`
+   - Each field has a type hint and a description
+   - The model uses these descriptions to generate appropriate content
+
+
+
+```python
+# Define the expected response structure using Pydantic
+class JokeResponse(BaseModel):
+    joke: str = Field(description="A funny joke")
+    funny_level: int = Field(description="How funny the joke is, from 1 to 10")
+
+response = agent.step("Tell me a joke.", response_format=JokeResponse)
+
+
+# Display the results
+print("=== Raw Response ===")
+print(response.msgs[0].content)
+
+print("\n=== Parsed Object ===")
+print(response.msgs[0].parsed)
+
+print("\n=== Type of Parsed Object ===")
+print(type(response.msgs[0].parsed))
+```
+
+## 2. Structured Response with Tools <a name="with-tools"></a>
+
+In this section, we'll demonstrate how to combine structured responses with CAMEL's tool system. This allows the model to perform calculations and searches while maintaining a structured output format.
+
+Let's create an example where we ask the model to perform a calculation and return the result in a structured format:
+
+
+1. **Import required libraries**:
+
+
+
+```python
+from pydantic import BaseModel, Field
+from camel.agents import ChatAgent
+from camel.configs.openai_config import ChatGPTConfig
+from camel.models import ModelFactory
+from camel.toolkits import MathToolkit, SearchToolkit
+from camel.types import ModelPlatformType, ModelType
+```
+
+2. **Tool Integration**:
+   - We import and initialize `MathToolkit` and `SearchToolkit` to give the model calculation and search capabilities
+   - These tools are passed to the `ChatAgent` during initialization
+
+
+```python
+# Use wiki tool to avoid additional api config
+search_tools = SearchToolkit().get_tools()
+wiki_tool = search_tools[0]
+
+tools_list = [
+    *MathToolkit().get_tools(),  # Adds math calculation capabilities
+    wiki_tool,  # Adds web search capabilities
+]
+
+# Configure model with specific settings
+assistant_model_config = ChatGPTConfig(
+    temperature=0.0,  # Use low temperature for more deterministic outputs
+)
+
+# Define system message
+assistant_sys_msg = "You are a helpful assistant that's good at calculations and research."
+
+# Cell 3: Initialize the model
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+    model_config_dict=assistant_model_config.as_dict(),
+)
+
+# Initialize agent with tools
+camel_agent = ChatAgent(
+    assistant_sys_msg,
+    model=model,
+    tools=tools_list,  # Pass the tools to the agent
+)
+```
+
+3. **Structured Response**:
+   - We define a `CalculationResult` Pydantic model with three fields
+   - The model uses available tools to perform calculations while maintaining the specified output structure
+
+
+```python
+# Define the structured response format
+class CalculationResult(BaseModel):
+    current_age: str = Field(description="The current age being calculated")
+    calculated_age: str = Field(description="The age after adding years")
+    calculation_steps: str = Field(description="Detailed steps of the calculation")
+```
+
+4. **Execution Flow**:
+   - The model first uses search tools to find the founding year of the University of Oxford
+   - It then performs the age calculation using math tools
+   - Finally, it formats the response according to our `CalculationResult` schema
+
+
+
+```python
+# Define the user's question
+user_msg = """Assume now is 2024 in the Gregorian calendar, 
+estimate the current age of University of Oxford 
+and then add 10 more years to this age."""
+
+# Get the structured response
+response = camel_agent.step(
+    user_msg, 
+    response_format=CalculationResult
+)
+
+# Display the results
+print("=== Raw Response ===")
+print(response.msgs[0].content)
+
+print("\n=== Parsed Object ===")
+print(response.msgs[0].parsed)
+
+print("\n=== Accessing Fields ===")
+print(f"Current age: {response.msgs[0].parsed.current_age}")
+print(f"Calculated age: {response.msgs[0].parsed.calculated_age}")
+print(f"\nCalculation steps:\n{response.msgs[0].parsed.calculation_steps}")
+```
+
+## 3. Structured Response with Non-Native Models <a name="non-native"></a>
+
+Some models don't natively support structured output formats. In this section, we'll show how to achieve structured responses through prompt engineering using GPT 3.5 TURBO. This approach is particularly useful with open-source or custom models.
+
+Let's create a recipe generator that returns structured data, demonstrating how to work with models that don't support native structured output:
+
+1. **Import libraries**:
+
+
+```python
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+import json
+```
+
+2. **Model-Agnostic Approach**:
+   - We define our data structure using Pydantic models
+
+
+```python
+# Define Pydantic models for our data structure
+# Define our data models
+class Ingredient(BaseModel):
+    name: str
+    amount: str
+    unit: str
+
+class RecipeStep(BaseModel):
+    step_number: int
+    instruction: str
+    duration: str
+
+class Recipe(BaseModel):
+    name: str
+    description: str
+    prep_time: str
+    cook_time: str
+    servings: int
+    ingredients: List[Ingredient]
+    instructions: List[RecipeStep]
+    dietary_info: List[str] = Field(description="List of dietary categories")
+
+```
+
+3. **Define agent and recipe generator function**
+   - The `generate_recipe` function manually constructs a prompt that asks for JSON
+   - We handle the response parsing and validation manually
+
+
+```python
+# Cell 2: Initialize the default model
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.GPT_3_5_TURBO,
+    api_key=openai_api_key,
+)
+
+agent = ChatAgent("You are a professional chef assistant.")
+```
+
+
+```python
+# Function to demonstrate manual parsing
+def generate_recipe(dish: str) -> Recipe:
+    # First, get a structured response
+    response = agent.step(
+        f"Provide a detailed recipe for {dish} in JSON format with the following structure: "
+        "{\"name\": \"...\", \"description\": \"...\", \"prep_time\": \"...\", "
+        "\"cook_time\": \"...\", \"servings\": 0, \"ingredients\": [{\"name\": \"...\", "
+        "\"amount\": \"...\", \"unit\": \"...\"}], \"instructions\": [{\"step_number\": 1, "
+        "\"instruction\": \"...\", \"duration\": \"...\"}], \"dietary_info\": [\"...\"]}\n\n"
+        "Return ONLY the JSON object, without any additional text or markdown formatting."
+    )
+    
+    try:
+        # Extract JSON from the response
+        content = response.msgs[0].content.strip()
+        if content.startswith("```json"):
+            content = content[7:-3].strip()  # Remove markdown code block if present
+        
+        # Parse and validate the response
+        recipe_data = json.loads(content)
+        return Recipe(**recipe_data)
+    except Exception as e:
+        print(f"Error parsing response: {e}")
+        print("Raw response:", response.msgs[0].content)
+        raise
+```
+
+4.1. **Generate and display a recipe**
+
+
+
+```python
+# Cell 4: Generate and display a recipe
+try:
+    recipe = generate_recipe("vegetable lasagna")
+    
+    print(f"=== {recipe.name.upper()} ===")
+    print(recipe.description)
+    print(f"\nPreparation: {recipe.prep_time} | Cooking: {recipe.cook_time} | Servings: {recipe.servings}")
+    
+    print("\nINGREDIENTS:")
+    for ing in recipe.ingredients:
+        print(f"- {ing.amount} {ing.unit} {ing.name}")
+    
+    print("\nINSTRUCTIONS:")
+    for step in recipe.instructions:
+        print(f"{step.step_number}. {step.instruction} ({step.duration})")
+    
+    print("\nDIETARY INFO:", ", ".join(recipe.dietary_info))
+
+except Exception as e:
+    print(f"Failed to generate recipe: {e}")
+```
+
+4.2. **Alternative approach**
+- Using response_format with the default model 
+- This shows how it would work with a model that supports structured output**
+
+
+```python
+# Cell 5: Alternative approach - Using response_format with the default model
+# This shows how it would work with a model that supports structured output
+try:
+    response = agent.step(
+        "Give me a recipe for vegetable lasagna",
+        response_format=Recipe
+    )
+    
+    print("\n=== Using response_format ===")
+    print("Recipe name:", response.msgs[0].parsed.name)
+    print("First ingredient:", response.msgs[0].parsed.ingredients[0].name)
+    
+except Exception as e:
+    print("\nNote: The default model might not support structured output natively.")
+    print("Error:", e)
+```
+
+## 🌟 Highlights
+
+## Conclusion
+
+This notebook has guided you through the powerful capabilities of structured responses in CAMEL, from basic implementations to advanced use cases. By leveraging Pydantic models and CAMEL's flexible architecture, you can create robust, type-safe interactions with language models.
+
+### Key Highlights
+
+* **Type-Safe Outputs**: Ensure consistent data structures with Pydantic models
+* **Flexible Integration**: Works with various model types, including those without native structured output support
+* **Tool Compatibility**: Seamlessly combine structured responses with CAMEL's tool system
+
+### Key Tools Utilized
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+* **Pydantic**: Provides data validation and settings management using Python type annotations.
+* **Structured Outputs**: Enforce specific response formats for reliable data processing.
+
+### Next Steps
+
+This comprehensive setup allows you to adapt and expand the example for various scenarios, including:
+
+* Building data processing pipelines
+* Creating structured APIs with LLMs
+* Developing complex multi-agent systems
+* Implementing data validation and transformation workflows
+
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

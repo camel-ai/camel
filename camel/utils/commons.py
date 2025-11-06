@@ -318,6 +318,8 @@ def api_keys_required(
                 key_way = "https://aimlapi.com/"
             elif env_var_name == 'COHERE_API_KEY':
                 key_way = "https://cohere.com/"
+            elif env_var_name == 'COMETAPI_KEY':
+                key_way = "https://api.cometapi.com/console/token"
             elif env_var_name == 'DEEPSEEK_API_KEY':
                 key_way = "https://www.deepseek.com/"
             elif env_var_name == 'AZURE_OPENAI_API_KEY':
@@ -352,6 +354,10 @@ def api_keys_required(
                 key_way = "https://platform.lingyiwanwu.com/docs"
             elif env_var_name == 'ZHIPUAI_API_KEY':
                 key_way = "https://www.zhipuai.cn/"
+            elif env_var_name == 'KLAVIS_API_KEY':
+                key_way = "https://www.klavis.ai/docs"
+            elif env_var_name == 'XAI_API_KEY':
+                key_way = "https://api.x.ai/v1"
 
             if missing_keys:
                 raise ValueError(
@@ -1009,14 +1015,32 @@ def with_timeout(timeout=None):
                 if effective_timeout is None:
                     return func(*args, **kwargs)
 
-                # Container to hold the result of the function call
+                # If current thread has a running asyncio event loop, avoid
+                # switching threads to preserve asyncio context (e.g., for
+                # asyncio.create_task). Execute inline without enforcing a
+                # sync timeout to keep event loop semantics intact.
+                try:
+                    asyncio.get_running_loop()
+                    loop_running = True
+                except RuntimeError:
+                    loop_running = False
+
+                if loop_running:
+                    return func(*args, **kwargs)
+
+                # Container to hold the result or exception from the function
+                # call
                 result_container = []
+                exception_container = []
 
                 def target():
-                    result_container.append(func(*args, **kwargs))
+                    try:
+                        result_container.append(func(*args, **kwargs))
+                    except Exception as e:
+                        exception_container.append(e)
 
-                # Start the function in a new thread
-                thread = threading.Thread(target=target)
+                # Start the function in a new daemon thread
+                thread = threading.Thread(target=target, daemon=True)
                 thread.start()
                 thread.join(effective_timeout)
 
@@ -1027,7 +1051,16 @@ def with_timeout(timeout=None):
                         f"exceeded {effective_timeout} seconds."
                     )
                 else:
-                    return result_container[0]
+                    # If an exception occurred, re-raise it
+                    if exception_container:
+                        raise exception_container[0]
+                    # Return result if available
+                    if result_container:
+                        return result_container[0]
+                    raise RuntimeError(
+                        f"Function `{func.__name__}` completed but produced "
+                        "no result or exception."
+                    )
 
         return wrapper
 
@@ -1038,3 +1071,93 @@ def with_timeout(timeout=None):
         return decorator(func)
 
     return decorator
+
+
+def browser_toolkit_save_auth_cookie(
+    cookie_json_path: str, url: str, wait_time: int = 60
+):
+    r"""Saves authentication cookies and browser storage state to a JSON file.
+
+    This function launches a browser window and navigates to the specified URL,
+    allowing the user to manually authenticate (log in) during a 60-second
+    wait period.After authentication, it saves all cookies, localStorage, and
+    sessionStorage data to the specified JSON file path, which can be used
+    later to maintain authenticated sessions without requiring manual login.
+
+    Args:
+        cookie_json_path (str): Path where the authentication cookies and
+            storage state will be saved as a JSON file. If the file already
+            exists, it will be loaded first and then overwritten with updated
+            state. The function checks if this file exists before attempting
+            to use it.
+        url (str): The URL to navigate to for authentication (e.g., a login
+            page).
+        wait_time (int): The time in seconds to wait for the user to manually
+            authenticate.
+
+    Usage:
+        1. The function opens a browser window and navigates to the specified
+            URL
+        2. User manually logs in during the wait_time wait period
+        3. Browser storage state (including auth cookies) is saved to the
+           specified file
+        4. The saved state can be used in subsequent browser sessions to
+           maintain authentication
+
+    Note:
+        The wait_time sleep is intentional to give the user enough time to
+        complete the manual authentication process before the storage state
+        is captured.
+    """
+    from playwright.sync_api import sync_playwright
+
+    playwright = sync_playwright().start()
+
+    # Launch visible browser window using Chromium
+    browser = playwright.chromium.launch(headless=False, channel="chromium")
+
+    # Check if cookie file exists before using it
+    storage_state = (
+        cookie_json_path if os.path.exists(cookie_json_path) else None
+    )
+
+    # Create browser context with proper typing
+    context = browser.new_context(
+        accept_downloads=True, storage_state=storage_state
+    )
+    page = context.new_page()
+    page.goto(url)  # Navigate to the authentication URL
+    # Wait for page to fully load
+    page.wait_for_load_state("load", timeout=1000)
+    time.sleep(wait_time)  # Wait 60 seconds for user to manually authenticate
+    # Save browser storage state (cookies, localStorage, etc.) to JSON file
+    context.storage_state(path=cookie_json_path)
+
+    browser.close()  # Close the browser when finished
+
+
+def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
+    r"""Helper function to run async functions in synchronous context.
+
+    Args:
+        func (Callable[..., Any]): The async function to wrap.
+
+    Returns:
+        Callable[..., Any]: A synchronous wrapper for the async function.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper

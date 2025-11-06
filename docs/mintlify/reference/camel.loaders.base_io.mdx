@@ -1,0 +1,289 @@
+<a id="camel.loaders.base_io"></a>
+
+<a id="camel.loaders.base_io.create_file"></a>
+
+## create_file
+
+```python
+def create_file(file: BytesIO, filename: str):
+```
+
+Reads an uploaded file and returns a File object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: A File object.
+
+<a id="camel.loaders.base_io.create_file_from_raw_bytes"></a>
+
+## create_file_from_raw_bytes
+
+```python
+def create_file_from_raw_bytes(raw_bytes: bytes, filename: str):
+```
+
+Reads raw bytes and returns a File object.
+
+**Parameters:**
+
+- **raw_bytes** (bytes): The raw bytes content of the file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: A File object.
+
+<a id="camel.loaders.base_io.File"></a>
+
+## File
+
+```python
+class File(ABC):
+```
+
+Represents an uploaded file comprised of Documents.
+
+**Parameters:**
+
+- **name** (str): The name of the file.
+- **file_id** (str): The unique identifier of the file.
+- **metadata** (Dict[str, Any], optional): Additional metadata associated with the file. Defaults to None.
+- **docs** (List[Dict[str, Any]], optional): A list of documents contained within the file. Defaults to None.
+- **raw_bytes** (bytes, optional): The raw bytes content of the file. Defaults to b"".
+
+<a id="camel.loaders.base_io.File.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    name: str,
+    file_id: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    docs: Optional[List[Dict[str, Any]]] = None,
+    raw_bytes: bytes = b''
+):
+```
+
+<a id="camel.loaders.base_io.File.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a File object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: A File object.
+
+<a id="camel.loaders.base_io.File.from_raw_bytes"></a>
+
+### from_raw_bytes
+
+```python
+def from_raw_bytes(cls, raw_bytes: bytes, filename: str):
+```
+
+Creates a File object from raw bytes.
+
+**Parameters:**
+
+- **raw_bytes** (bytes): The raw bytes content of the file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: A File object.
+
+<a id="camel.loaders.base_io.File.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.loaders.base_io.File.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```
+
+<a id="camel.loaders.base_io.File.copy"></a>
+
+### copy
+
+```python
+def copy(self):
+```
+
+Create a deep copy of this File
+
+<a id="camel.loaders.base_io.strip_consecutive_newlines"></a>
+
+## strip_consecutive_newlines
+
+```python
+def strip_consecutive_newlines(text: str):
+```
+
+Strips consecutive newlines from a string.
+
+**Parameters:**
+
+- **text** (str): The string to strip.
+
+**Returns:**
+
+  str: The string with consecutive newlines stripped.
+
+<a id="camel.loaders.base_io.DocxFile"></a>
+
+## DocxFile
+
+```python
+class DocxFile(File):
+```
+
+<a id="camel.loaders.base_io.DocxFile.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a DocxFile object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the docx file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  DocxFile: A DocxFile object.
+
+<a id="camel.loaders.base_io.PdfFile"></a>
+
+## PdfFile
+
+```python
+class PdfFile(File):
+```
+
+<a id="camel.loaders.base_io.PdfFile.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a PdfFile object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the pdf file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  PdfFile: A PdfFile object.
+
+<a id="camel.loaders.base_io.TxtFile"></a>
+
+## TxtFile
+
+```python
+class TxtFile(File):
+```
+
+<a id="camel.loaders.base_io.TxtFile.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a TxtFile object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the txt file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  TxtFile: A TxtFile object.
+
+<a id="camel.loaders.base_io.JsonFile"></a>
+
+## JsonFile
+
+```python
+class JsonFile(File):
+```
+
+<a id="camel.loaders.base_io.JsonFile.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a JsonFile object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the json file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  JsonFile: A JsonFile object.
+
+<a id="camel.loaders.base_io.HtmlFile"></a>
+
+## HtmlFile
+
+```python
+class HtmlFile(File):
+```
+
+<a id="camel.loaders.base_io.HtmlFile.from_bytes"></a>
+
+### from_bytes
+
+```python
+def from_bytes(cls, file: BytesIO, filename: str):
+```
+
+Creates a HtmlFile object from a BytesIO object.
+
+**Parameters:**
+
+- **file** (BytesIO): A BytesIO object representing the contents of the html file.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  HtmlFile: A HtmlFile object.

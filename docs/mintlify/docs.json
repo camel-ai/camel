@@ -1,0 +1,764 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "CAMEL-AI Documentation",
+  "theme": "mint",
+  "logo": {
+    "light": "images/CAMEL_Icon.png",
+    "dark": "images/CAMEL_Icon_White.png",
+    "href": "https://camel-ai.org "
+  },
+  "favicon": "images/CAMEL_Icon.png",
+  "colors": {
+    "primary": "#5603fc",
+    "light": "#5603fc",
+    "dark": "#5603fc"
+  },
+  "background": {
+    "color": {
+      "light": "#F6F3EF"
+    }
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "CAMEL Home",
+        "href": "https://camel-ai.org "
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/camel-ai/camel "
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Join Community",
+      "href": "https://discord.com/invite/CNcNpquyDc "
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "get_started/introduction",
+              "get_started/installation",
+              "get_started/setup"
+            ]
+          },
+          {
+            "group": "Key Modules",
+            "pages": [
+              "key_modules/agents",
+              "key_modules/models",
+              "key_modules/tools",
+              "key_modules/societies",
+              "key_modules/workforce",
+              "key_modules/datagen",
+              "key_modules/interpreters",
+              "key_modules/runtimes",
+              "key_modules/messages",
+              "key_modules/memory",
+              "key_modules/prompts",
+              "key_modules/tasks",
+              "key_modules/loaders",
+              "key_modules/storages",
+              "key_modules/embeddings",
+              "key_modules/retrievers"
+            ]
+          },
+          {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
+            ]
+          },
+          {
+            "group": "CAMEL with MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
+            ]
+          },
+          {
+            "group": "Cookbooks",
+            "pages": [
+              {
+                "group": "Basic Concepts",
+                "pages": [
+                  "cookbooks/basic_concepts/agents_message",
+                  "cookbooks/basic_concepts/agents_prompting",
+                  "cookbooks/basic_concepts/create_your_first_agent",
+                  "cookbooks/basic_concepts/create_your_first_agents_society"
+                ]
+              },
+              {
+                "group": "Advanced Features",
+                "pages": [
+                  "cookbooks/advanced_features/agent_generate_structured_output",
+                  "cookbooks/advanced_features/agents_tracking",
+                  "cookbooks/advanced_features/agents_with_MCP",
+                  "cookbooks/advanced_features/agents_with_dkg",
+                  "cookbooks/advanced_features/agents_with_graph_rag",
+                  "cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
+                  "cookbooks/advanced_features/agents_with_memory",
+                  "cookbooks/advanced_features/agents_with_rag",
+                  "cookbooks/advanced_features/agents_with_tools",
+                  "cookbooks/advanced_features/agents_with_tools_from_ACI",
+                  "cookbooks/advanced_features/agents_with_tools_from_Composio",
+                  "cookbooks/advanced_features/critic_agents_and_tree_search",
+                  "cookbooks/advanced_features/embodied_agents"
+                ]
+              },
+              {
+                "group": "Applications",
+                "pages": [
+                  "cookbooks/applications/customer_service_Discord_bot_using_Cohere_model_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
+                  "cookbooks/applications/dynamic_travel_planner",
+                  "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/pptx_toolkit",
+                  "cookbooks/applications/roleplaying_scraper"
+                ]
+              },
+              {
+                "group": "Data Generation",
+                "pages": [
+                  "cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface",
+                  "cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format",
+                  "cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen",
+                  "cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
+                  "cookbooks/data_generation/self_improving_cot_generation",
+                  "cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1",
+                  "cookbooks/data_generation/self_instruct_data_generation",
+                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
+                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct",
+                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama",
+                  "cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model"
+                ]
+              },
+              {
+                "group": "Data Processing",
+                "pages": [
+                  "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
+                  "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "cookbooks/data_processing/summarisation_agent_with_mistral_ocr",
+                  "cookbooks/data_processing/video_analysis"
+                ]
+              },
+              {
+                "group": "Loong",
+                "pages": [
+                  "cookbooks/loong/batched_single_step_env",
+                  "cookbooks/loong/multi_step_rl",
+                  "cookbooks/loong/single_step_env"
+                ]
+              },
+              {
+                "group": "Multi Agent Society",
+                "pages": [
+                  "cookbooks/multi_agent_society/agents_society",
+                  "cookbooks/multi_agent_society/azure_openai_claude_society",
+                  "cookbooks/multi_agent_society/task_generation",
+                  "cookbooks/multi_agent_society/workforce_judge_committee"
+                ]
+              },
+              {
+                "group": "MCP",
+                "pages": [
+                  "cookbooks/mcp/agents_with_sql_mcp",
+                  "cookbooks/mcp/camel_aci_mcp_cookbook"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "reference/index"
+            ]
+          },
+          {
+            "group": "Agents",
+            "pages": [
+              "reference/camel.agents._types",
+              "reference/camel.agents._utils",
+              "reference/camel.agents.base",
+              "reference/camel.agents.chat_agent",
+              "reference/camel.agents.critic_agent",
+              "reference/camel.agents.deductive_reasoner_agent",
+              "reference/camel.agents.embodied_agent",
+              "reference/camel.agents.knowledge_graph_agent",
+              "reference/camel.agents.mcp_agent",
+              "reference/camel.agents.programmed_agent_instruction",
+              "reference/camel.agents.repo_agent",
+              "reference/camel.agents.role_assignment_agent",
+              "reference/camel.agents.search_agent",
+              "reference/camel.agents.task_agent",
+              "reference/camel.agents.tool_agents.base",
+              "reference/camel.agents.tool_agents.hugging_face_tool_agent"
+            ]
+          },
+          {
+            "group": "Configs",
+            "pages": [
+              "reference/camel.configs.aihubmix_config",
+              "reference/camel.configs.aiml_config",
+              "reference/camel.configs.amd_config",
+              "reference/camel.configs.anthropic_config",
+              "reference/camel.configs.base_config",
+              "reference/camel.configs.bedrock_config",
+              "reference/camel.configs.cohere_config",
+              "reference/camel.configs.cometapi_config",
+              "reference/camel.configs.crynux_config",
+              "reference/camel.configs.deepseek_config",
+              "reference/camel.configs.gemini_config",
+              "reference/camel.configs.groq_config",
+              "reference/camel.configs.internlm_config",
+              "reference/camel.configs.litellm_config",
+              "reference/camel.configs.lmstudio_config",
+              "reference/camel.configs.mistral_config",
+              "reference/camel.configs.modelscope_config",
+              "reference/camel.configs.moonshot_config",
+              "reference/camel.configs.nebius_config",
+              "reference/camel.configs.netmind_config",
+              "reference/camel.configs.novita_config",
+              "reference/camel.configs.nvidia_config",
+              "reference/camel.configs.ollama_config",
+              "reference/camel.configs.openai_config",
+              "reference/camel.configs.openrouter_config",
+              "reference/camel.configs.ppio_config",
+              "reference/camel.configs.qianfan_config",
+              "reference/camel.configs.qwen_config",
+              "reference/camel.configs.reka_config",
+              "reference/camel.configs.samba_config",
+              "reference/camel.configs.sglang_config",
+              "reference/camel.configs.siliconflow_config",
+              "reference/camel.configs.togetherai_config",
+              "reference/camel.configs.vllm_config",
+              "reference/camel.configs.watsonx_config",
+              "reference/camel.configs.yi_config",
+              "reference/camel.configs.zhipuai_config"
+            ]
+          },
+          {
+            "group": "Data Generation",
+            "pages": [
+              "reference/camel.datagen.cot_datagen",
+              "reference/camel.datagen.self_improving_cot",
+              "reference/camel.datagen.evol_instruct.evol_instruct",
+              "reference/camel.datagen.evol_instruct.scorer",
+              "reference/camel.datagen.evol_instruct.templates",
+              "reference/camel.datagen.self_instruct.self_instruct",
+              "reference/camel.datagen.source2synth.data_processor",
+              "reference/camel.datagen.source2synth.models",
+              "reference/camel.datagen.source2synth.user_data_processor_config"
+            ]
+          },
+          {
+            "group": "Datasets",
+            "pages": [
+              "reference/camel.datasets.base_generator",
+              "reference/camel.datasets.few_shot_generator",
+              "reference/camel.datasets.models",
+              "reference/camel.datasets.self_instruct_generator",
+              "reference/camel.datasets.static_dataset"
+            ]
+          },
+          {
+            "group": "Embeddings",
+            "pages": [
+              "reference/camel.embeddings.azure_embedding",
+              "reference/camel.embeddings.base",
+              "reference/camel.embeddings.gemini_embedding",
+              "reference/camel.embeddings.jina_embedding",
+              "reference/camel.embeddings.mistral_embedding",
+              "reference/camel.embeddings.openai_compatible_embedding",
+              "reference/camel.embeddings.openai_embedding",
+              "reference/camel.embeddings.sentence_transformers_embeddings",
+              "reference/camel.embeddings.together_embedding",
+              "reference/camel.embeddings.vlm_embedding"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "reference/camel.models._utils",
+              "reference/camel.models.aihubmix_model",
+              "reference/camel.models.aiml_model",
+              "reference/camel.models.amd_model",
+              "reference/camel.models.anthropic_model",
+              "reference/camel.models.aws_bedrock_model",
+              "reference/camel.models.azure_openai_model",
+              "reference/camel.models.base_audio_model",
+              "reference/camel.models.base_model",
+              "reference/camel.models.cohere_model",
+              "reference/camel.models.cometapi_model",
+              "reference/camel.models.crynux_model",
+              "reference/camel.models.deepseek_model",
+              "reference/camel.models.fish_audio_model",
+              "reference/camel.models.gemini_model",
+              "reference/camel.models.groq_model",
+              "reference/camel.models.internlm_model",
+              "reference/camel.models.litellm_model",
+              "reference/camel.models.lmstudio_model",
+              "reference/camel.models.mistral_model",
+              "reference/camel.models.model_factory",
+              "reference/camel.models.model_manager",
+              "reference/camel.models.modelscope_model",
+              "reference/camel.models.moonshot_model",
+              "reference/camel.models.nebius_model",
+              "reference/camel.models.nemotron_model",
+              "reference/camel.models.netmind_model",
+              "reference/camel.models.novita_model",
+              "reference/camel.models.nvidia_model",
+              "reference/camel.models.ollama_model",
+              "reference/camel.models.openai_audio_models",
+              "reference/camel.models.openai_compatible_model",
+              "reference/camel.models.openai_model",
+              "reference/camel.models.openrouter_model",
+              "reference/camel.models.ppio_model",
+              "reference/camel.models.qianfan_model",
+              "reference/camel.models.qwen_model",
+              "reference/camel.models.reka_model",
+              "reference/camel.models.samba_model",
+              "reference/camel.models.sglang_model",
+              "reference/camel.models.siliconflow_model",
+              "reference/camel.models.stub_model",
+              "reference/camel.models.togetherai_model",
+              "reference/camel.models.vllm_model",
+              "reference/camel.models.volcano_model",
+              "reference/camel.models.watsonx_model",
+              "reference/camel.models.yi_model",
+              "reference/camel.models.zhipuai_model",
+              "reference/camel.models.reward.base_reward_model",
+              "reference/camel.models.reward.evaluator",
+              "reference/camel.models.reward.nemotron_model",
+              "reference/camel.models.reward.skywork_model"
+            ]
+          },
+          {
+            "group": "Interpreters",
+            "pages": [
+              "reference/camel.interpreters.base",
+              "reference/camel.interpreters.docker_interpreter",
+              "reference/camel.interpreters.e2b_interpreter",
+              "reference/camel.interpreters.internal_python_interpreter",
+              "reference/camel.interpreters.ipython_interpreter",
+              "reference/camel.interpreters.microsandbox_interpreter",
+              "reference/camel.interpreters.subprocess_interpreter"
+            ]
+          },
+          {
+            "group": "Memory",
+            "pages": [
+              "reference/camel.memories.agent_memories",
+              "reference/camel.memories.base",
+              "reference/camel.memories.records",
+              "reference/camel.memories.blocks.chat_history_block",
+              "reference/camel.memories.blocks.vectordb_block",
+              "reference/camel.memories.context_creators.score_based"
+            ]
+          },
+          {
+            "group": "Messages",
+            "pages": [
+              "reference/camel.messages.base",
+              "reference/camel.messages.func_message",
+              "reference/camel.messages.conversion.alpaca",
+              "reference/camel.messages.conversion.conversation_models"
+            ]
+          },
+          {
+            "group": "Prompts",
+            "pages": [
+              "reference/camel.prompts.ai_society",
+              "reference/camel.prompts.base",
+              "reference/camel.prompts.code",
+              "reference/camel.prompts.evaluation",
+              "reference/camel.prompts.generate_text_embedding_data",
+              "reference/camel.prompts.image_craft",
+              "reference/camel.prompts.misalignment",
+              "reference/camel.prompts.persona_hub",
+              "reference/camel.prompts.prompt_templates",
+              "reference/camel.prompts.role_description_prompt_template",
+              "reference/camel.prompts.solution_extraction",
+              "reference/camel.prompts.task_prompt_template",
+              "reference/camel.prompts.translation",
+              "reference/camel.prompts.video_description_prompt"
+            ]
+          },
+          {
+            "group": "Responses",
+            "pages": [
+              "reference/camel.responses.agent_responses"
+            ]
+          },
+          {
+            "group": "Retrievers",
+            "pages": [
+              "reference/camel.retrievers.auto_retriever",
+              "reference/camel.retrievers.base",
+              "reference/camel.retrievers.bm25_retriever",
+              "reference/camel.retrievers.cohere_rerank_retriever",
+              "reference/camel.retrievers.hybrid_retrival",
+              "reference/camel.retrievers.vector_retriever"
+            ]
+          },
+          {
+            "group": "Societies",
+            "pages": [
+              "reference/camel.societies.babyagi_playing",
+              "reference/camel.societies.role_playing",
+              "reference/camel.societies.workforce.base",
+              "reference/camel.societies.workforce.role_playing_worker",
+              "reference/camel.societies.workforce.single_agent_worker",
+              "reference/camel.societies.workforce.structured_output_handler",
+              "reference/camel.societies.workforce.task_channel",
+              "reference/camel.societies.workforce.utils",
+              "reference/camel.societies.workforce.worker",
+              "reference/camel.societies.workforce.workflow_memory_manager",
+              "reference/camel.societies.workforce.workforce",
+              "reference/camel.societies.workforce.workforce_callback",
+              "reference/camel.societies.workforce.workforce_logger",
+              "reference/camel.societies.workforce.workforce_metrics"
+            ]
+          },
+          {
+            "group": "Storage",
+            "pages": [
+              "reference/camel.storages.graph_storages.base",
+              "reference/camel.storages.graph_storages.graph_element",
+              "reference/camel.storages.graph_storages.nebula_graph",
+              "reference/camel.storages.graph_storages.neo4j_graph",
+              "reference/camel.storages.key_value_storages.base",
+              "reference/camel.storages.key_value_storages.in_memory",
+              "reference/camel.storages.key_value_storages.json",
+              "reference/camel.storages.key_value_storages.mem0_cloud",
+              "reference/camel.storages.key_value_storages.redis",
+              "reference/camel.storages.object_storages.amazon_s3",
+              "reference/camel.storages.object_storages.azure_blob",
+              "reference/camel.storages.object_storages.base",
+              "reference/camel.storages.object_storages.google_cloud",
+              "reference/camel.storages.vectordb_storages.base",
+              "reference/camel.storages.vectordb_storages.chroma",
+              "reference/camel.storages.vectordb_storages.faiss",
+              "reference/camel.storages.vectordb_storages.milvus",
+              "reference/camel.storages.vectordb_storages.oceanbase",
+              "reference/camel.storages.vectordb_storages.pgvector",
+              "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
+              "reference/camel.storages.vectordb_storages.tidb",
+              "reference/camel.storages.vectordb_storages.weaviate"
+            ]
+          },
+          {
+            "group": "Tasks",
+            "pages": [
+              "reference/camel.tasks.task"
+            ]
+          },
+          {
+            "group": "Terminators",
+            "pages": [
+              "reference/camel.terminators.base",
+              "reference/camel.terminators.response_terminator",
+              "reference/camel.terminators.token_limit_terminator"
+            ]
+          },
+          {
+            "group": "Toolkits",
+            "pages": [
+              "reference/camel.toolkits.aci_toolkit",
+              "reference/camel.toolkits.artifact_toolkit",
+              "reference/camel.toolkits.arxiv_toolkit",
+              "reference/camel.toolkits.ask_news_toolkit",
+              "reference/camel.toolkits.async_browser_toolkit",
+              "reference/camel.toolkits.audio_analysis_toolkit",
+              "reference/camel.toolkits.base",
+              "reference/camel.toolkits.bohrium_toolkit",
+              "reference/camel.toolkits.browser_toolkit",
+              "reference/camel.toolkits.browser_toolkit_commons",
+              "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.context_summarizer_toolkit",
+              "reference/camel.toolkits.craw4ai_toolkit",
+              "reference/camel.toolkits.dalle_toolkit",
+              "reference/camel.toolkits.dappier_toolkit",
+              "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.dingtalk",
+              "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
+              "reference/camel.toolkits.excel_toolkit",
+              "reference/camel.toolkits.file_toolkit",
+              "reference/camel.toolkits.file_write_toolkit",
+              "reference/camel.toolkits.function_tool",
+              "reference/camel.toolkits.github_toolkit",
+              "reference/camel.toolkits.google_calendar_toolkit",
+              "reference/camel.toolkits.google_drive_mcp_toolkit",
+              "reference/camel.toolkits.google_maps_toolkit",
+              "reference/camel.toolkits.google_scholar_toolkit",
+              "reference/camel.toolkits.human_toolkit",
+              "reference/camel.toolkits.image_analysis_toolkit",
+              "reference/camel.toolkits.image_generation_toolkit",
+              "reference/camel.toolkits.jina_reranker_toolkit",
+              "reference/camel.toolkits.klavis_toolkit",
+              "reference/camel.toolkits.linkedin_toolkit",
+              "reference/camel.toolkits.markitdown_toolkit",
+              "reference/camel.toolkits.math_toolkit",
+              "reference/camel.toolkits.mcp_toolkit",
+              "reference/camel.toolkits.memory_toolkit",
+              "reference/camel.toolkits.meshy_toolkit",
+              "reference/camel.toolkits.message_agent_toolkit",
+              "reference/camel.toolkits.message_integration",
+              "reference/camel.toolkits.mineru_toolkit",
+              "reference/camel.toolkits.minimax_mcp_toolkit",
+              "reference/camel.toolkits.networkx_toolkit",
+              "reference/camel.toolkits.note_taking_toolkit",
+              "reference/camel.toolkits.notion_mcp_toolkit",
+              "reference/camel.toolkits.notion_toolkit",
+              "reference/camel.toolkits.open_api_toolkit",
+              "reference/camel.toolkits.openai_image_toolkit",
+              "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
+              "reference/camel.toolkits.playwright_mcp_toolkit",
+              "reference/camel.toolkits.pptx_toolkit",
+              "reference/camel.toolkits.pubmed_toolkit",
+              "reference/camel.toolkits.pulse_mcp_search_toolkit",
+              "reference/camel.toolkits.pyautogui_toolkit",
+              "reference/camel.toolkits.reddit_toolkit",
+              "reference/camel.toolkits.resend_toolkit",
+              "reference/camel.toolkits.retrieval_toolkit",
+              "reference/camel.toolkits.screenshot_toolkit",
+              "reference/camel.toolkits.search_toolkit",
+              "reference/camel.toolkits.searxng_toolkit",
+              "reference/camel.toolkits.semantic_scholar_toolkit",
+              "reference/camel.toolkits.slack_toolkit",
+              "reference/camel.toolkits.stripe_toolkit",
+              "reference/camel.toolkits.sympy_toolkit",
+              "reference/camel.toolkits.task_planning_toolkit",
+              "reference/camel.toolkits.terminal_toolkit",
+              "reference/camel.toolkits.thinking_toolkit",
+              "reference/camel.toolkits.twitter_toolkit",
+              "reference/camel.toolkits.vertex_ai_veo_toolkit",
+              "reference/camel.toolkits.video_analysis_toolkit",
+              "reference/camel.toolkits.video_download_toolkit",
+              "reference/camel.toolkits.weather_toolkit",
+              "reference/camel.toolkits.web_deploy_toolkit",
+              "reference/camel.toolkits.wechat_official_toolkit",
+              "reference/camel.toolkits.whatsapp_toolkit",
+              "reference/camel.toolkits.wolfram_alpha_toolkit",
+              "reference/camel.toolkits.zapier_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
+              "reference/camel.toolkits.hybrid_browser_toolkit.installer",
+              "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
+              "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
+              "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.config_loader",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.snapshot",
+              "reference/camel.toolkits.non_visual_browser_toolkit.actions",
+              "reference/camel.toolkits.non_visual_browser_toolkit.agent",
+              "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
+              "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot",
+              "reference/camel.toolkits.terminal_toolkit.terminal_toolkit",
+              "reference/camel.toolkits.terminal_toolkit.utils"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "reference/camel.types.enums",
+              "reference/camel.types.mcp_registries",
+              "reference/camel.types.unified_model_type",
+              "reference/camel.types.agents.tool_calling_record"
+            ]
+          },
+          {
+            "group": "Verifiers",
+            "pages": [
+              "reference/camel.verifiers.base",
+              "reference/camel.verifiers.math_verifier",
+              "reference/camel.verifiers.models",
+              "reference/camel.verifiers.physics_verifier",
+              "reference/camel.verifiers.python_verifier"
+            ]
+          },
+          {
+            "group": "Bots",
+            "pages": [
+              "reference/camel.bots.telegram_bot",
+              "reference/camel.bots.discord.discord_app",
+              "reference/camel.bots.discord.discord_installation",
+              "reference/camel.bots.discord.discord_store",
+              "reference/camel.bots.slack.models",
+              "reference/camel.bots.slack.slack_app"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "reference/camel.utils.async_func",
+              "reference/camel.utils.commons",
+              "reference/camel.utils.context_utils",
+              "reference/camel.utils.deduplication",
+              "reference/camel.utils.filename",
+              "reference/camel.utils.langfuse",
+              "reference/camel.utils.mcp",
+              "reference/camel.utils.mcp_client",
+              "reference/camel.utils.message_summarizer",
+              "reference/camel.utils.response_format",
+              "reference/camel.utils.token_counting",
+              "reference/camel.utils.tool_result",
+              "reference/camel.utils.chunker.base",
+              "reference/camel.utils.chunker.code_chunker",
+              "reference/camel.utils.chunker.uio_chunker"
+            ]
+          },
+          {
+            "group": "Environments",
+            "pages": [
+              "reference/camel.environments.models",
+              "reference/camel.environments.multi_step",
+              "reference/camel.environments.rlcards_env",
+              "reference/camel.environments.single_step",
+              "reference/camel.environments.tic_tac_toe"
+            ]
+          },
+          {
+            "group": "Extractors",
+            "pages": [
+              "reference/camel.extractors.base",
+              "reference/camel.extractors.python_strategies"
+            ]
+          },
+          {
+            "group": "Personas",
+            "pages": [
+              "reference/camel.personas.persona",
+              "reference/camel.personas.persona_hub"
+            ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "reference/camel.benchmarks.apibank",
+              "reference/camel.benchmarks.apibench",
+              "reference/camel.benchmarks.base",
+              "reference/camel.benchmarks.browsecomp",
+              "reference/camel.benchmarks.gaia",
+              "reference/camel.benchmarks.nexus",
+              "reference/camel.benchmarks.ragbench",
+              "reference/camel.benchmarks.mock_website.app",
+              "reference/camel.benchmarks.mock_website.mock_web"
+            ]
+          },
+          {
+            "group": "Data Collectors",
+            "pages": [
+              "reference/camel.data_collectors.alpaca_collector",
+              "reference/camel.data_collectors.base",
+              "reference/camel.data_collectors.sharegpt_collector"
+            ]
+          },
+          {
+            "group": "Datahubs",
+            "pages": [
+              "reference/camel.datahubs.base",
+              "reference/camel.datahubs.huggingface"
+            ]
+          },
+          {
+            "group": "Loaders",
+            "pages": [
+              "reference/camel.loaders.apify_reader",
+              "reference/camel.loaders.base_io",
+              "reference/camel.loaders.base_loader",
+              "reference/camel.loaders.chunkr_reader",
+              "reference/camel.loaders.crawl4ai_reader",
+              "reference/camel.loaders.firecrawl_reader",
+              "reference/camel.loaders.jina_url_reader",
+              "reference/camel.loaders.markitdown",
+              "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
+              "reference/camel.loaders.pandas_reader",
+              "reference/camel.loaders.scrapegraph_reader",
+              "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
+            ]
+          },
+          {
+            "group": "Runtimes",
+            "pages": [
+              "reference/camel.runtimes.base",
+              "reference/camel.runtimes.configs",
+              "reference/camel.runtimes.daytona_runtime",
+              "reference/camel.runtimes.docker_runtime",
+              "reference/camel.runtimes.llm_guard_runtime",
+              "reference/camel.runtimes.remote_http_runtime",
+              "reference/camel.runtimes.ubuntu_docker_runtime",
+              "reference/camel.runtimes.utils.function_risk_toolkit",
+              "reference/camel.runtimes.utils.ignore_risk_toolkit"
+            ]
+          },
+          {
+            "group": "Schemas",
+            "pages": [
+              "reference/camel.schemas.base",
+              "reference/camel.schemas.openai_converter",
+              "reference/camel.schemas.outlines_converter"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Website",
+          "href": "https://www.camel-ai.org/ ",
+          "icon": "globe"
+        }
+      ]
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/camel-ai/camel ",
+      "twitter": "https://x.com/CamelAIOrg "
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-XV5VXFS2RG"
+    }
+  }
+}

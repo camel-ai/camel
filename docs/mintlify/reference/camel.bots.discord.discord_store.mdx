@@ -1,0 +1,46 @@
+<a id="camel.bots.discord.discord_store"></a>
+
+<a id="camel.bots.discord.discord_store.DiscordBaseInstallationStore"></a>
+
+## DiscordBaseInstallationStore
+
+```python
+class DiscordBaseInstallationStore:
+```
+
+Abstract base class for managing Discord installations.
+
+This class defines the interface for database operations related to storing
+and retrieving Discord installation data. Subclasses must implement these
+methods to handle database-specific logic.
+
+<a id="camel.bots.discord.discord_store.DiscordSQLiteInstallationStore"></a>
+
+## DiscordSQLiteInstallationStore
+
+```python
+class DiscordSQLiteInstallationStore(DiscordBaseInstallationStore):
+```
+
+SQLite-based implementation for managing Discord installations.
+
+This class provides methods for initializing the database, saving,
+retrieving, and deleting installation records using SQLite.
+
+**Parameters:**
+
+- **database** (str): Path to the SQLite database file.
+
+<a id="camel.bots.discord.discord_store.DiscordSQLiteInstallationStore.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, database: str):
+```
+
+Initializes the SQLite installation store.
+
+**Parameters:**
+
+- **database** (str): Path to the SQLite database file.

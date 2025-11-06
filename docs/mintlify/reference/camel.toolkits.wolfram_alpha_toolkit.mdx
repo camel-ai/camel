@@ -1,0 +1,126 @@
+<a id="camel.toolkits.wolfram_alpha_toolkit"></a>
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit"></a>
+
+## WolframAlphaToolkit
+
+```python
+class WolframAlphaToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for WolframAlpha.
+
+Wolfram|Alpha is an answer engine developed by Wolfram Research.
+It is offered as an online service that answers factual queries
+by computing answers from externally sourced data.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha"></a>
+
+### query_wolfram_alpha
+
+```python
+def query_wolfram_alpha(self, query: str):
+```
+
+Queries Wolfram|Alpha and returns the result as a simple answer.
+
+**Parameters:**
+
+- **query** (str): The query to send to Wolfram Alpha.
+
+**Returns:**
+
+  str: The result from Wolfram Alpha as a simple answer.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha_step_by_step"></a>
+
+### query_wolfram_alpha_step_by_step
+
+```python
+def query_wolfram_alpha_step_by_step(self, query: str):
+```
+
+Queries Wolfram|Alpha and returns detailed results with
+step-by-step solution.
+
+**Parameters:**
+
+- **query** (str): The query to send to Wolfram Alpha.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary with detailed information including
+step-by-step solution.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha_llm"></a>
+
+### query_wolfram_alpha_llm
+
+```python
+def query_wolfram_alpha_llm(self, query: str):
+```
+
+Sends a query to the Wolfram|Alpha API optimized for language
+model usage.
+
+**Parameters:**
+
+- **query** (str): The query to send to Wolfram Alpha LLM.
+
+**Returns:**
+
+  str: The result from Wolfram Alpha as a string.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit._parse_wolfram_result"></a>
+
+### _parse_wolfram_result
+
+```python
+def _parse_wolfram_result(self, result):
+```
+
+Parses a Wolfram Alpha API result into a structured dictionary
+format.
+
+**Parameters:**
+
+- **result**: The API result returned from a Wolfram Alpha query, structured with multiple pods, each containing specific information related to the query.
+
+**Returns:**
+
+  Dict[str, Any]: A structured dictionary with the original query
+and the final answer.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit._get_wolframalpha_step_by_step_solution"></a>
+
+### _get_wolframalpha_step_by_step_solution
+
+```python
+def _get_wolframalpha_step_by_step_solution(self, app_id: str, query: str):
+```
+
+Retrieve a step-by-step solution from the Wolfram Alpha API for a
+given query.
+
+**Parameters:**
+
+- **app_id** (str): Your Wolfram Alpha API application ID.
+- **query** (str): The mathematical or computational query to solve.
+
+**Returns:**
+
+  dict: The step-by-step solution response text from the Wolfram
+Alpha API.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

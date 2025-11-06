@@ -78,6 +78,12 @@ class PythonVerifier(BaseVerifier):
         else:  # Unix-like systems
             self.bin_dir = 'bin'
 
+    def _cleanup_venv(self) -> None:
+        r"""Clean up the virtual environment if it exists."""
+        if self.venv_path and os.path.exists(self.venv_path):
+            shutil.rmtree(self.venv_path)
+            self.venv_path = None
+
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
         # Check if we're in a uv environment and use uv if available
@@ -96,10 +102,7 @@ class PythonVerifier(BaseVerifier):
             logger.info(f"Virtual environment created at {self.venv_path}")
         except Exception as e:
             logger.error(f"Failed to create virtual environment: {e}")
-            # Clean up resources before re-raising
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
 
         venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
@@ -122,19 +125,14 @@ class PythonVerifier(BaseVerifier):
                     "Failed to install required packages: "
                     f"{e.stderr.decode().strip()}"
                 )
-                # Clean up resources before re-raising
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
             except subprocess.TimeoutExpired:
                 logger.error(
                     f"Package installation timed out "
                     f"after {self._timeout} seconds"
                 )
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
 
     def _is_uv_environment(self) -> bool:
@@ -159,19 +157,14 @@ class PythonVerifier(BaseVerifier):
                 "[UV] Failed to create virtual environment:\n"
                 f"{e.stderr.decode().strip()}"
             )
-            # Clean up resources before re-raising
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
         except subprocess.TimeoutExpired:
             logger.error(
                 f"[UV] Virtual environment creation timed "
                 f"out after {self._timeout} seconds"
             )
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
 
         if self.required_packages:
@@ -203,27 +196,19 @@ class PythonVerifier(BaseVerifier):
                     "[UV] Failed to install required packages via uv:\n"
                     f"{e.stderr.decode().strip()}"
                 )
-                # Clean up resources before re-raising
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
             except subprocess.TimeoutExpired:
                 logger.error(
                     f"[UV] Package installation timed "
                     f"out after {self._timeout} seconds"
                 )
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
 
     async def _cleanup(self) -> None:
-        r"""Clean up the virtual environment."""
-        if self.venv_path:
-            shutil.rmtree(self.venv_path)
-            logger.info(f"Virtual environment at {self.venv_path} removed")
-            self.venv_path = None
+        r"""Clean up resources after execution."""
+        self._cleanup_venv()
 
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
@@ -243,7 +228,7 @@ class PythonVerifier(BaseVerifier):
             solution (str): The Python code or expression to execute and
                 verify.
             reference_answer (Optional[str]): The expected value as a Python
-             expression. If None, only execution success is verified.
+                expression. If None, only execution success is verified.
 
         Returns:
             VerificationResult: Result of the verification process.

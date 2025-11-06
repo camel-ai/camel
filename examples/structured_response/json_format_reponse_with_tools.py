@@ -15,7 +15,6 @@
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import (
     MathToolkit,
@@ -27,9 +26,6 @@ tools_list = [
     *MathToolkit().get_tools(),
     *SearchToolkit().get_tools(),
 ]
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
 
 # Define system message
 assistant_sys_msg = "You are a helpful assistant."
@@ -37,7 +33,6 @@ assistant_sys_msg = "You are a helpful assistant."
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 # Set agent

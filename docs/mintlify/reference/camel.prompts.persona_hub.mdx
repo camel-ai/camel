@@ -1,0 +1,28 @@
+<a id="camel.prompts.persona_hub"></a>
+
+<a id="camel.prompts.persona_hub.PersonaHubPrompt"></a>
+
+## PersonaHubPrompt
+
+```python
+class PersonaHubPrompt(TextPromptDict):
+```
+
+A dictionary containing :obj:`TextPrompt` used for generating and
+relating personas based on given text or existing personas.
+
+This class inherits from TextPromptDict, allowing for easy access and
+management of the prompts.
+
+**Parameters:**
+
+- **TEXT_TO_PERSONA** (TextPrompt): A prompt for inferring a persona from a given text. This prompt asks to identify who is likely to interact with the provided text in various ways (read, write, like, dislike). The response should follow a specific template format.
+- **PERSONA_TO_PERSONA** (TextPrompt): A prompt for deriving related personas based on a given persona. This prompt asks to describe personas who might have a close relationship with the provided persona. The response should follow a specific template format, allowing for multiple related personas.
+
+<a id="camel.prompts.persona_hub.PersonaHubPrompt.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, *args: Any, **kwargs: Any):
+```

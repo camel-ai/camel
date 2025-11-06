@@ -1,0 +1,163 @@
+<a id="camel.toolkits.google_scholar_toolkit"></a>
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit"></a>
+
+## GoogleScholarToolkit
+
+```python
+class GoogleScholarToolkit(BaseToolkit):
+```
+
+A toolkit for retrieving information about authors and their
+publications from Google Scholar.
+
+**Parameters:**
+
+- **author_identifier** (Union[str, None]): The author's Google Scholar URL or name of the author to search for.
+- **is_author_name** (bool): Flag to indicate if the identifier is a name. (default: :obj:`False`)
+- **scholarly** (module): The scholarly module for querying Google Scholar.
+- **author** (Optional[Dict[str, Any]]): Cached author details, allowing manual assignment if desired.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    author_identifier: str,
+    is_author_name: bool = False,
+    use_free_proxies: bool = False,
+    proxy_http: Optional[str] = None,
+    proxy_https: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the GoogleScholarToolkit with the author's identifier.
+
+**Parameters:**
+
+- **author_identifier** (str): The author's Google Scholar URL or name of the author to search for.
+- **is_author_name** (bool): Flag to indicate if the identifier is a name. (default: :obj:`False`)
+- **use_free_proxies** (bool): Whether to use Free Proxies. (default: :obj:`False`)
+- **proxy_http** (Optional[str]): Proxy http address pass to pg. SingleProxy. (default: :obj:`None`)
+- **proxy_https** (Optional[str]): Proxy https address pass to pg. SingleProxy. (default: :obj:`None`)
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.author"></a>
+
+### author
+
+```python
+def author(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing author details. If no data
+is available, returns an empty dictionary.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.author"></a>
+
+### author
+
+```python
+def author(self, value: Optional[Dict[str, Any]]):
+```
+
+Sets or overrides the cached author information.
+
+**Parameters:**
+
+- **value** (Optional[Dict[str, Any]]): A dictionary containing author details to cache or `None` to clear the cached data.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit._extract_author_id"></a>
+
+### _extract_author_id
+
+```python
+def _extract_author_id(self):
+```
+
+**Returns:**
+
+  Optional[str]: The extracted author ID, or None if not found.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.get_author_detailed_info"></a>
+
+### get_author_detailed_info
+
+```python
+def get_author_detailed_info(self):
+```
+
+**Returns:**
+
+  dict: A dictionary containing detailed information about the
+author.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.get_author_publications"></a>
+
+### get_author_publications
+
+```python
+def get_author_publications(self):
+```
+
+**Returns:**
+
+  List[str]: A list of publication titles authored by the author.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.get_publication_by_title"></a>
+
+### get_publication_by_title
+
+```python
+def get_publication_by_title(self, publication_title: str):
+```
+
+Retrieves detailed information about a specific publication by its
+title. Note that this method cannot retrieve the full content of the
+paper.
+
+**Parameters:**
+
+- **publication_title** (str): The title of the publication to search for.
+
+**Returns:**
+
+  Optional[dict]: A dictionary containing detailed information about
+the publication if found; otherwise, `None`.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.get_full_paper_content_by_link"></a>
+
+### get_full_paper_content_by_link
+
+```python
+def get_full_paper_content_by_link(self, pdf_url: str):
+```
+
+Retrieves the full paper content from a given PDF URL using the
+arxiv2text tool.
+
+**Parameters:**
+
+- **pdf_url** (str): The URL of the PDF file.
+
+**Returns:**
+
+  Optional[str]: The full text extracted from the PDF, or `None` if
+an error occurs.
+
+<a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

@@ -1,0 +1,122 @@
+<a id="camel.agents._utils"></a>
+
+<a id="camel.agents._utils.build_default_summary_prompt"></a>
+
+## build_default_summary_prompt
+
+```python
+def build_default_summary_prompt(conversation_text: str):
+```
+
+Create the default prompt used for conversation summarization.
+
+**Parameters:**
+
+- **conversation_text** (str): The conversation to be summarized.
+
+**Returns:**
+
+  str: A formatted prompt instructing the model to produce a structured
+markdown summary.
+
+<a id="camel.agents._utils.generate_tool_prompt"></a>
+
+## generate_tool_prompt
+
+```python
+def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]):
+```
+
+**Returns:**
+
+  str: A string representing the tool prompt.
+
+<a id="camel.agents._utils.extract_tool_call"></a>
+
+## extract_tool_call
+
+```python
+def extract_tool_call(content: str):
+```
+
+Extract the tool call from the model response, if present.
+
+**Parameters:**
+
+- **response** (Any): The model's response object.
+
+**Returns:**
+
+  Optional[Dict[str, Any]]: The parsed tool call if present,
+otherwise None.
+
+<a id="camel.agents._utils.safe_model_dump"></a>
+
+## safe_model_dump
+
+```python
+def safe_model_dump(obj):
+```
+
+Safely dump a Pydantic model to a dictionary.
+
+This method attempts to use the `model_dump` method if available,
+otherwise it falls back to the `dict` method.
+
+<a id="camel.agents._utils.convert_to_function_tool"></a>
+
+## convert_to_function_tool
+
+```python
+def convert_to_function_tool(tool: Union[FunctionTool, Callable]):
+```
+
+Convert a tool to a FunctionTool from Callable.
+
+<a id="camel.agents._utils.convert_to_schema"></a>
+
+## convert_to_schema
+
+```python
+def convert_to_schema(tool: Union[FunctionTool, Callable, Dict[str, Any]]):
+```
+
+Convert a tool to a schema from Callable or FunctionTool.
+
+<a id="camel.agents._utils.get_info_dict"></a>
+
+## get_info_dict
+
+```python
+def get_info_dict(
+    session_id: Optional[str],
+    usage: Optional[Dict[str, int]],
+    termination_reasons: List[str],
+    num_tokens: int,
+    tool_calls: List[ToolCallingRecord],
+    external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+):
+```
+
+Returns a dictionary containing information about the chat session.
+
+**Parameters:**
+
+- **session_id** (str, optional): The ID of the chat session.
+- **usage** (Dict[str, int], optional): Information about the usage of the LLM.
+- **termination_reasons** (List[str]): The reasons for the termination of the chat session.
+- **num_tokens** (int): The number of tokens used in the chat session.
+- **tool_calls** (List[ToolCallingRecord]): The list of function calling records, containing the information of called tools.
+- **external_tool_call_requests** (Optional[List[ToolCallRequest]]): The requests for external tool calls.
+
+**Returns:**
+
+  Dict[str, Any]: The chat session information.
+
+<a id="camel.agents._utils.handle_logprobs"></a>
+
+## handle_logprobs
+
+```python
+def handle_logprobs(choice: Choice):
+```

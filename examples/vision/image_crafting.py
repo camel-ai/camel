@@ -14,7 +14,7 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -39,7 +39,7 @@ def main():
     dalle_agent = ChatAgent(
         system_message=sys_msg,
         model=model,
-        tools=DalleToolkit().get_tools(),
+        tools=OpenAIImageToolkit().get_tools(),
     )
 
     response = dalle_agent.step("Draw a picture of a camel.")

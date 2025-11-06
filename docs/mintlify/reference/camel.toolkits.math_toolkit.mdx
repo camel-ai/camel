@@ -1,0 +1,185 @@
+<a id="camel.toolkits.math_toolkit"></a>
+
+<a id="camel.toolkits.math_toolkit.MathToolkit"></a>
+
+## MathToolkit
+
+```python
+class MathToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for mathematical operations.
+
+This class provides methods for basic mathematical operations such as
+addition, subtraction, multiplication, division, and rounding.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_add"></a>
+
+### math_add
+
+```python
+def math_add(self, a: float, b: float):
+```
+
+Adds two numbers.
+
+**Parameters:**
+
+- **a** (float): The first number to be added.
+- **b** (float): The second number to be added.
+
+**Returns:**
+
+  float: The sum of the two numbers.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_subtract"></a>
+
+### math_subtract
+
+```python
+def math_subtract(self, a: float, b: float):
+```
+
+Do subtraction between two numbers.
+
+**Parameters:**
+
+- **a** (float): The minuend in subtraction.
+- **b** (float): The subtrahend in subtraction.
+
+**Returns:**
+
+  float: The result of subtracting :obj:`b` from :obj:`a`.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_multiply"></a>
+
+### math_multiply
+
+```python
+def math_multiply(
+    self,
+    a: float,
+    b: float,
+    decimal_places: int = 2
+):
+```
+
+Multiplies two numbers.
+
+**Parameters:**
+
+- **a** (float): The multiplier in the multiplication.
+- **b** (float): The multiplicand in the multiplication.
+- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 2.
+
+**Returns:**
+
+  float: The product of the two numbers.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_divide"></a>
+
+### math_divide
+
+```python
+def math_divide(
+    self,
+    a: float,
+    b: float,
+    decimal_places: int = 2
+):
+```
+
+Divides two numbers.
+
+**Parameters:**
+
+- **a** (float): The dividend in the division.
+- **b** (float): The divisor in the division.
+- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 2.
+
+**Returns:**
+
+  float: The result of dividing :obj:`a` by :obj:`b`.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_round"></a>
+
+### math_round
+
+```python
+def math_round(self, a: float, decimal_places: int = 0):
+```
+
+Rounds a number to a specified number of decimal places.
+
+**Parameters:**
+
+- **a** (float): The number to be rounded.
+- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 0.
+
+**Returns:**
+
+  float: The rounded number.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.add"></a>
+
+### add
+
+```python
+def add(self, *args, **kwargs):
+```
+
+Deprecated: Use math_add instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.sub"></a>
+
+### sub
+
+```python
+def sub(self, *args, **kwargs):
+```
+
+Deprecated: Use math_subtract instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.multiply"></a>
+
+### multiply
+
+```python
+def multiply(self, *args, **kwargs):
+```
+
+Deprecated: Use math_multiply instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.divide"></a>
+
+### divide
+
+```python
+def divide(self, *args, **kwargs):
+```
+
+Deprecated: Use math_divide instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.round"></a>
+
+### round
+
+```python
+def round(self, *args, **kwargs):
+```
+
+Deprecated: Use math_round instead. Note: This was shadowing
+Python's built-in round().

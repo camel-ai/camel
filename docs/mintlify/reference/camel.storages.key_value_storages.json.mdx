@@ -1,0 +1,93 @@
+<a id="camel.storages.key_value_storages.json"></a>
+
+<a id="camel.storages.key_value_storages.json.CamelJSONEncoder"></a>
+
+## CamelJSONEncoder
+
+```python
+class CamelJSONEncoder(JSONEncoder):
+```
+
+A custom JSON encoder for serializing CAMEL-specific types.
+
+Handles serialization of:
+- Enumerated types (RoleType, TaskType, ModelType, OpenAIBackendRole)
+- Pydantic BaseModel objects (from structured outputs)
+
+Ensures these types can be stored in and retrieved from JSON format.
+
+<a id="camel.storages.key_value_storages.json.CamelJSONEncoder.default"></a>
+
+### default
+
+```python
+def default(self, obj):
+```
+
+<a id="camel.storages.key_value_storages.json.JsonStorage"></a>
+
+## JsonStorage
+
+```python
+class JsonStorage(BaseKeyValueStorage):
+```
+
+A concrete implementation of the :obj:`BaseKeyValueStorage` using JSON
+files. Allows for persistent storage of records in a human-readable format.
+
+**Parameters:**
+
+- **path** (Path, optional): Path to the desired JSON file. If `None`, a default path `./chat_history.json` will be used. (default: :obj:`None`)
+
+<a id="camel.storages.key_value_storages.json.JsonStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, path: Optional[Path] = None):
+```
+
+<a id="camel.storages.key_value_storages.json.JsonStorage._json_object_hook"></a>
+
+### _json_object_hook
+
+```python
+def _json_object_hook(self, d):
+```
+
+<a id="camel.storages.key_value_storages.json.JsonStorage.save"></a>
+
+### save
+
+```python
+def save(self, records: List[Dict[str, Any]]):
+```
+
+Saves a batch of records to the key-value storage system.
+
+**Parameters:**
+
+- **records** (List[Dict[str, Any]]): A list of dictionaries, where each dictionary represents a unique record to be stored.
+
+<a id="camel.storages.key_value_storages.json.JsonStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+represents a stored record.
+
+<a id="camel.storages.key_value_storages.json.JsonStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all records from the key-value storage system.

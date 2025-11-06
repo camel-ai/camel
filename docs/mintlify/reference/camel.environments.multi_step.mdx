@@ -1,0 +1,99 @@
+<a id="camel.environments.multi_step"></a>
+
+<a id="camel.environments.multi_step.MultiStepEnv"></a>
+
+## MultiStepEnv
+
+```python
+class MultiStepEnv(ABC):
+```
+
+A multi-step environment for reinforcement learning with LLMs.
+
+<a id="camel.environments.multi_step.MultiStepEnv.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: BaseExtractor,
+    max_steps: Optional[int] = None,
+    **kwargs
+):
+```
+
+Initialize the environment.
+
+**Parameters:**
+
+- **extractor**: Extractor to process LLM responses.
+- **max_steps**: Maximum steps per episode. **kwargs: Additional environment parameters.
+
+<a id="camel.environments.multi_step.MultiStepEnv._get_initial_state"></a>
+
+### _get_initial_state
+
+```python
+def _get_initial_state(self):
+```
+
+<a id="camel.environments.multi_step.MultiStepEnv._get_next_observation"></a>
+
+### _get_next_observation
+
+```python
+def _get_next_observation(self):
+```
+
+<a id="camel.environments.multi_step.MultiStepEnv._get_terminal_observation"></a>
+
+### _get_terminal_observation
+
+```python
+def _get_terminal_observation(self):
+```
+
+<a id="camel.environments.multi_step.MultiStepEnv.is_done"></a>
+
+### is_done
+
+```python
+def is_done(self):
+```
+
+**Returns:**
+
+  bool: A boolean flag.
+
+<a id="camel.environments.multi_step.MultiStepEnv._is_done"></a>
+
+### _is_done
+
+```python
+def _is_done(self):
+```
+
+<a id="camel.environments.multi_step.MultiStepEnv.metadata"></a>
+
+### metadata
+
+```python
+def metadata(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A copy of the environment's metadata.
+
+<a id="camel.environments.multi_step.MultiStepEnv.current_step"></a>
+
+### current_step
+
+```python
+def current_step(self):
+```
+
+**Returns:**
+
+  int: The number of the step we are currently in.

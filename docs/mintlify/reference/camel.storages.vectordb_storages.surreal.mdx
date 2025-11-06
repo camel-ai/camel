@@ -1,0 +1,231 @@
+<a id="camel.storages.vectordb_storages.surreal"></a>
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage"></a>
+
+## SurrealStorage
+
+```python
+class SurrealStorage(BaseVectorStorage):
+```
+
+An implementation of the `BaseVectorStorage` using SurrealDB,
+a scalable, distributed database with WebSocket support, for
+efficient vector storage and similarity search.
+
+SurrealDB official site and documentation can be found at:
+`SurrealDB <https://surrealdb.com>`_
+
+**Parameters:**
+
+- **url** (str): WebSocket URL for connecting to SurrealDB (default: "ws://localhost:8000/rpc").
+- **table** (str): Name of the table used for storing vectors (default: "vector_store").
+- **vector_dim** (int): Dimensionality of the stored vectors.
+- **distance** (VectorDistance): Distance metric used for similarity comparisons (default: VectorDistance.COSINE).
+- **namespace** (str): SurrealDB namespace to use (default: "default"). (default: `"default"`)
+- **database** (str): SurrealDB database name (default: "demo"). (default: `"demo"`)
+- **user** (str): Username for authentication (default: "root"). (default: `"root"`)
+- **password** (str): Password for authentication (default: "root"). (default: `"root"`)
+
+**Note:**
+
+- SurrealDB supports flexible schema and powerful querying capabilities
+via SQL-like syntax over WebSocket.
+- This implementation manages connection setup and ensures the target
+table exists.
+- Suitable for applications requiring distributed vector storage and
+search with real-time updates.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize SurrealStorage with connection settings and ensure
+the target table exists.
+
+**Parameters:**
+
+- **url** (str): WebSocket URL for connecting to SurrealDB. (default: :obj:`"ws://localhost:8000/rpc"`)
+- **table** (str): Name of the table used for vector storage. (default: :obj:`"vector_store"`)
+- **vector_dim** (int): Dimensionality of the stored vectors. (default: :obj:`786`)
+- **distance** (VectorDistance): Distance metric for similarity searches. (default: :obj:`VectorDistance.COSINE`)
+- **namespace** (str): SurrealDB namespace to use. (default: :obj:`"default"`)
+- **database** (str): SurrealDB database name. (default: :obj:`"demo"`)
+- **user** (str): Username for authentication. (default: :obj:`"root"`)
+- **password** (str): Password for authentication. (default: :obj:`"root"`)
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._table_exists"></a>
+
+### _table_exists
+
+```python
+def _table_exists(self):
+```
+
+**Returns:**
+
+  bool: True if the table exists, False otherwise.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._get_table_info"></a>
+
+### _get_table_info
+
+```python
+def _get_table_info(self):
+```
+
+**Returns:**
+
+  Dict[str, int]: A dictionary with 'dim' and 'count' keys.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._create_table"></a>
+
+### _create_table
+
+```python
+def _create_table(self):
+```
+
+Define and create the vector storage table with HNSW index.
+
+Documentation: https://surrealdb.com/docs/surrealdb/reference-guide/
+vector-search#vector-search-cheat-sheet
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._drop_table"></a>
+
+### _drop_table
+
+```python
+def _drop_table(self):
+```
+
+Drop the vector storage table if it exists.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._check_and_create_table"></a>
+
+### _check_and_create_table
+
+```python
+def _check_and_create_table(self):
+```
+
+Check if the table exists and matches the expected vector
+dimension. If not, create a new table.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage._validate_and_convert_records"></a>
+
+### _validate_and_convert_records
+
+```python
+def _validate_and_convert_records(self, records: List[VectorRecord]):
+```
+
+Validate and convert VectorRecord instances into
+SurrealDB-compatible dictionaries.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to insert.
+
+**Returns:**
+
+  List[Dict]: Transformed list of dicts ready for insertion.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.query"></a>
+
+### query
+
+```python
+def query(self, query: VectorDBQuery, **kwargs: Any):
+```
+
+Perform a top-k similarity search using the configured distance
+metric.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): Query containing the query vector and top_k value.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: Ranked list of matching records
+with similarity scores.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs):
+```
+
+Insert validated vector records into the SurrealDB table.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to add.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.delete"></a>
+
+### delete
+
+```python
+def delete(
+    self,
+    ids: Optional[List[str]] = None,
+    if_all: bool = False,
+    **kwargs
+):
+```
+
+Delete specific records by ID or clear the entire table.
+
+**Parameters:**
+
+- **ids** (Optional[List[str]]): List of record IDs to delete.
+- **if_all** (bool): Whether to delete all records in the table.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: Object containing vector table metadata.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Reset the vector table by dropping and recreating it.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.surreal.SurrealStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+Provides access to the underlying SurrealDB client.

@@ -1,0 +1,96 @@
+<a id="camel.loaders.chunkr_reader"></a>
+
+<a id="camel.loaders.chunkr_reader.ChunkrReaderConfig"></a>
+
+## ChunkrReaderConfig
+
+```python
+class ChunkrReaderConfig:
+```
+
+Defines the parameters for configuring the task.
+
+**Parameters:**
+
+- **chunk_processing** (int, optional): The target chunk length. (default: :obj:`512`)
+- **high_resolution** (bool, optional): Whether to use high resolution OCR. (default: :obj:`True`)
+- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. **kwargs: Additional keyword arguments to pass to the Chunkr Configuration. This accepts all other Configuration parameters such as expires_in, pipeline, segment_processing, segmentation_strategy, etc. (default: `'Auto'`)
+- **See**: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/ models/task.rs#L749
+
+<a id="camel.loaders.chunkr_reader.ChunkrReaderConfig.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chunk_processing: int = 512,
+    high_resolution: bool = True,
+    ocr_strategy: str = 'Auto',
+    **kwargs
+):
+```
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader"></a>
+
+## ChunkrReader
+
+```python
+class ChunkrReader:
+```
+
+Chunkr Reader for processing documents and returning content
+in various formats.
+
+**Parameters:**
+
+- **api_key** (Optional[str], optional): The API key for Chunkr API. If not provided, it will be retrieved from the environment variable `CHUNKR_API_KEY`. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Chunkr service. (default: :obj:`https://api.chunkr.ai/api/v1/task`) **kwargs (Any): Additional keyword arguments for request headers.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    url: Optional[str] = 'https://api.chunkr.ai/api/v1/task'
+):
+```
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader._pretty_print_response"></a>
+
+### _pretty_print_response
+
+```python
+def _pretty_print_response(self, response_json: dict):
+```
+
+Pretty prints the JSON response.
+
+**Parameters:**
+
+- **response_json** (dict): The response JSON to pretty print.
+
+**Returns:**
+
+  str: Formatted JSON as a string.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader._to_chunkr_configuration"></a>
+
+### _to_chunkr_configuration
+
+```python
+def _to_chunkr_configuration(self, chunkr_config: ChunkrReaderConfig):
+```
+
+Converts the ChunkrReaderConfig to Chunkr Configuration.
+
+**Parameters:**
+
+- **chunkr_config** (ChunkrReaderConfig): The ChunkrReaderConfig to convert.
+
+**Returns:**
+
+  Configuration: Chunkr SDK configuration.

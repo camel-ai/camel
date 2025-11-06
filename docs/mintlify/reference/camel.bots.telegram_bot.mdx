@@ -1,0 +1,52 @@
+<a id="camel.bots.telegram_bot"></a>
+
+<a id="camel.bots.telegram_bot.TelegramBot"></a>
+
+## TelegramBot
+
+```python
+class TelegramBot:
+```
+
+Represents a Telegram bot that is powered by an agent.
+
+**Parameters:**
+
+- **chat_agent** (ChatAgent): Chat agent that will power the bot.
+- **telegram_token** (str, optional): The bot token.
+
+<a id="camel.bots.telegram_bot.TelegramBot.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chat_agent: ChatAgent,
+    telegram_token: Optional[str] = None
+):
+```
+
+<a id="camel.bots.telegram_bot.TelegramBot.run"></a>
+
+### run
+
+```python
+def run(self):
+```
+
+Start the Telegram bot.
+
+<a id="camel.bots.telegram_bot.TelegramBot.on_message"></a>
+
+### on_message
+
+```python
+def on_message(self, message: 'Message'):
+```
+
+Handles incoming messages from the user.
+
+**Parameters:**
+
+- **message** (types.Message): The incoming message object.

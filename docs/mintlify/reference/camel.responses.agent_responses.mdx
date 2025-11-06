@@ -1,0 +1,25 @@
+<a id="camel.responses.agent_responses"></a>
+
+<a id="camel.responses.agent_responses.ChatAgentResponse"></a>
+
+## ChatAgentResponse
+
+```python
+class ChatAgentResponse(BaseModel):
+```
+
+Response of a ChatAgent.
+
+**Parameters:**
+
+- **msgs** (List[BaseMessage]): A list of zero, one or several messages. If the list is empty, there is some error in message generation. If the list has one message, this is normal mode. If the list has several messages, this is the critic mode.
+- **terminated** (bool): A boolean indicating whether the agent decided to terminate the chat session.
+- **info** (Dict[str, Any]): Extra information about the chat message.
+
+<a id="camel.responses.agent_responses.ChatAgentResponse.msg"></a>
+
+### msg
+
+```python
+def msg(self):
+```

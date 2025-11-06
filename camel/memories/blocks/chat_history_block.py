@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import warnings
 from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
@@ -39,7 +38,7 @@ class ChatHistoryBlock(MemoryBlock):
             last message is 1.0, and with each step taken backward, the score
             of the message is multiplied by the `keep_rate`. Higher `keep_rate`
             leads to high possibility to keep history messages during context
-            creation.
+            creation. (default: :obj:`0.9`)
     """
 
     def __init__(
@@ -70,10 +69,10 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            warnings.warn("The `ChatHistoryMemory` is empty.")
+            # Empty memory is a valid state (e.g., during initialization).
+            # Users can check if memory is empty by checking the returned list.
             return list()
 
-        chat_records: List[MemoryRecord] = []
         if window_size is not None and window_size >= 0:
             # Initial preserved index: Keep first message
             # if it's SYSTEM/DEVELOPER (index 0)
@@ -82,7 +81,10 @@ class ChatHistoryBlock(MemoryBlock):
                 if (
                     record_dicts
                     and record_dicts[0]['role_at_backend']
-                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                    in {
+                        OpenAIBackendRole.SYSTEM.value,
+                        OpenAIBackendRole.DEVELOPER.value,
+                    }
                 )
                 else 0
             )
@@ -117,7 +119,7 @@ class ChatHistoryBlock(MemoryBlock):
             # Return full records when no window restriction
             final_records = record_dicts
 
-        chat_records = [
+        chat_records: List[MemoryRecord] = [
             MemoryRecord.from_dict(record) for record in final_records
         ]
 
@@ -165,3 +167,118 @@ class ChatHistoryBlock(MemoryBlock):
     def clear(self) -> None:
         r"""Clears all chat messages from the memory."""
         self.storage.clear()
+
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes the most recent records from the memory.
+
+        Args:
+            count (int): Number of records to remove from the end of the
+                conversation history. A value of 0 results in no changes.
+
+        Returns:
+            List[MemoryRecord]: The removed records in chronological order.
+        """
+        if not isinstance(count, int):
+            raise TypeError("`count` must be an integer.")
+        if count < 0:
+            raise ValueError("`count` must be non-negative.")
+        if count == 0:
+            return []
+
+        record_dicts = self.storage.load()
+        if not record_dicts:
+            return []
+
+        # Preserve initial system/developer instruction if present.
+        protected_prefix = (
+            1
+            if (
+                record_dicts
+                and record_dicts[0]['role_at_backend']
+                in {
+                    OpenAIBackendRole.SYSTEM.value,
+                    OpenAIBackendRole.DEVELOPER.value,
+                }
+            )
+            else 0
+        )
+
+        removable_count = max(len(record_dicts) - protected_prefix, 0)
+        if removable_count == 0:
+            return []
+
+        pop_count = min(count, removable_count)
+        split_index = len(record_dicts) - pop_count
+
+        popped_dicts = record_dicts[split_index:]
+        remaining_dicts = record_dicts[:split_index]
+
+        self.storage.clear()
+        if remaining_dicts:
+            self.storage.save(remaining_dicts)
+
+        return [MemoryRecord.from_dict(record) for record in popped_dicts]
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from the memory.
+
+        Args:
+            indices (List[int]): List of indices to remove. Indices are
+                positions in the current record list (0-based).
+                System/developer messages at index 0 are protected and will
+                not be removed.
+
+        Returns:
+            List[MemoryRecord]: The removed records in their original order.
+        """
+        if not indices:
+            return []
+
+        record_dicts = self.storage.load()
+        if not record_dicts:
+            return []
+
+        # Preserve initial system/developer instruction if present.
+        protected_prefix = (
+            1
+            if (
+                record_dicts
+                and record_dicts[0]['role_at_backend']
+                in {
+                    OpenAIBackendRole.SYSTEM.value,
+                    OpenAIBackendRole.DEVELOPER.value,
+                }
+            )
+            else 0
+        )
+
+        # Filter out protected indices and invalid ones
+        valid_indices = sorted(
+            {
+                idx
+                for idx in indices
+                if idx >= protected_prefix and idx < len(record_dicts)
+            }
+        )
+
+        if not valid_indices:
+            return []
+
+        # Extract records to remove (in original order)
+        removed_records = [record_dicts[idx] for idx in valid_indices]
+
+        # Build remaining records by excluding removed indices
+        remaining_dicts = [
+            record
+            for idx, record in enumerate(record_dicts)
+            if idx not in valid_indices
+        ]
+
+        # Save back to storage
+        self.storage.clear()
+        if remaining_dicts:
+            self.storage.save(remaining_dicts)
+
+        return [MemoryRecord.from_dict(record) for record in removed_records]

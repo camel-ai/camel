@@ -13,16 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import sys
-from typing import TYPE_CHECKING
+from typing import Literal
 
 import pytest
 from mcp.server import FastMCP
 
 from camel.toolkits.mcp_toolkit import MCPClient
 from camel.utils import MCPServer
-
-if TYPE_CHECKING:
-    from mcp import ClientSession
 
 
 @MCPServer(
@@ -52,6 +49,17 @@ class TextProcessorForMCP:
         """
         await asyncio.sleep(0.01)
         return len(text.split())
+
+    def run_mcp_server(
+        self, mode: Literal["stdio", "sse", "streamable-http"]
+    ) -> None:
+        r"""Run the MCP server in the specified mode.
+
+        Args:
+            mode (Literal["stdio", "sse", "streamable-http"]): The mode to run
+                the MCP server in.
+        """
+        self.mcp.run(mode)
 
 
 def test_tool_schema():
@@ -83,34 +91,31 @@ def test_tool_schema():
 @pytest.mark.asyncio
 async def test_async_word_count():
     processor = TextProcessorForMCP()
-    server = MCPClient(
-        command_or_url=sys.executable,
-        args=[__file__, "--server"],
-    )
-    await server.connect()
-    session: "ClientSession" = server._session
+    async with MCPClient(
+        config={
+            "command": sys.executable,
+            "args": [__file__, "--server"],
+        }
+    ) as client:
+        text = "hello world"
+        result = await client.call_tool(
+            tool_name="reverse_text",
+            arguments={"text": text},
+        )
+        assert len(result.content) == 1
+        assert result.content[0].text == processor.reverse_text(text)
 
-    text = "hello world"
-
-    result = await session.call_tool(
-        name="reverse_text",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert result.content[0].text == processor.reverse_text(text)
-
-    result = await session.call_tool(
-        name="async_word_count",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert int(result.content[0].text) == await processor.async_word_count(
-        text
-    )
-    await server.disconnect()
+        result = await client.call_tool(
+            tool_name="async_word_count",
+            arguments={"text": text},
+        )
+        assert len(result.content) == 1
+        assert int(result.content[0].text) == await processor.async_word_count(
+            text
+        )
 
 
 if __name__ == "__main__":
     if "--server" in sys.argv:
         processor = TextProcessorForMCP()
-        processor.mcp.run("stdio")
+        processor.run_mcp_server("stdio")

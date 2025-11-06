@@ -15,10 +15,13 @@ import os
 import subprocess
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import VLLM_API_PARAMS, VLLMConfig
+from camel.configs import VLLMConfig
+from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
 # flake8: noqa: E501
@@ -46,6 +49,9 @@ class VLLMModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client initialization.
 
     References:
         https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
@@ -59,21 +65,28 @@ class VLLMModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
-        url = url or os.environ.get("VLLM_BASE_URL")
+        self._url = url or os.environ.get("VLLM_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        super().__init__(
-            model_type=model_type,
-            model_config_dict=model_config_dict,
-            api_key=api_key,
-            url=url,
-            token_counter=token_counter,
-            timeout=timeout,
-        )
+        self._model_type = model_type
+
         if not self._url:
             self._start_server()
+
+        super().__init__(
+            model_type=self._model_type,
+            model_config_dict=model_config_dict,
+            api_key="Not_Used",
+            url=self._url,
+            token_counter=token_counter,
+            timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
+        )
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""
@@ -84,24 +97,9 @@ class VLLMModel(OpenAICompatibleModel):
                 stderr=subprocess.PIPE,
             )
             self._url = "http://localhost:8000/v1"
-            print(
+            logger.info(
                 f"vllm server started on {self._url} "
-                f"for {self.model_type} model."
+                f"for {self._model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start vllm server: {e}.")
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to vLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in VLLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into vLLM model backend."
-                )
+            logger.error(f"Failed to start vllm server: {e}.")

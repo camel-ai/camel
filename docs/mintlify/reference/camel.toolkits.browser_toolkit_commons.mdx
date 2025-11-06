@@ -1,0 +1,170 @@
+<a id="camel.toolkits.browser_toolkit_commons"></a>
+
+<a id="camel.toolkits.browser_toolkit_commons._get_str"></a>
+
+## _get_str
+
+```python
+def _get_str(d: Any, k: str):
+```
+
+Safely retrieve a string value from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit_commons._get_number"></a>
+
+## _get_number
+
+```python
+def _get_number(d: Any, k: str):
+```
+
+Safely retrieve a number (int or float) from a dictionary
+
+<a id="camel.toolkits.browser_toolkit_commons._get_bool"></a>
+
+## _get_bool
+
+```python
+def _get_bool(d: Any, k: str):
+```
+
+Safely retrieve a boolean value from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit_commons._parse_json_output"></a>
+
+## _parse_json_output
+
+```python
+def _parse_json_output(text: str, logger: Any):
+```
+
+Extract JSON output from a string.
+
+<a id="camel.toolkits.browser_toolkit_commons._reload_image"></a>
+
+## _reload_image
+
+```python
+def _reload_image(image: Image.Image):
+```
+
+<a id="camel.toolkits.browser_toolkit_commons.dom_rectangle_from_dict"></a>
+
+## dom_rectangle_from_dict
+
+```python
+def dom_rectangle_from_dict(rect: Dict[str, Any]):
+```
+
+Create a DOMRectangle object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit_commons.interactive_region_from_dict"></a>
+
+## interactive_region_from_dict
+
+```python
+def interactive_region_from_dict(region: Dict[str, Any]):
+```
+
+Create an :class:`InteractiveRegion` object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit_commons.visual_viewport_from_dict"></a>
+
+## visual_viewport_from_dict
+
+```python
+def visual_viewport_from_dict(viewport: Dict[str, Any]):
+```
+
+Create a :class:`VisualViewport` object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit_commons.add_set_of_mark"></a>
+
+## add_set_of_mark
+
+```python
+def add_set_of_mark(
+    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
+    ROIs: Dict[str, InteractiveRegion]
+):
+```
+
+<a id="camel.toolkits.browser_toolkit_commons._add_set_of_mark"></a>
+
+## _add_set_of_mark
+
+```python
+def _add_set_of_mark(screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]):
+```
+
+Add a set of marks to the screenshot.
+
+**Parameters:**
+
+- **screenshot** (Image.Image): The screenshot to add marks to.
+- **ROIs** (Dict[str, InteractiveRegion]): The regions to add marks to.
+
+**Returns:**
+
+  Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
+containing the screenshot with marked ROIs, ROIs fully within the
+images, ROIs located above the visible area, and ROIs located below
+the visible area.
+
+<a id="camel.toolkits.browser_toolkit_commons._draw_roi"></a>
+
+## _draw_roi
+
+```python
+def _draw_roi(
+    draw: ImageDraw.ImageDraw,
+    idx: int,
+    font: Union[ImageFont.FreeTypeFont, ImageFont.ImageFont],
+    rect: DOMRectangle
+):
+```
+
+Draw a ROI on the image.
+
+**Parameters:**
+
+- **draw** (ImageDraw.ImageDraw): The draw object.
+- **idx** (int): The index of the ROI.
+- **font** (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
+- **rect** (DOMRectangle): The DOM rectangle.
+
+<a id="camel.toolkits.browser_toolkit_commons._get_text_color"></a>
+
+## _get_text_color
+
+```python
+def _get_text_color(bg_color: Tuple[int, int, int, int]):
+```
+
+Determine the ideal text color (black or white) for contrast.
+
+**Parameters:**
+
+- **bg_color**: The background color (R, G, B, A).
+
+**Returns:**
+
+  A tuple representing black or white color for text.
+
+<a id="camel.toolkits.browser_toolkit_commons._get_random_color"></a>
+
+## _get_random_color
+
+```python
+def _get_random_color(identifier: int):
+```
+
+Generate a consistent random RGBA color based on the identifier.
+
+**Parameters:**
+
+- **identifier**: The ID used as a seed to ensure color consistency.
+
+**Returns:**
+
+  A tuple representing (R, G, B, A) values.

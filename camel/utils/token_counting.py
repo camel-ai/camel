@@ -133,10 +133,18 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_message = 4
             # If there's a name, the role is omitted
             self.tokens_per_name = -1
-        elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
+        elif (
+            ("gpt-3.5-turbo" in self.model)
+            or ("gpt-4" in self.model)
+            or ("gpt-5" in self.model)
+        ):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
-        elif ("o1" in self.model) or ("o3" in self.model):
+        elif (
+            ("o1" in self.model)
+            or ("o3" in self.model)
+            or ("o4" in self.model)
+        ):
             self.tokens_per_message = 2
             self.tokens_per_name = 1
         else:
@@ -144,8 +152,8 @@ class OpenAITokenCounter(BaseTokenCounter):
             raise NotImplementedError(
                 "Token counting for OpenAI Models is not presently "
                 f"implemented for model {model}. "
-                "See https://github.com/openai/openai-python/blob/main/chatml.md "
-                "for information on how messages are converted to tokens. "
+                "See https://github.com/openai/openai-python/blob/main/chatml"
+                ".md for information on how messages are converted to tokens. "
                 "See https://platform.openai.com/docs/models/gpt-4"
                 "or https://platform.openai.com/docs/models/gpt-3-5"
                 "for information about openai chat models."
@@ -187,24 +195,32 @@ class OpenAITokenCounter(BaseTokenCounter):
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
 
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
+                            # Only count tokens for base64 encoded images
+                            # For URLs, we cannot reliably determine token count without fetching the image
+                            if image_str.startswith("data:image"):
+                                # Base64 encoded image
+                                image_prefix_format = "data:image/{};base64,"
+                                image_prefix: Optional[str] = None
+                                for image_type in list(OpenAIImageType):
+                                    # Find the correct image format
+                                    image_prefix = image_prefix_format.format(
+                                        image_type.value
+                                    )
+                                    if image_prefix in image_str:
+                                        break
+                                assert isinstance(image_prefix, str)
+                                encoded_image = image_str.split(image_prefix)[
+                                    1
+                                ]
+                                image_bytes = BytesIO(
+                                    base64.b64decode(encoded_image)
                                 )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
-                            image_bytes = BytesIO(
-                                base64.b64decode(encoded_image)
-                            )
-                            image = Image.open(image_bytes)
-                            num_tokens += self._count_tokens_from_image(
-                                image, OpenAIVisionDetailType(detail)
-                            )
+                                image = Image.open(image_bytes)
+                                num_tokens += self._count_tokens_from_image(
+                                    image, OpenAIVisionDetailType(detail)
+                                )
+                            # Note: For regular URLs, token count cannot be determined without fetching the image
+                            # The actual token usage will be reported by the API response
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
@@ -276,15 +292,26 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self, model: str):
+    def __init__(
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ):
         r"""Constructor for the token counter for Anthropic models.
 
         Args:
             model (str): The name of the Anthropic model being used.
+            api_key (Optional[str], optional): The API key for authenticating
+                with the Anthropic service. If not provided, it will use the
+                ANTHROPIC_API_KEY environment variable. (default: :obj:`None`)
+            base_url (Optional[str], optional): The URL of the Anthropic
+                service. If not provided, it will use the default Anthropic
+                URL. (default: :obj:`None`)
         """
         from anthropic import Anthropic
 
-        self.client = Anthropic()
+        self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
 
     @dependencies_required('anthropic')

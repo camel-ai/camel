@@ -1,0 +1,50 @@
+{
+    "servers": [
+      {
+        "name": "cloudflare_docs",
+        "url": "https://docs.mcp.cloudflare.com/sse"
+      },
+      {
+        "name": "cloudflare_radar",
+        "url": "https://radar.mcp.cloudflare.com/sse"
+      },
+      {
+        "name": "cloudflare_browser",
+        "url": "https://browser.mcp.cloudflare.com/sse"
+      }
+    ],
+    "mcpServers": {
+        "cloudflare-docs": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://docs.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-bindings": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://bindings.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-observability": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://observability.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-radar": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://radar.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-browser": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://browser.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-logs": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://logs.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-ai-gateway": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://ai-gateway.mcp.cloudflare.com/sse"]
+        },
+        "cloudflare-dns-analytics": {
+            "command": "npx",
+            "args": ["mcp-remote", "https://dns-analytics.mcp.cloudflare.com/sse"]
+        }
+    }
+}

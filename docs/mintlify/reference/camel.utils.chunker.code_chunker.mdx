@@ -1,0 +1,91 @@
+<a id="camel.utils.chunker.code_chunker"></a>
+
+<a id="camel.utils.chunker.code_chunker.CodeChunker"></a>
+
+## CodeChunker
+
+```python
+class CodeChunker(BaseChunker):
+```
+
+A class for chunking code or text while respecting structure
+and token limits.
+
+This class ensures that structured elements such as functions,
+classes, and regions are not arbitrarily split across chunks.
+It also handles oversized lines and Base64-encoded images.
+
+**Parameters:**
+
+- **chunk_size** (int, optional): The maximum token size per chunk. (default: :obj:`8192`)
+- **remove_image**: (bool, optional): If the chunker should skip the images.
+- **model_name** (str, optional): The tokenizer model name used for token counting. (default: :obj:`"cl100k_base"`)
+
+<a id="camel.utils.chunker.code_chunker.CodeChunker.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chunk_size: int = 8192,
+    model_name: str = 'cl100k_base',
+    remove_image: Optional[bool] = True
+):
+```
+
+<a id="camel.utils.chunker.code_chunker.CodeChunker.count_tokens"></a>
+
+### count_tokens
+
+```python
+def count_tokens(self, text: str):
+```
+
+Counts the number of tokens in the given text.
+
+**Parameters:**
+
+- **text** (str): The input text to be tokenized.
+
+**Returns:**
+
+  int: The number of tokens in the input text.
+
+<a id="camel.utils.chunker.code_chunker.CodeChunker._split_oversized"></a>
+
+### _split_oversized
+
+```python
+def _split_oversized(self, line: str):
+```
+
+Splits an oversized line into multiple chunks based on token limits
+
+**Parameters:**
+
+- **line** (str): The oversized line to be split.
+
+**Returns:**
+
+  List[str]: A list of smaller chunks after splitting the
+oversized line.
+
+<a id="camel.utils.chunker.code_chunker.CodeChunker.chunk"></a>
+
+### chunk
+
+```python
+def chunk(self, content: List[str]):
+```
+
+Splits the content into smaller chunks while preserving
+structure and adhering to token constraints.
+
+**Parameters:**
+
+- **content** (List[str]): The content to be chunked.
+
+**Returns:**
+
+  List[str]: A list of chunked text segments.

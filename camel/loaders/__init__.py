@@ -14,12 +14,14 @@
 
 from .apify_reader import Apify
 from .base_io import File, create_file, create_file_from_raw_bytes
-from .chunkr_reader import ChunkrReader
+from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
+from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
-from .pandas_reader import PandasReader
+from .mistral_reader import MistralReader
+from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -31,7 +33,21 @@ __all__ = [
     'Firecrawl',
     'Apify',
     'ChunkrReader',
-    'PandasReader',
+    'ChunkrReaderConfig',
     'MinerU',
     'Crawl4AI',
+    'MarkItDownLoader',
+    'ScrapeGraphAI',
+    'MistralReader',
 ]
+
+
+def __getattr__(name: str):
+    if name == 'PandasReader':
+        raise ImportError(
+            "PandasReader has been removed from camel.loaders. "
+            "The pandasai dependency limited pandas to version 1.5.3. "
+            "Please use ExcelToolkit from camel.toolkits instead for "
+            "handling structured data."
+        )
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

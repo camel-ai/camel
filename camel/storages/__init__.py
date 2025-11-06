@@ -26,9 +26,14 @@ from .vectordb_storages.base import (
     VectorDBQueryResult,
     VectorRecord,
 )
+from .vectordb_storages.chroma import ChromaStorage
+from .vectordb_storages.faiss import FaissStorage
 from .vectordb_storages.milvus import MilvusStorage
+from .vectordb_storages.oceanbase import OceanBaseStorage
+from .vectordb_storages.pgvector import PgVectorStorage
 from .vectordb_storages.qdrant import QdrantStorage
 from .vectordb_storages.tidb import TiDBStorage
+from .vectordb_storages.weaviate import WeaviateStorage
 
 __all__ = [
     'BaseKeyValueStorage',
@@ -42,8 +47,13 @@ __all__ = [
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
+    "FaissStorage",
     'BaseGraphStorage',
     'Neo4jGraph',
     'NebulaGraph',
     'Mem0Storage',
+    'OceanBaseStorage',
+    'WeaviateStorage',
+    'PgVectorStorage',
+    'ChromaStorage',
 ]

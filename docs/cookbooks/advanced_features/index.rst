@@ -12,11 +12,14 @@ Advanced Features
    :maxdepth: 1
 
    agents_with_tools
+   agents_with_tools_from_ACI
    agents_with_tools_from_Composio
    agents_with_human_in_loop_and_tool_approval
    agents_with_memory
    agents_with_rag
    agents_with_graph_rag
+   agents_with_MCP
    agents_tracking
    critic_agents_and_tree_search
    embodied_agents
+   agent_generate_structured_output

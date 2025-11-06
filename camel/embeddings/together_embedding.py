@@ -27,7 +27,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
     r"""Provides text embedding functionalities using Together AI's models.
 
     Args:
-        model_name (str, optional): The model name to be used for text
+        model_type (str, optional): The model name to be used for text
             embeddings.
             (default: :obj:`togethercomputer/m2-bert-80M-8k-retrieval`)
         api_key (str, optional): The API key for authenticating with the
@@ -44,17 +44,17 @@ class TogetherEmbedding(BaseEmbedding[str]):
     @api_keys_required([("api_key", 'TOGETHER_API_KEY')])
     def __init__(
         self,
-        model_name: str = "togethercomputer/m2-bert-80M-8k-retrieval",
+        model_type: str = "togethercomputer/m2-bert-80M-8k-retrieval",
         api_key: Optional[str] = None,
         dimensions: Optional[int] = None,
     ) -> None:
-        if not isinstance(model_name, str) or not model_name.strip():
+        if not isinstance(model_type, str) or not model_type.strip():
             raise ValueError("Model name must be a non-empty string")
 
         if dimensions is not None and dimensions <= 0:
             raise ValueError("Dimensions must be a positive integer")
 
-        self.model_name = model_name
+        self.model_type = model_type
         self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
         self.output_dim = dimensions
 
@@ -91,7 +91,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
         try:
             response = self.client.embeddings.create(
                 input=objs,
-                model=self.model_name,
+                model=self.model_type,
                 **kwargs,
             )
 
@@ -100,7 +100,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
                 self.output_dim = len(response.data[0].embedding)
                 logger.debug(
                     f"Set output dimension to {self.output_dim} for model "
-                    f"{self.model_name}"
+                    f"{self.model_type}"
                 )
 
             return [data.embedding for data in response.data]
@@ -130,7 +130,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
         if self.output_dim is None:
             raise ValueError(
                 "Failed to determine embedding dimension for model: "
-                f"{self.model_name}"
+                f"{self.model_type}"
             )
 
         return self.output_dim

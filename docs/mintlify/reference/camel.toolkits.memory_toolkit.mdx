@@ -1,0 +1,109 @@
+<a id="camel.toolkits.memory_toolkit"></a>
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit"></a>
+
+## MemoryToolkit
+
+```python
+class MemoryToolkit(BaseToolkit):
+```
+
+A toolkit that provides methods for saving, loading, and clearing a
+ChatAgent's memory.
+These methods are exposed as FunctionTool objects for
+function calling. Internally, it calls:
+- agent.save_memory(path)
+- agent.load_memory(new_memory_obj)
+- agent.load_memory_from_path(path)
+- agent.clear_memory()
+
+**Parameters:**
+
+- **agent** (ChatAgent): The chat agent whose memory will be managed.
+- **timeout** (Optional[float], optional): Maximum execution time allowed for toolkit operations in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, agent: 'ChatAgent', timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.save"></a>
+
+### save
+
+```python
+def save(self, path: str):
+```
+
+Saves the agent's current memory to a JSON file.
+
+**Parameters:**
+
+- **path** (str): The file path to save the memory to.
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.load"></a>
+
+### load
+
+```python
+def load(self, memory_json: str):
+```
+
+Loads memory into the agent from a JSON string.
+
+**Parameters:**
+
+- **memory_json** (str): A JSON string containing memory records.
+
+**Returns:**
+
+  str: Confirmation or error message.
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.load_from_path"></a>
+
+### load_from_path
+
+```python
+def load_from_path(self, path: str):
+```
+
+Loads the agent's memory from a JSON file.
+
+**Parameters:**
+
+- **path** (str): The file path to load the memory from.
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.clear_memory"></a>
+
+### clear_memory
+
+```python
+def clear_memory(self):
+```
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.memory_toolkit.MemoryToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  list[FunctionTool]: List of FunctionTool objects.

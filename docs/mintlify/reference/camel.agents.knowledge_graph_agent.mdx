@@ -1,0 +1,111 @@
+<a id="camel.agents.knowledge_graph_agent"></a>
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent"></a>
+
+## KnowledgeGraphAgent
+
+```python
+class KnowledgeGraphAgent(ChatAgent):
+```
+
+An agent that can extract node and relationship information for
+different entities from given `Element` content.
+
+**Parameters:**
+
+- **task_prompt** (TextPrompt): A prompt for the agent to extract node and relationship information for different entities.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model: Optional[BaseModelBackend] = None):
+```
+
+Initialize the `KnowledgeGraphAgent`.
+
+**Parameters:**
+
+- **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    element: 'Element',
+    parse_graph_elements: bool = False,
+    prompt: Optional[str] = None
+):
+```
+
+Run the agent to extract node and relationship information.
+
+**Parameters:**
+
+- **element** (Element): The input element.
+- **parse_graph_elements** (bool, optional): Whether to parse into `GraphElement`. Defaults to `False`.
+- **prompt** (str, optional): The custom prompt to be used. Defaults to `None`.
+
+**Returns:**
+
+  Union[str, GraphElement]: The extracted node and relationship
+information. If `parse_graph_elements` is `True` then return
+`GraphElement`, else return `str`.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._validate_node"></a>
+
+### _validate_node
+
+```python
+def _validate_node(self, node: Node):
+```
+
+Validate if the object is a valid Node.
+
+**Parameters:**
+
+- **node** (Node): Object to be validated.
+
+**Returns:**
+
+  bool: True if the object is a valid Node, False otherwise.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._validate_relationship"></a>
+
+### _validate_relationship
+
+```python
+def _validate_relationship(self, relationship: Relationship):
+```
+
+Validate if the object is a valid Relationship.
+
+**Parameters:**
+
+- **relationship** (Relationship): Object to be validated.
+
+**Returns:**
+
+  bool: True if the object is a valid Relationship, False otherwise.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._parse_graph_elements"></a>
+
+### _parse_graph_elements
+
+```python
+def _parse_graph_elements(self, input_string: str):
+```
+
+Parses graph elements from given content.
+
+**Parameters:**
+
+- **input_string** (str): The input content.
+
+**Returns:**
+
+  GraphElement: The parsed graph elements.
