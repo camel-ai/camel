@@ -50,6 +50,7 @@ from camel.toolkits import (
     WebDeployToolkit,
     WhatsAppToolkit,
 )
+from camel.memories import BrowserChatHistoryMemory
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -323,7 +324,7 @@ def search_agent_factory(
         "browser_visit_page",
         "browser_get_page_snapshot",
     ]
-    USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
+    USER_DATA_DIR = "working_dir/user_data"
 
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -335,7 +336,7 @@ def search_agent_factory(
         cache_dir=WORKING_DIRECTORY,
         default_start_url="about:blank",
         user_data_dir=USER_DATA_DIR,
-        log_dir="task2",
+        log_dir="search_agent_logs",
     )
 
     # Initialize toolkits
@@ -433,10 +434,10 @@ Your capabilities include:
             content=system_message,
         ),
         model=model,
-        enable_tool_output_cache=True,
         toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
-        # prune_tool_calls_from_memory=True,
+        # browser history memory pruning for search agent
+        memory=BrowserChatHistoryMemory
     )
 
     # Return both agent and toolkit for cleanup purposes

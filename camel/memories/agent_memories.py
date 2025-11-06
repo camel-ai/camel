@@ -14,6 +14,7 @@
 
 import warnings
 from typing import List, Optional
+import re
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
@@ -21,6 +22,7 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.vectordb_storages.base import BaseVectorStorage
 from camel.types import OpenAIBackendRole
+from camel.messages.func_message import FunctionCallingMessage
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -277,3 +279,168 @@ class LongtermAgentMemory(AgentMemory):
         r"""Removes all records from the memory."""
         self.chat_history_block.clear()
         self.vector_db_block.clear()
+
+
+class BrowserChatHistoryMemory(AgentMemory):
+    r"""An agent memory wrapper of :obj:`ChatHistoryBlock` for browser agetn.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (BaseKeyValueStorage, optional): A storage backend for storing
+            chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
+            will be used. (default: :obj:`None`)
+        window_size (int, optional): The number of recent chat messages to
+            retrieve. If not provided, the entire chat history will be
+            retrieved.  (default: :obj:`None`)
+        agent_id (str, optional): The ID of the agent associated with the chat
+            history.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseKeyValueStorage] = None,
+        window_size: Optional[int] = None,
+        agent_id: Optional[str] = None,
+        prune_history_tool_calls: bool = True,
+    ) -> None:
+        if window_size is not None and not isinstance(window_size, int):
+            raise TypeError("`window_size` must be an integer or None.")
+        if window_size is not None and window_size < 0:
+            raise ValueError("`window_size` must be non-negative.")
+        self._context_creator = context_creator
+        self._window_size = window_size
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage,
+        )
+        self._agent_id = agent_id
+        self.prune_history_tool_calls = prune_history_tool_calls
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
+
+    def clean_lines(self, content:str) -> str:
+        """ Keep only the meaningful web content
+            Args:
+                content (str): The raw web content from browser toolkit to be cleaned.
+        """
+        if not content:
+            return ""
+        result = set()
+        for line in content.splitlines():
+            # Trim whitespace
+            line = line.strip()
+            # Remove everything in square brackets, including the brackets
+            line = re.sub(r'\[.*?\]', '', line)
+            # If line starts with - /url: keep only the URL part
+            m = re.match(r'^-\s*/url:\s*(.+)', line)
+            if m:
+                line = m.group(1)
+            else:
+                # Remove labels starting with - and any non-space,
+                # non-colon chars, followed by optional space or colon
+                line = re.sub(r'^-\s*[^:\s]+\s*:? ?', '', line)
+                # Remove trailing colons and spaces
+                line = re.sub(r'[:\s]+$', '', line)
+            # Remove leading and trailing non-alphanumeric characters
+            line = re.sub(r'^[^A-Za-z0-9]+|[^A-Za-z0-9]+$', '', line)
+            if line.strip() != '':
+                result.add(line)
+        return '\n'.join(result)
+
+    def retrieve(self) -> List[ContextRecord]:
+        records = self._chat_history_block.retrieve(self._window_size)
+        if self._window_size is not None and len(records) == self._window_size:
+            warnings.warn(
+                f"Chat history window size limit ({self._window_size}) "
+                f"reached. Some earlier messages will not be included in "
+                f"the context. Consider increasing window_size if you need "
+                f"a longer context.",
+                UserWarning,
+                stacklevel=2,
+            )
+        if self.prune_history_tool_calls:
+            # remove history tool calls label from records
+            # to to save token usage and improve context quality
+            # by keeping only the content
+            pruned_records = []
+            for i, record in enumerate(records[:-1]):
+                # only prune tool calls from past messages
+                if i == 5:
+                    print("Reached 5th record, stop pruning further.")
+                if record.memory_record.role_at_backend == OpenAIBackendRole.FUNCTION:
+                    # get the message from FundctionCallingMessage
+                    if (isinstance(record.memory_record.message, FunctionCallingMessage)):
+                        if isinstance(record.memory_record.message.result, dict):
+                            web_content = record.memory_record.message.result.get("snapshot", "")
+                            # we keep the snapshot content only
+                            record.memory_record.message.result["snapshot"] = self.clean_lines(web_content)
+                        elif isinstance(record.memory_record.message.result, str):
+                            record.memory_record.message.result = self.clean_lines(
+                                record.memory_record.message.result
+                            )
+                        else:
+                            raise ValueError(
+                                "Unsupported type for FunctionCallingMessage.result")
+                        pruned_records.append(record)
+                else:
+                    pruned_records.append(record)
+            pruned_records.append(records[-1])  # keep the last message as is
+        return pruned_records
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        for record in records:
+            # assign the agent_id to the record
+            if record.agent_id == "" and self.agent_id is not None:
+                record.agent_id = self.agent_id
+        self._chat_history_block.write_records(records)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def clear(self) -> None:
+        self._chat_history_block.clear()
+
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This method removes all FUNCTION/TOOL role messages and any ASSISTANT
+        messages that contain tool_calls in their meta_dict to save token
+        usage.
+        """
+        from camel.types import OpenAIBackendRole
+
+        # Get all messages from storage
+        record_dicts = self._chat_history_block.storage.load()
+        if not record_dicts:
+            return
+
+        # Track indices to remove (reverse order for efficient deletion)
+        indices_to_remove = []
+
+        # Identify indices of tool-related messages
+        for i, record in enumerate(record_dicts):
+            role = record.get('role_at_backend')
+
+            # Mark FUNCTION messages for removal
+            if role == OpenAIBackendRole.FUNCTION.value:
+                indices_to_remove.append(i)
+            # Mark TOOL messages for removal
+            elif role == OpenAIBackendRole.TOOL.value:
+                indices_to_remove.append(i)
+            # Mark ASSISTANT messages with tool_calls for removal
+            elif role == OpenAIBackendRole.ASSISTANT.value:
+                meta_dict = record.get('meta_dict', {})
+                if meta_dict and 'tool_calls' in meta_dict:
+                    indices_to_remove.append(i)
+
+        # Remove records in-place
+        for i in reversed(indices_to_remove):
+            del record_dicts[i]
+
+        # Save the modified records back to storage
+        self._chat_history_block.storage.save(record_dicts)

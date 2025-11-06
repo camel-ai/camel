@@ -565,7 +565,13 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
-
+        # check the memory is a class type, then instantiate it
+        if memory is not None and inspect.isclass(memory):
+            memory = memory(
+                context_creator,
+                window_size=message_window_size,
+                agent_id=self.agent_id,
+                )
         self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,

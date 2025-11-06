@@ -16,6 +16,7 @@ from .agent_memories import (
     ChatHistoryMemory,
     LongtermAgentMemory,
     VectorDBMemory,
+    BrowserChatHistoryMemory,
 )
 from .base import AgentMemory, BaseContextCreator, MemoryBlock
 from .blocks.chat_history_block import ChatHistoryBlock, EmptyMemoryWarning
@@ -32,6 +33,7 @@ __all__ = [
     'ScoreBasedContextCreator',
     'ChatHistoryMemory',
     'VectorDBMemory',
+    'BrowserChatHistoryMemory',
     'ChatHistoryBlock',
     'VectorDBBlock',
     'LongtermAgentMemory',
