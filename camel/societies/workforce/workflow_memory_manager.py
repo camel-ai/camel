@@ -172,7 +172,7 @@ class WorkflowMemoryManager:
                     "is deprecated. Workflows are now organized by role in "
                     f"workforce_workflows/{{role_name}}/ folders. No workflows "
                     f"found for role '{role_name}'.",
-                    DeprecationWarning,
+                    FutureWarning,
                     stacklevel=2,
                 )
 
@@ -406,26 +406,38 @@ class WorkflowMemoryManager:
                 - file_path (str): Path to saved file
                 - worker_description (str): Worker description used
         """
+        def _create_error_result(message: str) -> Dict[str, Any]:
+            """helper to create error result dict."""
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": message,
+            }
+
         try:
             # validate workflow_summary input
             if not workflow_summary:
-                return {
-                    "status": "error",
-                    "summary": "",
-                    "file_path": None,
-                    "worker_description": self.description,
-                    "message": "workflow_summary is required",
-                }
+                return _create_error_result("workflow_summary is required")
 
             # validate required fields exist
             if not hasattr(workflow_summary, 'task_title'):
-                return {
-                    "status": "error",
-                    "summary": "",
-                    "file_path": None,
-                    "worker_description": self.description,
-                    "message": "workflow_summary must have task_title field",
-                }
+                return _create_error_result(
+                    "workflow_summary must have task_title field"
+                )
+
+            if not hasattr(workflow_summary, 'agent_title'):
+                return _create_error_result(
+                    "workflow_summary must have agent_title field"
+                )
+
+            # validate agent_title is not empty
+            agent_title = getattr(workflow_summary, 'agent_title', '').strip()
+            if not agent_title:
+                return _create_error_result(
+                    "workflow_summary.agent_title cannot be empty"
+                )
 
             # use provided context utility or get default
             if context_utility is None:
@@ -482,13 +494,7 @@ class WorkflowMemoryManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": f"Failed to save workflow content: {e!s}",
-            }
+            return _create_error_result(f"Failed to save workflow content: {e!s}")
 
     async def save_workflow_async(
         self, conversation_accumulator: Optional[ChatAgent] = None
@@ -755,8 +761,8 @@ class WorkflowMemoryManager:
             "Session-based workflow search is deprecated and will be removed "
             "in a future version. Consider using load_workflows_by_role() for "
             "role-based organization instead.",
-            DeprecationWarning,
-            stacklevel=3,
+            FutureWarning,
+            stacklevel=2,
         )
 
         # generate filename-safe search pattern from worker role name
@@ -765,8 +771,9 @@ class WorkflowMemoryManager:
             clean_name = self._get_sanitized_role_name()
 
             # check if role_name is generic
-            generic_names = {'assistant', 'agent', 'user', 'system'}
-            if clean_name in generic_names:
+            from camel.societies.workforce.utils import GENERIC_ROLE_NAMES
+
+            if clean_name in GENERIC_ROLE_NAMES:
                 # for generic role names, search for all workflow files
                 # since filename is based on task_title
                 pattern = f"*{WORKFLOW_FILENAME_SUFFIX}*.md"
@@ -946,6 +953,9 @@ class WorkflowMemoryManager:
                 f"{'=' * 60}\n\n"
                 f"{workflow_data['content']}"
             )
+
+        # add clear ending marker
+        combined_content += "\n\n--- End of Previous Workflows ---\n"
 
         return combined_content
 

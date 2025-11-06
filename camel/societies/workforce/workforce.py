@@ -68,6 +68,7 @@ from camel.societies.workforce.structured_output_handler import (
 )
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    GENERIC_ROLE_NAMES,
     RecoveryStrategy,
     TaskAnalysisResult,
     TaskAssignment,
@@ -119,11 +120,6 @@ MAX_TASK_RETRIES = 3
 MAX_PENDING_TASKS_LIMIT = 20
 TASK_TIMEOUT_SECONDS = 600.0
 DEFAULT_WORKER_POOL_SIZE = 10
-
-# Generic role names that should trigger fallback in role identification
-GENERIC_ROLE_NAMES = frozenset(
-    {'assistant', 'agent', 'user', 'system', 'worker', 'helper'}
-)
 
 
 class WorkforceState(Enum):

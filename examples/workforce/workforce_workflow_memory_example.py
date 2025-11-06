@@ -171,6 +171,20 @@ async def demonstrate_second_session():
     # Load previous workflows
     loaded_workflows = workforce.load_workflow_memories()
 
+    # Print system messages to verify workflows were loaded
+    print("\n" + "="*80)
+    print("System messages after loading workflows:")
+    print("="*80)
+
+    for worker in workforce._children:
+        if hasattr(worker, 'worker') and hasattr(worker.worker, '_system_message'):
+            print(f"\n{worker.description} system message:")
+            print("-" * 80)
+            system_msg_content = worker.worker._system_message.content
+            # Print first 500 chars to avoid too much output
+            print(system_msg_content)
+            print("-" * 80)
+
     # Process new tasks with loaded workflow context
     new_tasks = [
         Task(

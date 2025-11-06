@@ -17,6 +17,12 @@ from typing import Callable, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+# generic role names that should trigger fallback in role identification
+# used for workflow organization to avoid using generic names as folder names
+GENERIC_ROLE_NAMES = frozenset(
+    {'assistant', 'agent', 'user', 'system', 'worker', 'helper'}
+)
+
 
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
