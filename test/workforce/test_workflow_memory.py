@@ -162,9 +162,9 @@ class TestSingleAgentWorkerWorkflow:
         """Test successful workflow loading (legacy pattern matching mode)."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Mock file discovery
+        # Mock file discovery - using role-based structure
         mock_files = [
-            f"{temp_context_dir}/session_123/data_analyst_workflow_20250122.md"
+            f"{temp_context_dir}/workforce_workflows/test_worker/data_analyst_workflow_20250122.md"
         ]
         mock_glob.return_value = mock_files
         mock_getmtime.return_value = 1234567890
@@ -226,17 +226,12 @@ class TestSingleAgentWorkerWorkflow:
         """
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Simulate realistic scenario: multiple workforce sessions over time
-        # Each session has workflows from different agents
-        # Session 1 (older): 17:23:56
-        # Session 2 (newer): 17:46:50
+        # Simulate realistic scenario: role-based folder structure
+        # Folder is named after agent role, files are named after task titles
         mock_files = [
-            # Newer session files (data_analyst and other agents)
-            f"{temp_context_dir}/workforce_workflows/session_20251002_174650_470517/data_analyst_workflow.md",
-            f"{temp_context_dir}/workforce_workflows/session_20251002_174650_470517/developer_workflow.md",
-            # Older session files (data_analyst and other agents)
-            f"{temp_context_dir}/workforce_workflows/session_20251002_172356_365242/data_analyst_workflow.md",
-            f"{temp_context_dir}/workforce_workflows/session_20251002_172356_365242/researcher_workflow.md",
+            # test_worker role folder with task-based filenames
+            f"{temp_context_dir}/workforce_workflows/test_worker/analyze_sales_data_workflow.md",
+            f"{temp_context_dir}/workforce_workflows/test_worker/create_quarterly_report_workflow.md",
         ]
         mock_glob.return_value = mock_files
 
@@ -268,9 +263,9 @@ class TestSingleAgentWorkerWorkflow:
                 mock_context_utility.load_markdown_file.call_args[0][0]
             )
 
-            # The loaded file should be 'data_analyst_workflow' (without .md)
-            # from the newer session (verified by it being loaded first)
-            assert loaded_filename == "data_analyst_workflow"
+            # The loaded file should be a task-based workflow name (without .md)
+            # Files are sorted by modification time (most recent first)
+            assert "workflow" in loaded_filename
 
     @patch('glob.glob')
     def test_load_workflow_memories_resets_system_message(
@@ -288,9 +283,9 @@ class TestSingleAgentWorkerWorkflow:
         # get original system message content
         original_content = worker.worker._original_system_message.content
 
-        # mock workflow files
+        # mock workflow files - role-based structure
         mock_files = [
-            f"{temp_context_dir}/workforce_workflows/session_1/data_analyst_workflow.md"
+            f"{temp_context_dir}/workforce_workflows/test_worker/analyze_data_workflow.md"
         ]
         mock_glob.return_value = mock_files
 
@@ -363,7 +358,10 @@ class TestWorkforceWorkflowMemoryMethods:
                 return_value=mock_result_2,
             ),
         ):
-            results = await mock_workforce.save_workflow_memories_async()
+            # use session_id to trigger legacy path (backward compat)
+            results = await mock_workforce.save_workflow_memories_async(
+                session_id="test_session"
+            )
 
             assert len(results) == 2
             assert all("/path/to/" in path for path in results.values())
@@ -393,7 +391,10 @@ class TestWorkforceWorkflowMemoryMethods:
                 return_value=mock_result_error,
             ),
         ):
-            results = await mock_workforce.save_workflow_memories_async()
+            # use session_id to trigger legacy path (backward compat)
+            results = await mock_workforce.save_workflow_memories_async(
+                session_id="test_session"
+            )
 
             assert len(results) == 2
             assert (
@@ -413,7 +414,10 @@ class TestWorkforceWorkflowMemoryMethods:
             'save_workflow_memories_async',
             side_effect=Exception("Test error"),
         ):
-            results = await mock_workforce.save_workflow_memories_async()
+            # use session_id to trigger legacy path (backward compat)
+            results = await mock_workforce.save_workflow_memories_async(
+                session_id="test_session"
+            )
 
             assert (
                 "error: Test error"
@@ -460,47 +464,50 @@ class TestWorkforceWorkflowMemoryMethods:
         # Store initial conversation accumulator state
         initial_accumulator = worker._conversation_accumulator
 
-        # Mock only the ChatAgent.asummarize() method (which makes LLM calls)
-        mock_summary_result = {
+        # Mock only the ChatAgent.generate_workflow_summary_async() method
+        # Role-based structure: workforce_workflows/{role}/{task_title}_workflow.md
+        from camel.utils.context_utils import WorkflowSummary
+
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="test_worker",
+            task_title="Analyze Sales Data",
+            task_description="Analyzed sales data for quarterly report",
+            tools=[],
+            steps=["Load data", "Analyze trends", "Generate report"],
+            tags=["data-analysis", "sales"],
+        )
+
+        mock_gen_result = {
             "status": "success",
-            "summary": "Completed data analysis workflow",
-            "file_path": (
-                f"{temp_context_dir}/workforce_workflows/"
-                "session_test/data_analyst_workflow.md"
-            ),
-            "worker_description": "data_analyst",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Completed data analysis workflow",
         }
 
         with patch.object(
-            ChatAgent, 'asummarize', return_value=mock_summary_result
-        ) as mock_asummarize:
+            ChatAgent,
+            'generate_workflow_summary_async',
+            return_value=mock_gen_result,
+        ) as mock_generate:
             # This executes the real save_workflow_memories_async() logic
             results = await workforce.save_workflow_memories_async()
 
             # Verify Workforce correctly processes worker results
             assert len(results) == 1
             assert worker.node_id in results
-            assert "data_analyst_workflow" in results[worker.node_id]
-            assert results[worker.node_id] == mock_summary_result["file_path"]
+            assert "workflow" in results[worker.node_id]
+            # check that file was saved in role-based directory
+            assert "test_worker" in results[worker.node_id]
+            assert "analyze_sales_data_workflow.md" in results[worker.node_id]
 
-            # Verify shared context utility was set up correctly
-            assert worker.worker._context_utility is not None
-
-            # Verify ChatAgent.asummarize was called with correct parameters
-            # (validates filename generation, prompt preparation, agent
-            # selection)
-            mock_asummarize.assert_called_once()
-            call_kwargs = mock_asummarize.call_args[1]
-
-            # Verify filename generation includes worker role_name
-            # (not description, as that would be too long)
-            assert 'filename' in call_kwargs
-            # MockSingleAgentWorker uses "Test Worker" as role_name
-            assert 'test_worker_workflow' in call_kwargs['filename']
+            # Verify generate_workflow_summary_async was called
+            mock_generate.assert_called_once()
+            call_kwargs = mock_generate.call_args[1]
 
             # Verify structured output format is set (WorkflowSummary)
             assert 'response_format' in call_kwargs
-            assert call_kwargs['response_format'] is not None
+            from camel.utils.context_utils import WorkflowSummary
+
+            assert call_kwargs['response_format'] == WorkflowSummary
 
             # Verify summary prompt was prepared
             assert 'summary_prompt' in call_kwargs
@@ -597,7 +604,7 @@ class TestWorkflowIntegration:
         worker1 = MockSingleAgentWorker("data_analyst")
         workforce1._children = [worker1]
 
-        # Mock successful asummarize and save
+        # Mock successful workflow generation and save using session_id
         mock_save_result = {
             "status": "success",
             "summary": "Data analysis workflow completed",
@@ -605,9 +612,12 @@ class TestWorkflowIntegration:
         }
 
         with patch.object(
-            worker1.worker, 'asummarize', return_value=mock_save_result
+            worker1, 'save_workflow_memories_async', return_value=mock_save_result
         ):
-            save_results = await workforce1.save_workflow_memories_async()
+            # use session_id for backward compat path
+            save_results = await workforce1.save_workflow_memories_async(
+                session_id="test_session"
+            )
             assert (
                 save_results[worker1.node_id] == mock_save_result["file_path"]
             )

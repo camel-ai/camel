@@ -1563,6 +1563,172 @@ class ChatAgent(BaseAgent):
             result["status"] = error_message
             return result
 
+    async def generate_workflow_summary_async(
+        self,
+        summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+        include_summaries: bool = False,
+        conversation_accumulator: Optional['ChatAgent'] = None,
+    ) -> Dict[str, Any]:
+        r"""Generate a workflow summary without saving to disk.
+
+        This method generates a workflow summary by calling a dedicated
+        summarizer agent. It does NOT save to disk - only generates the
+        summary content and structured output. Use this when you need to
+        inspect the summary (e.g., extract agent_title) before determining
+        where to save it.
+
+        Args:
+            summary_prompt (Optional[str]): Custom prompt for the summarizer.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure (e.g., WorkflowSummary).
+            include_summaries (bool): Whether to include previously generated
+                summaries. (default: :obj:`False`)
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. If provided,
+                memory will be retrieved from this agent instead of self.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with:
+                - structured_summary: Pydantic model instance
+                - summary_content: Raw text content
+                - status: "success" or error message
+
+        """
+        result: Dict[str, Any] = {
+            "structured_summary": None,
+            "summary_content": "",
+            "status": "",
+        }
+
+        try:
+            # get conversation from accumulator or self
+            source_agent = conversation_accumulator if conversation_accumulator else self
+            messages, _ = source_agent.memory.get_context()
+
+            if not messages:
+                result["status"] = "No conversation context available"
+                return result
+
+            # filter summaries if requested
+            if not include_summaries:
+                filtered_messages = []
+                for msg in messages:
+                    content = msg.content if hasattr(msg, 'content') else str(msg)
+                    if not content.startswith("[CONTEXT_SUMMARY]"):
+                        filtered_messages.append(msg)
+                messages = filtered_messages
+
+            # build conversation text
+            conversation_lines = []
+            for msg in messages:
+                # handle both BaseMessage objects and dicts
+                if isinstance(msg, dict):
+                    message_dict = msg
+                else:
+                    message_dict = msg.to_openai_message(
+                        role_at_backend=self.model_backend.model_type.value_for_tiktoken
+                    )
+                role = message_dict.get('role', 'unknown')
+                content = message_dict.get('content', '')
+
+                # handle tool calls and responses
+                if 'tool_calls' in message_dict:
+                    for tool_call in message_dict['tool_calls']:
+                        func_name = tool_call.get('function', {}).get(
+                            'name', 'unknown'
+                        )
+                        func_args_str = tool_call.get('function', {}).get(
+                            'arguments', '{}'
+                        )
+                        try:
+                            import json
+
+                            args_dict = json.loads(func_args_str)
+                            args_formatted = ', '.join(
+                                f"{k}={v}" for k, v in args_dict.items()
+                            )
+                        except (json.JSONDecodeError, ValueError, TypeError):
+                            args_formatted = func_args_str
+                        conversation_lines.append(
+                            f"[TOOL CALL] {func_name}({args_formatted})"
+                        )
+                elif role == 'tool':
+                    tool_name = message_dict.get('name', 'unknown_tool')
+                    if not content:
+                        content = str(message_dict.get('content', ''))
+                    conversation_lines.append(
+                        f"[TOOL RESULT] {tool_name} → {content}"
+                    )
+                elif content:
+                    conversation_lines.append(f"{role}: {content}")
+
+            conversation_text = "\n".join(conversation_lines).strip()
+
+            if not conversation_text:
+                result["status"] = "Conversation context is empty"
+                return result
+
+            # create or reuse summarizer agent
+            if self._context_summary_agent is None:
+                self._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
+                    ),
+                    model=self.model_backend,
+                    agent_id=f"{self.agent_id}_context_summarizer",
+                )
+            else:
+                self._context_summary_agent.reset()
+
+            # prepare prompt
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
+                )
+            else:
+                prompt_text = build_default_summary_prompt(conversation_text)
+
+            # call summarizer agent
+            if response_format:
+                response = await self._context_summary_agent.astep(
+                    prompt_text, response_format=response_format
+                )
+            else:
+                response = await self._context_summary_agent.astep(prompt_text)
+
+            # handle streaming response
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                response = await response
+
+            if not response.msgs:
+                result["status"] = "Failed to generate summary"
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            result.update(
+                {
+                    "structured_summary": structured_output,
+                    "summary_content": summary_content,
+                    "status": "success",
+                }
+            )
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to generate summary: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
+
     async def asummarize(
         self,
         filename: Optional[str] = None,
@@ -1571,6 +1737,7 @@ class ChatAgent(BaseAgent):
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
         add_user_messages: bool = True,
+        skip_save: bool = False,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -1600,10 +1767,17 @@ class ChatAgent(BaseAgent):
                 (full compression). (default: :obj:`False`)
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
+            skip_save (bool): If True, generates the summary and formats
+                content but does NOT save to disk. Returns the formatted
+                content and metadata for external saving. Useful for
+                two-pass workflows where folder location depends on
+                summary content. (default: :obj:`False`)
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
-                response_format was provided.
+                response_format was provided. When skip_save=True, includes
+                'formatted_content', 'base_filename', and 'metadata' fields
+                instead of file_path.
         """
 
         result: Dict[str, Any] = {

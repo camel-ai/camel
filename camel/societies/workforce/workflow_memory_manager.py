@@ -60,6 +60,9 @@ class WorkflowMemoryManager:
         description (str): Description of the worker's role.
         context_utility (Optional[ContextUtility]): Shared context utility
             for workflow operations. If None, creates a new instance.
+        role_identifier (Optional[str]): Role identifier for organizing
+            workflows by role. If provided, workflows will be stored in
+            role-based folders. If None, uses default workforce context.
     """
 
     def __init__(
@@ -67,6 +70,7 @@ class WorkflowMemoryManager:
         worker: ChatAgent,
         description: str,
         context_utility: Optional[ContextUtility] = None,
+        role_identifier: Optional[str] = None,
     ):
         # validate worker type at initialization
         if not isinstance(worker, ChatAgent):
@@ -78,11 +82,23 @@ class WorkflowMemoryManager:
         self.worker = worker
         self.description = description
         self._context_utility = context_utility
+        self._role_identifier = role_identifier
 
     def _get_context_utility(self) -> ContextUtility:
-        r"""Get context utility with lazy initialization."""
+        r"""Get context utility with lazy initialization.
+
+        Uses role-based context if role_identifier is set, otherwise falls
+        back to default workforce shared context.
+        """
         if self._context_utility is None:
-            self._context_utility = ContextUtility.get_workforce_shared()
+            if self._role_identifier:
+                self._context_utility = (
+                    ContextUtility.get_workforce_shared_by_role(
+                        self._role_identifier
+                    )
+                )
+            else:
+                self._context_utility = ContextUtility.get_workforce_shared()
         return self._context_utility
 
     def load_workflows(
@@ -184,6 +200,72 @@ class WorkflowMemoryManager:
             )
             return False
 
+    def load_workflows_by_role(
+        self,
+        role_name: Optional[str] = None,
+        pattern: Optional[str] = None,
+        max_files_to_load: int = 3,
+        use_smart_selection: bool = True,
+    ) -> bool:
+        r"""Load workflow memories from role-based directory structure.
+
+        This method loads workflows from the new role-based folder structure:
+        workforce_workflows/{role_name}/*.md
+
+        Args:
+            role_name (Optional[str]): Role name to load workflows from. If
+                None, uses the worker's role_name or role_identifier.
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                Ignored when use_smart_selection=True.
+            max_files_to_load (int): Maximum number of workflow files to load.
+                (default: :obj:`3`)
+            use_smart_selection (bool): Whether to use agent-based
+                intelligent workflow selection. When True, uses workflow
+                information and LLM to select most relevant workflows. When
+                False, falls back to pattern matching. (default: :obj:`True`)
+
+        Returns:
+            bool: True if workflow memories were successfully loaded, False
+                otherwise.
+        """
+        try:
+            # reset system message to original state before loading
+            self.worker.reset_to_original_system_message()
+
+            # determine role name to use
+            if role_name is None:
+                role_name = (
+                    self._role_identifier or self._get_sanitized_role_name()
+                )
+
+            # find workflow files in role-based directory
+            workflow_files = self._find_workflow_files_by_role(
+                role_name, pattern
+            )
+
+            if not workflow_files:
+                logger.info(f"No workflow files found for role: {role_name}")
+                return False
+
+            # load workflows
+            loaded_count = self._load_workflow_files(
+                workflow_files, max_files_to_load
+            )
+
+            # report results
+            if loaded_count > 0:
+                logger.info(
+                    f"Successfully loaded {loaded_count} workflow file(s) for "
+                    f"role {role_name}"
+                )
+            return loaded_count > 0
+
+        except Exception as e:
+            logger.warning(
+                f"Error loading workflow memories for role {role_name}: {e!s}"
+            )
+            return False
+
     def save_workflow(
         self, conversation_accumulator: Optional[ChatAgent] = None
     ) -> Dict[str, Any]:
@@ -265,6 +347,98 @@ class WorkflowMemoryManager:
                 "file_path": None,
                 "worker_description": self.description,
                 "message": f"Failed to save workflow memories: {e!s}",
+            }
+
+    async def save_workflow_content_async(
+        self,
+        workflow_summary: 'WorkflowSummary',
+        context_utility: Optional[ContextUtility] = None,
+        conversation_accumulator: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""Save a pre-generated workflow summary to disk.
+
+        This method takes a pre-generated WorkflowSummary object and saves
+        it to disk using the provided context utility. It does NOT call the
+        LLM - just formats and saves the content. Use this for two-pass
+        workflows where the summary is generated first, then saved to a
+        location determined by the summary content.
+
+        Args:
+            workflow_summary (WorkflowSummary): Pre-generated workflow summary
+                object containing task_title, agent_title, etc.
+            context_utility (Optional[ContextUtility]): Context utility with
+                correct working directory. If None, uses default.
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. Used to get
+                accurate message_count metadata. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Formatted workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+        try:
+            # use provided context utility or get default
+            if context_utility is None:
+                context_utility = self._get_context_utility()
+
+            # set context utility on worker
+            self.worker.set_context_utility(context_utility)
+
+            # determine filename from task_title
+            task_title = workflow_summary.task_title
+            clean_title = ContextUtility.sanitize_workflow_filename(task_title)
+            base_filename = (
+                f"{clean_title}_workflow" if clean_title else "workflow"
+            )
+
+            # build metadata - get message count from accumulator if available
+            metadata = context_utility.get_session_metadata()
+            source_agent = conversation_accumulator if conversation_accumulator else self.worker
+            metadata.update(
+                {
+                    "agent_id": self.worker.agent_id,
+                    "message_count": len(source_agent.memory.get_context()[0]),
+                }
+            )
+
+            # convert WorkflowSummary to markdown
+            summary_content = context_utility.structured_output_to_markdown(
+                structured_data=workflow_summary, metadata=metadata
+            )
+
+            # save to disk
+            save_status = context_utility.save_markdown_file(
+                base_filename,
+                summary_content,
+            )
+
+            file_path = (
+                context_utility.get_working_directory() / f"{base_filename}.md"
+            )
+
+            # format summary with context prefix
+            formatted_summary = (
+                f"[CONTEXT_SUMMARY] The following is a summary of our "
+                f"conversation from a previous session: {summary_content}"
+            )
+
+            return {
+                "status": "success" if save_status == "success" else save_status,
+                "summary": formatted_summary,
+                "file_path": str(file_path),
+                "worker_description": self.description,
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow content: {e!s}",
             }
 
     async def save_workflow_async(
@@ -511,6 +685,11 @@ class WorkflowMemoryManager:
     ) -> List[str]:
         r"""Find and return sorted workflow files matching the pattern.
 
+        .. note::
+            Session-based workflow search will be deprecated in a future
+            version. Consider using :meth:`_find_workflow_files_by_role` for
+            role-based organization instead.
+
         Args:
             pattern (Optional[str]): Custom search pattern for workflow files.
                 If None, uses worker role_name to generate pattern.
@@ -562,6 +741,60 @@ class WorkflowMemoryManager:
             return match.group(1) if match else ""
 
         workflow_files.sort(key=extract_session_timestamp, reverse=True)
+        return workflow_files
+
+    def _find_workflow_files_by_role(
+        self, role_name: Optional[str] = None, pattern: Optional[str] = None
+    ) -> List[str]:
+        r"""Find workflow files in role-based directory structure.
+
+        This method searches for workflows in the new role-based folder
+        structure: workforce_workflows/{role_name}/*.md
+
+        Args:
+            role_name (Optional[str]): Role name to search for. If None,
+                uses the worker's role_name or role_identifier.
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                If None, searches for all workflow files in the role directory.
+
+        Returns:
+            List[str]: Sorted list of workflow file paths by modification time
+                (most recent first).
+        """
+        # determine role name to use
+        if role_name is None:
+            role_name = self._role_identifier or self._get_sanitized_role_name()
+
+        # sanitize role name for filesystem use
+        clean_role = ContextUtility.sanitize_workflow_filename(role_name)
+        if not clean_role:
+            clean_role = "unknown_role"
+
+        # get the base workforce_workflows directory
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if camel_workdir:
+            base_dir = os.path.join(
+                camel_workdir, "workforce_workflows", clean_role
+            )
+        else:
+            base_dir = os.path.join("workforce_workflows", clean_role)
+
+        # use provided pattern or default to all workflow files
+        if pattern is None:
+            pattern = "*_workflow*.md"
+
+        # search for workflow files in role directory
+        search_path = str(Path(base_dir) / pattern)
+        workflow_files = glob.glob(search_path)
+
+        if not workflow_files:
+            logger.info(
+                f"No workflow files found in role directory: {base_dir}"
+            )
+            return []
+
+        # sort by file modification time (most recent first)
+        workflow_files.sort(key=os.path.getmtime, reverse=True)
         return workflow_files
 
     def _collect_workflow_contents(
