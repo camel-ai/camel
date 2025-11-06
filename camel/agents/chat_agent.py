@@ -915,6 +915,202 @@ class ChatAgent(BaseAgent):
             return normalized
         return normalized[: max(0, limit - 3)].rstrip() + "..."
 
+    def _clean_snapshot_line(self, line: str) -> str:
+        r"""Clean a single snapshot line by removing prefixes and references.
+
+        This method handles snapshot lines in the format:
+        - [prefix] "quoted text" [attributes] [ref=...]: description
+
+        It preserves:
+        - Quoted text content (including brackets inside quotes)
+        - Description text after the colon
+
+        It removes:
+        - Line prefixes (e.g., "- button", "- tooltip", "generic:")
+        - Attribute markers (e.g., [disabled], [ref=e47])
+        - Lines with only element types
+        - All indentation
+
+        Args:
+            line: The original line content.
+
+        Returns:
+            The cleaned line content, or empty string if line should be removed.
+        """
+        # Remove all leading whitespace (indentation)
+        original = line.strip()
+        if not original:
+            return ''
+
+        # Check if line is just a line prefix (element type) with optional colon
+        # Examples: "- generic:", "- img", "generic:", "img", "button:"
+        # Matches "- word" or "word:" or "- word:" or just "word"
+        if re.match(r'^(?:-\s+)?\w+\s*:?\s*$', original):
+            return ''  # Remove lines with only element types
+
+        # Step 1: Remove line prefix using regex
+        # Matches: "- button ", "- generic: ", "tooltip: ", "- img ", etc.
+        line = re.sub(r'^(?:-\s+)?\w+[\s:]+', '', original)
+
+        # Step 2: Remove bracket markers outside of quotes
+        # Strategy: protect quoted content, remove brackets, restore quotes
+
+        # Save all quoted content temporarily
+        quoted_parts = []
+
+        def save_quoted(match):
+            quoted_parts.append(match.group(0))
+            return f'__QUOTED_{len(quoted_parts)-1}__'
+
+        # Protect quoted content (double quotes)
+        line = re.sub(r'"[^"]*"', save_quoted, line)
+
+        # Remove all bracket markers (quotes are protected)
+        line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
+
+        # Restore quoted content
+        for i, quoted in enumerate(quoted_parts):
+            line = line.replace(f'__QUOTED_{i}__', quoted)
+
+        # Step 3: Clean up whitespace and formatting
+        line = re.sub(r'\s+', ' ', line).strip()
+        line = re.sub(r'\s*:\s*', ': ', line)
+
+        # Remove leading colon if that's all that remains
+        if line == ':' or line.startswith(': '):
+            line = line.lstrip(': ').strip()
+
+        # Return empty string if nothing meaningful remains
+        if not line:
+            return ''
+
+        return line
+
+    def _clean_snapshot_content(self, content: str) -> str:
+        r"""Clean snapshot content by removing prefixes, references, and
+        deduplicating lines.
+
+        This method identifies snapshot lines (containing element keywords or
+        references) and cleans them while preserving non-snapshot content.
+        It also handles JSON-formatted tool outputs with snapshot fields.
+
+        Args:
+            content: The original snapshot content.
+
+        Returns:
+            The cleaned content with deduplicated lines.
+        """
+        # Try to parse as JSON first
+        try:
+            import json
+
+            data = json.loads(content)
+            modified = False
+
+            # Recursively clean snapshot fields in JSON
+            def clean_json_value(obj):
+                nonlocal modified
+                if isinstance(obj, dict):
+                    result = {}
+                    for key, value in obj.items():
+                        if key == 'snapshot' and isinstance(value, str):
+                            # Found a snapshot field, clean it
+                            # Decode escape sequences (e.g., \n -> actual newline)
+                            try:
+                                decoded_value = value.encode().decode('unicode_escape')
+                            except:
+                                decoded_value = value
+
+                            # Check if cleaning is needed
+                            needs_cleaning = (
+                                '- ' in decoded_value or
+                                '[ref=' in decoded_value or
+                                any(elem + ':' in decoded_value for elem in [
+                                    'generic', 'img', 'banner', 'list',
+                                    'listitem', 'search', 'navigation'
+                                ])
+                            )
+
+                            if needs_cleaning:
+                                cleaned_snapshot = self._clean_text_snapshot(
+                                    decoded_value
+                                )
+                                result[key] = cleaned_snapshot
+                                modified = True
+                            else:
+                                result[key] = value
+                        else:
+                            result[key] = clean_json_value(value)
+                    return result
+                elif isinstance(obj, list):
+                    return [clean_json_value(item) for item in obj]
+                else:
+                    return obj
+
+            cleaned_data = clean_json_value(data)
+
+            if modified:
+                return json.dumps(cleaned_data, ensure_ascii=False, indent=4)
+            else:
+                return content
+
+        except (json.JSONDecodeError, TypeError):
+            # Not JSON, process as plain text
+            return self._clean_text_snapshot(content)
+
+    def _clean_text_snapshot(self, content: str) -> str:
+        r"""Clean plain text snapshot content.
+
+        This method:
+        - Removes all indentation
+        - Deletes empty lines
+        - Deduplicates all lines
+        - Cleans snapshot-specific markers
+
+        Args:
+            content: The original snapshot text.
+
+        Returns:
+            The cleaned content with deduplicated lines, no indentation, and no empty lines.
+        """
+        lines = content.split('\n')
+        cleaned_lines = []
+        seen = set()  # For deduplication across ALL lines
+
+        for line in lines:
+            # Strip indentation from every line
+            stripped_line = line.strip()
+
+            # Skip empty lines
+            if not stripped_line:
+                continue
+
+            # Skip metadata lines (like "- /url:", "- /ref:", etc.)
+            if re.match(r'^-?\s*/\w+\s*:', stripped_line):
+                continue
+
+            # Check if this is a snapshot line using regex
+            # Matches lines with: [ref=...], "- element", "element:", "- element:", etc.
+            is_snapshot_line = (
+                '[ref=' in stripped_line or
+                re.match(r'^(?:-\s+)?\w+(?:[\s:]|$)', stripped_line)
+            )
+
+            if is_snapshot_line:
+                # Clean snapshot line
+                cleaned = self._clean_snapshot_line(stripped_line)
+                # Only add if not empty and not duplicate
+                if cleaned and cleaned not in seen:
+                    cleaned_lines.append(cleaned)
+                    seen.add(cleaned)
+            else:
+                # Non-snapshot line: remove indentation, deduplicate
+                if stripped_line not in seen:
+                    cleaned_lines.append(stripped_line)
+                    seen.add(stripped_line)
+
+        return '\n'.join(cleaned_lines)
+
     def _register_tool_output_for_cache(
         self,
         func_name: str,
@@ -956,11 +1152,22 @@ class ChatAgent(BaseAgent):
         if self._tool_output_cache_manager is None or not entry.record_uuids:
             return
 
+        # Check if result contains snapshot markers and clean if necessary
+        result_to_cache = entry.result_text
+        if '- ' in result_to_cache and '[ref=' in result_to_cache:
+            # Likely contains snapshot with references, clean it
+            result_to_cache = self._clean_snapshot_content(result_to_cache)
+            logger.debug(
+                "Cleaned snapshot references from tool output '%s' (%s)",
+                entry.tool_name,
+                entry.tool_call_id,
+            )
+
         try:
             cache_id, cache_path = self._tool_output_cache_manager.save(
                 entry.tool_name,
                 entry.tool_call_id,
-                entry.result_text,
+                result_to_cache,
             )
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning(
@@ -986,7 +1193,7 @@ class ChatAgent(BaseAgent):
             },
             content="",
             func_name=entry.tool_name,
-            result=self._build_cache_reference_text(entry, cache_id),
+            result=result_to_cache,  # Use cleaned content directly
             tool_call_id=entry.tool_call_id,
         )
 
