@@ -142,6 +142,7 @@ jobs:
           BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
           CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
           NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+          COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode -m "not heavy_dependency" \

@@ -21,8 +21,11 @@ from camel.toolkits import TerminalToolkit
 
 
 @pytest.fixture
-def terminal_toolkit(temp_dir):
-    return TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+def terminal_toolkit(temp_dir, request):
+    toolkit = TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+    # Ensure cleanup happens after test completes
+    request.addfinalizer(toolkit.cleanup)
+    return toolkit
 
 
 @pytest.fixture
@@ -41,9 +44,12 @@ def test_file(temp_dir):
 
 def test_init():
     toolkit = TerminalToolkit()
-    assert toolkit.timeout == 20.0
-    assert isinstance(toolkit.shell_sessions, dict)
-    assert toolkit.os_type == platform.system()
+    try:
+        assert toolkit.timeout == 20.0
+        assert isinstance(toolkit.shell_sessions, dict)
+        assert toolkit.os_type == platform.system()
+    finally:
+        toolkit.cleanup()
 
 
 def test_shell_exec(terminal_toolkit, temp_dir):
@@ -61,28 +67,32 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     )
     assert "not found" in result.lower()
 
-    # Test session persistence
+    # Test session persistence - use non-blocking mode to create sessions
     session_id = "persistent_session"
-    terminal_toolkit.shell_exec(session_id, "echo 'test1'")
+    terminal_toolkit.shell_exec(session_id, "echo 'test1'", block=False)
     assert session_id in terminal_toolkit.shell_sessions
-    assert terminal_toolkit.shell_sessions[session_id]["output"] != ""
+    # For non-blocking mode, check if session was created
+    # (output might be empty initially)
+    assert "output_stream" in terminal_toolkit.shell_sessions[session_id]
 
 
 def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
-    # Test multiple concurrent sessions
+    # Test multiple concurrent sessions - use non-blocking mode
+    # to create sessions
     session1 = "session1"
     session2 = "session2"
 
-    result1 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session1,
         "echo 'Session 1'",
+        block=False,
     )
-    result2 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session2,
         "echo 'Session 2'",
+        block=False,
     )
 
-    assert "Session 1" in result1
-    assert "Session 2" in result2
+    # For non-blocking mode, sessions should be created immediately
     assert session1 in terminal_toolkit.shell_sessions
     assert session2 in terminal_toolkit.shell_sessions

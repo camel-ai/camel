@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aihubmix_model import AihubMixModel
 from .aiml_model import AIMLModel
 from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
@@ -19,6 +20,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
@@ -69,6 +71,7 @@ __all__ = [
     'StubModel',
     'ZhipuAIModel',
     'CohereModel',
+    'CometAPIModel',
     'ModelFactory',
     'ModelManager',
     'LiteLLMModel',
@@ -104,4 +107,5 @@ __all__ = [
     'WatsonXModel',
     'QianfanModel',
     'CrynuxModel',
+    'AihubMixModel',
 ]

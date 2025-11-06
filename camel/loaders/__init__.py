@@ -21,7 +21,6 @@ from .jina_url_reader import JinaURLReader
 from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .mistral_reader import MistralReader
-from .pandas_reader import PandasReader
 from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
@@ -33,7 +32,6 @@ __all__ = [
     'JinaURLReader',
     'Firecrawl',
     'Apify',
-    'PandasReader',
     'ChunkrReader',
     'ChunkrReaderConfig',
     'MinerU',
@@ -42,3 +40,14 @@ __all__ = [
     'ScrapeGraphAI',
     'MistralReader',
 ]
+
+
+def __getattr__(name: str):
+    if name == 'PandasReader':
+        raise ImportError(
+            "PandasReader has been removed from camel.loaders. "
+            "The pandasai dependency limited pandas to version 1.5.3. "
+            "Please use ExcelToolkit from camel.toolkits instead for "
+            "handling structured data."
+        )
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

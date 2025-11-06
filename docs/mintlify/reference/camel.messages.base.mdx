@@ -17,7 +17,7 @@ Base class for message objects used in CAMEL chat system.
 - **meta_dict** (Optional[Dict[str, Any]]): Additional metadata dictionary for the message.
 - **content** (str): The content of the message.
 - **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message. (default: :obj:`None`)
-- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. (default: :obj:`None`)
+- **image_list** (Optional[List[Union[Image.Image, str]]]): Optional list of PIL Image objects or image URLs (strings) associated with the message. (default: :obj:`None`)
 - **image_detail** (`Literal["auto", "low", "high"]`): Detail level of the images associated with the message. (default: :obj:`auto`)
 - **video_detail** (`Literal["auto", "low", "high"]`): Detail level of the videos associated with the message. (default: :obj:`auto`)
 - **parsed**: Optional[Union[Type[BaseModel], dict]]: Optional object which is parsed from the content. (default: :obj:`None`)
@@ -33,7 +33,7 @@ def make_user_message(
     content: str,
     meta_dict: Optional[Dict[str, str]] = None,
     video_bytes: Optional[bytes] = None,
-    image_list: Optional[List[Image.Image]] = None,
+    image_list: Optional[List[Union[Image.Image, str]]] = None,
     image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
     video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW
 ):
@@ -47,7 +47,7 @@ Create a new user message.
 - **content** (str): The content of the message.
 - **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
 - **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message.
-- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message.
+- **image_list** (Optional[List[Union[Image.Image, str]]]): Optional list of PIL Image objects or image URLs (strings) associated with the message.
 - **image_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the images associated with the message.
 - **video_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the videos associated with the message.
 
@@ -66,7 +66,7 @@ def make_assistant_message(
     content: str,
     meta_dict: Optional[Dict[str, str]] = None,
     video_bytes: Optional[bytes] = None,
-    image_list: Optional[List[Image.Image]] = None,
+    image_list: Optional[List[Union[Image.Image, str]]] = None,
     image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
     video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW
 ):
@@ -80,13 +80,38 @@ Create a new assistant message.
 - **content** (str): The content of the message.
 - **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
 - **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message.
-- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message.
+- **image_list** (Optional[List[Union[Image.Image, str]]]): Optional list of PIL Image objects or image URLs (strings) associated with the message.
 - **image_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the images associated with the message.
 - **video_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the videos associated with the message.
 
 **Returns:**
 
   BaseMessage: The new assistant message.
+
+<a id="camel.messages.base.BaseMessage.make_system_message"></a>
+
+### make_system_message
+
+```python
+def make_system_message(
+    cls,
+    content: str,
+    role_name: str = 'System',
+    meta_dict: Optional[Dict[str, str]] = None
+):
+```
+
+Create a new system message.
+
+**Parameters:**
+
+- **content** (str): The content of the system message.
+- **role_name** (str): The name of the system role. (default: :obj:`"System"`)
+- **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
+
+**Returns:**
+
+  BaseMessage: The new system message.
 
 <a id="camel.messages.base.BaseMessage.create_new_instance"></a>
 

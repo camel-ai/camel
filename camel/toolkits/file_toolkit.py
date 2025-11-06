@@ -906,7 +906,7 @@ class FileToolkit(BaseToolkit):
         self,
         file_path: Path,
         content: Union[str, List[List]],
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
     ) -> None:
         r"""Write CSV content to a file.
 
@@ -914,7 +914,8 @@ class FileToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (Union[str, List[List]]): The CSV content as a string or
                 list of lists.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
+            encoding (str): Character encoding to use.
+                (default: :obj:`utf-8-sig`)
         """
         import csv
 
@@ -1200,6 +1201,171 @@ class FileToolkit(BaseToolkit):
         except Exception as e:
             return f"Error editing file: {e}"
 
+    def search_files(
+        self,
+        pattern: str,
+        file_types: Optional[List[str]] = None,
+        file_pattern: Optional[str] = None,
+        path: Optional[str] = None,
+    ) -> str:
+        r"""Search for a text pattern in files with specified extensions or
+        file patterns.
+
+        This method searches for a text pattern (case-insensitive substring
+        match) in files matching either the specified file types or a file
+        pattern. It returns structured results showing which files contain
+        the pattern, along with line numbers and matching content.
+
+        Args:
+            pattern (str): The text pattern to search for (case-insensitive
+                string match).
+            file_types (Optional[List[str]]): List of file extensions to
+                search (e.g., ["md", "txt", "py"]). Do not include the dot.
+                If not provided and file_pattern is also not provided,
+                defaults to ["md"] (markdown files). Ignored if file_pattern
+                is provided. (default: :obj:`None`)
+            file_pattern (Optional[str]): Glob pattern for matching files
+                (e.g., "*_workflow.md", "test_*.py"). If provided, this
+                overrides file_types. (default: :obj:`None`)
+            path (Optional[str]): Directory to search in. If not provided,
+                uses the working_directory. Can be relative or absolute.
+                (default: :obj:`None`)
+
+        Returns:
+            str: JSON-formatted string containing search results with the
+                structure:
+                {
+                    "pattern": "search_pattern",
+                    "searched_path": "/absolute/path",
+                    "file_types": ["md", "txt"],
+                    "file_pattern": "*_workflow.md",
+                    "matches": [
+                        {
+                            "file": "relative/path/to/file.md",
+                            "line": 42,
+                            "content": "matching line content"
+                        },
+                        ...
+                    ],
+                    "total_matches": 10,
+                    "files_searched": 5
+                }
+                If an error occurs, returns a JSON string with an "error" key.
+        """
+        import json
+
+        try:
+            # resolve search path
+            if path:
+                path_obj = Path(path)
+                if not path_obj.is_absolute():
+                    search_path = (self.working_directory / path_obj).resolve()
+                else:
+                    search_path = path_obj.resolve()
+            else:
+                search_path = self.working_directory
+
+            # validate that search path exists
+            if not search_path.exists():
+                return json.dumps(
+                    {"error": f"Search path does not exist: {search_path}"}
+                )
+
+            if not search_path.is_dir():
+                return json.dumps(
+                    {"error": f"Search path is not a directory: {search_path}"}
+                )
+
+            # collect all matching files
+            matching_files: List[Path] = []
+
+            if file_pattern:
+                # use file_pattern if provided (overrides file_types)
+                pattern_glob = f"**/{file_pattern}"
+                matching_files.extend(search_path.rglob(pattern_glob))
+            else:
+                # use file_types if file_pattern not provided
+                if file_types is None:
+                    file_types = ["md"]
+
+                # normalize and deduplicate file types
+                normalized_types = set()
+                for file_type in file_types:
+                    file_type = file_type.lstrip('.')
+                    if file_type:  # skip empty strings
+                        normalized_types.add(file_type)
+
+                for file_type in normalized_types:
+                    # use rglob for recursive search
+                    pattern_glob = f"**/*.{file_type}"
+                    matching_files.extend(search_path.rglob(pattern_glob))
+
+            # search through files (case-insensitive)
+            matches = []
+            files_searched = 0
+            pattern_lower = pattern.lower()
+
+            for file_path in matching_files:
+                files_searched += 1
+                try:
+                    # read file content
+                    content = file_path.read_text(
+                        encoding=self.default_encoding
+                    )
+                    lines = content.splitlines()
+
+                    # search each line for pattern (case-insensitive)
+                    for line_num, line in enumerate(lines, start=1):
+                        if pattern_lower in line.lower():
+                            # get relative path for cleaner output
+                            try:
+                                relative_path = file_path.relative_to(
+                                    search_path
+                                )
+                            except ValueError:
+                                relative_path = file_path
+
+                            matches.append(
+                                {
+                                    "file": str(relative_path),
+                                    "line": line_num,
+                                    "content": line.strip(),
+                                }
+                            )
+
+                except (UnicodeDecodeError, PermissionError) as e:
+                    # skip files that can't be read
+                    logger.debug(f"Skipping file {file_path}: {e}")
+                    continue
+
+            # build result
+            result = {
+                "pattern": pattern,
+                "searched_path": str(search_path),
+                "matches": matches,
+                "total_matches": len(matches),
+                "files_searched": files_searched,
+            }
+
+            # include file_pattern or file_types in result
+            if file_pattern:
+                result["file_pattern"] = file_pattern
+            else:
+                result["file_types"] = (
+                    sorted(normalized_types) if normalized_types else ["md"]
+                )
+
+            logger.info(
+                f"Search completed: found {len(matches)} matches "
+                f"in {files_searched} files"
+            )
+            return json.dumps(result, indent=2)
+
+        except Exception as e:
+            error_msg = f"Error during file search: {e}"
+            logger.error(error_msg)
+            return json.dumps({"error": error_msg})
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -1212,6 +1378,7 @@ class FileToolkit(BaseToolkit):
             FunctionTool(self.write_to_file),
             FunctionTool(self.read_file),
             FunctionTool(self.edit_file),
+            FunctionTool(self.search_files),
         ]
 
 
