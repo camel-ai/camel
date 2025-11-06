@@ -532,3 +532,103 @@ class OutlookToolkit(BaseToolkit):
         return [
             FunctionTool(self.send_email),
         ]
+
+    async def create_draft_email(
+        self,
+        to_email: List[str],
+        subject: str,
+        content: str,
+        attachments: Optional[List[str]] = None,
+        cc_recipients: Optional[List[str]] = None,
+        bcc_recipients: Optional[List[str]] = None,
+        reply_to: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Creates a draft email in Microsoft Outlook.
+
+        Args:
+            to_email (List[str]): List of recipient email addresses.
+            subject (str): The subject of the email.
+            content (str): The body content of the email.
+            attachments (Optional[List[str]]): List of file paths to attach
+                to the email. (default: :obj:`None`)
+            cc_recipients (Optional[List[str]]): List of CC recipient email
+                addresses. (default: :obj:`None`)
+            bcc_recipients (Optional[List[str]]): List of BCC recipient email
+                addresses. (default: :obj:`None`)
+            reply_to (Optional[List[str]]): List of email addresses that will
+                receive replies when recipients use the "Reply" button. This
+                allows replies to be directed to different addresses than the
+                sender's address. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the draft
+                email creation operation, including the draft ID.
+
+        Raises:
+            ValueError: If creating the draft email fails or if email
+                addresses are invalid.
+        """
+        # Validate all email addresses
+        try:
+            validated = self._validate_all_email_addresses(
+                to_email=to_email,
+                cc_recipients=cc_recipients,
+                bcc_recipients=bcc_recipients,
+                reply_to=reply_to,
+            )
+        except ValueError as e:
+            error_msg = str(e)
+            return {"error": error_msg}
+
+        try:
+            request_body = self._create_message(
+                to_email=validated['to'],
+                subject=subject,
+                content=content,
+                attachments=attachments,
+                cc_recipients=validated['cc'],
+                bcc_recipients=validated['bcc'],
+                reply_to=validated['reply_to'],
+            )
+
+            result = await self.client.me.messages.post(request_body)
+
+            logger.info("Draft email created successfully.")
+            return {
+                'status': 'success',
+                'message': 'Draft email created successfully',
+                'draft_id': result.id,
+                'recipients': validated['to'],
+                'subject': subject,
+            }
+        except Exception as e:
+            error_msg = f"Failed to create draft email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    async def send_draft_email(self, draft_id: str) -> Dict[str, Any]:
+        """Sends a draft email via Microsoft Outlook.
+
+        Args:
+            draft_id (str): The ID of the draft email to send.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the draft
+                email sending operation.
+
+        Raises:
+            ValueError: If sending the draft email fails.
+        """
+        try:
+            await self.client.me.messages.by_message_id(draft_id).send.post()
+
+            logger.info(f"Draft email with ID {draft_id} sent successfully.")
+            return {
+                'status': 'success',
+                'message': 'Draft email sent successfully',
+                'draft_id': draft_id,
+            }
+        except Exception as e:
+            error_msg = f"Failed to send draft email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
