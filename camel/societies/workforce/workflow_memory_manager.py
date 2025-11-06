@@ -148,9 +148,7 @@ class WorkflowMemoryManager:
                 else self._get_sanitized_role_name()
             )
 
-            logger.info(
-                f"Attempting to load workflows for role: {role_name}"
-            )
+            logger.info(f"Attempting to load workflows for role: {role_name}")
 
             # try loading from role-based structure
             loaded = self.load_workflows_by_role(
@@ -168,10 +166,11 @@ class WorkflowMemoryManager:
                 import warnings
 
                 warnings.warn(
-                    f"Session-based workflow loading (session_id={session_id}) "
-                    "is deprecated. Workflows are now organized by role in "
-                    f"workforce_workflows/{{role_name}}/ folders. No workflows "
-                    f"found for role '{role_name}'.",
+                    f"Session-based workflow loading "
+                    f"(session_id={session_id}) is deprecated. "
+                    f"Workflows are now organized by role in "
+                    f"workforce_workflows/{{role_name}}/ folders. "
+                    f"No workflows found for role '{role_name}'.",
                     FutureWarning,
                     stacklevel=2,
                 )
@@ -191,7 +190,9 @@ class WorkflowMemoryManager:
                     if workflows_metadata:
                         selected_files, selection_method = (
                             self._select_relevant_workflows(
-                                workflows_metadata, max_files_to_load, session_id
+                                workflows_metadata,
+                                max_files_to_load,
+                                session_id,
                             )
                         )
 
@@ -215,9 +216,7 @@ class WorkflowMemoryManager:
                         )
                         return loaded_count > 0
 
-            logger.info(
-                f"No workflow files found for role '{role_name}'"
-            )
+            logger.info(f"No workflow files found for role '{role_name}'")
             return False
 
         except Exception as e:
@@ -406,6 +405,7 @@ class WorkflowMemoryManager:
                 - file_path (str): Path to saved file
                 - worker_description (str): Worker description used
         """
+
         def _create_error_result(message: str) -> Dict[str, Any]:
             """helper to create error result dict."""
             return {
@@ -457,7 +457,11 @@ class WorkflowMemoryManager:
 
             # build metadata - get message count from accumulator if available
             metadata = context_utility.get_session_metadata()
-            source_agent = conversation_accumulator if conversation_accumulator else self.worker
+            source_agent = (
+                conversation_accumulator
+                if conversation_accumulator
+                else self.worker
+            )
             metadata.update(
                 {
                     "agent_id": self.worker.agent_id,
@@ -487,14 +491,18 @@ class WorkflowMemoryManager:
             )
 
             return {
-                "status": "success" if save_status == "success" else save_status,
+                "status": "success"
+                if save_status == "success"
+                else save_status,
                 "summary": formatted_summary,
                 "file_path": str(file_path),
                 "worker_description": self.description,
             }
 
         except Exception as e:
-            return _create_error_result(f"Failed to save workflow content: {e!s}")
+            return _create_error_result(
+                f"Failed to save workflow content: {e!s}"
+            )
 
     async def save_workflow_async(
         self, conversation_accumulator: Optional[ChatAgent] = None
@@ -829,7 +837,9 @@ class WorkflowMemoryManager:
         """
         # determine role name to use
         if role_name is None:
-            role_name = self._role_identifier or self._get_sanitized_role_name()
+            role_name = (
+                self._role_identifier or self._get_sanitized_role_name()
+            )
 
         # sanitize role name for filesystem use
         clean_role = ContextUtility.sanitize_workflow_filename(role_name)

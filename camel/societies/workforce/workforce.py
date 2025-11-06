@@ -41,7 +41,7 @@ from .workforce_callback import WorkforceCallback
 from .workforce_metrics import WorkforceMetrics
 
 if TYPE_CHECKING:
-    from camel.utils.context_utils import ContextUtility
+    from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 from colorama import Fore
 
@@ -562,14 +562,14 @@ class Workforce(BaseNode):
     ) -> str:
         r"""Extract role identifier for organizing workflows.
 
-        Uses priority fallback: role_name → agent_title (from WorkflowSummary) →
-        sanitized description.
+        Uses priority fallback: role_name → agent_title (from
+        WorkflowSummary) → sanitized description.
 
         Args:
             worker (ChatAgent): The worker agent to extract role from.
             description (str): Worker description to use as fallback.
-            workflow_summary (Optional[WorkflowSummary]): Optional WorkflowSummary
-                object that may contain agent_title field.
+            workflow_summary (Optional[WorkflowSummary]): Optional
+                WorkflowSummary object that may contain agent_title field.
 
         Returns:
             str: Role identifier for organizing workflows.
@@ -2416,7 +2416,9 @@ class Workforce(BaseNode):
                         await child.worker.generate_workflow_summary_async(
                             summary_prompt=summary_prompt,
                             response_format=WorkflowSummary,
-                            conversation_accumulator=child._conversation_accumulator,
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
                         )
                     )
 
@@ -2441,10 +2443,8 @@ class Workforce(BaseNode):
                     )
 
                     # create role-based context utility
-                    role_context = (
-                        ContextUtility.get_workforce_shared_by_role(
-                            role_id
-                        )
+                    role_context = ContextUtility.get_workforce_shared_by_role(
+                        role_id
                     )
 
                     # save with correct context and accumulator
@@ -2452,7 +2452,9 @@ class Workforce(BaseNode):
                         await workflow_manager.save_workflow_content_async(
                             workflow_summary=workflow_summary,
                             context_utility=role_context,
-                            conversation_accumulator=child._conversation_accumulator,
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
                         )
                     )
 

@@ -263,8 +263,8 @@ class TestSingleAgentWorkerWorkflow:
                 mock_context_utility.load_markdown_file.call_args[0][0]
             )
 
-            # The loaded file should be a task-based workflow name (without .md)
-            # Files are sorted by modification time (most recent first)
+            # The loaded file should be a task-based workflow name
+            # (without .md). Files sorted by modification time (recent first)
             assert "workflow" in loaded_filename
 
     @patch('glob.glob')
@@ -465,7 +465,8 @@ class TestWorkforceWorkflowMemoryMethods:
         initial_accumulator = worker._conversation_accumulator
 
         # Mock only the ChatAgent.generate_workflow_summary_async() method
-        # Role-based structure: workforce_workflows/{role}/{task_title}_workflow.md
+        # Role-based structure:
+        # workforce_workflows/{role}/{task_title}_workflow.md
         from camel.utils.context_utils import WorkflowSummary
 
         mock_workflow_summary = WorkflowSummary(
@@ -612,7 +613,9 @@ class TestWorkflowIntegration:
         }
 
         with patch.object(
-            worker1, 'save_workflow_memories_async', return_value=mock_save_result
+            worker1,
+            'save_workflow_memories_async',
+            return_value=mock_save_result,
         ):
             # use session_id for backward compat path
             save_results = await workforce1.save_workflow_memories_async(

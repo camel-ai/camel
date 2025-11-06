@@ -1457,10 +1457,6 @@ class ChatAgent(BaseAgent):
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output, metadata=metadata
                 )
-            if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
-                )
 
             # Save the markdown (either custom structured or default)
             save_status = context_util.save_markdown_file(
@@ -1524,9 +1520,14 @@ class ChatAgent(BaseAgent):
                 if isinstance(msg, dict):
                     content = msg.get('content', '')
                 else:
-                    content = msg.content if hasattr(msg, 'content') else str(msg)
+                    content = (
+                        msg.content if hasattr(msg, 'content') else str(msg)
+                    )
 
-                if not (isinstance(content, str) and content.startswith("[CONTEXT_SUMMARY]")):
+                if not (
+                    isinstance(content, str)
+                    and content.startswith("[CONTEXT_SUMMARY]")
+                ):
                     filtered_messages.append(msg)
             messages = filtered_messages
 
@@ -1617,7 +1618,9 @@ class ChatAgent(BaseAgent):
 
         try:
             # get conversation from accumulator or self
-            source_agent = conversation_accumulator if conversation_accumulator else self
+            source_agent = (
+                conversation_accumulator if conversation_accumulator else self
+            )
             messages, _ = source_agent.memory.get_context()
 
             if not messages:
@@ -1879,10 +1882,6 @@ class ChatAgent(BaseAgent):
                 # convert structured output to custom markdown
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output, metadata=metadata
-                )
-            if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
                 )
 
             # Save the markdown (either custom structured or default)

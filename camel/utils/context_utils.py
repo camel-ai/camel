@@ -37,12 +37,15 @@ class WorkflowSummary(BaseModel):
     """
 
     agent_title: str = Field(
-        description="A concise role or identity describing WHO the agent is "
-        "and its purpose (≤ 5 words). This represents the agent's capability "
-        "or specialization, not the specific task. Use lowercase with underscores. "
-        "Examples: 'data_analyst', 'python_developer', 'research_assistant', "
-        "'content_writer', 'sales_analyst', 'customer_support_agent'. "
-        "This is used to organize workflows by agent role.",
+        description=(
+            "A concise role or identity describing WHO the agent is "
+            "and its purpose (≤ 5 words). This represents the agent's "
+            "capability or specialization, not the specific task. Use "
+            "lowercase with underscores. Examples: 'data_analyst', "
+            "'python_developer', 'research_assistant', 'content_writer', "
+            "'sales_analyst', 'customer_support_agent'. This is used to "
+            "organize workflows by agent role."
+        )
     )
     task_title: str = Field(
         description="A short, generic title of the main task (≤ 10 words). "
@@ -989,9 +992,10 @@ class ContextUtility:
 
         if session_id is not None:
             warnings.warn(
-                "Session-based workflow storage will be deprecated in a future "
-                "version. Consider using get_workforce_shared_by_role() for "
-                "role-based organization instead.",
+                "Session-based workflow storage will be deprecated in a "
+                "future version. Consider using "
+                "get_workforce_shared_by_role() for role-based "
+                "organization instead.",
                 FutureWarning,
                 stacklevel=2,
             )
