@@ -68,7 +68,6 @@ from camel.societies.workforce.structured_output_handler import (
 )
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
-    GENERIC_ROLE_NAMES,
     RecoveryStrategy,
     TaskAnalysisResult,
     TaskAssignment,
@@ -574,6 +573,7 @@ class Workforce(BaseNode):
         Returns:
             str: Role identifier for organizing workflows.
         """
+        from camel.societies.workforce.utils import is_generic_role_name
         from camel.utils.context_utils import ContextUtility
 
         # try worker.role_name first (if not generic)
@@ -581,7 +581,7 @@ class Workforce(BaseNode):
             clean_name = ContextUtility.sanitize_workflow_filename(
                 worker.role_name
             )
-            if clean_name and clean_name not in GENERIC_ROLE_NAMES:
+            if clean_name and not is_generic_role_name(clean_name):
                 return clean_name
 
         # try agent_title from WorkflowSummary (LLM-generated)
@@ -590,7 +590,7 @@ class Workforce(BaseNode):
             clean_title = ContextUtility.sanitize_workflow_filename(
                 agent_title
             )
-            if clean_title and clean_title not in GENERIC_ROLE_NAMES:
+            if clean_title and not is_generic_role_name(clean_title):
                 return clean_title
 
         # fallback to sanitized truncated description

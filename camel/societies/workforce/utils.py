@@ -24,6 +24,33 @@ GENERIC_ROLE_NAMES = frozenset(
 )
 
 
+def is_generic_role_name(role_name: str) -> bool:
+    r"""Check if a role name is generic and should trigger fallback logic.
+
+    Generic role names are common, non-specific identifiers that don't
+    provide meaningful information about an agent's actual purpose.
+    When a role name is generic, fallback logic should be used to find
+    a more specific identifier (e.g., from LLM-generated agent_title
+    or description).
+
+    Args:
+        role_name (str): The role name to check (will be converted to
+            lowercase for case-insensitive comparison).
+
+    Returns:
+        bool: True if the role name is generic, False otherwise.
+
+    Example:
+        >>> is_generic_role_name("assistant")
+        True
+        >>> is_generic_role_name("data_analyst")
+        False
+        >>> is_generic_role_name("AGENT")
+        True
+    """
+    return role_name.lower() in GENERIC_ROLE_NAMES
+
+
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
 
@@ -168,8 +195,7 @@ class TaskAnalysisResult(BaseModel):
 
     # Common fields - always populated
     reasoning: str = Field(
-        description="Explanation for the analysis result or recovery "
-        "decision"
+        description="Explanation for the analysis result or recovery decision"
     )
 
     recovery_strategy: Optional[RecoveryStrategy] = Field(
@@ -317,8 +343,7 @@ def check_if_running(
             # This should not be reached, but just in case
             if handle_exceptions:
                 logger.error(
-                    f"Unexpected failure in {func.__name__}: "
-                    f"{last_exception}"
+                    f"Unexpected failure in {func.__name__}: {last_exception}"
                 )
                 return None
             else:

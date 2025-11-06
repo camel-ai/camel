@@ -24,6 +24,9 @@ from camel.logger import get_logger
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
+from camel.societies.workforce.utils import (
+    is_generic_role_name,
+)
 from camel.types import OpenAIBackendRole
 from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
@@ -324,12 +327,7 @@ class WorkflowMemoryManager:
             # check if we should use role_name or let summarize extract
             # task_title
             clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = clean_name not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
+            use_role_name_for_filename = not is_generic_role_name(clean_name)
 
             # if role_name is explicit, use it for filename
             # if role_name is generic, pass none to let summarize use
@@ -552,12 +550,7 @@ class WorkflowMemoryManager:
             # check if we should use role_name or let asummarize extract
             # task_title
             clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = clean_name not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
+            use_role_name_for_filename = not is_generic_role_name(clean_name)
 
             # generate and save workflow summary
             # if role_name is explicit, use it for filename
@@ -779,9 +772,7 @@ class WorkflowMemoryManager:
             clean_name = self._get_sanitized_role_name()
 
             # check if role_name is generic
-            from camel.societies.workforce.utils import GENERIC_ROLE_NAMES
-
-            if clean_name in GENERIC_ROLE_NAMES:
+            if is_generic_role_name(clean_name):
                 # for generic role names, search for all workflow files
                 # since filename is based on task_title
                 pattern = f"*{WORKFLOW_FILENAME_SUFFIX}*.md"

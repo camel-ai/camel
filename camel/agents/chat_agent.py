@@ -1703,7 +1703,6 @@ class ChatAgent(BaseAgent):
         working_directory: Optional[Union[str, Path]] = None,
         include_summaries: bool = False,
         add_user_messages: bool = True,
-        skip_save: bool = False,
     ) -> Dict[str, Any]:
         r"""Asynchronously summarize the agent's current conversation context
         and persist it to a markdown file.
@@ -1733,17 +1732,11 @@ class ChatAgent(BaseAgent):
                 (full compression). (default: :obj:`False`)
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
-            skip_save (bool): If True, generates the summary and formats
-                content but does NOT save to disk. Returns the formatted
-                content and metadata for external saving. Useful for
-                two-pass workflows where folder location depends on
-                summary content. (default: :obj:`False`)
+
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
-                response_format was provided. When skip_save=True, includes
-                'formatted_content', 'base_filename', and 'metadata' fields
-                instead of file_path.
+                response_format was provided.
         """
 
         result: Dict[str, Any] = {
