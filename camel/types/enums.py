@@ -329,7 +329,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_128K = "moonshot-v1-128k"
     MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
 
-    # SiliconFlow models support tool calling https://docs.siliconflow.cn/cn/userguide/guides/function-calling
+    # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
     SILICONFLOW_PRO_DEEPSEEK_V3 = "Pro/deepseek-ai/DeepSeek-V3"
@@ -1292,6 +1292,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
             ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
+            ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1312,6 +1321,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B,
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B,
             ModelType.NOVITA_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+            ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
         }:
             return 64_000
         elif self in {
