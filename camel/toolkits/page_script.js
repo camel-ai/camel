@@ -191,35 +191,47 @@ var MultimodalWebSurfer = MultimodalWebSurfer || (function() {
         labelElements(getInteractiveElements());
         let elements = document.querySelectorAll("[__elementId]");
         let results = {};
-        for (let i=0; i<elements.length; i++) {
-           let key = elements[i].getAttribute("__elementId");
-           let rects = elements[i].getClientRects();
-       let ariaRole = getApproximateAriaRole(elements[i]);
-       let ariaName = getApproximateAriaName(elements[i]);
-       let vScrollable = elements[i].scrollHeight - elements[i].clientHeight >= 1;
-  
-       let record = {
-               "tag_name": ariaRole[1],
-           "role": ariaRole[0],
-           "aria-name": ariaName,
-           "v-scrollable": vScrollable,
-           "rects": []
-       };
-  
-           for (const rect of rects) {
-           let x = rect.left + rect.width/2;
-               let y = rect.top + rect.height/2;
-               if (isTopmost(elements[i], x, y)) {
-           record["rects"].push(JSON.parse(JSON.stringify(rect)));
-               }
-           }
-  
-       if (record["rects"].length > 0) {
-               results[key] = record;
-           }
+        let scale = window.devicePixelRatio || 1;
+    
+        for (let i = 0; i < elements.length; i++) {
+            let key = elements[i].getAttribute("__elementId");
+            let rects = elements[i].getClientRects();
+            let ariaRole = getApproximateAriaRole(elements[i]);
+            let ariaName = getApproximateAriaName(elements[i]);
+            let vScrollable = elements[i].scrollHeight - elements[i].clientHeight >= 1;
+    
+            let record = {
+                "tag_name": ariaRole[1],
+                "role": ariaRole[0],
+                "aria-name": ariaName,
+                "v-scrollable": vScrollable,
+                "rects": []
+            };
+    
+            for (const rect of rects) {
+                let x = rect.left + rect.width / 2;
+                let y = rect.top + rect.height / 2;
+                if (isTopmost(elements[i], x, y)) {
+                    record["rects"].push({
+                        x: rect.x * scale,
+                        y: rect.y * scale,
+                        width: rect.width * scale,
+                        height: rect.height * scale,
+                        top: rect.top * scale,
+                        left: rect.left * scale,
+                        right: rect.right * scale,
+                        bottom: rect.bottom * scale
+                    });
+                }
+            }
+    
+            if (record["rects"].length > 0) {
+                results[key] = record;
+            }
         }
+    
         return results;
-    };
+    };    
   
     let getVisualViewport = function() {
         let vv = window.visualViewport;

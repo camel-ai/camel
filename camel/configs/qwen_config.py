@@ -80,12 +80,5 @@ class QwenConfig(BaseConfig):
     stop: Optional[Union[str, List]] = None
     extra_body: Optional[Dict[str, Any]] = None
 
-    def __init__(self, include_usage: bool = True, **kwargs):
-        super().__init__(**kwargs)
-        # Only set stream_options when stream is True
-        # Otherwise, it will raise error when calling the API
-        if self.stream:
-            self.stream_options = {"include_usage": include_usage}
-
 
 QWEN_API_PARAMS = {param for param in QwenConfig.model_fields.keys()}

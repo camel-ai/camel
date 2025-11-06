@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import base64
 import io
 import os
@@ -104,6 +107,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             ValueError: If the input type is not supported.
             RuntimeError: If the API request fails.
         """
+
         input_data = []
         for obj in objs:
             if isinstance(obj, str):
@@ -111,7 +115,10 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     input_data.append({"text": obj})
                 else:
                     input_data.append(obj)  # type: ignore[arg-type]
-            elif isinstance(obj, Image.Image):
+            elif (
+                obj.__class__.__module__ == "PIL.Image"
+                and obj.__class__.__name__ == "Image"
+            ):
                 if self.model_type != EmbeddingModelType.JINA_CLIP_V2:
                     raise ValueError(
                         f"Model {self.model_type} does not support "

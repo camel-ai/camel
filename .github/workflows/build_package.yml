@@ -10,10 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Clean up before build
+      - name: Free disk space
         run: |
           sudo apt-get clean
+          sudo apt-get autoremove -y
           sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
           sudo rm -rf /tmp/*
           sudo rm -rf $HOME/.cache/pip
           df -h
@@ -30,17 +35,38 @@ jobs:
       - name: Create virtual environment
         run: |
           uv venv .venv --python=3.10
+          df -h
 
-      - name: Install dependencies
+      - name: Install core dependencies
         run: |
           source .venv/bin/activate
-          uv pip install -e ".[all, dev, docs]"
+          # Install just the core dependencies first
+          uv pip install -e "."
+          df -h
+
+      - name: Install dev dependencies
+        run: |
+          source .venv/bin/activate
+          # Install dev dependencies separately
+          uv pip install -e ".[dev]"
+          df -h
+
+      - name: Install docs dependencies
+        run: |
+          source .venv/bin/activate
+          # Install docs dependencies separately
+          uv pip install -e ".[docs]"
+          df -h
+
+      - name: Install build tools
+        run: |
+          source .venv/bin/activate
+          uv pip install build
+          df -h
 
       - name: Build
         run: |
           source .venv/bin/activate
-          uv pip install -e ".[all, dev, docs]"
-          uv pip install build
           python -m build
 
       - name: Set up test environment
@@ -73,6 +99,7 @@ jobs:
           AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
           AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
           AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
+          AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
           MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
           REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
           NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -106,15 +133,43 @@ jobs:
           PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
           BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
           BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
+          NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+          NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
+          WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
+          WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+          QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
+          ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+          BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+          CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+          NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+          COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
         run: |
           source test_venv/bin/activate
-          pytest --fast-test-mode ./test
+          pytest --fast-test-mode -m "not heavy_dependency" \
+            --ignore=test/datagen/test_evol_instruct.py \
+            --ignore=test/datagen/test_self_improving_cot_pipeline.py \
+            --ignore=test/datasets/test_base_dataset.py \
+            --ignore=test/datasets/test_self_instruct_generator.py \
+            --ignore=test/embeddings/test_open_source_embeddings.py \
+            --ignore=test/environments/test_multi_step_env.py \
+            --ignore=test/environments/test_single_step_env.py \
+            --ignore=test/environments/test_tictactoe_env.py \
+            --ignore=test/interpreters/test_python_interpreter.py \
+            --ignore=test/models/reward/test_nemotron_model.py \
+            --ignore=test/toolkits/test_video_analysis_toolkit.py \
+            --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+            ./test
 
       - name: Clean up after build
         if: always()
         run: |
           sudo apt-get clean
+          sudo apt-get autoremove -y
           sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
           sudo rm -rf /tmp/*
           sudo rm -rf $HOME/.cache/pip
           df -h

@@ -1,0 +1,123 @@
+<a id="camel.storages.key_value_storages.redis"></a>
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage"></a>
+
+## RedisStorage
+
+```python
+class RedisStorage(BaseKeyValueStorage):
+```
+
+A concrete implementation of the :obj:`BaseCacheStorage` using Redis as
+the backend. This is suitable for distributed cache systems that require
+persistence and high availability.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    sid: str,
+    url: str = 'redis://localhost:6379',
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+    **kwargs
+):
+```
+
+Initializes the RedisStorage instance with the provided URL and
+options.
+
+**Parameters:**
+
+- **sid** (str): The ID for the storage instance to identify the record space.
+- **url** (str): The URL for connecting to the Redis server. **kwargs: Additional keyword arguments for Redis client configuration.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc,
+    tb
+):
+```
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage._create_client"></a>
+
+### _create_client
+
+```python
+def _create_client(self, **kwargs):
+```
+
+Creates the Redis client with the provided URL and options.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+**Returns:**
+
+  redis.asyncio.Redis: The Redis client instance.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.save"></a>
+
+### save
+
+```python
+def save(
+    self,
+    records: List[Dict[str, Any]],
+    expire: Optional[int] = None
+):
+```
+
+Saves a batch of records to the key-value storage system.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+represents a stored record.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all records from the key-value storage system.
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage._run_async"></a>
+
+### _run_async
+
+```python
+def _run_async(self, coro):
+```

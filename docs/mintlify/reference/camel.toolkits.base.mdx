@@ -1,0 +1,117 @@
+<a id="camel.toolkits.base"></a>
+
+<a id="camel.toolkits.base.BaseToolkit"></a>
+
+## BaseToolkit
+
+```python
+class BaseToolkit:
+```
+
+Base class for toolkits.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout for the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.base.BaseToolkit.__init_subclass__"></a>
+
+### __init_subclass__
+
+```python
+def __init_subclass__(cls, **kwargs):
+```
+
+<a id="camel.toolkits.base.BaseToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.run_mcp_server"></a>
+
+### run_mcp_server
+
+```python
+def run_mcp_server(self, mode: Literal['stdio', 'sse', 'streamable-http']):
+```
+
+Run the MCP server in the specified mode.
+
+**Parameters:**
+
+- **mode** (`Literal["stdio", "sse", "streamable-http"]`): The mode to run the MCP server in.
+
+<a id="camel.toolkits.base.RegisteredAgentToolkit"></a>
+
+## RegisteredAgentToolkit
+
+```python
+class RegisteredAgentToolkit:
+```
+
+Mixin class for toolkits that need to register a ChatAgent.
+
+This mixin provides a standard interface for toolkits that require
+a reference to a ChatAgent instance. The ChatAgent will check if a
+toolkit has this mixin and automatically register itself.
+
+<a id="camel.toolkits.base.RegisteredAgentToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+<a id="camel.toolkits.base.RegisteredAgentToolkit.agent"></a>
+
+### agent
+
+```python
+def agent(self):
+```
+
+**Returns:**
+
+  Optional[ChatAgent]: The registered agent, or None if not
+registered.
+
+**Note:**
+
+If None is returned, it means the toolkit has not been registered
+with a ChatAgent yet. Make sure to pass this toolkit to a ChatAgent
+via the toolkits parameter during initialization.
+
+<a id="camel.toolkits.base.RegisteredAgentToolkit.register_agent"></a>
+
+### register_agent
+
+```python
+def register_agent(self, agent: 'ChatAgent'):
+```
+
+Register a ChatAgent with this toolkit.
+
+This method allows registering an agent after initialization. The
+ChatAgent will automatically call this method if the toolkit to
+register inherits from RegisteredAgentToolkit.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The ChatAgent instance to register.

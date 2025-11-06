@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -45,6 +45,8 @@ class ModelScopeConfig(BaseConfig):
             while higher values make it more diverse. (default: :obj:`0.3`)
         stream (bool, optional): If True, enables streaming output.
             (default: :obj:`None`)
+        extra_body (dict, optional): Extra body parameters to be passed to
+            the ModelScope API.
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
@@ -52,6 +54,7 @@ class ModelScopeConfig(BaseConfig):
     top_p: Optional[float] = None
     temperature: Optional[float] = None
     stream: Optional[bool] = None
+    extra_body: Optional[Dict[str, Any]] = None
 
 
 MODELSCOPE_API_PARAMS = {

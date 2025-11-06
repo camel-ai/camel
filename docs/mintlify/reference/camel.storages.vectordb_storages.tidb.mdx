@@ -1,0 +1,233 @@
+<a id="camel.storages.vectordb_storages.tidb"></a>
+
+<a id="camel.storages.vectordb_storages.tidb.EnumEncoder"></a>
+
+## EnumEncoder
+
+```python
+class EnumEncoder(JSONEncoder):
+```
+
+<a id="camel.storages.vectordb_storages.tidb.EnumEncoder.default"></a>
+
+### default
+
+```python
+def default(self, obj):
+```
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage"></a>
+
+## TiDBStorage
+
+```python
+class TiDBStorage(BaseVectorStorage):
+```
+
+An implementation of the `BaseVectorStorage` for interacting with TiDB.
+
+The detailed information about TiDB is available at:
+`TiDB Vector Search <https://pingcap.com/ai>`_
+
+**Parameters:**
+
+- **vector_dim** (int): The dimension of storing vectors.
+- **url_and_api_key** (Optional[Union[Tuple[str, str], str]]): A tuple containing the database url and API key for connecting to a TiDB cluster. The URL should be in the format: "mysql+pymysql://`<username>`:`<password>`@`<host>`:`<port>`/`<db_name>`". TiDB will not use the API Key, but retains the definition for interface compatible.
+- **collection_name** (Optional[str]): Name of the collection. The collection name will be used as the table name in TiDB. If not provided, set it to the current time with iso format. **kwargs (Any): Additional keyword arguments for initializing TiDB connection.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    vector_dim: int,
+    collection_name: Optional[str] = None,
+    url_and_api_key: Optional[Union[Tuple[str, str], str]] = None,
+    **kwargs: Any
+):
+```
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._create_client"></a>
+
+### _create_client
+
+```python
+def _create_client(self, database_url: Optional[str] = None, **kwargs: Any):
+```
+
+Initializes the TiDB client with the provided connection details.
+
+**Parameters:**
+
+- **database_url** (Optional[str]): The database connection string for the TiDB server. **kwargs: Additional keyword arguments passed to the TiDB client.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._get_table_model"></a>
+
+### _get_table_model
+
+```python
+def _get_table_model(self, collection_name: str):
+```
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._open_and_create_table"></a>
+
+### _open_and_create_table
+
+```python
+def _open_and_create_table(self):
+```
+
+Opens an existing table or creates a new table in TiDB.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._check_table"></a>
+
+### _check_table
+
+```python
+def _check_table(self):
+```
+
+Ensuring the specified table matches the specified vector
+dimensionality.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._generate_table_name"></a>
+
+### _generate_table_name
+
+```python
+def _generate_table_name(self):
+```
+
+**Returns:**
+
+  str: A unique, valid table name.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._get_table_info"></a>
+
+### _get_table_info
+
+```python
+def _get_table_info(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing details about the
+table.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._validate_and_convert_vectors"></a>
+
+### _validate_and_convert_vectors
+
+```python
+def _validate_and_convert_vectors(self, records: List[VectorRecord]):
+```
+
+Validates and converts VectorRecord instances to VectorDBRecord
+instances.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to validate and convert.
+
+**Returns:**
+
+  List[VectorDBRecord]: A list of VectorDBRecord instances.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs):
+```
+
+Adds a list of vectors to the specified table.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments pass to insert.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.delete"></a>
+
+### delete
+
+```python
+def delete(self, ids: List[str], **kwargs: Any):
+```
+
+Deletes a list of vectors identified by their IDs from the
+storage.
+
+**Parameters:**
+
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments passed to delete.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: An object containing information about the
+table's status.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.query"></a>
+
+### query
+
+```python
+def query(self, query: VectorDBQuery, **kwargs: Any):
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments passed to search.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all vectors from the TiDB table. This method
+deletes the existing table and then recreates it with the same
+schema to effectively remove all stored vectors.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+**Returns:**
+
+  Any: The TiDB client instance.

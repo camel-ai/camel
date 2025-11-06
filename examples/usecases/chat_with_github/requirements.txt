@@ -1,0 +1,4 @@
+camel-ai[all]
+streamlit
+python-dotenv
+

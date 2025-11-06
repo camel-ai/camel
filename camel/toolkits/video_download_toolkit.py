@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import io
 import tempfile
 from pathlib import Path
@@ -23,7 +26,7 @@ from PIL import Image
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -54,13 +57,12 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     return Image.open(io.BytesIO(out))
 
 
-@MCPServer()
 class VideoDownloaderToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.
 
     Args:
-        download_directory (Optional[str], optional): The directory where the
+        working_directory (Optional[str], optional): The directory where the
             video will be downloaded to. If not provided, video will be stored
             in a temporary directory and will be cleaned up after use.
             (default: :obj:`None`)
@@ -71,30 +73,30 @@ class VideoDownloaderToolkit(BaseToolkit):
     @dependencies_required("yt_dlp", "ffmpeg")
     def __init__(
         self,
-        download_directory: Optional[str] = None,
+        working_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
-        self._cleanup = download_directory is None
+        self._cleanup = working_directory is None
         self._cookies_path = cookies_path
 
-        self._download_directory = Path(
-            download_directory or tempfile.mkdtemp()
+        self._working_directory = Path(
+            working_directory or tempfile.mkdtemp()
         ).resolve()
 
         try:
-            self._download_directory.mkdir(parents=True, exist_ok=True)
+            self._working_directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
             raise ValueError(
-                f"{self._download_directory} is not a valid directory."
+                f"{self._working_directory} is not a valid directory."
             )
         except OSError as e:
             raise ValueError(
-                f"Error creating directory {self._download_directory}: {e}"
+                f"Error creating directory {self._working_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded to {self._working_directory}")
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -109,7 +111,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
 
-                    shutil.rmtree(self._download_directory, ignore_errors=True)
+                    shutil.rmtree(self._working_directory, ignore_errors=True)
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down
                 pass
@@ -120,12 +122,15 @@ class VideoDownloaderToolkit(BaseToolkit):
         yt-dlp will detect if the video is downloaded automatically so there
         is no need to check if the video exists.
 
+        Args:
+            url (str): The URL of the video to download.
+
         Returns:
             str: The path to the downloaded video file.
         """
         import yt_dlp
 
-        video_template = self._download_directory / "%(title)s.%(ext)s"
+        video_template = self._working_directory / "%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),
@@ -172,7 +177,8 @@ class VideoDownloaderToolkit(BaseToolkit):
         dividing the video into equal parts if an integer is provided.
 
         Args:
-            video_url (str): The URL of the video to take screenshots.
+            video_path (str): The local path or URL of the video to take
+              screenshots.
             amount (int): the amount of evenly split screenshots to capture.
 
         Returns:

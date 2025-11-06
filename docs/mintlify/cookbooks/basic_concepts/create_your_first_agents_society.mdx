@@ -1,0 +1,248 @@
+---
+title: "Creating Your First Agent Society"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1cmWPxXEsyMbmjPhD2bWfHuhd_Uz6FaJQ?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to set up and leverage CAMEL's ability to create your first agent society through `RolePlaying()`class.
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **Agent Society**: Enabling multi-agent communication for the task solving.
+
+## Philosophical Bits
+
+
+
+> *What magical trick makes us intelligent? The trick is that there is no trick. The power of intelligence stems from our vast diversity, not from any single, perfect principle.*
+>
+> -- Marvin Minsky, The Society of Mind, p. 308
+
+In this section, we will take a spite of the task-oriented `RolePlaying()` class. We design this in an instruction-following manner. The essence is that to solve a complex task, you can enable two communicative agents collaboratively working together step by step to reach solutions. The main concepts include:
+
+- **Task**: a task can be as simple as an idea, initialized by an inception prompt.
+
+- **AI User**: the agent who is expected to provide instructions.
+
+- **AI Assistant**: the agent who is expected to respond with solutions that fulfills the instructions.
+
+## 📦 Installation
+
+
+```python
+!pip install "camel-ai==0.2.16"
+```
+
+## 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+## Quick Start
+
+
+
+```python
+# Import necessary classes
+from camel.societies import RolePlaying
+from camel.types import TaskType, ModelType, ModelPlatformType
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O_MINI,
+    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(), # [Optional] the config for model
+)
+```
+
+### 🕹 Step 1: Configure the Role-Playing Session
+
+
+#### Set the `Task` Arguments
+
+
+```python
+task_kwargs = {
+    'task_prompt': 'Develop a plan to TRAVEL TO THE PAST and make changes.',
+    'with_task_specify': True,
+    'task_specify_agent_kwargs': {'model': model}
+}
+```
+
+#### Set the `User` Arguments
+You may think the user as the `instruction sender`.
+
+
+```python
+user_role_kwargs = {
+    'user_role_name': 'an ambitious aspiring TIME TRAVELER',
+    'user_agent_kwargs': {'model': model}
+}
+```
+
+#### Set the `Assistant` Arguments
+Again, you may think the assistant as the `instruction executor`.
+
+
+```python
+assistant_role_kwargs = {
+    'assistant_role_name': 'the best-ever experimental physicist',
+    'assistant_agent_kwargs': {'model': model}
+}
+```
+
+### Step 2: Kickstart Your Society
+Putting them altogether – your role-playing session is ready to go!
+
+
+```python
+society = RolePlaying(
+    **task_kwargs,             # The task arguments
+    **user_role_kwargs,        # The instruction sender's arguments
+    **assistant_role_kwargs,   # The instruction receiver's arguments
+)
+```
+
+### Step 3: Solving Tasks with Your Society
+Hold your bytes. Prior to our travel, let's define a small helper function.
+
+
+```python
+def is_terminated(response):
+    """
+    Give alerts when the session should be terminated.
+    """
+    if response.terminated:
+        role = response.msg.role_type.name
+        reason = response.info['termination_reasons']
+        print(f'AI {role} terminated due to {reason}')
+
+    return response.terminated
+```
+
+Time to chart our course – writing a simple loop for our society to proceed:
+
+
+```python
+def run(society, round_limit: int=10):
+
+    # Get the initial message from the ai assistant to the ai user
+    input_msg = society.init_chat()
+
+    # Starting the interactive session
+    for _ in range(round_limit):
+
+        # Get the both responses for this round
+        assistant_response, user_response = society.step(input_msg)
+
+        # Check the termination condition
+        if is_terminated(assistant_response) or is_terminated(user_response):
+            break
+
+        # Get the results
+        print(f'[AI User] {user_response.msg.content}.\n')
+        # Check if the task is end
+        if 'CAMEL_TASK_DONE' in user_response.msg.content:
+            break
+        print(f'[AI Assistant] {assistant_response.msg.content}.\n')
+
+
+
+        # Get the input message for the next round
+        input_msg = assistant_response.msg
+
+    return None
+```
+
+
+```python
+run(society)
+```
+
+## 🌟 Highlights
+
+In this notebook, This notebook has guided you through setting up and use agent society for task solving.
+
+Key tools utilized in this notebook include:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **Agent Society**: Enabling multi-agent communication for the task solving.
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+

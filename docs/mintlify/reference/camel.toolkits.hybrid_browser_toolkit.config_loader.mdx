@@ -1,0 +1,113 @@
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader"></a>
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.BrowserConfig"></a>
+
+## BrowserConfig
+
+```python
+class BrowserConfig:
+```
+
+Browser configuration settings.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ToolkitConfig"></a>
+
+## ToolkitConfig
+
+```python
+class ToolkitConfig:
+```
+
+Toolkit-specific configuration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader"></a>
+
+## ConfigLoader
+
+```python
+class ConfigLoader:
+```
+
+Configuration loader for HybridBrowserToolkit.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    browser_config: Optional[BrowserConfig] = None,
+    toolkit_config: Optional[ToolkitConfig] = None
+):
+```
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.from_kwargs"></a>
+
+### from_kwargs
+
+```python
+def from_kwargs(cls, **kwargs):
+```
+
+Create ConfigLoader from keyword arguments.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.get_browser_config"></a>
+
+### get_browser_config
+
+```python
+def get_browser_config(self):
+```
+
+Get browser configuration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.get_toolkit_config"></a>
+
+### get_toolkit_config
+
+```python
+def get_toolkit_config(self):
+```
+
+Get toolkit configuration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.to_ws_config"></a>
+
+### to_ws_config
+
+```python
+def to_ws_config(self):
+```
+
+Convert to WebSocket wrapper configuration format.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.get_timeout_config"></a>
+
+### get_timeout_config
+
+```python
+def get_timeout_config(self):
+```
+
+Get all timeout configurations.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.update_browser_config"></a>
+
+### update_browser_config
+
+```python
+def update_browser_config(self, **kwargs):
+```
+
+Update browser configuration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.config_loader.ConfigLoader.update_toolkit_config"></a>
+
+### update_toolkit_config
+
+```python
+def update_toolkit_config(self, **kwargs):
+```
+
+Update toolkit configuration.

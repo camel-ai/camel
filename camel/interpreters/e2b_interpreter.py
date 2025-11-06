@@ -28,6 +28,11 @@ class E2BInterpreter(BaseInterpreter):
     Args:
         require_confirm (bool, optional): If True, prompt user before running
             code strings for security. (default: :obj:`True`)
+
+    Environment Variables:
+        E2B_API_KEY: The API key for authenticating with the E2B service.
+        E2B_DOMAIN: The base URL for the E2B API. If not provided,
+            will use the default E2B endpoint.
     """
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, Optional[str]]] = {
@@ -55,7 +60,35 @@ class E2BInterpreter(BaseInterpreter):
         from e2b_code_interpreter import Sandbox
 
         self.require_confirm = require_confirm
-        self._sandbox = Sandbox(api_key=os.environ.get("E2B_API_KEY"))
+
+        # Get API key from environment variable
+        api_key = os.environ.get("E2B_API_KEY")
+
+        # Get domain from environment variable
+        domain = os.environ.get("E2B_DOMAIN")
+
+        # Create sandbox with appropriate parameters
+        sandbox_kwargs = {"api_key": api_key}
+
+        # Only add domain if it's provided
+        # (to maintain compatibility with standard E2B)
+        if domain:
+            sandbox_kwargs["domain"] = domain
+            logger.info(f"Using custom E2B endpoint: {domain}")
+
+        try:
+            self._sandbox = Sandbox(**sandbox_kwargs)
+        except TypeError as e:
+            if domain and "domain" in str(e):
+                logger.warning(
+                    f"The e2b_code_interpreter library doesn't support "
+                    f"custom domain. "
+                    f"Using default E2B endpoint. Error: {e}"
+                )
+                # Fallback to default configuration without domain
+                self._sandbox = Sandbox(api_key=api_key)
+            else:
+                raise e
 
     def __del__(self) -> None:
         r"""Destructor for the E2BInterpreter class.
@@ -63,24 +96,27 @@ class E2BInterpreter(BaseInterpreter):
         This method ensures that the e2b sandbox is killed when the
         interpreter is deleted.
         """
-        if (
-            hasattr(self, '_sandbox')
-            and self._sandbox is not None
-            and self._sandbox.is_running()
-        ):
-            self._sandbox.kill()
+        try:
+            if (
+                hasattr(self, '_sandbox')
+                and self._sandbox is not None
+                and self._sandbox.is_running()
+            ):
+                self._sandbox.kill()
+        except ImportError as e:
+            logger.warning(f"Error during sandbox cleanup: {e}")
 
     def run(
         self,
         code: str,
-        code_type: str,
+        code_type: str = "python",
     ) -> str:
         r"""Executes the given code in the e2b sandbox.
 
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: The string representation of the output of the executed code.
@@ -138,3 +174,15 @@ class E2BInterpreter(BaseInterpreter):
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
         raise RuntimeError("E2B doesn't support " "`action_space`.")
+
+    def execute_command(self, command: str) -> str:
+        r"""Execute a command can be used to resolve the dependency of the
+        code.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            str: The output of the command.
+        """
+        return self._sandbox.commands.run(command)

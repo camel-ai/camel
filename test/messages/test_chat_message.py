@@ -63,8 +63,10 @@ def test_chat_message(chat_message: BaseMessage) -> None:
     dictionary = chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
-        "role_type": role_type.name,
+        "role_type": role_type.value,
         "content": content,
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
     assert dictionary == reference_dict
 
@@ -83,8 +85,10 @@ def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
     dictionary = assistant_chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
-        "role_type": role_type.name,
+        "role_type": role_type.value,
         "content": content,
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
     assert dictionary == reference_dict
 
@@ -103,7 +107,9 @@ def test_user_chat_message(user_chat_message: BaseMessage) -> None:
     dictionary = user_chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
-        "role_type": role_type.name,
+        "role_type": role_type.value,
         "content": content,
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
     assert dictionary == reference_dict

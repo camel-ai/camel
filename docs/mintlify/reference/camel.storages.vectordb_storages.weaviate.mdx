@@ -1,0 +1,322 @@
+<a id="camel.storages.vectordb_storages.weaviate"></a>
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage"></a>
+
+## WeaviateStorage
+
+```python
+class WeaviateStorage(BaseVectorStorage):
+```
+
+An implementation of the `BaseVectorStorage` for interacting with
+Weaviate, a cloud-native vector search engine.
+
+This class provides multiple ways to connect to Weaviate instances:
+- Weaviate Cloud (WCD)
+- Local Docker/Kubernetes instances
+- Embedded Weaviate
+- Custom connection parameters
+
+**Parameters:**
+
+- **vector_dim** (int): The dimension of storing vectors.
+- **collection_name** (Optional[str], optional): Name for the collection in Weaviate. If not provided, generates a unique name based on current timestamp. (default: :obj:`None`)
+- **connection_type** (ConnectionType, optional): Type of connection to use. Supported types: 'local', 'cloud', 'embedded', 'custom'. (default: :obj:`"local"`) # Weaviate Cloud parameters
+- **wcd_cluster_url** (Optional[str], optional): Weaviate Cloud cluster URL. Required when connection_type='cloud'.
+- **wcd_api_key** (Optional[str], optional): Weaviate Cloud API key. Required when connection_type='cloud'. # Local instance parameters
+- **local_host** (str, optional): Local Weaviate host. (default: :obj:`"localhost"`)
+- **local_port** (int, optional): Local Weaviate HTTP port. (default: :obj:`8080`)
+- **local_grpc_port** (int, optional): Local Weaviate gRPC port. (default: :obj:`50051`)
+- **local_auth_credentials** (Optional[Union[str, Any]], optional): Authentication credentials for local instance. Can be an API key string or Auth object. (default: :obj:`None`) # Embedded Weaviate parameters
+- **embedded_hostname** (str, optional): Embedded instance hostname. (default: :obj:`"127.0.0.1"`)
+- **embedded_port** (int, optional): Embedded instance HTTP port. (default: :obj:`8079`)
+- **embedded_grpc_port** (int, optional): Embedded instance gRPC port. (default: :obj:`50050`)
+- **embedded_version** (Optional[str], optional): Weaviate version for embedded instance. If None, uses the default version. (default: :obj:`None`)
+- **embedded_persistence_data_path** (Optional[str], optional): Directory for embedded database files. (default: :obj:`None`)
+- **embedded_binary_path** (Optional[str], optional): Directory for Weaviate binary. (default: :obj:`None`)
+- **embedded_environment_variables** (Optional[Dict[str, str]], optional): Environment variables for embedded instance. (default: :obj:`None`) # Custom connection parameters
+- **custom_http_host** (Optional[str], optional): Custom HTTP host.
+- **custom_http_port** (Optional[int], optional): Custom HTTP port.
+- **custom_http_secure** (Optional[bool], optional): Use HTTPS.
+- **custom_grpc_host** (Optional[str], optional): Custom gRPC host.
+- **custom_grpc_port** (Optional[int], optional): Custom gRPC port.
+- **custom_grpc_secure** (Optional[bool], optional): Use secure gRPC.
+- **custom_auth_credentials** (Optional[Any], optional): Custom auth. # Vector index configuration parameters
+- **vector_index_type** (VectorIndexType, optional): Vector index type. Supported types: 'hnsw', 'flat'. (default: :obj:`"hnsw"`)
+- **distance_metric** (DistanceMetric, optional): Distance metric for vector similarity. Supported metrics: 'cosine', 'dot', 'l2-squared', 'hamming', 'manhattan'. (default: :obj:`"cosine"`) # Common parameters for all connection types
+- **headers** (Optional[Dict[str, str]], optional): Additional headers for third-party API keys (e.g., OpenAI, Cohere). (default: :obj:`None`)
+- **additional_config** (Optional[Any], optional): Advanced configuration options like timeouts. (default: :obj:`None`)
+- **skip_init_checks** (bool, optional): Skip initialization checks. (default: :obj:`False`)
+
+**Note:**
+
+This implementation supports synchronous operations only.
+The client connection is automatically handled and closed when the
+storage instance is destroyed.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    vector_dim: int,
+    collection_name: Optional[str] = None,
+    connection_type: ConnectionType = 'local',
+    wcd_cluster_url: Optional[str] = None,
+    wcd_api_key: Optional[str] = None,
+    local_host: str = 'localhost',
+    local_port: int = 8080,
+    local_grpc_port: int = 50051,
+    local_auth_credentials: Optional[Union[str, Any]] = None,
+    embedded_hostname: str = '127.0.0.1',
+    embedded_port: int = 8079,
+    embedded_grpc_port: int = 50050,
+    embedded_version: Optional[str] = None,
+    embedded_persistence_data_path: Optional[str] = None,
+    embedded_binary_path: Optional[str] = None,
+    embedded_environment_variables: Optional[Dict[str, str]] = None,
+    custom_http_host: Optional[str] = None,
+    custom_http_port: Optional[int] = None,
+    custom_http_secure: Optional[bool] = None,
+    custom_grpc_host: Optional[str] = None,
+    custom_grpc_port: Optional[int] = None,
+    custom_grpc_secure: Optional[bool] = None,
+    custom_auth_credentials: Optional[Any] = None,
+    vector_index_type: VectorIndexType = 'hnsw',
+    distance_metric: DistanceMetric = 'cosine',
+    headers: Optional[Dict[str, str]] = None,
+    additional_config: Optional[Any] = None,
+    skip_init_checks: bool = False,
+    **kwargs: Any
+):
+```
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client"></a>
+
+### _get_connection_client
+
+```python
+def _get_connection_client(self):
+```
+
+Get Weaviate client based on connection type and user settings.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_cloud_client"></a>
+
+### _create_cloud_client
+
+```python
+def _create_cloud_client(self, weaviate_module: Any):
+```
+
+Create a Weaviate Cloud client.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_local_client"></a>
+
+### _create_local_client
+
+```python
+def _create_local_client(self, weaviate_module: Any):
+```
+
+Create a local Weaviate client.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_embedded_client"></a>
+
+### _create_embedded_client
+
+```python
+def _create_embedded_client(self, weaviate_module: Any):
+```
+
+Create an embedded Weaviate client.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_custom_client"></a>
+
+### _create_custom_client
+
+```python
+def _create_custom_client(self, weaviate_module: Any):
+```
+
+Create a custom Weaviate client.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Clean up client connection.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.close"></a>
+
+### close
+
+```python
+def close(self):
+```
+
+Explicitly close the client connection.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._generate_collection_name"></a>
+
+### _generate_collection_name
+
+```python
+def _generate_collection_name(self):
+```
+
+Generate a collection name if user doesn't provide one.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection"></a>
+
+### _check_and_create_collection
+
+```python
+def _check_and_create_collection(self, **kwargs: Any):
+```
+
+Check if collection exists and create if it doesn't.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._collection_exists"></a>
+
+### _collection_exists
+
+```python
+def _collection_exists(self, collection_name: str):
+```
+
+Check if the collection exists.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_vector_index_config"></a>
+
+### _get_vector_index_config
+
+```python
+def _get_vector_index_config(self, **kwargs: Any):
+```
+
+Get vector index configuration based on user settings.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_collection"></a>
+
+### _create_collection
+
+```python
+def _create_collection(self, **kwargs: Any):
+```
+
+Create a new collection in Weaviate.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs: Any):
+```
+
+Saves a list of vector records to the storage.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to be saved. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.delete"></a>
+
+### delete
+
+```python
+def delete(self, ids: List[str], **kwargs: Any):
+```
+
+Deletes a list of vectors identified by their IDs from the storage.
+
+**Parameters:**
+
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage._calculate_similarity_from_distance"></a>
+
+### _calculate_similarity_from_distance
+
+```python
+def _calculate_similarity_from_distance(self, distance: Optional[float]):
+```
+
+Calculate similarity score based on distance metric.
+
+**Parameters:**
+
+- **distance** (Optional[float]): The distance value from Weaviate.
+
+**Returns:**
+
+  float: Normalized similarity score between 0 and 1.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: The vector database status.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.query"></a>
+
+### query
+
+```python
+def query(self, query: VectorDBQuery, **kwargs: Any):
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Remove all vectors from the storage.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+Provides access to the underlying vector database client.

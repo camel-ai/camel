@@ -359,15 +359,16 @@ class MilvusStorage(BaseVectorStorage):
             **kwargs,
         )
         query_results = []
-        for point in search_result:
-            query_results.append(
-                VectorDBQueryResult.create(
-                    similarity=(point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector'),
+        for points in search_result:
+            for point in points:
+                query_results.append(
+                    VectorDBQueryResult.create(
+                        similarity=point['distance'],
+                        id=str(point['id']),
+                        payload=(point['entity'].get('payload')),
+                        vector=point['entity'].get('vector'),
+                    )
                 )
-            )
 
         return query_results
 

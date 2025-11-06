@@ -33,6 +33,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.O1_PREVIEW,
         ModelType.O1_MINI,
         ModelType.GPT_4_5_PREVIEW,
+        ModelType.GPT_5,
     ],
 )
 def test_openai_compatible_model(model_type: ModelType):

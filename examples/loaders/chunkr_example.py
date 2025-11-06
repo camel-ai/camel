@@ -12,40 +12,66 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.loaders import ChunkrReader
+import asyncio
+
+from camel.loaders import ChunkrReader, ChunkrReaderConfig
+
+
+async def process_file(
+    chunkr: ChunkrReader,
+    file_path: str,
+    chunk_config: ChunkrReaderConfig = None,
+) -> str:
+    try:
+        task_id = await chunkr.submit_task(
+            file_path,
+            chunkr_config=chunk_config,
+        )
+        result = await chunkr.get_task_output(task_id)
+        return result
+    except Exception as e:
+        print(f"Error processing file {file_path}: {e}")
 
 
 def read_with_different_model():
     r"""Reads a document using the Chunkr API."""
-    print("Choose a model for processing the file:")
-    print("1. Fast")
-    print("2. HighQuality")
-    choice = input("Enter your choice (1-2): ")
-    models = {"1": "Fast", "2": "HighQuality"}
 
-    if choice not in models:
+    chunk_config = ChunkrReaderConfig()
+
+    print("Whether to use high-resolution images for processing the file:")
+    print("1. Yes")
+    print("2. No")
+    choice = input("Enter your choice (1-2): ")
+    high_resolution_strategies = {"1": "Yes", "2": "No"}
+
+    if choice not in high_resolution_strategies:
         print("Invalid choice. Exiting.")
         return
 
-    model = models[choice]
+    is_high_resolution = high_resolution_strategies[choice]
+    chunk_config.high_resolution = is_high_resolution == "Yes"
 
     print("Choose an OCR strategy:")
     print("1. Auto")
     print("2. All")
-    print("3. Off")
-    ocr_choice = input("Enter your choice (1-3) [Default: Auto]: ")
-    ocr_strategies = {"1": "Auto", "2": "All", "3": "Off"}
+    ocr_choice = input("Enter your choice (1-2) [Default: All]: ")
+    ocr_strategies = {"1": "Auto", "2": "All"}
 
     if ocr_choice not in ocr_strategies:
-        ocr_strategy = "Auto"
+        chunk_config.ocr_strategy = "All"
     else:
-        ocr_strategy = ocr_strategies[ocr_choice]
+        chunk_config.ocr_strategy = ocr_strategies[ocr_choice]
 
     while True:
         target_chunk_length = (
-            input("Enter the target chunk length [Default: 512]: ") or "512"
+            input(
+                "Enter The target number of words in each chunk."
+                "[Default: 512]: "
+            )
+            or "512"
         )
         if target_chunk_length.isdigit() and int(target_chunk_length) > 0:
+            chunk_config.chunk_processing = int(target_chunk_length)
             break
         else:
             print("Invalid input. Please enter a valid positive integer.")
@@ -55,16 +81,10 @@ def read_with_different_model():
     chunkr_reader = ChunkrReader()
 
     try:
-        task_id = chunkr_reader.submit_task(
-            file_path,
-            model=model,
-            ocr_strategy=ocr_strategy,
-            target_chunk_length=target_chunk_length,
+        result = asyncio.run(
+            process_file(chunkr_reader, file_path, chunk_config)
         )
-
-        result = chunkr_reader.get_task_output(task_id)
         print(result)
-
     except Exception as e:
         print(f"An error occurred: {e}")
 

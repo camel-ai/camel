@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+import threading
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -77,6 +78,9 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
+        stop_event (Optional[threading.Event], optional): Event to signal
+            termination of the agent's operation. When set, the agent will
+            terminate its execution. (default: :obj:`None`)
     """
 
     def __init__(
@@ -101,6 +105,7 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         if model is not None:
             logger.warning(
@@ -114,6 +119,9 @@ class RolePlaying:
         self.model = model
         self.task_type = task_type
         self.task_prompt = task_prompt
+
+        self.task_specify_agent_kwargs = task_specify_agent_kwargs
+        self.task_planner_agent_kwargs = task_planner_agent_kwargs
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self._init_specified_task_prompt(
@@ -156,6 +164,7 @@ class RolePlaying:
             assistant_agent_kwargs=assistant_agent_kwargs,
             user_agent_kwargs=user_agent_kwargs,
             output_language=output_language,
+            stop_event=stop_event,
         )
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -316,6 +325,7 @@ class RolePlaying:
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         r"""Initialize assistant and user agents with their system messages.
 
@@ -330,6 +340,9 @@ class RolePlaying:
                 pass to the user agent. (default: :obj:`None`)
             output_language (str, optional): The language to be output by the
                 agents. (default: :obj:`None`)
+            stop_event (Optional[threading.Event], optional): Event to signal
+                termination of the agent's operation. When set, the agent will
+                terminate its execution. (default: :obj:`None`)
         """
         if self.model is not None:
             if assistant_agent_kwargs is None:
@@ -344,6 +357,7 @@ class RolePlaying:
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             output_language=output_language,
+            stop_event=stop_event,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
@@ -351,6 +365,7 @@ class RolePlaying:
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             output_language=output_language,
+            stop_event=stop_event,
             **(user_agent_kwargs or {}),
         )
         self.user_sys_msg = self.user_agent.system_message
@@ -541,13 +556,12 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
+        if self._is_multi_response(self.user_agent):
             self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
@@ -564,13 +578,7 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.assistant_agent):
             self.assistant_agent.record_message(assistant_msg)
 
         return (
@@ -624,13 +632,7 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.user_agent):
             self.user_agent.record_message(user_msg)
 
         assistant_response = await self.assistant_agent.astep(user_msg)
@@ -647,13 +649,7 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.assistant_agent):
             self.assistant_agent.record_message(assistant_msg)
 
         return (
@@ -668,3 +664,67 @@ class RolePlaying:
                 info=user_response.info,
             ),
         )
+
+    def clone(
+        self, task_prompt: str, with_memory: bool = False
+    ) -> 'RolePlaying':
+        r"""Creates a new instance of RolePlaying with the same configuration.
+
+        Args:
+            task_prompt (str): The task prompt to be used by the new instance.
+            with_memory (bool, optional): Whether to copy the memory
+                (conversation history) to the new instance. If True, the new
+                instance will have the same conversation history. If False,
+                the new instance will have a fresh memory.
+                (default: :obj:`False`)
+
+        Returns:
+            RolePlaying: A new instance of RolePlaying with the same
+                configuration.
+        """
+
+        new_instance = RolePlaying(
+            assistant_role_name=self.assistant_agent.role_name,
+            user_role_name=self.user_agent.role_name,
+            task_prompt=task_prompt,
+            with_task_specify=self.with_task_specify,
+            task_specify_agent_kwargs=self.task_specify_agent_kwargs,
+            with_task_planner=self.with_task_planner,
+            task_planner_agent_kwargs=self.task_planner_agent_kwargs,
+            with_critic_in_the_loop=False,
+            model=self.model,
+            task_type=self.task_type,
+        )
+        tmp_assistant_sys_msg = new_instance.assistant_sys_msg
+        new_instance.assistant_agent = self.assistant_agent.clone(with_memory)
+        new_instance.assistant_sys_msg = tmp_assistant_sys_msg
+        new_instance.assistant_agent._system_message = tmp_assistant_sys_msg
+
+        tmp_user_sys_msg = new_instance.user_sys_msg
+        new_instance.user_agent = self.user_agent.clone(with_memory)
+        new_instance.user_sys_msg = tmp_user_sys_msg
+        new_instance.user_agent._system_message = tmp_user_sys_msg
+
+        new_instance.with_critic_in_the_loop = self.with_critic_in_the_loop
+        new_instance.critic_sys_msg = self.critic_sys_msg
+        if self.critic:
+            new_instance.critic = self.critic.clone(with_memory)
+
+        return new_instance
+
+    def _is_multi_response(self, agent: ChatAgent) -> bool:
+        r"""Checks if the given agent supports multi-response.
+
+        Args:
+            agent (ChatAgent): The agent to check for multi-response support.
+
+        Returns:
+            bool: True if the agent supports multi-response, False otherwise.
+        """
+        if (
+            'n' in agent.model_backend.model_config_dict.keys()
+            and agent.model_backend.model_config_dict['n'] is not None
+            and agent.model_backend.model_config_dict['n'] > 1
+        ):
+            return True
+        return False

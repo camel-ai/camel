@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .azure_embedding import AzureEmbedding
 from .base import BaseEmbedding
+from .gemini_embedding import GeminiEmbedding
 from .jina_embedding import JinaEmbedding
 from .mistral_embedding import MistralEmbedding
 from .openai_compatible_embedding import OpenAICompatibleEmbedding
@@ -31,4 +32,5 @@ __all__ = [
     "OpenAICompatibleEmbedding",
     "JinaEmbedding",
     "TogetherEmbedding",
+    "GeminiEmbedding",
 ]

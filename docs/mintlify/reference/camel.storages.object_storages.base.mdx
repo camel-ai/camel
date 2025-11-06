@@ -1,0 +1,138 @@
+<a id="camel.storages.object_storages.base"></a>
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage"></a>
+
+## BaseObjectStorage
+
+```python
+class BaseObjectStorage(ABC):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.object_exists"></a>
+
+### object_exists
+
+```python
+def object_exists(self, file_path: PurePath):
+```
+
+Check if the object exists in the storage.
+
+**Parameters:**
+
+- **file_path** (PurePath): The path to the object in the storage.
+
+**Returns:**
+
+  bool: True if the object exists, False otherwise.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.canonicalize_path"></a>
+
+### canonicalize_path
+
+```python
+def canonicalize_path(file_path: PurePath):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.put_file"></a>
+
+### put_file
+
+```python
+def put_file(self, file_path: PurePath, file: File):
+```
+
+Put a file to the object storage.
+
+**Parameters:**
+
+- **file_path** (PurePath): The path to the object in the storage.
+- **file** (File): The file to be put.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.get_file"></a>
+
+### get_file
+
+```python
+def get_file(self, file_path: PurePath):
+```
+
+Get a file from the object storage.
+
+**Parameters:**
+
+- **file_path** (PurePath): The path to the object in the storage.
+
+**Returns:**
+
+  File: The file object get from the storage.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.upload_file"></a>
+
+### upload_file
+
+```python
+def upload_file(self, local_file_path: Path, remote_file_path: PurePath):
+```
+
+Upload a local file to the object storage.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be uploaded.
+- **remote_file_path** (PurePath): The path to the object in storage.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.download_file"></a>
+
+### download_file
+
+```python
+def download_file(self, local_file_path: Path, remote_file_path: PurePath):
+```
+
+Download a file from the object storage to the local system.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be saved.
+- **remote_file_path** (PurePath): The path to the object in storage.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage._put_file"></a>
+
+### _put_file
+
+```python
+def _put_file(self, file_key: str, file: File):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage._get_file"></a>
+
+### _get_file
+
+```python
+def _get_file(self, file_key: str, filename: str):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage._object_exists"></a>
+
+### _object_exists
+
+```python
+def _object_exists(self, file_key: str):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage._upload_file"></a>
+
+### _upload_file
+
+```python
+def _upload_file(self, local_file_path: Path, remote_file_key: str):
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage._download_file"></a>
+
+### _download_file
+
+```python
+def _download_file(self, local_file_path: Path, remote_file_key: str):
+```

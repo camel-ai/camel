@@ -98,8 +98,8 @@ class Firecrawl:
     def scrape(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
-    ) -> Dict:
+        params: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
         r"""To scrape a single URL. This function supports advanced scraping
         by setting different parameters and returns the full scraped data as a
         dictionary.
@@ -108,11 +108,11 @@ class Firecrawl:
 
         Args:
             url (str): The URL to read.
-            params (Optional[Dict[str, Any]]): Additional parameters for the
+            params (Optional[Dict[str, str]]): Additional parameters for the
                 scrape request.
 
         Returns:
-            Dict: The scraped data.
+            Dict[str, str]: The scraped data.
 
         Raises:
             RuntimeError: If the scrape process fails.

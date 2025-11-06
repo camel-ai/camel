@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 
 import pytest
 
@@ -27,20 +26,3 @@ def test_volcano_model():
     assert model.model_type == model_type
     assert model.model_config_dict == {}
     assert isinstance(model.token_counter, OpenAITokenCounter)
-
-
-@pytest.mark.model_backend
-def test_volcano_model_unexpected_argument():
-    model_type = "deepseek-r1-250120"
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into Volcano model backend."
-            )
-        ),
-    ):
-        _ = VolcanoModel(model_type, model_config_dict)

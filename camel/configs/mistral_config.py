@@ -76,4 +76,4 @@ class MistralConfig(BaseConfig):
         return response_format
 
 
-MISTRAL_API_PARAMS = {param for param in MistralConfig().model_fields.keys()}
+MISTRAL_API_PARAMS = {param for param in MistralConfig.model_fields.keys()}

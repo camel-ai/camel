@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory, OpenAIAudioModels
 from camel.toolkits import AudioAnalysisToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -39,19 +38,13 @@ audio_models.text_to_speech(input=input, storage_path=storage_path)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(
-        temperature=0.0,
-    ).as_dict(),
+    model_type=ModelType.GPT_5_MINI,
 )
 
 
 audio_reason_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(
-        temperature=0.0,
-    ).as_dict(),
+    model_type=ModelType.GPT_5_MINI,
 )
 
 # Create the AudioAnalysisToolkit with our reasoning model

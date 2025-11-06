@@ -1,0 +1,184 @@
+---
+title: "Video Analysis"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1egJ-14pRtBbM9lkqhHcZp75mAki1lgzS?usp=sharing)
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to set up and leverage CAMEL's ability to do video analysis.
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+* **Video Analysis**: How to use CAMEL to read and generate descriptions of uploaded videos.
+
+## 📦 Installation
+
+
+```python
+%pip install "camel-ai[all]==0.2.66"
+```
+
+## 🔑 Setting Up API Keys
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+## Set up an agent for video analysis task
+
+
+```python
+from camel.toolkits import VideoDownloaderToolkit
+#Download video to be analyse
+urls=["https://www.youtube.com/watch?v=n3u5EcjRmdY","https://youtu.be/PNqrHNQlU6I?si=8s2Zvh_F1-bIkeBr"]
+video_downloader = VideoDownloaderToolkit("./download")
+for url in urls:
+  video_downloader.download_video(url)
+```
+
+
+```python
+from camel.agents import ChatAgent
+from camel.configs.openai_config import ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.prompts.prompt_templates import PromptTemplateGenerator
+from camel.types import ModelType, ModelPlatformType
+from camel.types.enums import RoleType, TaskType
+from camel.models import ModelFactory
+
+# Define system message
+sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
+    TaskType.VIDEO_DESCRIPTION, RoleType.ASSISTANT
+)
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content=sys_msg_prompt,
+)
+
+# Set model
+model=ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict=ChatGPTConfig().as_dict(),
+)
+
+# Set agent
+camel_agent = ChatAgent(
+    sys_msg,
+    model=model
+)
+```
+
+## Providing video and set user message
+
+
+```python
+# Provide your video path
+video_cctv = "/content/download/This AI Agent Analyses Videos Brilliantly (5 Easy Examples You Can Try).mp4"
+with open(video_cctv, "rb") as video_cctv:
+    video_bytes_cctv = video_cctv.read()
+
+# Set user message
+user_msg_cctv = BaseMessage.make_user_message(
+    role_name="User",
+    content="These are frames from a video that I want to upload. Generate a"
+    "compelling description that I can upload along with the video.",
+    video_bytes=video_bytes_cctv,
+)
+
+# Get response information
+response_cctv = camel_agent.step(user_msg_cctv)
+print(response_cctv.msgs[0].content)
+```
+
+
+```python
+# Provide your video path
+video_help = "/content/download/Introducing CRAB.mp4"
+with open(video_help, "rb") as video_help:
+    video_bytes_help = video_help.read()
+
+# Set user message
+user_msg_help = BaseMessage.make_user_message(
+    role_name="User",
+    content="These are frames from a video that I want to upload. Generate a"
+    "compelling description that I can upload along with the video.",
+    video_bytes=video_bytes_help,
+)
+
+# Get response information
+response_help = camel_agent.step(user_msg_help)
+print(response_help.msgs[0].content)
+```
+
+## 🌟 Highlights
+
+This notebook has guided you through setting up an agent and analyzing videos using CAMEL.
+
+Now, you know how to generate description for uploaded videos.
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+

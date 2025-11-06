@@ -1,0 +1,198 @@
+<a id="camel.models.sglang_model"></a>
+
+<a id="camel.models.sglang_model.SGLangModel"></a>
+
+## SGLangModel
+
+```python
+class SGLangModel(BaseModelBackend):
+```
+
+SGLang service interface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`SGLangConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. SGLang doesn't need API key, it would be ignored if set. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the model service. If not provided, :obj:`"http://127.0.0.1:30000/v1"` will be used. (default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. Note: When using custom clients with SGLang, server auto-start features will be disabled. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
+- **Reference**: https://sgl-project.github.io/backend/openai_api_completions. html
+
+<a id="camel.models.sglang_model.SGLangModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
+    **kwargs: Any
+):
+```
+
+<a id="camel.models.sglang_model.SGLangModel._start_server"></a>
+
+### _start_server
+
+```python
+def _start_server(self):
+```
+
+<a id="camel.models.sglang_model.SGLangModel._ensure_server_running"></a>
+
+### _ensure_server_running
+
+```python
+def _ensure_server_running(self):
+```
+
+Ensures that the server is running. If not, starts the server.
+
+<a id="camel.models.sglang_model.SGLangModel._monitor_inactivity"></a>
+
+### _monitor_inactivity
+
+```python
+def _monitor_inactivity(self):
+```
+
+Monitor whether the server process has been inactive for over 10
+minutes.
+
+<a id="camel.models.sglang_model.SGLangModel.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+**Returns:**
+
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
+
+<a id="camel.models.sglang_model.SGLangModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Runs inference of OpenAI chat completion.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+
+**Returns:**
+
+  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+`ChatCompletion` in the non-stream mode, or
+`Stream[ChatCompletionChunk]` in the stream mode.
+
+<a id="camel.models.sglang_model.SGLangModel.stream"></a>
+
+### stream
+
+```python
+def stream(self):
+```
+
+**Returns:**
+
+  bool: Whether the model is in stream mode.
+
+<a id="camel.models.sglang_model.SGLangModel.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Properly clean up resources when the model is destroyed.
+
+<a id="camel.models.sglang_model.SGLangModel.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Terminate the server process and clean up resources.
+
+<a id="camel.models.sglang_model._terminate_process"></a>
+
+## _terminate_process
+
+```python
+def _terminate_process(process):
+```
+
+<a id="camel.models.sglang_model._kill_process_tree"></a>
+
+## _kill_process_tree
+
+```python
+def _kill_process_tree(
+    parent_pid,
+    include_parent: bool = True,
+    skip_pid: Optional[int] = None
+):
+```
+
+Kill the process and all its child processes.
+
+<a id="camel.models.sglang_model._execute_shell_command"></a>
+
+## _execute_shell_command
+
+```python
+def _execute_shell_command(command: str):
+```
+
+Execute a shell command and return the process handle
+
+**Parameters:**
+
+- **command**: Shell command as a string (can include \\ line continuations)
+
+**Returns:**
+
+  subprocess.Popen: Process handle
+
+<a id="camel.models.sglang_model._wait_for_server"></a>
+
+## _wait_for_server
+
+```python
+def _wait_for_server(base_url: str, timeout: Optional[float] = 30):
+```
+
+Wait for the server to be ready by polling the /v1/models endpoint.
+
+**Parameters:**
+
+- **base_url** (str): The base URL of the server
+- **timeout** (Optional[float]): Maximum time to wait in seconds. (default: :obj:`30`)

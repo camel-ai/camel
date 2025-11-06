@@ -1,0 +1,41 @@
+<a id="camel.toolkits.playwright_mcp_toolkit"></a>
+
+<a id="camel.toolkits.playwright_mcp_toolkit.PlaywrightMCPToolkit"></a>
+
+## PlaywrightMCPToolkit
+
+```python
+class PlaywrightMCPToolkit(MCPToolkit):
+```
+
+PlaywrightMCPToolkit provides an interface for interacting with web
+browsers using the Playwright automation library through the Model Context
+Protocol (MCP).
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+- **additional_args** (Optional[List[str]]): Additional command-line arguments to pass to the Playwright MCP server. For example, `["--cdp-endpoint=http://localhost:9222"]`. (default: :obj:`None`)
+
+**Note:**
+
+Currently only supports asynchronous operation mode.
+
+<a id="camel.toolkits.playwright_mcp_toolkit.PlaywrightMCPToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    additional_args: Optional[List[str]] = None
+):
+```
+
+Initializes the PlaywrightMCPToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+- **additional_args** (Optional[List[str]]): Additional command-line arguments to pass to the Playwright MCP server. For example, `["--cdp-endpoint=http://localhost:9222"]`. (default: :obj:`None`)

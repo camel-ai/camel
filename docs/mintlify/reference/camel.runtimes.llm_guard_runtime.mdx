@@ -1,0 +1,64 @@
+<a id="camel.runtimes.llm_guard_runtime"></a>
+
+<a id="camel.runtimes.llm_guard_runtime.LLMGuardRuntime"></a>
+
+## LLMGuardRuntime
+
+```python
+class LLMGuardRuntime(BaseRuntime):
+```
+
+A runtime that evaluates the risk level of functions using
+a language model.
+
+**Parameters:**
+
+- **prompt** (str): The prompt to use for the language model. (default: :obj:`GUARDPROMPT`)
+- **model** (BaseModelBackend): The language model to use. (default: :obj: `None`)
+- **verbose** (bool): Whether to print verbose output. (default: :obj: `False`)
+
+<a id="camel.runtimes.llm_guard_runtime.LLMGuardRuntime.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    prompt: str = GUARDPROMPT,
+    model: Optional[BaseModelBackend] = None,
+    verbose: bool = False
+):
+```
+
+<a id="camel.runtimes.llm_guard_runtime.LLMGuardRuntime.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    funcs: Union[FunctionTool, List[FunctionTool]],
+    threshold: int = 2
+):
+```
+
+Add a function or list of functions to the runtime.
+
+**Parameters:**
+
+- **funcs** (FunctionTool or List[FunctionTool]): The function or list of functions to add.
+- **threshold** (int): The risk threshold for functions. (default: :obj:`2`)
+
+**Returns:**
+
+  LLMGuardRuntime: The current runtime.
+
+<a id="camel.runtimes.llm_guard_runtime.LLMGuardRuntime.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Resets the runtime to its initial state.

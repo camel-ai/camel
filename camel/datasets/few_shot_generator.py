@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime
 from typing import List
 
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -176,14 +176,30 @@ class FewShotGenerator(BaseGenerator):
                 ]
                 prompt = self._construct_prompt(examples)
 
+                # Create a simplified version of DataPoint that omits metadata
+                # because agent.step's response_format parameter doesn't
+                # support type Dict[str, Any]
+                class DataPointSimplified(BaseModel):
+                    question: str = Field(
+                        description="The primary question or issue to "
+                        "be addressed."
+                    )
+                    final_answer: str = Field(description="The final answer.")
+                    rationale: str = Field(
+                        description="Logical reasoning or explanation "
+                        "behind the answer."
+                    )
+
                 try:
                     agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
+                        self.agent.step(
+                            prompt, response_format=DataPointSimplified
+                        )
                         .msgs[0]
                         .parsed
                     )
 
-                    assert isinstance(agent_output, DataPoint)
+                    assert isinstance(agent_output, DataPointSimplified)
 
                     self.agent.reset()
 

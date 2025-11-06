@@ -204,26 +204,23 @@ class CoTDataGenerator:
         logger.info("Answer verification result: %s", is_correct)
         return is_correct
 
-    def monte_carlo_tree_search(
+    def evaluate_partial_solution(
         self, question: str, partial_solution: str = ""
     ) -> float:
-        r"""Perform Monte Carlo Tree Search to find the best solution.
+        r"""Evaluate the quality of a partial solution against the
+        golden answer.
 
-        Process:
-        a. Selection: Choose promising partial solutions based on previous
-        scores
-        b. Expansion: Generate new solution steps using the generator agent
-        c. Simulation: Evaluate solution quality using similarity scores
-        d. Backpropagation: Update solution tree with new findings
+        This function generates a similarity score between the given partial
+        solution and the correct answer (golden answer).
 
         Args:
-            question (str): The question to solve.
-            partial_solution (str): The current partial solution.
+            question (str): The question being solved.
+            partial_solution (str): The partial solution generated so far.
                 (default::obj:`""`)
 
         Returns:
-            float: The similarity score between the current
-                solution and golden answer.
+            float: A similarity score between 0 and 1, indicating how close the
+                partial solution is to the golden answer.
         """
         if question not in self.golden_answers:
             raise ValueError(
@@ -293,10 +290,21 @@ class CoTDataGenerator:
         r"""Solve a question using a multi-step approach.
 
         The solution process follows these steps:
-        1. Try to solve directly - if correct, return the solution
-        2. If not correct, use Monte Carlo Tree Search to find a good solution
-        3. If the solution isn't perfect, use binary search to locate errors
-        4. Generate a new solution based on the correct part
+        1. Try to solve directly - if correct, return the solution.
+        2. If not correct, perform a search by iteratively generating
+        new solutions and evaluating their similarity scores to
+        find a good solution. The search process involves:
+            a. Generation: Generate new solution candidates using
+            the generator agent.
+            b. Evaluation: Score each solution candidate for similarity
+            to the golden answer.
+            c. Selection: Keep the best-scoring candidate found so far.
+            d. Early stopping: If a sufficiently high-scoring solution
+            is found (score > 0.9), stop early.
+        3. If the solution isn't perfect, use binary search to locate
+        errors.
+        4. Generate a new solution based on the correct part of the
+        initial solution.
 
         Args:
             question (str): The question to solve.
@@ -304,14 +312,14 @@ class CoTDataGenerator:
         Returns:
             str: The best solution found.
         """
+
         # 1. Try direct solution first
         solution = self.get_answer(question)
         if self.verify_answer(question, solution):
             logger.info("Initial solution is correct")
             return solution
 
-        # 2. If direct solution fails, try Monte Carlo Tree Search
-        # to find a solution with high similarity score
+        # 2. If direct solution fails, iteratively search for a better solution
         best_solution = ""
         best_score: float = 0.0
         for i in range(self.search_limit):
@@ -319,23 +327,10 @@ class CoTDataGenerator:
             current_solution = self.get_answer(question, best_solution)
 
             # Evaluate solution similarity score
-            prompt = (
-                f"Please evaluate this solution and "
-                f"give a score between 0-1:\n"
-                f"Question: {question}\n"
-                f"Solution: {current_solution}\n"
-                f"Correct answer: {self.golden_answers.get(question, '')}\n"
-                f"Return a JSON object with a single field 'score' containing "
-                f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
-            )
-            self.generator_agent.reset()
-            response = self.generator_agent.step(prompt)
             try:
-                response = self.generator_agent.step(
-                    prompt, response_format=AgentResponse
+                score = self.evaluate_partial_solution(
+                    question, current_solution
                 )
-                agent_response = response.msgs[0].parsed.score  # type: ignore [union-attr]
-                score = agent_response
 
                 # Exit early if we find a very good solution (score > 0.9)
                 if score > 0.9:
@@ -357,7 +352,7 @@ class CoTDataGenerator:
                     best_score,
                 )
             except Exception as e:
-                logger.error("Error parsing agent response: %s", str(e))
+                logger.error("Error evaluating partial solution: %s", str(e))
                 continue
 
         # 3. If the answer is not completely correct,

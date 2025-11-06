@@ -1,0 +1,50 @@
+<a id="camel.memories.context_creators.score_based"></a>
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator"></a>
+
+## ScoreBasedContextCreator
+
+```python
+class ScoreBasedContextCreator(BaseContextCreator):
+```
+
+A context creation strategy that orders records chronologically.
+
+**Parameters:**
+
+- **token_counter** (BaseTokenCounter): Token counter instance used to compute the combined token count of the returned messages.
+- **token_limit** (int): Retained for API compatibility. No longer used to filter records.
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, token_counter: BaseTokenCounter, token_limit: int):
+```
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.token_limit"></a>
+
+### token_limit
+
+```python
+def token_limit(self):
+```
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.create_context"></a>
+
+### create_context
+
+```python
+def create_context(self, records: List[ContextRecord]):
+```
+
+Returns messages sorted by timestamp and their total token count.

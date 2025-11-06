@@ -25,6 +25,8 @@ from camel.environments import (
 from camel.environments.single_step import SingleStepEnv
 from camel.verifiers.models import VerificationOutcome, VerificationResult
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 class MockSingleStepEnv(SingleStepEnv):
     async def _compute_custom_reward(
@@ -863,6 +865,82 @@ async def test_batched_single_step_env_error_handling():
     await env_close_fail.setup()
     with pytest.raises(Exception, match="Cleanup failed"):
         await env_close_fail.close()
+
+
+def get_dummy_predefined_data(n):
+    predefined_data = []
+    for i in range(n):
+        predefined_data.append(
+            {
+                "question": f"What is {i} + {i}?",
+                "final_answer": str(i + i),
+                "rationale": f"Adding {i} and {i} gives {i + i}.",
+                "metadata": {"difficulty": "easy"},
+            }
+        )
+    return predefined_data
+
+
+@pytest.mark.asyncio
+async def test_basegenerator_reset_reproducibility_with_identical_seed():
+    """Verify that resetting the environment with the same random seed
+    produces identical sampling order across consecutive resets."""
+
+    PREDEFINED_DATA_SIZE = 128
+    RESET_BATCH_SIZE = 64
+
+    predefined_data = get_dummy_predefined_data(PREDEFINED_DATA_SIZE)
+    mock_verifier = create_mock_verifier()
+    dataset = MockGenerator(predefined_data, seed=42)
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
+    await env.setup()
+
+    # Pre-populate dataset with all data to ensure sampling from full pool
+    await dataset.generate_new(PREDEFINED_DATA_SIZE)
+
+    # First reset with seed=42
+    observations1 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=42)
+    questions1 = [obs.question for obs in observations1]
+
+    # Second reset with same seed=42 should produce same order
+    observations2 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=42)
+    questions2 = [obs.question for obs in observations2]
+
+    # Same seed should produce same sampling order
+    assert (
+        questions1 == questions2
+    ), "Same seed should produce same sampling order"
+    await env.close()
+
+
+@pytest.mark.asyncio
+async def test_basegenerator_reset_variability_with_different_seeds():
+    """Verify that resetting the environment with different random seeds
+    produces distinct sampling orders, confirming stochastic behavior."""
+
+    PREDEFINED_DATA_SIZE = 128
+    RESET_BATCH_SIZE = 64
+
+    predefined_data = get_dummy_predefined_data(PREDEFINED_DATA_SIZE)
+    mock_verifier = create_mock_verifier()
+    dataset = MockGenerator(predefined_data, seed=42)
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
+    await env.setup()
+
+    # Pre-populate dataset with all data to ensure sampling from full pool
+    await dataset.generate_new(PREDEFINED_DATA_SIZE)
+
+    observations1 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=42)
+    questions1 = [obs.question for obs in observations1]
+
+    observations2 = await env.reset(batch_size=RESET_BATCH_SIZE, seed=43)
+    questions2 = [obs.question for obs in observations2]
+
+    # Different seeds should produce different orders
+    assert (
+        questions1 != questions2
+    ), "Different seeds should produce different sampling orders"
+    await env.close()
 
 
 @pytest.mark.asyncio

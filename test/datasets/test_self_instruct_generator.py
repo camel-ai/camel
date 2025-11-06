@@ -21,6 +21,8 @@ from camel.agents import ChatAgent
 from camel.datasets import DataPoint, SelfInstructGenerator
 from camel.verifiers import BaseVerifier
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 @pytest.fixture
 def mock_verifier():

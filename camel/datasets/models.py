@@ -24,7 +24,7 @@ class DataPoint(BaseModel):
         final_answer (str): The final answer.
         rationale (Optional[str]): Logical reasoning or explanation behind the
             answer. (default: :obj:`None`)
-        metadata Optional[Dict[str, Any]]: Additional metadata about the data
+        metadata (Optional[Dict[str, Any]]): Additional metadata about the data
             point. (default: :obj:`None`)
     """
 
@@ -46,7 +46,7 @@ class DataPoint(BaseModel):
         Returns:
             Dict[str, Any]: Dictionary representation of the DataPoint.
         """
-        return self.dict()
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'DataPoint':
