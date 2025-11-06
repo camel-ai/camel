@@ -19,34 +19,8 @@ import requests
 import logging
 from typing import Any, Dict, List, Optional, Literal
 from camel.toolkits.base import BaseToolkit
-try:
-    from camel.toolkits.base import BaseToolkit
-    from camel.toolkits import FunctionTool
-    from camel.utils import MCPServer, api_keys_required, retry_on_error
-except ImportError:
-    # Fallback for testing without full CAMEL installation
-    class BaseToolkit:
-        def __init__(self, timeout=None):
-            self.timeout = timeout
-    
-    class FunctionTool:
-        def __init__(self, func):
-            self.func = func
-    
-    def MCPServer():
-        def decorator(cls):
-            return cls
-        return decorator
-    
-    def api_keys_required(keys):
-        def decorator(func):
-            return func
-        return decorator
-    
-    def retry_on_error():
-        def decorator(func):
-            return func
-        return decorator
+from camel.toolkits import FunctionTool
+from camel.utils import MCPServer, api_keys_required, retry_on_error
 
 
 # Global variables for token management
