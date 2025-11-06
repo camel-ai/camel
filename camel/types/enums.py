@@ -1438,6 +1438,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COMETAPI_DEEPSEEK_REASONER,
             ModelType.COMETAPI_QWEN3_30B_A3B,
             ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
         }:
             return 128_000
         elif self in {
