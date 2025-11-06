@@ -1049,7 +1049,8 @@ class ContextUtility:
         if not clean_role:
             clean_role = "unknown_role"
 
-        # check if context already exists
+        # use setdefault to avoid race condition when multiple async tasks
+        # access the same role simultaneously
         if clean_role not in cls._role_based_contexts:
             camel_workdir = os.environ.get("CAMEL_WORKDIR")
             if camel_workdir:
@@ -1059,10 +1060,14 @@ class ContextUtility:
             else:
                 base_path = os.path.join("workforce_workflows", clean_role)
 
-            cls._role_based_contexts[clean_role] = cls(
-                working_directory=base_path,
-                create_folder=False,  # Don't create folder until needed
-                use_session_subfolder=False,  # No session subfolder for role-based
+            # setdefault is atomic for dict operations
+            cls._role_based_contexts.setdefault(
+                clean_role,
+                cls(
+                    working_directory=base_path,
+                    create_folder=False,  # Don't create folder until needed
+                    use_session_subfolder=False,  # No session subfolder
+                ),
             )
         return cls._role_based_contexts[clean_role]
 
