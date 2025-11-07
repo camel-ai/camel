@@ -508,6 +508,7 @@
               "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
+              "reference/camel.toolkits.gmail_toolkit",
               "reference/camel.toolkits.google_calendar_toolkit",
               "reference/camel.toolkits.google_drive_mcp_toolkit",
               "reference/camel.toolkits.google_maps_toolkit",
