@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import ast
 import json
 import os
 import random
@@ -26,7 +27,6 @@ from typing import (
     Literal,
     Optional,
     Tuple,
-    TypeVar,
     Union,
 )
 
@@ -57,9 +57,6 @@ TEST_CATEGORIES = {
     "javascript": f"{VERSION_PREFIX}_javascript.json",
     "rest": f"{VERSION_PREFIX}_rest.json",
 }
-
-# define generic type variable for return type
-T = TypeVar('T', bound=BaseBenchmark)
 
 
 class BFCLSample:
@@ -97,6 +94,65 @@ class FunctionCallParser:
     """
 
     @staticmethod
+    def _try_parse_json(json_str: str) -> Optional[Dict]:
+        r"""Attempt to parse a JSON string.
+
+        Args:
+            json_str (str): The JSON string to parse.
+
+        Returns:
+            Optional[Dict]: Parsed JSON object or None if parsing fails.
+        """
+        try:
+            return json.loads(json_str)
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return None
+
+    @staticmethod
+    def _extract_from_markdown_codeblock(text: str) -> Optional[Dict]:
+        r"""Extract JSON from markdown code blocks.
+
+        Args:
+            text (str): The text containing markdown code blocks.
+
+        Returns:
+            Optional[Dict]: Extracted JSON object or None if not found.
+        """
+        json_pattern = r'```(?:json)?\s*([\s\S]*?)```'
+        match = re.search(json_pattern, text)
+        if not match:
+            return None
+
+        # Try to parse the entire matched content
+        result = FunctionCallParser._try_parse_json(match.group(1))
+        if result:
+            return result
+
+        # If parsing fails, try to find a JSON object within
+        curly_pattern = r'{[\s\S]*?}'
+        curly_match = re.search(curly_pattern, match.group(1))
+        if curly_match:
+            return FunctionCallParser._try_parse_json(curly_match.group(0))
+
+        return None
+
+    @staticmethod
+    def _extract_json_object_with_braces(text: str) -> Optional[Dict]:
+        r"""Extract JSON object surrounded by curly braces.
+
+        Args:
+            text (str): The text to search for JSON objects.
+
+        Returns:
+            Optional[Dict]: Extracted JSON object or None if not found.
+        """
+        curly_pattern = r'{[\s\S]*?}'
+        match = re.search(curly_pattern, text)
+        if match:
+            return FunctionCallParser._try_parse_json(match.group(0))
+        return None
+
+    @staticmethod
     def extract_json_from_string(text: str) -> Optional[Dict]:
         r"""Attempt to extract a JSON object from text string.
 
@@ -107,42 +163,21 @@ class FunctionCallParser:
             Optional[Dict]: Extracted JSON object or None if not found.
         """
         # Try to extract JSON from markdown code blocks
-        json_pattern = r'```(?:json)?\s*([\s\S]*?)```'
-        match = re.search(json_pattern, text)
-        if match:
-            try:
-                # Try to parse the entire matched content
-                return json.loads(match.group(1))
-            except json.JSONDecodeError:
-                # If parsing fails, try to find and extract a JSON object
-                # within
-                curly_pattern = r'{[\s\S]*?}'
-                curly_match = re.search(curly_pattern, match.group(1))
-                if curly_match:
-                    try:
-                        return json.loads(curly_match.group(0))
-                    except Exception:
-                        logger.warning(
-                            "Failed to parse JSON object from text: " f"{text}"
-                        )
+        result = FunctionCallParser._extract_from_markdown_codeblock(text)
+        if result:
+            return result
 
         # Try to parse the entire text as JSON
-        try:
-            return json.loads(text)
-        except Exception:
-            logger.warning("Failed to parse JSON object from text: " f"{text}")
+        result = FunctionCallParser._try_parse_json(text)
+        if result:
+            return result
 
         # Try to find JSON object surrounded by curly braces in the text
-        curly_pattern = r'{[\s\S]*?}'
-        match = re.search(curly_pattern, text)
-        if match:
-            try:
-                return json.loads(match.group(0))
-            except Exception:
-                logger.warning(
-                    "Failed to parse JSON object from text: " f"{text}"
-                )
+        result = FunctionCallParser._extract_json_object_with_braces(text)
+        if result:
+            return result
 
+        logger.warning("Failed to parse JSON object from text: " f"{text}")
         return None
 
     @staticmethod
@@ -238,7 +273,7 @@ class FunctionCallParser:
                 )
                 try:
                     # Try to parse parameter string as dictionary
-                    parameters = eval(parameters_str)
+                    parameters = ast.literal_eval(parameters_str)
                 except Exception:
                     logger.warning(
                         "Failed to parse parameters from REST API call: "
@@ -284,7 +319,7 @@ class FunctionCallParser:
 
             return function_name, parameters
 
-        # Fall back to legacy AST-based parsing for simple function calls
+        # Fall back to regex-based parsing for simple function calls
         try:
             # Clean up the input
             clean_call = response_text.strip()
