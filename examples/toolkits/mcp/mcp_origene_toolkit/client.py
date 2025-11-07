@@ -26,10 +26,11 @@ async def main():
     OrigeneToolkit instead of using hardcoded configuration.
     """
     # Define custom configuration for MCP servers
+    # reference:https://github.com/GENTEL-lab/OrigeneMCP
     config_dict = {
         "mcpServers": {
-            "chembl_mcp": {
-                "url": "http://127.0.0.1:8788/chembl_mcp/mcp/",
+            "pubchem_mcp": {
+                "url": "http://127.0.0.1:8788/pubchem_mcp/mcp/",
                 "mode": "streamable-http",
             }
         }
