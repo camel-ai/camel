@@ -123,6 +123,7 @@ class RecoveryStrategy(str, Enum):
     DECOMPOSE = "decompose"
     CREATE_WORKER = "create_worker"
     REASSIGN = "reassign"
+    REFINE = "refine"
 
     def __str__(self):
         return self.value
@@ -219,6 +220,57 @@ class TaskAnalysisResult(BaseModel):
             and self.quality_score >= 70
             and self.recovery_strategy is None
         )
+
+
+class ValidationResult(BaseModel):
+    r"""Result of validating aggregated parallel task results.
+
+    This model is used to validate results from parallel subtasks that were
+    "scattered" across multiple agents, checking for duplicates and ensuring
+    the final result meets the original requirements.
+    """
+
+    requirements_met: bool = Field(
+        description="Whether the aggregated results meet the original task "
+        "requirements (e.g., '5 unique papers found')"
+    )
+
+    unique_count: int = Field(
+        description="Number of unique items found after deduplication"
+    )
+
+    duplicate_count: int = Field(
+        default=0,
+        description="Number of duplicate items that were removed",
+    )
+
+    missing_count: int = Field(
+        default=0,
+        description="Number of items still needed to meet requirements "
+        "(e.g., if 5 required but only 3 found, missing_count=2)",
+    )
+
+    deduplicated_result: str = Field(
+        description="The cleaned, deduplicated result content"
+    )
+
+    reasoning: str = Field(
+        description="Explanation of the validation decision and any issues "
+        "found"
+    )
+
+    additional_task_guidance: Optional[str] = Field(
+        default=None,
+        description="If requirements not met, guidance for generating "
+        "additional targeted subtasks (e.g., 'Find 2 more papers, "
+        "excluding: [list]')",
+    )
+
+    duplicate_subtask_ids: Optional[List[str]] = Field(
+        default=None,
+        description="List of subtask IDs that produced duplicate results. "
+        "These subtasks should be retried with refinement guidance.",
+    )
 
 
 def check_if_running(

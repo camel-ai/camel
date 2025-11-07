@@ -415,10 +415,72 @@ FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
 QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
 {
   "quality_score": 0-100,
-  "reasoning": "explanation (1-2 sentences)", 
+  "reasoning": "explanation (1-2 sentences)",
   "issues": ["issue1", "issue2"],
   "recovery_strategy": "retry|reassign|replan|decompose or null",
   "modified_task_content": "new content if replan, else null"
+}"""
+
+VALIDATION_PROMPT = TextPrompt(
+    """You are validating the aggregated results from subtasks to ensure they meet the original task requirements.
+
+**ORIGINAL TASK INFORMATION:**
+- Task ID: {task_id}
+- Task Content: {task_content}
+- Number of Subtasks: {num_subtasks}
+- Subtask IDs: {subtask_ids}
+
+**AGGREGATED RESULT:**
+{aggregated_result}
+
+**YOUR RESPONSIBILITIES:**
+
+1. **Deduplication**: Identify and remove duplicate content across subtask results
+   - Look for repeated information, identical items, or overlapping content
+   - Count unique items vs duplicates
+
+2. **Requirement Validation**: Check if the deduplicated results meet the original task requirements
+   - Extract any numerical requirements (e.g., "5 papers", "3 examples")
+   - Verify the unique count EXACTLY matches the requirements (not approximately)
+   - Set requirements_met to FALSE if even one item is missing
+   - Identify how many items are missing if requirements not met
+
+3. **Quality Assessment**: Ensure the deduplicated result is coherent and complete
+   - Verify all unique items are valid and relevant
+   - Check for completeness and accuracy
+
+**RESPONSE REQUIREMENTS:**
+
+- **requirements_met**: MUST be false if unique_count does not EXACTLY match the required number
+- **unique_count**: Total number of unique items after deduplication
+- **duplicate_count**: Number of duplicate items removed
+- **missing_count**: If requirements not met, how many items are still needed (0 if met)
+- **deduplicated_result**: The cleaned result with duplicates removed and content merged
+- **reasoning**: Clear explanation of your validation decision (2-3 sentences)
+- **additional_task_guidance**: If requirements not met, provide guidance for individual subtask refinement. IMPORTANT: Multiple duplicate subtasks will be retried IN PARALLEL with the SAME guidance, so they may find the same new item again. To prevent this, your guidance should encourage DIVERSITY by suggesting exploration of different domains, time periods, methodologies, or approaches. Express guidance in SINGULAR form (what ONE subtask should do), list all items to avoid/exclude, AND suggest exploring diverse areas to maximize chances of finding different unique items
+- **duplicate_subtask_ids**: List of subtask IDs that returned duplicate results (e.g., ["research_task_1.3", "research_task_1.5"] if these two had the same result). Use null if no duplicates found.
+
+**RESPONSE FORMAT:**
+{response_format}
+
+**CRITICAL**:
+- Return ONLY a valid JSON object
+- Be thorough in identifying duplicates
+- Provide specific guidance if additional tasks are needed
+- Ensure all required fields are included
+"""
+)
+
+VALIDATION_RESPONSE_FORMAT = """JSON format:
+{
+  "requirements_met": true|false,
+  "unique_count": number,
+  "duplicate_count": number,
+  "missing_count": number,
+  "deduplicated_result": "cleaned content",
+  "reasoning": "explanation (2-3 sentences)",
+  "additional_task_guidance": "guidance string or null",
+  "duplicate_subtask_ids": ["subtask_id1", "subtask_id2"] or null
 }"""
 
 TASK_AGENT_SYSTEM_MESSAGE = """You are an intelligent task management assistant responsible for planning, analyzing, and quality control.
