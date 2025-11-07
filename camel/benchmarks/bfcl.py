@@ -766,6 +766,7 @@ def run_bfcl_benchmark(
         category=category,
         randomize=False,
         subset=subset,
+        force_download=force_download,
     )
 
     # Log results
@@ -929,11 +930,20 @@ class BFCLBenchmark(BaseBenchmark):
             / f"{VERSION_PREFIX}_{category}.json"
         )
 
+        # If file doesn't exist, automatically download
         if not dataset_file.exists():
-            raise FileNotFoundError(
-                f"The dataset file {dataset_file} does not exist. "
-                "Please download it first."
+            logger.info(
+                f"Dataset file {dataset_file} not found. Downloading..."
             )
+            self.download()
+
+            # Check again after download
+            if not dataset_file.exists():
+                raise FileNotFoundError(
+                    f"The dataset file {dataset_file} does not exist even "
+                    "after download. Please check your network connection or "
+                    "download manually."
+                )
 
         # Load possible answers if they exist in the separate file
         possible_answers_dict = {}
@@ -1119,9 +1129,10 @@ class BFCLBenchmark(BaseBenchmark):
         """
         # process parameters from kwargs
         category = kwargs.get("category", "simple")
+        force_download = kwargs.get("force_download", False)
 
         logger.info(f"Running BFCL benchmark on {category} category.")
-        self.load(force_download=False, category=category)
+        self.load(force_download=force_download, category=category)
         samples = self._data
 
         # Shuffle and subset if necessary
