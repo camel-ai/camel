@@ -39,6 +39,24 @@ def mock_model_backend():
         yield stub_model
 
 
+@pytest.fixture(autouse=True)
+def reset_context_utility():
+    """Reset ContextUtility shared state before each test.
+
+    This ensures test isolation by clearing cached ContextUtility instances
+    that persist across tests. Without this, tests can fail when run together
+    because they inherit stale ContextUtility instances pointing to deleted
+    temporary directories from previous tests.
+    """
+    from camel.utils.context_utils import ContextUtility
+
+    # reset before test
+    ContextUtility.reset_shared_sessions()
+    yield
+    # cleanup after test
+    ContextUtility.reset_shared_sessions()
+
+
 class MockSingleAgentWorker(SingleAgentWorker):
     """A mock worker for testing workflow functionality."""
 
