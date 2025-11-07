@@ -266,7 +266,8 @@ class WorkflowMemoryManager:
         )
 
         logger.info(
-            f"Falling back to session-based loading for session_id={session_id}"
+            f"Falling back to session-based loading for "
+            f"session_id={session_id}"
         )
 
         if use_smart_selection:
@@ -294,12 +295,10 @@ class WorkflowMemoryManager:
         workflows_metadata = context_util.get_all_workflows_info(session_id)
 
         if workflows_metadata:
-            selected_files, selection_method = (
-                self._select_relevant_workflows(
-                    workflows_metadata,
-                    max_files_to_load,
-                    session_id,
-                )
+            selected_files, selection_method = self._select_relevant_workflows(
+                workflows_metadata,
+                max_files_to_load,
+                session_id,
             )
 
             if selected_files:
@@ -422,7 +421,8 @@ class WorkflowMemoryManager:
 
         except Exception as e:
             logger.error(
-                f"Error loading workflow memories for {self.description}: {e!s}",
+                f"Error loading workflow memories for "
+                f"{self.description}: {e!s}",
                 exc_info=True,
             )
             return False
@@ -1117,7 +1117,9 @@ class WorkflowMemoryManager:
                 camel_workdir, self.config.workflow_folder_name, clean_role
             )
         else:
-            base_dir = os.path.join(self.config.workflow_folder_name, clean_role)
+            base_dir = os.path.join(
+                self.config.workflow_folder_name, clean_role
+            )
 
         # use provided pattern or default to all workflow files
         if pattern is None:

@@ -315,11 +315,13 @@ class TestSingleAgentWorkerWorkflow:
         with pytest.raises(TypeError, match="Worker must be a ChatAgent"):
             worker.load_workflow_memories()
 
-    def test_load_workflow_prioritizes_newest_session(self, workflow_files_dir):
-        """Test that workflow loading prioritizes most recent files (legacy mode).
+    def test_load_workflow_prioritizes_newest_session(
+        self, workflow_files_dir
+    ):
+        """Test workflow loading prioritizes most recent files (legacy).
 
-        This test verifies that when multiple workflow files exist, the most
-        recently modified files are loaded first.
+        This test verifies that when multiple workflow files exist, the
+        most recently modified files are loaded first.
         """
         worker = MockSingleAgentWorker("data_analyst")
 
@@ -683,7 +685,6 @@ class TestWorkflowIntegration:
             )
 
 
-
 class TestSharedContextUtility:
     """Test shared context utility functionality."""
 
@@ -825,7 +826,8 @@ class TestSmartWorkflowSelection:
         """Test smart selection when fewer workflows exist than max_files."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Only 3 workflows exist but ask for 5 - should load all 3 without agent selection
+        # Only 3 workflows exist but ask for 5 - should load all 3
+        # without agent selection
         result = worker.load_workflow_memories(
             max_workflows=5, use_smart_selection=True
         )
@@ -2194,7 +2196,9 @@ class TestWorkflowVersioning:
     """Test workflow versioning functionality."""
 
     @pytest.mark.asyncio
-    async def test_workflow_version_increments_on_update(self, temp_context_dir):
+    async def test_workflow_version_increments_on_update(
+        self, temp_context_dir
+    ):
         """Test that workflow version increments when saving same workflow
         twice."""
         from pathlib import Path
@@ -2270,9 +2274,9 @@ class TestWorkflowVersioning:
         created_at_v1 = created_match_v1.group(1).strip()
         created_at_v2 = created_match_v2.group(1).strip()
 
-        assert created_at_v1 == created_at_v2, (
-            "created_at should be preserved across versions"
-        )
+        assert (
+            created_at_v1 == created_at_v2
+        ), "created_at should be preserved across versions"
 
     @pytest.mark.asyncio
     async def test_new_workflow_starts_at_version_one(self, temp_context_dir):
