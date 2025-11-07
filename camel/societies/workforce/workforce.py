@@ -863,10 +863,12 @@ class Workforce(BaseNode):
             Union[List[Task], Generator[List[Task], None, None]]:
             The subtasks or generator of subtasks.
         """
-        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        decompose_prompt = str(
+            TASK_DECOMPOSE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         self.task_agent.reset()
         result = task.decompose(self.task_agent, decompose_prompt)
@@ -993,16 +995,18 @@ class Workforce(BaseNode):
             ]
 
         # Format the unified analysis prompt
-        analysis_prompt = TASK_ANALYSIS_PROMPT.format(
-            task_id=task.id,
-            task_content=task.content,
-            task_result=task_result,
-            failure_count=task.failure_count,
-            task_depth=task.get_depth(),
-            assigned_worker=task.assigned_worker_id or "unknown",
-            issue_type=issue_type,
-            issue_specific_analysis=issue_analysis,
-            response_format=response_format,
+        analysis_prompt = str(
+            TASK_ANALYSIS_PROMPT.format(
+                task_id=task.id,
+                task_content=task.content,
+                task_result=task_result,
+                failure_count=task.failure_count,
+                task_depth=task.get_depth(),
+                assigned_worker=task.assigned_worker_id or "unknown",
+                issue_type=issue_type,
+                issue_specific_analysis=issue_analysis,
+                response_format=response_format,
+            )
         )
 
         try:
@@ -3121,10 +3125,12 @@ class Workforce(BaseNode):
         Returns:
             Worker: The created worker node.
         """
-        prompt = CREATE_NODE_PROMPT.format(
-            content=task.content,
-            child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        prompt = str(
+            CREATE_NODE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+                additional_info=task.additional_info,
+            )
         )
         # Check if we should use structured handler
         if self.use_structured_output_handler:

@@ -70,10 +70,8 @@ def test_score_based_context_creator():
     ]
 
     expected_output = [
-        r.memory_record.to_openai_message()
-        for r in [
-            context_records[1]  # Only expect the highest scoring message
-        ]
+        record.memory_record.to_openai_message()
+        for record in sorted(context_records, key=lambda r: r.timestamp)
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output
@@ -137,9 +135,16 @@ def test_score_based_context_creator_with_system_message():
             score=0.9,
         ),
     ]
+    sorted_records = sorted(
+        (record for record in context_records[1:]),
+        key=lambda r: r.timestamp,
+    )
     expected_output = [
-        r.memory_record.to_openai_message()
-        for r in [context_records[0], context_records[2], context_records[3]]
+        context_records[0].memory_record.to_openai_message(),
+        *(
+            record.memory_record.to_openai_message()
+            for record in sorted_records
+        ),
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output

@@ -45,6 +45,32 @@ class MemoryBlock(ABC):
         """
         self.write_records([record])
 
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes records from the memory and returns the removed records.
+
+        Args:
+            count (int): Number of records to remove.
+
+        Returns:
+            List[MemoryRecord]: The records that were removed from the memory
+                in their original order.
+        """
+        raise NotImplementedError
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from the memory.
+
+        Args:
+            indices (List[int]): List of indices to remove. Indices should be
+                valid positions in the current record list.
+
+        Returns:
+            List[MemoryRecord]: The removed records in their original order.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def clear(self) -> None:
         r"""Clears all messages from the memory."""
