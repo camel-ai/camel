@@ -82,6 +82,35 @@ class WorkflowMetadata(BaseModel):
     )
 
 
+class WorkflowConfig(BaseModel):
+    r"""Configuration for workflow memory management.
+
+    Centralizes all workflow-related configuration options to avoid scattered
+    settings across multiple files and methods.
+    """
+
+    max_workflows_per_role: int = Field(
+        default=100,
+        description="Maximum number of workflows to keep per role folder",
+    )
+    workflow_filename_suffix: str = Field(
+        default="_workflow",
+        description="Suffix appended to workflow filenames",
+    )
+    workflow_folder_name: str = Field(
+        default="workforce_workflows",
+        description="Base folder name for storing workflows",
+    )
+    enable_versioning: bool = Field(
+        default=True,
+        description="Whether to track workflow versions",
+    )
+    default_max_files_to_load: int = Field(
+        default=3,
+        description="Default maximum number of workflow files to load",
+    )
+
+
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
 
