@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
   workflow_dispatch:
 
