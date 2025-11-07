@@ -561,18 +561,30 @@ class ContextUtility:
         session_dir.mkdir(parents=True, exist_ok=True)
         return session_dir
 
-    def get_session_metadata(self) -> Dict[str, Any]:
+    def get_session_metadata(
+        self, workflow_version: int = 1, created_at: Optional[str] = None
+    ) -> Dict[str, Any]:
         r"""Collect comprehensive session information including identifiers,
         timestamps, and directory paths for tracking and reference.
 
+        Args:
+            workflow_version (int): Version number of the workflow. Defaults
+                to 1 for new workflows. (default: :obj:`1`)
+            created_at (Optional[str]): ISO timestamp when workflow was first
+                created. If None, uses current timestamp for new workflows.
+                (default: :obj:`None`)
+
         Returns:
             Dict[str, Any]: Session metadata including ID, timestamp,
-                directory.
+                directory, version, and update timestamp.
         """
+        now = datetime.now().isoformat()
         return {
             'session_id': self.session_id,
             'working_directory': str(self.working_directory),
-            'created_at': datetime.now().isoformat(),
+            'created_at': created_at if created_at else now,
+            'updated_at': now,
+            'workflow_version': workflow_version,
         }
 
     def list_sessions(self, base_dir: Optional[str] = None) -> List[str]:

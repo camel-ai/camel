@@ -25,6 +25,7 @@ from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
 from camel.societies.workforce.utils import (
+    WorkflowMetadata,
     is_generic_role_name,
 )
 from camel.types import OpenAIBackendRole
@@ -106,6 +107,100 @@ class WorkflowMemoryManager:
             else:
                 self._context_utility = ContextUtility.get_workforce_shared()
         return self._context_utility
+
+    def _extract_existing_workflow_metadata(
+        self, file_path: Path
+    ) -> Optional[WorkflowMetadata]:
+        r"""Extract metadata from an existing workflow file for versioning.
+
+        This method reads the metadata section from an existing workflow
+        markdown file to retrieve version number and creation timestamp,
+        enabling proper version tracking when updating workflows.
+
+        Args:
+            file_path (Path): Path to the existing workflow file.
+
+        Returns:
+            Optional[WorkflowMetadata]: WorkflowMetadata instance if file
+                exists and metadata is successfully parsed, None otherwise.
+        """
+        try:
+            # check if parent directory exists first
+            if not file_path.parent.exists():
+                return None
+
+            if not file_path.exists():
+                return None
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # extract metadata section
+            metadata_match = re.search(
+                r'## Metadata\s*\n(.*?)(?:\n##|$)', content, re.DOTALL
+            )
+
+            if not metadata_match:
+                return None
+
+            metadata_section = metadata_match.group(1).strip()
+
+            # parse metadata lines (format: "- key: value")
+            metadata_dict: Dict[str, Any] = {}
+            for line in metadata_section.split('\n'):
+                line = line.strip()
+                if line.startswith('-'):
+                    # remove leading "- " and split on first ":"
+                    line = line[1:].strip()
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        key = key.strip()
+                        value = value.strip()
+
+                        # convert workflow_version to int
+                        if key == 'workflow_version':
+                            try:
+                                metadata_dict[key] = int(value)
+                            except ValueError:
+                                metadata_dict[key] = 1
+                        # convert message_count to int
+                        elif key == 'message_count':
+                            try:
+                                metadata_dict[key] = int(value)
+                            except ValueError:
+                                metadata_dict[key] = 0
+                        else:
+                            metadata_dict[key] = value
+
+            # create WorkflowMetadata instance if we have required fields
+            required_fields = {
+                'session_id',
+                'working_directory',
+                'created_at',
+                'agent_id',
+            }
+            if not required_fields.issubset(metadata_dict.keys()):
+                logger.warning(
+                    f"Existing workflow missing required metadata fields: "
+                    f"{file_path}"
+                )
+                return None
+
+            # ensure we have updated_at and workflow_version
+            if 'updated_at' not in metadata_dict:
+                metadata_dict['updated_at'] = metadata_dict['created_at']
+            if 'workflow_version' not in metadata_dict:
+                metadata_dict['workflow_version'] = 1
+            if 'message_count' not in metadata_dict:
+                metadata_dict['message_count'] = 0
+
+            return WorkflowMetadata(**metadata_dict)
+
+        except Exception as e:
+            logger.warning(
+                f"Error extracting workflow metadata from {file_path}: {e}"
+            )
+            return None
 
     def load_workflows(
         self,
@@ -503,12 +598,31 @@ class WorkflowMemoryManager:
                 else "workflow"
             )
 
+            # check if workflow file already exists to handle versioning
+            file_path = (
+                context_utility.get_working_directory() / f"{base_filename}.md"
+            )
+            existing_metadata = self._extract_existing_workflow_metadata(
+                file_path
+            )
+
             # build metadata - get message count from accumulator if available
-            metadata = context_utility.get_session_metadata()
             source_agent = (
                 conversation_accumulator
                 if conversation_accumulator
                 else self.worker
+            )
+
+            # determine version and created_at based on existing metadata
+            if existing_metadata:
+                workflow_version = existing_metadata.workflow_version + 1
+                created_at = existing_metadata.created_at
+            else:
+                workflow_version = 1
+                created_at = None
+
+            metadata = context_utility.get_session_metadata(
+                workflow_version=workflow_version, created_at=created_at
             )
             metadata.update(
                 {
@@ -526,10 +640,6 @@ class WorkflowMemoryManager:
             save_status = context_utility.save_markdown_file(
                 base_filename,
                 summary_content,
-            )
-
-            file_path = (
-                context_utility.get_working_directory() / f"{base_filename}.md"
             )
 
             # format summary with context prefix

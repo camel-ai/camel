@@ -51,6 +51,37 @@ def is_generic_role_name(role_name: str) -> bool:
     return role_name.lower() in GENERIC_ROLE_NAMES
 
 
+class WorkflowMetadata(BaseModel):
+    r"""Pydantic model for workflow metadata tracking.
+
+    This model defines the formal schema for workflow metadata that tracks
+    versioning, timestamps, and contextual information about saved workflows.
+    Used to maintain workflow history and enable proper version management.
+    """
+
+    session_id: str = Field(
+        description="Session identifier for the workflow execution"
+    )
+    working_directory: str = Field(
+        description="Directory path where the workflow is stored"
+    )
+    created_at: str = Field(
+        description="ISO timestamp when workflow was first created"
+    )
+    updated_at: str = Field(
+        description="ISO timestamp of last modification to the workflow"
+    )
+    workflow_version: int = Field(
+        default=1, description="Version number, increments on updates"
+    )
+    agent_id: str = Field(
+        description="UUID of the agent that created/updated the workflow"
+    )
+    message_count: int = Field(
+        description="Number of messages in the workflow conversation"
+    )
+
+
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
 

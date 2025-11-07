@@ -2461,3 +2461,137 @@ class TestErrorHandlingAndEdgeCases:
         elif result["status"] == "error":
             # graceful error handling
             assert "message" in result
+
+
+class TestWorkflowVersioning:
+    """Test workflow versioning functionality."""
+
+    def test_workflow_version_increments_on_update(self, temp_context_dir):
+        """Test that workflow version increments when saving same workflow
+        twice."""
+        from pathlib import Path
+
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import ContextUtility, WorkflowSummary
+
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # create context utility with specific folder
+        role_name = "data_analyst"
+        context_utility = ContextUtility(
+            working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
+            create_folder=True,
+            use_session_subfolder=False,
+        )
+
+        manager = WorkflowMemoryManager(
+            worker=worker.worker,
+            description="Data analysis expert",
+            context_utility=context_utility,
+            role_identifier=role_name,
+        )
+
+        # create workflow summary
+        workflow_summary = WorkflowSummary(
+            agent_title="data_analyst",
+            task_title="Calculate Sum",
+            task_description="Calculate the sum of two numbers",
+            tools=[],
+            steps=["1. Add numbers", "2. Return result"],
+            failure_and_recovery_strategies=[],
+            notes_and_observations="",
+            tags=["math"],
+        )
+
+        # save first time (should be version 1)
+        result1 = manager.save_workflow(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+
+        assert result1["status"] == "success"
+        workflow_file = Path(result1["file_path"])
+        assert workflow_file.exists()
+
+        content1 = workflow_file.read_text()
+        assert "workflow_version: 1" in content1
+        assert "created_at:" in content1
+        assert "updated_at:" in content1
+
+        # save again (should be version 2)
+        result2 = manager.save_workflow(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+
+        assert result2["status"] == "success"
+        content2 = workflow_file.read_text()
+        assert "workflow_version: 2" in content2
+
+        # verify created_at is preserved
+        import re
+
+        created_match_v1 = re.search(r"created_at: (.+)", content1)
+        created_match_v2 = re.search(r"created_at: (.+)", content2)
+
+        assert created_match_v1 and created_match_v2
+        created_at_v1 = created_match_v1.group(1).strip()
+        created_at_v2 = created_match_v2.group(1).strip()
+
+        assert created_at_v1 == created_at_v2, (
+            "created_at should be preserved across versions"
+        )
+
+    def test_new_workflow_starts_at_version_one(self, temp_context_dir):
+        """Test that a new workflow starts at version 1."""
+        from pathlib import Path
+
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import ContextUtility, WorkflowSummary
+
+        worker = MockSingleAgentWorker("content_writer")
+
+        role_name = "content_writer"
+        context_utility = ContextUtility(
+            working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
+            create_folder=True,
+            use_session_subfolder=False,
+        )
+
+        manager = WorkflowMemoryManager(
+            worker=worker.worker,
+            description="Content writing expert",
+            context_utility=context_utility,
+            role_identifier=role_name,
+        )
+
+        workflow_summary = WorkflowSummary(
+            agent_title="content_writer",
+            task_title="Write Blog Post",
+            task_description="Write a blog post on a given topic",
+            tools=[],
+            steps=["1. Research topic", "2. Write content"],
+            failure_and_recovery_strategies=[],
+            notes_and_observations="",
+            tags=["writing"],
+        )
+
+        result = manager.save_workflow(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+
+        assert result["status"] == "success"
+        workflow_file = Path(result["file_path"])
+        content = workflow_file.read_text()
+
+        assert "workflow_version: 1" in content
+        assert "created_at:" in content
+        assert "updated_at:" in content
