@@ -40,6 +40,7 @@ class GmailToolkit(BaseToolkit):
 
     This class provides methods for Gmail operations including sending emails,
     managing drafts, fetching messages, managing labels, and handling contacts.
+    API keys can be accessed in google cloud console (https://console.cloud.google.com/)
     """
 
     def __init__(
