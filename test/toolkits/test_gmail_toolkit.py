@@ -711,7 +711,9 @@ def test_extract_attachments_regular_attachment(gmail_toolkit):
         }
     }
 
-    attachments = gmail_toolkit._extract_attachments(message, include_inline=True)
+    attachments = gmail_toolkit._extract_attachments(
+        message, include_inline=True
+    )
 
     assert len(attachments) == 1
     assert attachments[0]['attachment_id'] == 'ANGjdJ123'
@@ -757,7 +759,9 @@ def test_extract_attachments_inline_image(gmail_toolkit):
         }
     }
 
-    attachments = gmail_toolkit._extract_attachments(message, include_inline=True)
+    attachments = gmail_toolkit._extract_attachments(
+        message, include_inline=True
+    )
 
     assert len(attachments) == 2
     # First inline image (Content-ID)

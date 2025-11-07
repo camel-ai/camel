@@ -191,15 +191,20 @@ class GmailToolkit(BaseToolkit):
                     break
 
             # Extract identifiers for reply context
-            message_id_header = (
-                self._get_header_value(headers, 'Message-Id')
-                or self._get_header_value(headers, 'Message-ID')
-            )
+            message_id_header = self._get_header_value(
+                headers, 'Message-Id'
+            ) or self._get_header_value(headers, 'Message-ID')
             thread_id = original_message.get('threadId')
 
             # Prepare reply subject
-            if not subject.startswith('Re: '):
+            if subject and not subject.startswith('Re: '):
                 subject = f"Re: {subject}"
+            elif not subject:
+                subject = "Re: (No Subject)"
+
+            # Validate from_email
+            if not from_email:
+                return {"error": "Original message has no sender address"}
 
             # Prepare recipients
             if reply_all:
@@ -212,8 +217,8 @@ class GmailToolkit(BaseToolkit):
                     recipients.extend(
                         [email.strip() for email in cc_emails.split(',')]
                     )
-                # Remove duplicates
-                recipients = list(set(recipients))
+                # Remove duplicates and None values
+                recipients = [r for r in list(set(recipients)) if r]
 
                 # Get current user's email and remove it from recipients
                 try:
@@ -224,12 +229,16 @@ class GmailToolkit(BaseToolkit):
                         ]
                         # Remove current user from recipients (handle both
                         # plain email and "Name <email>" format)
-                        recipients = [
-                            email
-                            for email in recipients
-                            if email != current_user_email
-                            and not email.endswith(f'<{current_user_email}>')
-                        ]
+                        filtered_recipients = []
+                        for email in recipients:
+                            # Extract email from "Name <email>" format
+                            match = re.search(r'<([^>]+)>$', email.strip())
+                            email_addr = (
+                                match.group(1) if match else email.strip()
+                            )
+                            if email_addr != current_user_email:
+                                filtered_recipients.append(email)
+                        recipients = filtered_recipients
                 except Exception as e:
                     logger.warning(
                         "Could not get current user email to filter from "
@@ -328,8 +337,10 @@ class GmailToolkit(BaseToolkit):
                     break
 
             # Prepare forward subject
-            if not subject.startswith('Fwd: '):
+            if subject and not subject.startswith('Fwd: '):
                 subject = f"Fwd: {subject}"
+            elif not subject:
+                subject = "Fwd: (No Subject)"
 
             # Prepare forward body
             if forward_body:
@@ -353,67 +364,69 @@ class GmailToolkit(BaseToolkit):
             attachment_paths = []
             temp_files: List[str] = []
 
-            if include_attachments:
-                # Extract attachment metadata
-                attachments = self._extract_attachments(original_message)
-                for att in attachments:
+            try:
+                if include_attachments:
+                    # Extract attachment metadata
+                    attachments = self._extract_attachments(original_message)
+                    for att in attachments:
+                        try:
+                            # Create temp file
+                            temp_file = tempfile.NamedTemporaryFile(
+                                delete=False, suffix=f"_{att['filename']}"
+                            )
+                            temp_files.append(temp_file.name)
+
+                            # Download attachment
+                            result = self.get_attachment(
+                                message_id=message_id,
+                                attachment_id=att['attachment_id'],
+                                save_path=temp_file.name,
+                            )
+
+                            if result.get('success'):
+                                attachment_paths.append(temp_file.name)
+
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to download attachment "
+                                f"{att['filename']}: {e}"
+                            )
+
+                # Create forward message (now with attachments!)
+                message = self._create_message(
+                    to_list,
+                    subject,
+                    body,
+                    cc_list,
+                    bcc_list,
+                    attachments=attachment_paths if attachment_paths else None,
+                )
+
+                # Send forward
+                sent_message = (
+                    self.gmail_service.users()
+                    .messages()
+                    .send(userId='me', body=message)
+                    .execute()
+                )
+
+                return {
+                    "success": True,
+                    "message_id": sent_message.get('id'),
+                    "thread_id": sent_message.get('threadId'),
+                    "message": "Email forwarded successfully",
+                    "attachments_forwarded": len(attachment_paths),
+                }
+
+            finally:
+                # Clean up temp files
+                for temp_file_path in temp_files:
                     try:
-                        # Create temp file
-                        temp_file = tempfile.NamedTemporaryFile(
-                            delete=False, suffix=f"_{att['filename']}"
-                        )
-                        temp_files.append(temp_file.name)
-
-                        # Download attachment
-                        result = self.get_attachment(
-                            message_id=message_id,
-                            attachment_id=att['attachment_id'],
-                            save_path=temp_file.name,
-                        )
-
-                        if result.get('success'):
-                            attachment_paths.append(temp_file.name)
-
+                        os.unlink(temp_file_path)
                     except Exception as e:
                         logger.warning(
-                            f"Failed to download attachment "
-                            f"{att['filename']}: {e}"
+                            f"Failed to delete temp file {temp_file_path}: {e}"
                         )
-
-            # Create forward message (now with attachments!)
-            message = self._create_message(
-                to_list,
-                subject,
-                body,
-                cc_list,
-                bcc_list,
-                attachments=attachment_paths if attachment_paths else None,
-            )
-
-            # Send forward
-            sent_message = (
-                self.gmail_service.users()
-                .messages()
-                .send(userId='me', body=message)
-                .execute()
-            )
-
-            # Clean up temp files
-            for temp_file_path in temp_files:
-                try:
-                    os.unlink(temp_file_path)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to delete temp file {temp_file_path}: {e}"
-                    )
-
-            return {
-                "success": True,
-                "message_id": sent_message.get('id'),
-                "thread_id": sent_message.get('threadId'),
-                "message": "Email forwarded successfully",
-                "attachments_forwarded": len(attachment_paths),
-            }
 
         except Exception as e:
             logger.error("Failed to forward email: %s", e)
@@ -555,10 +568,13 @@ class GmailToolkit(BaseToolkit):
                 request_params['labelIds'] = label_ids
 
             # List messages
+            if page_token:
+                request_params['pageToken'] = page_token
+
             messages_result = (
                 self.gmail_service.users()
                 .messages()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -676,7 +692,7 @@ class GmailToolkit(BaseToolkit):
 
         Args:
             message_id (str): The ID of the message to move to trash
-            (found in send_email/list_drafts results or 
+            (found in send_email/list_drafts results or
             users.messages.get).
 
         Returns:
@@ -711,8 +727,8 @@ class GmailToolkit(BaseToolkit):
         r"""Get an attachment from a message.
 
         Args:
-            message_id (str): The ID of the message containing the 
-                attachment (found in send_email/list_drafts results 
+            message_id (str): The ID of the message containing the
+                attachment (found in send_email/list_drafts results
                 or users.messages.get).
             attachment_id (str): The ID of the attachment.
             save_path (Optional[str]): Path to save the attachment file.
@@ -795,10 +811,13 @@ class GmailToolkit(BaseToolkit):
                 request_params['labelIds'] = label_ids
 
             # List threads
+            if page_token:
+                request_params['pageToken'] = page_token
+
             threads_result = (
                 self.gmail_service.users()
                 .threads()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -825,7 +844,9 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to list threads: %s", e)
             return {"error": f"Failed to list threads: {e!s}"}
 
-    def list_drafts(self, max_results: int = 10, page_token: Optional[str] = None) -> Dict[str, Any]:
+    def list_drafts(
+        self, max_results: int = 10, page_token: Optional[str] = None
+    ) -> Dict[str, Any]:
         r"""List email drafts.
 
         Args:
@@ -843,7 +864,7 @@ class GmailToolkit(BaseToolkit):
                 .list(
                     userId='me',
                     maxResults=max_results,
-                    **({"pageToken": page_token} if page_token else {})
+                    **({"pageToken": page_token} if page_token else {}),
                 )
                 .execute()
             )
@@ -1084,10 +1105,13 @@ class GmailToolkit(BaseToolkit):
             }
 
             # Search contacts
+            if page_token:
+                request_params['pageToken'] = page_token
+
             contacts_result = (
                 self.people_service.people()
                 .connections()
-                .list(**({**request_params, **({"pageToken": page_token} if page_token else {})}))
+                .list(**request_params)
                 .execute()
             )
 
@@ -1171,7 +1195,15 @@ class GmailToolkit(BaseToolkit):
         from googleapiclient.discovery import build
 
         try:
-            service = build('gmail', 'v1', credentials=self._credentials)
+            # Build service with optional timeout
+            if self.timeout is not None:
+                import httplib2
+
+                http = httplib2.Http(timeout=self.timeout)
+                http = self._credentials.authorize(http)
+                service = build('gmail', 'v1', http=http)
+            else:
+                service = build('gmail', 'v1', credentials=self._credentials)
             return service
         except Exception as e:
             raise ValueError(f"Failed to build Gmail service: {e}") from e
@@ -1181,7 +1213,15 @@ class GmailToolkit(BaseToolkit):
         from googleapiclient.discovery import build
 
         try:
-            service = build('people', 'v1', credentials=self._credentials)
+            # Build service with optional timeout
+            if self.timeout is not None:
+                import httplib2
+
+                http = httplib2.Http(timeout=self.timeout)
+                http = self._credentials.authorize(http)
+                service = build('people', 'v1', http=http)
+            else:
+                service = build('people', 'v1', credentials=self._credentials)
             return service
         except Exception as e:
             raise ValueError(f"Failed to build People service: {e}") from e
@@ -1215,7 +1255,8 @@ class GmailToolkit(BaseToolkit):
             if not client_secret:
                 missing_vars.append('GOOGLE_CLIENT_SECRET')
             raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}. "
+                f"Missing required environment variables: "
+                f"{', '.join(missing_vars)}. "
                 "Please set these in your .env file or environment variables."
             )
 
@@ -1246,7 +1287,7 @@ class GmailToolkit(BaseToolkit):
             try:
                 creds.refresh(Request())
                 logger.info("Access token refreshed")
-                
+
                 # Save refreshed credentials to disk
                 token_file.parent.mkdir(parents=True, exist_ok=True)
                 try:
@@ -1264,10 +1305,11 @@ class GmailToolkit(BaseToolkit):
                     logger.info(f"Refreshed credentials saved to {token_file}")
                 except Exception as e:
                     logger.warning(
-                        f"Failed to save refreshed credentials to {token_file}: {e}. "
+                        f"Failed to save refreshed credentials to "
+                        f"{token_file}: {e}. "
                         "Token refreshed but not persisted."
                     )
-                
+
                 return creds
             except Exception as e:
                 logger.warning(f"Token refresh failed: {e}")
@@ -1407,7 +1449,9 @@ class GmailToolkit(BaseToolkit):
                 "bcc": header_map.get('bcc', ''),
                 "date": header_map.get('date', ''),
                 "body": self._extract_message_body(message),
-                "attachments": self._extract_attachments(message, include_inline=True),
+                "attachments": self._extract_attachments(
+                    message, include_inline=True
+                ),
                 "label_ids": message.get('labelIds', []),
                 "size_estimate": message.get('sizeEstimate', 0),
             }
@@ -1448,7 +1492,7 @@ class GmailToolkit(BaseToolkit):
 
         text_parts = []
 
-        def decode_text_data(data: str, mime_type: str) -> str | None:
+        def decode_text_data(data: str, mime_type: str) -> Optional[str]:
             """Helper to decode base64 text data.
 
             Args:
@@ -1541,7 +1585,7 @@ class GmailToolkit(BaseToolkit):
 
         def find_text_recursive(
             part: Dict[str, Any], target_mime: str
-        ) -> str | None:
+        ) -> Optional[str]:
             """Recursively search for text content of a specific MIME type.
 
             Args:
@@ -1697,9 +1741,19 @@ class GmailToolkit(BaseToolkit):
         return [att for att in attachments if not att['is_inline']]
 
     def _is_valid_email(self, email: str) -> bool:
-        r"""Validate email address format."""
+        r"""Validate email address format.
+
+        Supports both formats:
+        - Plain email: john@example.com
+        - Named email: John Doe <john@example.com>
+        """
+        # Extract email from "Name <email>" format if present
+        match = re.search(r'<([^>]+)>$', email.strip())
+        email_to_check = match.group(1) if match else email.strip()
+
+        # Validate the email address
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(pattern, email) is not None
+        return re.match(pattern, email_to_check) is not None
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
