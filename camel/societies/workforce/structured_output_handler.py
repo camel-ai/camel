@@ -448,7 +448,10 @@ Ensure the JSON is valid and properly formatted.
                 duplicate_count=0,
                 missing_count=0,
                 deduplicated_result="",
-                reasoning="Default validation result due to parsing error - failing safe",
+                reasoning=(
+                    "Default validation result due to parsing error - "
+                    "failing safe"
+                ),
                 additional_task_guidance=None,
             )
         else:
@@ -533,7 +536,10 @@ Ensure the JSON is valid and properly formatted.
                 duplicate_count=0,
                 missing_count=0,
                 deduplicated_result="",
-                reasoning=f"Fallback validation result (failing safe): {error_message}",
+                reasoning=(
+                    f"Fallback validation result (failing safe): "
+                    f"{error_message}"
+                ),
                 additional_task_guidance=None,
             )
 

@@ -1108,7 +1108,8 @@ class Workforce(BaseNode):
             "deduplicated_result": aggregated_result,
             "reasoning": (
                 "Validation failed - could not parse response. "
-                "Failing safe to prevent accepting potentially invalid results."
+                "Failing safe to prevent accepting potentially "
+                "invalid results."
             ),
             "additional_task_guidance": None,
             "duplicate_subtask_ids": None,
@@ -1141,8 +1142,9 @@ class Workforce(BaseNode):
                 "additional_task_guidance": (
                     "Find ONE unique research paper on the topic, avoiding: "
                     "Paper A, Paper B, Paper C. To ensure diversity across "
-                    "parallel retries, consider exploring different publication "
-                    "years, research methodologies, or application domains."
+                    "parallel retries, consider exploring different "
+                    "publication years, research methodologies, or "
+                    "application domains."
                 ),
                 "duplicate_subtask_ids": [
                     "task_1.2",
@@ -1173,9 +1175,9 @@ class Workforce(BaseNode):
                 if isinstance(result, ValidationResult):
                     return result
                 elif isinstance(result, dict):
-                    return ValidationResult(**result)
+                    return ValidationResult.model_validate(result)
                 else:
-                    return ValidationResult(**fallback_values)
+                    return ValidationResult.model_validate(fallback_values)
             else:
                 response = self.task_agent.step(
                     validation_prompt, response_format=ValidationResult
@@ -1187,7 +1189,7 @@ class Workforce(BaseNode):
                 f"Error during validation for task {task.id}: {e}, "
                 f"using fallback"
             )
-            return ValidationResult(**fallback_values)
+            return ValidationResult.model_validate(fallback_values)
 
     def _build_task_content_with_refinement(
         self,
@@ -1276,7 +1278,7 @@ class Workforce(BaseNode):
                         )
                     )
 
-                    if is_refinement_subtask:
+                    if is_refinement_subtask and task.additional_info:
                         task.additional_info['base_content'] = (
                             recovery_decision.modified_task_content
                         )
@@ -1289,10 +1291,14 @@ class Workforce(BaseNode):
                         )
 
                         if refinement_guidance and refinement_iteration > 0:
-                            task.content = self._build_task_content_with_refinement(
-                                base_content=recovery_decision.modified_task_content,
-                                refinement_guidance=refinement_guidance,
-                                refinement_iteration=refinement_iteration,
+                            task.content = (
+                                self._build_task_content_with_refinement(
+                                    base_content=(
+                                        recovery_decision.modified_task_content
+                                    ),
+                                    refinement_guidance=refinement_guidance,
+                                    refinement_iteration=refinement_iteration,
+                                )
                             )
                         else:
                             task.content = (
@@ -1421,6 +1427,9 @@ class Workforce(BaseNode):
                     f"targeted subtasks"
                 )
 
+                if not task.additional_info:
+                    task.additional_info = {}
+
                 validation_info = task.additional_info.get(
                     'validation_result', {}
                 )
@@ -1438,8 +1447,9 @@ class Workforce(BaseNode):
                     ]
                 else:
                     logger.warning(
-                        f"No duplicate_subtask_ids provided by validation agent "
-                        f"for {task.id}, falling back to retrying first {missing_count} subtasks"
+                        f"No duplicate_subtask_ids provided by validation "
+                        f"agent for {task.id}, falling back to retrying "
+                        f"first {missing_count} subtasks"
                     )
                     subtasks_to_retry = task.subtasks[:missing_count]
 
@@ -4093,9 +4103,11 @@ class Workforce(BaseNode):
 
                     logger.info(
                         f"Validation result for {parent.id}: "
-                        f"requirements_met={validation_result.requirements_met}, "
+                        f"requirements_met="
+                        f"{validation_result.requirements_met}, "
                         f"unique_count={validation_result.unique_count}, "
-                        f"duplicate_count={validation_result.duplicate_count}, "
+                        f"duplicate_count="
+                        f"{validation_result.duplicate_count}, "
                         f"missing_count={validation_result.missing_count}"
                     )
 
@@ -4121,9 +4133,15 @@ class Workforce(BaseNode):
                             )
 
                             parent.additional_info['validation_result'] = {
-                                'unique_count': validation_result.unique_count,
-                                'duplicate_count': validation_result.duplicate_count,
-                                'missing_count': validation_result.missing_count,
+                                'unique_count': (
+                                    validation_result.unique_count
+                                ),
+                                'duplicate_count': (
+                                    validation_result.duplicate_count
+                                ),
+                                'missing_count': (
+                                    validation_result.missing_count
+                                ),
                                 'reasoning': validation_result.reasoning,
                                 'additional_task_guidance': (
                                     validation_result.additional_task_guidance
@@ -4141,8 +4159,11 @@ class Workforce(BaseNode):
                                 recovery_strategy=RecoveryStrategy.REFINE,
                                 modified_task_content=None,
                                 issues=[
-                                    f"Missing {validation_result.missing_count} "
-                                    f"items to meet requirements"
+                                    (
+                                        f"Missing "
+                                        f"{validation_result.missing_count} "
+                                        f"items to meet requirements"
+                                    )
                                 ],
                             )
 
