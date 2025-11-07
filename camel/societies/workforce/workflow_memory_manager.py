@@ -267,19 +267,69 @@ class WorkflowMemoryManager:
                     self._role_identifier or self._get_sanitized_role_name()
                 )
 
-            # find workflow files in role-based directory
-            workflow_files = self._find_workflow_files_by_role(
-                role_name, pattern
-            )
+            # determine which selection method to use
+            if use_smart_selection:
+                # smart selection: use workflow information and agent
+                # intelligence
+                context_util = self._get_context_utility()
 
-            if not workflow_files:
-                logger.info(f"No workflow files found for role: {role_name}")
-                return False
+                # find workflow files in role-based directory
+                workflow_files = self._find_workflow_files_by_role(
+                    role_name, pattern
+                )
 
-            # load workflows
-            loaded_count = self._load_workflow_files(
-                workflow_files, max_files_to_load
-            )
+                # get workflow metadata for smart selection
+                workflows_metadata = []
+                for file_path in workflow_files:
+                    metadata = context_util.extract_workflow_info(file_path)
+                    if metadata:
+                        workflows_metadata.append(metadata)
+
+                if not workflows_metadata:
+                    logger.info(
+                        f"No workflow files found for role: {role_name}"
+                    )
+                    return False
+
+                # use agent to select most relevant workflows
+                selected_files, selection_method = (
+                    self._select_relevant_workflows(
+                        workflows_metadata, max_files_to_load
+                    )
+                )
+
+                if not selected_files:
+                    logger.info(
+                        f"No workflows selected for role {role_name} "
+                        f"(method: {selection_method.value})"
+                    )
+                    return False
+
+                # log selection method used
+                logger.info(
+                    f"Workflow selection method: {selection_method.value}"
+                )
+
+                # load selected workflows
+                loaded_count = self._load_workflow_files(
+                    selected_files, max_files_to_load
+                )
+
+            else:
+                # legacy pattern matching approach
+                workflow_files = self._find_workflow_files_by_role(
+                    role_name, pattern
+                )
+
+                if not workflow_files:
+                    logger.info(
+                        f"No workflow files found for role: {role_name}"
+                    )
+                    return False
+
+                loaded_count = self._load_workflow_files(
+                    workflow_files, max_files_to_load
+                )
 
             # report results
             if loaded_count > 0:
