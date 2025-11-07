@@ -531,6 +531,9 @@ class OutlookToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.send_email),
+            FunctionTool(self.create_draft_email),
+            FunctionTool(self.send_draft_email),
+            FunctionTool(self.delete_email),
         ]
 
     async def create_draft_email(
@@ -630,5 +633,76 @@ class OutlookToolkit(BaseToolkit):
             }
         except Exception as e:
             error_msg = f"Failed to send draft email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    async def delete_email(self, message_id: str) -> Dict[str, Any]:
+        """Deletes an email from Microsoft Outlook.
+
+        Args:
+            message_id (str): The ID of the email to delete.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the email
+                deletion operation.
+
+        Raises:
+            ValueError: If deleting the email fails.
+        """
+        try:
+            await self.client.me.messages.by_message_id(message_id).delete()
+            logger.info(f"Email with ID {message_id} deleted successfully.")
+            return {
+                'status': 'success',
+                'message': 'Email deleted successfully',
+                'message_id': message_id,
+            }
+        except Exception as e:
+            error_msg = f"Failed to delete email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    async def move_message_to_folder(
+        self, message_id: str, destination_folder_id: str
+    ) -> Dict[str, Any]:
+        """Moves an email to a specified folder in Microsoft Outlook.
+
+        Args:
+            message_id (str): The ID of the email to move.
+                destination_folder_id (str): The destination folder ID, or
+                a well-known folder name. For a list of supported
+                well-known folder names, see
+                https://learn.microsoft.com/en-us/graph/api/resources/mailfolder?view=graph-rest-1.0.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the email
+                move operation.
+
+        Raises:
+            ValueError: If moving the email fails.
+        """
+        from msgraph.generated.users.item.messages.item.move.move_post_request_body import (  # noqa: E501
+            MovePostRequestBody,
+        )
+
+        try:
+            request_body = MovePostRequestBody(
+                destination_id=destination_folder_id,
+            )
+            message = self.client.me.messages.by_message_id(message_id)
+            await message.move.post(request_body)
+
+            logger.info(
+                f"Email with ID {message_id} moved to folder "
+                f"{destination_folder_id} successfully."
+            )
+            return {
+                'status': 'success',
+                'message': 'Email moved successfully',
+                'message_id': message_id,
+                'destination_folder_id': destination_folder_id,
+            }
+        except Exception as e:
+            error_msg = f"Failed to move email: {e!s}"
             logger.error(error_msg)
             return {"error": error_msg}
