@@ -1,26 +1,65 @@
 <a id="camel.tasks.task"></a>
 
+<a id="camel.tasks.task.TaskValidationMode"></a>
+
+## TaskValidationMode
+
+```python
+class TaskValidationMode(Enum):
+```
+
+Validation modes for different use cases.
+
 <a id="camel.tasks.task.validate_task_content"></a>
 
 ## validate_task_content
 
 ```python
-def validate_task_content(content: str, task_id: str = 'unknown', min_length: int = 10):
+def validate_task_content(
+    content: str,
+    task_id: str = 'unknown',
+    min_length: int = 1,
+    mode: TaskValidationMode = TaskValidationMode.INPUT,
+    check_failure_patterns: bool = True
+):
 ```
 
-Validates task result content to avoid silent failures.
-It performs basic checks to ensure the content meets minimum
-quality standards.
+Unified validation for task content and results to avoid silent
+failures. Performs comprehensive checks to ensure content meets quality
+standards.
 
 **Parameters:**
 
-- **content** (str): The task result content to validate.
+- **content** (str): The task content or result to validate.
 - **task_id** (str): Task ID for logging purposes. (default: :obj:`"unknown"`)
-- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`10`)
+- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`1`)
+- **mode** (TaskValidationMode): Validation mode - INPUT for task content, OUTPUT for task results. (default: :obj:`TaskValidationMode.INPUT`)
+- **check_failure_patterns** (bool): Whether to check for failure indicators in the content. Only effective in OUTPUT mode. (default: :obj:`True`)
 
 **Returns:**
 
   bool: True if content passes validation, False otherwise.
+
+<a id="camel.tasks.task.is_task_result_insufficient"></a>
+
+## is_task_result_insufficient
+
+```python
+def is_task_result_insufficient(task: 'Task'):
+```
+
+Check if a task result is insufficient and should be treated as failed.
+
+This is a convenience wrapper around validate_task_content for backward
+compatibility and semantic clarity when checking task results.
+
+**Parameters:**
+
+- **task** (Task): The task to check.
+
+**Returns:**
+
+  bool: True if the result is insufficient, False otherwise.
 
 <a id="camel.tasks.task.parse_response"></a>
 
@@ -77,7 +116,12 @@ Task is specific assignment that can be passed to a agent.
 - **subtasks** (List[Task]): The childrent sub-tasks for the task. (default: :obj:`[]`)
 - **result** (Optional[str]): The answer for the task. (default: :obj:`""`)
 - **failure_count** (int): The failure count for the task. (default: :obj:`0`)
+- **assigned_worker_id** (Optional[str]): The ID of the worker assigned to this task. (default: :obj:`None`)
 - **additional_info** (Optional[Dict[str, Any]]): Additional information for the task. (default: :obj:`None`)
+- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the task. (default: :obj:`None`)
+- **image_detail** (`Literal["auto", "low", "high"]`): Detail level of the images associated with the task. (default: :obj:`auto`)
+- **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the task. (default: :obj:`None`)
+- **video_detail** (`Literal["auto", "low", "high"]`): Detail level of the videos associated with the task. (default: :obj:`auto`)
 
 <a id="camel.tasks.task.Task.__repr__"></a>
 
@@ -257,8 +301,8 @@ def decompose(
 ):
 ```
 
-Decompose a task to a list of sub-tasks. It can be used for data
-generation and planner of agent.
+Decompose a task to a list of sub-tasks. Automatically detects
+streaming or non-streaming based on agent configuration.
 
 **Parameters:**
 
@@ -268,7 +312,67 @@ generation and planner of agent.
 
 **Returns:**
 
-  List[Task]: A list of tasks which are :obj:`Task` instances.
+  Union[List[Task], Generator[List[Task], None, None]]: If agent is
+configured for streaming, returns a generator that yields lists
+of new tasks as they are parsed. Otherwise returns a list of
+all tasks.
+
+<a id="camel.tasks.task.Task._decompose_streaming"></a>
+
+### _decompose_streaming
+
+```python
+def _decompose_streaming(
+    self,
+    response: 'StreamingChatAgentResponse',
+    task_parser: Callable[[str, str], List['Task']]
+):
+```
+
+Handle streaming response for task decomposition.
+
+**Parameters:**
+
+- **response**: Streaming response from agent
+- **task_parser**: Function to parse tasks from response
+- **Yields**: List[Task]: New tasks as they are parsed from streaming response
+
+<a id="camel.tasks.task.Task._decompose_non_streaming"></a>
+
+### _decompose_non_streaming
+
+```python
+def _decompose_non_streaming(self, response, task_parser: Callable[[str, str], List['Task']]):
+```
+
+Handle non-streaming response for task decomposition.
+
+**Parameters:**
+
+- **response**: Regular response from agent
+- **task_parser**: Function to parse tasks from response
+
+**Returns:**
+
+  List[Task]: All parsed tasks
+
+<a id="camel.tasks.task.Task._parse_partial_tasks"></a>
+
+### _parse_partial_tasks
+
+```python
+def _parse_partial_tasks(self, response: str):
+```
+
+Parse tasks from potentially incomplete response.
+
+**Parameters:**
+
+- **response**: Partial response content
+
+**Returns:**
+
+  List[Task]: Tasks parsed from complete `<task>``</task>` blocks
 
 <a id="camel.tasks.task.Task.compose"></a>
 

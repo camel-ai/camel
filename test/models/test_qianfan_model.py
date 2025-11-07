@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 
 import pytest
 
@@ -50,25 +49,7 @@ def test_qianfan_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_qianfan_model_unexpected_argument():
-    model_type = ModelType.QIANFAN_ERNIE_X1_TURBO_32K
-
-    model_config_dict = {"model_path": "ernie-x1-turbo-32k"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into QIANFAN model backend."
-            )
-        ),
-    ):
-        _ = QianfanModel(model_type, model_config_dict)
-
-
-@pytest.mark.model_backend
 def test_qianfan_model_stream_property():
-    model = QianfanModel(ModelType.QIANFAN_ERNIE_X1_TURBO_32K)
+    model = QianfanModel(ModelType.ERNIE_X1_TURBO_32K)
 
     assert model.stream is False

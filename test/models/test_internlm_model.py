@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -37,20 +36,3 @@ def test_internlm_model(model_type: ModelType):
     assert model.model_config_dict == InternLMConfig().as_dict()
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_internlm_model_unexpected_argument():
-    model_type = ModelType.INTERNLM3_LATEST
-    model_config_dict = {"model_path": "internlm-max"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into InternLM model backend."
-            )
-        ),
-    ):
-        _ = InternLMModel(model_type, model_config_dict)

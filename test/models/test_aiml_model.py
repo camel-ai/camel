@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -35,20 +34,3 @@ def test_aiml_model(model_type: ModelType):
     assert model.model_config_dict == AIMLConfig().as_dict()
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_aiml_model_unexpected_argument():
-    model_type = ModelType.AIML_MIXTRAL_8X7B
-    model_config_dict = {"model_path": "aiml_v1"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into AIML model backend."
-            )
-        ),
-    ):
-        _ = AIMLModel(model_type, model_config_dict)

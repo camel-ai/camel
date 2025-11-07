@@ -117,7 +117,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Auto-update documentation after merge"
+            git commit -m "Auto-update documentation after merge [skip ci]"
             git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}
             git push origin ${{ github.ref_name }}
           fi

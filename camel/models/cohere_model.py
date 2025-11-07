@@ -21,9 +21,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cohere.types import ChatMessageV2, ChatResponse
+    from cohere.types import (  # type: ignore[attr-defined]
+        ChatMessageV2,
+        ChatResponse,
+    )
 
-from camel.configs import COHERE_API_PARAMS, CohereConfig
+from camel.configs import CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -450,21 +453,6 @@ class CohereModel(BaseModelBackend):
             record(llm_event)
 
         return openai_response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to Cohere API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Cohere API.
-        """
-        for param in self.model_config_dict:
-            if param not in COHERE_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Cohere model backend."
-                )
 
     @property
     def stream(self) -> bool:

@@ -13,7 +13,121 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import functools
 import inspect
-from typing import Any, Callable, Optional
+import warnings
+from typing import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+
+from pydantic import create_model
+from pydantic.errors import PydanticSchemaGenerationError
+
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def _is_pydantic_serializable(type_annotation: Any) -> Tuple[bool, str]:
+    r"""Check if a type annotation is Pydantic serializable.
+
+    Args:
+        type_annotation: The type annotation to check
+
+    Returns:
+        Tuple[bool, str]: (is_serializable, error_message)
+    """
+    # Handle None type
+    if type_annotation is type(None) or type_annotation is None:
+        return True, ""
+
+    # Handle generic types (List, Dict, Optional, etc.)
+    origin = get_origin(type_annotation)
+    if origin is not None:
+        args = get_args(type_annotation)
+
+        # For Union types (including Optional), check all args
+        if origin is Union:
+            for arg in args:
+                is_serializable, error_msg = _is_pydantic_serializable(arg)
+                if not is_serializable:
+                    return False, error_msg
+            return True, ""
+
+        # For List, Set, Tuple, etc., check the contained types
+        if origin in (list, set, tuple, frozenset):
+            for arg in args:
+                is_serializable, error_msg = _is_pydantic_serializable(arg)
+                if not is_serializable:
+                    return False, error_msg
+            return True, ""
+
+        # For Dict, check both key and value types
+        if origin is dict:
+            for arg in args:
+                is_serializable, error_msg = _is_pydantic_serializable(arg)
+                if not is_serializable:
+                    return False, error_msg
+            return True, ""
+
+    # Try to create a simple pydantic model with this type
+    try:
+        create_model("TestModel", test_field=(type_annotation, ...))
+        # If model creation succeeds, the type is serializable
+        return True, ""
+    except (PydanticSchemaGenerationError, TypeError, ValueError) as e:
+        error_msg = (
+            f"Type '{type_annotation}' is not Pydantic serializable. "
+            f"Consider using a custom serializable type or converting "
+            f"to bytes/base64. Error: {e!s}"
+        )
+        return False, error_msg
+
+
+def _validate_function_types(func: Callable[..., Any]) -> List[str]:
+    r"""Validate function parameter and return types are Pydantic serializable.
+
+    Args:
+        func (Callable[..., Any]): The function to validate.
+
+    Returns:
+        List[str]: List of error messages for incompatible types.
+    """
+    errors = []
+
+    try:
+        type_hints = get_type_hints(func)
+    except (NameError, AttributeError) as e:
+        # If we can't get type hints, skip validation
+        logger.warning(f"Could not get type hints for {func.__name__}: {e}")
+        return []
+
+    # Check return type
+    return_type = type_hints.get('return', Any)
+    if return_type != Any:
+        is_serializable, error_msg = _is_pydantic_serializable(return_type)
+        if not is_serializable:
+            errors.append(f"Return type: {error_msg}")
+
+    # Check parameter types
+    sig = inspect.signature(func)
+    for param_name, _param in sig.parameters.items():
+        if param_name == 'self':
+            continue
+
+        param_type = type_hints.get(param_name, Any)
+        if param_type != Any:
+            is_serializable, error_msg = _is_pydantic_serializable(param_type)
+            if not is_serializable:
+                errors.append(f"Parameter '{param_name}': {error_msg}")
+
+    return errors
 
 
 class MCPServer:
@@ -55,7 +169,7 @@ class MCPServer:
 
     def __init__(
         self,
-        function_names: Optional[list[str]] = None,
+        function_names: Optional[List[str]] = None,
         server_name: Optional[str] = None,
     ):
         self.function_names = function_names
@@ -106,11 +220,11 @@ class MCPServer:
         """
         from mcp.server.fastmcp import FastMCP
 
-        from camel.toolkits.base import BaseToolkit
-
         original_init = cls.__init__
 
         def new_init(instance, *args, **kwargs):
+            from camel.toolkits.base import BaseToolkit
+
             original_init(instance, *args, **kwargs)
             self.server_name = self.server_name or cls.__name__
             instance.mcp = FastMCP(self.server_name)
@@ -135,6 +249,26 @@ class MCPServer:
                         f"Method {name} not found in class {cls.__name__} or "
                         "cannot be called."
                     )
+
+                # Validate function types for Pydantic compatibility
+                type_errors = _validate_function_types(func)
+                if type_errors:
+                    error_message = (
+                        f"Method '{name}' in class '{cls.__name__}' has "
+                        f"non-Pydantic-serializable types:\n"
+                        + "\n".join(f"  - {error}" for error in type_errors)
+                        + "\n\nSuggestions:"
+                        + "\n  - Use standard Python types (str, int, float, bool, bytes)"  # noqa: E501
+                        + "\n  - Convert complex objects to JSON strings or bytes"  # noqa: E501
+                        + "\n  - Create custom Pydantic models for complex data"  # noqa: E501
+                        + "\n  - Use base64 encoding for binary data like images"  # noqa: E501
+                    )
+
+                    # For now, issue a warning instead of raising an error
+                    # This allows gradual migration while alerting developers
+                    warnings.warn(error_message, UserWarning, stacklevel=3)
+                    logger.warning(error_message)
+
                 wrapper = self.make_wrapper(func)
                 instance.mcp.tool(name=name)(wrapper)
 

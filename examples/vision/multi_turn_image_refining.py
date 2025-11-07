@@ -22,7 +22,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.responses import ChatAgentResponse
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -75,7 +75,7 @@ PROMPT: here is the updated prompt!
         self.artist = ChatAgent(
             system_message=self.artist_sys_msg,
             model=model,
-            tools=DalleToolkit().get_tools(),
+            tools=OpenAIImageToolkit().get_tools(),
         )
 
         self.artist.reset()

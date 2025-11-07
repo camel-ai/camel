@@ -378,3 +378,42 @@ print(search_alibaba_tongxiao_response)
 ]}
 ===============================================================================
 """
+# Example using metaso response
+metaso_response = SearchToolkit().search_metaso(
+    query="What is CAMEL-AI?",
+    scope="webpage",
+    page=1,
+)
+
+print(metaso_response)
+"""
+===============================================================================
+{'credits': 10, 'searchParameters': {'q': 'What is CAMEL-AI?', 'scope': 'webpage',
+ 'page': 1, 'includeSummary': False, 'includeRawContent': False, 'conciseSnippet':
+  False, 'format': 'chat_completions'}, 'webpages': [{'title': '使用CAMEL框架和Qwen
+  模型自动进行数据获取及报告与知识 ...', 'link': 'https://developer.aliyun.com/articl
+  e/1647631', 'score': 'high', 'snippet': '**关于CAMEL AI**\n* * *\n**"Finding the
+   Scaling Law of Agents"**\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建基
+   于大语言模型(LLMs)的多智能体系统的开源平台,旨在推动人工智能的发展。就像AI领域的“沙
+   漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。CAMEL框架
+   是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。', 'position'
+   : 1, 'authors': ['阿里云开发者社区'], 'date': '2024年12月31日'}, {'title':
+   'CAMEL-AI团队参与发表Nature子刊啦!聚焦LLM如何重塑 ...', 'link': 'https://cloud.
+   tencent.com/developer/article/2475624', 'score': 'high', 'snippet': 'Finding
+   the Scaling Law of Agents"\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建
+   基于大语言模型)LLMs)的多智能体系统的开源平台，旨在推动人工智能的发展。\n就像AI领域的
+   “沙漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。\n
+   CAMEL框架是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。\n
+   CAMEL AI框架设计上极具灵活性与模块化,包含多种智能体实现、专业领域提示示例以及AI数据探
+   索功能等模块，适应各种高效决策与复杂数据处理需求。\n通过协作运作的智能体队列,CAMEL AI
+   不仅在金融、零售、医疗等领域展示出强大的适用性和创新性，还大大提升了自适应能力......
+   'position': 9, 'authors': ['KubeNine'], 'date': '2025年04月15日'}, {'title': '
+   RAG应用的评估-CSDN博客', 'link': 'https://blog.csdn.net/weixin_44245188/article/
+   details/148157069', 'score': 'high', 'snippet': "Query: 什么是CAMEL AI?\n
+   Expected Answers: ['CAMEL AI 是一个开源的、社区驱动的AI框架。']\nRetrieved
+   Results: ['CAMEL AI 介绍\\n\\nCAMEL AI 是一个开源的、社区驱动的AI框架,旨在简化AI应
+   用的开发和部署。该框架提供了多种功能模块，包括数据加载、特征工程、模型训练和部署等。']
+   \nPrecision: 1.0000\nRecall: 1.0000\nF1 Score: 1.0000\nAverage
+ Similarity: 0.9584", 'position': 10, 'date': '2025年05月23日'}], 'total': 38}
+===============================================================================
+"""  # noqa: E501

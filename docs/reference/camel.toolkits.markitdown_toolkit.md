@@ -18,12 +18,12 @@ A class representing a toolkit for MarkItDown.
 def __init__(self, timeout: Optional[float] = None):
 ```
 
-<a id="camel.toolkits.markitdown_toolkit.MarkItDownToolkit.load_files"></a>
+<a id="camel.toolkits.markitdown_toolkit.MarkItDownToolkit.read_files"></a>
 
-### load_files
+### read_files
 
 ```python
-def load_files(self, file_paths: List[str]):
+def read_files(self, file_paths: List[str]):
 ```
 
 Scrapes content from a list of files and converts it to Markdown.

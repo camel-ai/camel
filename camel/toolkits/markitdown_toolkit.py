@@ -25,15 +25,41 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class MarkItDownToolkit(BaseToolkit):
-    r"""A class representing a toolkit for MarkItDown."""
+    r"""A class representing a toolkit for MarkItDown.
+
+    .. deprecated::
+        MarkItDownToolkit is deprecated. Use FileToolkit instead, which now
+        includes the same functionality through its read_file method that
+        supports both single files and multiple files.
+
+        Example migration:
+            # Old way
+            from camel.toolkits import MarkItDownToolkit
+            toolkit = MarkItDownToolkit()
+            content = toolkit.read_files(['file1.pdf', 'file2.docx'])
+
+            # New way
+            from camel.toolkits import FileToolkit
+            toolkit = FileToolkit()
+            content = toolkit.read_file(['file1.pdf', 'file2.docx'])
+    """
 
     def __init__(
         self,
         timeout: Optional[float] = None,
     ):
+        import warnings
+
+        warnings.warn(
+            "MarkItDownToolkit is deprecated and will be removed in a future "
+            "version. Please use FileToolkit instead, which now includes "
+            "read_file method that supports both single and multiple files.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(timeout=timeout)
 
-    def load_files(self, file_paths: List[str]) -> Dict[str, str]:
+    def read_files(self, file_paths: List[str]) -> Dict[str, str]:
         r"""Scrapes content from a list of files and converts it to Markdown.
 
         This function takes a list of local file paths, attempts to convert
@@ -74,5 +100,5 @@ class MarkItDownToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.load_files),
+            FunctionTool(self.read_files),
         ]

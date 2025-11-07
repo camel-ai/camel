@@ -148,6 +148,22 @@ def _run(
 ):
 ```
 
+Runs the query to the backend model in a non-stream mode.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+- **response_format** (Optional[Type[BaseModel]]): The format of the response.
+- **tools** (Optional[List[Dict[str, Any]]]): The schema of the tools to use for the request.
+
+**Returns:**
+
+  Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+`ChatCompletion` in the non-stream mode, or
+`Stream[ChatCompletionChunk]` in the stream mode,
+or `ChatCompletionStreamManager[BaseModel]` in the structured
+stream mode.
+
 <a id="camel.models.base_model.BaseModelBackend.run"></a>
 
 ### run
@@ -171,17 +187,11 @@ Runs the query to the backend model.
 
 **Returns:**
 
-  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-`ChatCompletion` in the non-stream mode, or
-`Stream[ChatCompletionChunk]` in the stream mode.
-
-<a id="camel.models.base_model.BaseModelBackend.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```
+  Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+`ChatCompletion` in the non-stream mode,
+`Stream[ChatCompletionChunk]` in the stream mode, or
+`ChatCompletionStreamManager[BaseModel]` in the structured
+stream mode.
 
 <a id="camel.models.base_model.BaseModelBackend.count_tokens_from_messages"></a>
 

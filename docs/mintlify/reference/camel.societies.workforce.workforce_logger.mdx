@@ -5,7 +5,7 @@
 ## WorkforceLogger
 
 ```python
-class WorkforceLogger:
+class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
 ```
 
 Logs events and metrics for a Workforce instance.
@@ -43,14 +43,7 @@ Internal method to create and store a log entry.
 ### log_task_created
 
 ```python
-def log_task_created(
-    self,
-    task_id: str,
-    description: str,
-    parent_task_id: Optional[str] = None,
-    task_type: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_created(self, event: TaskCreatedEvent):
 ```
 
 Logs the creation of a new task.
@@ -60,12 +53,7 @@ Logs the creation of a new task.
 ### log_task_decomposed
 
 ```python
-def log_task_decomposed(
-    self,
-    parent_task_id: str,
-    subtask_ids: List[str],
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_decomposed(self, event: TaskDecomposedEvent):
 ```
 
 Logs the decomposition of a task into subtasks.
@@ -75,14 +63,7 @@ Logs the decomposition of a task into subtasks.
 ### log_task_assigned
 
 ```python
-def log_task_assigned(
-    self,
-    task_id: str,
-    worker_id: str,
-    queue_time_seconds: Optional[float] = None,
-    dependencies: Optional[List[str]] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_assigned(self, event: TaskAssignedEvent):
 ```
 
 Logs the assignment of a task to a worker.
@@ -92,12 +73,7 @@ Logs the assignment of a task to a worker.
 ### log_task_started
 
 ```python
-def log_task_started(
-    self,
-    task_id: str,
-    worker_id: str,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_started(self, event: TaskStartedEvent):
 ```
 
 Logs when a worker starts processing a task.
@@ -107,15 +83,7 @@ Logs when a worker starts processing a task.
 ### log_task_completed
 
 ```python
-def log_task_completed(
-    self,
-    task_id: str,
-    worker_id: str,
-    result_summary: Optional[str] = None,
-    processing_time_seconds: Optional[float] = None,
-    token_usage: Optional[Dict[str, int]] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_completed(self, event: TaskCompletedEvent):
 ```
 
 Logs the successful completion of a task.
@@ -125,14 +93,7 @@ Logs the successful completion of a task.
 ### log_task_failed
 
 ```python
-def log_task_failed(
-    self,
-    task_id: str,
-    error_message: str,
-    error_type: str,
-    worker_id: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_task_failed(self, event: TaskFailedEvent):
 ```
 
 Logs the failure of a task.
@@ -142,13 +103,7 @@ Logs the failure of a task.
 ### log_worker_created
 
 ```python
-def log_worker_created(
-    self,
-    worker_id: str,
-    worker_type: str,
-    role: str,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_worker_created(self, event: WorkerCreatedEvent):
 ```
 
 Logs the creation of a new worker.
@@ -158,15 +113,28 @@ Logs the creation of a new worker.
 ### log_worker_deleted
 
 ```python
-def log_worker_deleted(
-    self,
-    worker_id: str,
-    reason: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
+def log_worker_deleted(self, event: WorkerDeletedEvent):
 ```
 
 Logs the deletion of a worker.
+
+<a id="camel.societies.workforce.workforce_logger.WorkforceLogger.log_queue_status"></a>
+
+### log_queue_status
+
+```python
+def log_queue_status(self, event: QueueStatusEvent):
+```
+
+Logs the status of a task queue.
+
+<a id="camel.societies.workforce.workforce_logger.WorkforceLogger.log_all_tasks_completed"></a>
+
+### log_all_tasks_completed
+
+```python
+def log_all_tasks_completed(self, event: AllTasksCompletedEvent):
+```
 
 <a id="camel.societies.workforce.workforce_logger.WorkforceLogger.reset_task_data"></a>
 
@@ -178,22 +146,6 @@ def reset_task_data(self):
 
 Resets logs and data related to tasks, preserving worker
 information.
-
-<a id="camel.societies.workforce.workforce_logger.WorkforceLogger.log_queue_status"></a>
-
-### log_queue_status
-
-```python
-def log_queue_status(
-    self,
-    queue_name: str,
-    length: int,
-    pending_task_ids: Optional[List[str]] = None,
-    metadata: Optional[Dict[str, Any]] = None
-):
-```
-
-Logs the status of a task queue.
 
 <a id="camel.societies.workforce.workforce_logger.WorkforceLogger.dump_to_json"></a>
 

@@ -15,7 +15,7 @@ import os
 import subprocess
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import VLLM_API_PARAMS, VLLMConfig
+from camel.configs import VLLMConfig
 from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
@@ -103,18 +103,3 @@ class VLLMModel(OpenAICompatibleModel):
             )
         except Exception as e:
             logger.error(f"Failed to start vllm server: {e}.")
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to vLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in VLLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into vLLM model backend."
-                )

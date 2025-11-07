@@ -19,16 +19,19 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     List,
     Literal,
     Optional,
     Union,
 )
 
-from pydantic import BaseModel, Field
+from PIL import Image
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+    from camel.agents.chat_agent import StreamingChatAgentResponse
 import uuid
 
 from camel.logger import get_logger
@@ -45,19 +48,35 @@ from .task_prompt import (
 logger = get_logger(__name__)
 
 
+class TaskValidationMode(Enum):
+    r"""Validation modes for different use cases."""
+
+    INPUT = "input"  # For validating task content before processing
+    OUTPUT = "output"  # For validating task results after completion
+
+
 def validate_task_content(
-    content: str, task_id: str = "unknown", min_length: int = 10
+    content: str,
+    task_id: str = "unknown",
+    min_length: int = 1,
+    mode: TaskValidationMode = TaskValidationMode.INPUT,
+    check_failure_patterns: bool = True,
 ) -> bool:
-    r"""Validates task result content to avoid silent failures.
-    It performs basic checks to ensure the content meets minimum
-    quality standards.
+    r"""Unified validation for task content and results to avoid silent
+    failures. Performs comprehensive checks to ensure content meets quality
+    standards.
 
     Args:
-        content (str): The task result content to validate.
+        content (str): The task content or result to validate.
         task_id (str): Task ID for logging purposes.
             (default: :obj:`"unknown"`)
         min_length (int): Minimum content length after stripping whitespace.
-            (default: :obj:`10`)
+            (default: :obj:`1`)
+        mode (TaskValidationMode): Validation mode - INPUT for task content,
+            OUTPUT for task results. (default: :obj:`TaskValidationMode.INPUT`)
+        check_failure_patterns (bool): Whether to check for failure indicators
+            in the content. Only effective in OUTPUT mode.
+            (default: :obj:`True`)
 
     Returns:
         bool: True if content passes validation, False otherwise.
@@ -80,16 +99,72 @@ def validate_task_content(
         logger.warning(
             f"Task {task_id}: Content too short ({len(stripped_content)} "
             f"chars < {min_length} minimum). Content preview: "
-            f"'{stripped_content[:50]}...'"
+            f"'{stripped_content}'"
         )
         return False
 
+    # 4: For OUTPUT mode, check for failure patterns if enabled
+    if mode == TaskValidationMode.OUTPUT and check_failure_patterns:
+        content_lower = stripped_content.lower()
+
+        # Check for explicit failure indicators
+        failure_indicators = [
+            "i cannot complete",
+            "i cannot do",
+            "task failed",
+            "unable to complete",
+            "cannot be completed",
+            "failed to complete",
+            "i cannot",
+            "not possible",
+            "impossible to",
+            "cannot perform",
+        ]
+
+        if any(indicator in content_lower for indicator in failure_indicators):
+            logger.warning(
+                f"Task {task_id}: Failure indicator detected in result. "
+                f"Content preview: '{stripped_content}'"
+            )
+            return False
+
+        # Check for responses that are just error messages or refusals
+        if content_lower.startswith(("error", "failed", "cannot", "unable")):
+            logger.warning(
+                f"Task {task_id}: Error/refusal pattern detected at start. "
+                f"Content preview: '{stripped_content}'"
+            )
+            return False
+
     # All validation checks passed
     logger.debug(
-        f"Task {task_id}: Content validation passed "
+        f"Task {task_id}: {mode.value} validation passed "
         f"({len(stripped_content)} chars)"
     )
     return True
+
+
+def is_task_result_insufficient(task: "Task") -> bool:
+    r"""Check if a task result is insufficient and should be treated as failed.
+
+    This is a convenience wrapper around validate_task_content for backward
+    compatibility and semantic clarity when checking task results.
+
+    Args:
+        task (Task): The task to check.
+
+    Returns:
+        bool: True if the result is insufficient, False otherwise.
+    """
+    if not hasattr(task, 'result') or task.result is None:
+        return True
+
+    return not validate_task_content(
+        content=task.result,
+        task_id=task.id,
+        mode=TaskValidationMode.OUTPUT,
+        check_failure_patterns=True,
+    )
 
 
 def parse_response(
@@ -111,7 +186,7 @@ def parse_response(
     tasks = []
     if task_id is None:
         task_id = "0"
-    for i, content in enumerate(tasks_content):
+    for i, content in enumerate(tasks_content, 1):
         stripped_content = content.strip()
         # validate subtask content before creating the task
         if validate_task_content(stripped_content, f"{task_id}.{i}"):
@@ -120,7 +195,7 @@ def parse_response(
             logger.warning(
                 f"Skipping invalid subtask {task_id}.{i} "
                 f"during decomposition: "
-                f"Content '{stripped_content[:50]}...' failed validation"
+                f"Content '{stripped_content}' failed validation"
             )
     return tasks
 
@@ -156,8 +231,21 @@ class Task(BaseModel):
             (default: :obj:`""`)
         failure_count (int): The failure count for the task.
             (default: :obj:`0`)
+        assigned_worker_id (Optional[str]): The ID of the worker assigned to
+            this task. (default: :obj:`None`)
+        dependencies (List[Task]): The dependencies for the task.
+            (default: :obj:`[]`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
+        image_list (Optional[List[Union[Image.Image, str]]]): Optional list
+            of PIL Image objects or image URLs (strings) associated with the
+            task. (default: :obj:`None`)
+        image_detail (Literal["auto", "low", "high"]): Detail level of the
+            images associated with the task. (default: :obj:`auto`)
+        video_bytes (Optional[bytes]): Optional bytes of a video associated
+            with the task. (default: :obj:`None`)
+        video_detail (Literal["auto", "low", "high"]): Detail level of the
+            videos associated with the task. (default: :obj:`auto`)
     """
 
     content: str
@@ -178,7 +266,21 @@ class Task(BaseModel):
 
     failure_count: int = 0
 
+    assigned_worker_id: Optional[str] = None
+
+    dependencies: List["Task"] = []
+
     additional_info: Optional[Dict[str, Any]] = None
+
+    image_list: Optional[List[Union[Image.Image, str]]] = None
+
+    image_detail: Literal["auto", "low", "high"] = "auto"
+
+    video_bytes: Optional[bytes] = None
+
+    video_detail: Literal["auto", "low", "high"] = "auto"
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the task."""
@@ -307,9 +409,9 @@ class Task(BaseModel):
         agent: "ChatAgent",
         prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
-    ) -> List["Task"]:
-        r"""Decompose a task to a list of sub-tasks. It can be used for data
-        generation and planner of agent.
+    ) -> Union[List["Task"], Generator[List["Task"], None, None]]:
+        r"""Decompose a task to a list of sub-tasks. Automatically detects
+        streaming or non-streaming based on agent configuration.
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
@@ -320,7 +422,10 @@ class Task(BaseModel):
                 the default parse_response will be used.
 
         Returns:
-            List[Task]: A list of tasks which are :obj:`Task` instances.
+            Union[List[Task], Generator[List[Task], None, None]]: If agent is
+                configured for streaming, returns a generator that yields lists
+                of new tasks as they are parsed. Otherwise returns a list of
+                all tasks.
         """
 
         role_name = agent.role_name
@@ -332,9 +437,106 @@ class Task(BaseModel):
             role_name=role_name, content=content
         )
         response = agent.step(msg)
+
+        # Auto-detect streaming based on response type
+        from camel.agents.chat_agent import StreamingChatAgentResponse
+
+        if isinstance(response, StreamingChatAgentResponse):
+            return self._decompose_streaming(response, task_parser)
+        else:
+            return self._decompose_non_streaming(response, task_parser)
+
+    def _decompose_streaming(
+        self,
+        response: "StreamingChatAgentResponse",
+        task_parser: Callable[[str, str], List["Task"]],
+    ) -> Generator[List["Task"], None, None]:
+        r"""Handle streaming response for task decomposition.
+
+        Args:
+            response: Streaming response from agent
+            task_parser: Function to parse tasks from response
+
+        Yields:
+            List[Task]: New tasks as they are parsed from streaming response
+        """
+        accumulated_content = ""
+        yielded_count = 0
+
+        # Process streaming response
+        for chunk in response:
+            accumulated_content = chunk.msg.content
+
+            # Try to parse partial tasks from accumulated content
+            try:
+                current_tasks = self._parse_partial_tasks(accumulated_content)
+
+                # Yield new tasks if we have more than previously yielded
+                if len(current_tasks) > yielded_count:
+                    new_tasks = current_tasks[yielded_count:]
+                    for task in new_tasks:
+                        task.additional_info = self.additional_info
+                        task.parent = self
+                    yield new_tasks
+                    yielded_count = len(current_tasks)
+
+            except Exception:
+                # If parsing fails, continue accumulating
+                continue
+
+        # Final complete parsing
+        final_tasks = task_parser(accumulated_content, self.id)
+        for task in final_tasks:
+            task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = final_tasks
+
+    def _decompose_non_streaming(
+        self, response, task_parser: Callable[[str, str], List["Task"]]
+    ) -> List["Task"]:
+        r"""Handle non-streaming response for task decomposition.
+
+        Args:
+            response: Regular response from agent
+            task_parser: Function to parse tasks from response
+
+        Returns:
+            List[Task]: All parsed tasks
+        """
         tasks = task_parser(response.msg.content, self.id)
         for task in tasks:
             task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = tasks
+        return tasks
+
+    def _parse_partial_tasks(self, response: str) -> List["Task"]:
+        r"""Parse tasks from potentially incomplete response.
+
+        Args:
+            response: Partial response content
+
+        Returns:
+            List[Task]: Tasks parsed from complete <task></task> blocks
+        """
+        pattern = r"<task>(.*?)</task>"
+        tasks_content = re.findall(pattern, response, re.DOTALL)
+
+        tasks = []
+        task_id = self.id or "0"
+
+        for i, content in enumerate(tasks_content, 1):
+            stripped_content = content.strip()
+            if validate_task_content(stripped_content, f"{task_id}.{i}"):
+                tasks.append(
+                    Task(content=stripped_content, id=f"{task_id}.{i}")
+                )
+            else:
+                logger.warning(
+                    f"Skipping invalid subtask {task_id}.{i} "
+                    f"during streaming decomposition: "
+                    f"Content '{stripped_content}' failed validation"
+                )
         return tasks
 
     def compose(
@@ -363,6 +565,10 @@ class Task(BaseModel):
             role_name=role_name,
             content=self.content,
             additional_info=self.additional_info,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_bytes=self.video_bytes,
+            video_detail=self.video_detail,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(
@@ -513,7 +719,12 @@ class TaskManager:
         role_name = agent.role_name
         content = template.format(role_name=role_name, content=task.content)
         msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
+            role_name=role_name,
+            content=content,
+            image_list=task.image_list,
+            image_detail=task.image_detail,
+            video_bytes=task.video_bytes,
+            video_detail=task.video_detail,
         )
         response = agent.step(msg)
         if task_parser is None:

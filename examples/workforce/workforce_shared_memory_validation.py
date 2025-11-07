@@ -45,10 +45,16 @@ def main():
     # === TEST SETUP ===
     print("1. Setting up test workforce with shared memory...")
 
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=model)
+
     workforce = Workforce(
         description="Memory Test Workforce",
-        coordinator_agent_kwargs={"model": model},
-        task_agent_kwargs={"model": model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,  # Enable shared memory
         graceful_shutdown_timeout=2.0,
     )
@@ -291,10 +297,16 @@ def main():
     # === STEP 9: COMPARISON WITH NO SHARED MEMORY ===
     print("\n10. Comparison test: Workforce WITHOUT shared memory...")
 
+    # Create custom agents for the control group workforce
+    coordinator_agent_2 = ChatAgent(
+        "You are a helpful coordinator.", model=model
+    )
+    task_agent_2 = ChatAgent("You are a helpful task planner.", model=model)
+
     workforce_no_memory = Workforce(
         description="Control Group - No Memory Sharing",
-        coordinator_agent_kwargs={"model": model},
-        task_agent_kwargs={"model": model},
+        coordinator_agent=coordinator_agent_2,
+        task_agent=task_agent_2,
         share_memory=False,  # Disable shared memory
         graceful_shutdown_timeout=2.0,
     )

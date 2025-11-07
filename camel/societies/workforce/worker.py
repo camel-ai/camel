@@ -87,15 +87,9 @@ class Worker(BaseNode, ABC):
                 f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
                 f"{Fore.RESET}"
             )
-            # Get the Task instance of dependencies
-            dependency_ids = await self._channel.get_dependency_ids()
-            task_dependencies = [
-                await self._channel.get_task_by_id(dep_id)
-                for dep_id in dependency_ids
-            ]
 
             # Process the task
-            task_state = await self._process_task(task, task_dependencies)
+            task_state = await self._process_task(task, task.dependencies)
 
             # Update the result and status of the task
             task.set_state(task_state)
@@ -103,6 +97,8 @@ class Worker(BaseNode, ABC):
             await self._channel.return_task(task.id)
         except Exception as e:
             logger.error(f"Error processing task {task.id}: {e}")
+            # Store error information in task result
+            task.result = f"{type(e).__name__}: {e!s}"
             task.set_state(TaskState.FAILED)
             await self._channel.return_task(task.id)
         finally:

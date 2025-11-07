@@ -19,14 +19,18 @@ title slides, content slides, text formatting, and image embedding.
 ### __init__
 
 ```python
-def __init__(self, output_dir: str = './', timeout: Optional[float] = None):
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None
+):
 ```
 
 Initialize the PPTXToolkit.
 
 **Parameters:**
 
-- **output_dir** (str): The default directory for output files. Defaults to the current working directory.
+- **working_directory** (str, optional): The default directory for output files. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `camel_working_dir`.
 - **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._resolve_filepath"></a>
@@ -190,7 +194,7 @@ Create a PowerPoint presentation (PPTX) file.
 **Parameters:**
 
 - **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with the following structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides, which can be one of: * Bullet/step slides: `{"heading": str, "bullet_points": list of str or nested lists, "img_keywords": str (optional)}` - If any bullet point starts with '&gt;> ', it will be rendered as a step-by-step process. - "img_keywords" can be a URL or search keywords for an image (optional). * Table slides: `{"heading": str, "table": {"headers": list of str, "rows": list of list of str}}`
-- **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
+- **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.working_directory.
 - **template** (Optional[str]): The path to the template PPTX file. Initializes a presentation from a given template file Or PPTX file. (default: :obj:`None`)
 
 **Returns:**

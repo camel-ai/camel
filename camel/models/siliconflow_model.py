@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream
 from pydantic import BaseModel
 
-from camel.configs import SILICONFLOW_API_PARAMS, SiliconFlowConfig
+from camel.configs import SiliconFlowConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -104,18 +104,3 @@ class SiliconFlowModel(OpenAICompatibleModel):
         raise NotImplementedError(
             "SiliconFlow does not support async inference."
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to SiliconFlow API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to SiliconFlow API.
-        """
-        for param in self.model_config_dict:
-            if param not in SILICONFLOW_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into SiliconFlow model backend."
-                )

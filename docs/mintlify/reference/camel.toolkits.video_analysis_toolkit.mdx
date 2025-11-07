@@ -12,7 +12,7 @@ A class for analysing videos with vision-language model.
 
 **Parameters:**
 
-- **download_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
+- **working_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
 - **model** (Optional[BaseModelBackend], optional): The model to use for visual analysis. (default: :obj:`None`)
 - **use_audio_transcription** (bool, optional): Whether to enable audio transcription using OpenAI's audio models. Requires a valid OpenAI API key. When disabled, video analysis will be based solely on visual content. (default: :obj:`False`)
 - **use_ocr** (bool, optional): Whether to enable OCR for extracting text from video frames. (default: :obj:`False`)
@@ -28,7 +28,7 @@ A class for analysing videos with vision-language model.
 ```python
 def __init__(
     self,
-    download_directory: Optional[str] = None,
+    working_directory: Optional[str] = None,
     model: Optional[BaseModelBackend] = None,
     use_audio_transcription: bool = False,
     use_ocr: bool = False,

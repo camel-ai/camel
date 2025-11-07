@@ -16,12 +16,20 @@ class ModelType(UnifiedModelType, Enum):
 def __str__(self):
 ```
 
+<a id="camel.types.enums.ModelType.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
 <a id="camel.types.enums.ModelType.__new__"></a>
 
 ### __new__
 
 ```python
-def __new__(cls, value):
+def __new__(cls, value: Union['ModelType', str]):
 ```
 
 <a id="camel.types.enums.ModelType.from_name"></a>
@@ -29,7 +37,7 @@ def __new__(cls, value):
 ### from_name
 
 ```python
-def from_name(cls, name):
+def from_name(cls, name: str):
 ```
 
 Returns the ModelType enum value from a string.
@@ -67,6 +75,16 @@ def is_openai(self):
 ```
 
 Returns whether this type of models is an OpenAI-released model.
+
+<a id="camel.types.enums.ModelType.is_amd"></a>
+
+### is_amd
+
+```python
+def is_amd(self):
+```
+
+Returns whether this type of models is a AMD model.
 
 <a id="camel.types.enums.ModelType.is_aws_bedrock"></a>
 
@@ -120,6 +138,27 @@ def is_groq(self):
 ```
 
 Returns whether this type of models is served by Groq.
+
+<a id="camel.types.enums.ModelType.is_nebius"></a>
+
+### is_nebius
+
+```python
+def is_nebius(self):
+```
+
+Returns whether this type of models is served by Nebius AI
+Studio.
+
+<a id="camel.types.enums.ModelType.is_cometapi"></a>
+
+### is_cometapi
+
+```python
+def is_cometapi(self):
+```
+
+Returns whether this type of models is served by CometAPI.
 
 <a id="camel.types.enums.ModelType.is_openrouter"></a>
 
@@ -801,6 +840,16 @@ def is_crynux(self):
 ```
 
 Returns whether this platform is Crynux.
+
+<a id="camel.types.enums.ModelPlatformType.is_aihubmix"></a>
+
+### is_aihubmix
+
+```python
+def is_aihubmix(self):
+```
+
+Returns whether this platform is AihubMix.
 
 <a id="camel.types.enums.AudioModelType"></a>
 

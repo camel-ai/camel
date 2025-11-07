@@ -18,8 +18,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncStream, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
+from camel.logger import get_logger as camel_get_logger
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -29,6 +34,21 @@ from camel.types import (
     UnifiedModelType,
 )
 from camel.utils import BaseTokenCounter
+
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import get_logger  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import]
+
+        logger = get_logger('base_model')
+    except ImportError:
+        from camel.utils import observe
+
+        logger = camel_get_logger('base_model')
+else:
+    from camel.utils import observe
+
+    logger = camel_get_logger('base_model')
 
 
 class ModelBackendMeta(abc.ABCMeta):
@@ -101,7 +121,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             == "true"
         )
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
-        self.check_model_config()
 
     @property
     @abstractmethod
@@ -307,7 +326,28 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
+        r"""Runs the query to the backend model in a non-stream mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode,
+                or `ChatCompletionStreamManager[BaseModel]` in the structured
+                stream mode.
+        """
         pass
 
     @abstractmethod
@@ -316,15 +356,41 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
+        r"""Runs the query to the backend model in async non-stream mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode,
+                or `AsyncChatCompletionStreamManager[BaseModel]` in the
+                structured stream mode.
+        """
         pass
 
+    @observe()
     def run(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs the query to the backend model.
 
         Args:
@@ -338,9 +404,11 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode,
+                `Stream[ChatCompletionChunk]` in the stream mode, or
+                `ChatCompletionStreamManager[BaseModel]` in the structured
+                stream mode.
         """
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
@@ -352,7 +420,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = self._run(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
@@ -360,12 +434,17 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return result
 
+    @observe()
     async def arun(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs the query to the backend model asynchronously.
 
         Args:
@@ -379,9 +458,11 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode,
+                `AsyncStream[ChatCompletionChunk]` in the stream mode, or
+                `AsyncChatCompletionStreamManager[BaseModel]` in the structured
+                stream mode.
         """
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
@@ -391,24 +472,19 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = await self._arun(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
             self._log_response(log_path, result)
 
         return result
-
-    @abstractmethod
-    def check_model_config(self):
-        r"""Check whether the input model configuration contains unexpected
-        arguments
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected argument for this model class.
-        """
-        pass
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count the number of tokens in the messages using the specific

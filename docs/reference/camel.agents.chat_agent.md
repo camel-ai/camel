@@ -1,5 +1,219 @@
 <a id="camel.agents.chat_agent"></a>
 
+<a id="camel.agents.chat_agent.StreamContentAccumulator"></a>
+
+## StreamContentAccumulator
+
+```python
+class StreamContentAccumulator:
+```
+
+Manages content accumulation across streaming responses to ensure
+all responses contain complete cumulative content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.set_base_content"></a>
+
+### set_base_content
+
+```python
+def set_base_content(self, content: str):
+```
+
+Set the base content (usually empty or pre-tool content).
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.add_streaming_content"></a>
+
+### add_streaming_content
+
+```python
+def add_streaming_content(self, new_content: str):
+```
+
+Add new streaming content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.add_tool_status"></a>
+
+### add_tool_status
+
+```python
+def add_tool_status(self, status_message: str):
+```
+
+Add a tool status message.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.get_full_content"></a>
+
+### get_full_content
+
+```python
+def get_full_content(self):
+```
+
+Get the complete accumulated content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.get_content_with_new_status"></a>
+
+### get_content_with_new_status
+
+```python
+def get_content_with_new_status(self, status_message: str):
+```
+
+Get content with a new status message appended.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.reset_streaming_content"></a>
+
+### reset_streaming_content
+
+```python
+def reset_streaming_content(self):
+```
+
+Reset only the streaming content, keep base and tool status.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse"></a>
+
+## StreamingChatAgentResponse
+
+```python
+class StreamingChatAgentResponse:
+```
+
+A wrapper that makes streaming responses compatible with
+non-streaming code.
+
+This class wraps a Generator[ChatAgentResponse, None, None] and provides
+the same interface as ChatAgentResponse, so existing code doesn't need to
+change.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, generator: Generator[ChatAgentResponse, None, None]):
+```
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse._ensure_latest_response"></a>
+
+### _ensure_latest_response
+
+```python
+def _ensure_latest_response(self):
+```
+
+Ensure we have the latest response by consuming the generator.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.msgs"></a>
+
+### msgs
+
+```python
+def msgs(self):
+```
+
+Get messages from the latest response.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.terminated"></a>
+
+### terminated
+
+```python
+def terminated(self):
+```
+
+Get terminated status from the latest response.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.info"></a>
+
+### info
+
+```python
+def info(self):
+```
+
+Get info from the latest response.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.msg"></a>
+
+### msg
+
+```python
+def msg(self):
+```
+
+Get the single message if there's exactly one message.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
+
+Make this object iterable.
+
+<a id="camel.agents.chat_agent.StreamingChatAgentResponse.__getattr__"></a>
+
+### __getattr__
+
+```python
+def __getattr__(self, name):
+```
+
+Forward any other attribute access to the latest response.
+
+<a id="camel.agents.chat_agent.AsyncStreamingChatAgentResponse"></a>
+
+## AsyncStreamingChatAgentResponse
+
+```python
+class AsyncStreamingChatAgentResponse:
+```
+
+A wrapper that makes async streaming responses awaitable and
+compatible with non-streaming code.
+
+This class wraps an AsyncGenerator[ChatAgentResponse, None] and provides
+both awaitable and async iterable interfaces.
+
+<a id="camel.agents.chat_agent.AsyncStreamingChatAgentResponse.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, async_generator: AsyncGenerator[ChatAgentResponse, None]):
+```
+
+<a id="camel.agents.chat_agent.AsyncStreamingChatAgentResponse.__await__"></a>
+
+### __await__
+
+```python
+def __await__(self):
+```
+
+Make this object awaitable - returns the final response.
+
+<a id="camel.agents.chat_agent.AsyncStreamingChatAgentResponse.__aiter__"></a>
+
+### __aiter__
+
+```python
+def __aiter__(self):
+```
+
+Make this object async iterable.
+
 <a id="camel.agents.chat_agent.ChatAgent"></a>
 
 ## ChatAgent
@@ -23,6 +237,9 @@ Class for managing conversations of CAMEL Chat Agents.
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
+- **tool_execution_timeout** (Optional[float], optional): Timeout for individual tool execution. If None, wait indefinitely.
+- **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -43,7 +260,10 @@ def __init__(
     scheduling_strategy: str = 'round_robin',
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
-    stop_event: Optional[threading.Event] = None
+    stop_event: Optional[threading.Event] = None,
+    tool_execution_timeout: Optional[float] = None,
+    mask_tool_output: bool = False,
+    pause_event: Optional[asyncio.Event] = None
 ):
 ```
 
@@ -381,6 +601,80 @@ def _try_format_message(self, message: BaseMessage, response_format: Type[BaseMo
   bool: Whether the message is formatted successfully (or no format
 is needed).
 
+<a id="camel.agents.chat_agent.ChatAgent._check_tools_strict_compatibility"></a>
+
+### _check_tools_strict_compatibility
+
+```python
+def _check_tools_strict_compatibility(self):
+```
+
+**Returns:**
+
+  bool: True if all tools are strict mode compatible,
+False otherwise.
+
+<a id="camel.agents.chat_agent.ChatAgent._convert_response_format_to_prompt"></a>
+
+### _convert_response_format_to_prompt
+
+```python
+def _convert_response_format_to_prompt(self, response_format: Type[BaseModel]):
+```
+
+Convert a Pydantic response format to a prompt instruction.
+
+**Parameters:**
+
+- **response_format** (Type[BaseModel]): The Pydantic model class.
+
+**Returns:**
+
+  str: A prompt instruction requesting the specific format.
+
+<a id="camel.agents.chat_agent.ChatAgent._handle_response_format_with_non_strict_tools"></a>
+
+### _handle_response_format_with_non_strict_tools
+
+```python
+def _handle_response_format_with_non_strict_tools(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Handle response format when tools are not strict mode compatible.
+
+**Parameters:**
+
+- **input_message**: The original input message.
+- **response_format**: The requested response format.
+
+**Returns:**
+
+  Tuple: (modified_message, modified_response_format,
+used_prompt_formatting)
+
+<a id="camel.agents.chat_agent.ChatAgent._apply_prompt_based_parsing"></a>
+
+### _apply_prompt_based_parsing
+
+```python
+def _apply_prompt_based_parsing(
+    self,
+    response: ModelResponse,
+    original_response_format: Type[BaseModel]
+):
+```
+
+Apply manual parsing when using prompt-based formatting.
+
+**Parameters:**
+
+- **response**: The model response to parse.
+- **original_response_format**: The original response format class.
+
 <a id="camel.agents.chat_agent.ChatAgent._format_response_if_needed"></a>
 
 ### _format_response_if_needed
@@ -421,8 +715,11 @@ to the input message.
 
 **Returns:**
 
-  ChatAgentResponse: Contains output messages, a termination status
-flag, and session information.
+  Union[ChatAgentResponse, StreamingChatAgentResponse]: If stream is
+False, returns a ChatAgentResponse. If stream is True, returns
+a StreamingChatAgentResponse that behaves like
+ChatAgentResponse but can also be iterated for
+streaming updates.
 
 <a id="camel.agents.chat_agent.ChatAgent.chat_history"></a>
 
@@ -478,6 +775,18 @@ def _convert_to_chatagent_response(
 
 Parse the final model response into the chat agent response.
 
+<a id="camel.agents.chat_agent.ChatAgent._process_pending_images"></a>
+
+### _process_pending_images
+
+```python
+def _process_pending_images(self):
+```
+
+**Returns:**
+
+  List: List of successfully converted PIL Images.
+
 <a id="camel.agents.chat_agent.ChatAgent._record_final_output"></a>
 
 ### _record_final_output
@@ -487,6 +796,37 @@ def _record_final_output(self, output_messages: List[BaseMessage]):
 ```
 
 Log final messages or warnings about multiple responses.
+
+<a id="camel.agents.chat_agent.ChatAgent._is_vision_error"></a>
+
+### _is_vision_error
+
+```python
+def _is_vision_error(self, exc: Exception):
+```
+
+Check if the exception is likely related to vision/image is not
+supported by the model.
+
+<a id="camel.agents.chat_agent.ChatAgent._has_images"></a>
+
+### _has_images
+
+```python
+def _has_images(self, messages: List[OpenAIMessage]):
+```
+
+Check if any message contains images.
+
+<a id="camel.agents.chat_agent.ChatAgent._strip_images_from_messages"></a>
+
+### _strip_images_from_messages
+
+```python
+def _strip_images_from_messages(self, messages: List[OpenAIMessage]):
+```
+
+Remove images from messages, keeping only text content.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_model_response"></a>
 
@@ -589,42 +929,6 @@ information.
 
   _ModelResponse: parsed model response.
 
-<a id="camel.agents.chat_agent.ChatAgent._handle_stream_response"></a>
-
-### _handle_stream_response
-
-```python
-def _handle_stream_response(self, response: Stream[ChatCompletionChunk], prompt_tokens: int):
-```
-
-Process a stream response from the model and extract the necessary
-information.
-
-**Parameters:**
-
-- **response** (dict): Model response.
-- **prompt_tokens** (int): Number of input prompt tokens.
-
-**Returns:**
-
-  _ModelResponse: a parsed model response.
-
-<a id="camel.agents.chat_agent.ChatAgent._handle_chunk"></a>
-
-### _handle_chunk
-
-```python
-def _handle_chunk(
-    self,
-    chunk: ChatCompletionChunk,
-    content_dict: defaultdict,
-    finish_reasons_dict: defaultdict,
-    output_messages: List[BaseMessage]
-):
-```
-
-Handle a chunk of the model response.
-
 <a id="camel.agents.chat_agent.ChatAgent._step_terminate"></a>
 
 ### _step_terminate
@@ -686,12 +990,204 @@ def _record_tool_calling(
     func_name: str,
     args: Dict[str, Any],
     result: Any,
-    tool_call_id: str
+    tool_call_id: str,
+    mask_output: bool = False
 ):
 ```
 
 Record the tool calling information in the memory, and return the
 tool calling record.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function called.
+- **args** (Dict[str, Any]): The arguments passed to the tool.
+- **result** (Any): The result returned by the tool execution.
+- **tool_call_id** (str): A unique identifier for the tool call.
+- **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+
+**Returns:**
+
+  ToolCallingRecord: A struct containing information about
+this tool call.
+
+<a id="camel.agents.chat_agent.ChatAgent._stream"></a>
+
+### _stream
+
+```python
+def _stream(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Executes a streaming step in the chat session, yielding
+intermediate responses as they are generated.
+
+**Parameters:**
+
+- **input_message** (Union[BaseMessage, str]): The input message for the agent.
+- **response_format** (Optional[Type[BaseModel]], optional): A Pydantic model defining the expected structure of the response.
+- **Yields**: 
+- **ChatAgentResponse**: Intermediate responses containing partial content, tool calls, and other information as they become available.
+
+<a id="camel.agents.chat_agent.ChatAgent._get_token_count"></a>
+
+### _get_token_count
+
+```python
+def _get_token_count(self, content: str):
+```
+
+Get token count for content with fallback.
+
+<a id="camel.agents.chat_agent.ChatAgent._stream_response"></a>
+
+### _stream_response
+
+```python
+def _stream_response(
+    self,
+    openai_messages: List[OpenAIMessage],
+    num_tokens: int,
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Internal method to handle streaming responses with tool calls.
+
+<a id="camel.agents.chat_agent.ChatAgent._process_stream_chunks_with_accumulator"></a>
+
+### _process_stream_chunks_with_accumulator
+
+```python
+def _process_stream_chunks_with_accumulator(
+    self,
+    stream: Stream[ChatCompletionChunk],
+    content_accumulator: StreamContentAccumulator,
+    accumulated_tool_calls: Dict[str, Any],
+    tool_call_records: List[ToolCallingRecord],
+    step_token_usage: Dict[str, int],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Process streaming chunks with content accumulator.
+
+<a id="camel.agents.chat_agent.ChatAgent._accumulate_tool_calls"></a>
+
+### _accumulate_tool_calls
+
+```python
+def _accumulate_tool_calls(
+    self,
+    tool_call_deltas: List[Any],
+    accumulated_tool_calls: Dict[str, Any]
+):
+```
+
+Accumulate tool call chunks and return True when
+any tool call is complete.
+
+**Parameters:**
+
+- **tool_call_deltas** (List[Any]): List of tool call deltas.
+- **accumulated_tool_calls** (Dict[str, Any]): Dictionary of accumulated tool calls.
+
+**Returns:**
+
+  bool: True if any tool call is complete, False otherwise.
+
+<a id="camel.agents.chat_agent.ChatAgent._execute_tools_sync_with_status_accumulator"></a>
+
+### _execute_tools_sync_with_status_accumulator
+
+```python
+def _execute_tools_sync_with_status_accumulator(
+    self,
+    accumulated_tool_calls: Dict[str, Any],
+    content_accumulator: StreamContentAccumulator,
+    step_token_usage: Dict[str, int],
+    tool_call_records: List[ToolCallingRecord]
+):
+```
+
+Execute multiple tools synchronously with
+proper content accumulation, using threads+queue for
+non-blocking status streaming.
+
+<a id="camel.agents.chat_agent.ChatAgent._execute_tool_from_stream_data"></a>
+
+### _execute_tool_from_stream_data
+
+```python
+def _execute_tool_from_stream_data(self, tool_call_data: Dict[str, Any]):
+```
+
+Execute a tool from accumulated stream data.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_error_response"></a>
+
+### _create_error_response
+
+```python
+def _create_error_response(
+    self,
+    error_message: str,
+    tool_call_records: List[ToolCallingRecord]
+):
+```
+
+Create an error response for streaming.
+
+<a id="camel.agents.chat_agent.ChatAgent._record_assistant_tool_calls_message"></a>
+
+### _record_assistant_tool_calls_message
+
+```python
+def _record_assistant_tool_calls_message(self, accumulated_tool_calls: Dict[str, Any], content: str = ''):
+```
+
+Record the assistant message that contains tool calls.
+
+This method creates and records an assistant message that includes
+the tool calls information, which is required by OpenAI's API format.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
+
+### _create_tool_status_response_with_accumulator
+
+```python
+def _create_tool_status_response_with_accumulator(
+    self,
+    accumulator: StreamContentAccumulator,
+    status_message: str,
+    status_type: str,
+    step_token_usage: Dict[str, int],
+    tool_calls: Optional[List[ToolCallingRecord]] = None
+):
+```
+
+Create a tool status response using content accumulator.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
+
+### _create_streaming_response_with_accumulator
+
+```python
+def _create_streaming_response_with_accumulator(
+    self,
+    accumulator: StreamContentAccumulator,
+    new_content: str,
+    step_token_usage: Dict[str, int],
+    response_id: str = '',
+    tool_call_records: Optional[List[ToolCallingRecord]] = None
+):
+```
+
+Create a streaming response using content accumulator.
 
 <a id="camel.agents.chat_agent.ChatAgent.get_usage_dict"></a>
 
@@ -746,6 +1242,17 @@ configuration as the current instance.
 
   ChatAgent: A new instance of :obj:`ChatAgent` with the same
 configuration.
+
+<a id="camel.agents.chat_agent.ChatAgent._clone_tools"></a>
+
+### _clone_tools
+
+```python
+def _clone_tools(self):
+```
+
+Clone tools for new agent instance,
+handling stateful toolkits properly.
 
 <a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
 

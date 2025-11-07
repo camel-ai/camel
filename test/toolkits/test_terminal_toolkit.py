@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
 import platform
 import tempfile
 from pathlib import Path
@@ -22,8 +21,11 @@ from camel.toolkits import TerminalToolkit
 
 
 @pytest.fixture
-def terminal_toolkit(temp_dir):
-    return TerminalToolkit(working_dir=temp_dir, safe_mode=False)
+def terminal_toolkit(temp_dir, request):
+    toolkit = TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+    # Ensure cleanup happens after test completes
+    request.addfinalizer(toolkit.cleanup)
+    return toolkit
 
 
 @pytest.fixture
@@ -42,58 +44,12 @@ def test_file(temp_dir):
 
 def test_init():
     toolkit = TerminalToolkit()
-    assert toolkit.timeout is None
-    assert isinstance(toolkit.shell_sessions, dict)
-    assert toolkit.os_type == platform.system()
-
-
-def test_file_find_in_content(terminal_toolkit, test_file):
-    # Test basic pattern matching
-    result = terminal_toolkit.file_find_in_content(str(test_file), "World")
-    assert "World" in result
-
-    # Test regex pattern
-    result = terminal_toolkit.file_find_in_content(str(test_file), "^Test$")
-    assert "Test" in result
-
-    # Test non-existent pattern
-    result = terminal_toolkit.file_find_in_content(str(test_file), "NotFound")
-    assert result == ""
-
-    # Test with directory instead of file
-    result = terminal_toolkit.file_find_in_content(
-        str(test_file.parent), "pattern"
-    )
-    assert "not a file" in result.lower()
-
-
-def test_file_find_by_name(terminal_toolkit, temp_dir):
-    # Create test files
-    (temp_dir / "test1.txt").touch()
-    (temp_dir / "test2.txt").touch()
-    (temp_dir / "other.log").touch()
-    os.makedirs(temp_dir / "subdir")
-    (temp_dir / "subdir" / "test3.txt").touch()
-
-    # Test basic glob pattern
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "*.txt")
-    assert "test1.txt" in result
-    assert "test2.txt" in result
-    assert "test3.txt" in result
-    assert "other.log" not in result
-
-    # Test specific filename
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "other.log")
-    assert "other.log" in result
-
-    # Test non-existent pattern
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "nonexistent*")
-    assert result == ""
-
-    # Test with file instead of directory
-    test_file = temp_dir / "test1.txt"
-    result = terminal_toolkit.file_find_by_name(str(test_file), "*.txt")
-    assert "not a directory" in result.lower()
+    try:
+        assert toolkit.timeout == 20.0
+        assert isinstance(toolkit.shell_sessions, dict)
+        assert toolkit.os_type == platform.system()
+    finally:
+        toolkit.cleanup()
 
 
 def test_shell_exec(terminal_toolkit, temp_dir):
@@ -111,28 +67,32 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     )
     assert "not found" in result.lower()
 
-    # Test session persistence
+    # Test session persistence - use non-blocking mode to create sessions
     session_id = "persistent_session"
-    terminal_toolkit.shell_exec(session_id, "echo 'test1'")
+    terminal_toolkit.shell_exec(session_id, "echo 'test1'", block=False)
     assert session_id in terminal_toolkit.shell_sessions
-    assert terminal_toolkit.shell_sessions[session_id]["output"] != ""
+    # For non-blocking mode, check if session was created
+    # (output might be empty initially)
+    assert "output_stream" in terminal_toolkit.shell_sessions[session_id]
 
 
 def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
-    # Test multiple concurrent sessions
+    # Test multiple concurrent sessions - use non-blocking mode
+    # to create sessions
     session1 = "session1"
     session2 = "session2"
 
-    result1 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session1,
         "echo 'Session 1'",
+        block=False,
     )
-    result2 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session2,
         "echo 'Session 2'",
+        block=False,
     )
 
-    assert "Session 1" in result1
-    assert "Session 2" in result2
+    # For non-blocking mode, sessions should be created immediately
     assert session1 in terminal_toolkit.shell_sessions
     assert session2 in terminal_toolkit.shell_sessions

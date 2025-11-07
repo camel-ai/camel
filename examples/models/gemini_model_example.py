@@ -28,7 +28,7 @@ user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
 # Example of using the gemini-2.5-pro-preview-06-05 model
 model_2_5_pro_pre = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
+    model_type=ModelType.GEMINI_2_5_PRO,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
 camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_5_pro_pre)
