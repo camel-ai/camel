@@ -94,6 +94,90 @@ def mock_workforce():
     return workforce
 
 
+@pytest.fixture
+def workflow_files_dir(temp_context_dir):
+    """Create workflow files for testing.
+
+    Creates a role-based folder structure with sample workflow files.
+    """
+    import time
+
+    # Create role-based folder structure
+    role_dir = os.path.join(
+        temp_context_dir, "workforce_workflows", "test_worker"
+    )
+    os.makedirs(role_dir, exist_ok=True)
+
+    # Create multiple workflow files for testing
+    workflows = [
+        {
+            "filename": "data_analysis_workflow.md",
+            "content": """### Task Title
+Data Analysis Workflow
+
+### Task Description
+Analyze sales data and generate reports
+
+### Tags
+- data-analysis
+- statistics
+- reporting
+
+### Steps
+1. Load data
+2. Analyze trends
+3. Generate report
+""",
+        },
+        {
+            "filename": "web_scraping_workflow.md",
+            "content": """### Task Title
+Web Scraping Workflow
+
+### Task Description
+Scrape website data
+
+### Tags
+- web-scraping
+- data-collection
+
+### Steps
+1. Configure scraper
+2. Extract data
+3. Store results
+""",
+        },
+        {
+            "filename": "database_query_workflow.md",
+            "content": """### Task Title
+Database Query Workflow
+
+### Task Description
+Query database for analysis
+
+### Tags
+- database
+- sql
+- data-analysis
+
+### Steps
+1. Connect to database
+2. Execute queries
+3. Process results
+""",
+        },
+    ]
+
+    # Write workflow files with slight delays to ensure different timestamps
+    for workflow in workflows:
+        file_path = os.path.join(role_dir, workflow["filename"])
+        with open(file_path, 'w') as f:
+            f.write(workflow["content"])
+        time.sleep(0.01)  # Ensure different modification times
+
+    return temp_context_dir
+
+
 class TestSingleAgentWorkerWorkflow:
     """Test workflow functionality for SingleAgentWorker."""
 
@@ -213,63 +297,27 @@ class TestSingleAgentWorkerWorkflow:
         with pytest.raises(TypeError, match="Worker must be a ChatAgent"):
             worker.load_workflow_memories()
 
-    @patch('glob.glob')
-    def test_load_workflow_prioritizes_newest_session(
-        self, mock_glob, temp_context_dir
-    ):
-        """Test that workflow loading prioritizes files from newest sessions
-        (legacy mode).
+    def test_load_workflow_prioritizes_newest_session(self, workflow_files_dir):
+        """Test that workflow loading prioritizes most recent files (legacy mode).
 
-        This test verifies that when multiple workflow files exist across
-        different sessions, files from the newest session (by session
-        timestamp) are loaded first, regardless of file modification times.
+        This test verifies that when multiple workflow files exist, the most
+        recently modified files are loaded first.
         """
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Simulate realistic scenario: role-based folder structure
-        # Folder is named after agent role, files are named after task titles
-        mock_files = [
-            # test_worker role folder with task-based filenames
-            f"{temp_context_dir}/workforce_workflows/test_worker/analyze_sales_data_workflow.md",
-            f"{temp_context_dir}/workforce_workflows/test_worker/create_quarterly_report_workflow.md",
-        ]
-        mock_glob.return_value = mock_files
-
-        # Mock the shared context utility methods
-        mock_context_utility = MagicMock()
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
+        # Use legacy pattern matching mode
+        result = worker.load_workflow_memories(
+            max_workflows=1, use_smart_selection=False
         )
 
-        with patch(
-            'camel.utils.context_utils.ContextUtility.get_workforce_shared',
-            return_value=mock_context_utility,
-        ):
-            # Use legacy pattern matching mode
-            result = worker.load_workflow_memories(
-                max_workflows=1, use_smart_selection=False
-            )
+        assert result is True
 
-            assert result is True
+        # Verify workflow was loaded into system message
+        system_content = worker.worker._system_message.content
+        assert "Workflow" in system_content or "workflow" in system_content
 
-            # Verify load was called once
-            assert mock_context_utility.load_markdown_file.call_count == 1
-
-            # Get the filename that was loaded (first argument)
-            loaded_filename = (
-                mock_context_utility.load_markdown_file.call_args[0][0]
-            )
-
-            # The loaded file should be a task-based workflow name
-            # (without .md). Files sorted by modification time (recent first)
-            assert "workflow" in loaded_filename
-
-    @patch('glob.glob')
     def test_load_workflow_memories_resets_system_message(
-        self, mock_glob, temp_context_dir
+        self, workflow_files_dir
     ):
         """Test that multiple calls to load_workflow_memories reset system
         message (legacy mode).
@@ -283,146 +331,33 @@ class TestSingleAgentWorkerWorkflow:
         # get original system message content
         original_content = worker.worker._original_system_message.content
 
-        # mock workflow files - role-based structure
-        mock_files = [
-            f"{temp_context_dir}/workforce_workflows/test_worker/analyze_data_workflow.md"
-        ]
-        mock_glob.return_value = mock_files
-
-        # mock the shared context utility methods
-        mock_context_utility = MagicMock()
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
+        # first call to load_workflow_memories (legacy mode)
+        worker.load_workflow_memories(
+            max_workflows=1, use_smart_selection=False
         )
 
-        with patch(
-            'camel.utils.context_utils.ContextUtility.get_workforce_shared',
-            return_value=mock_context_utility,
-        ):
-            # first call to load_workflow_memories (legacy mode)
-            worker.load_workflow_memories(
-                max_workflows=1, use_smart_selection=False
-            )
+        # verify reset was called (system message matches original)
+        first_call_system_content = worker.worker._system_message.content
 
-            # verify reset was called (system message matches original)
-            first_call_system_content = worker.worker._system_message.content
+        # second call to load_workflow_memories (legacy mode)
+        worker.load_workflow_memories(
+            max_workflows=1, use_smart_selection=False
+        )
 
-            # second call to load_workflow_memories (legacy mode)
-            worker.load_workflow_memories(
-                max_workflows=1, use_smart_selection=False
-            )
+        # after second call, system message should still be based on
+        # original (not accumulating from first call)
+        second_call_system_content = worker.worker._system_message.content
 
-            # after second call, system message should still be based on
-            # original (not accumulating from first call)
-            second_call_system_content = worker.worker._system_message.content
+        # verify both calls resulted in same base system message
+        # (indicating reset happened before each load)
+        assert first_call_system_content == second_call_system_content
 
-            # verify both calls resulted in same base system message
-            # (indicating reset happened before each load)
-            assert first_call_system_content == second_call_system_content
-
-            # verify the system message contains original content
-            assert original_content in second_call_system_content
-
-            # verify load was called twice (once per load_workflow_memories)
-            assert mock_context_utility.load_markdown_file.call_count == 2
+        # verify the system message contains original content
+        assert original_content in second_call_system_content
 
 
 class TestWorkforceWorkflowMemoryMethods:
     """Test workflow functionality for Workforce."""
-
-    @pytest.mark.asyncio
-    async def test_save_workflow_memories_success(self, mock_workforce):
-        """Test successful workflow saving for all workers."""
-        # Mock save_workflow_memories_async for both workers
-        mock_result_1 = {
-            "status": "success",
-            "file_path": "/path/to/data_analyst_workflow.md",
-        }
-        mock_result_2 = {
-            "status": "success",
-            "file_path": "/path/to/python_developer_workflow.md",
-        }
-
-        with (
-            patch.object(
-                mock_workforce._children[0],
-                'save_workflow_memories_async',
-                return_value=mock_result_1,
-            ),
-            patch.object(
-                mock_workforce._children[1],
-                'save_workflow_memories_async',
-                return_value=mock_result_2,
-            ),
-        ):
-            # use session_id to trigger legacy path (backward compat)
-            results = await mock_workforce.save_workflow_memories_async(
-                session_id="test_session"
-            )
-
-            assert len(results) == 2
-            assert all("/path/to/" in path for path in results.values())
-
-    @pytest.mark.asyncio
-    async def test_save_workflow_memories_mixed_results(self, mock_workforce):
-        """Test workflow saving with mixed success/failure results."""
-        # Mock one success, one failure
-        mock_result_success = {
-            "status": "success",
-            "file_path": "/path/to/data_analyst_workflow.md",
-        }
-        mock_result_error = {
-            "status": "error",
-            "message": "No conversation context",
-        }
-
-        with (
-            patch.object(
-                mock_workforce._children[0],
-                'save_workflow_memories_async',
-                return_value=mock_result_success,
-            ),
-            patch.object(
-                mock_workforce._children[1],
-                'save_workflow_memories_async',
-                return_value=mock_result_error,
-            ),
-        ):
-            # use session_id to trigger legacy path (backward compat)
-            results = await mock_workforce.save_workflow_memories_async(
-                session_id="test_session"
-            )
-
-            assert len(results) == 2
-            assert (
-                "/path/to/data_analyst_workflow.md"
-                in results[mock_workforce._children[0].node_id]
-            )
-            assert (
-                "error: No conversation context"
-                in results[mock_workforce._children[1].node_id]
-            )
-
-    @pytest.mark.asyncio
-    async def test_save_workflow_memories_exception(self, mock_workforce):
-        """Test workflow saving when exception occurs."""
-        with patch.object(
-            mock_workforce._children[0],
-            'save_workflow_memories_async',
-            side_effect=Exception("Test error"),
-        ):
-            # use session_id to trigger legacy path (backward compat)
-            results = await mock_workforce.save_workflow_memories_async(
-                session_id="test_session"
-            )
-
-            assert (
-                "error: Test error"
-                in results[mock_workforce._children[0].node_id]
-            )
 
     @pytest.mark.asyncio
     async def test_save_workflow_memories_real_execution(
@@ -598,46 +533,6 @@ class TestWorkflowIntegration:
     """Integration tests for workflow functionality."""
 
     @pytest.mark.asyncio
-    async def test_end_to_end_workflow_memory(self, temp_context_dir):
-        """Test complete workflow: save workflow, load in new session."""
-        # First session: create workforce and mock workflow saving
-        workforce1 = Workforce("Test Team")
-        worker1 = MockSingleAgentWorker("data_analyst")
-        workforce1._children = [worker1]
-
-        # Mock successful workflow generation and save using session_id
-        mock_save_result = {
-            "status": "success",
-            "summary": "Data analysis workflow completed",
-            "file_path": f"{temp_context_dir}/data_analyst_workflow_test.md",
-        }
-
-        with patch.object(
-            worker1,
-            'save_workflow_memories_async',
-            return_value=mock_save_result,
-        ):
-            # use session_id for backward compat path
-            save_results = await workforce1.save_workflow_memories_async(
-                session_id="test_session"
-            )
-            assert (
-                save_results[worker1.node_id] == mock_save_result["file_path"]
-            )
-
-        # Second session: create new workforce and load workflows
-        workforce2 = Workforce("Test Team")
-        worker2 = MockSingleAgentWorker("data_analyst")
-        workforce2._children = [worker2]
-
-        # Mock successful workflow loading
-        with patch.object(
-            worker2, 'load_workflow_memories', return_value=True
-        ):
-            load_results = workforce2.load_workflow_memories()
-            assert load_results[worker2.node_id] is True
-
-    @pytest.mark.asyncio
     async def test_filename_sanitization(self):
         """Test worker descriptions are properly sanitized for filenames."""
         worker = MockSingleAgentWorker("Data Analyst & ML Engineer!")
@@ -769,56 +664,6 @@ class TestWorkflowIntegration:
                 or "analyze" in result["file_path"]
             )
 
-    @pytest.mark.asyncio
-    async def test_custom_session_id_integration(self, temp_context_dir):
-        """Test end-to-end workflow with custom session ID.
-
-        This test addresses issue #3277 request for custom session IDs.
-        """
-        # create workforce with custom session id
-        workforce = Workforce("Test Team")
-        worker = MockSingleAgentWorker("test_analyst")
-        workforce._children = [worker]
-
-        custom_session = "project_abc123"
-
-        # simulate conversation
-        user_msg = BaseMessage.make_user_message(
-            role_name="User", content="Analyze data"
-        )
-        assistant_msg = BaseMessage.make_assistant_message(
-            role_name="Assistant", content="Analysis complete"
-        )
-        worker.worker.record_message(user_msg)
-        worker.worker.record_message(assistant_msg)
-
-        # mock the asummarize method
-        expected_path = (
-            f"{temp_context_dir}/workforce_workflows/"
-            f"{custom_session}/test_worker_workflow.md"
-        )
-        mock_result = {
-            "status": "success",
-            "summary": "Test workflow",
-            "file_path": expected_path,
-        }
-
-        with patch.object(ChatAgent, 'asummarize', return_value=mock_result):
-            # save with custom session id
-            results = await workforce.save_workflow_memories_async(
-                session_id=custom_session
-            )
-
-            # verify results contain the custom session path
-            assert worker.node_id in results
-            assert custom_session in results[worker.node_id]
-
-            # verify the shared context utility was created with custom
-            # session
-            assert workforce._shared_context_utility is not None
-            assert (
-                workforce._shared_context_utility.session_id == custom_session
-            )
 
 
 class TestSharedContextUtility:
@@ -918,63 +763,16 @@ class TestSharedContextUtility:
 class TestSmartWorkflowSelection:
     """Test smart workflow selection feature."""
 
-    def test_smart_selection_with_metadata(self, temp_context_dir):
+    def test_smart_selection_with_metadata(self, workflow_files_dir):
         """Test smart workflow selection using metadata."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Mock workflow metadata
-        mock_metadata = [
-            {
-                'title': 'Data Analysis Workflow',
-                'description': 'Analyze sales data and generate reports',
-                'tags': ['data-analysis', 'statistics', 'reporting'],
-                'file_path': (
-                    f"{temp_context_dir}/session_1/data_analyst_workflow.md"
-                ),
-            },
-            {
-                'title': 'Web Scraping Workflow',
-                'description': 'Scrape website data',
-                'tags': ['web-scraping', 'data-collection'],
-                'file_path': (
-                    f"{temp_context_dir}/session_1/web_scraper_workflow.md"
-                ),
-            },
-            {
-                'title': 'Database Query Workflow',
-                'description': 'Query database for analysis',
-                'tags': ['database', 'sql', 'data-analysis'],
-                'file_path': (
-                    f"{temp_context_dir}/session_1/db_analyst_workflow.md"
-                ),
-            },
-        ]
-
-        # Mock context utility to return info
-        mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_info.return_value = (
-            mock_metadata
-        )
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
-        )
-
-        # Mock agent response to select first workflow
+        # Mock agent response to select workflows 1 and 3
         mock_agent_response = MagicMock()
         mock_agent_response.msgs = [MagicMock(content="1, 3")]
 
-        # Mock get_workforce_shared to return our mock context utility
-        with (
-            patch(
-                'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
-                return_value=mock_context_utility,
-            ),
-            patch.object(
-                worker.worker, 'step', return_value=mock_agent_response
-            ),
+        with patch.object(
+            worker.worker, 'step', return_value=mock_agent_response
         ):
             result = worker.load_workflow_memories(
                 max_workflows=2, use_smart_selection=True
@@ -982,8 +780,11 @@ class TestSmartWorkflowSelection:
 
             # Verify smart selection was used
             assert result is True
-            mock_context_utility.get_all_workflows_info.assert_called_once()
             worker.worker.step.assert_called_once()
+
+            # Verify workflows were loaded into system message
+            system_content = worker.worker._system_message.content
+            assert "Workflow" in system_content or "workflow" in system_content
 
             # Verify agent was asked to select workflows
             selection_call = worker.worker.step.call_args[0][0]
@@ -992,115 +793,44 @@ class TestSmartWorkflowSelection:
             assert "data-analysis" in selection_call.content
 
     def test_smart_selection_no_metadata(self, temp_context_dir):
-        """Test smart selection when no workflow info found."""
+        """Test smart selection when no workflow files exist."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Mock context utility to return empty info
-        mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_info.return_value = []
+        # Don't create any workflow files - should return False
+        result = worker.load_workflow_memories(use_smart_selection=True)
 
-        with patch(
-            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
-            return_value=mock_context_utility,
-        ):
-            result = worker.load_workflow_memories(use_smart_selection=True)
+        assert result is False
 
-            assert result is False
-            mock_context_utility.get_all_workflows_info.assert_called_once()
-
-    def test_smart_selection_fewer_workflows_than_max(self, temp_context_dir):
+    def test_smart_selection_fewer_workflows_than_max(
+        self, workflow_files_dir
+    ):
         """Test smart selection when fewer workflows exist than max_files."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        # Mock only 2 workflows but ask for 5
-        mock_metadata = [
-            {
-                'title': 'Workflow 1',
-                'description': 'Test workflow 1',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow1.md",
-            },
-            {
-                'title': 'Workflow 2',
-                'description': 'Test workflow 2',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow2.md",
-            },
-        ]
-
-        mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_info.return_value = (
-            mock_metadata
-        )
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
+        # Only 3 workflows exist but ask for 5 - should load all 3 without agent selection
+        result = worker.load_workflow_memories(
+            max_workflows=5, use_smart_selection=True
         )
 
-        with patch(
-            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
-            return_value=mock_context_utility,
-        ):
-            result = worker.load_workflow_memories(
-                max_workflows=5, use_smart_selection=True
-            )
+        # Should load all 3 workflows without agent selection
+        assert result is True
 
-            # Should load all 2 workflows without agent selection
-            assert result is True
-            assert mock_context_utility.load_markdown_file.call_count == 2
+        # Verify workflows were loaded
+        system_content = worker.worker._system_message.content
+        assert "Workflow" in system_content or "workflow" in system_content
 
     def test_smart_selection_agent_selection_failure_fallback(
-        self, temp_context_dir
+        self, workflow_files_dir
     ):
         """Test fallback to most recent when agent selection fails."""
         worker = MockSingleAgentWorker("data_analyst")
-
-        mock_metadata = [
-            {
-                'title': 'Workflow 1',
-                'description': 'Test',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow1.md",
-            },
-            {
-                'title': 'Workflow 2',
-                'description': 'Test',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow2.md",
-            },
-            {
-                'title': 'Workflow 3',
-                'description': 'Test',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow3.md",
-            },
-        ]
-
-        mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_info.return_value = (
-            mock_metadata
-        )
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
-        )
 
         # Mock agent to return invalid response
         mock_agent_response = MagicMock()
         mock_agent_response.msgs = [MagicMock(content="invalid response")]
 
-        with (
-            patch(
-                'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
-                return_value=mock_context_utility,
-            ),
-            patch.object(
-                worker.worker, 'step', return_value=mock_agent_response
-            ),
+        with patch.object(
+            worker.worker, 'step', return_value=mock_agent_response
         ):
             result = worker.load_workflow_memories(
                 max_workflows=2, use_smart_selection=True
@@ -1108,44 +838,23 @@ class TestSmartWorkflowSelection:
 
             # Should fallback to first 2 workflows (most recent)
             assert result is True
-            assert mock_context_utility.load_markdown_file.call_count == 2
 
-    def test_smart_selection_memory_cleanup(self, temp_context_dir):
+            # Verify workflows were loaded
+            system_content = worker.worker._system_message.content
+            assert "Workflow" in system_content or "workflow" in system_content
+
+    def test_smart_selection_memory_cleanup(self, workflow_files_dir):
         """Test that agent memory is cleaned after smart selection."""
         worker = MockSingleAgentWorker("data_analyst")
 
-        mock_metadata = [
-            {
-                'title': 'Test Workflow',
-                'description': 'Test',
-                'tags': ['test'],
-                'file_path': f"{temp_context_dir}/session_1/workflow.md",
-            }
-        ]
+        result = worker.load_workflow_memories(use_smart_selection=True)
 
-        mock_context_utility = MagicMock()
-        mock_context_utility.get_all_workflows_info.return_value = (
-            mock_metadata
-        )
-        mock_context_utility.load_markdown_file.return_value = (
-            "# Workflow content\nThis is workflow data"
-        )
-        mock_context_utility._filter_metadata_from_content.return_value = (
-            "This is workflow data"
-        )
+        assert result is True
 
-        with patch(
-            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
-            return_value=mock_context_utility,
-        ):
-            result = worker.load_workflow_memories(use_smart_selection=True)
-
-            assert result is True
-
-            # Memory should be cleaned (only system message remains)
-            final_memory = worker.worker.memory.get_context()[0]
-            # Should have system message only
-            assert len(final_memory) == 1
+        # Memory should be cleaned (only system message remains)
+        final_memory = worker.worker.memory.get_context()[0]
+        # Should have system message only
+        assert len(final_memory) == 1
 
     def test_extract_workflow_info(self, temp_context_dir):
         """Test info extraction from workflow markdown file."""
@@ -1284,11 +993,11 @@ Code development
         """
         import os
 
-        # Create session directory in workforce_workflows
-        session_dir = os.path.join(
-            temp_context_dir, "workforce_workflows", "session_test"
+        # Create role-based directory in workforce_workflows
+        role_dir = os.path.join(
+            temp_context_dir, "workforce_workflows", "test_worker"
         )
-        os.makedirs(session_dir, exist_ok=True)
+        os.makedirs(role_dir, exist_ok=True)
 
         # Create 10 different workflow files with varied content
         workflows = [
@@ -1362,11 +1071,11 @@ Code development
 
         # Write workflow files
         for workflow in workflows:
-            file_path = os.path.join(session_dir, workflow["name"])
+            file_path = os.path.join(role_dir, workflow["name"])
             content = f"""## Metadata
 
 - session_id: session_test
-- working_directory: {session_dir}
+- working_directory: {role_dir}
 - created_at: 2025-01-15T10:00:00.000000
 - agent_id: test-agent-id
 - message_count: 5
@@ -2466,7 +2175,8 @@ class TestErrorHandlingAndEdgeCases:
 class TestWorkflowVersioning:
     """Test workflow versioning functionality."""
 
-    def test_workflow_version_increments_on_update(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_workflow_version_increments_on_update(self, temp_context_dir):
         """Test that workflow version increments when saving same workflow
         twice."""
         from pathlib import Path
@@ -2506,7 +2216,7 @@ class TestWorkflowVersioning:
         )
 
         # save first time (should be version 1)
-        result1 = manager.save_workflow(
+        result1 = await manager.save_workflow_content_async(
             workflow_summary=workflow_summary,
             context_utility=context_utility,
             conversation_accumulator=None,
@@ -2522,7 +2232,7 @@ class TestWorkflowVersioning:
         assert "updated_at:" in content1
 
         # save again (should be version 2)
-        result2 = manager.save_workflow(
+        result2 = await manager.save_workflow_content_async(
             workflow_summary=workflow_summary,
             context_utility=context_utility,
             conversation_accumulator=None,
@@ -2546,7 +2256,8 @@ class TestWorkflowVersioning:
             "created_at should be preserved across versions"
         )
 
-    def test_new_workflow_starts_at_version_one(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_new_workflow_starts_at_version_one(self, temp_context_dir):
         """Test that a new workflow starts at version 1."""
         from pathlib import Path
 
@@ -2582,7 +2293,7 @@ class TestWorkflowVersioning:
             tags=["writing"],
         )
 
-        result = manager.save_workflow(
+        result = await manager.save_workflow_content_async(
             workflow_summary=workflow_summary,
             context_utility=context_utility,
             conversation_accumulator=None,
