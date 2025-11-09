@@ -152,10 +152,10 @@ class RolePlaying:
         )
 
         # Initialize agent attributes first
-        self.assistant_agent: Optional[ChatAgent] = assistant_agent
-        self.user_agent: Optional[ChatAgent] = user_agent
-        self.assistant_sys_msg: Optional[BaseMessage] = None
-        self.user_sys_msg: Optional[BaseMessage] = None
+        self.assistant_agent: ChatAgent
+        self.user_agent: ChatAgent
+        self.assistant_sys_msg: BaseMessage
+        self.user_sys_msg: BaseMessage
         
         # Determine if we need to generate system messages
         if assistant_agent is None or user_agent is None:
@@ -393,11 +393,12 @@ class RolePlaying:
                 assistant_agent.stop_event = stop_event
             self.assistant_agent = assistant_agent
             # Handle potential None system_message - use provided or fallback
-            self.assistant_sys_msg = (
-                assistant_agent.system_message 
-                if assistant_agent.system_message is not None 
-                else init_assistant_sys_msg
-            )
+            if assistant_agent.system_message is not None:
+                self.assistant_sys_msg = assistant_agent.system_message
+            elif init_assistant_sys_msg is not None:
+                self.assistant_sys_msg = init_assistant_sys_msg
+            else:
+                raise ValueError("Assistant system message cannot be None")
         else:
             # Create new assistant agent
             if init_assistant_sys_msg is None:
@@ -419,11 +420,12 @@ class RolePlaying:
                 user_agent.stop_event = stop_event
             self.user_agent = user_agent
             # Handle potential None system_message - use provided or fallback
-            self.user_sys_msg = (
-                user_agent.system_message 
-                if user_agent.system_message is not None 
-                else init_user_sys_msg
-            )
+            if user_agent.system_message is not None:
+                self.user_sys_msg = user_agent.system_message
+            elif init_user_sys_msg is not None:
+                self.user_sys_msg = init_user_sys_msg
+            else:
+                raise ValueError("User system message cannot be None")
         else:
             # Create new user agent
             if init_user_sys_msg is None:
@@ -531,8 +533,10 @@ class RolePlaying:
             BaseMessage: A single `BaseMessage` representing the initial
                 message.
         """
-        self.assistant_agent.reset()
-        self.user_agent.reset()
+        if self.assistant_agent is not None:
+            self.assistant_agent.reset()
+        if self.user_agent is not None:
+            self.user_agent.reset()
         default_init_msg_content = (
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
@@ -541,9 +545,14 @@ class RolePlaying:
             init_msg_content = default_init_msg_content
 
         # Initialize a message sent by the assistant
+        assistant_role_name = "assistant"
+        if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
+            role_name = getattr(self.assistant_sys_msg, 'role_name', None)
+            if role_name is not None:
+                assistant_role_name = role_name
+        
         init_msg = BaseMessage.make_assistant_message(
-            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
-            or "assistant",
+            role_name=assistant_role_name,
             content=init_msg_content,
         )
 
@@ -567,8 +576,10 @@ class RolePlaying:
         """
         # Currently, reset() is synchronous, but if it becomes async in the
         # future, we can await it here
-        self.assistant_agent.reset()
-        self.user_agent.reset()
+        if self.assistant_agent is not None:
+            self.assistant_agent.reset()
+        if self.user_agent is not None:
+            self.user_agent.reset()
         default_init_msg_content = (
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
@@ -577,9 +588,14 @@ class RolePlaying:
             init_msg_content = default_init_msg_content
 
         # Initialize a message sent by the assistant
+        assistant_role_name = "assistant"
+        if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
+            role_name = getattr(self.assistant_sys_msg, 'role_name', None)
+            if role_name is not None:
+                assistant_role_name = role_name
+
         init_msg = BaseMessage.make_assistant_message(
-            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
-            or "assistant",
+            role_name=assistant_role_name,
             content=init_msg_content,
         )
 
@@ -610,6 +626,11 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
+        if self.user_agent is None:
+            raise ValueError("User agent is not initialized")
+        if self.assistant_agent is None:
+            raise ValueError("Assistant agent is not initialized")
+            
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (
@@ -686,6 +707,11 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
+        if self.user_agent is None:
+            raise ValueError("User agent is not initialized")
+        if self.assistant_agent is None:
+            raise ValueError("Assistant agent is not initialized")
+            
         user_response = await self.user_agent.astep(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (
@@ -748,6 +774,8 @@ class RolePlaying:
             RolePlaying: A new instance of RolePlaying with the same
                 configuration.
         """
+        if self.assistant_agent is None or self.user_agent is None:
+            raise ValueError("Cannot clone: assistant_agent or user_agent is None")
 
         new_instance = RolePlaying(
             assistant_role_name=self.assistant_agent.role_name,
