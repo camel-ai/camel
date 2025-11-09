@@ -151,13 +151,15 @@ class RolePlaying:
             **(sys_msg_generator_kwargs or {}),
         )
 
-        self.assistant_agent: ChatAgent
-        self.user_agent: ChatAgent
-        self.assistant_sys_msg: Optional[BaseMessage]
-        self.user_sys_msg: Optional[BaseMessage]
-
-        # Do not regenerate sys_msg when using custom agents
-        if self.assistant_agent is not None and self.user_agent is not None:
+        # Initialize agent attributes first
+        self.assistant_agent: Optional[ChatAgent] = assistant_agent
+        self.user_agent: Optional[ChatAgent] = user_agent
+        self.assistant_sys_msg: Optional[BaseMessage] = None
+        self.user_sys_msg: Optional[BaseMessage] = None
+        
+        # Determine if we need to generate system messages
+        if assistant_agent is None or user_agent is None:
+            # Generate system messages for missing agents
             (
                 init_assistant_sys_msg,
                 init_user_sys_msg,
@@ -169,8 +171,11 @@ class RolePlaying:
                 extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
             )
         else:
+            # When both agents are provided, use their existing system messages
             init_assistant_sys_msg = assistant_agent.system_message
             init_user_sys_msg = user_agent.system_message
+            # Create a default sys_msg_meta_dicts for critic initialization
+            sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
     
         self._init_agents(
             init_assistant_sys_msg,
@@ -182,6 +187,7 @@ class RolePlaying:
             assistant_agent=assistant_agent,
             user_agent=user_agent,
         )
+
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
         self._init_critic(
@@ -336,8 +342,8 @@ class RolePlaying:
 
     def _init_agents(
         self,
-        init_assistant_sys_msg: BaseMessage,
-        init_user_sys_msg: BaseMessage,
+        init_assistant_sys_msg: Optional[BaseMessage],
+        init_user_sys_msg: Optional[BaseMessage],
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         output_language: Optional[str] = None,
@@ -348,9 +354,9 @@ class RolePlaying:
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
-            init_assistant_sys_msg (BaseMessage): Assistant agent's initial
+            init_assistant_sys_msg (Optional[BaseMessage]): Assistant agent's initial
                 system message.
-            init_user_sys_msg (BaseMessage): User agent's initial system
+            init_user_sys_msg (Optional[BaseMessage]): User agent's initial system
                 message.
             assistant_agent_kwargs (Dict, optional): Additional arguments to
                 pass to the assistant agent. (default: :obj:`None`)
@@ -380,13 +386,22 @@ class RolePlaying:
         
         # Use provided assistant agent if available, otherwise create a new one
         if assistant_agent is not None:
-            # Ensure functionality consistent
-            assistant_agent.output_language = output_language
-            assistant_agent.stop_event = stop_event
+            # Ensure functionality consistent with our configuration
+            if hasattr(assistant_agent, 'output_language'):
+                assistant_agent.output_language = output_language
+            if hasattr(assistant_agent, 'stop_event'):
+                assistant_agent.stop_event = stop_event
             self.assistant_agent = assistant_agent
-
-            self.assistant_sys_msg = assistant_agent.system_message
+            # Handle potential None system_message - use provided or fallback
+            self.assistant_sys_msg = (
+                assistant_agent.system_message 
+                if assistant_agent.system_message is not None 
+                else init_assistant_sys_msg
+            )
         else:
+            # Create new assistant agent
+            if init_assistant_sys_msg is None:
+                raise ValueError("Assistant system message cannot be None when creating new agent")
             self.assistant_agent = ChatAgent(
                 init_assistant_sys_msg,
                 output_language=output_language,
@@ -397,9 +412,22 @@ class RolePlaying:
 
         # Use provided user agent if available, otherwise create a new one
         if user_agent is not None:
+            # Ensure functionality consistent with our configuration
+            if hasattr(user_agent, 'output_language'):
+                user_agent.output_language = output_language   
+            if hasattr(user_agent, 'stop_event'):
+                user_agent.stop_event = stop_event
             self.user_agent = user_agent
-            self.user_sys_msg = user_agent.system_message
+            # Handle potential None system_message - use provided or fallback
+            self.user_sys_msg = (
+                user_agent.system_message 
+                if user_agent.system_message is not None 
+                else init_user_sys_msg
+            )
         else:
+            # Create new user agent
+            if init_user_sys_msg is None:
+                raise ValueError("User system message cannot be None when creating new agent")
             self.user_agent = ChatAgent(
                 init_user_sys_msg,
                 output_language=output_language,
