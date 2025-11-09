@@ -255,9 +255,10 @@ class TerminalToolkit(BaseToolkit):
         Args:
             id (str): A specific ID for the session. Must be unique for each non-blocking session.
             command (str): The command to execute.
-            block (bool): If True, the command runs synchronously, waiting for it
-                to complete or time out, and returns its full output. If False,
-                the command runs asynchronously in the background.
+            block (bool): True is suitable for commands running quickly and returning output immediately. shell_exec will wait 
+                for the command to complete until timeout and then return all output. False is suitable for long-running commands 
+                or sessions require further interaction. If False, shell_exec returns immediately after starting the command, and the session stays
+                in the background. The session can be interacted with using other functions like shell_view, shell_write_to_process, etc.
 
         Returns:
             str: If block is True, returns the complete stdout and stderr.
