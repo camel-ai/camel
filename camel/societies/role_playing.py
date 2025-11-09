@@ -62,8 +62,8 @@ class RolePlaying:
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
             to the assistant agent. (default: :obj:`None`)
-        user_agent_kwargs (Dict, optional): Additional arguments to pass to
-            the user agent. (default: :obj:`None`)
+        user_agent_kwargs (Dict, optional): Additional arguments to pass to the
+            user agent. (default: :obj:`None`)
         task_specify_agent_kwargs (Dict, optional): Additional arguments to
             pass to the task specify agent. (default: :obj:`None`)
         task_planner_agent_kwargs (Dict, optional): Additional arguments to
@@ -541,8 +541,7 @@ class RolePlaying:
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
         )
-        if init_msg_content is None:
-            init_msg_content = default_init_msg_content
+        init_msg_content = init_msg_content or default_init_msg_content
 
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
@@ -584,8 +583,7 @@ class RolePlaying:
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
         )
-        if init_msg_content is None:
-            init_msg_content = default_init_msg_content
+        init_msg_content = init_msg_content or default_init_msg_content
 
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
