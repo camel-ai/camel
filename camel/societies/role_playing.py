@@ -457,7 +457,7 @@ class RolePlaying:
             sys_msg_meta_dicts (list): A list of system message meta dicts.
             critic_role_name (str): The name of the role played by the critic.
             critic_criteria (str, optional): Critic criteria for the
-                critic agent. If not specified, set the criteria to
+                critic agent. If not specified, set it to
                 improve task performance. (default: :obj:`None`)
             critic_kwargs (Dict, optional): Additional arguments to
                 pass to the critic. (default: :obj:`None`)
@@ -541,7 +541,7 @@ class RolePlaying:
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
         )
-        init_msg_content = init_msg_content or default_init_msg_content
+        final_init_msg_content = init_msg_content or default_init_msg_content
 
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
@@ -552,7 +552,7 @@ class RolePlaying:
         
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
-            content=init_msg_content,
+            content=final_init_msg_content,
         )
 
         return init_msg
@@ -583,7 +583,7 @@ class RolePlaying:
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
         )
-        init_msg_content = init_msg_content or default_init_msg_content
+        final_init_msg_content = init_msg_content or default_init_msg_content
 
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
@@ -594,7 +594,7 @@ class RolePlaying:
 
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
-            content=init_msg_content,
+            content=final_init_msg_content,
         )
 
         return init_msg
