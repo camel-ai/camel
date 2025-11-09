@@ -52,6 +52,7 @@ from .openai_types import (
     ParsedChatCompletion,
 )
 from .unified_model_type import UnifiedModelType
+from .version_control import *
 
 __all__ = [
     'RoleType',

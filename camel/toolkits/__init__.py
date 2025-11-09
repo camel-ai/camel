@@ -19,6 +19,8 @@ from .function_tool import (
     generate_docstring,
 )
 from .open_api_specs.security_config import openapi_security_config
+from .gitee_toolkit import GiteeToolkit
+
 
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
@@ -32,16 +34,20 @@ from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
 from .base import BaseToolkit, RegisteredAgentToolkit
+from .git_base_toolkit import GitBaseToolkit
+from .version_control_base_toolkit import VersionControlBaseToolkit
+from .repo_sync_toolkit import RepoSyncToolkit
+from .svn_toolkit import SVNToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
+from .gitlab_toolkit import GitLabToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
 from .wechat_official_toolkit import WeChatOfficialToolkit
-from .dingtalk import DingtalkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -96,20 +102,25 @@ from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
+    "GitBaseToolkit",
+    "SVNToolkit",
+    "VersionControlBaseToolkit",
+    "RepoSyncToolkit",
     'BaseToolkit',
     'FunctionTool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
     'openapi_security_config',
+    'GiteeToolkit',
     'GithubToolkit',
+    'GitLabToolkit',
     'MathToolkit',
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
     'WeChatOfficialToolkit',
-    'DingtalkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',

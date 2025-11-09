@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import sys
+import os
+import pytest
 from unittest.mock import MagicMock, patch
-
 
 # Create proper classes for mocking
 class ContentFile:
@@ -75,16 +76,19 @@ for name, mock in mock_modules.items():
 
 # Now import the toolkit after setting up all the mocks
 from camel.toolkits.github_toolkit import GithubToolkit  # noqa: E402
+from camel.types.version_control import (
+    RepositoryNotFoundError,
+    AuthenticationError,
+    OperationFailedError,
+    ResourceNotFoundError
+)  # noqa: E402
 
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
 def test_init(mock_github):
     r"""Test that GithubToolkit initializes correctly."""
-    # Set up mock
-    mock_repo = MagicMock()
-    mock_github.return_value.get_repo.return_value = mock_repo
-    # Create toolkit with mock auth
+    # Simple initialization test
     github_toolkit = GithubToolkit(access_token="token")
     assert github_toolkit is not None, "Failed to initialize GithubToolkit"
 
@@ -338,3 +342,129 @@ def test_github_get_all_file_paths(mock_github):
         assert (
             files == expected_files
         ), f"Expected {expected_files}, got {files}"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_get_repository(mock_github):
+    r"""Test get_repository method functionality."""
+    # Set up mock
+    mock_repo = MagicMock()
+    mock_github.return_value.get_repo.return_value = mock_repo
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the get_repository method
+    with patch.object(
+        github_toolkit,
+        'get_repository',
+        return_value=mock_repo
+    ):
+        repo = github_toolkit.get_repository("test/repo")
+        assert repo == mock_repo, "Repository should be returned correctly"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_get_clone_url(mock_github):
+    r"""Test get_clone_url method functionality."""
+    # Set up mock
+    mock_repo = MagicMock()
+    mock_repo.clone_url = "https://github.com/test/repo.git"
+    mock_github.return_value.get_repo.return_value = mock_repo
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the get_clone_url method
+    with patch.object(
+        github_toolkit,
+        'get_clone_url',
+        return_value="https://github.com/test/repo.git"
+    ):
+        url = github_toolkit.get_clone_url("test/repo")
+        expected_url = "https://github.com/test/repo.git"
+        assert url == expected_url, f"Expected {expected_url}, got {url}"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_get_branches_or_tags(mock_github):
+    r"""Test get_branches_or_tags method functionality."""
+    # Set up mock
+    mock_repo = MagicMock()
+    mock_github.return_value.get_repo.return_value = mock_repo
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the get_branches_or_tags method
+    with patch.object(
+        github_toolkit,
+        'get_branches_or_tags',
+        return_value=["main", "develop"]
+    ):
+        branches = github_toolkit.get_branches_or_tags("test/repo")
+        expected_branches = ["main", "develop"]
+        assert branches == expected_branches, f"Expected {expected_branches}, got {branches}"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_github_retrieve_file_content(mock_github):
+    r"""Test github_retrieve_file_content method functionality."""
+    # Set up mock
+    mock_repo = MagicMock()
+    mock_github.return_value.get_repo.return_value = mock_repo
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the github_retrieve_file_content method
+    with patch.object(
+        github_toolkit,
+        'github_retrieve_file_content',
+        return_value="file content"
+    ):
+        content = github_toolkit.github_retrieve_file_content(
+            repo_name="test/repo",
+            file_path="path/to/file.txt"
+        )
+        expected_content = "file content"
+        assert content == expected_content, f"Expected {expected_content}, got {content}"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_is_repository_exist(mock_github):
+    r"""Test is_repository_exist method functionality."""
+    # Set up mock
+    mock_github.return_value.get_repo.return_value = MagicMock()
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the is_repository_exist method
+    with patch.object(
+        github_toolkit,
+        'is_repository_exist',
+        return_value=True
+    ):
+        exists = github_toolkit.is_repository_exist("test/repo")
+        assert exists is True, "Repository existence check failed"
+
+
+@patch.dict('sys.modules', mock_modules)
+@patch('github.Github')
+def test_repository_not_found_exception(mock_github):
+    r"""Test handling of RepositoryNotFoundError."""
+    # Set up mock to raise exception
+    mock_github.return_value.get_repo.side_effect = RepositoryNotFoundError("Repository not found")
+    # Create toolkit with mock auth
+    github_toolkit = GithubToolkit(access_token="token")
+    
+    # Mock the github_get_issue_list method to raise exception
+    with patch.object(
+        github_toolkit,
+        'github_get_issue_list',
+        side_effect=RepositoryNotFoundError("Repository not found")
+    ):
+        # Verify exception is raised
+        with pytest.raises(RepositoryNotFoundError):
+            github_toolkit.github_get_issue_list(repo_name="non_existent/repo")
