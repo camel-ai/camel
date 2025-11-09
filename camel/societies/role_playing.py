@@ -154,8 +154,8 @@ class RolePlaying:
         # Initialize agent attributes first
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
-        self.assistant_sys_msg: BaseMessage
-        self.user_sys_msg: BaseMessage
+        self.assistant_sys_msg: Optional[BaseMessage] = None
+        self.user_sys_msg: Optional[BaseMessage] = None
         
         # Determine if we need to generate system messages
         if assistant_agent is None or user_agent is None:
