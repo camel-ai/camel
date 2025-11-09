@@ -15,6 +15,7 @@ import atexit
 import os
 import platform
 import select
+import shlex
 import subprocess
 import sys
 import threading
@@ -191,6 +192,20 @@ class TerminalToolkit(BaseToolkit):
                     f"Successfully attached to Docker container "
                     f"'{docker_container_name}'."
                 )
+                # Ensure the working directory exists inside the container
+                if self.docker_workdir:
+                    try:
+                        quoted_dir = shlex.quote(self.docker_workdir)
+                        mkdir_cmd = f'sh -lc "mkdir -p -- {quoted_dir}"'
+                        _init = self.docker_api_client.exec_create(
+                            self.container.id, mkdir_cmd
+                        )
+                        self.docker_api_client.exec_start(_init['Id'])
+                    except Exception as e:
+                        logger.warning(
+                            f"[Docker] Failed to ensure workdir "
+                            f"'{self.docker_workdir}': {e}"
+                        )
             except NotFound:
                 raise RuntimeError(
                     f"Docker container '{docker_container_name}' not found."
