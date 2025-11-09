@@ -7,7 +7,7 @@ on:
       - "camel/**"
       - "examples/**"
       - "test/integration_test/**"
-      - ".github/workflows/test-minimal-install.yml"
+      - ".github/workflows/test_minimal_dependency.yml"
 
 jobs:
   minimal-dependency:

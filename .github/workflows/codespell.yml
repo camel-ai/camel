@@ -5,8 +5,16 @@ name: Codespell
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
   pull_request:
     branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 permissions:
   contents: read
