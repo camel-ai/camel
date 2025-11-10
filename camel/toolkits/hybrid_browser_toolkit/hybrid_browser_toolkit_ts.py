@@ -1791,7 +1791,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
         finally:
-            # Always clean up the listener to prevent breaking future copy operations
             js_cleanup = f"""
             if (window.{var_name}_removeListener) {{
                 window.{var_name}_removeListener();
@@ -1800,7 +1799,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             delete window.{var_name}_removeListener;
             'cleaned'
             """
-            # Suppress cleanup errors to avoid masking original error
             with contextlib.suppress(Exception):
                 await ws_wrapper.console_exec(js_cleanup)
 
