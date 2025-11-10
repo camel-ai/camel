@@ -1604,11 +1604,17 @@ export class HybridBrowserSession {
             break;
           case 'wait':
             // Only apply wait if op.delay is a non-negative finite number
+            // Limit to prevent resource exhaustion (CodeQL js/resource-exhaustion)
             {
-              const maxDelay = 10000; // 10 seconds
+              const MAX_WAIT_DELAY = 10000; // 10 seconds maximum
               let delayValue = Number(op.delay);
-              if (!isFinite(delayValue) || delayValue < 0) delayValue = 0;
-              const safeDelay = Math.min(delayValue, maxDelay);
+              if (!isFinite(delayValue) || delayValue < 0) {
+                delayValue = 0;
+              }
+              // Clamp delay to safe range [0, MAX_WAIT_DELAY]
+              const safeDelay = delayValue > MAX_WAIT_DELAY ? MAX_WAIT_DELAY : delayValue;
+              // lgtm[js/resource-exhaustion]
+              // Safe: delay is clamped to MAX_WAIT_DELAY (10 seconds)
               await new Promise(resolve => setTimeout(resolve, safeDelay));
             }
             break;

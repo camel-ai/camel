@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # =========
 
+import contextlib
 import time
 from typing import (
     Any,
@@ -1607,18 +1608,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             1	Alice	30
             2	Bob	25
         """
+        import platform
+        import uuid
+
+        ws_wrapper = await self._get_ws_wrapper()
+
+        # Use unique ID to avoid conflicts in parallel execution
+        request_id = str(uuid.uuid4())
+        var_name = f"__sheetCopy_{request_id.replace('-', '_')}"
+
         try:
-            import platform
-
-            ws_wrapper = await self._get_ws_wrapper()
-
             # Step 1: Setup copy interception with multiple captures
-            # Use unique ID to avoid conflicts in parallel execution
-            import uuid
-
-            request_id = str(uuid.uuid4())
-            var_name = f"__sheetCopy_{request_id.replace('-', '_')}"
-
             js_inject = f"""
             window.{var_name} = [];
             let copyCount = 0;
@@ -1737,17 +1737,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             else:
                 captured_contents = []
 
-            # Clean up the listener and temporary variable
-            js_cleanup = f"""
-            if (window.{var_name}_removeListener) {{
-                window.{var_name}_removeListener();
-            }}
-            delete window.{var_name};
-            delete window.{var_name}_removeListener;
-            'cleaned'
-            """
-            await ws_wrapper.console_exec(js_cleanup)
-
             if not captured_contents:
                 sheet_content = ""
             elif len(captured_contents) == 1:
@@ -1801,6 +1790,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "current_tab": 0,
                 "total_tabs": 0,
             }
+        finally:
+            # Always clean up the listener to prevent breaking future copy operations
+            js_cleanup = f"""
+            if (window.{var_name}_removeListener) {{
+                window.{var_name}_removeListener();
+            }}
+            delete window.{var_name};
+            delete window.{var_name}_removeListener;
+            'cleaned'
+            """
+            # Suppress cleanup errors to avoid masking original error
+            with contextlib.suppress(Exception):
+                await ws_wrapper.console_exec(js_cleanup)
 
     # Additional methods for backward compatibility
     async def browser_wait_user(
