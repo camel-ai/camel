@@ -534,6 +534,8 @@ class OutlookToolkit(BaseToolkit):
             FunctionTool(self.create_draft_email),
             FunctionTool(self.send_draft_email),
             FunctionTool(self.delete_email),
+            FunctionTool(self.move_message_to_folder),
+            FunctionTool(self.get_attachments),
         ]
 
     async def create_draft_email(
@@ -706,3 +708,206 @@ class OutlookToolkit(BaseToolkit):
             error_msg = f"Failed to move email: {e!s}"
             logger.error(error_msg)
             return {"error": error_msg}
+
+    async def get_attachments(
+        self,
+        message_id: str,
+        metadata_only: bool = True,
+        include_inline_attachments: bool = False,
+        save_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Retrieves attachments from a Microsoft Outlook email message.
+
+        This method fetches attachments from a specified email message and can
+        either return metadata only or download the full attachment content.
+        Inline attachments (like embedded images) can optionally be included
+        or excluded from the results.
+        Also, if a save_path is provided, attachments will be saved to disk.
+
+        Args:
+            message_id (str): The unique identifier of the email message from
+                which to retrieve attachments.
+            metadata_only (bool): If True, returns only attachment metadata
+                (name, size, content type, etc.) without downloading the actual
+                file content. If False, downloads the full attachment content.
+                (default: :obj:`True`)
+            include_inline_attachments (bool): If True, includes inline
+                attachments (such as embedded images) in the results. If False,
+                filters them out. (default: :obj:`False`)
+            save_path (Optional[str]): The local directory path where
+                attachments should be saved. If provided, attachments are saved
+                to disk and the file paths are returned. If None, attachment
+                content is returned as base64-encoded strings (only when
+                metadata_only=False). (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the attachment retrieval
+            results
+
+        """
+        try:
+            request_config = self._build_attachment_query(metadata_only)
+            attachments_response = await self._fetch_attachments(
+                message_id, request_config
+            )
+
+            if not attachments_response:
+                return {
+                    'status': 'success',
+                    'message_id': message_id,
+                    'attachments': [],
+                    'total_count': 0,
+                }
+
+            attachments_list = []
+            for attachment in attachments_response.value:
+                if not include_inline_attachments and attachment.is_inline:
+                    continue
+                info = self._process_attachment(
+                    attachment,
+                    metadata_only,
+                    save_path,
+                )
+                attachments_list.append(info)
+
+            return {
+                'status': 'success',
+                'message_id': message_id,
+                'attachments': attachments_list,
+                'total_count': len(attachments_list),
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to get attachments: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    def _build_attachment_query(self, metadata_only: bool):
+        """Constructs the query configuration for fetching attachments.
+
+        Args:
+            metadata_only (bool): Whether to fetch only metadata or include
+                content bytes.
+
+        Returns:
+            AttachmentsRequestBuilderGetRequestConfiguration: Query config
+                for the Graph API request.
+        """
+        from msgraph.generated.users.item.messages.item.attachments.attachments_request_builder import (  # noqa: E501
+            AttachmentsRequestBuilder,
+        )
+
+        query_params = AttachmentsRequestBuilder.AttachmentsRequestBuilderGetQueryParameters(  # noqa: E501
+            select=[
+                "id",
+                "lastModifiedDateTime",
+                "name",
+                "contentType",
+                "size",
+                "isInline",
+            ]
+        )
+        if not metadata_only:
+            query_params.select.append("content_bytes")
+
+        return AttachmentsRequestBuilder.AttachmentsRequestBuilderGetRequestConfiguration(  # noqa: E501
+            query_parameters=query_params
+        )
+
+    async def _fetch_attachments(self, message_id: str, request_config):
+        """Fetches attachments from the Microsoft Graph API.
+
+        Args:
+            message_id (str): The email message ID.
+            request_config: The request configuration with query parameters.
+
+        Returns:
+            Attachments response from the Graph API.
+        """
+        return await self.client.me.messages.by_message_id(
+            message_id
+        ).attachments.get(request_configuration=request_config)
+
+    def _process_attachment(
+        self,
+        attachment,
+        metadata_only: bool,
+        save_path: Optional[str],
+    ):
+        """Processes a single attachment and extracts its information.
+
+        Args:
+            attachment: The attachment object from Graph API.
+            metadata_only (bool): Whether to include content bytes.
+            save_path (Optional[str]): Path to save attachment file.
+
+        Returns:
+            Dict: Dictionary containing attachment information.
+        """
+        import base64
+
+        info = {
+            'id': attachment.id,
+            'name': attachment.name,
+            'content_type': attachment.content_type,
+            'size': attachment.size,
+            'is_inline': getattr(attachment, 'is_inline', False),
+            'last_modified_date_time': (
+                attachment.last_modified_date_time.isoformat()
+                if getattr(attachment, 'last_modified_date_time', None)
+                else None
+            ),
+        }
+
+        if not metadata_only:
+            content_bytes = getattr(attachment, 'content_bytes', None)
+            if content_bytes:
+                # Decode once because bytes contain Base64 text '
+                decoded_bytes = base64.b64decode(content_bytes)
+
+                if save_path:
+                    file_path = self._save_attachment_file(
+                        save_path, attachment.name, decoded_bytes
+                    )
+                    info['saved_path'] = file_path
+                    logger.info(
+                        f"Attachment {attachment.name} saved to {file_path}"
+                    )
+                else:
+                    info['content_bytes'] = decoded_bytes
+
+        return info
+
+    def _save_attachment_file(
+        self,
+        save_path: str,
+        attachment_name: str,
+        content_bytes: bytes,
+        cannot_overwrite: bool = True,
+    ) -> str:
+        """Saves attachment content to a file on disk.
+
+        Args:
+            save_path (str): Directory path where file should be saved.
+            attachment_name (str): Name of the attachment file.
+            content_bytes (bytes): The file content as bytes.
+            cannot_overwrite (bool): If True, appends counter to filename
+                if file exists. (default: :obj:`True`)
+
+        Returns:
+            str: The full file path where the attachment was saved.
+        """
+        import os
+
+        os.makedirs(save_path, exist_ok=True)
+        file_path = os.path.join(save_path, attachment_name)
+        file_path_already_exists = os.path.exists(file_path)
+        if cannot_overwrite and file_path_already_exists:
+            count = 1
+            name, ext = os.path.splitext(attachment_name)
+            while os.path.exists(file_path):
+                file_path = os.path.join(save_path, f"{name}_{count}{ext}")
+                count += 1
+        with open(file_path, 'wb') as f:
+            f.write(content_bytes)
+        return file_path
