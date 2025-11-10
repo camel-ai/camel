@@ -64,6 +64,11 @@ def mock_people_service():
 
 @pytest.fixture
 def gmail_toolkit(mock_gmail_service, mock_people_service):
+    # Create a mock credentials object to avoid OAuth authentication
+    mock_credentials = MagicMock()
+    mock_credentials.valid = True
+    mock_credentials.expired = False
+
     with (
         patch.dict(
             'os.environ',
@@ -72,6 +77,11 @@ def gmail_toolkit(mock_gmail_service, mock_people_service):
                 'GOOGLE_CLIENT_SECRET': 'mock_client_secret',
                 'GOOGLE_REFRESH_TOKEN': 'mock_refresh_token',
             },
+        ),
+        patch.object(
+            GmailToolkit,
+            '_authenticate',
+            return_value=mock_credentials,
         ),
         patch.object(
             GmailToolkit,
