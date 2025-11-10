@@ -2228,11 +2228,12 @@ class Workforce(BaseNode):
             else TaskState.FAILED
         )
         
-        # Log completion and mode info
+        # Auto-reset mode to initial value after pipeline completion
+        previous_mode = self.mode
+        self.mode = self._initial_mode
         logger.info(
-            f"Pipeline execution completed. Current mode: {self.mode.value}. "
-            f"Use workforce.reset() to reset mode to {self._initial_mode.value}, "
-            f"or workforce.set_mode() to manually change mode."
+            f"Pipeline execution completed. Mode automatically reset from "
+            f"{previous_mode.value} to {self._initial_mode.value}."
         )
         
         return task
@@ -2248,15 +2249,23 @@ class Workforce(BaseNode):
     def _all_pipeline_tasks_successful(self) -> bool:
         """Check if all pipeline tasks completed successfully.
         
-        This method determines the FINAL STATE of the entire pipeline but does 
-        NOT affect task execution flow. In PIPELINE mode:
+        INTENT: This method determines the FINAL STATE of the entire pipeline 
+        but does NOT affect task execution flow. It's called AFTER all tasks 
+        have finished to decide whether the overall pipeline succeeded or failed.
         
+        WHY THIS DESIGN:
+        - In PIPELINE mode, we want failed tasks to pass their error info to 
+          downstream tasks (for error handling/recovery in join tasks)
+        - But we still need to report the overall pipeline status correctly
+        - This separation allows: execution continues + correct final status
+        
+        EXECUTION FLOW (handled in _post_ready_tasks()):
         - Failed tasks still pass their results (including errors) to dependent 
           tasks, allowing join tasks to execute even when upstream tasks fail.
-        - This is handled in _post_ready_tasks() where dependencies are checked.
         
-        This method only runs AFTER all tasks have been processed to determine 
-        whether the overall pipeline should be marked as DONE or FAILED.
+        FINAL STATUS (this method):
+        - This method only runs AFTER all tasks have been processed to determine 
+          whether the overall pipeline should be marked as DONE or FAILED.
         
         Returns:
             bool: True if all tasks completed successfully (DONE state), 
@@ -2273,15 +2282,19 @@ class Workforce(BaseNode):
                     Main pipeline task marked as FAILED
                     But Task D still executed and got all information
         """
-        # 1. If there are still pending tasks, pipeline is not complete
+        # Check 1: Pipeline incomplete if tasks still pending
+        # Intent: Don't evaluate success until all execution finished
         if self._pending_tasks:
             return False
         
-        # 2. If no tasks were completed, consider it a failure
+        # Check 2: No completed tasks = empty pipeline = failure
+        # Intent: Catch edge case of malformed or empty pipeline
         if not self._completed_tasks:
             return False
         
-        # 3. Check if all completed tasks succeeded
+        # Check 3: All tasks must be DONE for pipeline to be successful
+        # Intent: Even one failed task means the pipeline didn't fully succeed,
+        # though downstream tasks still ran (for error handling/recovery)
         return all(task.state == TaskState.DONE for task in self._completed_tasks)
 
     def process_task(self, task: Task) -> Task:
@@ -3884,25 +3897,40 @@ class Workforce(BaseNode):
                     )
                 dependencies = self._task_dependencies[task.id]
 
-                # Check if all dependencies are in completed state
+                # Check if all dependencies are in completed state (regardless of success/failure)
                 all_deps_completed = all(
                     dep_id in completed_tasks_info for dep_id in dependencies
                 )
 
                 # Only proceed with dependency checks if all deps are completed
                 if all_deps_completed:
-                    # Determine if task should be posted based on mode
+                    # ====================================================================
+                    # INTENT: Determine if task should execute based on dependency states
+                    # 
+                    # WHY TWO DIFFERENT STRATEGIES:
+                    # - PIPELINE mode: Workflow-focused, allows error propagation
+                    #   * Join tasks need to see failures to handle them
+                    #   * Example: Merge task gets partial results + error info
+                    # 
+                    # - AUTO_DECOMPOSE mode: Correctness-focused, prevents cascading failures
+                    #   * Only execute if all inputs are valid
+                    #   * Example: Analysis task needs all data to be correct
+                    # ====================================================================
                     should_post_task = False
                     
                     if self.mode == WorkforceMode.PIPELINE:
-                        # PIPELINE mode: Dependencies completed (success or failure)
+                        # PIPELINE mode: Post if dependencies completed (success OR failure)
+                        # Intent: Allow downstream tasks to handle/report upstream failures
+                        # Benefit: Join tasks can aggregate partial results + error context
                         should_post_task = True
                         logger.debug(
                             f"Task {task.id} ready in PIPELINE mode. "
-                            f"All dependencies completed."
+                            f"All dependencies completed (success or failure)."
                         )
                     else:
-                        # AUTO_DECOMPOSE mode: All dependencies must succeed
+                        # AUTO_DECOMPOSE mode: Post ONLY if all dependencies succeeded
+                        # Intent: Prevent executing tasks with invalid/incomplete inputs
+                        # Benefit: Stops cascading failures, clearer error source
                         all_deps_done = all(
                             completed_tasks_info[dep_id] == TaskState.DONE
                             for dep_id in dependencies
@@ -4055,10 +4083,27 @@ class Workforce(BaseNode):
         for cb in self._callbacks:
             cb.log_task_failed(task_failed_event)
 
-        # Check for immediate halt conditions
+        # ========================================================================
+        # Check for immediate halt conditions after max retries
+        # ========================================================================
         if task.failure_count >= MAX_TASK_RETRIES:
-            # PIPELINE mode: Allow workflow to continue with failed task
+            # ====================================================================
+            # INTENT: Different failure handling for different modes
+            # 
+            # PIPELINE mode: Continue workflow despite failures
+            # - WHY: Allow partial results and error recovery in join tasks
+            # - EXAMPLE: In fork-join, if branch A fails, branch B + join still run
+            # - BENEFIT: Join task can generate report with available data + errors
+            # 
+            # AUTO_DECOMPOSE mode: Halt on critical failures
+            # - WHY: Prevent cascading failures and wasted computation
+            # - EXAMPLE: If data fetch fails, don't try to analyze invalid data
+            # - BENEFIT: Fail fast, clearer error source, save resources
+            # ====================================================================
+            
             if self.mode == WorkforceMode.PIPELINE:
+                # PIPELINE: Mark as failed but continue workflow
+                # Intent: Failed tasks pass error info to downstream tasks
                 logger.warning(
                     f"Task {task.id} failed after {MAX_TASK_RETRIES} "
                     f"retries in PIPELINE mode. Marking as failed and "
@@ -4070,11 +4115,13 @@ class Workforce(BaseNode):
                 if task.id in self._assignees:
                     await self._channel.archive_task(task.id)
                 
-                # Check if any pending tasks are now ready
+                # Resume workflow: Check if downstream tasks can now proceed
+                # (they'll receive this failed task's error message)
                 await self._post_ready_tasks()
                 return False  # Don't halt workforce
             
-            # AUTO_DECOMPOSE mode: Halt on max retries
+            # AUTO_DECOMPOSE: Halt immediately on max retries
+            # Intent: Stop execution to prevent cascading failures
             logger.error(
                 f"Task {task.id} has exceeded maximum retry attempts "
                 f"({MAX_TASK_RETRIES}). Final failure reason: "
@@ -4085,7 +4132,7 @@ class Workforce(BaseNode):
             self._completed_tasks.append(task)
             if task.id in self._assignees:
                 await self._channel.archive_task(task.id)
-            return True
+            return True  # Halt workforce
 
         if len(self._pending_tasks) > MAX_PENDING_TASKS_LIMIT:
             logger.error(
@@ -4099,19 +4146,35 @@ class Workforce(BaseNode):
                 await self._channel.archive_task(task.id)
             return True
 
-        # PIPELINE mode: Simple retry without intelligent recovery
+        # ========================================================================
+        # INTENT: Different recovery strategies for different modes
+        # 
+        # PIPELINE mode: Simple retry (fast, predictable)
+        # - WHY: Pipelines are usually well-defined workflows with known steps
+        # - STRATEGY: Just retry the same task without complex analysis
+        # - BENEFIT: Lower overhead, faster recovery, simpler debugging
+        # 
+        # AUTO_DECOMPOSE mode: Intelligent recovery (adaptive, robust)
+        # - WHY: Dynamic task decomposition needs smart error handling
+        # - STRATEGY: Analyze failure and choose best recovery (retry/replan/decompose)
+        # - BENEFIT: Better success rate, can adapt to unexpected failures
+        # ========================================================================
+        
         if self.mode == WorkforceMode.PIPELINE:
+            # PIPELINE: Simple retry logic (no LLM analysis needed)
+            # Intent: Fast recovery for predefined workflows
             logger.info(
                 f"Task {task.id} failed in PIPELINE mode. "
                 f"Will retry (attempt {task.failure_count}/{MAX_TASK_RETRIES})"
             )
-            # Simply reset to pending for retry
+            # Reset task to pending and retry with same configuration
             task.state = TaskState.PENDING
             self._pending_tasks.append(task)
             await self._post_ready_tasks()
             return False
 
-        # AUTO_DECOMPOSE mode: Use intelligent failure analysis
+        # AUTO_DECOMPOSE: Intelligent failure analysis and recovery
+        # Intent: Use LLM to analyze failure and choose optimal recovery strategy
         recovery_decision = self._analyze_task(
             task, for_failure=True, error_message=detailed_error
         )
