@@ -69,20 +69,7 @@ async def main():
         id="research_task_1",
     )
 
-    print("=" * 80)
-    print("WORKFORCE VALIDATION AND ITERATIVE REFINEMENT EXAMPLE")
-    print("=" * 80)
-    print("\nTask:", task.content)
-    print("\nThe workforce will:")
-    print("1. Decompose the task into parallel subtasks")
-    print("2. Execute subtasks in parallel")
-    print("3. Validate and deduplicate results")
-    print("4. If duplicates found or requirements not met, create")
-    print("   additional targeted subtasks")
-    print(
-        "5. Repeat until requirements are satisfied or max iterations reached"
-    )
-    print("\n" + "=" * 80 + "\n")
+    
 
     try:
         # Process the task with the workforce
