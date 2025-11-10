@@ -99,6 +99,7 @@ web_tools = [
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "sympy>=1.13.3,<2",
@@ -301,6 +302,7 @@ eigent = [
     "google-api-python-client==2.166.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
+    "httplib2>=0.31.0",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -321,6 +323,7 @@ all = [
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "requests_oauthlib>=1.3.1,<2",
@@ -430,6 +433,7 @@ all = [
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
     "google-cloud-aiplatform>=1.111.0",
+    "httplib2>=0.31.0",
 ]
 
 [project.urls]
@@ -654,7 +658,8 @@ module = [
     "surrealdb.*",
     "microsandbox.*",
     "sentence_transformers.*",
-    "markitdown"
+    "markitdown",
+    "httplib2",
 ]
 ignore_missing_imports = true
 

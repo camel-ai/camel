@@ -45,8 +45,21 @@ class GoogleCalendarToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
+
+        Note:
+            Before using this toolkit, make sure to:
+            1. Set the required environment variables: GOOGLE_CLIENT_ID and
+               GOOGLE_CLIENT_SECRET
+            2. Configure the redirect URI in Google Cloud Console to
+               http://localhost/
         """
         super().__init__(timeout=timeout)
+        logger.info(
+            "Initializing GoogleCalendarToolkit. Make sure to set "
+            "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables, "
+            "and configure the redirect URI in Google Cloud Console to "
+            "http://localhost/"
+        )
         self.service = self._get_calendar_service()
 
     def create_event(
