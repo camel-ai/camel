@@ -1572,15 +1572,89 @@ export class HybridBrowserSession {
     return true;
   }
 
+  async batchKeyboardInput(operations: Array<{type: string, keys?: string[], text?: string, delay?: number}>, skipStabilityWait: boolean = false): Promise<any> {
+    const startTime = Date.now();
+    const page = await this.getCurrentPage();
+
+    try {
+      const executionStart = Date.now();
+
+      for (const op of operations) {
+        switch (op.type) {
+          case 'press':
+            if (op.keys) {
+              const keys = op.keys.join('+');
+              await page.keyboard.press(keys);
+            }
+            break;
+          case 'type':
+            if (op.text) {
+              await page.keyboard.type(op.text, { delay: op.delay || 0 });
+            }
+            break;
+          case 'wait':
+            if (op.delay) {
+              await new Promise(resolve => setTimeout(resolve, op.delay));
+            }
+            break;
+        }
+      }
+
+      const executionTime = Date.now() - executionStart;
+      let stabilityTime = 0;
+      let stabilityResult = { domContentLoadedTime: 0, networkIdleTime: 0 };
+
+      if (!skipStabilityWait) {
+        const stabilityStart = Date.now();
+
+        try {
+          const browserConfig = this.configLoader.getBrowserConfig();
+          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
+          stabilityResult.domContentLoadedTime = Date.now() - stabilityStart;
+        } catch (error) {
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+        stabilityTime = Date.now() - stabilityStart;
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        stabilityTime = 50;
+      }
+
+      const totalTime = Date.now() - startTime;
+
+      return {
+        success: true,
+        message: `Batch keyboard input completed (${operations.length} operations)`,
+        timing: {
+          total_time_ms: totalTime,
+          execution_time_ms: executionTime,
+          stability_wait_time_ms: stabilityTime,
+          operations_count: operations.length,
+          skipped_stability: skipStabilityWait,
+        },
+      };
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      return {
+        success: false,
+        message: `Batch keyboard input failed: ${error}`,
+        timing: {
+          total_time_ms: totalTime,
+        },
+      };
+    }
+  }
+
   async getTabInfo(): Promise<TabInfo[]> {
     const tabInfo: TabInfo[] = [];
-    
+
     for (const [tabId, page] of this.pages) {
       if (!page.isClosed()) {
         try {
           const title = await page.title();
           const url = page.url();
-          
+
           tabInfo.push({
             tab_id: tabId,
             title,
@@ -1592,7 +1666,7 @@ export class HybridBrowserSession {
         }
       }
     }
-    
+
     return tabInfo;
   }
 
