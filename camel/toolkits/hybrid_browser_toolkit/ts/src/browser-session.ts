@@ -1577,6 +1577,11 @@ export class HybridBrowserSession {
     const page = await this.getCurrentPage();
 
     try {
+      const maxOperations = 100; // Prevent excessive number of operations per batch
+      if (!Array.isArray(operations) || operations.length > maxOperations) {
+        throw new Error(`Too many operations in batch (max ${maxOperations} allowed)`);
+      }
+
       const executionStart = Date.now();
 
       for (const op of operations) {
@@ -1591,15 +1596,19 @@ export class HybridBrowserSession {
             if (op.text) {
               // Limit delay to prevent resource exhaustion attacks
               const maxTypeDelay = 1000; // 1 second per character max
-              const safeTypeDelay = Math.min(op.delay || 0, maxTypeDelay);
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) delayValue = 0;
+              const safeTypeDelay = Math.min(delayValue, maxTypeDelay);
               await page.keyboard.type(op.text, { delay: safeTypeDelay });
             }
             break;
           case 'wait':
-            if (op.delay) {
-              // Limit delay to prevent resource exhaustion attacks
+            // Only apply wait if op.delay is a non-negative finite number
+            {
               const maxDelay = 10000; // 10 seconds
-              const safeDelay = Math.min(op.delay, maxDelay);
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) delayValue = 0;
+              const safeDelay = Math.min(delayValue, maxDelay);
               await new Promise(resolve => setTimeout(resolve, safeDelay));
             }
             break;
