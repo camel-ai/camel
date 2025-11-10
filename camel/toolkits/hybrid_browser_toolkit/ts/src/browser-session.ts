@@ -1589,12 +1589,18 @@ export class HybridBrowserSession {
             break;
           case 'type':
             if (op.text) {
-              await page.keyboard.type(op.text, { delay: op.delay || 0 });
+              // Limit delay to prevent resource exhaustion attacks
+              const maxTypeDelay = 1000; // 1 second per character max
+              const safeTypeDelay = Math.min(op.delay || 0, maxTypeDelay);
+              await page.keyboard.type(op.text, { delay: safeTypeDelay });
             }
             break;
           case 'wait':
             if (op.delay) {
-              await new Promise(resolve => setTimeout(resolve, op.delay));
+              // Limit delay to prevent resource exhaustion attacks
+              const maxDelay = 10000; // 10 seconds
+              const safeDelay = Math.min(op.delay, maxDelay);
+              await new Promise(resolve => setTimeout(resolve, safeDelay));
             }
             break;
         }
