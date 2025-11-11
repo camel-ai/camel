@@ -77,7 +77,7 @@ class FailingWorker(SingleAgentWorker):
 
 @pytest.fixture(autouse=True)
 def stub_openai_api_key(monkeypatch):
-    r"""Ensure OPENAI_API_KEY is set to avoid real backend calls during tests."""
+    r"""Ensure OPENAI_API_KEY is set during tests."""
     previous_value = os.environ.get("OPENAI_API_KEY")
     monkeypatch.setenv("OPENAI_API_KEY", "dummy")
     yield
@@ -132,8 +132,6 @@ def test_pipeline_fork_join_pattern():
 
     # Verify tasks were created
     assert len(workforce._pending_tasks) == 4
-
-    tasks_dict = {task.id: task for task in workforce._pending_tasks}
 
     # Find tasks by content
     task_a = next(t for t in workforce._pending_tasks if t.content == "Task A")
@@ -202,7 +200,7 @@ def test_pipeline_manual_mode_setting():
 
 
 def test_pipeline_execution_structure():
-    """Test pipeline structure and worker assignment (without actual execution)."""
+    """Test pipeline structure and worker assignment without execution."""
     workforce = Workforce("Test Workforce")
 
     # Add workers
@@ -272,7 +270,7 @@ async def test_pipeline_failed_task_continues_workflow():
     task_2.state = TaskState.FAILED
     workforce._completed_tasks = [task_1, task_2]
 
-    # Check if task 3 should be posted (it should, because PIPELINE mode continues)
+    # Check if task 3 should be posted (PIPELINE mode continues)
     completed_tasks_info = {t.id: t.state for t in workforce._completed_tasks}
     all_deps_completed = all(
         dep_id in completed_tasks_info
@@ -292,7 +290,7 @@ async def test_pipeline_failed_task_continues_workflow():
 
 @pytest.mark.asyncio
 async def test_pipeline_fork_with_one_branch_failing():
-    """Test fork-join pattern where one branch fails but join still executes."""
+    """Ensure fork-join runs even when one branch fails."""
     workforce = Workforce("Test Workforce")
 
     # Add workers
@@ -352,7 +350,6 @@ def test_pipeline_mode_reset_after_execution():
     assert workforce.mode == WorkforceMode.PIPELINE
 
     # Simulate pipeline completion by calling the mode reset logic
-    previous_mode = workforce.mode
     workforce.mode = workforce._initial_mode
 
     # Verify mode was reset
@@ -517,7 +514,7 @@ def test_pipeline_with_task_objects_in_parallel():
     assert parallel_task_2 is not None, "Parallel Task 2 should exist"
 
     # Verify additional info if preserved (implementation dependent)
-    # If additional_info is preserved, check it; otherwise just verify tasks exist
+    # If preserved, check it; otherwise ensure tasks exist
     if (
         parallel_task_1.additional_info
         and "type" in parallel_task_1.additional_info
@@ -532,7 +529,7 @@ def test_pipeline_with_task_objects_in_parallel():
 
 @pytest.mark.asyncio
 async def test_handle_failed_task_pipeline_vs_auto_decompose():
-    """Test different failure handling between PIPELINE and AUTO_DECOMPOSE modes."""
+    """Compare failure handling in PIPELINE vs AUTO_DECOMPOSE modes."""
     workforce = Workforce("Test Workforce")
 
     # Test PIPELINE mode
@@ -542,15 +539,10 @@ async def test_handle_failed_task_pipeline_vs_auto_decompose():
     task_pipeline.state = TaskState.FAILED
     task_pipeline.result = "Failed"
 
-    # In PIPELINE mode with max retries, should not halt
-    should_halt_pipeline = task_pipeline.failure_count >= 3
     pipeline_mode = workforce.mode == WorkforceMode.PIPELINE
 
-    # PIPELINE mode should continue (not halt) even after max retries
-    expected_halt = False  # Should NOT halt in PIPELINE mode
-    assert (
-        pipeline_mode
-    ), "Should be in PIPELINE mode for this part of the test"
+    assert pipeline_mode, "Should be in PIPELINE mode for this test section"
+    assert task_pipeline.failure_count >= 3
 
     # Test AUTO_DECOMPOSE mode
     workforce.mode = WorkforceMode.AUTO_DECOMPOSE
@@ -559,18 +551,10 @@ async def test_handle_failed_task_pipeline_vs_auto_decompose():
     task_auto.state = TaskState.FAILED
     task_auto.result = "Failed"
 
-    # In AUTO_DECOMPOSE mode with max retries, should halt
-    should_halt_auto = task_auto.failure_count >= 3
     auto_mode = workforce.mode == WorkforceMode.AUTO_DECOMPOSE
 
-    # AUTO_DECOMPOSE mode should halt after max retries
-    expected_halt_auto = True
-    assert (
-        auto_mode
-    ), "Should be in AUTO_DECOMPOSE mode for this part of the test"
-    assert (
-        should_halt_auto
-    ), "Should halt in AUTO_DECOMPOSE mode after max retries"
+    assert auto_mode, "Should be in AUTO_DECOMPOSE mode for this test section"
+    assert task_auto.failure_count >= 3
 
 
 def test_pipeline_get_builder():

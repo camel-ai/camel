@@ -50,7 +50,6 @@ from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
-from camel.societies.workforce.events import WorkerCreatedEvent
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
@@ -78,7 +77,6 @@ from camel.societies.workforce.utils import (
     check_if_running,
 )
 from camel.societies.workforce.worker import Worker
-from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.tasks.task import (
     Task,
     TaskState,
@@ -672,8 +670,13 @@ class Workforce(BaseNode):
         logger.info(f"Workforce mode changed to {mode.value}")
         return self
 
-    def _ensure_pipeline_builder(self):
-        """Ensure pipeline builder is initialized and switch to pipeline mode."""
+    def _ensure_pipeline_builder(self) -> PipelineTaskBuilder:
+        """Ensure pipeline builder is initialized and switch to
+        pipeline mode.
+
+        Returns:
+            PipelineTaskBuilder: The initialized pipeline builder instance.
+        """
         if self._pipeline_builder is None:
             from camel.societies.workforce.utils import PipelineTaskBuilder
 
@@ -686,6 +689,8 @@ class Workforce(BaseNode):
                 f"PIPELINE. Use workforce.set_mode() to manually control mode."
             )
             self.mode = WorkforceMode.PIPELINE
+
+        return self._pipeline_builder
 
     def pipeline_add(
         self,
@@ -714,7 +719,8 @@ class Workforce(BaseNode):
                 for the task. Only used when content is a string.
                 (default: :obj:`None`)
             auto_depend (bool, optional): If True and dependencies is None,
-                automatically depend on the last added task. (default: :obj:`True`)
+                automatically depend on the last added task.
+                (default: :obj:`True`)
 
         Returns:
             Workforce: Self for method chaining.
@@ -731,7 +737,7 @@ class Workforce(BaseNode):
             ... )
             >>> workforce.pipeline_add(task)
         """
-        self._ensure_pipeline_builder()
+        builder = self._ensure_pipeline_builder()
 
         # Convert Task object to parameters if needed
         if isinstance(content, Task):
@@ -742,7 +748,7 @@ class Workforce(BaseNode):
             task_content = content
             task_additional_info = additional_info
 
-        self._pipeline_builder.add(
+        builder.add(
             task_content,
             task_id,
             dependencies,
@@ -774,7 +780,8 @@ class Workforce(BaseNode):
                 Only used when task_contents contains strings.
                 (default: :obj:`"parallel"`)
             auto_depend (bool, optional): If True and dependencies is None,
-                automatically depend on the last added task. (default: :obj:`True`)
+                automatically depend on the last added task.
+                (default: :obj:`True`)
 
         Returns:
             Workforce: Self for method chaining.
@@ -787,23 +794,33 @@ class Workforce(BaseNode):
             >>>
             >>> # Advanced usage with Task objects
             >>> tasks = [
-            ...     Task(content="Analysis 1", additional_info={"type": "tech"}),
-            ...     Task(content="Analysis 2", additional_info={"type": "biz"})
+            ...     Task(
+            ...         content="Analysis 1",
+            ...         additional_info={"type": "tech"},
+            ...     ),
+            ...     Task(
+            ...         content="Analysis 2",
+            ...         additional_info={"type": "biz"},
+            ...     ),
             ... ]
             >>> workforce.add_parallel_pipeline_tasks(tasks)
         """
-        self._ensure_pipeline_builder()
+        builder = self._ensure_pipeline_builder()
 
         # Convert Task objects to content strings if needed
         if task_contents and isinstance(task_contents[0], Task):
             # Extract content from Task objects
             content_list = [task.content for task in task_contents]
-            self._pipeline_builder.add_parallel_tasks(
+            builder.add_parallel_tasks(
                 content_list, dependencies, task_id_prefix, auto_depend
             )
         else:
-            self._pipeline_builder.add_parallel_tasks(
-                task_contents, dependencies, task_id_prefix, auto_depend
+            # task_contents is List[str] in else branch
+            builder.add_parallel_tasks(
+                task_contents,  # type: ignore[arg-type]
+                dependencies,
+                task_id_prefix,
+                auto_depend,
             )
         return self
 
@@ -842,7 +859,7 @@ class Workforce(BaseNode):
             ... )
             >>> workforce.add_sync_pipeline_task(sync_task)
         """
-        self._ensure_pipeline_builder()
+        builder = self._ensure_pipeline_builder()
 
         # Convert Task object to parameters if needed
         if isinstance(content, Task):
@@ -851,7 +868,7 @@ class Workforce(BaseNode):
         else:
             task_content = content
 
-        self._pipeline_builder.add_sync_task(task_content, wait_for, task_id)
+        builder.add_sync_task(task_content, wait_for, task_id)
         return self
 
     def pipeline_fork(
@@ -872,26 +889,33 @@ class Workforce(BaseNode):
 
         Example:
             >>> # Simple usage with strings
-            >>> workforce.pipeline_add("Collect Data").pipeline_fork([
-            ...     "Technical Analysis", "Fundamental Analysis"
-            ... ]).pipeline_join("Generate Report")
+            >>> workforce.pipeline_add("Collect Data").pipeline_fork(
+            ...     ["Technical Analysis", "Fundamental Analysis"]
+            ... ).pipeline_join("Generate Report")
             >>>
             >>> # Advanced usage with Task objects
             >>> tasks = [
-            ...     Task(content="Parse JSON", additional_info={"format": "json"}),
-            ...     Task(content="Parse XML", additional_info={"format": "xml"})
+            ...     Task(
+            ...         content="Parse JSON",
+            ...         additional_info={"format": "json"},
+            ...     ),
+            ...     Task(
+            ...         content="Parse XML",
+            ...         additional_info={"format": "xml"},
+            ...     ),
             ... ]
             >>> workforce.pipeline_add("Fetch Data").pipeline_fork(tasks)
         """
-        self._ensure_pipeline_builder()
+        builder = self._ensure_pipeline_builder()
 
         # Convert Task objects to content strings if needed
         if task_contents and isinstance(task_contents[0], Task):
             # Extract content from Task objects
             content_list = [task.content for task in task_contents]
-            self._pipeline_builder.fork(content_list)
+            builder.fork(content_list)
         else:
-            self._pipeline_builder.fork(task_contents)
+            # task_contents is List[str] in else branch
+            builder.fork(task_contents)  # type: ignore[arg-type]
         return self
 
     def pipeline_join(
@@ -914,7 +938,9 @@ class Workforce(BaseNode):
 
         Example:
             >>> # Simple usage
-            >>> workforce.pipeline_fork(["Task A", "Task B"]).pipeline_join("Merge Results")
+            >>> workforce.pipeline_fork(["Task A", "Task B"]).pipeline_join(
+            ...     "Merge Results"
+            ... )
             >>>
             >>> # Advanced usage with Task object
             >>> join_task = Task(
@@ -923,7 +949,7 @@ class Workforce(BaseNode):
             ... )
             >>> workforce.pipeline_fork(["A", "B"]).pipeline_join(join_task)
         """
-        self._ensure_pipeline_builder()
+        builder = self._ensure_pipeline_builder()
 
         # Convert Task object to parameters if needed
         if isinstance(content, Task):
@@ -932,7 +958,7 @@ class Workforce(BaseNode):
         else:
             task_content = content
 
-        self._pipeline_builder.join(task_content, task_id)
+        builder.join(task_content, task_id)
         return self
 
     def pipeline_build(self) -> Workforce:
@@ -942,9 +968,9 @@ class Workforce(BaseNode):
             Workforce: Self for method chaining.
 
         Example:
-            >>> workforce.pipeline_add("Step 1").pipeline_fork([
-            ...     "Task A", "Task B"
-            ... ]).pipeline_join("Merge").pipeline_build()
+            >>> workforce.pipeline_add("Step 1").pipeline_fork(
+            ...     ["Task A", "Task B"]
+            ... ).pipeline_join("Merge").pipeline_build()
         """
         if self._pipeline_builder is None:
             raise ValueError("No pipeline tasks defined")
@@ -966,16 +992,15 @@ class Workforce(BaseNode):
             >>> tasks = builder.build()
             >>> workforce.set_pipeline_tasks(tasks)
         """
-        self._ensure_pipeline_builder()
-        return self._pipeline_builder
+        return self._ensure_pipeline_builder()
 
     def set_pipeline_tasks(self, tasks: List[Task]) -> None:
         """Set predefined pipeline tasks for PIPELINE mode.
 
         Args:
             tasks (List[Task]): List of tasks with dependencies already set.
-                The dependencies should be Task objects in the Task.dependencies
-                attribute.
+                The dependencies should be Task objects in the
+                Task.dependencies attribute.
 
         Raises:
             ValueError: If tasks are invalid.
@@ -2211,7 +2236,8 @@ class Workforce(BaseNode):
         # Don't reset here - keep the predefined tasks
         self._task = task
 
-        # Log main task creation event through callbacks (following source code pattern)
+        # Log main task creation event through callbacks
+        # (following source code pattern)
         task_created_event = TaskCreatedEvent(
             task_id=task.id,
             description=task.content,
@@ -2255,27 +2281,30 @@ class Workforce(BaseNode):
     def _all_pipeline_tasks_successful(self) -> bool:
         """Check if all pipeline tasks completed successfully.
 
-        INTENT: This method determines the FINAL STATE of the entire pipeline
-        but does NOT affect task execution flow. It's called AFTER all tasks
-        have finished to decide whether the overall pipeline succeeded or failed.
+        INTENT: This method determines the FINAL STATE of the entire
+        pipeline but does NOT affect task execution flow. It's called
+        AFTER all tasks have finished to decide whether the overall
+        pipeline succeeded or failed.
 
         WHY THIS DESIGN:
-        - In PIPELINE mode, we want failed tasks to pass their error info to
-          downstream tasks (for error handling/recovery in join tasks)
-        - But we still need to report the overall pipeline status correctly
-        - This separation allows: execution continues + correct final status
+        - In PIPELINE mode, we want failed tasks to pass their error info
+          to downstream tasks (for recovery in join tasks)
+        - We still need to report the overall pipeline status correctly
+        - This separation allows execution to continue and keeps a correct
+          final status
 
         EXECUTION FLOW (handled in _post_ready_tasks()):
-        - Failed tasks still pass their results (including errors) to dependent
-          tasks, allowing join tasks to execute even when upstream tasks fail.
+        - Failed tasks still pass their results (including errors) to
+          dependent tasks, allowing join tasks to execute even when
+          upstream tasks fail.
 
         FINAL STATUS (this method):
-        - This method only runs AFTER all tasks have been processed to determine
-          whether the overall pipeline should be marked as DONE or FAILED.
+        - Runs AFTER all tasks have been processed to decide whether the
+          overall pipeline should be marked as DONE or FAILED.
 
         Returns:
             bool: True if all tasks completed successfully (DONE state),
-                  False if any tasks failed or are still pending.
+                False if any tasks failed or are still pending.
 
         Example:
             Fork-Join pattern with one failed branch:
@@ -2284,9 +2313,9 @@ class Workforce(BaseNode):
             - Task C (parallel summary 2) → FAILED
             - Task D (join/synthesis) → DONE (receives B's result + C's error)
 
-            Result: _all_pipeline_tasks_successful() returns False
-                    Main pipeline task marked as FAILED
-                    But Task D still executed and got all information
+            Result: _all_pipeline_tasks_successful() returns False,
+            main pipeline task marked as FAILED, but Task D still executed
+            and received all information.
         """
         # Check 1: Pipeline incomplete if tasks still pending
         # Intent: Don't evaluate success until all execution finished
@@ -3820,8 +3849,10 @@ class Workforce(BaseNode):
         tasks whose dependencies have been met."""
 
         # Step 1: Identify and assign any new tasks in the pending queue
-        # In PIPELINE mode, tasks already have dependencies set but need worker assignment
-        # In other modes, tasks without dependencies entry are new and need both
+        # In PIPELINE mode, tasks already have dependencies set but need
+        # worker assignment.
+        # In other modes, tasks without a dependencies entry are new and
+        # need both assignments and dependencies.
         if self.mode == WorkforceMode.PIPELINE:
             tasks_to_assign = [
                 task
@@ -3853,8 +3884,9 @@ class Workforce(BaseNode):
                 f"{json.dumps(batch_result.model_dump(), indent=2)}"
             )
             for assignment in batch_result.assignments:
-                # For pipeline mode, dependencies are already set, only update assignees
-                # For other modes, update both dependencies and assignees
+                # For pipeline mode, dependencies are already set, only
+                # update assignees.
+                # For other modes, update both dependencies and assignees.
                 if self.mode != WorkforceMode.PIPELINE:
                     self._task_dependencies[assignment.task_id] = (
                         assignment.dependencies
@@ -3904,40 +3936,41 @@ class Workforce(BaseNode):
                     )
                 dependencies = self._task_dependencies[task.id]
 
-                # Check if all dependencies are in completed state (regardless of success/failure)
+                # Check if all dependencies are in the completed state
+                # (regardless of success or failure).
                 all_deps_completed = all(
                     dep_id in completed_tasks_info for dep_id in dependencies
                 )
 
                 # Only proceed with dependency checks if all deps are completed
                 if all_deps_completed:
-                    # ====================================================================
-                    # INTENT: Determine if task should execute based on dependency states
-                    #
-                    # WHY TWO DIFFERENT STRATEGIES:
-                    # - PIPELINE mode: Workflow-focused, allows error propagation
-                    #   * Join tasks need to see failures to handle them
-                    #   * Example: Merge task gets partial results + error info
-                    #
-                    # - AUTO_DECOMPOSE mode: Correctness-focused, prevents cascading failures
-                    #   * Only execute if all inputs are valid
-                    #   * Example: Analysis task needs all data to be correct
-                    # ====================================================================
+                    # Intent: decide whether this task should run based on
+                    # dependency state.
+                    # Pipeline mode allows error propagation so joins can
+                    # handle upstream failures.
+                    # Auto-decompose mode requires successful inputs to avoid
+                    # cascading errors.
                     should_post_task = False
 
                     if self.mode == WorkforceMode.PIPELINE:
-                        # PIPELINE mode: Post if dependencies completed (success OR failure)
-                        # Intent: Allow downstream tasks to handle/report upstream failures
-                        # Benefit: Join tasks can aggregate partial results + error context
+                        # PIPELINE mode: post if dependencies are complete
+                        # (success OR failure).
+                        # Intent: allow downstream tasks to handle and report
+                        # upstream failures.
+                        # Benefit: join tasks can aggregate partial results
+                        # plus error context.
                         should_post_task = True
                         logger.debug(
                             f"Task {task.id} ready in PIPELINE mode. "
                             f"All dependencies completed (success or failure)."
                         )
                     else:
-                        # AUTO_DECOMPOSE mode: Post ONLY if all dependencies succeeded
-                        # Intent: Prevent executing tasks with invalid/incomplete inputs
-                        # Benefit: Stops cascading failures, clearer error source
+                        # AUTO_DECOMPOSE mode: post ONLY if all dependencies
+                        # succeeded.
+                        # Intent: prevent executing tasks with invalid or
+                        # incomplete inputs.
+                        # Benefit: stops cascading failures and keeps the error
+                        # source clear.
                         all_deps_done = all(
                             completed_tasks_info[dep_id] == TaskState.DONE
                             for dep_id in dependencies
@@ -3955,13 +3988,14 @@ class Workforce(BaseNode):
                         await self._post_task(task, assignee_id)
                         posted_tasks.append(task)
                     elif self.mode == WorkforceMode.AUTO_DECOMPOSE:
-                        # AUTO_DECOMPOSE mode: Handle dependency failures
+                        # AUTO_DECOMPOSE mode: handle dependency failures.
                         any_dep_failed = any(
                             completed_tasks_info[dep_id] == TaskState.FAILED
                             for dep_id in dependencies
                         )
                         if any_dep_failed:
-                            # Check if any failed dependencies can still be retried
+                            # Check if any failed dependencies can still be
+                            # retried.
                             failed_deps = [
                                 dep_id
                                 for dep_id in dependencies
@@ -4091,31 +4125,19 @@ class Workforce(BaseNode):
         for cb in self._callbacks:
             cb.log_task_failed(task_failed_event)
 
-        # ========================================================================
-        # Check for immediate halt conditions after max retries
-        # ========================================================================
+        # Check for immediate halt conditions after max retries.
         if task.failure_count >= MAX_TASK_RETRIES:
-            # ====================================================================
-            # INTENT: Different failure handling for different modes
-            #
-            # PIPELINE mode: Continue workflow despite failures
-            # - WHY: Allow partial results and error recovery in join tasks
-            # - EXAMPLE: In fork-join, if branch A fails, branch B + join still run
-            # - BENEFIT: Join task can generate report with available data + errors
-            #
-            # AUTO_DECOMPOSE mode: Halt on critical failures
-            # - WHY: Prevent cascading failures and wasted computation
-            # - EXAMPLE: If data fetch fails, don't try to analyze invalid data
-            # - BENEFIT: Fail fast, clearer error source, save resources
-            # ====================================================================
+            # Intent: handle max retry failures differently per mode.
+            # Pipeline mode continues to allow downstream recovery.
+            # Auto-decompose mode halts to avoid cascading errors.
 
             if self.mode == WorkforceMode.PIPELINE:
                 # PIPELINE: Mark as failed but continue workflow
                 # Intent: Failed tasks pass error info to downstream tasks
                 logger.warning(
-                    f"Task {task.id} failed after {MAX_TASK_RETRIES} "
-                    f"retries in PIPELINE mode. Marking as failed and "
-                    f"allowing workflow to continue. Error: {failure_reason}"
+                    f"Task {task.id} failed after {MAX_TASK_RETRIES} retries "
+                    f"in PIPELINE mode. Marking as failed and allowing the "
+                    f"workflow to continue. Error: {failure_reason}"
                 )
                 task.state = TaskState.FAILED
                 self._cleanup_task_tracking(task.id)
@@ -4154,35 +4176,25 @@ class Workforce(BaseNode):
                 await self._channel.archive_task(task.id)
             return True
 
-        # ========================================================================
-        # INTENT: Different recovery strategies for different modes
-        #
-        # PIPELINE mode: Simple retry (fast, predictable)
-        # - WHY: Pipelines are usually well-defined workflows with known steps
-        # - STRATEGY: Just retry the same task without complex analysis
-        # - BENEFIT: Lower overhead, faster recovery, simpler debugging
-        #
-        # AUTO_DECOMPOSE mode: Intelligent recovery (adaptive, robust)
-        # - WHY: Dynamic task decomposition needs smart error handling
-        # - STRATEGY: Analyze failure and choose best recovery (retry/replan/decompose)
-        # - BENEFIT: Better success rate, can adapt to unexpected failures
-        # ========================================================================
+        # Recovery strategies differ by mode.
+        # Pipeline mode retries quickly without additional analysis.
+        # Auto-decompose mode analyzes the failure to choose a recovery plan.
 
         if self.mode == WorkforceMode.PIPELINE:
             # PIPELINE: Simple retry logic (no LLM analysis needed)
             # Intent: Fast recovery for predefined workflows
             logger.info(
-                f"Task {task.id} failed in PIPELINE mode. "
-                f"Will retry (attempt {task.failure_count}/{MAX_TASK_RETRIES})"
+                f"Task {task.id} failed in PIPELINE mode. Will retry "
+                f"(attempt {task.failure_count}/{MAX_TASK_RETRIES})"
             )
             # Reset task to pending and retry with same configuration
-            task.state = TaskState.PENDING
+            task.state = TaskState.OPEN
             self._pending_tasks.append(task)
             await self._post_ready_tasks()
             return False
 
         # AUTO_DECOMPOSE: Intelligent failure analysis and recovery
-        # Intent: Use LLM to analyze failure and choose optimal recovery strategy
+        # Intent: Use LLM analysis to choose an optimal recovery strategy.
         recovery_decision = self._analyze_task(
             task, for_failure=True, error_message=detailed_error
         )
