@@ -235,7 +235,8 @@ class PipelineTaskBuilder:
         self._last_task_id = (
             None  # Track the last added task for chain inference
         )
-        self._last_parallel_tasks = []  # Track the last added parallel tasks for sync
+        # Track the last added parallel tasks for sync
+        self._last_parallel_tasks: List[str] = []
 
     def add(
         self,
@@ -257,13 +258,15 @@ class PipelineTaskBuilder:
             additional_info (dict, optional): Additional information
                 for the task. (default: :obj:`None`)
             auto_depend (bool, optional): If True and dependencies is None,
-                automatically depend on the last added task. (default: :obj:`True`)
+                automatically depend on the last added task.
+                (default: :obj:`True`)
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
 
         Raises:
-            ValueError: If task_id already exists or if any dependency is not found.
+            ValueError: If task_id already exists or if any dependency is
+                not found.
 
         Example:
             >>> builder.add("Step 1").add("Step 2").add("Step 3")
@@ -325,13 +328,15 @@ class PipelineTaskBuilder:
             task_id_prefix (str, optional): Prefix for generated task IDs.
                 (default: :obj:`"parallel"`)
             auto_depend (bool, optional): If True and dependencies is None,
-                automatically depend on the last added task. (default: :obj:`True`)
+                automatically depend on the last added task.
+                (default: :obj:`True`)
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
 
         Raises:
-            ValueError: If any task_id already exists or if any dependency is not found.
+            ValueError: If any task_id already exists or if any dependency
+                is not found.
 
         Example:
             >>> builder.add("Collect Data").add_parallel_tasks([
@@ -388,10 +393,13 @@ class PipelineTaskBuilder:
             PipelineTaskBuilder: Self for method chaining.
 
         Raises:
-            ValueError: If task_id already exists or if any dependency is not found.
+            ValueError: If task_id already exists or if any dependency is
+                not found.
 
         Example:
-            >>> builder.add_parallel_tasks(["Task A", "Task B"]).add_sync_task("Merge Results")
+            >>> builder.add_parallel_tasks(
+            ...     ["Task A", "Task B"]
+            ... ).add_sync_task("Merge Results")
             # Automatically waits for both parallel tasks
         """
         # Auto-infer wait_for from last parallel tasks
@@ -402,7 +410,8 @@ class PipelineTaskBuilder:
                 self._last_parallel_tasks = []
             else:
                 raise ValueError(
-                    "wait_for cannot be empty for sync task and no parallel tasks found"
+                    "wait_for cannot be empty for sync task and no "
+                    "parallel tasks found"
                 )
 
         if not wait_for:
@@ -419,7 +428,8 @@ class PipelineTaskBuilder:
             List[Task]: List of tasks with proper dependency relationships.
 
         Raises:
-            ValueError: If there are circular dependencies or other validation errors.
+            ValueError: If there are circular dependencies or other
+                validation errors.
         """
         if not self.task_list:
             raise ValueError("No tasks defined in pipeline")
@@ -438,10 +448,12 @@ class PipelineTaskBuilder:
         self._last_parallel_tasks = []
 
     def fork(self, task_contents: List[str]) -> 'PipelineTaskBuilder':
-        """Create parallel branches from the current task (alias for add_parallel_tasks).
+        """Create parallel branches from the current task (alias for
+        add_parallel_tasks).
 
         Args:
-            task_contents (List[str]): List of task content strings for parallel execution.
+            task_contents (List[str]): List of task content strings for
+                parallel execution.
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
@@ -456,7 +468,8 @@ class PipelineTaskBuilder:
     def join(
         self, content: str, task_id: Optional[str] = None
     ) -> 'PipelineTaskBuilder':
-        """Join parallel branches with a synchronization task (alias for add_sync_task).
+        """Join parallel branches with a synchronization task (alias for
+        add_sync_task).
 
         Args:
             content (str): Content of the join/sync task.
@@ -499,7 +512,8 @@ class PipelineTaskBuilder:
             if task_id not in visited:
                 if has_cycle(task_id):
                     raise ValueError(
-                        f"Circular dependency detected involving task: {task_id}"
+                        f"Circular dependency detected involving task: "
+                        f"{task_id}"
                     )
 
     def get_task_info(self) -> dict:
