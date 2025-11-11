@@ -195,7 +195,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         return self
 
     def load(self, force_download: bool = False) -> "STWebAgentBenchmark":
-        """Load the ST-WebAgentBench data.
+        r"""Load the ST-WebAgentBench data.
         
         Args:
             force_download (bool): Whether to force download the data.
