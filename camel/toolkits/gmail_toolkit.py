@@ -148,8 +148,10 @@ class GmailToolkit(BaseToolkit):
         r"""Reply to an email message.
 
         Args:
-            message_id (str): The ID of the message to reply to (found in
-                send_email/list_drafts results or users.messages.get).
+            message_id (str): The unique identifier of the message to reply to.
+                To get a message ID, first use fetch_emails() to list messages,
+                or use the 'message_id' returned from send_email() or
+                create_email_draft().
             reply_body (str): The reply message body.
             reply_all (bool): Whether to reply to all recipients.
             is_html (bool): Whether the body is HTML format. Set to True when
@@ -290,10 +292,15 @@ class GmailToolkit(BaseToolkit):
         r"""Forward an email message.
 
         Args:
-            message_id (str): The ID of the message to forward (found in
-                send_email/list_drafts results or users.messages.get).
+            message_id (str): The unique identifier of the message to forward.
+                To get a message ID, first use fetch_emails() to list messages,
+                or use the 'message_id' returned from send_email() or
+                create_email_draft().
             to (Union[str, List[str]]): Recipient email address(es).
-            forward_body (Optional[str]): Additional message to include.
+                forward_body (Optional[str]): Additional message to include at
+                the top of the forwarded email, before the original message
+                content. If not provided, only the original message will be
+                forwarded.
             cc (Optional[Union[str, List[str]]]): CC recipient email
                 address(es).
             bcc (Optional[Union[str, List[str]]]): BCC recipient email
@@ -502,7 +509,9 @@ class GmailToolkit(BaseToolkit):
         r"""Send a draft email.
 
         Args:
-            draft_id (str): The ID of the draft to send.
+            draft_id (str): The unique identifier of the draft to send.
+                To get a draft ID, first use list_drafts() to list drafts,
+                or use the 'draft_id' returned from create_email_draft().
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -539,7 +548,15 @@ class GmailToolkit(BaseToolkit):
         r"""Fetch emails with filters and pagination.
 
         Args:
-            query (str): Gmail search query string.
+            query (str): Gmail search query string. Use Gmail's search syntax:
+                - 'from:example@domain.com' - emails from specific sender
+                - 'subject:meeting' - emails with specific subject text
+                - 'has:attachment' - emails with attachments
+                - 'is:unread' - unread emails
+                - 'in:sent' - emails in sent folder
+                - 'after:2024/01/01 before:2024/12/31' - date range
+                Examples: 'from:john@example.com subject:project', 'is:unread
+                has:attachment'
             max_results (int): Maximum number of emails to fetch.
             include_spam_trash (bool): Whether to include spam and trash.
             label_ids (Optional[List[str]]): List of label IDs to filter
@@ -603,7 +620,10 @@ class GmailToolkit(BaseToolkit):
         r"""Fetch a thread by ID.
 
         Args:
-            thread_id (str): The ID of the thread to fetch.
+            thread_id (str): The unique identifier of the thread to fetch.
+                To get a thread ID, first use list_threads() to list threads,
+                or use the 'thread_id' returned from send_email() or
+                reply_to_email().
 
         Returns:
             Dict[str, Any]: A dictionary containing the thread details.
@@ -642,8 +662,10 @@ class GmailToolkit(BaseToolkit):
         r"""Modify labels on an email message.
 
         Args:
-            message_id (str): The ID of the message to modify (found in
-                send_email/list_drafts results or users.messages.get).
+            message_id (str): The unique identifier of the message to modify.
+                To get a message ID, first use fetch_emails() to list messages,
+                or use the 'message_id' returned from send_email() or
+                create_email_draft().
             add_labels (Optional[List[str]]): List of label IDs to add to
                 the message.
                 Label IDs can be:
@@ -692,9 +714,10 @@ class GmailToolkit(BaseToolkit):
         r"""Move a message to trash.
 
         Args:
-            message_id (str): The ID of the message to move to trash
-            (found in send_email/list_drafts results or
-            users.messages.get).
+            message_id (str): The unique identifier of the message to move to
+                trash. To get a message ID, first use fetch_emails() to list
+                messages, or use the 'message_id' returned from send_email()
+                or create_email_draft().
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -728,11 +751,19 @@ class GmailToolkit(BaseToolkit):
         r"""Get an attachment from a message.
 
         Args:
-            message_id (str): The ID of the message containing the
-                attachment (found in send_email/list_drafts results
-                or users.messages.get).
-            attachment_id (str): The ID of the attachment.
-            save_path (Optional[str]): Path to save the attachment file.
+            message_id (str): The unique identifier of the message containing
+                the attachment. To get a message ID, first use fetch_emails()
+                to list messages, or use the 'message_id' returned from
+                send_email() or create_email_draft().
+            attachment_id (str): The unique identifier of the attachment to
+                download. To get an attachment ID, first use fetch_emails() to
+                get message details, then look for 'attachment_id' in the
+                'attachments' list of each message.
+            save_path (Optional[str]): Local file path where the attachment
+                should be saved. If provided, the attachment will be saved to
+                this location and the response will include a success message.
+                If not provided, the attachment data will be returned as
+                base64-encoded content in the response.
 
         Returns:
             Dict[str, Any]: A dictionary containing the attachment data or
@@ -782,7 +813,15 @@ class GmailToolkit(BaseToolkit):
         r"""List email threads.
 
         Args:
-            query (str): Gmail search query string.
+            query (str): Gmail search query string. Use Gmail's search syntax:
+                - 'from:example@domain.com' - threads from specific sender
+                - 'subject:meeting' - threads with specific subject text
+                - 'has:attachment' - threads with attachments
+                - 'is:unread' - unread threads
+                - 'in:sent' - threads in sent folder
+                - 'after:2024/01/01 before:2024/12/31' - date range
+                Examples: 'from:john@example.com subject:project', 'is:unread
+                has:attachment'
             max_results (int): Maximum number of threads to fetch.
             include_spam_trash (bool): Whether to include spam and trash.
             label_ids (Optional[List[str]]): List of label IDs to filter
@@ -939,8 +978,13 @@ class GmailToolkit(BaseToolkit):
 
         Args:
             name (str): The name of the label to create.
-            label_list_visibility (str): Label visibility in label list.
-            message_list_visibility (str): Label visibility in message list.
+            label_list_visibility (str): How the label appears in Gmail's
+                label list. - 'labelShow': Label is visible in the label list
+                sidebar (default) - 'labelHide': Label is hidden from the
+                label list sidebar
+            message_list_visibility (str): How the label appears in message
+                lists. - 'show': Label is visible on messages in inbox/lists
+                (default) - 'hide': Label is hidden from message displays
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -975,10 +1019,10 @@ class GmailToolkit(BaseToolkit):
         r"""Delete a Gmail label.
 
         Args:
-            label_id (str): The ID of the user-created label to delete.
-                Retrieve the label ID from `list_gmail_labels()`.
-                Note: System labels (e.g., 'INBOX', 'SENT', 'DRAFT', 'SPAM',
-                'TRASH', 'UNREAD', 'STARRED', 'IMPORTANT',
+            label_id (str): The unique identifier of the user-created label to
+                delete. To get a label ID, first use list_gmail_labels() to
+                list all labels. Note: System labels (e.g., 'INBOX', 'SENT',
+                'DRAFT', 'SPAM', 'TRASH', 'UNREAD', 'STARRED', 'IMPORTANT',
                 'CATEGORY_PERSONAL', etc.) cannot be deleted.
 
         Returns:
@@ -1009,7 +1053,10 @@ class GmailToolkit(BaseToolkit):
         r"""Modify labels on a thread.
 
         Args:
-            thread_id (str): The ID of the thread to modify.
+            thread_id (str): The unique identifier of the thread to modify.
+                To get a thread ID, first use list_threads() to list threads,
+                or use the 'thread_id' returned from send_email() or
+                reply_to_email().
             add_labels (Optional[List[str]]): List of label IDs to add to all
                 messages in the thread.
                 Label IDs can be:
@@ -1148,7 +1195,12 @@ class GmailToolkit(BaseToolkit):
         r"""Search for people in contacts.
 
         Args:
-            query (str): Search query for people.
+            query (str): Search query for people in contacts. Can search by:
+                - Name: 'John Smith' or partial names like 'John'
+                - Email: 'john@example.com'
+                - Organization: 'Google' or 'Acme Corp'
+                - Phone number: '+1234567890'
+                Examples: 'John Smith', 'john@example.com', 'Google'
             max_results (int): Maximum number of results to fetch.
 
         Returns:
