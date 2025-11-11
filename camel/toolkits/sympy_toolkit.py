@@ -18,7 +18,7 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 logger = get_logger(__name__)
 
@@ -33,7 +33,7 @@ class SymPyToolkit(BaseToolkit):
     def __init__(
         self,
         default_variable: str = 'x',
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ):
         r"""Initializes the toolkit with a default variable and logging.
 

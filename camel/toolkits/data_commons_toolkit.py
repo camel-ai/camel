@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class DataCommonsToolkit(BaseToolkit):
     Refer to https://datacommons.org/browser/ for more details.
     """
 
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         r"""Initialize the DataCommonsToolkit.
 
         Args:

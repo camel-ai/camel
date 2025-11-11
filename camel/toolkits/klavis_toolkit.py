@@ -21,7 +21,12 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    Constants,
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 logger = get_logger(__name__)
 
@@ -48,7 +53,9 @@ class KlavisToolkit(BaseToolkit):
             (None, "KLAVIS_API_KEY"),
         ]
     )
-    def __init__(self, timeout: Optional[float] = None) -> None:
+    def __init__(
+        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    ) -> None:
         r"""Initialize the KlavisToolkit with API client. The API key is
         retrieved from environment variables.
         """

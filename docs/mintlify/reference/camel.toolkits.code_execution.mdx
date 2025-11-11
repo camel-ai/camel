@@ -32,7 +32,7 @@ def __init__(
     unsafe_mode: bool = False,
     import_white_list: Optional[List[str]] = None,
     require_confirm: bool = False,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     microsandbox_config: Optional[dict] = None
 ):
 ```

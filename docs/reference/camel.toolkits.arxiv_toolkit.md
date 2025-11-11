@@ -16,7 +16,7 @@ academic papers.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
 ```
 
 Initializes the ArxivToolkit and sets up the arXiv client.

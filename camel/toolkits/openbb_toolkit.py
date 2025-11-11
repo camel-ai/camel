@@ -17,7 +17,12 @@ from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    Constants,
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 
 @MCPServer()
@@ -38,7 +43,9 @@ class OpenBBToolkit(BaseToolkit):
             (None, "OPENBB_TOKEN"),
         ]
     )
-    def __init__(self, timeout: Optional[float] = None) -> None:
+    def __init__(
+        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    ) -> None:
         r"""Initialize the OpenBBToolkit.
 
         This method sets up the OpenBB client and initializes the OpenBB

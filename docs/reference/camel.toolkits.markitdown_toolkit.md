@@ -15,7 +15,7 @@ A class representing a toolkit for MarkItDown.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
 ```
 
 <a id="camel.toolkits.markitdown_toolkit.MarkItDownToolkit.read_files"></a>

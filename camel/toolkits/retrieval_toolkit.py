@@ -31,7 +31,7 @@ class RetrievalToolkit(BaseToolkit):
     def __init__(
         self,
         auto_retriever: Optional[AutoRetriever] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initializes a new instance of the RetrievalToolkit class."""
         super().__init__(timeout=timeout)

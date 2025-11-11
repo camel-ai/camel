@@ -17,7 +17,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required
+from camel.utils import Constants, dependencies_required
 
 
 def handle_googlemaps_exceptions(
@@ -101,7 +101,9 @@ class GoogleMapsToolkit(BaseToolkit):
     """
 
     @dependencies_required('googlemaps')
-    def __init__(self, timeout: Optional[float] = None) -> None:
+    def __init__(
+        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    ) -> None:
         super().__init__(timeout=timeout)
         import googlemaps
 

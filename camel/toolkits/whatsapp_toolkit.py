@@ -19,7 +19,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, retry_on_error
+from camel.utils import Constants, MCPServer, retry_on_error
 
 
 @MCPServer()
@@ -37,7 +37,7 @@ class WhatsAppToolkit(BaseToolkit):
         version (str): API version.
     """
 
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         r"""Initializes the WhatsAppToolkit."""
         super().__init__(timeout=timeout)
         self.base_url = "https://graph.facebook.com"

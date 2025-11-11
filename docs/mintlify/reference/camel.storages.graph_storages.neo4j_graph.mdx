@@ -35,7 +35,7 @@ def __init__(
     username: str,
     password: str,
     database: str = 'neo4j',
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     truncate: bool = False
 ):
 ```

@@ -24,7 +24,7 @@ specialized formats.
 def __init__(
     self,
     working_directory: Optional[str] = None,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     default_encoding: str = 'utf-8',
     backup_enabled: bool = True
 ):

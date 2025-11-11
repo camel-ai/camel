@@ -27,7 +27,7 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, Constants
 
 
 class StubTokenCounter(BaseTokenCounter):
@@ -82,7 +82,7 @@ class StubModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
     ) -> None:
         r"""All arguments are unused for the dummy model."""

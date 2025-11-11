@@ -19,7 +19,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 
 @MCPServer()
@@ -33,7 +33,7 @@ class JinaRerankerToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         model_name: str = "jinaai/jina-reranker-m0",
         device: Optional[str] = None,
         use_api: bool = True,

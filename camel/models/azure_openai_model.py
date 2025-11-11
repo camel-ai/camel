@@ -33,6 +33,7 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
+    Constants,
     OpenAITokenCounter,
     get_current_agent_session_id,
     is_langfuse_available,
@@ -116,7 +117,7 @@ class AzureOpenAIModel(BaseModelBackend):
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
         azure_ad_token_provider: Optional["AzureADTokenProvider"] = None,

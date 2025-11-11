@@ -58,7 +58,7 @@ from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
-from camel.utils import BaseTokenCounter, configure_langfuse
+from camel.utils import BaseTokenCounter, Constants, configure_langfuse
 
 
 class ModelFactory:
@@ -121,7 +121,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,

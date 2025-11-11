@@ -37,7 +37,7 @@ def __init__(
     model_config_dict: Optional[Dict[str, Any]] = None,
     api_key: Optional[str] = None,
     url: Optional[str] = None,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     token_counter: Optional[BaseTokenCounter] = None,
     api_version: Optional[str] = None,
     azure_deployment_name: Optional[str] = None,

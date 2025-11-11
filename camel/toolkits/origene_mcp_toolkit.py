@@ -14,6 +14,8 @@
 
 from typing import Dict, Optional
 
+from camel.utils import Constants
+
 from .mcp_toolkit import MCPToolkit
 
 
@@ -37,7 +39,7 @@ class OrigeneToolkit(MCPToolkit):
     def __init__(
         self,
         config_dict: Optional[Dict] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initializes the OrigeneToolkit.
 

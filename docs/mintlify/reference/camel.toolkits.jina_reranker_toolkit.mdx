@@ -21,7 +21,7 @@ based on their relevance to a given query using the Jina Reranker model.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     model_name: str = 'jinaai/jina-reranker-m0',
     device: Optional[str] = None,
     use_api: bool = True

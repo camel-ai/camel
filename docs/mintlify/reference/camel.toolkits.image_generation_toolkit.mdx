@@ -18,7 +18,7 @@ A class toolkit for image generation using Grok and OpenAI models.
 def __init__(
     self,
     model: Optional[Literal['gpt-image-1', 'dall-e-3', 'dall-e-2', 'grok-2-image', 'grok-2-image-latest', 'grok-2-image-1212']] = 'dall-e-3',
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     size: Optional[Literal['256x256', '512x512', '1024x1024', '1536x1024', '1024x1536', '1792x1024', '1024x1792', 'auto']] = '1024x1024',

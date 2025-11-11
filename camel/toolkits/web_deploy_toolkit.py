@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import Constants
 
 logger = get_logger(__name__)
 
@@ -45,7 +46,7 @@ class WebDeployToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         add_branding_tag: bool = True,
         logo_path: str = "../camel/misc/favicon.png",
         tag_text: str = "Created by CAMEL",

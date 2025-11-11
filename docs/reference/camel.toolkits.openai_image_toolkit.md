@@ -19,7 +19,7 @@ Image Generation API.
 def __init__(
     self,
     model: Optional[Literal['gpt-image-1', 'dall-e-3', 'dall-e-2']] = 'gpt-image-1',
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     size: Optional[Literal['256x256', '512x512', '1024x1024', '1536x1024', '1024x1536', '1792x1024', '1024x1792', 'auto']] = '1024x1024',

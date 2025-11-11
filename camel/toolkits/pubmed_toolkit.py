@@ -18,7 +18,7 @@ import requests
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 logger = get_logger(__name__)
 
@@ -38,7 +38,9 @@ class PubMedToolkit(BaseToolkit):
 
     BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
-    def __init__(self, timeout: Optional[float] = None) -> None:
+    def __init__(
+        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    ) -> None:
         r"""Initializes the PubMedToolkit."""
         super().__init__(timeout=timeout)
 

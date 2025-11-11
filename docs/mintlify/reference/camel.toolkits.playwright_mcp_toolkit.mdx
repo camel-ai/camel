@@ -28,7 +28,7 @@ Currently only supports asynchronous operation mode.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     additional_args: Optional[List[str]] = None
 ):
 ```
