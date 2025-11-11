@@ -314,7 +314,6 @@ class Workforce(BaseNode):
         
         # Pipeline building state
         self._pipeline_builder: Optional[PipelineTaskBuilder] = None
-        self._pipeline_tasks_need_assignment: bool = False
         # Dictionary to track task start times
         self._task_start_times: Dict[str, float] = {}
         # Human intervention support
@@ -993,9 +992,6 @@ class Workforce(BaseNode):
                 self._task_dependencies[task.id] = [dep.id for dep in task.dependencies]
             else:
                 self._task_dependencies[task.id] = []
-        
-        # Mark that pipeline tasks need assignment
-        self._pipeline_tasks_need_assignment = True
 
     def _collect_shared_memory(self) -> Dict[str, List]:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
@@ -2694,7 +2690,6 @@ class Workforce(BaseNode):
         self._completed_tasks = []
         self._assignees.clear()
         self._in_flight_tasks = 0
-        self._pipeline_tasks_need_assignment = False
         self.coordinator_agent.reset()
         self.task_agent.reset()
         self._task_start_times.clear()
