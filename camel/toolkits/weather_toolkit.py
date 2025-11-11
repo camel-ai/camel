@@ -16,7 +16,7 @@ from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 
 @MCPServer()
@@ -29,7 +29,7 @@ class WeatherToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ):
         r"""Initializes a new instance of the WeatherToolkit class.
 

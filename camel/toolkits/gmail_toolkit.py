@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 logger = get_logger(__name__)
 
@@ -45,7 +45,7 @@ class GmailToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ):
         r"""Initializes a new instance of the GmailToolkit class.
 

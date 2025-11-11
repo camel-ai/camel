@@ -18,7 +18,7 @@ import time
 from typing import Optional
 
 from camel.toolkits.base import BaseToolkit
-from camel.utils import with_timeout
+from camel.utils import Constants, with_timeout
 
 
 # Example 1: Basic function with timeout
@@ -39,7 +39,7 @@ def slow_function() -> str:
 
 # Example 3: Class with configurable timeout
 class TimeoutExample:
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         self.timeout = timeout
 
     @with_timeout()  # Uses instance timeout
@@ -57,7 +57,7 @@ class TimeoutExample:
 
 # Example 4: Toolkit with timeout
 class TimeoutToolkit(BaseToolkit):
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         super().__init__(timeout=timeout)
 
     @with_timeout()

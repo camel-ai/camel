@@ -24,6 +24,7 @@ from camel.models._utils import try_modify_message_with_format
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
+    Constants,
     OpenAITokenCounter,
     api_keys_required,
     get_current_agent_session_id,
@@ -84,7 +85,7 @@ class WatsonXModel(BaseModelBackend):
         url: Optional[str] = None,
         project_id: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         **kwargs: Any,
     ):
         from ibm_watsonx_ai import APIClient, Credentials

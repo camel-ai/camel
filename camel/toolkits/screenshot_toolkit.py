@@ -22,7 +22,7 @@ from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.toolkits import BaseToolkit, FunctionTool
 from camel.toolkits.base import RegisteredAgentToolkit
-from camel.utils import dependencies_required
+from camel.utils import Constants, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -34,7 +34,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ):
         r"""Initializes the ScreenshotToolkit.
 

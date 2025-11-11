@@ -17,7 +17,7 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import Constants, MCPServer
 
 logger = get_logger(__name__)
 
@@ -28,7 +28,7 @@ class Crawl4AIToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ):
         super().__init__(timeout=timeout)
         self._client = None

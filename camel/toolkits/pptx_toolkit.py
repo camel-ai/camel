@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required
+from camel.utils import Constants, MCPServer, api_keys_required
 
 logger = get_logger(__name__)
 
@@ -54,7 +54,7 @@ class PPTXToolkit(BaseToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initialize the PPTXToolkit.
 

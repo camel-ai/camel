@@ -19,7 +19,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, api_keys_required
+from camel.utils import Constants, MCPServer, api_keys_required
 
 
 @MCPServer()
@@ -40,7 +40,7 @@ class MeshyToolkit(BaseToolkit):
             (None, 'MESHY_API_KEY'),
         ]
     )
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         r"""Initializes the MeshyToolkit with the API key from the
         environment.
         """

@@ -22,7 +22,7 @@ title slides, content slides, text formatting, and image embedding.
 def __init__(
     self,
     working_directory: Optional[str] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 ):
 ```
 

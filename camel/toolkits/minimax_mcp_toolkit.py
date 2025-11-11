@@ -16,6 +16,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from camel.toolkits import BaseToolkit, FunctionTool
+from camel.utils import Constants
 
 from .mcp_toolkit import MCPToolkit
 
@@ -56,7 +57,7 @@ class MinimaxMCPToolkit(BaseToolkit):
         api_key: Optional[str] = None,
         api_host: str = "https://api.minimax.io",
         base_path: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initializes the MinimaxMCPToolkit.
 

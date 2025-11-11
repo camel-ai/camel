@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import Constants, api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -43,7 +43,7 @@ class ACIToolkit(BaseToolkit):
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         linked_account_owner_id: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initialize the ACI toolkit.
 

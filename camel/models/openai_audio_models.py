@@ -19,6 +19,7 @@ from openai import AsyncOpenAI, OpenAI, _legacy_response
 
 from camel.models.base_audio_model import BaseAudioModel
 from camel.types import AudioModelType, VoiceType
+from camel.utils import Constants
 
 
 class OpenAIAudioModels(BaseAudioModel):
@@ -29,7 +30,7 @@ class OpenAIAudioModels(BaseAudioModel):
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initialize an instance of OpenAI."""
         super().__init__(api_key, url, timeout)

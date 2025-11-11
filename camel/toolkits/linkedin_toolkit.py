@@ -21,7 +21,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, handle_http_error
+from camel.utils import Constants, MCPServer, handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
@@ -34,7 +34,7 @@ class LinkedInToolkit(BaseToolkit):
     retrieving the authenticated user's profile information.
     """
 
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         super().__init__(timeout=timeout)
         self._access_token = self._get_access_token()
 

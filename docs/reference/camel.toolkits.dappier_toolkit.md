@@ -19,7 +19,7 @@ Sports, Weather and more.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
 ```
 
 Initialize the DappierTookit with API clients.The API keys and

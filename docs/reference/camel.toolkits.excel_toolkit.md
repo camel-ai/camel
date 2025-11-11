@@ -22,7 +22,7 @@ Markdown formatted table.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     file_path: Optional[str] = None
 ):
 ```

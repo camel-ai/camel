@@ -22,6 +22,7 @@ from camel.messages import BaseMessage
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import RoleType
+from camel.utils import Constants
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -93,7 +94,7 @@ class AgentCommunicationToolkit(BaseToolkit):
     def __init__(
         self,
         agents: Optional[Dict[str, "ChatAgent"]] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_message_history: int = 100,
         get_response: bool = False,
     ) -> None:

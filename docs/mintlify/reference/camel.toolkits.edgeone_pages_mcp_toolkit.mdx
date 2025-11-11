@@ -20,7 +20,7 @@ EdgeOne pages using the EdgeOne Pages MCP server.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
 ```
 
 Initializes the EdgeOnePagesMCPToolkit.

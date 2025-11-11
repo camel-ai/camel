@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import Constants
 from camel.utils.context_utils import ContextUtility
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ class ContextSummarizerToolkit(BaseToolkit):
         self,
         agent: "ChatAgent",
         working_directory: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         summary_prompt_template: Optional[str] = None,
     ):
         r"""Initialize the ContextSummarizerToolkit.

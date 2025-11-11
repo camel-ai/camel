@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import Constants, MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -42,7 +42,7 @@ class FileToolkit(BaseToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         default_encoding: str = "utf-8",
         backup_enabled: bool = True,
     ) -> None:

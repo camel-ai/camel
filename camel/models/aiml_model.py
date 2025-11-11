@@ -19,6 +19,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
+    Constants,
     api_keys_required,
 )
 
@@ -60,7 +61,7 @@ class AIMLModel(OpenAICompatibleModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
         **kwargs: Any,
     ) -> None:

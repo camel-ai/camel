@@ -26,7 +26,7 @@ specific issues, and creating pull requests in a GitHub repository.
 def __init__(
     self,
     access_token: Optional[str] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 ):
 ```
 

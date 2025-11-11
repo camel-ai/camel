@@ -21,7 +21,7 @@ Markdown file for note-taking purposes.
 def __init__(
     self,
     working_directory: Optional[str] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 ):
 ```
 

@@ -17,7 +17,7 @@ from typing import Dict, Generator, List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import Constants, MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -29,7 +29,9 @@ class ArxivToolkit(BaseToolkit):
     """
 
     @dependencies_required('arxiv')
-    def __init__(self, timeout: Optional[float] = None) -> None:
+    def __init__(
+        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    ) -> None:
         r"""Initializes the ArxivToolkit and sets up the arXiv client."""
         super().__init__(timeout=timeout)
         import arxiv

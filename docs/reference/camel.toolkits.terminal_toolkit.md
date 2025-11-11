@@ -37,7 +37,7 @@ needed.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     shell_sessions: Optional[Dict[str, Any]] = None,
     working_dir: str = './workspace',
     need_terminal: bool = True,

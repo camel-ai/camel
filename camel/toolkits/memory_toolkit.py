@@ -21,6 +21,7 @@ from camel.memories import (
 )
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import Constants
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -43,7 +44,11 @@ class MemoryToolkit(BaseToolkit):
             (default: :obj:`None`)
     """
 
-    def __init__(self, agent: 'ChatAgent', timeout: Optional[float] = None):
+    def __init__(
+        self,
+        agent: 'ChatAgent',
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    ):
         super().__init__(timeout=timeout)
         self.agent = agent
 

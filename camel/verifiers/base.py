@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import BatchProcessor
+from camel.utils import BatchProcessor, Constants
 
 from .models import VerificationOutcome, VerificationResult
 
@@ -47,7 +47,7 @@ class BaseVerifier(ABC):
         self,
         extractor: Optional[BaseExtractor] = None,
         max_parallel: Optional[int] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
         retry_delay: float = 1.0,
         initial_batch_size: Optional[int] = None,
