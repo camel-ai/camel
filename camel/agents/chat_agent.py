@@ -29,6 +29,7 @@ import threading
 import time
 import uuid
 import warnings
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -167,6 +168,18 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
         """
     )
 )
+
+
+@dataclass
+class _ToolOutputHistoryEntry:
+    tool_name: str
+    tool_call_id: str
+    result_text: str
+    record_uuids: List[str]
+    record_timestamps: List[float]
+    preview_text: str
+    cached: bool = False
+    cache_id: Optional[str] = None
 
 
 class StreamContentAccumulator:
@@ -414,6 +427,11 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
+        enable_snapshot_clean (bool, optional): Whether to clean snapshot
+            markers and references from historical tool outputs in memory.
+            This removes verbose DOM markers (like [ref=...]) from older tool
+            results while keeping the latest output intact for immediate use.
+            (default: :obj:`False`)
         retry_attempts (int, optional): Maximum number of retry attempts for
             rate limit errors. (default: :obj:`3`)
         retry_delay (float, optional): Initial delay in seconds between
@@ -470,6 +488,7 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
+        enable_snapshot_clean: bool = False,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
@@ -489,6 +508,9 @@ class ChatAgent(BaseAgent):
 
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
+
+        self._enable_snapshot_clean = enable_snapshot_clean
+        self._tool_output_history: List[_ToolOutputHistoryEntry] = []
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
@@ -1132,6 +1154,294 @@ class ChatAgent(BaseAgent):
         r"""Add a list of tools to the agent."""
         for tool in tools:
             self.add_tool(tool)
+
+    def _serialize_tool_result(self, result: Any) -> str:
+        if isinstance(result, str):
+            return result
+        try:
+            return json.dumps(result, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return str(result)
+
+    def _summarize_tool_result(self, text: str, limit: int = 160) -> str:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if len(normalized) <= limit:
+            return normalized
+        return normalized[: max(0, limit - 3)].rstrip() + "..."
+
+    def _clean_snapshot_line(self, line: str) -> str:
+        r"""Clean a single snapshot line by removing prefixes and references.
+
+        This method handles snapshot lines in the format:
+        - [prefix] "quoted text" [attributes] [ref=...]: description
+
+        It preserves:
+        - Quoted text content (including brackets inside quotes)
+        - Description text after the colon
+
+        It removes:
+        - Line prefixes (e.g., "- button", "- tooltip", "generic:")
+        - Attribute markers (e.g., [disabled], [ref=e47])
+        - Lines with only element types
+        - All indentation
+
+        Args:
+            line: The original line content.
+
+        Returns:
+            The cleaned line content, or empty string if line should be
+            removed.
+        """
+        original = line.strip()
+        if not original:
+            return ''
+
+        # Check if line is just an element type marker
+        # (e.g., "- generic:", "button:")
+        if re.match(r'^(?:-\s+)?\w+\s*:?\s*$', original):
+            return ''
+
+        # Remove element type prefix
+        line = re.sub(r'^(?:-\s+)?\w+[\s:]+', '', original)
+
+        # Remove bracket markers while preserving quoted text
+        quoted_parts = []
+
+        def save_quoted(match):
+            quoted_parts.append(match.group(0))
+            return f'__QUOTED_{len(quoted_parts)-1}__'
+
+        line = re.sub(r'"[^"]*"', save_quoted, line)
+        line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
+
+        for i, quoted in enumerate(quoted_parts):
+            line = line.replace(f'__QUOTED_{i}__', quoted)
+
+        # Clean up formatting
+        line = re.sub(r'\s+', ' ', line).strip()
+        line = re.sub(r'\s*:\s*', ': ', line)
+        line = line.lstrip(': ').strip()
+
+        return '' if not line else line
+
+    def _clean_snapshot_content(self, content: str) -> str:
+        r"""Clean snapshot content by removing prefixes, references, and
+        deduplicating lines.
+
+        This method identifies snapshot lines (containing element keywords or
+        references) and cleans them while preserving non-snapshot content.
+        It also handles JSON-formatted tool outputs with snapshot fields.
+
+        Args:
+            content: The original snapshot content.
+
+        Returns:
+            The cleaned content with deduplicated lines.
+        """
+        try:
+            import json
+
+            data = json.loads(content)
+            modified = False
+
+            def clean_json_value(obj):
+                nonlocal modified
+                if isinstance(obj, dict):
+                    result = {}
+                    for key, value in obj.items():
+                        if key == 'snapshot' and isinstance(value, str):
+                            try:
+                                decoded_value = value.encode().decode(
+                                    'unicode_escape'
+                                )
+                            except (UnicodeDecodeError, AttributeError):
+                                decoded_value = value
+
+                            needs_cleaning = (
+                                '- ' in decoded_value
+                                or '[ref=' in decoded_value
+                                or any(
+                                    elem + ':' in decoded_value
+                                    for elem in [
+                                        'generic',
+                                        'img',
+                                        'banner',
+                                        'list',
+                                        'listitem',
+                                        'search',
+                                        'navigation',
+                                    ]
+                                )
+                            )
+
+                            if needs_cleaning:
+                                cleaned_snapshot = self._clean_text_snapshot(
+                                    decoded_value
+                                )
+                                result[key] = cleaned_snapshot
+                                modified = True
+                            else:
+                                result[key] = value
+                        else:
+                            result[key] = clean_json_value(value)
+                    return result
+                elif isinstance(obj, list):
+                    return [clean_json_value(item) for item in obj]
+                else:
+                    return obj
+
+            cleaned_data = clean_json_value(data)
+
+            if modified:
+                return json.dumps(cleaned_data, ensure_ascii=False, indent=4)
+            else:
+                return content
+
+        except (json.JSONDecodeError, TypeError):
+            return self._clean_text_snapshot(content)
+
+    def _clean_text_snapshot(self, content: str) -> str:
+        r"""Clean plain text snapshot content.
+
+        This method:
+        - Removes all indentation
+        - Deletes empty lines
+        - Deduplicates all lines
+        - Cleans snapshot-specific markers
+
+        Args:
+            content: The original snapshot text.
+
+        Returns:
+            The cleaned content with deduplicated lines, no indentation,
+            and no empty lines.
+        """
+        lines = content.split('\n')
+        cleaned_lines = []
+        seen = set()
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            if not stripped_line:
+                continue
+
+            # Skip metadata lines (like "- /url:", "- /ref:")
+            if re.match(r'^-?\s*/\w+\s*:', stripped_line):
+                continue
+
+            is_snapshot_line = '[ref=' in stripped_line or re.match(
+                r'^(?:-\s+)?\w+(?:[\s:]|$)', stripped_line
+            )
+
+            if is_snapshot_line:
+                cleaned = self._clean_snapshot_line(stripped_line)
+                if cleaned and cleaned not in seen:
+                    cleaned_lines.append(cleaned)
+                    seen.add(cleaned)
+            else:
+                if stripped_line not in seen:
+                    cleaned_lines.append(stripped_line)
+                    seen.add(stripped_line)
+
+        return '\n'.join(cleaned_lines)
+
+    def _register_tool_output_for_cache(
+        self,
+        func_name: str,
+        tool_call_id: str,
+        result_text: str,
+        records: List[MemoryRecord],
+    ) -> None:
+        if not records:
+            return
+
+        entry = _ToolOutputHistoryEntry(
+            tool_name=func_name,
+            tool_call_id=tool_call_id,
+            result_text=result_text,
+            record_uuids=[str(record.uuid) for record in records],
+            record_timestamps=[record.timestamp for record in records],
+            preview_text=self._summarize_tool_result(result_text),
+        )
+        self._tool_output_history.append(entry)
+        self._process_tool_output_cache()
+
+    def _process_tool_output_cache(self) -> None:
+        if not self._enable_snapshot_clean or not self._tool_output_history:
+            return
+
+        # Only clean older results; keep the latest expanded for immediate use.
+        for entry in self._tool_output_history[:-1]:
+            if entry.cached:
+                continue
+            self._clean_snapshot_in_memory(entry)
+
+    def _clean_snapshot_in_memory(
+        self, entry: _ToolOutputHistoryEntry
+    ) -> None:
+        if not entry.record_uuids:
+            return
+
+        # Clean snapshot markers and references from historical tool output
+        result_text = entry.result_text
+        if '- ' in result_text and '[ref=' in result_text:
+            cleaned_result = self._clean_snapshot_content(result_text)
+            logger.debug(
+                "Cleaned snapshot references from tool output '%s' (%s)",
+                entry.tool_name,
+                entry.tool_call_id,
+            )
+
+            # Update the message in memory storage
+            timestamp = (
+                entry.record_timestamps[0]
+                if entry.record_timestamps
+                else time.time_ns() / 1_000_000_000
+            )
+            cleaned_message = FunctionCallingMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict={},
+                content="",
+                func_name=entry.tool_name,
+                result=cleaned_result,
+                tool_call_id=entry.tool_call_id,
+            )
+
+            chat_history_block = getattr(
+                self.memory, "_chat_history_block", None
+            )
+            storage = getattr(chat_history_block, "storage", None)
+            if storage is None:
+                return
+
+            existing_records = storage.load()
+            updated_records = [
+                record
+                for record in existing_records
+                if record["uuid"] not in entry.record_uuids
+            ]
+            new_record = MemoryRecord(
+                message=cleaned_message,
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+                timestamp=timestamp,
+                agent_id=self.agent_id,
+            )
+            updated_records.append(new_record.to_dict())
+            updated_records.sort(key=lambda record: record["timestamp"])
+            storage.clear()
+            storage.save(updated_records)
+
+            logger.info(
+                "Cleaned snapshot in memory for tool output '%s' (%s)",
+                entry.tool_name,
+                entry.tool_call_id,
+            )
+
+            entry.cached = True
+            entry.record_uuids = [str(new_record.uuid)]
+            entry.record_timestamps = [timestamp]
 
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
