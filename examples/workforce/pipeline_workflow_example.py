@@ -20,7 +20,7 @@ This example demonstrates the fork-join pattern in CAMEL Workforce Pipeline mode
 - Fork to 5 parallel summarization tasks
 - Join results into a comprehensive synthesis
 
-The example shows how to handle parallel task processing where multiple agents 
+The example shows how to handle parallel task processing where multiple agents
 work on different parts of the same data source with automatic synchronization.
 """
 
@@ -29,13 +29,13 @@ import time
 
 from colorama import Fore, Style, init
 
-from camel.configs import ChatGPTConfig
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce, WorkforceMode
 from camel.tasks import Task
 from camel.types import ModelPlatformType, ModelType
-from camel.messages import BaseMessage
 
 # Initialize colorama for colored output
 init(autoreset=True)
@@ -52,166 +52,182 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
+
 def print_section(title: str):
     """Print a colored section header."""
     print(f"\n{Fore.CYAN}{'='*60}")
     print(f"{Fore.CYAN}{title}")
     print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
 
+
 def print_result(task_id: str, result: str):
     """Print task result with formatting."""
     print(f"{Fore.GREEN}Task {task_id} completed:")
-    print(f"{Fore.WHITE}Result: {result[:200]}{'...' if len(result) > 200 else ''}")
+    print(
+        f"{Fore.WHITE}Result: {result[:200]}{'...' if len(result) > 200 else ''}"
+    )
     print()
 
 
 async def example_1_literature_analysis_pipeline():
     """Example 1: Literature analysis with parallel summarization."""
     print_section("Example 1: Literature Analysis with Parallel Processing")
-    
+
     # Create coordinator agent
     coordinator_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Literature Analysis Coordinator",
-            content="You are a coordinator responsible for managing literature analysis tasks and ensuring quality output."
+            content="You are a coordinator responsible for managing literature analysis tasks and ensuring quality output.",
         ),
-        model=model
+        model=model,
     )
-    
+
     # Create task agent using the same model
     task_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Task Planning Agent",
-            content="You are a task planning agent responsible for analyzing and coordinating complex tasks."
+            content="You are a task planning agent responsible for analyzing and coordinating complex tasks.",
         ),
-        model=model
+        model=model,
     )
-    
+
     # Create workforce for literature analysis
     workforce = Workforce(
         "Literature Analysis Team",
         coordinator_agent=coordinator_agent,
         task_agent=task_agent,
-        mode=WorkforceMode.PIPELINE
+        mode=WorkforceMode.PIPELINE,
     )
-    
+
     # Add search agent with search tools (using mock data for demonstration)
     search_system_message = BaseMessage.make_assistant_message(
         role_name="Literature Researcher",
-        content="You are a literature researcher. Provide 5 recent AI/ML papers with titles, authors, and brief descriptions. Format them as [Paper 1], [Paper 2], etc. Use representative examples from recent AI/ML research."
+        content="You are a literature researcher. Provide 5 recent AI/ML papers with titles, authors, and brief descriptions. Format them as [Paper 1], [Paper 2], etc. Use representative examples from recent AI/ML research.",
     )
     search_agent = ChatAgent(
-        system_message=search_system_message,
-        model=model,
-        tools=[]
+        system_message=search_system_message, model=model, tools=[]
     )
-    
+
     # Add multiple summary agents for parallel processing
     for i in range(5):
         summary_system_message = BaseMessage.make_assistant_message(
             role_name=f"Summary Specialist {i+1}",
-            content="You are a literature summary specialist. Focus on extracting key insights, methodologies, and contributions from research papers."
+            content="You are a literature summary specialist. Focus on extracting key insights, methodologies, and contributions from research papers.",
         )
         summary_agent = ChatAgent(
-            system_message=summary_system_message,
-            model=model,
-            tools=[]
+            system_message=summary_system_message, model=model, tools=[]
         )
-        workforce.add_single_agent_worker(f"Summary Specialist {i+1}", summary_agent)
-    
+        workforce.add_single_agent_worker(
+            f"Summary Specialist {i+1}", summary_agent
+        )
+
     # Add synthesis agent
     synthesis_system_message = BaseMessage.make_assistant_message(
         role_name="Research Synthesizer",
-        content="You are a research synthesizer. Combine multiple literature summaries into comprehensive analysis and identify research trends."
+        content="You are a research synthesizer. Combine multiple literature summaries into comprehensive analysis and identify research trends.",
     )
     synthesis_agent = ChatAgent(
-        system_message=synthesis_system_message,
-        model=model,
-        tools=[]
+        system_message=synthesis_system_message, model=model, tools=[]
     )
-    
+
     workforce.add_single_agent_worker("Literature Researcher", search_agent)
     workforce.add_single_agent_worker("Research Synthesizer", synthesis_agent)
-    
+
     # Build literature analysis pipeline
-    workforce.pipeline_add("Generate 5 representative recent AI/ML papers with titles, authors, and brief descriptions. Format as [Paper 1] to [Paper 5]") \
-             .pipeline_fork([
-                 "Summarize [Paper 1] core insights, methodology and contributions",
-                 "Summarize [Paper 2] core insights, methodology and contributions", 
-                 "Summarize [Paper 3] core insights, methodology and contributions",
-                 "Summarize [Paper 4] core insights, methodology and contributions",
-                 "Summarize [Paper 5] core insights, methodology and contributions"
-             ]) \
-             .pipeline_join("Analyze AI/ML research trends based on the 5 paper summaries") \
-             .pipeline_build()
-    
-    print(f"{Fore.YELLOW}Literature analysis pipeline built: 1 search → 5 parallel summaries → 1 synthesis")
+    workforce.pipeline_add(
+        "Generate 5 representative recent AI/ML papers with titles, authors, and brief descriptions. Format as [Paper 1] to [Paper 5]"
+    ).pipeline_fork(
+        [
+            "Summarize [Paper 1] core insights, methodology and contributions",
+            "Summarize [Paper 2] core insights, methodology and contributions",
+            "Summarize [Paper 3] core insights, methodology and contributions",
+            "Summarize [Paper 4] core insights, methodology and contributions",
+            "Summarize [Paper 5] core insights, methodology and contributions",
+        ]
+    ).pipeline_join(
+        "Analyze AI/ML research trends based on the 5 paper summaries"
+    ).pipeline_build()
+
+    print(
+        f"{Fore.YELLOW}Literature analysis pipeline built: 1 search → 5 parallel summaries → 1 synthesis"
+    )
     print(f"{Fore.YELLOW}Mode: {workforce.mode}")
-    
+
     # Execute the pipeline
     main_task = Task(
         content="AI/ML Literature Review and Trend Analysis",
-        id="literature_analysis"
+        id="literature_analysis",
     )
-    
+
     start_time = time.time()
     result = await workforce.process_task_async(main_task)
     end_time = time.time()
-    
-    print_result(result.id, result.result or "Literature analysis completed successfully")
-    print(f"{Fore.BLUE}[TIME] Execution time: {end_time - start_time:.2f} seconds")
-    
+
+    print_result(
+        result.id,
+        result.result or "Literature analysis completed successfully",
+    )
+    print(
+        f"{Fore.BLUE}[TIME] Execution time: {end_time - start_time:.2f} seconds"
+    )
+
     return result
+
 
 def print_summary():
     """Print example summary."""
     print_section("Pipeline Example Summary")
-    
+
     print(f"{Fore.GREEN}Pipeline pattern demonstrated:")
     patterns = [
         "✓ FORK-JOIN: Single task → 5 parallel processing → 1 synthesis",
         "✓ PARALLEL SCALING: Easy adjustment of parallel worker count",
         "✓ DEPENDENCY CHAINS: Automatic synchronization and dependency resolution",
-        "✓ STRUCTURED OUTPUT: Using [markers] for smart task distribution"
+        "✓ STRUCTURED OUTPUT: Using [markers] for smart task distribution",
     ]
-    
+
     for pattern in patterns:
         print(f"{Fore.WHITE}  {pattern}")
-    
+
     print(f"\n{Fore.CYAN}Technical features:")
     tech_features = [
         "• Pipeline mode with pipeline_fork() and pipeline_join()",
         "• Automatic worker assignment and task routing",
         "• Multi-agent parallel coordination",
-        "• Structured task dependencies"
+        "• Structured task dependencies",
     ]
-    
+
     for feature in tech_features:
         print(f"{Fore.WHITE}  {feature}")
+
 
 async def main():
     """Main function to run pipeline example."""
     print_section("CAMEL Workforce Pipeline Example")
-    print(f"{Fore.YELLOW}Testing Pipeline mode with fork-join pattern and parallel processing.")
-    
+    print(
+        f"{Fore.YELLOW}Testing Pipeline mode with fork-join pattern and parallel processing."
+    )
+
     result = None
-    
+
     try:
         print(f"\n{Fore.BLUE}Running literature analysis pipeline example...")
-        
+
         result = await example_1_literature_analysis_pipeline()
-        
+
         print_summary()
-        
+
         print(f"\n{Fore.GREEN}Pipeline example completed successfully!")
-        
+
     except Exception as e:
         print(f"\n{Fore.RED}Error: {e}")
         import traceback
+
         traceback.print_exc()
         raise
-    
+
     return result
+
 
 if __name__ == "__main__":
     # Run the examples

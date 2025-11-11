@@ -227,11 +227,14 @@ class PipelineTaskBuilder:
     def __init__(self):
         """Initialize an empty pipeline task builder."""
         from camel.tasks import Task
+
         self._TaskClass = Task
         self.task_list = []
         self.task_counter = 0
         self._task_registry = {}  # task_id -> Task mapping for fast lookup
-        self._last_task_id = None  # Track the last added task for chain inference
+        self._last_task_id = (
+            None  # Track the last added task for chain inference
+        )
         self._last_parallel_tasks = []  # Track the last added parallel tasks for sync
 
     def add(
@@ -258,29 +261,35 @@ class PipelineTaskBuilder:
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
-            
+
         Raises:
             ValueError: If task_id already exists or if any dependency is not found.
-            
+
         Example:
             >>> builder.add("Step 1").add("Step 2").add("Step 3")
             # Step 2 depends on Step 1, Step 3 depends on Step 2
         """
         # Generate or validate task_id
         task_id = task_id or f"pipeline_task_{self.task_counter}"
-        
+
         # Check ID uniqueness
         if task_id in self._task_registry:
             raise ValueError(f"Task ID '{task_id}' already exists")
 
         # Auto-infer dependencies if not specified
-        if dependencies is None and auto_depend and self._last_task_id is not None:
+        if (
+            dependencies is None
+            and auto_depend
+            and self._last_task_id is not None
+        ):
             dependencies = [self._last_task_id]
 
         # Validate dependencies exist
         dep_tasks = []
         if dependencies:
-            missing_deps = [dep for dep in dependencies if dep not in self._task_registry]
+            missing_deps = [
+                dep for dep in dependencies if dep not in self._task_registry
+            ]
             if missing_deps:
                 raise ValueError(f"Dependencies not found: {missing_deps}")
             dep_tasks = [self._task_registry[dep] for dep in dependencies]
@@ -320,10 +329,10 @@ class PipelineTaskBuilder:
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
-            
+
         Raises:
             ValueError: If any task_id already exists or if any dependency is not found.
-            
+
         Example:
             >>> builder.add("Collect Data").add_parallel_tasks([
             ...     "Technical Analysis", "Fundamental Analysis"
@@ -331,26 +340,32 @@ class PipelineTaskBuilder:
         """
         if not task_contents:
             raise ValueError("task_contents cannot be empty")
-            
+
         # Auto-infer dependencies if not specified
-        if dependencies is None and auto_depend and self._last_task_id is not None:
+        if (
+            dependencies is None
+            and auto_depend
+            and self._last_task_id is not None
+        ):
             dependencies = [self._last_task_id]
-            
+
         parallel_task_ids = []
-        base_counter = self.task_counter  # Save current counter for consistent naming
-        
+        base_counter = (
+            self.task_counter
+        )  # Save current counter for consistent naming
+
         for i, content in enumerate(task_contents):
             task_id = f"{task_id_prefix}_{i}_{base_counter}"
             # Use auto_depend=False since we're manually managing dependencies
             self.add(content, task_id, dependencies, auto_depend=False)
             parallel_task_ids.append(task_id)
-        
+
         # Set the last task to None since we have multiple parallel endings
         # The next task will need to explicitly specify dependencies
         self._last_task_id = None
         # Store parallel task IDs for potential sync operations
         self._last_parallel_tasks = parallel_task_ids
-        
+
         return self
 
     def add_sync_task(
@@ -371,10 +386,10 @@ class PipelineTaskBuilder:
 
         Returns:
             PipelineTaskBuilder: Self for method chaining.
-            
+
         Raises:
             ValueError: If task_id already exists or if any dependency is not found.
-            
+
         Example:
             >>> builder.add_parallel_tasks(["Task A", "Task B"]).add_sync_task("Merge Results")
             # Automatically waits for both parallel tasks
@@ -386,29 +401,32 @@ class PipelineTaskBuilder:
                 # Clear the parallel tasks after using them
                 self._last_parallel_tasks = []
             else:
-                raise ValueError("wait_for cannot be empty for sync task and no parallel tasks found")
-        
+                raise ValueError(
+                    "wait_for cannot be empty for sync task and no parallel tasks found"
+                )
+
         if not wait_for:
             raise ValueError("wait_for cannot be empty for sync task")
-            
-        return self.add(content, task_id, dependencies=wait_for, auto_depend=False)
 
+        return self.add(
+            content, task_id, dependencies=wait_for, auto_depend=False
+        )
 
     def build(self) -> List:
         """Build and return the complete task list with dependencies.
 
         Returns:
             List[Task]: List of tasks with proper dependency relationships.
-            
+
         Raises:
             ValueError: If there are circular dependencies or other validation errors.
         """
         if not self.task_list:
             raise ValueError("No tasks defined in pipeline")
-        
+
         # Validate no circular dependencies
         self._validate_dependencies()
-        
+
         return self.task_list.copy()
 
     def clear(self) -> None:
@@ -418,53 +436,54 @@ class PipelineTaskBuilder:
         self.task_counter = 0
         self._last_task_id = None
         self._last_parallel_tasks = []
-    
+
     def fork(self, task_contents: List[str]) -> 'PipelineTaskBuilder':
         """Create parallel branches from the current task (alias for add_parallel_tasks).
-        
+
         Args:
             task_contents (List[str]): List of task content strings for parallel execution.
-            
+
         Returns:
             PipelineTaskBuilder: Self for method chaining.
-            
+
         Example:
             >>> builder.add("Collect Data").fork([
             ...     "Technical Analysis", "Fundamental Analysis"
             ... ]).join("Generate Report")
         """
         return self.add_parallel_tasks(task_contents)
-    
-    def join(self, content: str, task_id: Optional[str] = None) -> 'PipelineTaskBuilder':
+
+    def join(
+        self, content: str, task_id: Optional[str] = None
+    ) -> 'PipelineTaskBuilder':
         """Join parallel branches with a synchronization task (alias for add_sync_task).
-        
+
         Args:
             content (str): Content of the join/sync task.
             task_id (str, optional): ID for the sync task.
-            
+
         Returns:
             PipelineTaskBuilder: Self for method chaining.
-            
+
         Example:
             >>> builder.fork(["Task A", "Task B"]).join("Merge Results")
         """
         return self.add_sync_task(content, task_id=task_id)
-    
-        
+
     def _validate_dependencies(self) -> None:
         """Validate that there are no circular dependencies.
-        
+
         Raises:
             ValueError: If circular dependencies are detected.
         """
         # Use DFS to detect cycles
         visited = set()
         rec_stack = set()
-        
+
         def has_cycle(task_id: str) -> bool:
             visited.add(task_id)
             rec_stack.add(task_id)
-            
+
             task = self._task_registry[task_id]
             for dep in task.dependencies:
                 if dep.id not in visited:
@@ -472,18 +491,20 @@ class PipelineTaskBuilder:
                         return True
                 elif dep.id in rec_stack:
                     return True
-            
+
             rec_stack.remove(task_id)
             return False
-        
+
         for task_id in self._task_registry:
             if task_id not in visited:
                 if has_cycle(task_id):
-                    raise ValueError(f"Circular dependency detected involving task: {task_id}")
-                    
+                    raise ValueError(
+                        f"Circular dependency detected involving task: {task_id}"
+                    )
+
     def get_task_info(self) -> dict:
         """Get information about all tasks in the pipeline.
-        
+
         Returns:
             dict: Dictionary containing task count and task details.
         """
@@ -493,10 +514,10 @@ class PipelineTaskBuilder:
                 {
                     "id": task.id,
                     "content": task.content,
-                    "dependencies": [dep.id for dep in task.dependencies]
+                    "dependencies": [dep.id for dep in task.dependencies],
                 }
                 for task in self.task_list
-            ]
+            ],
         }
 
 

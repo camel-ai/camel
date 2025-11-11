@@ -14,7 +14,6 @@
 
 import os
 from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -111,7 +110,9 @@ def test_pipeline_builder_basic_chain():
 
     # Verify dependencies
     tasks = list(workforce._pending_tasks)
-    assert len(workforce._task_dependencies[tasks[0].id]) == 0  # Task A has no deps
+    assert (
+        len(workforce._task_dependencies[tasks[0].id]) == 0
+    )  # Task A has no deps
     assert (
         tasks[0].id in workforce._task_dependencies[tasks[1].id]
     )  # Task B depends on A
@@ -148,11 +149,10 @@ def test_pipeline_fork_join_pattern():
     assert (
         task_a.id in workforce._task_dependencies[task_c.id]
     )  # C depends on A
-    assert task_b.id in workforce._task_dependencies[
-        task_d.id
-    ] and task_c.id in workforce._task_dependencies[
-        task_d.id
-    ]  # D depends on B and C
+    assert (
+        task_b.id in workforce._task_dependencies[task_d.id]
+        and task_c.id in workforce._task_dependencies[task_d.id]
+    )  # D depends on B and C
 
 
 def test_pipeline_add_with_task_objects():
@@ -160,7 +160,9 @@ def test_pipeline_add_with_task_objects():
     workforce = Workforce("Test Workforce")
 
     task1 = Task(content="Task 1", id="custom_1")
-    task2 = Task(content="Task 2", id="custom_2", additional_info={"priority": "high"})
+    task2 = Task(
+        content="Task 2", id="custom_2", additional_info={"priority": "high"}
+    )
 
     workforce.pipeline_add(task1).pipeline_add(task2).pipeline_build()
 
@@ -211,7 +213,9 @@ def test_pipeline_execution_structure():
     workforce.pipeline_add("Step 1").pipeline_add("Step 2").pipeline_build()
 
     # Verify pipeline structure
-    assert len(workforce._pending_tasks) == 2, "Should have 2 tasks in pipeline"
+    assert (
+        len(workforce._pending_tasks) == 2
+    ), "Should have 2 tasks in pipeline"
     assert len(workforce._children) == 1, "Should have 1 worker"
 
     # Get the pipeline tasks
@@ -220,8 +224,12 @@ def test_pipeline_execution_structure():
     task_2 = pipeline_tasks[1]
 
     # Verify dependencies were set correctly
-    assert len(workforce._task_dependencies[task_1.id]) == 0, "Task 1 should have no dependencies"
-    assert task_1.id in workforce._task_dependencies[task_2.id], "Task 2 should depend on Task 1"
+    assert (
+        len(workforce._task_dependencies[task_1.id]) == 0
+    ), "Task 1 should have no dependencies"
+    assert (
+        task_1.id in workforce._task_dependencies[task_2.id]
+    ), "Task 2 should depend on Task 1"
 
     # Verify mode is PIPELINE
     assert workforce.mode == WorkforceMode.PIPELINE
@@ -243,9 +251,9 @@ async def test_pipeline_failed_task_continues_workflow():
     workforce.add_single_agent_worker("Fail Worker", fail_worker.worker)
 
     # Build pipeline where middle task will fail
-    workforce.pipeline_add("Task 1").pipeline_add("Task 2 (will fail)").pipeline_add(
-        "Task 3"
-    ).pipeline_build()
+    workforce.pipeline_add("Task 1").pipeline_add(
+        "Task 2 (will fail)"
+    ).pipeline_add("Task 3").pipeline_build()
 
     # Get tasks
     tasks = list(workforce._pending_tasks)
@@ -271,10 +279,14 @@ async def test_pipeline_failed_task_continues_workflow():
         for dep_id in workforce._task_dependencies[task_3.id]
     )
 
-    assert all_deps_completed, "Task 3 dependencies should be marked as completed"
+    assert (
+        all_deps_completed
+    ), "Task 3 dependencies should be marked as completed"
 
     # In PIPELINE mode, should post task even if dependency failed
-    should_post = workforce.mode == WorkforceMode.PIPELINE and all_deps_completed
+    should_post = (
+        workforce.mode == WorkforceMode.PIPELINE and all_deps_completed
+    )
     assert should_post, "Task 3 should be ready to post in PIPELINE mode"
 
 
@@ -319,7 +331,9 @@ async def test_pipeline_fork_with_one_branch_failing():
     ), "Task D dependencies should all be completed (success or failure)"
 
     # Task D should be ready to execute in PIPELINE mode
-    should_post = workforce.mode == WorkforceMode.PIPELINE and all_deps_completed
+    should_post = (
+        workforce.mode == WorkforceMode.PIPELINE and all_deps_completed
+    )
     assert (
         should_post
     ), "Task D (join) should execute even though Task C (branch) failed"
@@ -462,7 +476,9 @@ def test_pipeline_with_parallel_tasks():
     # Verify parallel tasks all depend on the initial task
     initial_task = next(t for t in tasks_list if t.content == "Initial Task")
     for parallel_task in parallel_tasks:
-        assert initial_task.id in workforce._task_dependencies[parallel_task.id]
+        assert (
+            initial_task.id in workforce._task_dependencies[parallel_task.id]
+        )
 
     # Verify sync task depends on all parallel tasks
     for parallel_task in parallel_tasks:
@@ -473,8 +489,12 @@ def test_pipeline_with_task_objects_in_parallel():
     """Test parallel tasks with Task objects."""
     workforce = Workforce("Test Workforce")
 
-    task1 = Task(content="Parallel Task 1", additional_info={"type": "analysis"})
-    task2 = Task(content="Parallel Task 2", additional_info={"type": "research"})
+    task1 = Task(
+        content="Parallel Task 1", additional_info={"type": "analysis"}
+    )
+    task2 = Task(
+        content="Parallel Task 2", additional_info={"type": "research"}
+    )
 
     workforce.pipeline_add("Start").add_parallel_pipeline_tasks(
         [task1, task2]
@@ -498,9 +518,15 @@ def test_pipeline_with_task_objects_in_parallel():
 
     # Verify additional info if preserved (implementation dependent)
     # If additional_info is preserved, check it; otherwise just verify tasks exist
-    if parallel_task_1.additional_info and "type" in parallel_task_1.additional_info:
+    if (
+        parallel_task_1.additional_info
+        and "type" in parallel_task_1.additional_info
+    ):
         assert parallel_task_1.additional_info["type"] == "analysis"
-    if parallel_task_2.additional_info and "type" in parallel_task_2.additional_info:
+    if (
+        parallel_task_2.additional_info
+        and "type" in parallel_task_2.additional_info
+    ):
         assert parallel_task_2.additional_info["type"] == "research"
 
 
@@ -647,4 +673,3 @@ def test_pipeline_empty_task_list_raises_error():
 
     with pytest.raises(ValueError, match="Cannot set empty task list"):
         workforce.set_pipeline_tasks([])
-
