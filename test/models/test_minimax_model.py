@@ -53,8 +53,8 @@ class TestMinimaxModel:
 
     def test_minimax_m2_model_default_url(self, monkeypatch):
         # Test default URL when no environment variable is set
-        monkeypatch.delenv("MINIMAX_M2_API_BASE_URL", raising=False)
-        monkeypatch.setenv("MINIMAX_M2_API_KEY", "test_key")
+        monkeypatch.delenv("MINIMAX_API_BASE_URL ", raising=False)
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
 
         model = MinimaxModel(ModelType.MINIMAX_M2)
         assert model._url == "https://api.minimax.chat/v1"
