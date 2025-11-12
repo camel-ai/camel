@@ -3435,6 +3435,7 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
@@ -3456,7 +3457,11 @@ class ChatAgent(BaseAgent):
             logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            mask_output=mask_flag,
         )
 
     async def _aexecute_tool(
@@ -3498,6 +3503,7 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
+
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
@@ -3562,16 +3568,74 @@ class ChatAgent(BaseAgent):
             timestamp=base_timestamp + 1e-6,
         )
 
-        # Record information about this tool call
+        # Calculate tool cost and token usage
+        cost_info = self._calculate_tool_cost(assist_msg, func_msg)
+        # Record information about this tool call with cost tracking
         tool_record = ToolCallingRecord(
             tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            token_usage={
+                "prompt_tokens": int(cost_info["prompt_tokens"]),
+                "completion_tokens": int(cost_info["completion_tokens"]),
+                "total_tokens": int(cost_info["total_tokens"]),
+            },
         )
 
         self._update_last_tool_call_state(tool_record)
         return tool_record
+
+    def _calculate_tool_cost(
+        self, assist_msg: OpenAIMessage, func_msg: OpenAIMessage
+    ) -> Dict[str, int]:
+        r"""Calculate the tool cost and token usage for a tool call.
+
+        Args:
+            assist_msg (OpenAIMessage): The assistant message 
+                as tool call input.
+            func_msg (OpenAIMessage): The function message 
+                as tool call output.
+
+        Returns:
+            Dictionary containing token usage and cost estimates.
+        """
+
+        if hasattr(self.model_backend, 'token_counter'):
+            try:
+                input_messages = assist_msg.to_openai_message(
+                    OpenAIBackendRole.ASSISTANT
+                )
+                output_messages = func_msg.to_openai_message(
+                    OpenAIBackendRole.FUNCTION
+                )
+                input_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [input_messages]
+                    )
+                output_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [output_messages]
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Error calculating tool call token usage tokens: {e}"
+                )
+                input_tokens = len(assist_msg.content.split())
+                output_tokens = len(func_msg.content.split())
+        else:
+            logger.warning(
+                "Token counter not available. "
+                "Using contexnt words count to estimate token usage."
+            )
+            input_tokens = len(assist_msg.content.split())
+            output_tokens = len(func_msg.content.split())
+
+        return {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
 
     def _stream(
         self,
