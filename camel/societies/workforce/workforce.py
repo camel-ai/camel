@@ -1099,22 +1099,6 @@ class Workforce(BaseNode):
             )
         )
 
-        # Fallback values if parsing fails - fail-safe approach
-        fallback_values = {
-            "requirements_met": False,
-            "unique_count": 0,
-            "duplicate_count": 0,
-            "missing_count": num_subtasks,
-            "deduplicated_result": aggregated_result,
-            "reasoning": (
-                "Validation failed - could not parse response. "
-                "Failing safe to prevent accepting potentially "
-                "invalid results."
-            ),
-            "additional_task_guidance": None,
-            "duplicate_subtask_ids": None,
-        }
-
         examples = [
             {
                 "requirements_met": True,
@@ -1123,11 +1107,13 @@ class Workforce(BaseNode):
                 "missing_count": 0,
                 "deduplicated_result": "Deduplicated content here...",
                 "reasoning": (
-                    "Found 5 unique papers after removing 2 duplicates. "
-                    "Requirements fully met."
+                    "Found 5 unique papers. Task_1.3 and task_1.5 both "
+                    "returned 'Attention Is All You Need' (keeping "
+                    "task_1.3's result). Requirements fully met after "
+                    "deduplication."
                 ),
                 "additional_task_guidance": None,
-                "duplicate_subtask_ids": ["task_1.3", "task_1.5"],
+                "duplicate_subtask_ids": ["task_1.5"],
             },
             {
                 "requirements_met": False,
@@ -1136,8 +1122,10 @@ class Workforce(BaseNode):
                 "missing_count": 2,
                 "deduplicated_result": "3 unique papers found...",
                 "reasoning": (
-                    "Only 3 unique papers found after deduplication. "
-                    "Need 2 more to meet requirement of 5."
+                    "Only 3 unique papers found. Task_1.1 and task_1.2 "
+                    "both returned 'Paper A' (kept task_1.1). Task_1.4, "
+                    "task_1.5, task_1.6 all returned 'Paper B' (kept "
+                    "task_1.4). Need 2 more unique papers."
                 ),
                 "additional_task_guidance": (
                     "Find ONE unique research paper on the topic, avoiding: "
@@ -1148,10 +1136,23 @@ class Workforce(BaseNode):
                 ),
                 "duplicate_subtask_ids": [
                     "task_1.2",
-                    "task_1.4",
                     "task_1.5",
                     "task_1.6",
                 ],
+            },
+            {
+                "requirements_met": True,
+                "unique_count": 5,
+                "duplicate_count": 0,
+                "missing_count": 0,
+                "deduplicated_result": "All 5 papers are distinct...",
+                "reasoning": (
+                    "Found 5 distinct papers with different titles. "
+                    "All papers are unique, no exact duplicates found. "
+                    "Requirements fully met."
+                ),
+                "additional_task_guidance": None,
+                "duplicate_subtask_ids": None,
             },
         ]
 
@@ -1169,7 +1170,9 @@ class Workforce(BaseNode):
                 result = self.structured_handler.parse_structured_response(
                     response.msg.content if response.msg else "",
                     schema=ValidationResult,
-                    fallback_values=fallback_values,
+                    fallback_values=self.structured_handler.create_fallback_response(
+                        ValidationResult, "fail to parse structured response"
+                    ),
                 )
 
                 if isinstance(result, ValidationResult):
@@ -1177,7 +1180,13 @@ class Workforce(BaseNode):
                 elif isinstance(result, dict):
                     return ValidationResult.model_validate(result)
                 else:
-                    return ValidationResult.model_validate(fallback_values)
+                    fallback = (
+                        self.structured_handler.create_fallback_response(
+                            ValidationResult,
+                            "failed to create ValidationResult Instance",
+                        )
+                    )
+                    return ValidationResult.model_validate(fallback)
             else:
                 response = self.task_agent.step(
                     validation_prompt, response_format=ValidationResult
@@ -1189,31 +1198,11 @@ class Workforce(BaseNode):
                 f"Error during validation for task {task.id}: {e}, "
                 f"using fallback"
             )
-            return ValidationResult.model_validate(fallback_values)
-
-    def _build_task_content_with_refinement(
-        self,
-        base_content: str,
-        refinement_guidance: str,
-        refinement_iteration: int,
-    ) -> str:
-        r"""Build task content with refinement guidance.
-
-        Args:
-            base_content (str): The base task content
-            refinement_guidance (str): The refinement guidance from validation
-            refinement_iteration (int): The current refinement iteration number
-
-        Returns:
-            str: The complete task content including refinement guidance
-        """
-        return (
-            f"{base_content}\n\n"
-            f"IMPORTANT - REFINEMENT ITERATION {refinement_iteration}:\n"
-            f"{refinement_guidance}\n\n"
-            f"Your previous result was a duplicate. You MUST find a "
-            f"completely DIFFERENT and UNIQUE item this time."
-        )
+            return ValidationResult.model_validate(
+                self.structured_handler.create_fallback_response(
+                    ValidationResult, e
+                )
+            )
 
     async def _apply_recovery_strategy(
         self,
@@ -1271,49 +1260,10 @@ class Workforce(BaseNode):
 
             elif strategy == RecoveryStrategy.REPLAN:
                 if recovery_decision.modified_task_content:
-                    is_refinement_subtask = (
-                        task.additional_info
-                        and task.additional_info.get(
-                            'refinement_subtask', False
-                        )
-                    )
-
-                    if is_refinement_subtask and task.additional_info:
-                        task.additional_info['base_content'] = (
-                            recovery_decision.modified_task_content
-                        )
-
-                        refinement_guidance = task.additional_info.get(
-                            'refinement_guidance'
-                        )
-                        refinement_iteration = task.additional_info.get(
-                            'refinement_iteration', 0
-                        )
-
-                        if refinement_guidance and refinement_iteration > 0:
-                            task.content = (
-                                self._build_task_content_with_refinement(
-                                    base_content=(
-                                        recovery_decision.modified_task_content
-                                    ),
-                                    refinement_guidance=refinement_guidance,
-                                    refinement_iteration=refinement_iteration,
-                                )
-                            )
-                        else:
-                            task.content = (
-                                recovery_decision.modified_task_content
-                            )
-
-                        logger.info(
-                            f"Task {task.id} replanned with preserved "
-                            f"refinement context from additional_info"
-                        )
-                    else:
-                        task.content = recovery_decision.modified_task_content
+                    task.content = recovery_decision.modified_task_content
 
                     logger.info(f"Task {task.id} content modified for replan")
-
+                # Repost the modified task
                 if task.id in self._assignees:
                     assignee_id = self._assignees[task.id]
                     await self._post_task(task, assignee_id)
@@ -1331,12 +1281,14 @@ class Workforce(BaseNode):
                     )
 
             elif strategy == RecoveryStrategy.REASSIGN:
+                # Reassign to a different worker
                 old_worker = task.assigned_worker_id
                 logger.info(
                     f"Task {task.id} will be reassigned from worker "
                     f"{old_worker}"
                 )
 
+                # Find a different worker
                 batch_result = await self._find_assignee([task])
                 assignment = batch_result.assignments[0]
                 new_worker = assignment.assignee_id
@@ -1427,40 +1379,31 @@ class Workforce(BaseNode):
                     f"targeted subtasks"
                 )
 
-                if not task.additional_info:
-                    task.additional_info = {}
+                # Access ValidationResult object directly instead of dict
+                validation_result = None
+                if task.additional_info:
+                    validation_result = task.additional_info.get(
+                        'validation_result'
+                    )
 
-                validation_info = task.additional_info.get(
-                    'validation_result', {}
-                )
-                additional_guidance = validation_info.get(
-                    'additional_task_guidance'
-                )
-                missing_count = validation_info.get('missing_count', 1)
-                duplicate_ids = validation_info.get(
-                    'duplicate_subtask_ids', []
-                )
+                # Extract values from ValidationResult, with safe defaults
+                if validation_result and isinstance(
+                    validation_result, ValidationResult
+                ):
+                    additional_guidance = (
+                        validation_result.additional_task_guidance
+                    )
+                    duplicate_ids = (
+                        validation_result.duplicate_subtask_ids or []
+                    )
 
                 if duplicate_ids:
                     subtasks_to_retry = [
                         sub for sub in task.subtasks if sub.id in duplicate_ids
                     ]
-                else:
-                    logger.warning(
-                        f"No duplicate_subtask_ids provided by validation "
-                        f"agent for {task.id}, falling back to retrying "
-                        f"first {missing_count} subtasks"
+                    logger.info(
+                        f"{len(subtasks_to_retry)} duplicates to retry "
                     )
-                    subtasks_to_retry = task.subtasks[:missing_count]
-
-                logger.info(
-                    f"Refinement for {task.id}: validation agent detected "
-                    f"{validation_info.get('duplicate_count', 0)} duplicates "
-                    f"in subtasks {duplicate_ids}, "
-                    f"need {missing_count} more unique items, "
-                    f"will retry {len(subtasks_to_retry)} subtasks: "
-                    f"{[st.id for st in subtasks_to_retry]}"
-                )
 
                 refinement_iteration = task.additional_info.get(
                     'refinement_iteration', 0
@@ -1488,14 +1431,15 @@ class Workforce(BaseNode):
                         subtask.additional_info['refinement_guidance'] = (
                             additional_guidance
                         )
+                        iteration_num = refinement_iteration + 1
                         subtask.content = (
-                            self._build_task_content_with_refinement(
-                                base_content=subtask.additional_info[
-                                    'base_content'
-                                ],
-                                refinement_guidance=additional_guidance,
-                                refinement_iteration=refinement_iteration + 1,
-                            )
+                            f"{subtask.additional_info['base_content'],}\n\n"
+                            f"IMPORTANT - REFINEMENT ITERATION "
+                            f"{iteration_num}:\n"
+                            f"{additional_guidance}\n\n"
+                            f"Your previous result was a duplicate. You MUST "
+                            f"find a completely DIFFERENT and UNIQUE item "
+                            f"this time."
                         )
 
                 subtasks = subtasks_to_retry
@@ -4110,7 +4054,6 @@ class Workforce(BaseNode):
                         f"{validation_result.duplicate_count}, "
                         f"missing_count={validation_result.missing_count}"
                     )
-
                     parent.result = validation_result.deduplicated_result
 
                     if not validation_result.requirements_met:
@@ -4132,24 +4075,11 @@ class Workforce(BaseNode):
                                 f"{max_refinement_iterations})"
                             )
 
-                            parent.additional_info['validation_result'] = {
-                                'unique_count': (
-                                    validation_result.unique_count
-                                ),
-                                'duplicate_count': (
-                                    validation_result.duplicate_count
-                                ),
-                                'missing_count': (
-                                    validation_result.missing_count
-                                ),
-                                'reasoning': validation_result.reasoning,
-                                'additional_task_guidance': (
-                                    validation_result.additional_task_guidance
-                                ),
-                                'duplicate_subtask_ids': (
-                                    validation_result.duplicate_subtask_ids
-                                ),
-                            }
+                            # Store ValidationResult object directly to avoid
+                            # redundant dictionary conversions
+                            parent.additional_info['validation_result'] = (
+                                validation_result
+                            )
 
                             parent.state = TaskState.FAILED
                             parent.failure_count += 1
@@ -4850,6 +4780,7 @@ class Workforce(BaseNode):
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
+            max_refinement_iterations=2,
             task_timeout_seconds=self.task_timeout_seconds,
         )
 

@@ -13,25 +13,20 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.societies import Workforce
 from camel.tasks import Task
 from camel.toolkits import ArxivToolkit
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 
 async def main():
     # Create a model instance for the workforce agents
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type="gpt-4.1",
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        url=os.getenv("AZURE_OPENAI_BASE_URL"),
-        api_version="2024-12-01-preview",
+        model_platform=ModelPlatformType.OPENAI, model_type=ModelType.GPT_4_1
     )
     tools = ArxivToolkit().get_tools()
 
@@ -69,8 +64,6 @@ async def main():
         id="research_task_1",
     )
 
-    
-
     try:
         # Process the task with the workforce
         result = await workforce.process_task_async(task)
@@ -83,20 +76,12 @@ async def main():
         print(result.result)
 
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n Error: {e}")
         import traceback
 
         traceback.print_exc()
-
-    finally:
-        # Stop the workforce
-        workforce.stop()
 
 
 if __name__ == "__main__":
     # Run the main example
     asyncio.run(main())
-
-    # Uncomment to run additional examples:
-    # asyncio.run(simple_deduplication_example())
-    # asyncio.run(disable_validation_example())

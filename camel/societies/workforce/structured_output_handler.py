@@ -392,6 +392,7 @@ Ensure the JSON is valid and properly formatted.
                     'decompose',
                     'create_worker',
                     'reassign',
+                    'refine',
                 ]
                 if strategy not in valid_strategies:
                     # Try to match partial
