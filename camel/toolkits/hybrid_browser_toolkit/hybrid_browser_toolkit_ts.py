@@ -73,7 +73,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_forward",
         "browser_get_page_snapshot",
         "browser_get_som_screenshot",
-        "browser_get_page_links",
         "browser_click",
         "browser_type",
         "browser_select",
@@ -83,7 +82,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_mouse_drag",
         "browser_press_key",
         "browser_wait_user",
-        "browser_solve_task",
         "browser_switch_tab",
         "browser_close_tab",
         "browser_get_tab_info",
@@ -1499,7 +1497,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Remove all empty rows and columns, then add:
         - Column headers: A, B, C, D...
-        - Row numbers: 1, 2, 3, 4...
+        - Row numbers: 0, 1, 2, 3...
 
         Args:
             content (str): Raw sheet content with tabs and newlines.
@@ -1595,7 +1593,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "content" (str): Tab-separated spreadsheet content with
                   row/column labels. Format:
                   Line 1: "\tA\tB\tC" (column headers)
-                  Line 2+: "1\tdata1\tdata2\tdata3" (row number + data)
+                  Line 2+: "0\tdata1\tdata2\tdata3" (row number + data)
                 - "snapshot" (str): Always empty string (sheet tools don't
                   return snapshots).
                 - "tabs" (List[Dict]): Information about all open tabs.
