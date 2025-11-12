@@ -1487,7 +1487,8 @@ class ChatAgent(BaseAgent):
         message: BaseMessage,
         role: OpenAIBackendRole,
         timestamp: Optional[float] = None,
-    ) -> None:
+        return_records: bool = False,
+    ) -> Optional[List[MemoryRecord]]:
         r"""Updates the agent memory with a new message.
 
         Args:
@@ -1497,7 +1498,13 @@ class ChatAgent(BaseAgent):
             timestamp (Optional[float], optional): Custom timestamp for the
                 memory record. If `None`, the current time will be used.
                 (default: :obj:`None`)
-                    (default: obj:`None`)
+            return_records (bool, optional): When ``True`` the method returns
+                the list of MemoryRecord objects written to memory.
+                (default: :obj:`False`)
+
+        Returns:
+            Optional[List[MemoryRecord]]: The records that were written when
+            ``return_records`` is ``True``; otherwise ``None``.
         """
         record = MemoryRecord(
             message=message,
@@ -1508,6 +1515,10 @@ class ChatAgent(BaseAgent):
             agent_id=self.agent_id,
         )
         self.memory.write_record(record)
+
+        if return_records:
+            return [record]
+        return None
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -3862,15 +3873,29 @@ class ChatAgent(BaseAgent):
         base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
 
         self.update_memory(
-            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=base_timestamp
+            assist_msg,
+            OpenAIBackendRole.ASSISTANT,
+            timestamp=base_timestamp,
+            return_records=self._enable_snapshot_clean,
         )
 
         # Add minimal increment to ensure function message comes after
-        self.update_memory(
+        func_records = self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
             timestamp=base_timestamp + 1e-6,
+            return_records=self._enable_snapshot_clean,
         )
+
+        # Register tool output for snapshot cleaning if enabled
+        if self._enable_snapshot_clean and not mask_output and func_records:
+            serialized_result = self._serialize_tool_result(result)
+            self._register_tool_output_for_cache(
+                func_name,
+                tool_call_id,
+                serialized_result,
+                cast(List[MemoryRecord], func_records),
+            )
 
         # Record information about this tool call
         tool_record = ToolCallingRecord(
