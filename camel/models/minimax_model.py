@@ -32,7 +32,7 @@ class MinimaxModel(OpenAICompatibleModel):
             created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`MinimaxM2Config().as_dict()` will be used.
+            If:obj:`None`, :obj:`MinimaxConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
             with the Minimax service. (default: :obj:`None`).
