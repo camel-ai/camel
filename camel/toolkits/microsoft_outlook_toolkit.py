@@ -231,7 +231,7 @@ class OutlookToolkit(BaseToolkit):
         )
         return bool(email_pattern.match(email))
 
-    def _validate_emails(self, emails: List[str]) -> List[str]:
+    def _validate_emails(self, emails: Optional[List[str]]) -> List[str]:
         """Validates a list of email addresses.
 
         Args:
@@ -263,11 +263,11 @@ class OutlookToolkit(BaseToolkit):
 
     def _validate_all_email_addresses(
         self,
-        to_email: List[str],
+        to_email: Optional[List[str]],
         cc_recipients: Optional[List[str]] = None,
         bcc_recipients: Optional[List[str]] = None,
         reply_to: Optional[List[str]] = None,
-    ) -> Dict[str, Optional[List[str]]]:
+    ):
         """Validates all email addresses for to, cc, bcc, and reply_to fields.
 
         Args:
@@ -746,11 +746,13 @@ class OutlookToolkit(BaseToolkit):
 
         """
         try:
-            request_config = self._build_attachment_query(metadata_only)
+            request_config = None
+            if metadata_only:
+                request_config = self._build_attachment_query()
+
             attachments_response = await self._fetch_attachments(
                 message_id, request_config
             )
-
             if not attachments_response:
                 return {
                     'status': 'success',
@@ -782,7 +784,7 @@ class OutlookToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def _build_attachment_query(self, metadata_only: bool):
+    def _build_attachment_query(self):
         """Constructs the query configuration for fetching attachments.
 
         Args:
@@ -807,23 +809,29 @@ class OutlookToolkit(BaseToolkit):
                 "isInline",
             ]
         )
-        if not metadata_only:
-            query_params.select.append("content_bytes")
 
         return AttachmentsRequestBuilder.AttachmentsRequestBuilderGetRequestConfiguration(  # noqa: E501
             query_parameters=query_params
         )
 
-    async def _fetch_attachments(self, message_id: str, request_config):
+    async def _fetch_attachments(
+        self, message_id: str, request_config: Optional[Any] = None
+    ):
         """Fetches attachments from the Microsoft Graph API.
 
         Args:
             message_id (str): The email message ID.
-            request_config: The request configuration with query parameters.
+            request_config (Optional[Any]): The request configuration with
+            query parameters. (default: :obj:`None`)
+
 
         Returns:
             Attachments response from the Graph API.
         """
+        if not request_config:
+            return await self.client.me.messages.by_message_id(
+                message_id
+            ).attachments.get()
         return await self.client.me.messages.by_message_id(
             message_id
         ).attachments.get(request_configuration=request_config)
@@ -854,8 +862,6 @@ class OutlookToolkit(BaseToolkit):
             'is_inline': getattr(attachment, 'is_inline', False),
             'last_modified_date_time': (
                 attachment.last_modified_date_time.isoformat()
-                if getattr(attachment, 'last_modified_date_time', None)
-                else None
             ),
         }
 
@@ -874,7 +880,7 @@ class OutlookToolkit(BaseToolkit):
                         f"Attachment {attachment.name} saved to {file_path}"
                     )
                 else:
-                    info['content_bytes'] = decoded_bytes
+                    info['content_bytes'] = content_bytes
 
         return info
 
@@ -911,3 +917,158 @@ class OutlookToolkit(BaseToolkit):
         with open(file_path, 'wb') as f:
             f.write(content_bytes)
         return file_path
+
+    def _handle_html_body(self, body_content: str) -> str:
+        """Converts HTML email body to plain text.
+
+        Note: This method performs client-side HTML-to-text conversion.
+
+        Args:
+            body_content (str): The HTML content of the email body. This
+                content is already sanitized by Microsoft Graph API.
+
+        Returns:
+            str: Plain text version of the email body with cleaned whitespace
+                and removed HTML tags.
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            # Parse HTML content (already sanitized by Microsoft Graph)
+            soup = BeautifulSoup(body_content, 'html.parser')
+
+            # Remove script and style elements (defense in depth)
+            for script in soup(["script", "style"]):
+                script.decompose()
+
+            # Get text and clean up whitespace
+            text = soup.get_text()
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (
+                phrase.strip() for line in lines for phrase in line.split("  ")
+            )
+            text = '\n'.join(chunk for chunk in chunks if chunk)
+            return text
+
+        except Exception as e:
+            logger.error(f"Failed to parse HTML body: {e!s}")
+            return body_content
+
+    def _get_recipients(self, recipient_list: Optional[List[Any]]):
+        """Gets a list of recipients from a recipient list object."""
+        recipients = []
+        if not recipient_list:
+            return recipients
+        for recipient_info in recipient_list:
+            email = recipient_info.email_address.address
+            name = recipient_info.email_address.name
+            recipients.append({'address': email, 'name': name})
+        return recipients
+
+    async def _extract_message_details(
+        self,
+        message: Any,
+        return_html_content: bool = False,
+        include_attachments: bool = False,
+        attachment_metadata_only: bool = True,
+        include_inline_attachments: bool = False,
+        attachment_save_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Extracts detailed information from a message object.
+
+        This function processes a message object (either from a list response
+        or a direct fetch) and extracts all relevant details. It can
+        optionally fetch attachments but does not make additional API calls
+        for basic message information.
+
+        Args:
+            message (Any): The Microsoft Graph message object to extract
+                details from.
+            return_html_content (bool): If True and body content type is HTML,
+                returns the raw HTML content without converting it to plain
+                text. If False and body_type is 'text', HTML content will be
+                converted to plain text. Only applies when include_body=True.
+                (default: :obj:`False`)
+            include_attachments (bool): Whether to include attachment
+                information. If True, will make an API call to fetch
+                attachments. (default: :obj:`False`)
+            attachment_metadata_only (bool): If True, returns only attachment
+                metadata without downloading content. If False, downloads full
+                attachment content. Only used when include_attachments=True.
+                (default: :obj:`True`)
+            include_inline_attachments (bool): If True, includes inline
+                attachments in the results. Only used when
+                include_attachments=True. (default: :obj:`False`)
+            attachment_save_path (Optional[str]): Directory path where
+                attachments should be saved. Only used when
+                include_attachments=True and attachment_metadata_only=False.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the message details
+                including:
+                - Basic info (id, subject, from, received_date_time,body etc.)
+                - Recipients (to_recipients, cc_recipients, bcc_recipients)
+                - Attachment information (if requested)
+
+        """
+        try:
+            # Validate message object
+            from msgraph.generated.models.message import Message
+
+            if not isinstance(message, Message):
+                return {'error': 'Invalid message object provided'}
+
+            # Extract basic details
+            details = {
+                'id': message.id,
+                'subject': message.subject,
+                'from': self._get_recipients([message.from_]),
+                'to_recipients': self._get_recipients(message.to_recipients),
+                'cc_recipients': self._get_recipients(message.cc_recipients),
+                'bcc_recipients': self._get_recipients(message.bcc_recipients),
+                'received_date_time': (
+                    message.received_date_time.isoformat()
+                    if message.received_date_time
+                    else None
+                ),
+                'sent_date_time': (
+                    message.sent_date_time.isoformat()
+                    if message.sent_date_time
+                    else None
+                ),
+                'has_non_inline_attachments': message.has_attachments,
+                'importance': (str(message.importance)),
+                'is_read': message.is_read,
+                'is_draft': message.is_draft,
+                'body_preview': message.body_preview,
+            }
+
+            body_content = message.body.content if message.body else ''
+            content_type = message.body.content_type if (message.body) else ''
+
+            # Convert HTML to text if requested and content is HTML
+            is_content_html = content_type and "html" in str(content_type)
+            if is_content_html and not return_html_content and body_content:
+                body_content = self._handle_html_body(body_content)
+
+            details['body'] = body_content
+            details['body_type'] = content_type
+
+            # Include attachments if requested
+            if not include_attachments:
+                return details
+
+            attachments_info = await self.get_attachments(
+                message_id=details['id'],
+                metadata_only=attachment_metadata_only,
+                include_inline_attachments=include_inline_attachments,
+                save_path=attachment_save_path,
+            )
+            details['attachments'] = attachments_info.get('attachments', [])
+            return details
+
+        except Exception as e:
+            error_msg = f"Failed to extract message details: {e!s}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
