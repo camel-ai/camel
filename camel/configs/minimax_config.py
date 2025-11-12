@@ -20,7 +20,7 @@ from camel.configs.base_config import BaseConfig
 
 class MinimaxConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
-    compatibility with Minimax M2.
+    compatibility with Minimax.
 
     Reference: https://api.minimax.chat/document/guides/chat-model
 
