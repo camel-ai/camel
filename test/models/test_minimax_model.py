@@ -90,6 +90,6 @@ class TestMinimaxModel:
     )
     def test_minimax_m2_model_types_available(self, model_type: ModelType):
         # Test that all defined Minimax M2 model types are recognized
-        assert model_type.is_minimax_m2
+        assert model_type.is_minimax
         model = MinimaxModel(model_type)
         assert isinstance(model.model_type, ModelType)
