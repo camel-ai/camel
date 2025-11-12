@@ -1,4 +1,3 @@
-
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,8 +84,8 @@ class TestMinimaxModel:
     @pytest.mark.parametrize(
         "model_type",
         [
-           ModelType.MINIMAX_M2,
-        ModelType.MINIMAX_M2_STABLE,
+            ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
         ],
     )
     def test_minimax_m2_model_types_available(self, model_type: ModelType):
