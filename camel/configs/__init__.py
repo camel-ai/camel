@@ -17,6 +17,7 @@ from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
+from .burncloud_config import BURNCLOUD_API_PARAMS, BurnCloudConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
@@ -92,6 +93,8 @@ __all__ = [
     'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'BurnCloudConfig',
+    'BURNCLOUD_API_PARAMS',
     'CohereConfig',
     'COHERE_API_PARAMS',
     'CometAPIConfig',

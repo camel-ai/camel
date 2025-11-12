@@ -63,6 +63,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SambaNova**    | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama**       | [supported models](https://ollama.com/library) |
 | **OpenRouter**   | [supported models](https://openrouter.ai/models) |
+| **BurnCloud**    | [supported models](https://ai.burncloud.com/pricing) |
 | **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
 | **LMStudio**     | [supported models](https://lmstudio.ai/models) |
@@ -422,6 +423,46 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   ```
 
   **Available Models:** View the full list of models available through OpenRouter at [openrouter.ai/models](https://openrouter.ai/models).
+
+  </Tab>
+
+  <Tab title="BurnCloud">
+  Access [BurnCloud](https://www.burncloud.com) to route OpenAI-compatible requests to GPT, Claude, DeepSeek, Grok, and other hosted models:
+
+  - **Unified Endpoint**: Send standard OpenAI Chat Completions to `https://ai.burncloud.com/v1`.
+  - **Model Market**: Choose any model listed in the [BurnCloud Model Market](https://ai.burncloud.com/pricing), including reasoning and multimodal variants.
+  - **Drop-in Replacement**: Keep the same request schema, streaming, and tool-calling semantics as OpenAI clients.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import BurnCloudConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.BURNCLOUD,
+      model_type=ModelType.GPT_4O,
+      model_config_dict=BurnCloudConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Summarize the CAMEL AI framework in two sentences.")
+  print(response.msgs[0].content)
+  ```
+
+  **Environment Variables:**
+  ```bash
+  export BURNCLOUD_API_KEY="your_burncloud_api_key"
+  export BURNCLOUD_API_BASE_URL="https://ai.burncloud.com/v1"  # Optional override
+  ```
+
+  <Note type="info">
+    BurnCloud is fully OpenAI-compatible, so you can pass any supported model identifier as a plain string (e.g., `"claude-3.5-sonnet"`) even if it isn't part of the predefined enums.
+  </Note>
 
   </Tab>
 

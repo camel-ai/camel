@@ -1,0 +1,40 @@
+<a id="camel.models.burncloud_model"></a>
+
+<a id="camel.models.burncloud_model.BurnCloudModel"></a>
+
+## BurnCloudModel
+
+```python
+class BurnCloudModel(OpenAICompatibleModel):
+```
+
+OpenAI-compatible backend for the BurnCloud API gateway.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Target model identifier (e.g., `"gpt-4o"`, `"deepseek-reasoner"`).
+- **model_config_dict** (Optional[Dict[str, Any]], optional): Overrides for the request payload. Defaults to :obj:`BurnCloudConfig().as_dict()`.
+- **api_key** (Optional[str], optional): BurnCloud API key. Falls back to the ``BURNCLOUD_API_KEY`` environment variable.
+- **url** (Optional[str], optional): Base URL for the BurnCloud endpoint. Defaults to ``https://ai.burncloud.com/v1`` or ``BURNCLOUD_API_BASE_URL`` when provided.
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter implementation injected into the backend. Defaults to :class:`OpenAITokenCounter` via :class:`OpenAICompatibleModel`.
+- **timeout** (Optional[float], optional): Timeout in seconds for each API call. Defaults to the ``MODEL_TIMEOUT`` environment variable or ``180`` seconds.
+- **max_retries** (int, optional): Maximum retry attempts for failed requests. Defaults to ``3``.
+- **kwargs** (Any): Additional keyword arguments forwarded to the underlying OpenAI-compatible client.
+
+<a id="camel.models.burncloud_model.BurnCloudModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    **kwargs: Any
+):
+```

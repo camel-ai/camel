@@ -22,6 +22,7 @@ from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.burncloud_model import BurnCloudModel
 from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
@@ -109,6 +110,7 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
+        ModelPlatformType.BURNCLOUD: BurnCloudModel,
     }
 
     @staticmethod
