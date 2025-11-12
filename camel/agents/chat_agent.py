@@ -177,9 +177,7 @@ class _ToolOutputHistoryEntry:
     result_text: str
     record_uuids: List[str]
     record_timestamps: List[float]
-    preview_text: str
     cached: bool = False
-    cache_id: Optional[str] = None
 
 
 class StreamContentAccumulator:
@@ -1163,12 +1161,6 @@ class ChatAgent(BaseAgent):
         except (TypeError, ValueError):
             return str(result)
 
-    def _summarize_tool_result(self, text: str, limit: int = 160) -> str:
-        normalized = re.sub(r"\s+", " ", text).strip()
-        if len(normalized) <= limit:
-            return normalized
-        return normalized[: max(0, limit - 3)].rstrip() + "..."
-
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
 
@@ -1362,7 +1354,6 @@ class ChatAgent(BaseAgent):
             result_text=result_text,
             record_uuids=[str(record.uuid) for record in records],
             record_timestamps=[record.timestamp for record in records],
-            preview_text=self._summarize_tool_result(result_text),
         )
         self._tool_output_history.append(entry)
         self._process_tool_output_cache()
@@ -1387,11 +1378,6 @@ class ChatAgent(BaseAgent):
         result_text = entry.result_text
         if '- ' in result_text and '[ref=' in result_text:
             cleaned_result = self._clean_snapshot_content(result_text)
-            logger.debug(
-                "Cleaned snapshot references from tool output '%s' (%s)",
-                entry.tool_name,
-                entry.tool_call_id,
-            )
 
             # Update the message in memory storage
             timestamp = (
