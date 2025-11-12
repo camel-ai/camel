@@ -556,13 +556,12 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
+        if self._is_multi_response(self.user_agent):
             self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
@@ -579,13 +578,7 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.assistant_agent):
             self.assistant_agent.record_message(assistant_msg)
 
         return (
@@ -639,13 +632,7 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.user_agent):
             self.user_agent.record_message(user_msg)
 
         assistant_response = await self.assistant_agent.astep(user_msg)
@@ -662,13 +649,7 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
-        if (
-            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
-        ):
+        if self._is_multi_response(self.assistant_agent):
             self.assistant_agent.record_message(assistant_msg)
 
         return (
@@ -730,3 +711,20 @@ class RolePlaying:
             new_instance.critic = self.critic.clone(with_memory)
 
         return new_instance
+
+    def _is_multi_response(self, agent: ChatAgent) -> bool:
+        r"""Checks if the given agent supports multi-response.
+
+        Args:
+            agent (ChatAgent): The agent to check for multi-response support.
+
+        Returns:
+            bool: True if the agent supports multi-response, False otherwise.
+        """
+        if (
+            'n' in agent.model_backend.model_config_dict.keys()
+            and agent.model_backend.model_config_dict['n'] is not None
+            and agent.model_backend.model_config_dict['n'] > 1
+        ):
+            return True
+        return False

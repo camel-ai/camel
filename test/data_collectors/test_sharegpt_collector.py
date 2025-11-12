@@ -26,7 +26,6 @@ def test_sharegpt_converter():
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
@@ -63,7 +62,6 @@ def test_sharegpt_llm_converter():
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(

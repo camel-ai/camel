@@ -24,45 +24,75 @@ jobs:
         with:
           python-version: "3.10"
 
+      # Determine the commit to diff against so we only process changed docs
+      - name: Determine BASE_SHA for diff
+        id: diff
+        run: |
+          if git rev-parse --verify -q HEAD^1 >/dev/null; then
+            echo "BASE_SHA=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT
+          else
+            echo "BASE_SHA=${{ github.event.before }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
       - name: Convert Cookbooks and Update Mintlify Config
         run: |
           source .venv/bin/activate
-          echo "Manual workflow - processing all cookbooks files"
-          
+          BASE_SHA="${{ steps.diff.outputs.BASE_SHA }}"
+          echo "Incremental mode - processing changed cookbooks files since $BASE_SHA"
+
           python docs/mintlify/convert_notebook2mdx.py \
             --input docs/cookbooks \
             --output docs/mintlify \
             --update-docs-json docs/mintlify/docs.json \
             --docs-path-prefix "" \
+            --incremental --use-git --base-branch "$BASE_SHA" \
             --verbose
 
       - name: Convert Get Started docs
         run: |
           source .venv/bin/activate
-          echo "Manual workflow - processing all get_started files"
+          BASE_SHA="${{ steps.diff.outputs.BASE_SHA }}"
+          echo "Incremental mode - processing changed get_started files since $BASE_SHA"
 
           python docs/mintlify/convert_notebook2mdx.py \
             --input docs/get_started \
             --output docs/mintlify \
             --update-docs-json docs/mintlify/docs.json \
             --docs-path-prefix "" \
+            --incremental --use-git --base-branch "$BASE_SHA" \
             --verbose
 
       - name: Convert Key Modules docs
         run: |
           source .venv/bin/activate
-    
-          echo "Manual workflow - processing all key_modules files"
+          BASE_SHA="${{ steps.diff.outputs.BASE_SHA }}"
+          echo "Incremental mode - processing changed key_modules files since $BASE_SHA"
+
           python docs/mintlify/convert_notebook2mdx.py \
             --input docs/key_modules \
             --output docs/mintlify \
             --update-docs-json docs/mintlify/docs.json \
             --docs-path-prefix "" \
+            --incremental --use-git --base-branch "$BASE_SHA" \
             --verbose
-          
+
+      - name: Sync modified MDX files back to source docs
+        run: |
+          source .venv/bin/activate
+          BASE_SHA="${{ steps.diff.outputs.BASE_SHA }}"
+          echo "Reverse sync - processing changed MDX files since $BASE_SHA"
+
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/mintlify \
+            --output docs/mintlify \
+            --update-docs-json docs/mintlify/docs.json \
+            --docs-path-prefix "" \
+            --incremental --use-git --base-branch "$BASE_SHA" \
+            --verbose
+
       - name: Generate API Documentation
         run: |
           source .venv/bin/activate
@@ -78,15 +108,16 @@ jobs:
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
+          git config --global user.name "camel-docs-bot"
+          git config --global user.email "camel-docs-bot@users.noreply.github.com"
 
           git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+          git add docs/
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Auto-update documentation after merge"
+            git commit -m "Auto-update documentation after merge [skip ci]"
             git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}
             git push origin ${{ github.ref_name }}
           fi

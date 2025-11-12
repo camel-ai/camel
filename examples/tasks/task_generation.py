@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.tasks import (
     Task,
@@ -24,15 +23,9 @@ from camel.types import (
     ModelType,
 )
 
-# set up LLM model
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 # set up agent

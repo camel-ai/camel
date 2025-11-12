@@ -15,11 +15,11 @@ This class handles the processing of text data to generate multi-hop
 question-answer pairs using either an AI model or rule-based approaches.
 It manages the entire pipeline from text preprocessing to dataset curation.
 
-Attributes:
-config (ProcessorConfig): Configuration for data processing parameters.
-rng (random.Random): Random number generator for reproducibility.
-multi_hop_agent (Optional[MultiHopGeneratorAgent]): Agent for
-generating QA pairs.
+**Parameters:**
+
+- **config** (ProcessorConfig): Configuration for data processing parameters.
+- **rng** (random.Random): Random number generator for reproducibility.
+- **multi_hop_agent** (Optional[MultiHopGeneratorAgent]): Agent for generating QA pairs.
 
 <a id="camel.datagen.source2synth.data_processor.UserDataProcessor.__init__"></a>
 
@@ -88,10 +88,10 @@ Constructs training examples from raw text data.
 This class handles the construction of training examples by preprocessing
 text, extracting information pairs, and generating question-answer pairs.
 
-Attributes:
-config (ProcessorConfig): Configuration for example construction.
-multi_hop_agent (Optional[MultiHopGeneratorAgent]): Agent for QA
-generation.
+**Parameters:**
+
+- **config** (ProcessorConfig): Configuration for example construction.
+- **multi_hop_agent** (Optional[MultiHopGeneratorAgent]): Agent for QA generation.
 
 <a id="camel.datagen.source2synth.data_processor.ExampleConstructor.__init__"></a>
 
@@ -236,9 +236,10 @@ Manages and curates datasets of multi-hop question-answer pairs.
 This class handles dataset management tasks including quality filtering,
 complexity filtering, deduplication, and dataset sampling.
 
-Attributes:
-config (ProcessorConfig): Configuration for data curation parameters.
-rng (random.Random): Random number generator for reproducible sampling.
+**Parameters:**
+
+- **config** (ProcessorConfig): Configuration for data curation parameters.
+- **rng** (random.Random): Random number generator for reproducible sampling.
 
 <a id="camel.datagen.source2synth.data_processor.DataCurator.__init__"></a>
 

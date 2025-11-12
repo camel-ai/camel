@@ -1,0 +1,410 @@
+<a id="camel.toolkits.web_deploy_toolkit"></a>
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit"></a>
+
+## WebDeployToolkit
+
+```python
+class WebDeployToolkit(BaseToolkit):
+```
+
+A simple toolkit for initializing React projects and deploying web.
+
+This toolkit provides core functionality to:
+- Initialize new React projects
+- Build React applications
+- Deploy HTML content to local server
+- Serve static websites locally
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    add_branding_tag: bool = True,
+    logo_path: str = '../camel/misc/favicon.png',
+    tag_text: str = 'Created by CAMEL',
+    tag_url: str = 'https://github.com/camel-ai/camel',
+    remote_server_ip: Optional[str] = None,
+    remote_server_port: int = 8080
+):
+```
+
+Initialize the WebDeployToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Command timeout in seconds. (default: :obj:`None`)
+- **add_branding_tag** (bool): Whether to add brand tag to deployed pages. (default: :obj:`True`)
+- **logo_path** (str): Path to custom logo file (SVG, PNG, JPG, ICO). (default: :obj:`../camel/misc/favicon.png`)
+- **tag_text** (str): Text to display in the tag. (default: :obj:`Created by CAMEL`)
+- **tag_url** (str): URL to open when tag is clicked. (default: :obj:`https://github.com/camel-ai/camel`)
+- **remote_server_ip** (Optional[str]): Remote server IP for deployment. (default: :obj:`None` - use local deployment)
+- **remote_server_port** (int): Remote server port. (default: :obj:`8080`)
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_ip_or_domain"></a>
+
+### _validate_ip_or_domain
+
+```python
+def _validate_ip_or_domain(self, address: str):
+```
+
+Validate IP address or domain name format.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_port"></a>
+
+### _validate_port
+
+```python
+def _validate_port(self, port: int):
+```
+
+Validate port number.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._sanitize_text"></a>
+
+### _sanitize_text
+
+```python
+def _sanitize_text(self, text: str):
+```
+
+Sanitize text to prevent XSS.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_url"></a>
+
+### _validate_url
+
+```python
+def _validate_url(self, url: str):
+```
+
+Validate URL format.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_subdirectory"></a>
+
+### _validate_subdirectory
+
+```python
+def _validate_subdirectory(self, subdirectory: Optional[str]):
+```
+
+Validate subdirectory to prevent path traversal.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._is_port_available"></a>
+
+### _is_port_available
+
+```python
+def _is_port_available(self, port: int):
+```
+
+Check if a port is available for binding.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._load_server_registry"></a>
+
+### _load_server_registry
+
+```python
+def _load_server_registry(self):
+```
+
+Load server registry from persistent storage.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._save_server_registry"></a>
+
+### _save_server_registry
+
+```python
+def _save_server_registry(self):
+```
+
+Save server registry to persistent storage.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._is_process_running"></a>
+
+### _is_process_running
+
+```python
+def _is_process_running(self, pid: int):
+```
+
+Check if a process with given PID is still running.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._build_custom_url"></a>
+
+### _build_custom_url
+
+```python
+def _build_custom_url(self, domain: str, subdirectory: Optional[str] = None):
+```
+
+Build custom URL with optional subdirectory.
+
+**Parameters:**
+
+- **domain** (str): Custom domain
+- **subdirectory** (Optional[str]): Subdirectory path
+
+**Returns:**
+
+  str: Complete custom URL
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._load_logo_as_data_uri"></a>
+
+### _load_logo_as_data_uri
+
+```python
+def _load_logo_as_data_uri(self, logo_path: str):
+```
+
+Load a local logo file and convert it to data URI.
+
+**Parameters:**
+
+- **logo_path** (str): Path to the logo file
+
+**Returns:**
+
+  str: Data URI of the logo file
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._get_default_logo"></a>
+
+### _get_default_logo
+
+```python
+def _get_default_logo(self):
+```
+
+**Returns:**
+
+  str: Default logo data URI
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.deploy_html_content"></a>
+
+### deploy_html_content
+
+```python
+def deploy_html_content(
+    self,
+    html_content: Optional[str] = None,
+    html_file_path: Optional[str] = None,
+    file_name: str = 'index.html',
+    port: int = 8000,
+    domain: Optional[str] = None,
+    subdirectory: Optional[str] = None
+):
+```
+
+Deploy HTML content to a local server or remote server.
+
+**Parameters:**
+
+- **html_content** (Optional[str]): HTML content to deploy. Either this or html_file_path must be provided.
+- **html_file_path** (Optional[str]): Path to HTML file to deploy. Either this or html_content must be provided.
+- **file_name** (str): Name for the HTML file when using html_content. (default: :obj:`index.html`)
+- **port** (int): Port to serve on. (default: :obj:`8000`) (default: 8000)
+- **domain** (Optional[str]): Custom domain to access the content. (e.g., :obj:`example.com`)
+- **subdirectory** (Optional[str]): Subdirectory path for multi-user deployment. (e.g., :obj:`user123`)
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result with server URL and custom domain
+info.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_to_remote_server"></a>
+
+### _deploy_to_remote_server
+
+```python
+def _deploy_to_remote_server(
+    self,
+    html_content: str,
+    subdirectory: Optional[str] = None,
+    domain: Optional[str] = None
+):
+```
+
+Deploy HTML content to remote server via API.
+
+**Parameters:**
+
+- **html_content** (str): HTML content to deploy
+- **subdirectory** (Optional[str]): Subdirectory path for deployment
+- **domain** (Optional[str]): Custom domain
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_to_local_server"></a>
+
+### _deploy_to_local_server
+
+```python
+def _deploy_to_local_server(
+    self,
+    html_content: str,
+    file_name: str,
+    port: int,
+    domain: Optional[str],
+    subdirectory: Optional[str]
+):
+```
+
+Deploy HTML content to local server (original functionality).
+
+**Parameters:**
+
+- **html_content** (str): HTML content to deploy
+- **file_name** (str): Name for the HTML file
+- **port** (int): Port to serve on (default: 8000) (default: 8000)
+- **domain** (Optional[str]): Custom domain
+- **subdirectory** (Optional[str]): Subdirectory path
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._serve_static_files"></a>
+
+### _serve_static_files
+
+```python
+def _serve_static_files(self, directory: str, port: int):
+```
+
+Serve static files from a directory using a local HTTP server
+(as a background process).
+
+**Parameters:**
+
+- **directory** (str): Directory to serve files from
+- **port** (int): Port to serve on (default: 8000) (default: 8000)
+
+**Returns:**
+
+  Dict[str, Any]: Server information
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.deploy_folder"></a>
+
+### deploy_folder
+
+```python
+def deploy_folder(
+    self,
+    folder_path: str,
+    port: int = 8000,
+    domain: Optional[str] = None,
+    subdirectory: Optional[str] = None
+):
+```
+
+Deploy a folder containing web files.
+
+**Parameters:**
+
+- **folder_path** (str): Path to the folder to deploy.
+- **port** (int): Port to serve on. (default: :obj:`8000`) (default: 8000)
+- **domain** (Optional[str]): Custom domain to access the content. (e.g., :obj:`example.com`)
+- **subdirectory** (Optional[str]): Subdirectory path for multi-user deployment. (e.g., :obj:`user123`)
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result with custom domain info.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_folder_to_local_server"></a>
+
+### _deploy_folder_to_local_server
+
+```python
+def _deploy_folder_to_local_server(
+    self,
+    folder_path: str,
+    port: int,
+    domain: Optional[str],
+    subdirectory: Optional[str]
+):
+```
+
+Deploy folder to local server (original functionality).
+
+**Parameters:**
+
+- **folder_path** (str): Path to the folder to deploy
+- **port** (int): Port to serve on
+- **domain** (Optional[str]): Custom domain
+- **subdirectory** (Optional[str]): Subdirectory path
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_folder_to_remote_server"></a>
+
+### _deploy_folder_to_remote_server
+
+```python
+def _deploy_folder_to_remote_server(
+    self,
+    folder_path: str,
+    subdirectory: Optional[str] = None,
+    domain: Optional[str] = None
+):
+```
+
+Deploy folder to remote server via API.
+
+**Parameters:**
+
+- **folder_path** (str): Path to the folder to deploy
+- **subdirectory** (Optional[str]): Subdirectory path for deployment
+- **domain** (Optional[str]): Custom domain
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.stop_server"></a>
+
+### stop_server
+
+```python
+def stop_server(self, port: int):
+```
+
+Stop a running server on the specified port.
+
+**Parameters:**
+
+- **port** (int): Port of the server to stop.
+
+**Returns:**
+
+  Dict[str, Any]: Result of stopping the server.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.list_running_servers"></a>
+
+### list_running_servers
+
+```python
+def list_running_servers(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Information about running servers
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Get all available tools from the WebDeployToolkit.

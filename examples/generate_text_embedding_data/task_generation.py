@@ -14,7 +14,6 @@
 import os
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, TaskType
@@ -33,7 +32,6 @@ def main() -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
-        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     )
     agent = ChatAgent(
         "You are a helpful text retrieval task generator.",

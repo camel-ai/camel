@@ -1,0 +1,172 @@
+<a id="camel.toolkits.note_taking_toolkit"></a>
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit"></a>
+
+## NoteTakingToolkit
+
+```python
+class NoteTakingToolkit(BaseToolkit):
+```
+
+A toolkit for managing and interacting with markdown note files.
+
+This toolkit provides tools for creating, reading, appending to, and
+listing notes. All notes are stored as `.md` files in a dedicated working
+directory and are tracked in a registry.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initialize the NoteTakingToolkit.
+
+**Parameters:**
+
+- **working_directory** (str, optional): The directory path where notes will be stored. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `camel_working_dir`.
+- **timeout** (Optional[float]): The timeout for the toolkit.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.append_note"></a>
+
+### append_note
+
+```python
+def append_note(self, note_name: str, content: str):
+```
+
+Appends content to a note.
+
+If the note does not exist, it will be created with the given content.
+If the note already exists, the new content will be added to the end of
+the note.
+
+**Parameters:**
+
+- **note_name** (str): The name of the note (without the .md extension).
+- **content** (str): The content to append to the note.
+
+**Returns:**
+
+  str: A message confirming that the content was appended or the note
+was created.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit._load_registry"></a>
+
+### _load_registry
+
+```python
+def _load_registry(self):
+```
+
+Load the note registry from file.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit._save_registry"></a>
+
+### _save_registry
+
+```python
+def _save_registry(self):
+```
+
+Save the note registry to file using atomic write.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit._register_note"></a>
+
+### _register_note
+
+```python
+def _register_note(self, note_name: str):
+```
+
+Register a new note in the registry with thread-safe operations.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.create_note"></a>
+
+### create_note
+
+```python
+def create_note(
+    self,
+    note_name: str,
+    content: str,
+    overwrite: bool = False
+):
+```
+
+Creates a new note with a unique name.
+
+This function will create a new file for your note.
+By default, you must provide a `note_name` that does not already exist.
+If you want to add content to an existing note, use the `append_note`
+function instead. If you want to overwrite an existing note, set
+`overwrite=True`.
+
+**Parameters:**
+
+- **note_name** (str): The name for your new note (without the .md extension). This name must be unique unless overwrite is True.
+- **content** (str): The initial content to write in the note.
+- **overwrite** (bool): Whether to overwrite an existing note. Defaults to False.
+
+**Returns:**
+
+  str: A message confirming the creation of the note or an error if
+the note name is not valid or already exists
+(when overwrite=False).
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.list_note"></a>
+
+### list_note
+
+```python
+def list_note(self):
+```
+
+**Returns:**
+
+  str: A string containing a list of available notes and their sizes,
+or a message indicating that no notes have been created yet.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.read_note"></a>
+
+### read_note
+
+```python
+def read_note(self, note_name: Optional[str] = 'all_notes'):
+```
+
+Reads the content of a specific note or all notes.
+
+You can use this function in two ways:
+1.  **Read a specific note:** Provide the `note_name` (without the .md
+extension) to get the content of that single note.
+2.  **Read all notes:** Use `note_name="all_notes"` (default), and this
+function will return the content of all your notes, concatenated
+together.
+
+**Parameters:**
+
+- **note_name** (str, optional): The name of the note you want to read. Defaults to "all_notes" which reads all notes.
+
+**Returns:**
+
+  str: The content of the specified note(s), or an error message if
+a note cannot be read.
+
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects.

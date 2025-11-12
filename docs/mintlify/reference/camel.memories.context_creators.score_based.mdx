@@ -8,18 +8,12 @@
 class ScoreBasedContextCreator(BaseContextCreator):
 ```
 
-A default implementation of context creation strategy, which inherits
-from :obj:`BaseContextCreator`.
-
-This class provides a strategy to generate a conversational context from
-a list of chat history records while ensuring the total token count of
-the context does not exceed a specified limit. It prunes messages based
-on their score if the total token count exceeds the limit.
+A context creation strategy that orders records chronologically.
 
 **Parameters:**
 
-- **token_counter** (BaseTokenCounter): An instance responsible for counting tokens in a message.
-- **token_limit** (int): The maximum number of tokens allowed in the generated context.
+- **token_counter** (BaseTokenCounter): Token counter instance used to compute the combined token count of the returned messages.
+- **token_limit** (int): Retained for API compatibility. No longer used to filter records.
 
 <a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.__init__"></a>
 
@@ -53,118 +47,4 @@ def token_limit(self):
 def create_context(self, records: List[ContextRecord]):
 ```
 
-Constructs conversation context from chat history while respecting
-token limits.
-
-Key strategies:
-1. System message is always prioritized and preserved
-2. Truncation removes low-score messages first
-3. Final output maintains chronological order and in history memory,
-the score of each message decreases according to keep_rate. The
-newer the message, the higher the score.
-
-**Parameters:**
-
-- **records** (List[ContextRecord]): List of context records with scores and timestamps.
-
-**Returns:**
-
-  Tuple[List[OpenAIMessage], int]:
-- Ordered list of OpenAI messages
-- Total token count of the final context
-
-<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._extract_system_message"></a>
-
-### _extract_system_message
-
-```python
-def _extract_system_message(self, records: List[ContextRecord]):
-```
-
-Extracts the system message from records and validates it.
-
-**Parameters:**
-
-- **records** (List[ContextRecord]): List of context records representing conversation history.
-
-**Returns:**
-
-  Tuple[Optional[_ContextUnit], List[_ContextUnit]]: containing:
-- The system message as a `_ContextUnit`, if valid; otherwise,
-`None`.
-- An empty list, serving as the initial container for regular
-messages.
-
-<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._truncation_sort_key"></a>
-
-### _truncation_sort_key
-
-```python
-def _truncation_sort_key(self, unit: _ContextUnit):
-```
-
-Defines the sorting key for the truncation phase.
-
-Sorting priority:
-- Primary: Sort by score in descending order (higher scores first).
-- Secondary: Sort by timestamp in ascending order (older messages
-first when scores are equal).
-
-**Parameters:**
-
-- **unit** (_ContextUnit): A `_ContextUnit` representing a conversation record.
-
-**Returns:**
-
-  Tuple[float, float]:
-- Negative score for descending order sorting.
-- Timestamp for ascending order sorting.
-
-<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._conversation_sort_key"></a>
-
-### _conversation_sort_key
-
-```python
-def _conversation_sort_key(self, unit: _ContextUnit):
-```
-
-Defines the sorting key for assembling the final output.
-
-Sorting priority:
-- Primary: Sort by timestamp in ascending order (chronological order).
-- Secondary: Sort by score in descending order (higher scores first
-when timestamps are equal).
-
-**Parameters:**
-
-- **unit** (_ContextUnit): A `_ContextUnit` representing a conversation record.
-
-**Returns:**
-
-  Tuple[float, float]:
-- Timestamp for chronological sorting.
-- Negative score for descending order sorting.
-
-<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._assemble_output"></a>
-
-### _assemble_output
-
-```python
-def _assemble_output(
-    self,
-    context_units: List[_ContextUnit],
-    system_unit: Optional[_ContextUnit]
-):
-```
-
-Assembles final message list with proper ordering and token count.
-
-**Parameters:**
-
-- **context_units** (List[_ContextUnit]): Sorted list of regular message units.
-- **system_unit** (Optional[_ContextUnit]): System message unit (if present).
-
-**Returns:**
-
-  Tuple[List[OpenAIMessage], int]: Tuple of (ordered messages, total
-tokens)
+Returns messages sorted by timestamp and their total token count.

@@ -1,0 +1,641 @@
+<a id="camel.toolkits.gmail_toolkit"></a>
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit"></a>
+
+## GmailToolkit
+
+```python
+class GmailToolkit(BaseToolkit):
+```
+
+A comprehensive toolkit for Gmail operations.
+
+This class provides methods for Gmail operations including sending emails,
+managing drafts, fetching messages, managing labels, and handling contacts.
+API keys can be accessed in google cloud console (https://console.cloud.google.com/)
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes a new instance of the GmailToolkit class.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.people_service"></a>
+
+### people_service
+
+```python
+def people_service(self):
+```
+
+Lazily initialize and return the Google People service.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.people_service"></a>
+
+### people_service
+
+```python
+def people_service(self, service: Any):
+```
+
+Allow overriding/injecting the People service (e.g., in tests).
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.send_email"></a>
+
+### send_email
+
+```python
+def send_email(
+    self,
+    to: Union[str, List[str]],
+    subject: str,
+    body: str,
+    cc: Optional[Union[str, List[str]]] = None,
+    bcc: Optional[Union[str, List[str]]] = None,
+    attachments: Optional[List[str]] = None,
+    is_html: bool = False
+):
+```
+
+Send an email through Gmail.
+
+**Parameters:**
+
+- **to** (Union[str, List[str]]): Recipient email address(es).
+- **subject** (str): Email subject.
+- **body** (str): Email body content.
+- **cc** (Optional[Union[str, List[str]]]): CC recipient email address(es).
+- **bcc** (Optional[Union[str, List[str]]]): BCC recipient email address(es).
+- **attachments** (Optional[List[str]]): List of file paths to attach.
+- **is_html** (bool): Whether the body is HTML format. Set to True when sending formatted emails with HTML tags (e.g., bold, links, images). Use False (default) for plain text emails.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.reply_to_email"></a>
+
+### reply_to_email
+
+```python
+def reply_to_email(
+    self,
+    message_id: str,
+    reply_body: str,
+    reply_all: bool = False,
+    is_html: bool = False
+):
+```
+
+Reply to an email message.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the message to reply to. To get a message ID, first use fetch_emails() to list messages, or use the 'message_id' returned from send_email() or create_email_draft().
+- **reply_body** (str): The reply message body.
+- **reply_all** (bool): Whether to reply to all recipients.
+- **is_html** (bool): Whether the body is HTML format. Set to True when sending formatted emails with HTML tags (e.g., bold, links, images). Use False (default) for plain text emails.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.forward_email"></a>
+
+### forward_email
+
+```python
+def forward_email(
+    self,
+    message_id: str,
+    to: Union[str, List[str]],
+    forward_body: Optional[str] = None,
+    cc: Optional[Union[str, List[str]]] = None,
+    bcc: Optional[Union[str, List[str]]] = None,
+    include_attachments: bool = True
+):
+```
+
+Forward an email message.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the message to forward. To get a message ID, first use fetch_emails() to list messages, or use the 'message_id' returned from send_email() or create_email_draft().
+- **to** (Union[str, List[str]]): Recipient email address(es).
+- **forward_body** (Optional[str]): Additional message to include at the top of the forwarded email, before the original message content. If not provided, only the original message will be forwarded.
+- **cc** (Optional[Union[str, List[str]]]): CC recipient email address(es).
+- **bcc** (Optional[Union[str, List[str]]]): BCC recipient email address(es).
+- **include_attachments** (bool): Whether to include original attachments. Defaults to True. Only includes real attachments, not inline images.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation, including the number of attachments forwarded.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.create_email_draft"></a>
+
+### create_email_draft
+
+```python
+def create_email_draft(
+    self,
+    to: Union[str, List[str]],
+    subject: str,
+    body: str,
+    cc: Optional[Union[str, List[str]]] = None,
+    bcc: Optional[Union[str, List[str]]] = None,
+    attachments: Optional[List[str]] = None,
+    is_html: bool = False
+):
+```
+
+Create an email draft.
+
+**Parameters:**
+
+- **to** (Union[str, List[str]]): Recipient email address(es).
+- **subject** (str): Email subject.
+- **body** (str): Email body content.
+- **cc** (Optional[Union[str, List[str]]]): CC recipient email address(es).
+- **bcc** (Optional[Union[str, List[str]]]): BCC recipient email address(es).
+- **attachments** (Optional[List[str]]): List of file paths to attach.
+- **is_html** (bool): Whether the body is HTML format. Set to True when sending formatted emails with HTML tags (e.g., bold, links, images). Use False (default) for plain text emails.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.send_draft"></a>
+
+### send_draft
+
+```python
+def send_draft(self, draft_id: str):
+```
+
+Send a draft email.
+
+**Parameters:**
+
+- **draft_id** (str): The unique identifier of the draft to send. To get a draft ID, first use list_drafts() to list drafts, or use the 'draft_id' returned from create_email_draft().
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.fetch_emails"></a>
+
+### fetch_emails
+
+```python
+def fetch_emails(
+    self,
+    query: str = '',
+    max_results: int = 10,
+    include_spam_trash: bool = False,
+    label_ids: Optional[List[str]] = None,
+    page_token: Optional[str] = None
+):
+```
+
+Fetch emails with filters and pagination.
+
+**Parameters:**
+
+- **query** (str): Gmail search query string. Use Gmail's search syntax: - 'from:example@domain.com' - emails from specific sender - 'subject:meeting' - emails with specific subject text - 'has:attachment' - emails with attachments - 'is:unread' - unread emails - 'in:sent' - emails in sent folder - 'after:2024/01/01 before:2024/12/31' - date range
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the fetched emails.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.fetch_thread_by_id"></a>
+
+### fetch_thread_by_id
+
+```python
+def fetch_thread_by_id(self, thread_id: str):
+```
+
+Fetch a thread by ID.
+
+**Parameters:**
+
+- **thread_id** (str): The unique identifier of the thread to fetch. To get a thread ID, first use list_threads() to list threads, or use the 'thread_id' returned from send_email() or reply_to_email().
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the thread details.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.modify_email_labels"></a>
+
+### modify_email_labels
+
+```python
+def modify_email_labels(
+    self,
+    message_id: str,
+    add_labels: Optional[List[str]] = None,
+    remove_labels: Optional[List[str]] = None
+):
+```
+
+Modify labels on an email message.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the message to modify. To get a message ID, first use fetch_emails() to list messages, or use the 'message_id' returned from send_email() or create_email_draft().
+- **add_labels** (Optional[List[str]]): List of label IDs to add to the message. Label IDs can be: - System labels: 'INBOX', 'STARRED', 'IMPORTANT', 'UNREAD', etc. - Custom label IDs: Retrieved from list_gmail_labels() method.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.move_to_trash"></a>
+
+### move_to_trash
+
+```python
+def move_to_trash(self, message_id: str):
+```
+
+Move a message to trash.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the message to move to trash. To get a message ID, first use fetch_emails() to list messages, or use the 'message_id' returned from send_email() or create_email_draft().
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_attachment"></a>
+
+### get_attachment
+
+```python
+def get_attachment(
+    self,
+    message_id: str,
+    attachment_id: str,
+    save_path: Optional[str] = None
+):
+```
+
+Get an attachment from a message.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the message containing the attachment. To get a message ID, first use fetch_emails() to list messages, or use the 'message_id' returned from send_email() or create_email_draft().
+- **attachment_id** (str): The unique identifier of the attachment to download. To get an attachment ID, first use fetch_emails() to get message details, then look for 'attachment_id' in the 'attachments' list of each message.
+- **save_path** (Optional[str]): Local file path where the attachment should be saved. If provided, the attachment will be saved to this location and the response will include a success message. If not provided, the attachment data will be returned as base64-encoded content in the response.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the attachment data or
+save result.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_threads"></a>
+
+### list_threads
+
+```python
+def list_threads(
+    self,
+    query: str = '',
+    max_results: int = 10,
+    include_spam_trash: bool = False,
+    label_ids: Optional[List[str]] = None,
+    page_token: Optional[str] = None
+):
+```
+
+List email threads.
+
+**Parameters:**
+
+- **query** (str): Gmail search query string. Use Gmail's search syntax: - 'from:example@domain.com' - threads from specific sender - 'subject:meeting' - threads with specific subject text - 'has:attachment' - threads with attachments - 'is:unread' - unread threads - 'in:sent' - threads in sent folder - 'after:2024/01/01 before:2024/12/31' - date range
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the thread list.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_drafts"></a>
+
+### list_drafts
+
+```python
+def list_drafts(self, max_results: int = 10, page_token: Optional[str] = None):
+```
+
+List email drafts.
+
+**Parameters:**
+
+- **max_results** (int): Maximum number of drafts to fetch.
+- **page_token** (Optional[str]): Pagination token from a previous response. If provided, fetches the next page of results.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the draft list.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_gmail_labels"></a>
+
+### list_gmail_labels
+
+```python
+def list_gmail_labels(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the label list.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.create_label"></a>
+
+### create_label
+
+```python
+def create_label(
+    self,
+    name: str,
+    label_list_visibility: Literal['labelShow', 'labelHide'] = 'labelShow',
+    message_list_visibility: Literal['show', 'hide'] = 'show'
+):
+```
+
+Create a new Gmail label.
+
+**Parameters:**
+
+- **name** (str): The name of the label to create.
+- **label_list_visibility** (str): How the label appears in Gmail's label list. - 'labelShow': Label is visible in the label list sidebar (default) - 'labelHide': Label is hidden from the label list sidebar
+- **message_list_visibility** (str): How the label appears in message lists. - 'show': Label is visible on messages in inbox/lists (default) - 'hide': Label is hidden from message displays
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.delete_label"></a>
+
+### delete_label
+
+```python
+def delete_label(self, label_id: str):
+```
+
+Delete a Gmail label.
+
+**Parameters:**
+
+- **label_id** (str): The unique identifier of the user-created label to delete. To get a label ID, first use list_gmail_labels() to list all labels. Note: System labels (e.g., 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH', 'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.) cannot be deleted.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.modify_thread_labels"></a>
+
+### modify_thread_labels
+
+```python
+def modify_thread_labels(
+    self,
+    thread_id: str,
+    add_labels: Optional[List[str]] = None,
+    remove_labels: Optional[List[str]] = None
+):
+```
+
+Modify labels on a thread.
+
+**Parameters:**
+
+- **thread_id** (str): The unique identifier of the thread to modify. To get a thread ID, first use list_threads() to list threads, or use the 'thread_id' returned from send_email() or reply_to_email().
+- **add_labels** (Optional[List[str]]): List of label IDs to add to all messages in the thread. Label IDs can be: - System labels: 'INBOX', 'STARRED', 'IMPORTANT', 'UNREAD', etc. - Custom label IDs: Retrieved from list_gmail_labels().
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the
+operation.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_profile"></a>
+
+### get_profile
+
+```python
+def get_profile(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the profile information.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_contacts"></a>
+
+### get_contacts
+
+```python
+def get_contacts(self, max_results: int = 100, page_token: Optional[str] = None):
+```
+
+List connections from Google People API.
+
+**Parameters:**
+
+- **max_results** (int): Maximum number of contacts to fetch.
+- **page_token** (Optional[str]): Pagination token from a previous response. If provided, fetches the next page of results.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the contacts.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.search_people"></a>
+
+### search_people
+
+```python
+def search_people(self, query: str, max_results: int = 10):
+```
+
+Search for people in contacts.
+
+**Parameters:**
+
+- **query** (str): Search query for people in contacts. Can search by: - Name: 'John Smith' or partial names like 'John' - Email: 'john@example.com' - Organization: 'Google' or 'Acme Corp' - Phone number: '+1234567890'
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the search results.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._get_gmail_service"></a>
+
+### _get_gmail_service
+
+```python
+def _get_gmail_service(self):
+```
+
+Get Gmail service object.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._get_people_service"></a>
+
+### _get_people_service
+
+```python
+def _get_people_service(self):
+```
+
+Get People service object.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._authenticate"></a>
+
+### _authenticate
+
+```python
+def _authenticate(self):
+```
+
+Authenticate with Google APIs using OAuth2.
+
+Automatically saves and loads credentials from
+~/.camel/gmail_token.json to avoid repeated
+browser logins.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._create_message"></a>
+
+### _create_message
+
+```python
+def _create_message(
+    self,
+    to_list: List[str],
+    subject: str,
+    body: str,
+    cc_list: Optional[List[str]] = None,
+    bcc_list: Optional[List[str]] = None,
+    attachments: Optional[List[str]] = None,
+    is_html: bool = False,
+    in_reply_to: Optional[str] = None,
+    references: Optional[List[str]] = None
+):
+```
+
+Create a message object for sending.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._get_message_details"></a>
+
+### _get_message_details
+
+```python
+def _get_message_details(self, message_id: str):
+```
+
+Get detailed information about a message.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._get_header_value"></a>
+
+### _get_header_value
+
+```python
+def _get_header_value(self, headers: List[Dict[str, str]], name: str):
+```
+
+Get header value by name.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._extract_message_body"></a>
+
+### _extract_message_body
+
+```python
+def _extract_message_body(self, message: Dict[str, Any]):
+```
+
+Extract message body from message payload.
+
+Recursively traverses the entire message tree and collects all text
+content from text/plain and text/html parts. Special handling for
+multipart/alternative containers: recursively searches for one format
+(preferring plain text) to avoid duplication when both formats contain
+the same content. All other text parts are collected to ensure no
+information is lost.
+
+**Parameters:**
+
+- **message** (Dict[str, Any]): The Gmail message dictionary containing the payload to extract text from.
+
+**Returns:**
+
+  str: The extracted message body text with multiple parts separated
+by double newlines, or an empty string if no text content is
+found.
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._extract_attachments"></a>
+
+### _extract_attachments
+
+```python
+def _extract_attachments(self, message: Dict[str, Any], include_inline: bool = False):
+```
+
+Extract attachment information from message payload.
+
+Recursively traverses the message tree to find all attachments
+and extracts their metadata. Distinguishes between regular attachments
+and inline images embedded in HTML content.
+
+**Parameters:**
+
+- **message** (Dict[str, Any]): The Gmail message dictionary containing the payload to extract attachments from.
+
+**Returns:**
+
+  List[Dict[str, Any]]: List of attachment dictionaries, each
+containing:
+- attachment_id: Gmail's unique identifier for the attachment
+- filename: Name of the attached file
+- mime_type: MIME type of the attachment
+- size: Size of the attachment in bytes
+- is_inline: Whether this is an inline image (embedded in HTML)
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit._is_valid_email"></a>
+
+### _is_valid_email
+
+```python
+def _is_valid_email(self, email: str):
+```
+
+Validate email address format.
+
+Supports both formats:
+- Plain email: john@example.com
+- Named email: John Doe `<john@example.com>`
+
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

@@ -19,6 +19,8 @@ import pytest
 from camel.models.reward import NemotronRewardModel
 from camel.types import ModelType
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(

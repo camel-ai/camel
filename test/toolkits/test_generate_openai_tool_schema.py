@@ -214,7 +214,7 @@ def test_function_tool_generate_schema_with_retries(
                         'description': 'The integer value to check.',
                     },
                     'b': {
-                        'type': 'string',
+                        'type': ['string', 'null'],
                         'description': (
                             "The string to verify. Default is 'default'."
                         ),

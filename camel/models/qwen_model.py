@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import AsyncStream, Stream
 
-from camel.configs import QWEN_API_PARAMS, QwenConfig
+from camel.configs import QwenConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -54,6 +54,10 @@ class QwenModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -69,6 +73,8 @@ class QwenModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = QwenConfig().as_dict()
@@ -85,6 +91,8 @@ class QwenModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _post_handle_response(
@@ -251,18 +259,3 @@ class QwenModel(OpenAICompatibleModel):
             **request_config,
         )
         return self._post_handle_response(response)
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Qwen API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Qwen API.
-        """
-        for param in self.model_config_dict:
-            if param not in QWEN_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Qwen model backend."
-                )

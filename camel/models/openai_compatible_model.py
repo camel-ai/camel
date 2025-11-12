@@ -17,6 +17,10 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
@@ -31,7 +35,24 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    get_current_agent_session_id,
+    is_langfuse_available,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import trace as observe  # type: ignore[import]
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 logger = get_logger(__name__)
 
@@ -55,6 +76,23 @@ class OpenAICompatibleModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. Useful for RL frameworks
+            like AReaL or rLLM that provide OpenAI-compatible clients (e.g.,
+            ArealOpenAI). The client should implement the OpenAI client
+            interface with `.chat.completions.create()` and `.beta.chat.
+            completions.parse()` methods. (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. The client should implement
+            the AsyncOpenAI client interface. (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the
+            OpenAI client initialization. These can include parameters like
+            'organization', 'default_headers', 'http_client', etc.
+            Ignored if custom clients are provided.
     """
 
     def __init__(
@@ -65,33 +103,85 @@ class OpenAICompatibleModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
         url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
-        )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
         )
 
+        # Use custom clients if provided, otherwise create new ones
+        if client is not None:
+            # Use the provided custom sync client
+            self._client = client
+        else:
+            # Create default sync client
+            if is_langfuse_available():
+                from langfuse.openai import OpenAI as LangfuseOpenAI
+
+                self._client = LangfuseOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+
+        if async_client is not None:
+            # Use the provided custom async client
+            self._async_client = async_client
+        else:
+            # Create default async client
+            if is_langfuse_available():
+                from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+
+                self._async_client = LangfuseAsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -106,21 +196,54 @@ class OpenAICompatibleModel(BaseModelBackend):
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
+                `ChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
-        if response_format:
-            return self._request_parse(messages, response_format, tools)
-        else:
-            return self._request_chat_completion(messages, tools)
 
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
+        if response_format:
+            if is_streaming:
+                # Use streaming parse for structured output
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return self._request_parse(messages, response_format, tools)
+        else:
+            result = self._request_chat_completion(messages, tools)
+
+        return result
+
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
         Args:
@@ -132,17 +255,48 @@ class OpenAICompatibleModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                AsyncChatCompletionStreamManager[BaseModel]]:
+                `ChatCompletion` in the non-stream mode,
+                `AsyncStream[ChatCompletionChunk]` in the stream mode,
+                or `AsyncChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            if is_streaming:
+                # Use streaming parse for structured output
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
+
+        return result
 
     def _request_chat_completion(
         self,
@@ -254,6 +408,62 @@ class OpenAICompatibleModel(BaseModelBackend):
                 logger.error(f"Fallback attempt also failed: {e}")
                 raise
 
+    def _request_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletionStreamManager[BaseModel]:
+        r"""Request streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        # Use the beta streaming API for structured outputs
+        return self._client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
+
+    async def _arequest_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
+        r"""Request async streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        # Use the beta streaming API for structured outputs
+        return self._async_client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
@@ -276,6 +486,3 @@ class OpenAICompatibleModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
-
-    def check_model_config(self):
-        pass

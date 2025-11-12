@@ -32,6 +32,22 @@ def __new__(cls, value: Union['ModelType', str]):
 def __init__(self, value: Union['ModelType', str]):
 ```
 
+<a id="camel.types.unified_model_type.UnifiedModelType.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.types.unified_model_type.UnifiedModelType.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```
+
 <a id="camel.types.unified_model_type.UnifiedModelType.value_for_tiktoken"></a>
 
 ### value_for_tiktoken
@@ -102,6 +118,16 @@ def is_groq(self):
 ```
 
 Returns whether the model is a Groq served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_nebius"></a>
+
+### is_nebius
+
+```python
+def is_nebius(self):
+```
+
+Returns whether the model is a Nebius AI Studio served model.
 
 <a id="camel.types.unified_model_type.UnifiedModelType.is_openrouter"></a>
 
@@ -193,6 +219,16 @@ def is_cohere(self):
 
 Returns whether the model is a Cohere model.
 
+<a id="camel.types.unified_model_type.UnifiedModelType.is_cometapi"></a>
+
+### is_cometapi
+
+```python
+def is_cometapi(self):
+```
+
+Returns whether the model is a CometAPI served model.
+
 <a id="camel.types.unified_model_type.UnifiedModelType.is_yi"></a>
 
 ### is_yi
@@ -262,6 +298,26 @@ def is_watsonx(self):
 ```
 
 Returns whether the model is a WatsonX served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_qianfan"></a>
+
+### is_qianfan
+
+```python
+def is_qianfan(self):
+```
+
+Returns whether the model is a Qianfan served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_crynux"></a>
+
+### is_crynux
+
+```python
+def is_crynux(self):
+```
+
+Returns whether the model is a Crynux served model.
 
 <a id="camel.types.unified_model_type.UnifiedModelType.support_native_structured_output"></a>
 

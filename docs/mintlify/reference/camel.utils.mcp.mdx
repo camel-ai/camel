@@ -1,5 +1,41 @@
 <a id="camel.utils.mcp"></a>
 
+<a id="camel.utils.mcp._is_pydantic_serializable"></a>
+
+## _is_pydantic_serializable
+
+```python
+def _is_pydantic_serializable(type_annotation: Any):
+```
+
+Check if a type annotation is Pydantic serializable.
+
+**Parameters:**
+
+- **type_annotation**: The type annotation to check
+
+**Returns:**
+
+  Tuple[bool, str]: (is_serializable, error_message)
+
+<a id="camel.utils.mcp._validate_function_types"></a>
+
+## _validate_function_types
+
+```python
+def _validate_function_types(func: Callable[..., Any]):
+```
+
+Validate function parameter and return types are Pydantic serializable.
+
+**Parameters:**
+
+- **func** (Callable[..., Any]): The function to validate.
+
+**Returns:**
+
+  List[str]: List of error messages for incompatible types.
+
 <a id="camel.utils.mcp.MCPServer"></a>
 
 ## MCPServer
@@ -27,7 +63,7 @@ automatically register specified methods (or methods derived from
 ```python
 def __init__(
     self,
-    function_names: Optional[list[str]] = None,
+    function_names: Optional[List[str]] = None,
     server_name: Optional[str] = None
 ):
 ```

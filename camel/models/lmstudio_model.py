@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import LMSTUDIO_API_PARAMS, LMStudioConfig
+from camel.configs import LMStudioConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
@@ -43,6 +43,10 @@ class LMStudioModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     def __init__(
@@ -53,6 +57,8 @@ class LMStudioModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = LMStudioConfig().as_dict()
@@ -62,21 +68,12 @@ class LMStudioModel(OpenAICompatibleModel):
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to LMStudio API. But LMStudio API does not have any
-        additional arguments to check.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to LMStudio API.
-        """
-        for param in self.model_config_dict:
-            if param not in LMSTUDIO_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LMStudio model backend."
-                )

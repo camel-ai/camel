@@ -14,15 +14,24 @@
 
 import json
 import os
+import warnings
 from contextlib import AsyncExitStack
 from typing import Any, Dict, List, Optional
 
+from typing_extensions import TypeGuard
+
 from camel.logger import get_logger
-from camel.toolkits import BaseToolkit, FunctionTool
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import run_async
 from camel.utils.mcp_client import MCPClient, create_mcp_client
 
 logger = get_logger(__name__)
+
+# Suppress parameter description warnings for MCP tools
+warnings.filterwarnings(
+    "ignore", message="Parameter description is missing", category=UserWarning
+)
 
 
 class MCPConnectionError(Exception):
@@ -35,6 +44,187 @@ class MCPToolError(Exception):
     r"""Raised when MCP tool execution fails."""
 
     pass
+
+
+_EMPTY_SCHEMA = {
+    "additionalProperties": False,
+    "type": "object",
+    "properties": {},
+    "required": [],
+}
+
+
+def ensure_strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    r"""Mutates the given JSON schema to ensure it conforms to the
+    `strict` standard that the OpenAI API expects.
+    """
+    if schema == {}:
+        return _EMPTY_SCHEMA
+    return _ensure_strict_json_schema(schema, path=(), root=schema)
+
+
+def _ensure_strict_json_schema(
+    json_schema: object,
+    *,
+    path: tuple[str, ...],
+    root: dict[str, object],
+) -> dict[str, Any]:
+    if not is_dict(json_schema):
+        raise TypeError(
+            f"Expected {json_schema} to be a dictionary; path={path}"
+        )
+
+    defs = json_schema.get("$defs")
+    if is_dict(defs):
+        for def_name, def_schema in defs.items():
+            _ensure_strict_json_schema(
+                def_schema, path=(*path, "$defs", def_name), root=root
+            )
+
+    definitions = json_schema.get("definitions")
+    if is_dict(definitions):
+        for definition_name, definition_schema in definitions.items():
+            _ensure_strict_json_schema(
+                definition_schema,
+                path=(*path, "definitions", definition_name),
+                root=root,
+            )
+
+    typ = json_schema.get("type")
+    if typ == "object" and "additionalProperties" not in json_schema:
+        json_schema["additionalProperties"] = False
+    elif (
+        typ == "object"
+        and "additionalProperties" in json_schema
+        and json_schema["additionalProperties"]
+    ):
+        raise ValueError(
+            "additionalProperties should not be set for object types. This "
+            "could be because you're using an older version of Pydantic, or "
+            "because you configured additional properties to be allowed. If "
+            "you really need this, update the function or output tool "
+            "to not use a strict schema."
+        )
+
+    # object types
+    # { 'type': 'object', 'properties': { 'a':  {...} } }
+    properties = json_schema.get("properties")
+    if is_dict(properties):
+        json_schema["required"] = list(properties.keys())
+        json_schema["properties"] = {
+            key: _ensure_strict_json_schema(
+                prop_schema, path=(*path, "properties", key), root=root
+            )
+            for key, prop_schema in properties.items()
+        }
+
+    # arrays
+    # { 'type': 'array', 'items': {...} }
+    items = json_schema.get("items")
+    if is_dict(items):
+        json_schema["items"] = _ensure_strict_json_schema(
+            items, path=(*path, "items"), root=root
+        )
+
+    # unions
+    any_of = json_schema.get("anyOf")
+    if is_list(any_of):
+        json_schema["anyOf"] = [
+            _ensure_strict_json_schema(
+                variant, path=(*path, "anyOf", str(i)), root=root
+            )
+            for i, variant in enumerate(any_of)
+        ]
+
+    # intersections
+    all_of = json_schema.get("allOf")
+    if is_list(all_of):
+        if len(all_of) == 1:
+            json_schema.update(
+                _ensure_strict_json_schema(
+                    all_of[0], path=(*path, "allOf", "0"), root=root
+                )
+            )
+            json_schema.pop("allOf")
+        else:
+            json_schema["allOf"] = [
+                _ensure_strict_json_schema(
+                    entry, path=(*path, "allOf", str(i)), root=root
+                )
+                for i, entry in enumerate(all_of)
+            ]
+
+    # strip `None` defaults as there's no meaningful distinction here
+    # the schema will still be `nullable` and the model will default
+    # to using `None` anyway
+    if json_schema.get("default", None) is None:
+        json_schema.pop("default", None)
+
+    # we can't use `$ref`s if there are also other properties defined, e.g.
+    # `{"$ref": "...", "description": "my description"}`
+    #
+    # so we unravel the ref
+    # `{"type": "string", "description": "my description"}`
+    ref = json_schema.get("$ref")
+    if ref and has_more_than_n_keys(json_schema, 1):
+        assert isinstance(ref, str), f"Received non-string $ref - {ref}"
+
+        resolved = resolve_ref(root=root, ref=ref)
+        if not is_dict(resolved):
+            raise ValueError(
+                f"Expected `$ref: {ref}` to resolved to a dictionary but got "
+                f"{resolved}"
+            )
+
+        # properties from the json schema take priority
+        # over the ones on the `$ref`
+        json_schema.update({**resolved, **json_schema})
+        json_schema.pop("$ref")
+        # Since the schema expanded from `$ref` might not
+        # have `additionalProperties: false` applied
+        # we call `_ensure_strict_json_schema` again to fix the inlined
+        # schema and ensure it's valid
+        return _ensure_strict_json_schema(json_schema, path=path, root=root)
+
+    return json_schema
+
+
+def resolve_ref(*, root: dict[str, object], ref: str) -> object:
+    if not ref.startswith("#/"):
+        raise ValueError(
+            f"Unexpected $ref format {ref!r}; Does not start with #/"
+        )
+
+    path = ref[2:].split("/")
+    resolved = root
+    for key in path:
+        value = resolved[key]
+        assert is_dict(value), (
+            f"encountered non-dictionary entry while resolving {ref} - "
+            f"{resolved}"
+        )
+        resolved = value
+
+    return resolved
+
+
+def is_dict(obj: object) -> TypeGuard[dict[str, object]]:
+    # just pretend that we know there are only `str` keys
+    # as that check is not worth the performance cost
+    return isinstance(obj, dict)
+
+
+def is_list(obj: object) -> TypeGuard[list[object]]:
+    return isinstance(obj, list)
+
+
+def has_more_than_n_keys(obj: dict[str, object], n: int) -> bool:
+    i = 0
+    for _ in obj.keys():
+        i += 1
+        if i > n:
+            return True
+    return False
 
 
 class MCPToolkit(BaseToolkit):
@@ -214,25 +404,33 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
 
         try:
-            # Connect to all clients using AsyncExitStack
-            for i, client in enumerate(self.clients):
-                try:
-                    # Use MCPClient directly as async context manager
-                    await self._exit_stack.enter_async_context(client)
-                    msg = f"Connected to client {i+1}/{len(self.clients)}"
-                    logger.debug(msg)
-                except Exception as e:
-                    logger.error(f"Failed to connect to client {i+1}: {e}")
-                    # AsyncExitStack will handle cleanup of already connected
-                    await self._exit_stack.aclose()
-                    self._exit_stack = None
-                    error_msg = f"Failed to connect to client {i+1}: {e}"
-                    raise MCPConnectionError(error_msg) from e
+            # Apply timeout to the entire connection process
+            import asyncio
+
+            timeout_seconds = self.timeout or 30.0
+            await asyncio.wait_for(
+                self._connect_all_clients(), timeout=timeout_seconds
+            )
 
             self._is_connected = True
             msg = f"Successfully connected to {len(self.clients)} MCP servers"
             logger.info(msg)
             return self
+
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            self._is_connected = False
+            if self._exit_stack:
+                await self._exit_stack.aclose()
+                self._exit_stack = None
+
+            timeout_seconds = self.timeout or 30.0
+            error_msg = (
+                f"Connection timeout after {timeout_seconds}s. "
+                f"One or more MCP servers are not responding. "
+                f"Please check if the servers are running and accessible."
+            )
+            logger.error(error_msg)
+            raise MCPConnectionError(error_msg)
 
         except Exception:
             self._is_connected = False
@@ -240,6 +438,23 @@ class MCPToolkit(BaseToolkit):
                 await self._exit_stack.aclose()
                 self._exit_stack = None
             raise
+
+    async def _connect_all_clients(self):
+        r"""Connect to all clients sequentially."""
+        # Connect to all clients using AsyncExitStack
+        for i, client in enumerate(self.clients):
+            try:
+                # Use MCPClient directly as async context manager
+                await self._exit_stack.enter_async_context(client)
+                msg = f"Connected to client {i+1}/{len(self.clients)}"
+                logger.debug(msg)
+            except Exception as e:
+                logger.error(f"Failed to connect to client {i+1}: {e}")
+                # AsyncExitStack will cleanup already connected clients
+                await self._exit_stack.aclose()
+                self._exit_stack = None
+                error_msg = f"Failed to connect to client {i+1}: {e}"
+                raise MCPConnectionError(error_msg) from e
 
     async def disconnect(self):
         r"""Disconnect from all MCP servers."""
@@ -444,17 +659,169 @@ class MCPToolkit(BaseToolkit):
             error_msg = f"Failed to create client for server '{name}': {e}"
             raise ValueError(error_msg) from e
 
+    def _ensure_strict_tool_schema(self, tool: FunctionTool) -> FunctionTool:
+        r"""Ensure a tool has a strict schema compatible with
+        OpenAI's requirements.
+
+        Strategy:
+        - Ensure parameters exist with at least an empty properties object
+            (OpenAI requirement).
+        - Try converting parameters to strict using ensure_strict_json_schema.
+        - If conversion fails, mark function.strict = False and
+            keep best-effort parameters.
+        """
+        try:
+            schema = tool.get_openai_tool_schema()
+
+            def _has_strict_mode_incompatible_features(json_schema):
+                r"""Check if schema has features incompatible
+                with OpenAI strict mode."""
+
+                def _check_incompatible(obj, path=""):
+                    if not isinstance(obj, dict):
+                        return False
+
+                    # Check for allOf in array items (known to cause issues)
+                    if "items" in obj and isinstance(obj["items"], dict):
+                        items_schema = obj["items"]
+                        if "allOf" in items_schema:
+                            logger.debug(
+                                f"Found allOf in array items at {path}"
+                            )
+                            return True
+                        # Recursively check items schema
+                        if _check_incompatible(items_schema, f"{path}.items"):
+                            return True
+
+                    # Check for other potentially problematic patterns
+                    # anyOf/oneOf in certain contexts can also cause issues
+                    if (
+                        "anyOf" in obj and len(obj["anyOf"]) > 10
+                    ):  # Large unions can be problematic
+                        return True
+
+                    # Recursively check nested objects
+                    for key in [
+                        "properties",
+                        "additionalProperties",
+                        "patternProperties",
+                    ]:
+                        if key in obj and isinstance(obj[key], dict):
+                            if key == "properties":
+                                for prop_name, prop_schema in obj[key].items():
+                                    if isinstance(
+                                        prop_schema, dict
+                                    ) and _check_incompatible(
+                                        prop_schema,
+                                        f"{path}.{key}.{prop_name}",
+                                    ):
+                                        return True
+                            elif _check_incompatible(
+                                obj[key], f"{path}.{key}"
+                            ):
+                                return True
+
+                    # Check arrays and unions
+                    for key in ["allOf", "anyOf", "oneOf"]:
+                        if key in obj and isinstance(obj[key], list):
+                            for i, item in enumerate(obj[key]):
+                                if isinstance(
+                                    item, dict
+                                ) and _check_incompatible(
+                                    item, f"{path}.{key}[{i}]"
+                                ):
+                                    return True
+
+                    return False
+
+                return _check_incompatible(json_schema)
+
+            # Apply sanitization if available
+            if "function" in schema:
+                try:
+                    from camel.toolkits.function_tool import (
+                        sanitize_and_enforce_required,
+                    )
+
+                    schema = sanitize_and_enforce_required(schema)
+                except ImportError:
+                    logger.debug("sanitize_and_enforce_required not available")
+
+                parameters = schema["function"].get("parameters", {})
+                if not parameters:
+                    # Empty parameters - use minimal valid schema
+                    parameters = {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False,
+                    }
+                    schema["function"]["parameters"] = parameters
+
+                # MCP spec doesn't require 'properties', but OpenAI spec does
+                if (
+                    parameters.get("type") == "object"
+                    and "properties" not in parameters
+                ):
+                    parameters["properties"] = {}
+
+                try:
+                    # _check_schema_limits(parameters)
+
+                    # Check for OpenAI strict mode incompatible features
+                    if _has_strict_mode_incompatible_features(parameters):
+                        raise ValueError(
+                            "Schema contains features "
+                            "incompatible with strict mode"
+                        )
+
+                    strict_params = ensure_strict_json_schema(parameters)
+                    schema["function"]["parameters"] = strict_params
+                    schema["function"]["strict"] = True
+                except Exception as e:
+                    # Fallback to non-strict mode on any failure
+                    schema["function"]["strict"] = False
+                    logger.warning(
+                        f"Tool '{tool.get_function_name()}' "
+                        f"cannot use strict mode: {e}"
+                    )
+
+            tool.set_openai_tool_schema(schema)
+
+        except Exception as e:
+            # Final fallback - ensure tool still works
+            try:
+                current_schema = tool.get_openai_tool_schema()
+                if "function" in current_schema:
+                    current_schema["function"]["strict"] = False
+                tool.set_openai_tool_schema(current_schema)
+                logger.warning(
+                    f"Error processing schema for tool "
+                    f"'{tool.get_function_name()}': {str(e)[:100]}. "
+                    f"Using non-strict mode."
+                )
+            except Exception as inner_e:
+                logger.error(
+                    f"Critical error processing tool "
+                    f"'{tool.get_function_name()}': {inner_e}. "
+                    f"Tool may not function correctly."
+                )
+
+        return tool
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Aggregates all tools from the managed MCP client instances.
 
         Collects and combines tools from all connected MCP clients into a
         single unified list. Each tool is converted to a CAMEL-compatible
-        :obj:`FunctionTool` that can be used with CAMEL agents.
+        :obj:`FunctionTool` that can be used with CAMEL agents. All tools
+        are ensured to have strict schemas compatible with OpenAI's
+        requirements.
 
         Returns:
             List[FunctionTool]: Combined list of all available function tools
-                from all connected MCP servers. Returns an empty list if no
-                clients are connected or if no tools are available.
+                from all connected MCP servers with strict schemas. Returns an
+                empty list if no clients are connected or if no tools are
+                available.
 
         Note:
             This method can be called even when the toolkit is not connected,
@@ -478,17 +845,37 @@ class MCPToolkit(BaseToolkit):
             )
 
         all_tools = []
+        seen_names: set[str] = set()
         for i, client in enumerate(self.clients):
             try:
                 client_tools = client.get_tools()
-                all_tools.extend(client_tools)
+
+                # Ensure all tools have strict schemas
+                strict_tools = []
+                for tool in client_tools:
+                    strict_tool = self._ensure_strict_tool_schema(tool)
+                    name = strict_tool.get_function_name()
+                    if name in seen_names:
+                        logger.warning(
+                            f"Duplicate tool name detected and "
+                            f"skipped: '{name}' from client {i+1}"
+                        )
+                        continue
+                    seen_names.add(name)
+                    strict_tools.append(strict_tool)
+
+                all_tools.extend(strict_tools)
                 logger.debug(
-                    f"Client {i+1} contributed {len(client_tools)} tools"
+                    f"Client {i+1} contributed {len(strict_tools)} "
+                    f"tools (strict mode enabled)"
                 )
             except Exception as e:
                 logger.error(f"Failed to get tools from client {i+1}: {e}")
 
-        logger.info(f"Total tools available: {len(all_tools)}")
+        logger.info(
+            f"Total tools available: {len(all_tools)} (all with strict "
+            f"schemas)"
+        )
         return all_tools
 
     def get_text_tools(self) -> str:

@@ -1,0 +1,9 @@
+ffmpeg-python==0.2.0
+opencv-python==4.9.0.80
+streamlit==1.45.0
+pytesseract==0.3.13
+streamlit==1.45.1
+camel-ai[all]==0.2.61
+python-dotenv==1.1.0
+Pillow==11.3.0
+git+https://github.com/openai/whisper.git

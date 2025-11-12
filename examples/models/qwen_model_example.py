@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_2_5_CODER_32B,
+    model_type=ModelType.QWEN_3_CODER_PLUS,
     model_config_dict=QwenConfig(temperature=0.2).as_dict(),
 )
 
@@ -37,96 +37,158 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Creating a trading bot involves several steps, including data acquisition, 
-strategy development, backtesting, and live trading. Below is a simplified 
-example of a trading bot using Python. This example will use the `ccxt` 
-library to interact with cryptocurrency exchanges and `pandas` for data 
-manipulation. The strategy used here is a simple moving average crossover 
-strategy.
-
-First, you need to install the required libraries:
-
-```bash
-pip install ccxt pandas
-```
-
-Here's a basic example of a trading bot:
+Here's a basic Python trading bot framework using the ccxt library for cryptocurrency trading. This example includes key components like data fetching, strategy implementation, and order execution:
 
 ```python
 import ccxt
 import pandas as pd
+import numpy as np
 import time
+from datetime import datetime
 
-# Initialize the exchange
-exchange = ccxt.binance({
-    'apiKey': 'YOUR_API_KEY',
-    'secret': 'YOUR_SECRET_KEY',
-})
-
-# Define the trading parameters
-symbol = 'BTC/USDT'
-timeframe = '1h'
-short_window = 50
-long_window = 200
-amount_to_trade = 0.001  # Amount of BTC to trade
-
-def fetch_ohlcv(symbol, timeframe):
-    ohlcv = exchange.fetch_ohlcv(symbol, timeframe)
-    df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 
-    'close', 'volume'])
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    return df
-
-def calculate_moving_averages(df, short_window, long_window):
-    df['short_mavg'] = df['close'].rolling(window=short_window, min_periods=1).
-    mean()
-    df['long_mavg'] = df['close'].rolling(window=long_window, min_periods=1).
-    mean()
-    return df
-
-def get_signal(df):
-    if df['short_mavg'].iloc[-1] > df['long_mavg'].iloc[-1] and df
-    ['short_mavg'].iloc[-2] <= df['long_mavg'].iloc[-2]:
-        return 'buy'
-    elif df['short_mavg'].iloc[-1] < df['long_mavg'].iloc[-1] and df
-    ['short_mavg'].iloc[-2] >= df['long_mavg'].iloc[-2]:
-        return 'sell'
-    else:
-        return 'hold'
-
-def execute_trade(signal, symbol, amount):
-    if signal == 'buy':
-        order = exchange.create_market_buy_order(symbol, amount)
-        print(f"Executed BUY order: {order}")
-    elif signal == 'sell':
-        order = exchange.create_market_sell_order(symbol, amount)
-        print(f"Executed SELL order: {order}")
-
-def main():
-    while True:
+class SimpleTradingBot:
+    def __init__(self, exchange_id, api_key, secret, symbol, timeframe='1h', short_window=10, long_window=50):
+        # Initialize exchange connection
+        self.exchange = getattr(ccxt, exchange_id)({
+            'apiKey': api_key,
+            'secret': secret,
+            'enableRateLimit': True,
+        })
+        
+        self.symbol = symbol
+        self.timeframe = timeframe
+        self.short_window = short_window
+        self.long_window = long_window
+        self.position = None  # 'long', 'short', or None
+        
+    def fetch_ohlcv(self, limit=100):
+        """Fetch OHLCV data from exchange"""
+        raw_data = self.exchange.fetch_ohlcv(self.symbol, self.timeframe, limit=limit)
+        df = pd.DataFrame(raw_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        return df
+    
+    def calculate_indicators(self, df):
+        """Calculate moving averages"""
+        df['sma_short'] = df['close'].rolling(window=self.short_window).mean()
+        df['sma_long'] = df['close'].rolling(window=self.long_window).mean()
+        return df
+    
+    def generate_signal(self, df):
+        """Generate buy/sell signals based on moving average crossover"""
+        if len(df) < self.long_window:
+            return 'HOLD'
+            
+        # Get last two values for crossover detection
+        short_current = df['sma_short'].iloc[-1]
+        short_prev = df['sma_short'].iloc[-2]
+        long_current = df['sma_long'].iloc[-1]
+        long_prev = df['sma_long'].iloc[-2]
+        
+        # Bullish crossover
+        if short_prev <= long_prev and short_current > long_current:
+            return 'BUY'
+        # Bearish crossover
+        elif short_prev >= long_prev and short_current < long_current:
+            return 'SELL'
+        else:
+            return 'HOLD'
+    
+    def execute_order(self, signal, amount=0.001):  # Default small amount for safety
+        """Execute buy/sell orders"""
         try:
-            # Fetch OHLCV data
-            df = fetch_ohlcv(symbol, timeframe)
-
-            # Calculate moving averages
-            df = calculate_moving_averages(df, short_window, long_window)
-
-            # Get trading signal
-            signal = get_signal(df)
-
-            # Execute trade based on signal
-            execute_trade(signal, symbol, amount_to_trade)
-
-            # Wait for the next candle
-            time.sleep(60 * 60)  # Sleep for 1 hour
-
+            if signal == 'BUY' and self.position != 'long':
+                print(f"[{datetime.now()}] BUY signal. Executing order...")
+                order = self.exchange.create_market_buy_order(self.symbol, amount)
+                self.position = 'long'
+                print(f"Order executed: {order}")
+                
+            elif signal == 'SELL' and self.position != 'short':
+                print(f"[{datetime.now()}] SELL signal. Executing order...")
+                order = self.exchange.create_market_sell_order(self.symbol, amount)
+                self.position = 'short'
+                print(f"Order executed: {order}")
+                
         except Exception as e:
-            print(f"An error occurred: {e}")
-            time.sleep(60)  # Sleep for 1 minute before retrying
+            print(f"Order execution failed: {e}")
+    
+    def run(self):
+        """Main bot loop"""
+        print(f"Starting bot for {self.symbol} on {self.exchange.id}")
+        while True:
+            try:
+                # Fetch market data
+                df = self.fetch_ohlcv()
+                df = self.calculate_indicators(df)
+                
+                # Generate trading signal
+                signal = self.generate_signal(df)
+                print(f"[{datetime.now()}] Signal: {signal} | Price: {df['close'].iloc[-1]}")
+                
+                # Execute order if signal is strong
+                if signal in ['BUY', 'SELL']:
+                    self.execute_order(signal)
+                
+                # Wait before next iteration
+                time.sleep(60)  # Check every minute
+                
+            except Exception as e:
+                print(f"Error: {e}")
+                time.sleep(60)
 
+# Example usage (replace with your exchange credentials)
 if __name__ == "__main__":
-    main()
+    # WARNING: Never share your API keys
+    # Use environment variables or secure storage in production
+    bot = SimpleTradingBot(
+        exchange_id='binance',  # Change to your exchange
+        api_key='YOUR_API_KEY',
+        secret='YOUR_SECRET_KEY',
+        symbol='BTC/USDT',
+        timeframe='1h',
+        short_window=10,
+        long_window=50
+    )
+    
+    # Run the bot (WARNING: This will execute real trades)
+    # bot.run()  # Uncomment to run live
 ```
+
+### Key Features:
+1. **Moving Average Crossover Strategy**: Buys when short-term MA crosses above long-term MA, sells when it crosses below
+2. **Exchange Integration**: Uses CCXT library for connecting to various exchanges
+3. **Risk Management**: Position tracking to avoid duplicate orders
+4. **Error Handling**: Basic exception handling and rate limiting
+
+### Setup Instructions:
+1. Install required packages:
+```bash
+pip install ccxt pandas numpy
+```
+
+2. Get API keys from your exchange (enable trading permissions)
+3. Replace placeholder keys with your actual keys
+4. Adjust trading parameters (symbol, timeframes, windows)
+
+### Important Safety Notes:
+⚠️ **This is a basic example for educational purposes only**
+- Start with paper trading/simulation
+- Use small amounts for initial testing
+- Add proper risk management before using with real funds
+- Implement stop-losses and position sizing
+- Test thoroughly in sandbox environments
+- Monitor the bot continuously during operation
+
+### Possible Enhancements:
+1. Add more sophisticated strategies (RSI, MACD, Bollinger Bands)
+2. Implement backtesting capabilities
+3. Add database logging for trades
+4. Include Telegram/email notifications
+5. Add portfolio management features
+6. Implement proper configuration management
+7. Add web dashboard for monitoring
+
+Remember to comply with your exchange's API usage policies and trading regulations in your jurisdiction.
 ===============================================================================
 '''
 

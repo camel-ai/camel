@@ -42,6 +42,43 @@ Writes a record to the memory, appending it to existing ones.
 
 - **record** (MemoryRecord): Record to be added to the memory.
 
+<a id="camel.memories.base.MemoryBlock.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes records from the memory and returns the removed records.
+
+**Parameters:**
+
+- **count** (int): Number of records to remove.
+
+**Returns:**
+
+  List[MemoryRecord]: The records that were removed from the memory
+in their original order.
+
+<a id="camel.memories.base.MemoryBlock.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from the memory.
+
+**Parameters:**
+
+- **indices** (List[int]): List of indices to remove. Indices should be valid positions in the current record list.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in their original order.
+
 <a id="camel.memories.base.MemoryBlock.clear"></a>
 
 ### clear
@@ -72,11 +109,10 @@ Subclasses should implement the :obj:`token_counter`,:obj: `token_limit`,
 and :obj:`create_context` methods to provide specific context creation
 logic.
 
-Attributes:
-token_counter (BaseTokenCounter): A token counter instance responsible
-for counting tokens in a message.
-token_limit (int): The maximum number of tokens allowed in the
-generated context.
+**Parameters:**
+
+- **token_counter** (BaseTokenCounter): A token counter instance responsible for counting tokens in a message.
+- **token_limit** (int): The maximum number of tokens allowed in the generated context.
 
 <a id="camel.memories.base.BaseContextCreator.token_counter"></a>
 
@@ -184,6 +220,19 @@ def get_context(self):
 
   (List[OpenAIMessage], int): A tuple containing the constructed
 context in OpenAIMessage format and the total token count.
+
+<a id="camel.memories.base.AgentMemory.clean_tool_calls"></a>
+
+### clean_tool_calls
+
+```python
+def clean_tool_calls(self):
+```
+
+Removes tool call messages from memory.
+This is an optional method that can be overridden by subclasses
+to implement cleaning of tool-related messages. By default, it
+does nothing, maintaining backward compatibility.
 
 <a id="camel.memories.base.AgentMemory.__repr__"></a>
 

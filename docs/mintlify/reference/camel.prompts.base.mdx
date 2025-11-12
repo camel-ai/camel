@@ -53,9 +53,9 @@ A class that represents a text prompt. The :obj:`TextPrompt` class
 extends the built-in :obj:`str` class to provide a property for retrieving
 the set of keywords in the prompt.
 
-Attributes:
-key_words (set): A set of strings representing the keywords in the
-prompt.
+**Parameters:**
+
+- **key_words** (set): A set of strings representing the keywords in the prompt.
 
 <a id="camel.prompts.base.TextPrompt.key_words"></a>
 
@@ -95,8 +95,9 @@ class CodePrompt(TextPrompt):
 A class that represents a code prompt. It extends the :obj:`TextPrompt`
 class with a :obj:`code_type` property.
 
-Attributes:
-code_type (str, optional): The type of code. Defaults to None.
+**Parameters:**
+
+- **code_type** (str, optional): The type of code. Defaults to None.
 
 <a id="camel.prompts.base.CodePrompt.__new__"></a>
 

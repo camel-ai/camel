@@ -14,7 +14,8 @@ Defines the parameters for configuring the task.
 
 - **chunk_processing** (int, optional): The target chunk length. (default: :obj:`512`)
 - **high_resolution** (bool, optional): Whether to use high resolution OCR. (default: :obj:`True`)
-- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. (default: `'Auto'`)
+- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. **kwargs: Additional keyword arguments to pass to the Chunkr Configuration. This accepts all other Configuration parameters such as expires_in, pipeline, segment_processing, segmentation_strategy, etc. (default: `'Auto'`)
+- **See**: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/ models/task.rs#L749
 
 <a id="camel.loaders.chunkr_reader.ChunkrReaderConfig.__init__"></a>
 
@@ -25,7 +26,8 @@ def __init__(
     self,
     chunk_processing: int = 512,
     high_resolution: bool = True,
-    ocr_strategy: str = 'Auto'
+    ocr_strategy: str = 'Auto',
+    **kwargs
 ):
 ```
 

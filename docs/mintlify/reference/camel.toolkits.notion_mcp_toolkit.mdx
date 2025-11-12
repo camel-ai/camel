@@ -1,0 +1,126 @@
+<a id="camel.toolkits.notion_mcp_toolkit"></a>
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit"></a>
+
+## NotionMCPToolkit
+
+```python
+class NotionMCPToolkit(MCPToolkit):
+```
+
+NotionMCPToolkit provides an interface for interacting with Notion
+through the Model Context Protocol (MCP).
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+
+**Note:**
+
+Currently only supports asynchronous operation mode.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes the NotionMCPToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available tools.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._build_notion_tool_schema"></a>
+
+### _build_notion_tool_schema
+
+```python
+def _build_notion_tool_schema(self, mcp_tool, original_build_schema):
+```
+
+Build tool schema with Notion-specific fixes.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._fix_notion_schema_recursively"></a>
+
+### _fix_notion_schema_recursively
+
+```python
+def _fix_notion_schema_recursively(self, obj: Any):
+```
+
+Recursively fix Notion MCP schema issues.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._fix_dict_schema"></a>
+
+### _fix_dict_schema
+
+```python
+def _fix_dict_schema(self, obj: Dict[str, Any]):
+```
+
+Fix dictionary schema issues.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._fix_missing_type_with_properties"></a>
+
+### _fix_missing_type_with_properties
+
+```python
+def _fix_missing_type_with_properties(self, obj: Dict[str, Any]):
+```
+
+Fix objects with properties but missing type field.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._fix_object_with_properties"></a>
+
+### _fix_object_with_properties
+
+```python
+def _fix_object_with_properties(self, obj: Dict[str, Any]):
+```
+
+Fix objects with type="object" and properties.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._get_required_properties"></a>
+
+### _get_required_properties
+
+```python
+def _get_required_properties(self, properties: Dict[str, Any], conservative: bool = False):
+```
+
+Get list of required properties from a properties dict.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._is_property_required"></a>
+
+### _is_property_required
+
+```python
+def _is_property_required(self, prop_schema: Dict[str, Any]):
+```
+
+Check if a property should be marked as required.
+
+<a id="camel.toolkits.notion_mcp_toolkit.NotionMCPToolkit._process_nested_structures"></a>
+
+### _process_nested_structures
+
+```python
+def _process_nested_structures(self, obj: Dict[str, Any]):
+```
+
+Process all nested structures in a schema object.

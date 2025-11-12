@@ -12,10 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Literal, Optional
+from typing import TYPE_CHECKING, List, Literal, Optional
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta, with_timeout
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+
+
+logger = get_logger(__name__)
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
@@ -41,7 +48,9 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         super().__init_subclass__(**kwargs)
         for attr_name, attr_value in cls.__dict__.items():
             if callable(attr_value) and not attr_name.startswith("__"):
-                setattr(cls, attr_name, with_timeout(attr_value))
+                # Skip methods that have manual timeout management
+                if not getattr(attr_value, '_manual_timeout', False):
+                    setattr(cls, attr_name, with_timeout(attr_value))
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -63,3 +72,52 @@ class BaseToolkit(metaclass=AgentOpsMeta):
                 the MCP server in.
         """
         self.mcp.run(mode)
+
+
+class RegisteredAgentToolkit:
+    r"""Mixin class for toolkits that need to register a ChatAgent.
+
+    This mixin provides a standard interface for toolkits that require
+    a reference to a ChatAgent instance. The ChatAgent will check if a
+    toolkit has this mixin and automatically register itself.
+    """
+
+    def __init__(self):
+        self._agent: Optional["ChatAgent"] = None
+
+    @property
+    def agent(self) -> Optional["ChatAgent"]:
+        r"""Get the registered ChatAgent instance.
+
+        Returns:
+            Optional[ChatAgent]: The registered agent, or None if not
+                registered.
+
+        Note:
+            If None is returned, it means the toolkit has not been registered
+            with a ChatAgent yet. Make sure to pass this toolkit to a ChatAgent
+            via the toolkits parameter during initialization.
+        """
+        if self._agent is None:
+            logger.warning(
+                f"{self.__class__.__name__} does not have a "
+                f"registered ChatAgent. "
+                f"Please ensure this toolkit is passed to a ChatAgent via the "
+                f"'toolkits_to_register_agent' parameter during ChatAgent "
+                f"initialization if you want to use the tools that require a "
+                f"registered agent."
+            )
+        return self._agent
+
+    def register_agent(self, agent: "ChatAgent") -> None:
+        r"""Register a ChatAgent with this toolkit.
+
+        This method allows registering an agent after initialization. The
+        ChatAgent will automatically call this method if the toolkit to
+        register inherits from RegisteredAgentToolkit.
+
+        Args:
+            agent (ChatAgent): The ChatAgent instance to register.
+        """
+        self._agent = agent
+        logger.info(f"Agent registered with {self.__class__.__name__}")

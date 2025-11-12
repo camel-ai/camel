@@ -155,7 +155,7 @@ def set_log_level(level):
     _logger.debug(f"Logging level set to: {logging.getLevelName(level)}")
 
 
-def get_logger(name):
+def get_logger(name: str):
     r"""Get a logger with the specified name, prefixed with 'camel.'.
 
 

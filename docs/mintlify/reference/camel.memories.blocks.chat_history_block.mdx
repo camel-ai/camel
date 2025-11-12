@@ -20,7 +20,7 @@ like to fetch.
 **Parameters:**
 
 - **storage** (BaseKeyValueStorage, optional): A storage mechanism for storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage` will be used. (default: :obj:`None`)
-- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation.
+- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation. (default: :obj:`0.9`)
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.__init__"></a>
 
@@ -78,3 +78,39 @@ def clear(self):
 ```
 
 Clears all chat messages from the memory.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes the most recent records from the memory.
+
+**Parameters:**
+
+- **count** (int): Number of records to remove from the end of the conversation history. A value of 0 results in no changes.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in chronological order.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from the memory.
+
+**Parameters:**
+
+- **indices** (List[int]): List of indices to remove. Indices are positions in the current record list (0-based). System/developer messages at index 0 are protected and will not be removed.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in their original order.

@@ -1,0 +1,121 @@
+<a id="camel.toolkits.terminal_toolkit.utils"></a>
+
+<a id="camel.toolkits.terminal_toolkit.utils.check_command_safety"></a>
+
+## check_command_safety
+
+```python
+def check_command_safety(command: str, allowed_commands: Optional[Set[str]] = None):
+```
+
+Check if a command (potentially with chaining) is safe to execute.
+
+**Parameters:**
+
+- **command** (str): The command string to check
+- **allowed_commands** (Optional[Set[str]]): Set of allowed commands (whitelist mode)
+
+**Returns:**
+
+  Tuple[bool, str]: (is_safe, reason)
+
+<a id="camel.toolkits.terminal_toolkit.utils.sanitize_command"></a>
+
+## sanitize_command
+
+```python
+def sanitize_command(
+    command: str,
+    use_docker_backend: bool = False,
+    safe_mode: bool = True,
+    working_dir: Optional[str] = None,
+    allowed_commands: Optional[Set[str]] = None
+):
+```
+
+A comprehensive command sanitizer for both local and Docker backends.
+
+**Parameters:**
+
+- **command** (str): The command to sanitize
+- **use_docker_backend** (bool): Whether using Docker backend
+- **safe_mode** (bool): Whether to apply security checks
+- **working_dir** (Optional[str]): Working directory for path validation
+- **allowed_commands** (Optional[Set[str]]): Set of allowed commands
+
+**Returns:**
+
+  Tuple[bool, str]: (is_safe, message_or_command)
+
+<a id="camel.toolkits.terminal_toolkit.utils.is_uv_environment"></a>
+
+## is_uv_environment
+
+```python
+def is_uv_environment():
+```
+
+Detect whether the current Python runtime is managed by uv.
+
+<a id="camel.toolkits.terminal_toolkit.utils.ensure_uv_available"></a>
+
+## ensure_uv_available
+
+```python
+def ensure_uv_available(update_callback = None):
+```
+
+Ensure uv is available, installing it if necessary.
+
+**Parameters:**
+
+- **update_callback**: Optional callback function to receive status updates
+
+**Returns:**
+
+  Tuple[bool, Optional[str]]: (success, uv_path)
+
+<a id="camel.toolkits.terminal_toolkit.utils.setup_initial_env_with_uv"></a>
+
+## setup_initial_env_with_uv
+
+```python
+def setup_initial_env_with_uv(
+    env_path: str,
+    uv_path: str,
+    working_dir: str,
+    update_callback = None
+):
+```
+
+Set up initial environment using uv.
+
+<a id="camel.toolkits.terminal_toolkit.utils.setup_initial_env_with_venv"></a>
+
+## setup_initial_env_with_venv
+
+```python
+def setup_initial_env_with_venv(env_path: str, working_dir: str, update_callback = None):
+```
+
+Set up initial environment using standard venv.
+
+<a id="camel.toolkits.terminal_toolkit.utils.clone_current_environment"></a>
+
+## clone_current_environment
+
+```python
+def clone_current_environment(env_path: str, working_dir: str, update_callback = None):
+```
+
+Create a new Python virtual environment, optionally using uv.
+
+<a id="camel.toolkits.terminal_toolkit.utils.check_nodejs_availability"></a>
+
+## check_nodejs_availability
+
+```python
+def check_nodejs_availability(update_callback = None):
+```
+
+Check if Node.js is available without modifying the system.

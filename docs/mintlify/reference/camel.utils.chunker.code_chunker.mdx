@@ -15,12 +15,11 @@ This class ensures that structured elements such as functions,
 classes, and regions are not arbitrarily split across chunks.
 It also handles oversized lines and Base64-encoded images.
 
-Attributes:
-chunk_size (int, optional): The maximum token size per chunk.
-(default: :obj:`8192`)
-remove_image: (bool, optional): If the chunker should skip the images.
-model_name (str, optional): The tokenizer model name used
-for token counting. (default: :obj:`"cl100k_base"`)
+**Parameters:**
+
+- **chunk_size** (int, optional): The maximum token size per chunk. (default: :obj:`8192`)
+- **remove_image**: (bool, optional): If the chunker should skip the images.
+- **model_name** (str, optional): The tokenizer model name used for token counting. (default: :obj:`"cl100k_base"`)
 
 <a id="camel.utils.chunker.code_chunker.CodeChunker.__init__"></a>
 

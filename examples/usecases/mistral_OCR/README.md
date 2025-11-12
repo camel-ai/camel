@@ -84,5 +84,5 @@ requirements.txt  # Python dependencies
 streamlit
 pillow
 mistralai
-camel-ai==0.2.61
+camel-ai[all]==0.2.61
 ```

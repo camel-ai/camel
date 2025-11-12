@@ -45,6 +45,32 @@ class MemoryBlock(ABC):
         """
         self.write_records([record])
 
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes records from the memory and returns the removed records.
+
+        Args:
+            count (int): Number of records to remove.
+
+        Returns:
+            List[MemoryRecord]: The records that were removed from the memory
+                in their original order.
+        """
+        raise NotImplementedError
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from the memory.
+
+        Args:
+            indices (List[int]): List of indices to remove. Indices should be
+                valid positions in the current record list.
+
+        Returns:
+            List[MemoryRecord]: The removed records in their original order.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def clear(self) -> None:
         r"""Clears all messages from the memory."""
@@ -148,6 +174,14 @@ class AgentMemory(MemoryBlock, ABC):
                 context in OpenAIMessage format and the total token count.
         """
         return self.get_context_creator().create_context(self.retrieve())
+
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This is an optional method that can be overridden by subclasses
+        to implement cleaning of tool-related messages. By default, it
+        does nothing, maintaining backward compatibility.
+        """
+        pass
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the AgentMemory.

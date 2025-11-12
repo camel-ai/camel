@@ -50,3 +50,22 @@ def update_action_space(self, action_space: Dict[str, Any]):
 ```
 
 Updates action space for *python* interpreter
+
+<a id="camel.interpreters.base.BaseInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a command in the interpreter.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  Tuple[str, str]: A tuple containing the stdout and stderr of the
+command execution.
