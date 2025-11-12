@@ -26,17 +26,18 @@ class MinimaxConfig(BaseConfig):
 
     Args:
         temperature (float, optional): Sampling temperature to use, between
-            :obj:`0.0` and :obj:`1.0`. Higher values make the output more random,
-            while lower values make it more focused and deterministic.
-            Recommended to use :obj:`1.0`. Values outside this range will return
-            an error. (default: :obj:`None`)
+            :obj:`0.0` and :obj:`1.0`. Higher values make the output more
+            random, while lower values make it more focused and deterministic.
+            Recommended to use :obj:`1.0`. Values outside this range will
+            return an error. (default: :obj:`None`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`None`)
         n (int, optional): How many chat completion choices to generate for
-            each input message. Only supports value :obj:`1`. (default: :obj:`None`)
+            each input message. Only supports value :obj:`1`.
+            (default: :obj:`None`)
         response_format (object, optional): An object specifying the format
             that the model must output. Setting to
             {"type": "json_object"} enables JSON mode, which guarantees the
@@ -76,12 +77,10 @@ class MinimaxConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
-            
+
     Note:
         Some OpenAI parameters such as presence_penalty, frequency_penalty,
-        and logit_bias will be ignored by Minimax M2.
-        Image and audio inputs are currently not supported.
-        The deprecated function_call parameter should not be used; use tools instead.
+        and logit_bias will be ignored by Minimax.
     """
 
     temperature: Optional[float] = None
