@@ -295,6 +295,9 @@ class TerminalToolkit(BaseToolkit):
                     exec_output = self.docker_api_client.exec_start(exec_instance['Id'])
                     output = exec_output.decode('utf-8', errors='ignore')
                 
+                    if len(output) > 1000:
+                        # return truncated first 500 and last 500 characters
+                        output = output[:500] + "\n... [WARNING: OUTPUT truncated] ...\n" + output[-500:]
                 log_entry += f"--- Output ---\n{output}\n"
                 return output
             except subprocess.TimeoutExpired:
