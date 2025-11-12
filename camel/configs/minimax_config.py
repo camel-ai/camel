@@ -63,10 +63,6 @@ class MinimaxConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help to monitor and detect abuse.
             (default: :obj:`None`)
-        tools (list[FunctionTool], optional): A list of tools the model may
-            call. Currently, only functions are supported as a tool. Use this
-            to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported.
         tool_choice (Union[dict[str, str], str], optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
