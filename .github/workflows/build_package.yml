@@ -3,6 +3,10 @@ name: Build Package
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 jobs:
   build:
