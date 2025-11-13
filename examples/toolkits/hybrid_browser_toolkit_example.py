@@ -84,11 +84,26 @@ web_toolkit_custom = HybridBrowserToolkit(
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
-# Use the custom toolkit for the actual task
+
+# Example 4: Use HybridBrowserToolkit with snapshot cleaning
+# This example shows how to enable automatic cleaning of verbose DOM snapshots
+# to reduce context usage while preserving essential information
+
+web_toolkit_with_cleaning = HybridBrowserToolkit(
+    headless=False,
+    user_data_dir=USER_DATA_DIR,
+    enabled_tools=custom_tools,
+    browser_log_to_file=True,
+    stealth=True,
+    viewport_limit=True,
+    clean_snapshots=True,  # Enable automatic snapshot cleaning
+)
+
+# Use the toolkit with cleaning for the actual task
 agent = ChatAgent(
     model=model_backend,
-    tools=[*web_toolkit_custom.get_tools()],
-    toolkits_to_register_agent=[web_toolkit_custom],
+    tools=[*web_toolkit_with_cleaning.get_tools()],
+    toolkits_to_register_agent=[web_toolkit_with_cleaning],
     max_iteration=10,
 )
 
@@ -109,13 +124,13 @@ async def main() -> None:
         response = await agent.astep(TASK_PROMPT)
         print("Task:", TASK_PROMPT)
         print(f"Using user data directory: {USER_DATA_DIR}")
-        print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
+        print(f"Enabled tools: {web_toolkit_with_cleaning.enabled_tools}")
         print("\nResponse from agent:")
         print(response.msgs[0].content if response.msgs else "<no response>")
     finally:
         # Ensure browser is closed properly
         print("\nClosing browser...")
-        await web_toolkit_custom.browser_close()
+        await web_toolkit_with_cleaning.browser_close()
         print("Browser closed successfully.")
 
 
