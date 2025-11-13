@@ -25,6 +25,7 @@ from camel.logger import get_logger
 from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.output_processors import SnapshotCleaningProcessor
 from camel.utils import sanitize_filename
 from camel.utils.commons import dependencies_required
 
@@ -106,6 +107,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        clean_snapshots: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -195,6 +197,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 visible in the current viewport. When False, return all
                 elements on the page regardless of visibility.
                 Defaults to `False`.
+            clean_snapshots (bool): When True, automatically cleans verbose
+                DOM snapshots to reduce context usage while preserving
+                essential information. Removes redundant markers and references
+                from browser tool outputs. Defaults to `False`.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -208,6 +214,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._default_start_url = default_start_url or "https://google.com/"
         self._session_id = session_id or "default"
         self._viewport_limit = viewport_limit
+        self._clean_snapshots = clean_snapshots
 
         # Store timeout configuration
         self._default_timeout = default_timeout
@@ -270,6 +277,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             self.enabled_tools = enabled_tools.copy()
 
         logger.info(f"Enabled tools: {self.enabled_tools}")
+
+        # Setup snapshot cleaning if enabled
+        if self._clean_snapshots:
+            snapshot_processor = SnapshotCleaningProcessor()
+            self.register_output_processor(snapshot_processor)
+            logger.info(
+                "Snapshot cleaning enabled - DOM snapshots will "
+                "be automatically cleaned"
+            )
 
         # Log initialization if file logging is enabled
         if self.log_to_file:
@@ -354,6 +370,38 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return script_content
         except FileNotFoundError:
             raise FileNotFoundError(f"Script not found: {script_path}")
+
+    def _clean_snapshot_if_enabled(
+        self, snapshot: str, tool_name: str = "browser"
+    ) -> str:
+        r"""Clean snapshot content if snapshot cleaning is enabled.
+
+        Args:
+            snapshot: The raw snapshot content to clean.
+            tool_name: The name of the tool that generated the snapshot.
+
+        Returns:
+            The cleaned snapshot if cleaning is enabled, otherwise the
+                original snapshot.
+        """
+        if not self._clean_snapshots or not snapshot:
+            return snapshot
+
+        try:
+            # Process through the output manager
+            processed_context = self.process_tool_output(
+                tool_name=tool_name,
+                tool_call_id="snapshot_clean",
+                raw_result=snapshot,
+                agent_id=getattr(self, '_session_id', 'default'),
+            )
+
+            return processed_context.raw_result
+        except Exception as e:
+            logger.warning(
+                f"Failed to clean snapshot: {e}, returning original"
+            )
+            return snapshot
 
     def _validate_ref(self, ref: str, method_name: str) -> None:
         r"""Validate ref parameter."""
@@ -995,6 +1043,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         f"{len(after_snapshot)} chars"
                     )
 
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_action"
+            )
+
             # Get tab information for output
             tab_info = await self._get_tab_info_for_output()
 
@@ -1281,6 +1334,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             snapshot = await session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_visit_page"
+            )
         except Exception as e:
             logger.warning(f"Failed to capture snapshot: {e}")
 
@@ -1326,6 +1383,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             snapshot_start = time.time()
             snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
+            )
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_back"
             )
             snapshot_time = time.time() - snapshot_start
             logger.info(
@@ -1392,6 +1453,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_forward"
+            )
             snapshot_time = time.time() - snapshot_start
             logger.info(
                 f"Forward navigation snapshot captured in "
@@ -1446,10 +1511,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         )
 
         snapshot_text = analysis_data.get("snapshotText", "")
-        return (
+        result = (
             snapshot_text
             if snapshot_text
             else self._format_snapshot_from_analysis(analysis_data)
+        )
+
+        # Clean snapshot if enabled
+        return self._clean_snapshot_if_enabled(
+            result, "browser_get_page_snapshot"
         )
 
     @dependencies_required('PIL')
@@ -1930,6 +2000,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
+        # Clean snapshot if enabled
+        snapshot = self._clean_snapshot_if_enabled(
+            snapshot, "browser_wait_user"
+        )
         tab_info = await self._get_tab_info_for_output()
 
         return {"result": result_msg, "snapshot": snapshot, **tab_info}
@@ -2098,6 +2172,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_console_exec"
+            )
             snapshot_time = time.time() - snapshot_start
             logger.info(
                 f"Code execution snapshot captured in " f"{snapshot_time:.2f}s"
@@ -2217,6 +2295,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=self._screenshot_timeout,
             page_stability_timeout=self._page_stability_timeout,
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
+            viewport_limit=self._viewport_limit,
+            clean_snapshots=self._clean_snapshots,
         )
 
     @action_logger
@@ -2245,6 +2325,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         if success:
             snapshot = await session.get_snapshot(
                 force_refresh=True, diff_only=False
+            )
+            # Clean snapshot if enabled
+            snapshot = self._clean_snapshot_if_enabled(
+                snapshot, "browser_switch_tab"
             )
             tab_info = await self._get_tab_info_for_output()
 
@@ -2293,6 +2377,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             try:
                 snapshot = await session.get_snapshot(
                     force_refresh=True, diff_only=False
+                )
+                # Clean snapshot if enabled
+                snapshot = self._clean_snapshot_if_enabled(
+                    snapshot, "browser_close_tab"
                 )
             except Exception:
                 snapshot = ""  # No active tab

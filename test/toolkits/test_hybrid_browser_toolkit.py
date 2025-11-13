@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+from camel.toolkits.output_processors import SnapshotCleaningProcessor
 
 TEST_URL = "https://example.com"
 TEST_FILE_URL = "file:///test.html"
@@ -634,3 +635,355 @@ class TestHybridBrowserToolkit:
         assert "tabs" in result
         assert "current_tab" in result
         assert "total_tabs" in result
+
+
+def add_snapshot_cleaning_to_toolkit(toolkit, enable_cleaning=True):
+    """Add snapshot cleaning to an existing HybridBrowserToolkit instance.
+
+    Args:
+        toolkit: An existing HybridBrowserToolkit instance
+        enable_cleaning: Whether to enable snapshot cleaning
+
+    Returns:
+        The same toolkit instance with snapshot cleaning enabled
+    """
+    if enable_cleaning:
+        processor = SnapshotCleaningProcessor(enable_cleaning=True)
+        toolkit.register_output_processor(processor)
+    return toolkit
+
+
+class TestHybridBrowserToolkitWithCleaning:
+    """Test cases for HybridBrowserToolkit with snapshot cleaning."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        # Mock the WebSocket wrapper to avoid actual browser operations
+        self.mock_ws_wrapper = AsyncMock()
+        self.mock_ws_wrapper.start = AsyncMock()
+        self.mock_ws_wrapper.get_page_snapshot = AsyncMock()
+        self.mock_ws_wrapper.click = AsyncMock()
+        self.mock_ws_wrapper.visit_page = AsyncMock()
+        self.mock_ws_wrapper.get_tab_info = AsyncMock()
+
+    def test_toolkit_initialization_with_cleaning(self):
+        """Test that toolkit initializes with cleaning enabled."""
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            # Create standard toolkit and add cleaning
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit = add_snapshot_cleaning_to_toolkit(
+                toolkit, enable_cleaning=True
+            )
+
+            # Should have registered the snapshot cleaning processor
+            processors = toolkit.output_manager.processors
+            assert len(processors) > 0
+
+            # Check that it's specifically a SnapshotCleaningProcessor
+            has_snapshot_processor = any(
+                isinstance(p, SnapshotCleaningProcessor) for p in processors
+            )
+            assert has_snapshot_processor
+
+    def test_toolkit_initialization_without_cleaning(self):
+        """Test that toolkit can be initialized without cleaning."""
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            # Create standard toolkit without adding cleaning
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+
+            # Should have no processors
+            processors = toolkit.output_manager.processors
+            assert len(processors) == 0
+
+    @pytest.mark.asyncio
+    async def test_page_snapshot_with_cleaning(self):
+        """Test page snapshot with cleaning in a realistic scenario."""
+        with patch(
+            'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.WebSocketBrowserWrapper'
+        ) as mock_ws_class:
+            # Setup mock
+            mock_ws_instance = AsyncMock()
+            mock_ws_class.return_value = mock_ws_instance
+
+            # Mock realistic snapshot data with ref markers
+            mock_snapshot = """
+            - button "Login" [ref=1] [class=btn primary]
+            - textbox "Username" [ref=2] [placeholder=Enter username]
+            - textbox "Password" [ref=3] [type=password]
+            - link "Forgot Password?" [ref=4] [href=/forgot]
+            - generic "Footer" [ref=5] [class=footer-content]
+              - link "Privacy Policy" [ref=6] [href=/privacy]
+              - link "Terms of Service" [ref=7] [href=/terms]
+            """
+
+            mock_ws_instance.get_page_snapshot.return_value = (
+                mock_snapshot.strip()
+            )
+            mock_ws_instance.start = AsyncMock()
+
+            # Create toolkit with cleaning enabled
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit = add_snapshot_cleaning_to_toolkit(
+                toolkit, enable_cleaning=True
+            )
+
+            # Mock the _get_ws_wrapper method to return our mock
+            toolkit._get_ws_wrapper = AsyncMock(return_value=mock_ws_instance)
+
+            # Get the raw snapshot
+            raw_snapshot = await toolkit.browser_get_page_snapshot()
+
+            # Process it through the cleaning system
+            cleaned_context = toolkit.process_tool_output(
+                tool_name="browser_get_page_snapshot",
+                tool_call_id="test_snapshot_001",
+                raw_result=raw_snapshot,
+                agent_id="test_agent",
+            )
+
+            cleaned_snapshot = cleaned_context.raw_result
+
+            # Verify cleaning worked
+            assert '[ref=' not in cleaned_snapshot
+            assert '[class=' not in cleaned_snapshot
+            assert '[href=' not in cleaned_snapshot
+            assert '[placeholder=' not in cleaned_snapshot
+            assert '[type=' not in cleaned_snapshot
+
+            # Verify content is preserved
+            assert '"Login"' in cleaned_snapshot
+            assert '"Username"' in cleaned_snapshot
+            assert '"Password"' in cleaned_snapshot
+            assert '"Forgot Password?"' in cleaned_snapshot
+            assert '"Privacy Policy"' in cleaned_snapshot
+
+    @pytest.mark.asyncio
+    async def test_browser_click_with_cleaning(self):
+        """Test browser click with snapshot cleaning."""
+        with patch(
+            'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.WebSocketBrowserWrapper'
+        ) as mock_ws_class:
+            # Setup mock
+            mock_ws_instance = AsyncMock()
+            mock_ws_class.return_value = mock_ws_instance
+
+            # Mock click response with snapshot
+            mock_click_response = {
+                "result": "Clicked successfully",
+                "snapshot": """
+                - button "Submit" [ref=10] [disabled]
+                - generic "Success message: Form submitted!" [ref=11] 
+                [class=alert success]
+                - link "Continue" [ref=12] [href=/dashboard]
+                """,
+            }
+
+            mock_tab_info = [
+                {
+                    "id": "tab1",
+                    "title": "Test Page",
+                    "url": "https://example.com",
+                    "is_current": True,
+                }
+            ]
+
+            mock_ws_instance.click.return_value = mock_click_response
+            mock_ws_instance.get_tab_info.return_value = mock_tab_info
+            mock_ws_instance.start = AsyncMock()
+
+            # Create toolkit
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit = add_snapshot_cleaning_to_toolkit(
+                toolkit, enable_cleaning=True
+            )
+            toolkit._get_ws_wrapper = AsyncMock(return_value=mock_ws_instance)
+
+            # Perform click
+            raw_result = await toolkit.browser_click(ref="1")
+
+            # Process through cleaning
+            cleaned_context = toolkit.process_tool_output(
+                tool_name="browser_click",
+                tool_call_id="test_click_001",
+                raw_result=raw_result,
+                agent_id="test_agent",
+            )
+
+            cleaned_result = cleaned_context.raw_result
+
+            # Check that snapshot field in the result was cleaned
+            if (
+                isinstance(cleaned_result, dict)
+                and 'snapshot' in cleaned_result
+            ):
+                cleaned_snapshot = cleaned_result['snapshot']
+                assert '[ref=' not in cleaned_snapshot
+                assert '[disabled]' not in cleaned_snapshot
+                assert '[class=' not in cleaned_snapshot
+                assert '[href=' not in cleaned_snapshot
+
+                # Content should be preserved
+                assert '"Submit"' in cleaned_snapshot
+                assert '"Success message: Form submitted!"' in cleaned_snapshot
+                assert '"Continue"' in cleaned_snapshot
+
+    def test_tool_registration(self):
+        """Test that the toolkit's tools are properly registered."""
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit = add_snapshot_cleaning_to_toolkit(
+                toolkit, enable_cleaning=True
+            )
+
+            tools = toolkit.get_tools()
+
+            # Should have default tools
+            assert len(tools) > 0
+
+            # Check for essential browser tools
+            tool_names = [tool.get_function_name() for tool in tools]
+            essential_tools = [
+                'browser_open',
+                'browser_click',
+                'browser_type',
+                'browser_visit_page',
+            ]
+
+            for essential_tool in essential_tools:
+                assert essential_tool in tool_names
+
+    @pytest.mark.asyncio
+    async def test_performance_with_large_snapshot(self):
+        """Test performance with large snapshot data."""
+        import time
+
+        # Create a large snapshot for testing
+        large_snapshot_parts = []
+        for i in range(500):  # 500 elements
+            large_snapshot_parts.append(
+                f'- button "Button {i}" [ref={i}] [class=btn-{i}] '
+                f'[data-id={i}]'
+            )
+
+        large_snapshot = '\n'.join(large_snapshot_parts)
+
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            toolkit = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit = add_snapshot_cleaning_to_toolkit(
+                toolkit, enable_cleaning=True
+            )
+
+            # Time the processing
+            start_time = time.time()
+
+            cleaned_context = toolkit.process_tool_output(
+                tool_name="browser_get_page_snapshot",
+                tool_call_id="performance_test",
+                raw_result=large_snapshot,
+                agent_id="test_agent",
+            )
+
+            processing_time = time.time() - start_time
+
+            # Should complete in reasonable time (< 1 second for 500 elements)
+            assert processing_time < 1.0
+
+            # Check that cleaning worked
+            cleaned_result = cleaned_context.raw_result
+            assert '[ref=' not in cleaned_result
+            assert '[class=' not in cleaned_result
+            assert '[data-id=' not in cleaned_result
+
+            # Content should still be there
+            assert '"Button 0"' in cleaned_result
+            assert '"Button 499"' in cleaned_result
+
+            # Size should be significantly reduced
+            original_size = len(large_snapshot)
+            cleaned_size = len(cleaned_result)
+            reduction_ratio = (original_size - cleaned_size) / original_size
+
+            # Should have at least 30% size reduction
+            assert reduction_ratio > 0.3
+
+    def test_backward_compatibility(self):
+        """Test that existing HybridBrowserToolkit works unchanged."""
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            # Standard HybridBrowserToolkit should work without any issues
+            standard_toolkit = HybridBrowserToolkit(
+                mode="typescript", headless=True
+            )
+
+            # Should have the output manager (from BaseToolkit)
+            assert hasattr(standard_toolkit, 'output_manager')
+
+            # But no processors registered by default
+            assert len(standard_toolkit.output_manager.processors) == 0
+
+            # Should be able to manually add processor
+            processor = SnapshotCleaningProcessor(enable_cleaning=True)
+            standard_toolkit.register_output_processor(processor)
+
+            # Now should have one processor
+            assert len(standard_toolkit.output_manager.processors) == 1
+
+
+class TestIntegrationExample:
+    """Integration test showing how to use in real scenarios."""
+
+    def test_usage_example_documentation(self):
+        """Document the proper usage pattern."""
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
+            ),
+        ):
+            # Example 1: Add cleaning to existing toolkit instance
+            toolkit1 = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit1 = add_snapshot_cleaning_to_toolkit(
+                toolkit1, enable_cleaning=True
+            )
+
+            assert len(toolkit1.output_manager.processors) == 1
+
+            # Example 2: Create toolkit and add cleaning in one step
+            toolkit2 = add_snapshot_cleaning_to_toolkit(
+                HybridBrowserToolkit(mode="typescript", headless=True),
+                enable_cleaning=True,
+            )
+
+            assert len(toolkit2.output_manager.processors) == 1
+
+            # Example 3: Manual processor registration
+            toolkit3 = HybridBrowserToolkit(mode="typescript", headless=True)
+            toolkit3.register_output_processor(
+                SnapshotCleaningProcessor(enable_cleaning=True)
+            )
+
+            assert len(toolkit3.output_manager.processors) == 1
