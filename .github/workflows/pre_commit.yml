@@ -4,14 +4,14 @@ on:
   push:
     branches: [ "master", "qa" ]
     paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+      - "docs/reference/**"
+      - "docs/**/*.rst"
       - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
     paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+      - "docs/reference/**"
+      - "docs/**/*.rst"
       - "LICENSE"
 
 jobs:
