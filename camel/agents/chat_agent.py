@@ -3352,12 +3352,17 @@ class ChatAgent(BaseAgent):
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
+            reasoning_content = getattr(
+                choice.message, "reasoning_content", None
+            )
+
             chat_message = BaseMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=meta_dict,
                 content=choice.message.content or "",
                 parsed=getattr(choice.message, "parsed", None),
+                reasoning_content=reasoning_content,
             )
 
             output_messages.append(chat_message)
@@ -3760,6 +3765,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -3770,6 +3779,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -3911,11 +3921,16 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -3937,11 +3952,16 @@ class ChatAgent(BaseAgent):
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -4544,6 +4564,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4554,6 +4578,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -4761,11 +4786,16 @@ class ChatAgent(BaseAgent):
                 if should_finalize:
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -4902,19 +4932,24 @@ class ChatAgent(BaseAgent):
 
         # Add reasoning content info
         full_reasoning = accumulator.get_full_reasoning_content()
+        reasoning_payload: Optional[str] = None
         if full_reasoning:
-            meta_dict["reasoning_content"] = (
+            reasoning_payload = (
                 full_reasoning
                 if self.stream_accumulate
                 else reasoning_delta or ""
             )
-            meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
+            if reasoning_payload:
+                meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
+            else:
+                reasoning_payload = None
 
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=meta_dict,
             content=message_content,
+            reasoning_content=reasoning_payload,
         )
 
         return ChatAgentResponse(

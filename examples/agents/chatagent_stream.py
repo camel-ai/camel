@@ -39,16 +39,19 @@ streaming_response = agent_accumulated.step(user_message)
 
 for chunk_response in streaming_response:
     message = chunk_response.msgs[0]
-    meta = message.meta_dict or {}
-
-    reasoning_text = meta.get("reasoning_content")
+    reasoning_text = message.reasoning_content
     if reasoning_text:
         print(reasoning_text, end="", flush=True)
 
     content_text = message.content
     if content_text:
         print(content_text, end="", flush=True)
-
+usage = streaming_response.info.get("usage", {})
+print(
+    f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+    f"completion={usage.get('completion_tokens')}, "
+    f"total={usage.get('total_tokens')}"
+)
 print("\n\n---\nDelta streaming mode (stream_accumulate=False):\n")
 
 # Delta streaming mode (only new content per chunk)
@@ -63,13 +66,15 @@ streaming_response_delta = agent_delta.step(user_message)
 
 for chunk_response in streaming_response_delta:
     message = chunk_response.msgs[0]
-    meta = message.meta_dict or {}
-
-    reasoning_delta = meta.get("reasoning_content") or ""
+    reasoning_delta = message.reasoning_content or ""
     if reasoning_delta:
         print(reasoning_delta, end="", flush=True)
 
     if message.content:
         print(message.content, end="", flush=True)
-
-print()
+usage = streaming_response.info.get("usage", {})
+print(
+    f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+    f"completion={usage.get('completion_tokens')}, "
+    f"total={usage.get('total_tokens')}"
+)

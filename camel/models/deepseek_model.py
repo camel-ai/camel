@@ -165,46 +165,6 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return request_config
 
-    def _post_handle_response(
-        self, response: ChatCompletion
-    ) -> ChatCompletion:
-        r"""Handle reasoning content with <think> tags at the beginning."""
-        if isinstance(response, (Stream, AsyncStream)):
-            return response
-        if (
-            self.model_type in [ModelType.DEEPSEEK_REASONER]
-            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
-            == "true"
-        ):
-            reasoning_content = response.choices[0].message.reasoning_content  # type: ignore[attr-defined]
-            combined_content = (  # type: ignore[operator]
-                f"<think>\n{reasoning_content}\n</think>\n"
-                if reasoning_content
-                else ""
-            ) + response.choices[0].message.content
-
-            response = ChatCompletion.construct(
-                id=response.id,
-                choices=[
-                    dict(
-                        index=response.choices[0].index,
-                        message={
-                            "role": response.choices[0].message.role,
-                            "content": combined_content,
-                            "tool_calls": None,
-                        },
-                        finish_reason=response.choices[0].finish_reason
-                        if response.choices[0].finish_reason
-                        else None,
-                    )
-                ],
-                created=response.created,
-                model=response.model,
-                object="chat.completion",
-                usage=response.usage,
-            )
-        return response
-
     @observe()
     def _run(
         self,
@@ -246,7 +206,7 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
+        return response
 
     @observe()
     async def _arun(
@@ -288,4 +248,4 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
+        return response
