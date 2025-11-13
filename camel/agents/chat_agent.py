@@ -3367,8 +3367,10 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
 
@@ -3452,8 +3454,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -3461,37 +3463,41 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
                 # If we've already seen finish_reason but no usage chunk, exit
                 break
@@ -4177,8 +4183,10 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         async for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
 
@@ -4264,8 +4272,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -4273,37 +4281,41 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
                 # If we've already seen finish_reason but no usage chunk, exit
                 break
