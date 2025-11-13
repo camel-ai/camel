@@ -3989,8 +3989,9 @@ class ChatAgent(BaseAgent):
                         yield final_response
                     break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                # We've seen finish_reason but no usage chunk yet; keep
+                # consuming remaining chunks to capture final metadata.
+                continue
 
         return stream_completed, tool_calls_complete
 
@@ -4823,8 +4824,7 @@ class ChatAgent(BaseAgent):
                         yield final_response
                     break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                continue
 
         # Yield the final status as a tuple
         yield (stream_completed, tool_calls_complete)
