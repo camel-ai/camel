@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import atexit
 import os
 import platform
 import select
@@ -146,8 +145,6 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path: Optional[str] = None
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
-
-        atexit.register(self.__del__)
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -932,12 +929,16 @@ class TerminalToolkit(BaseToolkit):
                         f"during cleanup: {e}"
                     )
 
+    cleanup._manual_timeout = True  # type: ignore[attr-defined]
+
     def __del__(self):
         r"""Fallback cleanup in destructor."""
         try:
             self.cleanup()
         except Exception:
             pass
+
+    __del__._manual_timeout = True  # type: ignore[attr-defined]
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions

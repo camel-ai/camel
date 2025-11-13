@@ -15,6 +15,7 @@ import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
 
+from camel.models.aihubmix_model import AihubMixModel
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
@@ -109,6 +110,7 @@ class ModelFactory:
         ModelPlatformType.WATSONX: WatsonXModel,
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
+        ModelPlatformType.AIHUBMIX: AihubMixModel,
     }
 
     @staticmethod
