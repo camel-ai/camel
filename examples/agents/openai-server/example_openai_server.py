@@ -64,5 +64,5 @@ if __name__ == "__main__":
     app = main()
 else:
     # If imported, create the app
-    agent = ChatAgent(system_message="You are a helpful assistant.")
+    agent = ChatAgent()
     app = agent.to_openai_compatible_server()

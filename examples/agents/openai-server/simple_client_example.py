@@ -56,11 +56,16 @@ def main():
     print("\n3. Streaming Response:")
     response = client.chat.completions.create(
         model="camel-model",
-        messages=[{"role": "user", "content": "Count from 1 to 5 slowly."}],
+        messages=[
+            {
+                "role": "user",
+                "content": "Count from 1 to 5 slowly."
+                "Do not output newline characters",
+            }
+        ],
         stream=True,
     )
 
-    print("Streaming: ", end="")
     for chunk in response:
         if chunk.choices[0].delta.content:
             print(chunk.choices[0].delta.content, end="", flush=True)

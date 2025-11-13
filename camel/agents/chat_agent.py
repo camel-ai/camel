@@ -47,6 +47,8 @@ from typing import (
     cast,
 )
 
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse, StreamingResponse
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -102,6 +104,24 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+
+
+# Define Pydantic models for request/response
+class ChatMessage(BaseModel):
+    role: str
+    content: str = ""
+    name: Optional[str] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_call_id: Optional[str] = None
+
+
+class ChatCompletionRequest(BaseModel):
+    model: Optional[str] = "camel-model"
+    messages: List[ChatMessage]
+    stream: Optional[bool] = False
+    functions: Optional[Any] = None
+    tools: Optional[Any] = None
+
 
 TOKEN_LIMIT_ERROR_MARKERS = (
     "context_length_exceeded",
@@ -1950,26 +1970,6 @@ class ChatAgent(BaseAgent):
         new_system_message = original_content + '\n' + content
         self._original_system_message = BaseMessage.make_system_message(
             new_system_message
-        )
-        self._system_message = (
-            self._generate_system_message_for_output_language()
-        )
-        if reset_memory:
-            self.init_messages()
-
-    def reset_system_message(
-        self, content: str, reset_memory: bool = True
-    ) -> None:
-        """Reset context to new system message.
-
-        Args:
-            content (str): The new system message.
-            reset_memory (bool):
-                Whether to reinitialize conversation messages after appending
-                additional context. Defaults to True.
-        """
-        self._original_system_message = BaseMessage.make_system_message(
-            content
         )
         self._system_message = (
             self._generate_system_message_for_output_language()
@@ -5247,20 +5247,6 @@ class ChatAgent(BaseAgent):
             uvicorn.run(app, host="0.0.0.0", port=8000)
             ```
         """
-        import asyncio
-        import json
-        import time
-
-        from fastapi import FastAPI
-        from fastapi.responses import JSONResponse, StreamingResponse
-        from pydantic import BaseModel
-
-        # Define Pydantic models for request/response
-        class ChatMessage(BaseModel):
-            role: str
-            content: str = ""
-            name: Optional[str] = None
-            tool_calls: Optional[List[Dict[str, Any]]] = None
 
         app = FastAPI(
             title="CAMEL OpenAI-compatible API",
@@ -5268,24 +5254,24 @@ class ChatAgent(BaseAgent):
         )
 
         @app.post("/v1/chat/completions")
-        async def chat_completions(request_data: dict):
+        async def chat_completions(request_data: ChatCompletionRequest):
             try:
-                print("\n" + "=" * 80)
-                print(f"[{time.strftime('%H:%M:%S')}] 📨  Received Request:")
-                print(json.dumps(request_data, indent=2, ensure_ascii=False))
-                print("=" * 80)
+                logger.info("Request", request_data.model_dump_json())
 
-                messages = request_data.get("messages", [])
-                model = request_data.get("model", "camel-model")
-                stream = request_data.get("stream", False)
-                functions = request_data.get("functions")
-                tools = request_data.get("tools")
+                messages = request_data.messages
+                model = request_data.model
+                stream = request_data.stream
+                functions = request_data.functions
+                tools = request_data.tools
+
+                self.reset()
+                self._external_tool_schemas.clear()
 
                 # Convert OpenAI messages to CAMEL format and record in memory
                 current_user_message = None
                 for msg in messages:
-                    msg_role = msg.get("role", "")
-                    msg_content = msg.get("content", "")
+                    msg_role = msg.role
+                    msg_content = msg.content or ""
 
                     if msg_role == "user":
                         user_msg = BaseMessage.make_user_message(
@@ -5303,7 +5289,7 @@ class ChatAgent(BaseAgent):
                             role_name="System", content=msg_content
                         )
                         self.update_memory(sys_msg, OpenAIBackendRole.SYSTEM)
-                        self.reset_system_message(msg_content, True)
+                        self.update_system_message(msg_content, True)
                     elif msg_role == "assistant":
                         # Record previous assistant messages
                         assistant_msg = BaseMessage.make_assistant_message(
@@ -5314,7 +5300,7 @@ class ChatAgent(BaseAgent):
                         )
                     elif msg_role == "tool":
                         # Handle tool response messages if needed
-                        tool_call_id = msg.get("tool_call_id", "")
+                        tool_call_id = msg.tool_call_id
                         tool_msg = FunctionCallingMessage.make_tool_message(
                             role_name="Tool",
                             content=msg_content,
@@ -5328,22 +5314,28 @@ class ChatAgent(BaseAgent):
                     # Type guard to ensure tools_to_use is not None
                     if tools_to_use is not None:
                         for tool in tools_to_use:
-                            self.add_external_tool(tool)
+                            self._external_tool_schemas[
+                                tool["function"]["name"]
+                            ] = tool
 
                 # Get the response from the agent
+                self.model_backend.model_config_dict["stream"] = stream
                 if current_user_message is not None:
                     if stream:
-                        return StreamingResponse(
-                            _stream_response(
-                                current_user_message, request_data
-                            ),
-                            media_type="text/event-stream",
-                        )
+                        try:
+                            return StreamingResponse(
+                                _stream_response(
+                                    current_user_message, request_data
+                                ),
+                                media_type="text/event-stream",
+                            )
+                        except Exception:
+                            logger.warning(
+                                "The Model does not support streaming output,"
+                                "there will be no reply"
+                            )
                     else:
                         agent_response = await self.astep(current_user_message)
-
-                        print(f"agent_response.info {agent_response.info}")
-                        print(f"agent_response.msgs {agent_response.msgs}")
 
                         # Convert CAMEL response to OpenAI format
                         if not agent_response.msgs:
@@ -5416,11 +5408,10 @@ class ChatAgent(BaseAgent):
                             "usage": usage,
                         }
 
-                        print(f"[{time.strftime('%H:%M:%S')}] 💬  Response:")
-                        print(
-                            json.dumps(response, indent=2, ensure_ascii=False)
+                        logger.info(
+                            "Pesponse:",
+                            json.dumps(response, indent=2, ensure_ascii=False),
                         )
-                        print("=" * 80 + "\n")
 
                         return response
                 else:
@@ -5435,58 +5426,83 @@ class ChatAgent(BaseAgent):
                     content={"error": f"Internal server error: {e!s}"},
                 )
 
-        async def _stream_response(message: BaseMessage, request_data: dict):
+        async def _stream_response(
+            message: BaseMessage, request_data: ChatCompletionRequest
+        ):
             # Start a separate task for the agent processing
             agent_response = await self.astep(message)
 
-            if not agent_response.msgs:
-                # Stream an error message if no response
-                error_data = {'error': 'No response generated'}
-                yield f"data: {json.dumps(error_data)}\n\n"
-                return
+            if isinstance(agent_response, AsyncStreamingChatAgentResponse):
+                first_sent = False
+                last_content = ""
 
-            content = agent_response.msgs[0].content
-            # This provides a good streaming experience without complex
-            # token handling
-            words = content.split()
+                async for chunk in agent_response:
+                    if not chunk.msgs:
+                        continue
 
-            # Send the first event with model info
-            first_chunk = {
-                'id': f'chatcmpl-{int(time.time())}',
-                'object': 'chat.completion.chunk',
-                'created': int(time.time()),
-                'model': request_data.get("model", "camel-model"),
-                'choices': [
-                    {
-                        'index': 0,
-                        'delta': {'role': 'assistant'},
-                        'finish_reason': None,
-                    }
-                ],
-            }
-            yield f"data: {json.dumps(first_chunk)}\n\n"
+                    msg = chunk.msgs[0]
+                    full_content = (
+                        msg.content if hasattr(msg, "content") else ""
+                    )
 
-            # Stream the content word by word
-            for i, word in enumerate(words):
-                # Add space before each word except the first
-                word_content = word if i == 0 else f" {word}"
-                word_chunk = {
-                    'choices': [
-                        {
-                            'index': 0,
-                            'delta': {'content': word_content},
-                            'finish_reason': None,
+                    if not first_sent:
+                        first_chunk = {
+                            "id": f"chatcmpl-{int(time.time())}",
+                            "object": "chat.completion.chunk",
+                            "created": int(time.time()),
+                            "model": getattr(
+                                request_data, "model", "camel-model"
+                            ),
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {"role": "assistant"},
+                                    "finish_reason": None,
+                                }
+                            ],
                         }
+                        yield f"data: {json.dumps(first_chunk)}\n\n"
+                        first_sent = True
+
+                    if full_content and len(full_content) > len(last_content):
+                        # TODO Needs improvement.
+                        #  Since Camel returns accumulated streaming content,
+                        #  the current implementation uses diff
+                        #  to retrieve incremental content.
+                        delta_content = full_content[len(last_content) :]
+                        last_content = full_content
+                        word_chunk = {
+                            "id": f"chatcmpl-{int(time.time())}",
+                            "object": "chat.completion.chunk",
+                            "created": int(time.time()),
+                            "model": getattr(
+                                request_data, "model", "camel-model"
+                            ),
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {"content": delta_content},
+                                    "finish_reason": None,
+                                }
+                            ],
+                        }
+                        yield f"data: {json.dumps(word_chunk)}\n\n"
+
+                    if getattr(chunk, "terminated", False):
+                        break
+
+                final_chunk = {
+                    "choices": [
+                        {"index": 0, "delta": {}, "finish_reason": "stop"}
                     ]
                 }
-                yield f"data: {json.dumps(word_chunk)}\n\n"
-                await asyncio.sleep(0.05)  # Reasonable streaming speed
+                yield f"data: {json.dumps(final_chunk)}\n\n"
+                yield "data: [DONE]\n\n"
 
-            # Send the final event
-            final_chunk = {
-                'choices': [{'index': 0, 'delta': {}, 'finish_reason': 'stop'}]
-            }
-            yield f"data: {json.dumps(final_chunk)}\n\n"
-            yield "data: [DONE]\n\n"
+            else:
+                logger.warning(
+                    "The Model does not support streaming output, "
+                    "there will be no reply"
+                )
 
         return app
