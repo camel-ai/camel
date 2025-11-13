@@ -624,9 +624,9 @@ class TestWorkflowIntegration:
 
             # verify filename is reasonable length (< 100 chars including path)
             filename = os.path.basename(result["file_path"])
-            assert (
-                len(filename) < 100
-            ), f"Filename too long: {len(filename)} chars - {filename}"
+            assert len(filename) < 100, (
+                f"Filename too long: {len(filename)} chars - {filename}"
+            )
 
             # verify filename uses role_name, not full description
             assert "developer_agent_workflow" in filename
@@ -1437,9 +1437,9 @@ class TestConversationAccumulator:
             await worker._process_task(task3, [])
 
         # verify accumulator was created
-        assert (
-            worker._conversation_accumulator is not None
-        ), "Accumulator should be created when workflow memory is enabled"
+        assert worker._conversation_accumulator is not None, (
+            "Accumulator should be created when workflow memory is enabled"
+        )
 
         # verify accumulator has messages from ALL tasks
         accumulator = worker._conversation_accumulator
@@ -1456,12 +1456,12 @@ class TestConversationAccumulator:
         messages_content = [
             record.memory_record.message.content for record in records
         ]
-        assert any(
-            "2+2" in content for content in messages_content
-        ), "Should contain content from task1"
-        assert any(
-            "data trends" in content for content in messages_content
-        ), "Should contain content from task2"
+        assert any("2+2" in content for content in messages_content), (
+            "Should contain content from task1"
+        )
+        assert any("data trends" in content for content in messages_content), (
+            "Should contain content from task2"
+        )
         assert any(
             "summary report" in content for content in messages_content
         ), "Should contain content from task3"
@@ -1533,9 +1533,9 @@ class TestConversationAccumulator:
             await worker._process_task(task2, [])
 
         # verify accumulator exists
-        assert (
-            worker._conversation_accumulator is not None
-        ), "Accumulator should exist after processing tasks"
+        assert worker._conversation_accumulator is not None, (
+            "Accumulator should exist after processing tasks"
+        )
 
         # save workflow with mocked summarization
         mock_summary_result = {
@@ -1550,9 +1550,9 @@ class TestConversationAccumulator:
             result = await worker.save_workflow_memories_async()
 
         # verify save was successful
-        assert (
-            result["status"] == "success"
-        ), f"Save should succeed, got: {result}"
+        assert result["status"] == "success", (
+            f"Save should succeed, got: {result}"
+        )
 
         # accumulator should be None after successful save
         assert worker._conversation_accumulator is None, (
@@ -1687,9 +1687,9 @@ class TestAgentPoolMemoryTransfer:
 
         # verify accumulator received the conversation from pooled agent
         accumulator = worker._conversation_accumulator
-        assert (
-            accumulator is not None
-        ), "Accumulator should exist when workflow memory is enabled"
+        assert accumulator is not None, (
+            "Accumulator should exist when workflow memory is enabled"
+        )
 
         records = accumulator.memory.retrieve()
         assert len(records) >= 2, (
@@ -1699,9 +1699,9 @@ class TestAgentPoolMemoryTransfer:
 
         # verify the messages are about the task
         messages_content = [r.memory_record.message.content for r in records]
-        assert any(
-            "2+2" in msg for msg in messages_content
-        ), "Should contain task content from pooled agent"
+        assert any("2+2" in msg for msg in messages_content), (
+            "Should contain task content from pooled agent"
+        )
 
     @pytest.mark.asyncio
     async def test_memory_accumulation_with_and_without_pool(
@@ -1821,12 +1821,12 @@ class TestAgentPoolMemoryTransfer:
         records = worker._conversation_accumulator.memory.retrieve()
         messages_content = [r.memory_record.message.content for r in records]
 
-        assert any(
-            "First task" in msg for msg in messages_content
-        ), "Should contain first task content"
-        assert any(
-            "Second task" in msg for msg in messages_content
-        ), "Should contain second task content"
+        assert any("First task" in msg for msg in messages_content), (
+            "Should contain first task content"
+        )
+        assert any("Second task" in msg for msg in messages_content), (
+            "Should contain second task content"
+        )
 
 
 class TestWorkflowContentValidation:
@@ -1879,23 +1879,23 @@ This workflow analyzes sales data using pandas and matplotlib.
 
         # verify system message contains workflow content
         updated_system = worker.worker._system_message.content
-        assert (
-            updated_system != original_system
-        ), "System message should be modified"
-        assert (
-            "Data Analysis Pipeline" in updated_system
-        ), "Should contain task title"
-        assert (
-            "pandas and matplotlib" in updated_system
-        ), "Should contain task description content"
-        assert (
-            "Load CSV file" in updated_system
-        ), "Should contain workflow steps"
+        assert updated_system != original_system, (
+            "System message should be modified"
+        )
+        assert "Data Analysis Pipeline" in updated_system, (
+            "Should contain task title"
+        )
+        assert "pandas and matplotlib" in updated_system, (
+            "Should contain task description content"
+        )
+        assert "Load CSV file" in updated_system, (
+            "Should contain workflow steps"
+        )
 
         # verify proper formatting with header
-        assert (
-            "Previous Workflows" in updated_system
-        ), "Should have workflows header"
+        assert "Previous Workflows" in updated_system, (
+            "Should have workflows header"
+        )
         assert "=" * 60 in updated_system, "Should have separator lines"
 
     def test_multiple_workflows_formatted_correctly(self, temp_context_dir):
@@ -1961,9 +1961,9 @@ This is the third workflow.""",
 
         # should have separators
         separator_count = formatted_content.count("=" * 60)
-        assert (
-            separator_count >= 3
-        ), f"Should have at least 3 separators, got {separator_count}"
+        assert separator_count >= 3, (
+            f"Should have at least 3 separators, got {separator_count}"
+        )
 
     def test_metadata_filtered_from_loaded_workflow(self, temp_context_dir):
         """Test that metadata section is not included in system message.
@@ -2012,26 +2012,26 @@ This is the actual workflow description that should be loaded.
         system_content = worker.worker._system_message.content
 
         # should contain actual workflow content
-        assert (
-            "Actual Workflow Content" in system_content
-        ), "Should contain workflow title"
-        assert (
-            "actual workflow description" in system_content
-        ), "Should contain workflow description"
-        assert (
-            "Do important work" in system_content
-        ), "Should contain workflow steps"
+        assert "Actual Workflow Content" in system_content, (
+            "Should contain workflow title"
+        )
+        assert "actual workflow description" in system_content, (
+            "Should contain workflow description"
+        )
+        assert "Do important work" in system_content, (
+            "Should contain workflow steps"
+        )
 
         # should NOT contain metadata
-        assert (
-            "session_id: test_session_456" not in system_content
-        ), "Should filter out session_id metadata"
-        assert (
-            "agent_id: test-agent-789" not in system_content
-        ), "Should filter out agent_id metadata"
-        assert (
-            "created_at: 2025-01-01" not in system_content
-        ), "Should filter out created_at metadata"
+        assert "session_id: test_session_456" not in system_content, (
+            "Should filter out session_id metadata"
+        )
+        assert "agent_id: test-agent-789" not in system_content, (
+            "Should filter out agent_id metadata"
+        )
+        assert "created_at: 2025-01-01" not in system_content, (
+            "Should filter out created_at metadata"
+        )
 
 
 class TestErrorHandlingAndEdgeCases:
@@ -2074,9 +2074,9 @@ class TestErrorHandlingAndEdgeCases:
                 # system message should be updated even with malformed content
                 system_content = worker.worker._system_message.content
                 # the content might be loaded as-is, which is acceptable
-                assert isinstance(
-                    system_content, str
-                ), "System message should still be a string"
+                assert isinstance(system_content, str), (
+                    "System message should still be a string"
+                )
 
         except Exception as e:
             # if it raises an exception, it should be a handled one
@@ -2104,15 +2104,15 @@ class TestErrorHandlingAndEdgeCases:
 
             # should be able to create workflow manager without error
             manager = worker._get_workflow_manager()
-            assert (
-                manager is not None
-            ), "Workflow manager should be created without CAMEL_WORKDIR"
+            assert manager is not None, (
+                "Workflow manager should be created without CAMEL_WORKDIR"
+            )
 
             # context utility should use default directory
             context_util = manager._get_context_utility()
-            assert (
-                context_util is not None
-            ), "Context utility should be created with default directory"
+            assert context_util is not None, (
+                "Context utility should be created with default directory"
+            )
 
             # the context directory should use default "workforce_workflows"
             # (we don't test actual file operations to avoid creating files
@@ -2165,9 +2165,9 @@ class TestErrorHandlingAndEdgeCases:
         accumulator = worker._conversation_accumulator
         assert accumulator is not None
         records = accumulator.memory.retrieve()
-        assert (
-            len(records) > 50
-        ), f"Should have many records (>50), got {len(records)}"
+        assert len(records) > 50, (
+            f"Should have many records (>50), got {len(records)}"
+        )
 
         # attempt to save - should handle gracefully
         mock_summary_result = {
@@ -2196,11 +2196,12 @@ class TestWorkflowVersioning:
     """Test workflow versioning functionality."""
 
     @pytest.mark.asyncio
-    async def test_workflow_version_increments_on_update(
+    async def test_workflow_version_increments_and_preserves_created_at(
         self, temp_context_dir
     ):
-        """Test that workflow version increments when saving same workflow
-        twice."""
+        """Test version increments (v1->v2->v3) and created_at is preserved."""
+        import asyncio
+        import re
         from pathlib import Path
 
         from camel.societies.workforce.workflow_memory_manager import (
@@ -2210,7 +2211,6 @@ class TestWorkflowVersioning:
 
         worker = MockSingleAgentWorker("data_analyst")
 
-        # create context utility with specific folder
         role_name = "data_analyst"
         context_utility = ContextUtility(
             working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
@@ -2220,24 +2220,108 @@ class TestWorkflowVersioning:
 
         manager = WorkflowMemoryManager(
             worker=worker.worker,
-            description="Data analysis expert",
+            description="Data analyst",
             context_utility=context_utility,
             role_identifier=role_name,
         )
 
-        # create workflow summary
         workflow_summary = WorkflowSummary(
             agent_title="data_analyst",
             task_title="Calculate Sum",
-            task_description="Calculate the sum of two numbers",
+            task_description="Calculate sum",
             tools=[],
-            steps=["1. Add numbers", "2. Return result"],
+            steps=["1. Add numbers"],
             failure_and_recovery_strategies=[],
             notes_and_observations="",
             tags=["math"],
         )
 
-        # save first time (should be version 1)
+        # save v1
+        result1 = await manager.save_workflow_content_async(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+        assert result1["status"] == "success"
+        workflow_file = Path(result1["file_path"])
+        content1 = workflow_file.read_text()
+        assert "workflow_version: 1" in content1
+
+        created_match = re.search(r"created_at: (.+)", content1)
+        assert created_match
+        created_at_v1 = created_match.group(1).strip()
+
+        await asyncio.sleep(0.01)
+
+        # save v2
+        await manager.save_workflow_content_async(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+        content2 = workflow_file.read_text()
+        assert "workflow_version: 2" in content2
+
+        await asyncio.sleep(0.01)
+
+        # save v3
+        await manager.save_workflow_content_async(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+        content3 = workflow_file.read_text()
+        assert "workflow_version: 3" in content3
+
+        # verify created_at preserved
+        created_match_v3 = re.search(r"created_at: (.+)", content3)
+        assert created_match_v3
+        created_at_v3 = created_match_v3.group(1).strip()
+        assert created_at_v1 == created_at_v3
+
+    @pytest.mark.asyncio
+    async def test_workflow_version_disabled(self, temp_context_dir):
+        """Test that versioning can be disabled via config."""
+        from pathlib import Path
+
+        from camel.societies.workforce.utils import WorkflowConfig
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import ContextUtility, WorkflowSummary
+
+        worker = MockSingleAgentWorker("developer")
+
+        role_name = "developer"
+        context_utility = ContextUtility(
+            working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
+            create_folder=True,
+            use_session_subfolder=False,
+        )
+
+        # create config with versioning disabled
+        config = WorkflowConfig(enable_versioning=False)
+
+        manager = WorkflowMemoryManager(
+            worker=worker.worker,
+            description="Software developer",
+            context_utility=context_utility,
+            role_identifier=role_name,
+            config=config,
+        )
+
+        workflow_summary = WorkflowSummary(
+            agent_title="developer",
+            task_title="Fix Bug",
+            task_description="Fix critical production bug",
+            tools=[],
+            steps=["1. Identify issue", "2. Fix code"],
+            failure_and_recovery_strategies=[],
+            notes_and_observations="",
+            tags=["bug-fix"],
+        )
+
+        # save first time
         result1 = await manager.save_workflow_content_async(
             workflow_summary=workflow_summary,
             context_utility=context_utility,
@@ -2246,14 +2330,10 @@ class TestWorkflowVersioning:
 
         assert result1["status"] == "success"
         workflow_file = Path(result1["file_path"])
-        assert workflow_file.exists()
-
         content1 = workflow_file.read_text()
         assert "workflow_version: 1" in content1
-        assert "created_at:" in content1
-        assert "updated_at:" in content1
 
-        # save again (should be version 2)
+        # save again - version should STILL be 1 (not incremented)
         result2 = await manager.save_workflow_content_async(
             workflow_summary=workflow_summary,
             context_utility=context_utility,
@@ -2262,25 +2342,73 @@ class TestWorkflowVersioning:
 
         assert result2["status"] == "success"
         content2 = workflow_file.read_text()
-        assert "workflow_version: 2" in content2
-
-        # verify created_at is preserved
-        import re
-
-        created_match_v1 = re.search(r"created_at: (.+)", content1)
-        created_match_v2 = re.search(r"created_at: (.+)", content2)
-
-        assert created_match_v1 and created_match_v2
-        created_at_v1 = created_match_v1.group(1).strip()
-        created_at_v2 = created_match_v2.group(1).strip()
-
-        assert (
-            created_at_v1 == created_at_v2
-        ), "created_at should be preserved across versions"
+        assert "workflow_version: 1" in content2, (
+            "Version should remain 1 when versioning is disabled"
+        )
+        assert "workflow_version: 2" not in content2
 
     @pytest.mark.asyncio
-    async def test_new_workflow_starts_at_version_one(self, temp_context_dir):
-        """Test that a new workflow starts at version 1."""
+    async def test_extract_metadata_from_existing_workflow(
+        self, temp_context_dir
+    ):
+        """Test extracting metadata from an existing workflow file."""
+        from pathlib import Path
+
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+
+        worker = MockSingleAgentWorker("extractor_test")
+
+        manager = WorkflowMemoryManager(
+            worker=worker.worker,
+            description="Test worker",
+            role_identifier="extractor_test",
+        )
+
+        # create a workflow file with metadata
+        workflow_dir = Path(temp_context_dir) / "test_workflows"
+        workflow_dir.mkdir(parents=True, exist_ok=True)
+        workflow_file = workflow_dir / "test_workflow.md"
+
+        workflow_content = """## Metadata
+
+- session_id: test_session_123
+- working_directory: /tmp/test
+- created_at: 2025-01-15T10:00:00.000000
+- updated_at: 2025-01-15T12:00:00.000000
+- workflow_version: 3
+- agent_id: agent-uuid-456
+- message_count: 42
+
+## WorkflowSummary
+
+### Task Title
+Test Workflow
+
+### Task Description
+This is a test workflow for metadata extraction.
+"""
+
+        workflow_file.write_text(workflow_content)
+
+        # extract metadata
+        metadata = manager._extract_existing_workflow_metadata(workflow_file)
+
+        assert metadata is not None, "Should successfully extract metadata"
+        assert metadata.session_id == "test_session_123"
+        assert metadata.working_directory == "/tmp/test"
+        assert metadata.workflow_version == 3
+        assert metadata.agent_id == "agent-uuid-456"
+        assert metadata.message_count == 42
+        assert metadata.created_at == "2025-01-15T10:00:00.000000"
+        assert metadata.updated_at == "2025-01-15T12:00:00.000000"
+
+    @pytest.mark.asyncio
+    async def test_different_workflows_have_independent_versions(
+        self, temp_context_dir
+    ):
+        """Test that different workflow files maintain independent versions."""
         from pathlib import Path
 
         from camel.societies.workforce.workflow_memory_manager import (
@@ -2288,9 +2416,9 @@ class TestWorkflowVersioning:
         )
         from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
-        worker = MockSingleAgentWorker("content_writer")
+        worker = MockSingleAgentWorker("multi_task_worker")
 
-        role_name = "content_writer"
+        role_name = "multi_task_worker"
         context_utility = ContextUtility(
             working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
             create_folder=True,
@@ -2299,32 +2427,66 @@ class TestWorkflowVersioning:
 
         manager = WorkflowMemoryManager(
             worker=worker.worker,
-            description="Content writing expert",
+            description="Multi-task worker",
             context_utility=context_utility,
             role_identifier=role_name,
         )
 
-        workflow_summary = WorkflowSummary(
-            agent_title="content_writer",
-            task_title="Write Blog Post",
-            task_description="Write a blog post on a given topic",
+        # create first workflow
+        workflow1 = WorkflowSummary(
+            agent_title="multi_task_worker",
+            task_title="Task Alpha",
+            task_description="First task",
             tools=[],
-            steps=["1. Research topic", "2. Write content"],
+            steps=["Step 1"],
             failure_and_recovery_strategies=[],
             notes_and_observations="",
-            tags=["writing"],
+            tags=["alpha"],
         )
 
-        result = await manager.save_workflow_content_async(
-            workflow_summary=workflow_summary,
+        # create second workflow with different title
+        workflow2 = WorkflowSummary(
+            agent_title="multi_task_worker",
+            task_title="Task Beta",
+            task_description="Second task",
+            tools=[],
+            steps=["Step 1"],
+            failure_and_recovery_strategies=[],
+            notes_and_observations="",
+            tags=["beta"],
+        )
+
+        # save workflow1 twice (should be v1 then v2)
+        result1a = await manager.save_workflow_content_async(
+            workflow_summary=workflow1,
             context_utility=context_utility,
             conversation_accumulator=None,
         )
+        assert result1a["status"] == "success"
+        file1 = Path(result1a["file_path"])
+        assert "workflow_version: 1" in file1.read_text()
 
-        assert result["status"] == "success"
-        workflow_file = Path(result["file_path"])
-        content = workflow_file.read_text()
+        await manager.save_workflow_content_async(
+            workflow_summary=workflow1,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+        assert "workflow_version: 2" in file1.read_text()
 
-        assert "workflow_version: 1" in content
-        assert "created_at:" in content
-        assert "updated_at:" in content
+        # save workflow2 (should be v1, independent of workflow1)
+        result2a = await manager.save_workflow_content_async(
+            workflow_summary=workflow2,
+            context_utility=context_utility,
+            conversation_accumulator=None,
+        )
+        assert result2a["status"] == "success"
+        file2 = Path(result2a["file_path"])
+
+        # workflow2 should be v1 (its first save)
+        assert "workflow_version: 1" in file2.read_text()
+
+        # workflow1 should still be v2
+        assert "workflow_version: 2" in file1.read_text()
+
+        # verify they are different files
+        assert file1 != file2
