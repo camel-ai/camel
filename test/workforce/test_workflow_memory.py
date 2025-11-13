@@ -26,6 +26,19 @@ from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.tasks.task import Task, TaskState
 
 
+@pytest.fixture(autouse=True)
+def mock_model_backend():
+    """Use StubModel to prevent real LLM API calls in tests."""
+    from camel.models.stub_model import StubModel
+    from camel.types import ModelType
+
+    # Use the existing StubModel designed for unit tests
+    stub_model = StubModel(model_type=ModelType.STUB)
+
+    with patch('camel.models.ModelFactory.create', return_value=stub_model):
+        yield stub_model
+
+
 class MockSingleAgentWorker(SingleAgentWorker):
     """A mock worker for testing workflow functionality."""
 
