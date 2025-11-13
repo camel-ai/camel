@@ -163,6 +163,9 @@ class OutlookToolkit(BaseToolkit):
             server_address = (parsed_uri.hostname, parsed_uri.port)
             server = HTTPServer(server_address, RedirectHandler)
 
+            # Initialize code attribute to None
+            server.code = None
+
             # Open authorization URL
             logger.info("Opening browser for authentication...")
             webbrowser.open(auth_url)
@@ -536,6 +539,8 @@ class OutlookToolkit(BaseToolkit):
             FunctionTool(self.delete_email),
             FunctionTool(self.move_message_to_folder),
             FunctionTool(self.get_attachments),
+            FunctionTool(self.get_message),
+            FunctionTool(self.list_messages),
         ]
 
     async def create_draft_email(
@@ -1018,12 +1023,16 @@ class OutlookToolkit(BaseToolkit):
 
             if not isinstance(message, Message):
                 return {'error': 'Invalid message object provided'}
-
             # Extract basic details
             details = {
                 'id': message.id,
                 'subject': message.subject,
-                'from': self._get_recipients([message.from_]),
+                # Draft messages have from_ as None
+                'from': (
+                    self._get_recipients([message.from_])
+                    if message.from_
+                    else None
+                ),
                 'to_recipients': self._get_recipients(message.to_recipients),
                 'cc_recipients': self._get_recipients(message.cc_recipients),
                 'bcc_recipients': self._get_recipients(message.bcc_recipients),
@@ -1072,3 +1081,266 @@ class OutlookToolkit(BaseToolkit):
             error_msg = f"Failed to extract message details: {e!s}"
             logger.error(error_msg)
             raise ValueError(error_msg)
+
+    async def get_message(
+        self,
+        message_id: str,
+        return_html_content: bool = False,
+        include_attachments: bool = False,
+        attachment_metadata_only: bool = True,
+        include_inline_attachments: bool = False,
+        attachment_save_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Retrieves a single email message by ID from Microsoft Outlook.
+
+        This method fetches a specific email message using its unique
+        identifier and returns detailed information including subject, sender,
+        recipients, body content, and optionally attachments.
+
+        Args:
+            message_id (str): The unique identifier of the email message to
+                retrieve.
+            return_html_content (bool): If True and body content type is HTML,
+                returns the raw HTML content without converting it to plain
+                text. If False and body_type is HTML, content will be converted
+                to plain text. (default: :obj:`False`)
+            include_attachments (bool): Whether to include attachment
+                information in the response. (default: :obj:`False`)
+            attachment_metadata_only (bool): If True, returns only attachment
+                metadata without downloading content. If False, downloads full
+                attachment content. Only used when include_attachments=True.
+                (default: :obj:`True`)
+            include_inline_attachments (bool): If True, includes inline
+                attachments in the results. Only used when
+                include_attachments=True. (default: :obj:`False`)
+            attachment_save_path (Optional[str]): Directory path where
+                attachments should be saved. Only used when
+                include_attachments=True and attachment_metadata_only=False.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the message details
+                including id, subject, from, to_recipients, cc_recipients,
+                bcc_recipients, received_date_time, sent_date_time, body,
+                body_type, has_attachments, importance, is_read, is_draft,
+                body_preview, and optionally attachments.
+
+        Raises:
+            ValueError: If retrieving the message fails or message_id is
+                invalid.
+        """
+        try:
+            message = await self.client.me.messages.by_message_id(
+                message_id
+            ).get()
+
+            if not message:
+                error_msg = f"Message with ID {message_id} not found"
+                logger.error(error_msg)
+                return {"error": error_msg}
+
+            details = await self._extract_message_details(
+                message=message,
+                return_html_content=return_html_content,
+                include_attachments=include_attachments,
+                attachment_metadata_only=attachment_metadata_only,
+                include_inline_attachments=include_inline_attachments,
+                attachment_save_path=attachment_save_path,
+            )
+
+            logger.info(f"Message with ID {message_id} retrieved successfully")
+            return {
+                'status': 'success',
+                'message': details,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to get message: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    async def _get_messages_from_folder(
+        self,
+        folder_id: str,
+        request_config,
+    ):
+        """Fetches messages from a specific folder.
+
+        Args:
+            folder_id (str): The folder ID or well-known folder name.
+            request_config: The request configuration with query parameters.
+
+        Returns:
+            Messages response from the Graph API, or None if folder not found.
+        """
+        try:
+            messages = await self.client.me.mail_folders.by_mail_folder_id(
+                folder_id
+            ).messages.get(request_configuration=request_config)
+            return messages
+        except Exception as e:
+            logger.warning(
+                f"Failed to get messages from folder {folder_id}: {e!s}"
+            )
+            return None
+
+    async def list_messages(
+        self,
+        folder_ids: Optional[List[str]] = None,
+        filter_query: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
+        top: int = 10,
+        skip: int = 0,
+        return_html_content: bool = False,
+        include_attachment_metadata: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Retrieves messages from Microsoft Outlook using Microsoft Graph API.
+
+        Note: Each folder requires a separate API call. Use folder_ids=None
+        to search the entire mailbox in one call for better performance.
+
+        When using $filter and $orderby in the same query to get messages,
+        make sure to specify properties in the following ways:
+        Properties that appear in $orderby must also appear in $filter.
+        Properties that appear in $orderby are in the same order as in $filter.
+        Properties that are present in $orderby appear in $filter before any
+        properties that aren't.
+        Failing to do this results in the following error:
+        Error code: InefficientFilter
+        Error message: The restriction or sort order is too complex for this
+        operation.
+
+        Args:
+            folder_ids (Optional[List[str]]): Folder IDs or well-known names
+                ("inbox", "drafts", "sentitems", "deleteditems", "junkemail",
+                "archive", "outbox"). None searches the entire mailbox.
+            filter_query (Optional[str]): OData filter for messages.
+                Examples:
+                - Sender: "from/emailAddress/address eq 'john@example.com'"
+                - Subject: "subject eq 'Meeting Notes'",
+                           "contains(subject, 'urgent')"
+                - Read status: "isRead eq false", "isRead eq true"
+                - Attachments: "hasAttachments eq true/false"
+                - Importance: "importance eq 'high'/'normal'/'low'"
+                - Date: "receivedDateTime ge 2024-01-01T00:00:00Z"
+                - Combine: "isRead eq false and hasAttachments eq true"
+                - Negation: "not(isRead eq true)"
+                Reference: https://learn.microsoft.com/en-us/graph/filter-query-parameter
+            order_by (Optional[List[str]]): OData orderBy for sorting messages.
+                Examples:
+                - Date: "receivedDateTime desc/asc", "sentDateTime desc"
+                - Sender: "from/emailAddress/address asc/desc",
+                - Subject: "subject asc/desc"
+                - Importance: "importance desc/asc"
+                - Size: "size desc/asc"
+                - Multi-field: "importance desc, receivedDateTime desc"
+                Reference: https://learn.microsoft.com/en-us/graph/query-parameters
+                (default: "receivedDateTime desc")
+            top (int): Max messages per folder (default: 10)
+            skip (int): Messages to skip for pagination (default: 0)
+            return_html_content (bool): Return raw HTML if True;
+            else convert to text (default: False)
+            include_attachment_metadata (bool): Include attachment metadata
+            (name, size, type); content not included (default: False)
+
+        Returns:
+            Dict[str, Any]: Dictionary containing messages and
+            attachment metadata if requested.
+        """
+
+        try:
+            from msgraph.generated.users.item.mail_folders.item.messages.messages_request_builder import (  # noqa: E501
+                MessagesRequestBuilder,
+            )
+
+            # Build query parameters
+            if order_by:
+                query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
+                    top=top,
+                    skip=skip,
+                    orderby=order_by,
+                )
+            else:
+                query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
+                    top=top,
+                    skip=skip,
+                )
+
+            if filter_query:
+                query_params.filter = filter_query
+
+            request_config = MessagesRequestBuilder.MessagesRequestBuilderGetRequestConfiguration(  # noqa: E501
+                query_parameters=query_params
+            )
+            if not folder_ids:
+                # Search entire mailbox in a single API call
+                messages_response = await self.client.me.messages.get(
+                    request_configuration=request_config
+                )
+                all_messages = []
+                if messages_response and messages_response.value:
+                    for message in messages_response.value:
+                        details = await self._extract_message_details(
+                            message=message,
+                            return_html_content=return_html_content,
+                            include_attachments=include_attachment_metadata,
+                            attachment_metadata_only=True,
+                            include_inline_attachments=True,
+                            attachment_save_path=None,
+                        )
+                        all_messages.append(details)
+
+                logger.info(
+                    f"Retrieved {len(all_messages)} messages from mailbox"
+                )
+
+                return {
+                    'status': 'success',
+                    'messages': all_messages,
+                    'total_count': len(all_messages),
+                    'skip': skip,
+                    'top': top,
+                    'folders_searched': ['all'],
+                }
+            # Search specific folders (requires multiple API calls)
+            all_messages = []
+            for folder_id in folder_ids:
+                messages_response = await self._get_messages_from_folder(
+                    folder_id=folder_id,
+                    request_config=request_config,
+                )
+
+                if not messages_response or not messages_response.value:
+                    continue
+
+                # Extract details from each message
+                for message in messages_response.value:
+                    details = await self._extract_message_details(
+                        message=message,
+                        return_html_content=return_html_content,
+                        include_attachments=include_attachment_metadata,
+                        attachment_metadata_only=True,
+                        include_inline_attachments=False,
+                        attachment_save_path=None,
+                    )
+                    all_messages.append(details)
+
+            logger.info(
+                f"Retrieved {len(all_messages)} messages from "
+                f"{len(folder_ids)} folder(s)"
+            )
+
+            return {
+                'status': 'success',
+                'messages': all_messages,
+                'total_count': len(all_messages),
+                'skip': skip,
+                'top': top,
+                'folders_searched': folder_ids,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to list messages: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
