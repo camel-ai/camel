@@ -50,14 +50,6 @@ class BaseToolkit(metaclass=AgentOpsMeta):
 
         # Initialize output management
         self.output_manager = ToolOutputManager()
-        self._setup_default_processors()
-
-    def _setup_default_processors(self) -> None:
-        r"""Setup default output processors.
-
-        Subclasses can override this method to register specific processors.
-        """
-        pass
 
     def register_output_processor(
         self, processor: ToolOutputProcessor
