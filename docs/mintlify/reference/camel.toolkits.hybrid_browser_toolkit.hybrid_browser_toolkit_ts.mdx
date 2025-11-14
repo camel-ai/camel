@@ -1,5 +1,15 @@
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts"></a>
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.SheetCell"></a>
+
+## SheetCell
+
+```python
+class SheetCell(TypedDict):
+```
+
+Type definition for a sheet cell input.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit"></a>
 
 ## HybridBrowserToolkit
@@ -29,7 +39,6 @@ Initialize the HybridBrowserToolkit.
 - **headless** (bool): Whether to run browser in headless mode. Defaults to True.
 - **user_data_dir** (Optional[str]): Directory for user data persistence. Defaults to None.
 - **stealth** (bool): Whether to enable stealth mode. Defaults to False.
-- **web_agent_model** (Optional[BaseModelBackend]): Model for web agent operations. Defaults to None.
 - **cache_dir** (str): Directory for caching. Defaults to "tmp/". (default: `"tmp/"`)
 - **enabled_tools** (Optional[List[str]]): List of enabled tools. Defaults to None.
 - **browser_log_to_file** (bool): Whether to log browser actions to file. Defaults to False.
@@ -59,26 +68,6 @@ def __del__(self):
 
 Cleanup browser resources on garbage collection.
 
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.web_agent_model"></a>
-
-### web_agent_model
-
-```python
-def web_agent_model(self):
-```
-
-Get the web agent model.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.web_agent_model"></a>
-
-### web_agent_model
-
-```python
-def web_agent_model(self, value: Optional[BaseModelBackend]):
-```
-
-Set the web agent model.
-
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.cache_dir"></a>
 
 ### cache_dir
@@ -88,6 +77,28 @@ def cache_dir(self):
 ```
 
 Get the cache directory.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit._trim_sheet_content"></a>
+
+### _trim_sheet_content
+
+```python
+def _trim_sheet_content(self, content: str):
+```
+
+Trim sheet content and add row/column labels.
+
+Remove all empty rows and columns, then add:
+- Column headers: A, B, C, D...
+- Row numbers: 0, 1, 2, 3...
+
+**Parameters:**
+
+- **content** (str): Raw sheet content with tabs and newlines.
+
+**Returns:**
+
+  str: Trimmed content with row/column labels.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.clone_for_new_session"></a>
 
