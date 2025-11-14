@@ -215,7 +215,9 @@ class GoogleCalendarToolkit(BaseToolkit):
                 start_time = start_info.get(
                     'dateTime', start_info.get('date', 'Unknown')
                 )
-                end_time = end_info.get('dateTime', end_info.get('date', 'Unknown'))
+                end_time = end_info.get(
+                    'dateTime', end_info.get('date', 'Unknown')
+                )
                 timezone = (
                     start_info.get('timeZone')
                     or end_info.get('timeZone')
