@@ -507,6 +507,8 @@ known-first-party = ["camel"]
 "camel/benchmarks/tau_bench/envs/retail/tasks_train.py" = ["E501"]
 "camel/benchmarks/tau_bench/envs/retail/tasks_dev.py" = ["E501"]
 "camel/benchmarks/tau_bench/envs/retail/tools/__init__.py" = ["E501"]
+"camel/benchmarks/tau_bench/envs/airline/rules.py" = ["E501"]
+"camel/benchmarks/tau_bench/envs/retail/rules.py" = ["E501"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
