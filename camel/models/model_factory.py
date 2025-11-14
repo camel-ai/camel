@@ -15,6 +15,7 @@ import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
 
+from camel.models.aihubmix_model import AihubMixModel
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
@@ -30,6 +31,7 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.lmstudio_model import LMStudioModel
+from camel.models.minimax_model import MinimaxModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
@@ -90,6 +92,7 @@ class ModelFactory:
         ModelPlatformType.COMETAPI: CometAPIModel,
         ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
+        ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,
@@ -107,6 +110,7 @@ class ModelFactory:
         ModelPlatformType.WATSONX: WatsonXModel,
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
+        ModelPlatformType.AIHUBMIX: AihubMixModel,
     }
 
     @staticmethod

@@ -3,8 +3,16 @@ name: Pre Commit Check
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/reference/**"
+      - "docs/**/*.rst"
+      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/reference/**"
+      - "docs/**/*.rst"
+      - "LICENSE"
 
 jobs:
   pre-commit:
