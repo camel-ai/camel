@@ -358,7 +358,7 @@ class TauBenchBenchmark(BaseBenchmark):
                 except Exception as e:
                     error_info = {
                         "error": str(e),
-                        "traceback": traceback.format_exc()
+                        "traceback": traceback.format_exc(),
                     }
                     logger.error("❌ task_id=%s %s", task_idx, error_info)
                     logger.info("-----")
