@@ -64,6 +64,31 @@ def structured_output() -> None:
     print("Parsed:", parsed)
 
 
+def streaming_request() -> None:
+    model = ModelFactory.create(
+        ModelPlatformType.OPENAI_RESPONSES,
+        ModelType.GPT_4_1_MINI,
+        model_config_dict={"stream": True},
+    )
+    messages = [
+        {"role": "system", "content": "Stream your reply word by word."},
+        {
+            "role": "user",
+            "content": "Describe a sunrise over mountains in one short paragraph.",  # noqa:E501
+        },
+    ]
+
+    stream = model.run(messages)
+    print("Streaming response:")
+    with stream as events:  # type: ignore[assignment]
+        for event in events:
+            if getattr(event, "type", "") == "response.output_text.delta":
+                print(getattr(event, "delta", ""), end="", flush=True)
+        final = events.get_final_response()
+        print("\n\nFinal text:\n", getattr(final, "output_text", ""))
+
+
 if __name__ == "__main__":
     basic_request()
     structured_output()
+    streaming_request()

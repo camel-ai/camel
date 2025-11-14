@@ -27,7 +27,9 @@ from camel.core.messages import (
 )
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.responses.model_response import CamelModelResponse
+from camel.responses.adapters.responses_adapter import (
+    responses_to_camel_response,
+)
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -109,103 +111,6 @@ class OpenAIResponsesModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    # ----------------------- helpers -----------------------
-    def _to_camel_response_from_responses(
-        self, resp: Any, expected_parsed_type: Optional[Type[BaseModel]] = None
-    ) -> CamelModelResponse:
-        """Map a minimal Responses object to CamelModelResponse.
-
-        This uses duck typing to avoid hard dependencies on a specific
-        provider SDK version. It handles the common `output_text` and
-        aggregates text from `output[].content[]` as a fallback.
-        """
-        text = getattr(resp, "output_text", None)
-        if not text:
-            # Fallback: concatenate all text parts from output[].content[]
-            parts: List[str] = []
-            output = getattr(resp, "output", None)
-            if isinstance(output, list):
-                for item in output:
-                    content = getattr(item, "content", None) or (
-                        item.get("content") if isinstance(item, dict) else None
-                    )
-                    if isinstance(content, list):
-                        for c in content:
-                            if isinstance(c, dict) and c.get("type") in (
-                                "output_text",
-                                "text",
-                                "input_text",
-                            ):
-                                val = (
-                                    c.get("text") or c.get("output_text") or ""
-                                )
-                                if val:
-                                    parts.append(str(val))
-            text = "\n".join(parts) if parts else ""
-
-        from camel.messages.base import BaseMessage
-        from camel.types import RoleType
-
-        parsed_obj = None
-        if expected_parsed_type is not None:
-            # Prefer SDK's top-level parsed field
-            parsed_obj = getattr(resp, "output_parsed", None)
-            if parsed_obj is None:
-                parsed_obj = getattr(resp, "parsed", None)
-            if parsed_obj is None:
-                output = getattr(resp, "output", None)
-                if isinstance(output, list) and output:
-                    first = output[0]
-                    # Nested parsed on item or first content element
-                    parsed_obj = getattr(first, "parsed", None)
-                    if parsed_obj is None and isinstance(first, dict):
-                        parsed_obj = first.get("parsed")
-                    if parsed_obj is None:
-                        content = getattr(first, "content", None) or (
-                            first.get("content")
-                            if isinstance(first, dict)
-                            else None
-                        )
-                        if isinstance(content, list) and content:
-                            c0 = content[0]
-                            if isinstance(c0, dict):
-                                parsed_obj = c0.get("parsed")
-
-        msg = BaseMessage(
-            role_name="assistant",
-            role_type=RoleType.ASSISTANT,
-            meta_dict={},
-            content=text or "",
-            parsed=parsed_obj if isinstance(parsed_obj, BaseModel) else None,
-        )
-
-        # usage is provider-specific; attach raw when present
-        usage_raw: Optional[Dict[str, Any]] = None
-        usage_obj = getattr(resp, "usage", None)
-        try:
-            if usage_obj is not None:
-                usage_raw = (
-                    usage_obj.model_dump()  # type: ignore[attr-defined]
-                    if hasattr(usage_obj, "model_dump")
-                    else dict(usage_obj)
-                    if isinstance(usage_obj, dict)
-                    else None
-                )
-        except Exception:
-            usage_raw = None
-
-        return CamelModelResponse(
-            id=getattr(resp, "id", ""),
-            model=getattr(resp, "model", None),
-            created=getattr(resp, "created", None),
-            output_messages=[msg],
-            finish_reasons=["stop"],
-            usage={
-                "raw": usage_raw,
-            },  # type: ignore[arg-type]
-            raw=resp,
-        )
-
     # ----------------------- BaseModelBackend API -----------------------
     def _run(
         self,
@@ -233,11 +138,21 @@ class OpenAIResponsesModel(BaseModelBackend):
 
         # Merge extra args from model_config_dict
         request_dict = dict(self.model_config_dict)
+        is_streaming = bool(request_dict.pop("stream", False))
         request_dict.update(body)
 
         # Tools: Responses also accepts `tools`; pass through when provided
         if tools:
             request_dict["tools"] = tools
+
+        if is_streaming:
+            if response_format is not None:
+                raise NotImplementedError(
+                    "Responses streaming with response_format is not supported yet."  # noqa:E501
+                )
+            return self._client.responses.stream(
+                model=self.model_type, **request_dict
+            )
 
         if response_format is not None:
             # Structured outputs require Responses.parse with text_format
@@ -259,14 +174,14 @@ class OpenAIResponsesModel(BaseModelBackend):
                     "Failed to perform structured parse via Responses API. "
                     "Check that your model supports structured outputs."
                 ) from e
-            return self._to_camel_response_from_responses(
+            return responses_to_camel_response(
                 resp, expected_parsed_type=response_format
             )  # type: ignore[return-value]
         else:
             resp = self._client.responses.create(
                 model=self.model_type, **request_dict
             )
-            return self._to_camel_response_from_responses(resp)  # type: ignore[return-value]
+            return responses_to_camel_response(resp)  # type: ignore[return-value]
 
     async def _arun(
         self,
@@ -288,9 +203,19 @@ class OpenAIResponsesModel(BaseModelBackend):
         camel_msgs = openai_messages_to_camel(messages)
         body = camel_messages_to_responses_request(camel_msgs)
         request_dict = dict(self.model_config_dict)
+        is_streaming = bool(request_dict.pop("stream", False))
         request_dict.update(body)
         if tools:
             request_dict["tools"] = tools
+
+        if is_streaming:
+            if response_format is not None:
+                raise NotImplementedError(
+                    "Responses streaming with response_format is not supported yet."  # noqa:E501
+                )
+            return self._async_client.responses.stream(
+                model=self.model_type, **request_dict
+            )
 
         if response_format is not None:
             parse_fn = getattr(self._async_client.responses, "parse", None)
@@ -310,11 +235,11 @@ class OpenAIResponsesModel(BaseModelBackend):
                     "Failed to call structured parse via Responses API. "
                     "Check model support and SDK version."
                 ) from e
-            return self._to_camel_response_from_responses(
+            return responses_to_camel_response(
                 resp, expected_parsed_type=response_format
             )  # type: ignore[return-value]
         else:
             resp = await self._async_client.responses.create(
                 model=self.model_type, **request_dict
             )
-            return self._to_camel_response_from_responses(resp)  # type: ignore[return-value]
+            return responses_to_camel_response(resp)  # type: ignore[return-value]
