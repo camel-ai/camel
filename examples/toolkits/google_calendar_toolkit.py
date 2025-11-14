@@ -42,7 +42,7 @@ print(str(response.info['tool_calls'])[:1000])
 :00', 'max_results': 20}, result=[{'Event ID': '6s7mlm7aupsq5tjefsp8ru37hb', 
 'Summary': 'growth', 'Start Time': '2025-03-31T19:00:00+08:00', 'End Time': 
 '2025-03-31T20:00:00+08:00', 'Timezone': 'Europe/London', 'Link': 'https://ww
-w.google.com/calendar/event?eid=NnM3bWxtN2F1cHNxNXRqZWZzcDhydTM3aGIgdGFvL', 
+w.google.com/calendar/event?eid=NnM3bWxtN2F1cHNxNXRqZWZzcDhy_xxxxxxx', 
 'Attendees': ['xxxx', 'xxxx', 'xxxx', 'xxxx', 'xxxx'], 'Organizer': 'xxxx'}, 
 ===============================================================================
 '''
