@@ -4780,7 +4780,7 @@ class Workforce(BaseNode):
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
-            max_refinement_iterations=2,
+            max_refinement_iterations=self.max_refinement_iterations,
             task_timeout_seconds=self.task_timeout_seconds,
         )
 
