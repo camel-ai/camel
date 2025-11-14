@@ -115,6 +115,7 @@
                   "cookbooks/advanced_features/agents_with_tools",
                   "cookbooks/advanced_features/agents_with_tools_from_ACI",
                   "cookbooks/advanced_features/agents_with_tools_from_Composio",
+                  "cookbooks/advanced_features/camel_multimodal_rag_cookbook",
                   "cookbooks/advanced_features/critic_agents_and_tree_search",
                   "cookbooks/advanced_features/embodied_agents"
                 ]
