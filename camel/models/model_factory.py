@@ -32,6 +32,7 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.lmstudio_model import LMStudioModel
+from camel.models.minimax_model import MinimaxModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
@@ -92,6 +93,7 @@ class ModelFactory:
         ModelPlatformType.COMETAPI: CometAPIModel,
         ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
+        ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,
