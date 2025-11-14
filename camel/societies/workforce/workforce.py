@@ -3244,7 +3244,9 @@ class Workforce(BaseNode):
             role=new_node_conf.role,
             metadata={'description': new_node_conf.description},
         )
-        self._child_listening_tasks.append(await new_node.start())
+        self._child_listening_tasks.append(
+            asyncio.create_task(new_node.start())
+        )
         return new_node
 
     async def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
