@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # =========
 
+import contextlib
 import time
 from typing import (
     Any,
@@ -72,7 +73,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_forward",
         "browser_get_page_snapshot",
         "browser_get_som_screenshot",
-        "browser_get_page_links",
         "browser_click",
         "browser_type",
         "browser_select",
@@ -82,7 +82,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_mouse_drag",
         "browser_press_key",
         "browser_wait_user",
-        "browser_solve_task",
         "browser_switch_tab",
         "browser_close_tab",
         "browser_get_tab_info",
@@ -1387,7 +1386,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     async def _sheet_input_batch_js(
         self,
-        cells: List[Dict[str, Any]],
+        cells: List[SheetCell],
         ws_wrapper: Any,
         system: str,
     ) -> Dict[str, Any]:
@@ -1397,7 +1396,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Builds all operations and sends them in ONE command to TypeScript,
         which executes them and only waits for stability once at the end.
         """
-        operations = []
+        operations: List[Dict[str, Any]] = []
 
         # Go to A1 to ensure we start from a known position
         if system == "Darwin":
@@ -1498,7 +1497,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Remove all empty rows and columns, then add:
         - Column headers: A, B, C, D...
-        - Row numbers: 1, 2, 3, 4...
+        - Row numbers: 0, 1, 2, 3...
 
         Args:
             content (str): Raw sheet content with tabs and newlines.
@@ -1511,25 +1510,25 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         # Split into rows and parse into 2D array
         rows = content.split('\n')
-        grid = []
+        grid: List[List[str]] = []
         max_cols = 0
-        for row in rows:
-            cells = row.split('\t')
+        for row_str in rows:
+            cells = row_str.split('\t')
             grid.append(cells)
             max_cols = max(max_cols, len(cells))
 
         # Pad rows to same length
-        for row in grid:
-            while len(row) < max_cols:
-                row.append('')
+        for row_list in grid:
+            while len(row_list) < max_cols:
+                row_list.append('')
 
         if not grid:
             return ""
 
         # Find non-empty rows and columns (keep original indices)
         non_empty_rows = []
-        for i, row in enumerate(grid):
-            if any(cell.strip() for cell in row):
+        for i, row_cells in enumerate(grid):
+            if any(cell.strip() for cell in row_cells):
                 non_empty_rows.append(i)
 
         non_empty_cols = []
@@ -1564,8 +1563,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         result_rows = ['\t'.join(['', *col_headers])]
 
         # Add data rows with original row numbers (0-based)
-        for row_idx, row in zip(non_empty_rows, filtered_grid):
-            result_rows.append('\t'.join([str(row_idx), *row]))
+        for row_idx, row_data in zip(non_empty_rows, filtered_grid):
+            result_rows.append('\t'.join([str(row_idx), *row_data]))
 
         return '\n'.join(result_rows)
 
@@ -1594,7 +1593,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "content" (str): Tab-separated spreadsheet content with
                   row/column labels. Format:
                   Line 1: "\tA\tB\tC" (column headers)
-                  Line 2+: "1\tdata1\tdata2\tdata3" (row number + data)
+                  Line 2+: "0\tdata1\tdata2\tdata3" (row number + data)
                 - "snapshot" (str): Always empty string (sheet tools don't
                   return snapshots).
                 - "tabs" (List[Dict]): Information about all open tabs.
@@ -1607,37 +1606,38 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             1	Alice	30
             2	Bob	25
         """
+        import platform
+        import uuid
+
+        ws_wrapper = await self._get_ws_wrapper()
+
+        # Use unique ID to avoid conflicts in parallel execution
+        request_id = str(uuid.uuid4())
+        var_name = f"__sheetCopy_{request_id.replace('-', '_')}"
+
         try:
-            import platform
-
-            ws_wrapper = await self._get_ws_wrapper()
-
             # Step 1: Setup copy interception with multiple captures
-            # Use unique ID to avoid conflicts in parallel execution
-            import uuid
-
-            request_id = str(uuid.uuid4())
-            var_name = f"__sheetCopy_{request_id.replace('-', '_')}"
-
             js_inject = f"""
             window.{var_name} = [];
             let copyCount = 0;
             const copyListener = function(e) {{
                 try {{
-                    // Intercept the clipboard data before it's written to system clipboard
-                    // We need to capture it from Google Sheets' setData call
-                    const originalSetData = e.clipboardData.setData.bind(e.clipboardData);
+                    // Intercept clipboard data before system clipboard write
+                    // Capture from Google Sheets' setData call
+                    const originalSetData = e.clipboardData.setData.bind(
+                        e.clipboardData
+                    );
                     let capturedText = '';
 
                     e.clipboardData.setData = function(type, data) {{
                         if (type === 'text/plain') {{
                             capturedText = data;
                         }}
-                        // Don't call original setData to prevent writing to system clipboard
+                        // Prevent system clipboard write
                     }};
 
-                    // Let Google Sheets process the event (it will call setData)
-                    // The event will propagate and Google Sheets will try to set clipboard data
+                    // Let Google Sheets process event (calls setData)
+                    // Event propagates and Sheets tries to set clipboard
                     setTimeout(() => {{
                         copyCount++;
                         window.{var_name}.push(capturedText);
@@ -1665,47 +1665,51 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             import asyncio
 
             if system == "Darwin":
-                operations1 = [
+                select_all_copy_ops: List[Dict[str, Any]] = [
                     {"type": "press", "keys": ["Meta", "a"]},
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Meta", "c"]},
                 ]
                 await ws_wrapper._send_command(
                     'batch_keyboard_input',
-                    {'operations': operations1, 'skipStabilityWait': True},
+                    {
+                        'operations': select_all_copy_ops,
+                        'skipStabilityWait': True,
+                    },
                 )
                 await asyncio.sleep(0.2)
 
-                operations2 = [
-                    {"type": "press", "keys": ["Meta", "a"]},
-                    {"type": "wait", "delay": 100},
-                    {"type": "press", "keys": ["Meta", "c"]},
-                ]
+                # Repeat to capture correct one
                 await ws_wrapper._send_command(
                     'batch_keyboard_input',
-                    {'operations': operations2, 'skipStabilityWait': True},
+                    {
+                        'operations': select_all_copy_ops,
+                        'skipStabilityWait': True,
+                    },
                 )
                 await asyncio.sleep(0.2)
             else:
-                operations1 = [
+                select_all_copy_ops = [
                     {"type": "press", "keys": ["Control", "a"]},
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Control", "c"]},
                 ]
                 await ws_wrapper._send_command(
                     'batch_keyboard_input',
-                    {'operations': operations1, 'skipStabilityWait': True},
+                    {
+                        'operations': select_all_copy_ops,
+                        'skipStabilityWait': True,
+                    },
                 )
                 await asyncio.sleep(0.2)
 
-                operations2 = [
-                    {"type": "press", "keys": ["Control", "a"]},
-                    {"type": "wait", "delay": 100},
-                    {"type": "press", "keys": ["Control", "c"]},
-                ]
+                # Repeat to capture correct one
                 await ws_wrapper._send_command(
                     'batch_keyboard_input',
-                    {'operations': operations2, 'skipStabilityWait': True},
+                    {
+                        'operations': select_all_copy_ops,
+                        'skipStabilityWait': True,
+                    },
                 )
                 await asyncio.sleep(0.2)
 
@@ -1730,17 +1734,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     captured_contents = []
             else:
                 captured_contents = []
-
-            # Clean up the listener and temporary variable
-            js_cleanup = f"""
-            if (window.{var_name}_removeListener) {{
-                window.{var_name}_removeListener();
-            }}
-            delete window.{var_name};
-            delete window.{var_name}_removeListener;
-            'cleaned'
-            """
-            await ws_wrapper.console_exec(js_cleanup)
 
             if not captured_contents:
                 sheet_content = ""
@@ -1795,6 +1788,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "current_tab": 0,
                 "total_tabs": 0,
             }
+        finally:
+            js_cleanup = f"""
+            if (window.{var_name}_removeListener) {{
+                window.{var_name}_removeListener();
+            }}
+            delete window.{var_name};
+            delete window.{var_name}_removeListener;
+            'cleaned'
+            """
+            with contextlib.suppress(Exception):
+                await ws_wrapper.console_exec(js_cleanup)
 
     # Additional methods for backward compatibility
     async def browser_wait_user(

@@ -1577,6 +1577,11 @@ export class HybridBrowserSession {
     const page = await this.getCurrentPage();
 
     try {
+      const maxOperations = 100; // Prevent excessive number of operations per batch
+      if (!Array.isArray(operations) || operations.length > maxOperations) {
+        throw new Error(`Too many operations in batch (max ${maxOperations} allowed)`);
+      }
+
       const executionStart = Date.now();
 
       for (const op of operations) {
@@ -1589,12 +1594,28 @@ export class HybridBrowserSession {
             break;
           case 'type':
             if (op.text) {
-              await page.keyboard.type(op.text, { delay: op.delay || 0 });
+              // Limit delay to prevent resource exhaustion attacks
+              const maxTypeDelay = 1000; // 1 second per character max
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) delayValue = 0;
+              const safeTypeDelay = Math.min(delayValue, maxTypeDelay);
+              await page.keyboard.type(op.text, { delay: safeTypeDelay });
             }
             break;
           case 'wait':
-            if (op.delay) {
-              await new Promise(resolve => setTimeout(resolve, op.delay));
+            // Only apply wait if op.delay is a non-negative finite number
+            // Limit to prevent resource exhaustion (CodeQL js/resource-exhaustion)
+            {
+              const MAX_WAIT_DELAY = 10000; // 10 seconds maximum
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) {
+                delayValue = 0;
+              }
+              // Clamp delay to safe range [0, MAX_WAIT_DELAY]
+              const safeDelay = delayValue > MAX_WAIT_DELAY ? MAX_WAIT_DELAY : delayValue;
+              // lgtm[js/resource-exhaustion]
+              // Safe: delay is clamped to MAX_WAIT_DELAY (10 seconds)
+              await new Promise(resolve => setTimeout(resolve, safeDelay));
             }
             break;
         }
