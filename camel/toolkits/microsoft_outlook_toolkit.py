@@ -60,8 +60,7 @@ class OutlookToolkit(BaseToolkit):
     """A class representing a toolkit for Microsoft Outlook operations.
 
     This class provides methods for interacting with Microsoft Outlook via
-    the Microsoft Graph API, including sending emails and managing calendar
-    events.
+    the Microsoft Graph API.
     """
 
     def __init__(
@@ -173,16 +172,21 @@ class OutlookToolkit(BaseToolkit):
             # Capture authorization code via local server
             server.handle_request()
 
+            # Close the server after getting the code
+            server.server_close()
+
             if not server.code:
                 raise ValueError("Failed to get authorization code")
 
-            # Create credentials
+            authorization_code = server.code
+            # Set up token cache to store tokens
             cache_opts = TokenCachePersistenceOptions(name="my_app_cache")
 
+            # Create credentials
             credentials = AuthorizationCodeCredential(
                 tenant_id=self.tenant_id,
                 client_id=self.client_id,
-                authorization_code=server.code,
+                authorization_code=authorization_code,
                 redirect_uri=self.redirect_uri,
                 client_secret=self.client_secret,
                 token_cache_persistence_options=cache_opts,
@@ -218,7 +222,7 @@ class OutlookToolkit(BaseToolkit):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def _validate_email(self, email: str) -> bool:
+    def is_email_valid(self, email: str) -> bool:
         """Validates a single email address.
 
         Args:
@@ -228,88 +232,34 @@ class OutlookToolkit(BaseToolkit):
             bool: True if the email is valid, False otherwise.
         """
         import re
+        from email.utils import parseaddr
+
+        # Extract email address from both formats : "Email" , "Name <Email>"
+        _, addr = parseaddr(email)
 
         email_pattern = re.compile(
             r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         )
-        return bool(email_pattern.match(email))
+        return bool(addr and email_pattern.match(addr))
 
-    def _validate_emails(self, emails: Optional[List[str]]) -> List[str]:
-        """Validates a list of email addresses.
-
-        Args:
-            emails (List[str]): List of email addresses to validate.
-
-        Returns:
-            List[str]: List of valid email addresses.
-
-        Raises:
-            ValueError: If no valid email addresses are found or if any
-                email is invalid.
-        """
-        if not emails:
-            error_msg = "No email addresses provided"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        valid_emails = []
-
-        for email in emails:
-            if self._validate_email(email):
-                valid_emails.append(email)
-            else:
-                error_msg = f"Invalid email address: {email}"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-
-        return valid_emails
-
-    def _validate_all_email_addresses(
-        self,
-        to_email: Optional[List[str]],
-        cc_recipients: Optional[List[str]] = None,
-        bcc_recipients: Optional[List[str]] = None,
-        reply_to: Optional[List[str]] = None,
-    ):
-        """Validates all email addresses for to, cc, bcc, and reply_to fields.
+    def _get_invalid_emails(self, *lists: Optional[List[str]]) -> List[str]:
+        """Finds invalid email addresses from multiple email lists.
 
         Args:
-            to_email (List[str]): List of recipient email addresses.
-            cc_recipients (Optional[List[str]]): List of CC recipient email
-                addresses. (default: :obj:`None`)
-            bcc_recipients (Optional[List[str]]): List of BCC recipient email
-                addresses. (default: :obj:`None`)
-            reply_to (Optional[List[str]]): List of email addresses that will
-                receive replies. (default: :obj:`None`)
+            *lists: Variable number of optional email address lists.
 
         Returns:
-            Dict[str, Optional[List[str]]]: A dictionary containing validated
-                email addresses for each field:
-                - 'to': validated to_email addresses
-                - 'cc': validated cc_recipients addresses or None
-                - 'bcc': validated bcc_recipients addresses or None
-                - 'reply_to': validated reply_to addresses or None
-
-        Raises:
-            ValueError: If any email address is invalid in any field.
+            List[str]: List of invalid email addresses. Empty list if all
+                emails are valid.
         """
-        validated_emails = {
-            'to': self._validate_emails(to_email),
-            'cc': None,
-            'bcc': None,
-            'reply_to': None,
-        }
-
-        if cc_recipients:
-            validated_emails['cc'] = self._validate_emails(cc_recipients)
-
-        if bcc_recipients:
-            validated_emails['bcc'] = self._validate_emails(bcc_recipients)
-
-        if reply_to:
-            validated_emails['reply_to'] = self._validate_emails(reply_to)
-
-        return validated_emails
+        invalid_emails = []
+        for email_list in lists:
+            if email_list is None:
+                continue
+            for email in email_list:
+                if not self.is_email_valid(email):
+                    invalid_emails.append(email)
+        return invalid_emails
 
     def _create_attachments(self, file_paths: List[str]) -> List[Any]:
         """Creates Microsoft Graph FileAttachment objects from file paths.
@@ -352,6 +302,37 @@ class OutlookToolkit(BaseToolkit):
 
         return attachment_list
 
+    def _create_recipients(self, email_list: Optional[List[str]]) -> List[Any]:
+        """Creates Microsoft Graph Recipient objects from email addresses.
+
+        Supports both simple email format ("email@example.com") and
+        name-email format ("John Doe <email@example.com>").
+
+        Args:
+            email_list (Optional[List[str]]): List of email addresses,
+                which can include display names.
+
+        Returns:
+            List[Any]: List of Recipient objects ready for Graph API use.
+        """
+        from email.utils import parseaddr
+
+        from msgraph.generated.models import email_address, recipient
+
+        if not email_list:
+            return []
+
+        recipients: List[Any] = []
+        for email in email_list:
+            # Extract email address from both formats: "Email", "Name <Email>"
+            name, addr = parseaddr(email)
+            address = email_address.EmailAddress(address=addr)
+            if name:
+                address.name = name
+            recp = recipient.Recipient(email_address=address)
+            recipients.append(recp)
+        return recipients
+
     def _create_message(
         self,
         to_email: List[str],
@@ -382,24 +363,13 @@ class OutlookToolkit(BaseToolkit):
         Returns:
             message.Message: A Microsoft Graph message object.
         """
-        from msgraph.generated.models import (
-            body_type,
-            email_address,
-            item_body,
-            message,
-            recipient,
-        )
+        from msgraph.generated.models import body_type, item_body, message
 
         message_body = item_body.ItemBody(
             content_type=body_type.BodyType.Text, content=content
         )
 
-        to_recipients = [
-            recipient.Recipient(
-                email_address=email_address.EmailAddress(address=email)
-            )
-            for email in to_email
-        ]
+        to_recipients = self._create_recipients(to_email)
 
         mail_message = message.Message(
             subject=subject,
@@ -409,30 +379,17 @@ class OutlookToolkit(BaseToolkit):
 
         # Add CC recipients if provided
         if cc_recipients:
-            mail_message.cc_recipients = [
-                recipient.Recipient(
-                    email_address=email_address.EmailAddress(address=email)
-                )
-                for email in cc_recipients
-            ]
+            mail_message.cc_recipients = self._create_recipients(cc_recipients)
 
         # Add BCC recipients if provided
         if bcc_recipients:
-            mail_message.bcc_recipients = [
-                recipient.Recipient(
-                    email_address=email_address.EmailAddress(address=email)
-                )
-                for email in bcc_recipients
-            ]
+            mail_message.bcc_recipients = self._create_recipients(
+                bcc_recipients
+            )
 
         # Add reply-to addresses if provided
         if reply_to:
-            mail_message.reply_to = [
-                recipient.Recipient(
-                    email_address=email_address.EmailAddress(address=email)
-                )
-                for email in reply_to
-            ]
+            mail_message.reply_to = self._create_recipients(reply_to)
 
         # Add attachments if provided
         if attachments:
@@ -474,35 +431,32 @@ class OutlookToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing the result of the email
                 sending operation.
 
-        Raises:
-            ValueError: If sending the email fails or if email addresses are
-                invalid.
         """
         from msgraph.generated.users.item.send_mail.send_mail_post_request_body import (  # noqa: E501
             SendMailPostRequestBody,
         )
 
-        # Validate all email addresses
         try:
-            validated = self._validate_all_email_addresses(
-                to_email=to_email,
-                cc_recipients=cc_recipients,
-                bcc_recipients=bcc_recipients,
-                reply_to=reply_to,
+            # Validate all email addresses
+            invalid_emails = self._get_invalid_emails(
+                to_email, cc_recipients, bcc_recipients, reply_to
             )
-        except ValueError as e:
-            error_msg = str(e)
-            return {"error": error_msg}
+            if invalid_emails:
+                error_msg = (
+                    f"Invalid email address(es) provided: "
+                    f"{', '.join(invalid_emails)}"
+                )
+                logger.error(error_msg)
+                return {"error": error_msg}
 
-        try:
             mail_message = self._create_message(
-                to_email=validated['to'],
+                to_email=to_email,
                 subject=subject,
                 content=content,
                 attachments=attachments,
-                cc_recipients=validated['cc'],
-                bcc_recipients=validated['bcc'],
-                reply_to=validated['reply_to'],
+                cc_recipients=cc_recipients,
+                bcc_recipients=bcc_recipients,
+                reply_to=reply_to,
             )
 
             request = SendMailPostRequestBody(
@@ -516,7 +470,7 @@ class OutlookToolkit(BaseToolkit):
             return {
                 'status': 'success',
                 'message': 'Email sent successfully',
-                'recipients': validated['to'],
+                'recipients': to_email,
                 'subject': subject,
             }
         except Exception as e:
@@ -574,31 +528,28 @@ class OutlookToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing the result of the draft
                 email creation operation, including the draft ID.
 
-        Raises:
-            ValueError: If creating the draft email fails or if email
-                addresses are invalid.
         """
         # Validate all email addresses
-        try:
-            validated = self._validate_all_email_addresses(
-                to_email=to_email,
-                cc_recipients=cc_recipients,
-                bcc_recipients=bcc_recipients,
-                reply_to=reply_to,
+        invalid_emails = self._get_invalid_emails(
+            to_email, cc_recipients, bcc_recipients, reply_to
+        )
+        if invalid_emails:
+            error_msg = (
+                f"Invalid email address(es) provided: "
+                f"{', '.join(invalid_emails)}"
             )
-        except ValueError as e:
-            error_msg = str(e)
+            logger.error(error_msg)
             return {"error": error_msg}
 
         try:
             request_body = self._create_message(
-                to_email=validated['to'],
+                to_email=to_email,
                 subject=subject,
                 content=content,
                 attachments=attachments,
-                cc_recipients=validated['cc'],
-                bcc_recipients=validated['bcc'],
-                reply_to=validated['reply_to'],
+                cc_recipients=cc_recipients,
+                bcc_recipients=bcc_recipients,
+                reply_to=reply_to,
             )
 
             result = await self.client.me.messages.post(request_body)
@@ -608,7 +559,7 @@ class OutlookToolkit(BaseToolkit):
                 'status': 'success',
                 'message': 'Draft email created successfully',
                 'draft_id': result.id,
-                'recipients': validated['to'],
+                'recipients': to_email,
                 'subject': subject,
             }
         except Exception as e:
@@ -620,14 +571,14 @@ class OutlookToolkit(BaseToolkit):
         """Sends a draft email via Microsoft Outlook.
 
         Args:
-            draft_id (str): The ID of the draft email to send.
+            draft_id (str): The ID of the draft email to send. Can be obtained
+            either by creating a draft via `create_draft_email()` or from the
+            'message_id' field in messages returned by `list_messages()`.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the draft
                 email sending operation.
 
-        Raises:
-            ValueError: If sending the draft email fails.
         """
         try:
             await self.client.me.messages.by_message_id(draft_id).send.post()
@@ -647,14 +598,14 @@ class OutlookToolkit(BaseToolkit):
         """Deletes an email from Microsoft Outlook.
 
         Args:
-            message_id (str): The ID of the email to delete.
+            message_id (str): The ID of the email to delete. Can be obtained
+                from the 'message_id' field in messages returned by
+                `list_messages()`.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the email
                 deletion operation.
 
-        Raises:
-            ValueError: If deleting the email fails.
         """
         try:
             await self.client.me.messages.by_message_id(message_id).delete()
@@ -675,18 +626,18 @@ class OutlookToolkit(BaseToolkit):
         """Moves an email to a specified folder in Microsoft Outlook.
 
         Args:
-            message_id (str): The ID of the email to move.
-                destination_folder_id (str): The destination folder ID, or
-                a well-known folder name. For a list of supported
-                well-known folder names, see
-                https://learn.microsoft.com/en-us/graph/api/resources/mailfolder?view=graph-rest-1.0.
+            message_id (str): The ID of the email to move. Can be obtained
+                from the 'message_id' field in messages returned by
+                `list_messages()`.
+            destination_folder_id (str): The destination folder ID, or
+                a well-known folder name. Supported well-known folder names are
+                ("inbox", "drafts", "sentitems", "deleteditems", "junkemail",
+                "archive", "outbox").
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the email
                 move operation.
 
-        Raises:
-            ValueError: If moving the email fails.
         """
         from msgraph.generated.users.item.messages.item.move.move_post_request_body import (  # noqa: E501
             MovePostRequestBody,
@@ -731,7 +682,8 @@ class OutlookToolkit(BaseToolkit):
 
         Args:
             message_id (str): The unique identifier of the email message from
-                which to retrieve attachments.
+                which to retrieve attachments. Can be obtained from the
+                'message_id' field in messages returned by `list_messages()`.
             metadata_only (bool): If True, returns only attachment metadata
                 (name, size, content type, etc.) without downloading the actual
                 file content. If False, downloads the full attachment content.
@@ -937,23 +889,25 @@ class OutlookToolkit(BaseToolkit):
                 and removed HTML tags.
         """
         try:
-            from bs4 import BeautifulSoup
+            import html2text
 
-            # Parse HTML content (already sanitized by Microsoft Graph)
-            soup = BeautifulSoup(body_content, 'html.parser')
+            parser = html2text.HTML2Text()
 
-            # Remove script and style elements (defense in depth)
-            for script in soup(["script", "style"]):
-                script.decompose()
+            parser.ignore_links = False
+            parser.inline_links = True
+            parser.protect_links = True
+            parser.skip_internal_links = True
 
-            # Get text and clean up whitespace
-            text = soup.get_text()
-            lines = (line.strip() for line in text.splitlines())
-            chunks = (
-                phrase.strip() for line in lines for phrase in line.split("  ")
-            )
-            text = '\n'.join(chunk for chunk in chunks if chunk)
-            return text
+            parser.ignore_images = False
+            parser.images_as_html = False
+            parser.images_to_alt = False
+            parser.images_with_size = False
+
+            parser.ignore_emphasis = False
+            parser.body_width = 0
+            parser.single_line_break = True
+
+            return parser.handle(body_content).strip()
 
         except Exception as e:
             logger.error(f"Failed to parse HTML body: {e!s}")
@@ -961,7 +915,7 @@ class OutlookToolkit(BaseToolkit):
 
     def _get_recipients(self, recipient_list: Optional[List[Any]]):
         """Gets a list of recipients from a recipient list object."""
-        recipients = []
+        recipients: List[Dict[str, str]] = []
         if not recipient_list:
             return recipients
         for recipient_info in recipient_list:
@@ -992,7 +946,7 @@ class OutlookToolkit(BaseToolkit):
             return_html_content (bool): If True and body content type is HTML,
                 returns the raw HTML content without converting it to plain
                 text. If False and body_type is 'text', HTML content will be
-                converted to plain text. Only applies when include_body=True.
+                converted to plain text.
                 (default: :obj:`False`)
             include_attachments (bool): Whether to include attachment
                 information. If True, will make an API call to fetch
@@ -1012,7 +966,8 @@ class OutlookToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the message details
                 including:
-                - Basic info (id, subject, from, received_date_time,body etc.)
+                - Basic info (message_id, subject, from, received_date_time,
+                  body etc.)
                 - Recipients (to_recipients, cc_recipients, bcc_recipients)
                 - Attachment information (if requested)
 
@@ -1025,7 +980,7 @@ class OutlookToolkit(BaseToolkit):
                 return {'error': 'Invalid message object provided'}
             # Extract basic details
             details = {
-                'id': message.id,
+                'message_id': message.id,
                 'subject': message.subject,
                 # Draft messages have from_ as None
                 'from': (
@@ -1069,7 +1024,7 @@ class OutlookToolkit(BaseToolkit):
                 return details
 
             attachments_info = await self.get_attachments(
-                message_id=details['id'],
+                message_id=details['message_id'],
                 metadata_only=attachment_metadata_only,
                 include_inline_attachments=include_inline_attachments,
                 save_path=attachment_save_path,
@@ -1099,7 +1054,8 @@ class OutlookToolkit(BaseToolkit):
 
         Args:
             message_id (str): The unique identifier of the email message to
-                retrieve.
+                retrieve. Can be obtained from the 'message_id' field in
+                messages returned by `list_messages()`.
             return_html_content (bool): If True and body content type is HTML,
                 returns the raw HTML content without converting it to plain
                 text. If False and body_type is HTML, content will be converted
@@ -1120,14 +1076,11 @@ class OutlookToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary containing the message details
-                including id, subject, from, to_recipients, cc_recipients,
-                bcc_recipients, received_date_time, sent_date_time, body,
-                body_type, has_attachments, importance, is_read, is_draft,
-                body_preview, and optionally attachments.
+                including message_id, subject, from, to_recipients,
+                cc_recipients, bcc_recipients, received_date_time,
+                sent_date_time, body, body_type, has_attachments, importance,
+                is_read, is_draft, body_preview, and optionally attachments.
 
-        Raises:
-            ValueError: If retrieving the message fails or message_id is
-                invalid.
         """
         try:
             message = await self.client.me.messages.by_message_id(
@@ -1236,7 +1189,6 @@ class OutlookToolkit(BaseToolkit):
                 - Size: "size desc/asc"
                 - Multi-field: "importance desc, receivedDateTime desc"
                 Reference: https://learn.microsoft.com/en-us/graph/query-parameters
-                (default: "receivedDateTime desc")
             top (int): Max messages per folder (default: 10)
             skip (int): Messages to skip for pagination (default: 0)
             return_html_content (bool): Return raw HTML if True;
