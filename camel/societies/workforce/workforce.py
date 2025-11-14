@@ -1259,6 +1259,7 @@ class Workforce(BaseNode):
                     )
 
             elif strategy == RecoveryStrategy.REPLAN:
+                # Modify the task content and retry
                 if recovery_decision.modified_task_content:
                     task.content = recovery_decision.modified_task_content
 
@@ -1271,6 +1272,7 @@ class Workforce(BaseNode):
                         f"replanned and retried with worker {assignee_id}"
                     )
                 else:
+                    # Find a new assignee for the replanned task
                     batch_result = await self._find_assignee([task])
                     assignment = batch_result.assignments[0]
                     self._assignees[task.id] = assignment.assignee_id
@@ -1433,7 +1435,7 @@ class Workforce(BaseNode):
                         )
                         iteration_num = refinement_iteration + 1
                         subtask.content = (
-                            f"{subtask.additional_info['base_content'],}\n\n"
+                            f"{subtask.additional_info['base_content']}\n\n"
                             f"IMPORTANT - REFINEMENT ITERATION "
                             f"{iteration_num}:\n"
                             f"{additional_guidance}\n\n"
