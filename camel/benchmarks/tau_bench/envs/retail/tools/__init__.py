@@ -1,16 +1,3 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Copyright Sierra
 
 import json
@@ -26,9 +13,7 @@ class Calculate(Tool):
             return "Error: invalid characters in expression"
         try:
             # Evaluate the mathematical expression safely
-            return str(
-                round(float(eval(expression, {"__builtins__": None}, {})), 2)
-            )
+            return str(round(float(eval(expression, {"__builtins__": None}, {})), 2))
         except Exception as e:
             return f"Error: {e}"
 
@@ -79,9 +64,9 @@ class CancelPendingOrder(Tool):
             }
             refunds.append(refund)
             if "gift_card" in payment_id:  # refund to gift card immediately
-                payment_method = data["users"][order["user_id"]][
-                    "payment_methods"
-                ][payment_id]
+                payment_method = data["users"][order["user_id"]]["payment_methods"][
+                    payment_id
+                ]
                 payment_method["balance"] += payment["amount"]
                 payment_method["balance"] = round(payment_method["balance"], 2)
 
@@ -135,11 +120,7 @@ class ExchangeDeliveredOrderItems(Tool):
         new_item_ids: List[str],
         payment_method_id: str,
     ) -> str:
-        products, orders, users = (
-            data["products"],
-            data["orders"],
-            data["users"],
-        )
+        products, orders, users = data["products"], data["orders"], data["users"]
 
         # check order exists and is delivered
         if order_id not in orders:
@@ -182,14 +163,14 @@ class ExchangeDeliveredOrderItems(Tool):
         if payment_method_id not in users[order["user_id"]]["payment_methods"]:
             return "Error: payment method not found"
 
-        payment_method = users[order["user_id"]]["payment_methods"][
-            payment_method_id
-        ]
+        payment_method = users[order["user_id"]]["payment_methods"][payment_method_id]
         if (
             payment_method["source"] == "gift_card"
             and payment_method["balance"] < diff_price
         ):
-            return "Error: insufficient gift card balance to pay for the price difference"
+            return (
+                "Error: insufficient gift card balance to pay for the price difference"
+            )
 
         # modify the order
         order["status"] = "exchange requested"
@@ -286,9 +267,7 @@ class FindUserIdByEmail(Tool):
 
 class FindUserIdByNameZip(Tool):
     @staticmethod
-    def invoke(
-        data: Dict[str, Any], first_name: str, last_name: str, zip: str
-    ) -> str:
+    def invoke(data: Dict[str, Any], first_name: str, last_name: str, zip: str) -> str:
         users = data["users"]
         for user_id, profile in users.items():
             if (
@@ -424,8 +403,7 @@ class ListAllProductTypes(Tool):
     def invoke(data: Dict[str, Any]) -> str:
         products = data["products"]
         product_dict = {
-            product["name"]: product["product_id"]
-            for product in products.values()
+            product["name"]: product["product_id"] for product in products.values()
         }
         product_dict = dict(sorted(product_dict.items()))
         return json.dumps(product_dict)
@@ -539,11 +517,7 @@ class ModifyPendingOrderItems(Tool):
         new_item_ids: List[str],
         payment_method_id: str,
     ) -> str:
-        products, orders, users = (
-            data["products"],
-            data["orders"],
-            data["users"],
-        )
+        products, orders, users = data["products"], data["orders"], data["users"]
 
         # Check if the order exists and is pending
         if order_id not in orders:
@@ -585,16 +559,12 @@ class ModifyPendingOrderItems(Tool):
             return "Error: payment method not found"
 
         # If the new item is more expensive, check if the gift card has enough balance
-        payment_method = users[order["user_id"]]["payment_methods"][
-            payment_method_id
-        ]
+        payment_method = users[order["user_id"]]["payment_methods"][payment_method_id]
         if (
             payment_method["source"] == "gift_card"
             and payment_method["balance"] < diff_price
         ):
-            return (
-                "Error: insufficient gift card balance to pay for the new item"
-            )
+            return "Error: insufficient gift card balance to pay for the new item"
 
         # Handle the payment or refund
         order["payment_history"].append(
@@ -616,12 +586,12 @@ class ModifyPendingOrderItems(Tool):
                 if order_item["item_id"] == item_id
             )
             item["item_id"] = new_item_id
-            item["price"] = products[item["product_id"]]["variants"][
-                new_item_id
-            ]["price"]
-            item["options"] = products[item["product_id"]]["variants"][
-                new_item_id
-            ]["options"]
+            item["price"] = products[item["product_id"]]["variants"][new_item_id][
+                "price"
+            ]
+            item["options"] = products[item["product_id"]]["variants"][new_item_id][
+                "options"
+            ]
         order["status"] = "pending (item modified)"
 
         return json.dumps(order)
@@ -687,10 +657,7 @@ class ModifyPendingOrderPayment(Tool):
             return "Error: non-pending order cannot be modified"
 
         # Check if the payment method exists
-        if (
-            payment_method_id
-            not in data["users"][order["user_id"]]["payment_methods"]
-        ):
+        if payment_method_id not in data["users"][order["user_id"]]["payment_methods"]:
             return "Error: payment method not found"
 
         # Check that the payment history should only have one payment
@@ -701,11 +668,10 @@ class ModifyPendingOrderPayment(Tool):
             return "Error: there should be exactly one payment for a pending order"
 
         # Check that the payment method is different
-        if (
-            order["payment_history"][0]["payment_method_id"]
-            == payment_method_id
-        ):
-            return "Error: the new payment method should be different from the current one"
+        if order["payment_history"][0]["payment_method_id"] == payment_method_id:
+            return (
+                "Error: the new payment method should be different from the current one"
+            )
 
         amount = order["payment_history"][0]["amount"]
         payment_method = data["users"][order["user_id"]]["payment_methods"][
@@ -744,13 +710,11 @@ class ModifyPendingOrderPayment(Tool):
 
         # If refund is made to a gift card, update the balance
         if "gift_card" in order["payment_history"][0]["payment_method_id"]:
-            old_payment_method = data["users"][order["user_id"]][
-                "payment_methods"
-            ][order["payment_history"][0]["payment_method_id"]]
+            old_payment_method = data["users"][order["user_id"]]["payment_methods"][
+                order["payment_history"][0]["payment_method_id"]
+            ]
             old_payment_method["balance"] += amount
-            old_payment_method["balance"] = round(
-                old_payment_method["balance"], 2
-            )
+            old_payment_method["balance"] = round(old_payment_method["balance"], 2)
 
         return json.dumps(order)
 
@@ -864,10 +828,7 @@ class ModifyUserAddress(Tool):
 class ReturnDeliveredOrderItems(Tool):
     @staticmethod
     def invoke(
-        data: Dict[str, Any],
-        order_id: str,
-        item_ids: List[str],
-        payment_method_id: str,
+        data: Dict[str, Any], order_id: str, item_ids: List[str], payment_method_id: str
     ) -> str:
         orders = data["orders"]
 
@@ -879,15 +840,11 @@ class ReturnDeliveredOrderItems(Tool):
             return "Error: non-delivered order cannot be returned"
 
         # Check if the payment method exists and is either the original payment method or a gift card
-        if (
-            payment_method_id
-            not in data["users"][order["user_id"]]["payment_methods"]
-        ):
+        if payment_method_id not in data["users"][order["user_id"]]["payment_methods"]:
             return "Error: payment method not found"
         if (
             "gift_card" not in payment_method_id
-            and payment_method_id
-            != order["payment_history"][0]["payment_method_id"]
+            and payment_method_id != order["payment_history"][0]["payment_method_id"]
         ):
             return "Error: payment method should be either the original payment method or a gift card"
 

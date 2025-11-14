@@ -1,40 +1,136 @@
 # Tau-Bench Integration with CAMEL
 
-This module integrates the Tau-Bench benchmark into CAMEL for evaluating tool-agent-user interaction.
+This directory embeds the official τ-bench benchmark inside CAMEL so that
+CAMEL agents can be evaluated on realistic, policy-heavy customer service
+scenarios (airline and retail domains). The goal is functional parity with
+the upstream repository while keeping the codebase consistent with CAMEL’s
+style and tooling.
 
-## Overview
-
-Tau-Bench (τ-bench) tests agents on realistic customer service scenarios where they must:
-- Use domain-specific API tools
-- Follow policy guidelines
-- Interact naturally with simulated users
-- Complete user goals effectively
-
-## Architecture
+## Layout
 
 ```
 camel/benchmarks/tau_bench/
-├── __init__.py              # Exports: TauBenchBenchmark
-├── types.py                 # Core types (Task, TaskResult, etc.)
-├── benchmark.py             # Main TauBenchBenchmark class
-├── user_agent.py            # User simulation agents (independent)
+├── __init__.py                     # Re-exports TauBenchBenchmark
+├── benchmark.py                    # BaseBenchmark-compatible runner
+├── types.py                        # Dataclasses and enums
 ├── envs/
+│   ├── base.py                     # Shared Env implementation
+│   ├── user.py                     # User simulation agents
 │   ├── airline/
-│   │   ├── tasks.py        # Task definitions (from original)
-│   │   └── wiki.md         # Policy guidelines (from original)
+│   │   ├── env.py                  # Domain-specific Env subclass
+│   │   ├── tasks_test.py           # Upstream test split (JSON -> Task objects)
+│   │   ├── wiki.md                 # Policy / knowledge base
+│   │   └── tools/                  # FC wrappers around tau_bench tools
 │   └── retail/
-│       ├── tasks*.py       # Task definitions (from original)
-│       └── wiki.md         # Policy guidelines (from original)
+│       ├── env.py
+│       ├── tasks_{train,dev,test}.py
+│       ├── wiki.md
+│       └── tools/
+└── README_refactor.md              # Upstream parity notes
 ```
 
-## Key Design Principles
+> **Note:** The long instruction strings in `tasks_*.py` and `rules.py`
+> remain untouched to preserve upstream behaviour. Ruff is configured to
+> ignore `E501` for those files.
 
-1. **Clean Export**: Only `TauBenchBenchmark` is exported from the package
-2. **Separated Agents**: User agent and assistant agent are independently callable
-3. **Data Integration**: Task and wiki files are embedded from original tau-bench
-4. **Test-Friendly**: Easy to test and reproduce original tau-bench results
+## Running the Benchmark
 
-## Usage
+```python
+from camel.agents import ChatAgent
+from camel.benchmarks import TauBenchBenchmark
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+# Assistant agent (GPT-4o in this example)
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict={"temperature": 0.0},
+)
+agent = ChatAgent(
+    system_message="You are a meticulous airline support agent.",
+    model=model,
+)
+
+# Configure tau-bench
+benchmark = TauBenchBenchmark(
+    domain="airline",          # or "retail"
+    user_strategy="llm",
+    user_model="gpt-4.1",
+    user_provider="openai",
+    user_temperature=1.0,      # matches paper setting
+    save_to="examples/benchmarks",
+)
+benchmark.load()
+
+# Run tasks 0-49 (full airline test split)
+benchmark.run(
+    agent=agent,
+    start_index=0,
+    end_index=-1,
+    num_trials=3,
+    shuffle=True,
+    max_steps=30,
+    max_concurrency=5,
+)
+
+# Aggregate metrics (Pass@k, avg_reward, etc.)
+metrics = benchmark.evaluate()
+print(metrics)
+```
+
+### Common Parameters
+
+| Parameter          | Description                                                       |
+|--------------------|-------------------------------------------------------------------|
+| `domain`           | `"airline"` or `"retail"`                                         |
+| `user_strategy`    | `"llm"`, `"react"`, `"verify"`, `"reflection"` (see `envs/user.py`) |
+| `user_model`       | Model name understood by `ModelFactory`                           |
+| `user_temperature` | Temperature used for the simulated user (paper uses `1.0`)        |
+| `num_trials`       | Number of runs per task (paper averages ≥3 trials)                |
+| `shuffle`          | Randomize task order each trial                                   |
+| `max_steps`        | Max assistant turns per task (τ-bench default is 30)              |
+| `max_concurrency`  | Threaded parallelism for `_run_task`                              |
+
+## Example CLI Run
+
+An end-to-end reference is provided at `examples/benchmarks/tau_bench.py`.
+Running it with the default environment variables will execute the airline
+domain (tasks 0‑4) and save logs to `examples/benchmarks`.
+
+```bash
+python -m examples.benchmarks.tau_bench
+```
+
+## Current Status (Apr 2025)
+
+- ✅ Airline & retail domains embedded with original tasks/tools/wiki data.
+- ✅ τ-bench metrics (Pass@k, avg reward) reproduced inside CAMEL.
+- ✅ User simulator rewritten using CAMEL `ChatAgent` to avoid litellm.
+- ⚠️ Pre-commit Ruff ignores `E501` for the upstream data/Rule files only.
+- ⚠️ `mypy` pre-commit hook depends on `uv`; install via `pip install uv`
+  if you want `pre-commit run --all-files` to succeed locally.
+
+## Tips & Debugging
+
+- **Result Files:** Every `benchmark.run()` writes a JSON checkpoint under
+  `save_to`. Filenames follow the upstream format
+  `tool-calling-<model>-<temp>_range_<start>-<end>_user-...json`.
+- **User Behaviour:** Paper settings use GPT‑4.1 users with temperature 1.0.
+  Using colder users can make tasks harder because instructions get dumped
+  immediately.
+- **Pass@k Interpretation:** `evaluate()` reports pass@1 and pass@k (when
+  `num_trials > 1`). These match the original τ‑bench formula and can differ
+  from simply “% of tasks solved at least once”.
+- **Pre-commit:** Long upstream text files intentionally bypass `E501` via
+  `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`. If you add new
+  long-form instruction files, extend that list instead of rewrapping text.
+
+## References
+
+- [tau-bench GitHub](https://github.com/sierra-research/tau-bench)
+- [τ-bench paper](https://arxiv.org/abs/2406.12045)
+- `README_refactor.md` inside this directory for deeper parity notes.
 
 ### Basic Example
 
