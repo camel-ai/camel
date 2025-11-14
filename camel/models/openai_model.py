@@ -346,8 +346,11 @@ class OpenAIModel(BaseModelBackend):
                 ):
                     try:
                         return adapt_chat_to_camel_response(result)  # type: ignore[return-value]
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.warning(
+                            "Failed to convert ChatCompletion to CamelModelResponse: %s",  # noqa:E501
+                            exc,
+                        )
                 return result
         else:
             resp_or_stream = self._request_chat_completion(messages, tools)
@@ -360,8 +363,11 @@ class OpenAIModel(BaseModelBackend):
 
                     if isinstance(resp_or_stream, _CC):
                         return adapt_chat_to_camel_response(resp_or_stream)  # type: ignore[return-value]
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to convert streamed ChatCompletion to CamelModelResponse: %s",  # noqa:E501
+                        exc,
+                    )
             return resp_or_stream
 
     @observe()

@@ -61,7 +61,6 @@ from camel.agents._utils import (
     convert_to_function_tool,
     convert_to_schema,
     get_info_dict,
-    handle_logprobs,
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
@@ -93,7 +92,6 @@ from camel.responses.model_response import CamelModelResponse
 from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
-    ChatCompletion,
     ChatCompletionChunk,
     ModelPlatformType,
     ModelType,
@@ -3615,70 +3613,6 @@ class ChatAgent(BaseAgent):
             external_tool_call_requests,
         )
 
-    def _handle_batch_response(
-        self, response: ChatCompletion
-    ) -> ModelResponse:
-        r"""Process a batch response from the model and extract the necessary
-        information.
-
-        Args:
-            response (ChatCompletion): Model response.
-
-        Returns:
-            _ModelResponse: parsed model response.
-        """
-        output_messages: List[BaseMessage] = []
-        for choice in response.choices:
-            # Skip messages with no meaningful content
-            if (
-                choice.message.content is None
-                or choice.message.content.strip() == ""
-            ) and not choice.message.tool_calls:
-                continue
-
-            meta_dict = {}
-            if logprobs_info := handle_logprobs(choice):
-                meta_dict["logprobs_info"] = logprobs_info
-
-            chat_message = BaseMessage(
-                role_name=self.role_name,
-                role_type=self.role_type,
-                meta_dict=meta_dict,
-                content=choice.message.content or "",
-                parsed=getattr(choice.message, "parsed", None),
-            )
-
-            output_messages.append(chat_message)
-
-        finish_reasons = [
-            str(choice.finish_reason) for choice in response.choices
-        ]
-
-        usage = {}
-        if response.usage is not None:
-            usage = safe_model_dump(response.usage)
-
-        tool_call_requests: Optional[List[ToolCallRequest]] = None
-        if tool_calls := response.choices[0].message.tool_calls:
-            tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
-                )
-                tool_call_requests.append(tool_call_request)
-
-        return ModelResponse(
-            response=response,
-            tool_call_requests=tool_call_requests,
-            output_messages=output_messages,
-            finish_reasons=finish_reasons,
-            usage_dict=usage,
-            response_id=response.id or "",
-        )
-
     def _normalize_to_camel_response(self, resp: Any) -> CamelModelResponse:
         """Normalize backend response into CamelModelResponse.
 
@@ -3695,8 +3629,12 @@ class ChatAgent(BaseAgent):
 
             if isinstance(resp, _CC):
                 return adapt_chat_to_camel_response(resp)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "Failed to normalize response of type %s via ChatCompletion adapter: %s",  # noqa:E501
+                type(resp).__name__,
+                exc,
+            )
         raise TypeError(
             f"Unsupported response type for normalization: {type(resp).__name__}"  # noqa:E501
         )
@@ -3704,10 +3642,7 @@ class ChatAgent(BaseAgent):
     def _handle_camel_response(
         self, response: CamelModelResponse
     ) -> ModelResponse:
-        """Process a CamelModelResponse and build the legacy ModelResponse.
-
-        Mirrors _handle_batch_response semantics to keep behavior identical.
-        """
+        """Process a CamelModelResponse and build the legacy ModelResponse."""
         output_messages: List[BaseMessage] = []
         for msg in response.output_messages:
             # Re-wrap to preserve agent role naming convention
@@ -4198,7 +4133,8 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                camel_response = self._normalize_to_camel_response(response)
+                model_response = self._handle_camel_response(camel_response)
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -4957,7 +4893,8 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                camel_response = self._normalize_to_camel_response(response)
+                model_response = self._handle_camel_response(camel_response)
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,

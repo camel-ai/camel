@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.responses.model_response import (
     CamelModelResponse,
@@ -24,6 +25,8 @@ from camel.responses.model_response import (
     CamelUsage,
 )
 from camel.types import ChatCompletion, RoleType
+
+logger = get_logger(__name__)
 
 
 def _get(obj: Any, key: str, default: Any = None) -> Any:
@@ -41,8 +44,18 @@ def _json_loads_safe(val: Any) -> Dict[str, Any]:
             import json
 
             return json.loads(val)
-        except Exception:
+        except Exception as exc:
+            snippet = val[:200] + "..." if len(val) > 200 else val
+            logger.warning(
+                "Failed to parse tool call arguments as JSON. Snippet=%s, error=%s",  # noqa:E501
+                snippet,
+                exc,
+            )
             return {}
+    if val is not None:
+        logger.debug(
+            "Unexpected type for tool call arguments: %s", type(val).__name__
+        )
     return {}
 
 
@@ -116,21 +129,32 @@ def adapt_chat_to_camel_response(
     usage_raw: Dict[str, Any] = {}
     usage_obj: Optional[Any] = getattr(response, "usage", None)
     if usage_obj is not None:
-        try:
-            # Pydantic model -> dict
-            usage_raw = usage_obj.model_dump()  # type: ignore[no-any-return]
-        except Exception:
+        import dataclasses
+
+        if hasattr(usage_obj, "model_dump"):
             try:
-                import dataclasses
-
+                usage_raw = usage_obj.model_dump()  # type: ignore[no-any-return]
+            except Exception as exc:
+                logger.warning("Failed to dump usage via model_dump: %s", exc)
+        elif dataclasses.is_dataclass(usage_obj):
+            try:
                 usage_raw = dataclasses.asdict(usage_obj)  # type: ignore[arg-type]
-            except Exception:
-                usage_raw = {}
+            except Exception as exc:
+                logger.warning(
+                    "Failed to dump usage via dataclasses.asdict: %s", exc
+                )
+        elif isinstance(usage_obj, dict):
+            usage_raw = dict(usage_obj)
+        else:
+            logger.debug(
+                "Unsupported usage type: %s", type(usage_obj).__name__
+            )
 
+    usage_dict = usage_raw or {}
     usage = CamelUsage(
-        input_tokens=(usage_raw or {}).get("prompt_tokens"),
-        output_tokens=(usage_raw or {}).get("completion_tokens"),
-        total_tokens=(usage_raw or {}).get("total_tokens"),
+        input_tokens=usage_dict.get("prompt_tokens"),
+        output_tokens=usage_dict.get("completion_tokens"),
+        total_tokens=usage_dict.get("total_tokens"),
         raw=usage_raw or None,
     )
 
