@@ -24,7 +24,7 @@ from camel.interpreters import (
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -66,7 +66,7 @@ class CodeExecutionToolkit(BaseToolkit):
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
         require_confirm: bool = False,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         # Microsandbox configuration dictionary
         microsandbox_config: Optional[dict] = None,
     ) -> None:

@@ -21,7 +21,6 @@ from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import (
-    Constants,
     MCPServer,
     api_keys_required,
     dependencies_required,
@@ -40,7 +39,7 @@ class SearchToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         exclude_domains: Optional[List[str]] = None,
     ):
         r"""Initializes the SearchToolkit.

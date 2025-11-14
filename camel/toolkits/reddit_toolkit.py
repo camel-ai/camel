@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer, retry_on_error
+from camel.utils import MCPServer, retry_on_error
 
 
 @MCPServer()
@@ -39,7 +39,7 @@ class RedditToolkit(BaseToolkit):
         self,
         retries: int = 3,
         delay: float = 0.0,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.

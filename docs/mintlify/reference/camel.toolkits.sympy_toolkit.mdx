@@ -20,7 +20,7 @@ and Linear Algebra.
 def __init__(
     self,
     default_variable: str = 'x',
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    timeout: Optional[float] = None
 ):
 ```
 

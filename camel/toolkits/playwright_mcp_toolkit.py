@@ -14,8 +14,6 @@
 
 from typing import List, Optional
 
-from camel.utils import Constants
-
 from .mcp_toolkit import MCPToolkit
 
 
@@ -38,7 +36,7 @@ class PlaywrightMCPToolkit(MCPToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         additional_args: Optional[List[str]] = None,
     ) -> None:
         r"""Initializes the PlaywrightMCPToolkit.

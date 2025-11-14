@@ -20,7 +20,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ModelType,
 )
-from camel.utils import BaseTokenCounter, Constants, api_keys_required
+from camel.utils import BaseTokenCounter, api_keys_required
 
 
 class AWSBedrockModel(OpenAICompatibleModel):
@@ -66,7 +66,7 @@ class AWSBedrockModel(OpenAICompatibleModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         **kwargs: Any,
     ) -> None:

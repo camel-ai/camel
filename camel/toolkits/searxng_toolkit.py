@@ -20,7 +20,7 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -70,7 +70,7 @@ class SearxNGToolkit(BaseToolkit):
         categories: Optional[List[str]] = None,
         time_range: Optional[str] = None,
         safe_search: int = 1,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self._validate_searxng_host(searxng_host)

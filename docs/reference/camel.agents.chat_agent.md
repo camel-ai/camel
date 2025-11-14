@@ -261,7 +261,7 @@ def __init__(
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
-    tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    tool_execution_timeout: Optional[float] = None,
     mask_tool_output: bool = False,
     pause_event: Optional[asyncio.Event] = None
 ):

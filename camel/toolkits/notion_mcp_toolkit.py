@@ -15,7 +15,6 @@
 from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from camel.toolkits import FunctionTool
-from camel.utils import Constants
 
 from .mcp_toolkit import MCPToolkit
 
@@ -68,7 +67,7 @@ class NotionMCPToolkit(MCPToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the NotionMCPToolkit.
 

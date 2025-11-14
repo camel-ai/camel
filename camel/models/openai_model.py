@@ -33,7 +33,6 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     OpenAITokenCounter,
     api_keys_required,
     get_current_agent_session_id,
@@ -120,7 +119,7 @@ class OpenAIModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,

@@ -20,7 +20,7 @@ search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
     exclude_domains: Optional[List[str]] = None
 ):
 ```

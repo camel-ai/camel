@@ -15,7 +15,7 @@ A class representing a toolkit for Crawl4AI.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 <a id="camel.toolkits.craw4ai_toolkit.Crawl4AIToolkit.get_tools"></a>

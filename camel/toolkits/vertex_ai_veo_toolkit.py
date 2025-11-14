@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, api_keys_required, dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -43,7 +43,7 @@ class VertexAIVeoToolkit(BaseToolkit):
         location: str = "us-central1",
         model_id: str = "veo-2.0-generate-001",
         output_storage_uri: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the Vertex AI Veo toolkit.
 

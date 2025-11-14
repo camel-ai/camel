@@ -19,7 +19,7 @@ from typing import List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer, api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
 @MCPServer()
@@ -45,7 +45,7 @@ class StripeToolkit(BaseToolkit):
     def __init__(
         self,
         retries: int = 3,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         super().__init__(timeout=timeout)
         r"""Initializes the StripeToolkit with the specified number of

@@ -33,7 +33,6 @@ from camel.models._utils import try_modify_message_with_format
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     OpenAITokenCounter,
     api_keys_required,
     get_current_agent_session_id,
@@ -96,7 +95,7 @@ class CohereModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ):
         import cohere

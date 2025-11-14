@@ -18,7 +18,6 @@ from typing import List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants
 
 
 class NoteTakingToolkit(BaseToolkit):
@@ -32,7 +31,7 @@ class NoteTakingToolkit(BaseToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the NoteTakingToolkit.
 

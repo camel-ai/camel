@@ -17,7 +17,6 @@ from typing import Dict, List, Literal, Optional, Union
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import (
-    Constants,
     MCPServer,
     api_keys_required,
     dependencies_required,
@@ -39,7 +38,7 @@ class DappierToolkit(BaseToolkit):
             (None, "DAPPIER_API_KEY"),
         ]
     )
-    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initialize the DappierTookit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """

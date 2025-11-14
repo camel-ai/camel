@@ -14,8 +14,6 @@
 
 from typing import Optional
 
-from camel.utils import Constants
-
 from .mcp_toolkit import MCPToolkit
 
 
@@ -30,7 +28,7 @@ class EdgeOnePagesMCPToolkit(MCPToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the EdgeOnePagesMCPToolkit.
 

@@ -22,7 +22,7 @@ Google Drive using the Google Drive MCP server.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
     credentials_path: Optional[str] = None
 ):
 ```

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 # Import only for type hints (not executed at runtime)
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ class ExcelToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         working_directory: Optional[str] = None,
     ):
         r"""Initializes a new instance of the ExcelToolkit class.

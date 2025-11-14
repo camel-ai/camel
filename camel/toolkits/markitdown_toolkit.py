@@ -18,7 +18,7 @@ from camel.loaders.markitdown import MarkItDownLoader
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -46,7 +46,7 @@ class MarkItDownToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         import warnings
 

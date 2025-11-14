@@ -23,7 +23,6 @@ from typing_extensions import TypeGuard
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants
 from camel.utils.commons import run_async
 from camel.utils.mcp_client import MCPClient, create_mcp_client
 
@@ -336,7 +335,7 @@ class MCPToolkit(BaseToolkit):
         clients: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         # Call parent constructor first
         super().__init__(timeout=timeout)
@@ -524,7 +523,7 @@ class MCPToolkit(BaseToolkit):
         clients: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> "MCPToolkit":
         r"""Factory method that creates and connects to all MCP servers.
 
@@ -588,7 +587,7 @@ class MCPToolkit(BaseToolkit):
         clients: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> "MCPToolkit":
         r"""Synchronously create and connect to all MCP servers."""
         return run_async(cls.create)(

@@ -17,7 +17,7 @@ def __init__(
     self,
     extractor: Optional[BaseExtractor] = None,
     max_parallel: Optional[int] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
     max_retries: int = 3,
     retry_delay: float = 1.0,
     initial_batch_size: Optional[int] = None,

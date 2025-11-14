@@ -22,7 +22,6 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
@@ -110,7 +109,7 @@ class AnthropicModel(OpenAICompatibleModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         **kwargs: Any,
     ) -> None:

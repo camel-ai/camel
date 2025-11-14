@@ -14,8 +14,6 @@
 
 from typing import Optional
 
-from camel.utils import Constants
-
 from .mcp_toolkit import MCPToolkit
 
 
@@ -30,7 +28,7 @@ class GoogleDriveMCPToolkit(MCPToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         credentials_path: Optional[str] = None,
     ) -> None:
         r"""Initializes the GoogleDriveMCPToolkit.

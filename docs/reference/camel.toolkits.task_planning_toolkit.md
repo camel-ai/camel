@@ -15,7 +15,7 @@ A toolkit for task decomposition and re-planning.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initialize the TaskPlanningToolkit.

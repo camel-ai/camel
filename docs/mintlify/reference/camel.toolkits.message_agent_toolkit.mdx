@@ -58,7 +58,7 @@ and integration with the CAMEL workforce system.
 def __init__(
     self,
     agents: Optional[Dict[str, 'ChatAgent']] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
     max_message_history: int = 100,
     get_response: bool = False
 ):

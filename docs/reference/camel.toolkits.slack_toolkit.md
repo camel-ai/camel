@@ -18,7 +18,7 @@ channel, joining an existing channel, leaving a channel.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes a new instance of the SlackToolkit class.

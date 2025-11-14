@@ -23,7 +23,6 @@ from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     LiteLLMTokenCounter,
     dependencies_required,
     get_current_agent_session_id,
@@ -75,7 +74,7 @@ class LiteLLMModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         from litellm import completion

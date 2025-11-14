@@ -26,7 +26,7 @@ from PIL import Image
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, dependencies_required
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -75,7 +75,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         self,
         working_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self._cleanup = working_directory is None

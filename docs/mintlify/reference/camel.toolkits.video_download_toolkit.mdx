@@ -44,7 +44,7 @@ def __init__(
     self,
     working_directory: Optional[str] = None,
     cookies_path: Optional[str] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    timeout: Optional[float] = None
 ):
 ```
 

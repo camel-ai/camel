@@ -31,7 +31,6 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     OpenAITokenCounter,
     get_current_agent_session_id,
     update_current_observation,
@@ -95,7 +94,7 @@ class SGLangModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,

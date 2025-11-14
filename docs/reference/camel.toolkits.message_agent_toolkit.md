@@ -26,7 +26,7 @@ and receive responses, enabling multi-agent collaboration.
 def __init__(
     self,
     agents: Optional[Dict[str, ChatAgent]] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    timeout: Optional[float] = None
 ):
 ```
 

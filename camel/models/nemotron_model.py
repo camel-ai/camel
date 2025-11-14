@@ -18,7 +18,6 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
-    Constants,
     api_keys_required,
 )
 
@@ -56,7 +55,7 @@ class NemotronModel(OpenAICompatibleModel):
         model_type: Union[ModelType, str],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         **kwargs: Any,
     ) -> None:

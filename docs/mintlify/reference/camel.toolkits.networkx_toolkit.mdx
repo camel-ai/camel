@@ -25,7 +25,7 @@ Lazily import networkx module when needed.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
     graph_type: Literal['graph', 'digraph', 'multigraph', 'multidigraph'] = 'graph'
 ):
 ```

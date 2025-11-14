@@ -17,14 +17,14 @@ import requests
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 
 @MCPServer()
 class PulseMCPSearchToolkit(BaseToolkit):
     r"""A toolkit for searching MCP servers using the PulseMCP API."""
 
-    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+    def __init__(self, timeout: Optional[float] = None):
         super().__init__(timeout=timeout)
         self.api_base_url = "https://api.pulsemcp.com/v0beta"
 

@@ -35,7 +35,7 @@ def __init__(
     frame_interval: float = 4.0,
     output_language: str = 'English',
     cookies_path: Optional[str] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    timeout: Optional[float] = None
 ):
 ```
 

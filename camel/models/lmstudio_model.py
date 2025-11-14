@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Union
 from camel.configs import LMStudioConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
-from camel.utils import BaseTokenCounter, Constants
+from camel.utils import BaseTokenCounter
 
 
 class LMStudioModel(OpenAICompatibleModel):
@@ -56,7 +56,7 @@ class LMStudioModel(OpenAICompatibleModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         max_retries: int = 3,
         **kwargs: Any,
     ) -> None:

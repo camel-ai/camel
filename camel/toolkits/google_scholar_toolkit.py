@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 
 @MCPServer()
@@ -41,7 +41,7 @@ class GoogleScholarToolkit(BaseToolkit):
         use_free_proxies: bool = False,
         proxy_http: Optional[str] = None,
         proxy_https: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the GoogleScholarToolkit with the author's identifier.
 

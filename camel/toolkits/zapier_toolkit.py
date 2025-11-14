@@ -20,7 +20,6 @@ import requests
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import (
-    Constants,
     MCPServer,
     api_keys_required,
     dependencies_required,
@@ -49,9 +48,7 @@ class ZapierToolkit(BaseToolkit):
             (None, "ZAPIER_NLA_API_KEY"),
         ]
     )
-    def __init__(
-        self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
-    ) -> None:
+    def __init__(self, timeout: Optional[float] = None) -> None:
         super().__init__(timeout=timeout)
         r"""Initialize the ZapierToolkit with API client. The API key is
         retrieved from environment variables.

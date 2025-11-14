@@ -23,7 +23,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseAudioModel, BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -88,7 +88,7 @@ class AudioAnalysisToolkit(BaseToolkit):
         cache_dir: Optional[str] = None,
         transcribe_model: Optional[BaseAudioModel] = None,
         audio_reasoning_model: Optional[BaseModelBackend] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         r"""A toolkit for audio processing and analysis. This class provides
         methods for processing, transcribing, and extracting information from

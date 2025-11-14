@@ -29,7 +29,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import Constants, MCPServer, dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 from .video_download_toolkit import (
     VideoDownloaderToolkit,
@@ -130,7 +130,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         frame_interval: float = 4.0,
         output_language: str = "English",
         cookies_path: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self._cleanup = working_directory is None

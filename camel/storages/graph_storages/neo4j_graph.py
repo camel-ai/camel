@@ -17,7 +17,7 @@ from hashlib import md5
 from typing import Any, Dict, List, Optional
 
 from camel.storages.graph_storages import BaseGraphStorage, GraphElement
-from camel.utils import Constants, dependencies_required
+from camel.utils import dependencies_required
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class Neo4jGraph(BaseGraphStorage):
         username: str,
         password: str,
         database: str = "neo4j",
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         truncate: bool = False,
     ) -> None:
         r"""Create a new Neo4j graph instance."""

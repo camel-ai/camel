@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -38,7 +38,7 @@ class NetworkXToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
         graph_type: Literal[
             'graph', 'digraph', 'multigraph', 'multidigraph'
         ] = 'graph',

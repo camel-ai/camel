@@ -19,7 +19,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer
+from camel.utils import MCPServer
 
 if TYPE_CHECKING:
     from ssl import SSLContext
@@ -42,7 +42,7 @@ class SlackToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         r"""Initializes a new instance of the SlackToolkit class.
 

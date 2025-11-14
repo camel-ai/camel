@@ -20,7 +20,7 @@ def __init__(
     api_key: Optional[str] = None,
     base_url: Optional[str] = None,
     linked_account_owner_id: Optional[str] = None,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
+    timeout: Optional[float] = None
 ):
 ```
 

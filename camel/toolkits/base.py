@@ -37,7 +37,7 @@ class BaseToolkit(metaclass=AgentOpsMeta):
     mcp: FastMCP
     timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 
-    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+    def __init__(self, timeout: Optional[float] = None):
         # check if timeout is a positive number
         if timeout is not None and timeout <= 0:
             raise ValueError("Timeout must be a positive number.")

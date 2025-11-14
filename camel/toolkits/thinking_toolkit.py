@@ -17,7 +17,6 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants
 
 logger = get_logger(__name__)
 
@@ -27,7 +26,7 @@ class ThinkingToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         r"""Initialize the ThinkingToolkit.
 

@@ -16,7 +16,7 @@ from typing import List, Optional, cast
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer, api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
 def get_plain_text_from_rich_text(rich_text: List[dict]) -> str:
@@ -86,7 +86,7 @@ class NotionToolkit(BaseToolkit):
     def __init__(
         self,
         notion_token: Optional[str] = None,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the NotionToolkit.
 

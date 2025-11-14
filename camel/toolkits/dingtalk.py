@@ -26,7 +26,7 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import Constants, MCPServer, api_keys_required, retry_on_error
+from camel.utils import MCPServer, api_keys_required, retry_on_error
 
 logger = get_logger(__name__)
 
@@ -138,7 +138,7 @@ class DingtalkToolkit(BaseToolkit):
     webhook operations.
     """
 
-    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the DingtalkToolkit.
 
         Args:

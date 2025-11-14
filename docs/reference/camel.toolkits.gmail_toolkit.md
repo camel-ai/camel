@@ -41,7 +41,7 @@ The toolkit requests the following Gmail API scopes:
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    timeout: Optional[float] = None,
 ):
 ```
 

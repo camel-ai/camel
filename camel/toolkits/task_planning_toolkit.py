@@ -17,7 +17,6 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.tasks import Task
 from camel.toolkits import BaseToolkit, FunctionTool
-from camel.utils import Constants
 
 logger = get_logger(__name__)
 
@@ -27,7 +26,7 @@ class TaskPlanningToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        timeout: Optional[float] = None,
     ):
         r"""Initialize the TaskPlanningToolkit.
 
