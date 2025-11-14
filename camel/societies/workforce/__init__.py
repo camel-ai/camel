@@ -14,10 +14,12 @@
 
 from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
+from .workflow_memory_manager import WorkflowSelectionMethod
 from .workforce import Workforce
 
 __all__ = [
     "Workforce",
     "SingleAgentWorker",
     "RolePlayingWorker",
+    "WorkflowSelectionMethod",
 ]

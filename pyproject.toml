@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.76a10"
+version = "0.2.79"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 license = "Apache-2.0"
 keywords = [
@@ -32,6 +32,7 @@ dependencies = [
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
     "websockets>=13.0,<15.1",
+    "astor>=0.8.1",
 ]
 
 
@@ -78,10 +79,9 @@ rag = [
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "cohere>=5.11.0,<6",
-    "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
+    "unstructured==0.16.20; python_version < '3.13'",
     "crawl4ai>=0.3.745",
-    "pyobvector>=0.1.18",
+    "pyobvector>=0.1.18; python_version < '3.13'",
     "google-genai>=1.13.0",
     "chunkr-ai>=0.0.50, <0.1.0",
     "chromadb>=0.6.0,<1.0.0",
@@ -99,6 +99,7 @@ web_tools = [
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "sympy>=1.13.3,<2",
@@ -115,8 +116,7 @@ document_tools = [
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
-    "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
+    "unstructured==0.16.20; python_version < '3.13'",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
     "xls2xlsx>=0.2.0",
@@ -124,7 +124,7 @@ document_tools = [
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
     "crawl4ai>=0.3.745",
-    "markitdown>=0.1.1",
+    "markitdown>=0.1.1; python_version >= '3.13'",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50, <0.1.0",
     "python-pptx>=1.0.2",
@@ -152,7 +152,7 @@ communication_tools = [
 ]
 data_tools = [
     "numpy>=1.2,<=2.2",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
     "datacommons_pandas>=0.0.3,<0.0.4",
@@ -211,7 +211,7 @@ storage = [
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
     "mem0ai>=0.1.73",
-    "pyobvector>=0.1.18",
+    "pyobvector>=0.1.18; python_version < '3.13'",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
     "psycopg[binary]>=3.1.18,<4",
@@ -238,8 +238,7 @@ owl = [
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
-    "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
+    "unstructured==0.16.20; python_version < '3.13'",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
     "xls2xlsx>=0.2.0",
@@ -256,7 +255,7 @@ owl = [
     "typer>=0.15.2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
     "scrapegraph-py>=1.12.0,<2",
@@ -266,7 +265,7 @@ owl = [
     "chunkr-ai>=0.0.50, <0.1.0",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
-    "markitdown>=0.1.1",
+    "markitdown>=0.1.1; python_version >= '3.13'",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
@@ -290,11 +289,12 @@ eigent = [
     "wikipedia>=1,<2",
     "requests_oauthlib>=1.3.1,<2",
     "websockets>=13.0,<15.1",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "pylatex>=1.4.2",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
-    "markitdown[all]>=0.1.1",
+    "markitdown[all]>=0.1.1; python_version < '3.13'",
+    "markitdown>=0.1.1; python_version >= '3.13'",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
@@ -302,6 +302,7 @@ eigent = [
     "google-api-python-client==2.166.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
+    "httplib2>=0.31.0",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -313,8 +314,7 @@ all = [
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
-    "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
+    "unstructured==0.16.20; python_version < '3.13'",
     "wikipedia>=1,<2",
     "linkup-sdk>=0.2.1,<0.3",
     "duckduckgo-search>=6.3.5,<7",
@@ -323,6 +323,7 @@ all = [
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "requests_oauthlib>=1.3.1,<2",
@@ -359,7 +360,7 @@ all = [
     "tavily-python>=0.5.0,<0.6",
     "apify_client>=1.8.1,<2",
     "stripe>=11.3.0,<12",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
     "networkx>=3.4.2,<4",
@@ -369,7 +370,7 @@ all = [
     "faiss-cpu>=1.7.2,<2",
     "cohere>=5.11.0,<6",
     "neo4j>=5.18.0,<6",
-    "markitdown>=0.1.1",
+    "markitdown>=0.1.1; python_version >= '3.13'",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
@@ -410,7 +411,7 @@ all = [
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.4.0",
     "pyautogui>=0.9.54,<0.10",
-    "pyobvector>=0.1.18",
+    "pyobvector>=0.1.18; python_version < '3.13'",
     "scrapegraph-py>=1.12.0,<2",
     "daytona-sdk>=0.20.0",
     "ibm-watsonx-ai>=1.3.11",
@@ -432,6 +433,7 @@ all = [
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
     "google-cloud-aiplatform>=1.111.0",
+    "httplib2>=0.31.0",
 ]
 
 [project.urls]
@@ -610,7 +612,6 @@ module = [
     "tree-sitter-python",
     "tree-sitter",
     "networkx",
-    "pandasai",
     "sklearn.metrics.pairwise",
     "sympy.*",
     "astor",
@@ -656,7 +657,9 @@ module = [
     "reportlab.*",
     "surrealdb.*",
     "microsandbox.*",
-    "sentence_transformers.*"
+    "sentence_transformers.*",
+    "markitdown",
+    "httplib2",
 ]
 ignore_missing_imports = true
 
@@ -664,8 +667,8 @@ ignore_missing_imports = true
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 # the .py file needs to be listed twice since pre-commit and codespell treat
 # that path differently.
-skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py,examples/usecases,./examples/usecases'
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py'
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,'

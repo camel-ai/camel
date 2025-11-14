@@ -213,7 +213,7 @@ We are a community-driven research collective comprising over 100 researchers de
 </div>
 
 <div align="center">
-  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html">
+  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag">
     <img src="docs/images/rag_pipeline.png" alt="RAG Pipeline">
   </a>
 </div>
@@ -517,6 +517,7 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 |:---|:---|
 | **[ChatDev](https://github.com/OpenBMB/ChatDev/tree/main/camel)** | Communicative Agents for software Development |
 | **[Paper2Poster](https://github.com/Paper2Poster/Paper2Poster)** | Multimodal poster automation from scientific papers |
+| **[Paper2Video](https://github.com/showlab/Paper2Video)** | Automatic video generation from scientific papers |
 
 ### Product Projects
 
@@ -548,6 +549,14 @@ We are actively involved in community events including:
 > For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
 >
 > We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
+
+## Contributors
+
+<a href="https://github.com/camel-ai/camel/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 <br>
 
@@ -601,7 +610,7 @@ The source code is licensed under Apache 2.0.
 <br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://camel-ai.github.io/camel/index.html
+[docs-url]: https://camel-ai.github.io/camel/index
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
