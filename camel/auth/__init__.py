@@ -11,26 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .discord import DiscordApp
-from .slack.models import (
-    SlackAppMentionEventBody,
-    SlackAppMentionEventProfile,
-    SlackAuthProfile,
-    SlackEventBody,
-    SlackEventProfile,
+
+from .api_key_provider import ApiKeyProvider
+from .auth_manager import (
+    AuthenticationManager,
+    get_auth_manager,
+    register_auth_provider,
 )
-from .slack.slack_app import SlackApp
-from .slack.slack_application import SlackApplication
-from .telegram_bot import TelegramBot
+from .base import (
+    AuthenticationError,
+    AuthenticationProvider,
+    AuthenticationType,
+)
+from .oauth2_provider import OAuth2Provider
+from .service_account_provider import ServiceAccountProvider
+from .token_provider import TokenProvider
 
 __all__ = [
-    'DiscordApp',
-    'SlackApp',
-    'SlackApplication',
-    'SlackAppMentionEventBody',
-    'SlackAppMentionEventProfile',
-    'SlackAuthProfile',
-    'SlackEventBody',
-    'SlackEventProfile',
-    'TelegramBot',
+    'AuthenticationProvider',
+    'AuthenticationType',
+    'AuthenticationError',
+    'OAuth2Provider',
+    'TokenProvider',
+    'ApiKeyProvider',
+    'ServiceAccountProvider',
+    'AuthenticationManager',
+    'get_auth_manager',
+    'register_auth_provider',
 ]
