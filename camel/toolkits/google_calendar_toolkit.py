@@ -230,13 +230,14 @@ class GoogleCalendarToolkit(BaseToolkit):
 
                 result.append(
                     {
-                        'summary': event.get('summary', 'No Title'),
-                        'start': start_time,
-                        'end': end_time,
-                        'timezone': timezone,
-                        'hangoutLink': event.get('hangoutLink'),
-                        'attendees': attendees,
-                        'organizer': organizer,
+                        'Event ID': event.get('id'),
+                        'Summary': event.get('summary', 'No Title'),
+                        'Start Time': start_time,
+                        'End Time': end_time,
+                        'Timezone': timezone,
+                        'Link': event.get('htmlLink'),
+                        'Attendees': attendees,
+                        'Organizer': organizer,
                     }
                 )
 
