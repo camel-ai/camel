@@ -172,8 +172,17 @@ class RolePlaying:
             )
         else:
             # When both agents are provided, use their existing system messages
-            init_assistant_sys_msg = assistant_agent.system_message
-            init_user_sys_msg = user_agent.system_message
+            assistant_sys_msg = assistant_agent.system_message
+            user_sys_msg = user_agent.system_message
+            
+            # Ensure system messages are not None
+            if assistant_sys_msg is None:
+                raise ValueError("Provided assistant_agent has None system_message")
+            if user_sys_msg is None:
+                raise ValueError("Provided user_agent has None system_message")
+            
+            init_assistant_sys_msg = assistant_sys_msg
+            init_user_sys_msg = user_sys_msg
             # Create a default sys_msg_meta_dicts for critic initialization
             sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
     
@@ -546,9 +555,9 @@ class RolePlaying:
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
         if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
-            role_name = getattr(self.assistant_sys_msg, 'role_name', None)
-            if role_name is not None:
-                assistant_role_name = role_name
+            role_name_attr = getattr(self.assistant_sys_msg, 'role_name', None)
+            if role_name_attr is not None:
+                assistant_role_name = role_name_attr
         
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
@@ -588,9 +597,9 @@ class RolePlaying:
         # Initialize a message sent by the assistant
         assistant_role_name = "assistant"
         if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
-            role_name = getattr(self.assistant_sys_msg, 'role_name', None)
-            if role_name is not None:
-                assistant_role_name = role_name
+            role_name_attr = getattr(self.assistant_sys_msg, 'role_name', None)
+            if role_name_attr is not None:
+                assistant_role_name = role_name_attr
 
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
