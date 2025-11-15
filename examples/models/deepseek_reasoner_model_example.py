@@ -39,6 +39,7 @@ user_msg = """How many Rs are there in the word 'strawberry'?"""
 
 # Get response information
 response = camel_agent.step(user_msg)
+print(response.msgs[0].reasoning_content)
 print(response.msgs[0].content)
 '''
 ===============================================================================
