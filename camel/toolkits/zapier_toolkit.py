@@ -19,7 +19,11 @@ import requests
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 
 @MCPServer()

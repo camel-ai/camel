@@ -16,6 +16,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from camel.utils import Constants
+
 
 class BaseAudioModel(ABC):
     r"""Base class for audio models providing Text-to-Speech (TTS) and
@@ -26,7 +28,7 @@ class BaseAudioModel(ABC):
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     ) -> None:
         r"""Initialize an instance of BaseAudioModel.
 
