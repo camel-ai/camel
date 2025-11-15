@@ -338,6 +338,7 @@ class OutlookToolkit(BaseToolkit):
         to_email: List[str],
         subject: str,
         content: str,
+        is_content_html: bool = False,
         attachments: Optional[List[str]] = None,
         cc_recipients: Optional[List[str]] = None,
         bcc_recipients: Optional[List[str]] = None,
@@ -349,6 +350,8 @@ class OutlookToolkit(BaseToolkit):
             to_email (List[str]): List of recipient email addresses.
             subject (str): The subject of the email.
             content (str): The body content of the email.
+            is_content_html (bool): If True, the content type will be set to
+                HTML; otherwise, it will be Text. (default: :obj:`False`)
             attachments (Optional[List[str]]): List of file paths to attach
                 to the email. (default: :obj:`None`)
             cc_recipients (Optional[List[str]]): List of CC recipient email
@@ -365,8 +368,12 @@ class OutlookToolkit(BaseToolkit):
         """
         from msgraph.generated.models import body_type, item_body, message
 
+        if is_content_html:
+            content_type = body_type.BodyType.Html
+        else:
+            content_type = body_type.BodyType.Text
         message_body = item_body.ItemBody(
-            content_type=body_type.BodyType.Text, content=content
+            content_type=content_type, content=content
         )
 
         to_recipients = self._create_recipients(to_email)
@@ -402,6 +409,7 @@ class OutlookToolkit(BaseToolkit):
         to_email: List[str],
         subject: str,
         content: str,
+        is_content_html: bool = False,
         attachments: Optional[List[str]] = None,
         cc_recipients: Optional[List[str]] = None,
         bcc_recipients: Optional[List[str]] = None,
@@ -414,6 +422,8 @@ class OutlookToolkit(BaseToolkit):
             to_email (List[str]): List of recipient email addresses.
             subject (str): The subject of the email.
             content (str): The body content of the email.
+            is_content_html (bool): If True, the content type will be set to
+                HTML; otherwise, it will be Text. (default: :obj:`False`)
             attachments (Optional[List[str]]): List of file paths to attach
                 to the email. (default: :obj:`None`)
             cc_recipients (Optional[List[str]]): List of CC recipient email
@@ -453,6 +463,7 @@ class OutlookToolkit(BaseToolkit):
                 to_email=to_email,
                 subject=subject,
                 content=content,
+                is_content_html=is_content_html,
                 attachments=attachments,
                 cc_recipients=cc_recipients,
                 bcc_recipients=bcc_recipients,
@@ -502,6 +513,7 @@ class OutlookToolkit(BaseToolkit):
         to_email: List[str],
         subject: str,
         content: str,
+        is_content_html: bool = False,
         attachments: Optional[List[str]] = None,
         cc_recipients: Optional[List[str]] = None,
         bcc_recipients: Optional[List[str]] = None,
@@ -513,6 +525,8 @@ class OutlookToolkit(BaseToolkit):
             to_email (List[str]): List of recipient email addresses.
             subject (str): The subject of the email.
             content (str): The body content of the email.
+            is_content_html (bool): If True, the content type will be set to
+                HTML; otherwise, it will be Text. (default: :obj:`False`)
             attachments (Optional[List[str]]): List of file paths to attach
                 to the email. (default: :obj:`None`)
             cc_recipients (Optional[List[str]]): List of CC recipient email
@@ -546,6 +560,7 @@ class OutlookToolkit(BaseToolkit):
                 to_email=to_email,
                 subject=subject,
                 content=content,
+                is_content_html=is_content_html,
                 attachments=attachments,
                 cc_recipients=cc_recipients,
                 bcc_recipients=bcc_recipients,
