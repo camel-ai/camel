@@ -474,6 +474,7 @@ target-version = "py310"
 exclude = [
     "camel/benchmarks/tau2_bench/tau2/*",
     "camel/benchmarks/tau2_bench/data/*",
+    "camel/benchmarks/tau_bench/*",
 ]
 
 [tool.ruff.format]
