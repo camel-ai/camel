@@ -19,6 +19,7 @@ from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
+from .burncloud_model import BurnCloudModel
 from .cohere_model import CohereModel
 from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
@@ -66,6 +67,7 @@ __all__ = [
     'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
+    'BurnCloudModel',
     'AMDModel',
     'MistralModel',
     'GroqModel',

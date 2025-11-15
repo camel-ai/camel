@@ -1764,6 +1764,7 @@ class ModelPlatformType(Enum):
     NEBIUS = "nebius"
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
+    BURNCLOUD = "burncloud"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -1835,6 +1836,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_burncloud(self) -> bool:
+        r"""Returns whether this platform is BurnCloud."""
+        return self is ModelPlatformType.BURNCLOUD
 
     @property
     def is_lmstudio(self) -> bool:
