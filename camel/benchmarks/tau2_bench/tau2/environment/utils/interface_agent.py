@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Callable, Optional
 
-from loguru import logger
+from camel.logger import get_logger
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -9,6 +9,8 @@ from rich.prompt import Prompt
 from rich.theme import Theme
 
 from tau2.config import DEFAULT_LLM_ENV_INTERFACE, DEFAULT_LLM_ENV_INTERFACE_ARGS
+
+logger = get_logger(__name__)
 from tau2.data_model.message import (
     AssistantMessage,
     Message,

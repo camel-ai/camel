@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, TypeVar
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 from tau2.data_model.message import (
     AssistantMessage,

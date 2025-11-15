@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Optional
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 from tau2.agent.base import AgentError, BaseAgent, is_valid_agent_history_message
 from tau2.agent.llm_agent import LLMSoloAgent

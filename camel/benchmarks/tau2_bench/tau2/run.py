@@ -5,7 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Optional
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 from tau2.agent.llm_agent import LLMAgent, LLMGTAgent, LLMSoloAgent
 from tau2.data_model.simulation import (

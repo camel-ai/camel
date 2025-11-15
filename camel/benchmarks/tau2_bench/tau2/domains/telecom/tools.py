@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
-from loguru import logger
+from camel.logger import get_logger
 
 from tau2.domains.telecom.data_model import (
     Bill,
@@ -20,6 +20,8 @@ from tau2.domains.telecom.data_model import (
 )
 from tau2.domains.telecom.utils import get_today
 from tau2.environment.toolkit import ToolKitBase, ToolType, is_tool
+
+logger = get_logger(__name__)
 
 # TODO: Add an abstract base class for the tools
 

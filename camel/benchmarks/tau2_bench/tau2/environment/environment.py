@@ -3,7 +3,9 @@ from copy import deepcopy
 from datetime import date, datetime
 from typing import Any, Literal, Optional
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 from pydantic import BaseModel, Field
 
 from tau2.data_model.message import (

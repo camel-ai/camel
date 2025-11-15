@@ -9,9 +9,11 @@ from inspect import Signature
 from typing import Any, Callable, Dict, List, Optional
 
 from docstring_parser import parse
-from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, create_model, field_serializer
 from typing_extensions import override
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class BaseTool(BaseModel, ABC):

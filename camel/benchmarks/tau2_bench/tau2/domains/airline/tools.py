@@ -3,7 +3,7 @@
 from copy import deepcopy
 from typing import List, Optional
 
-from loguru import logger
+from camel.logger import get_logger
 
 from tau2.domains.airline.data_model import (
     AirportCode,
@@ -25,6 +25,8 @@ from tau2.domains.airline.data_model import (
     User,
 )
 from tau2.environment.toolkit import ToolKitBase, ToolType, is_tool
+
+logger = get_logger(__name__)
 
 # TODO: Add an abstract base class for the tools
 

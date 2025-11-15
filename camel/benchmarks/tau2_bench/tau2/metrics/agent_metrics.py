@@ -2,7 +2,9 @@ import math
 import re
 
 import pandas as pd
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 from pydantic import BaseModel
 
 from tau2.data_model.simulation import Results

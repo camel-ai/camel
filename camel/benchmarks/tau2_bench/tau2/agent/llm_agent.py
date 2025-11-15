@@ -1,7 +1,9 @@
 from copy import deepcopy
 from typing import List, Optional
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 from pydantic import BaseModel
 
 from tau2.agent.base import (

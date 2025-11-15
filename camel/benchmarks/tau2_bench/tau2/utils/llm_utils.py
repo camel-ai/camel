@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 from tau2.data_model.message import AssistantMessage, UserMessage
 

@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Optional
 
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 from pydantic import BaseModel
 
 from tau2.data_model.message import (

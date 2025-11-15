@@ -7,7 +7,9 @@ from pathlib import Path
 
 from deepdiff import DeepDiff
 from dotenv import load_dotenv
-from loguru import logger
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 res = load_dotenv()
 if not res:
