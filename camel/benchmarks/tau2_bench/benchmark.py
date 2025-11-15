@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""τ²-Bench integration that reuses CAMEL ``ChatAgent`` instances."""
+r"""τ²-Bench integration that reuses CAMEL ``ChatAgent`` instances."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def _toolkit_to_schemas(toolkit: Sequence) -> List[dict]:
 
 
 class Tau2BenchBenchmark(BaseBenchmark):
-    """Benchmark wrapper that proxies τ² runs through CAMEL agents."""
+    r"""Benchmark wrapper that proxies τ² runs through CAMEL agents."""
 
     def __init__(
         self,

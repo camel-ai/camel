@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Adapters that bridge CAMEL ``ChatAgent`` instances with the τ² runtime."""
+r"""Adapters that bridge CAMEL ``ChatAgent`` instances with the τ² runtime."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ToolCallRegistry:
-    """Tracks tool-call identifiers so tool responses can be contextualised."""
+    r"""Tracks tool-call identifiers so tool responses can be contextualised."""
 
     mapping: Dict[str, str] = field(default_factory=dict)
 
@@ -69,7 +69,7 @@ class ToolCallRegistry:
 
 @dataclass
 class CamelChatAgentState:
-    """Mutable state passed between τ² orchestrator steps."""
+    r"""Mutable state passed between τ² orchestrator steps."""
 
     tool_registry: ToolCallRegistry = field(default_factory=ToolCallRegistry)
 
@@ -140,7 +140,7 @@ def _extract_external_requests(
 
 
 class CamelTau2Agent(BaseAgent[CamelChatAgentState]):
-    """Wraps a CAMEL ``ChatAgent`` so τ² can treat it as a native agent."""
+    r"""Wraps a CAMEL ``ChatAgent`` so τ² can treat it as a native agent."""
 
     def __init__(
         self,
@@ -286,7 +286,7 @@ class CamelTau2Agent(BaseAgent[CamelChatAgentState]):
 
 
 class CamelTau2User(BaseUser):
-    """ChatAgent-powered replacement for τ²'s default user simulator."""
+    r"""ChatAgent-powered replacement for τ²'s default user simulator."""
 
     def __init__(
         self,
