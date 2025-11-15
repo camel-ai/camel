@@ -84,6 +84,8 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
+        install_dependencies (List): A list of user specified libraries
+            to install.
     """
 
     def __init__(
@@ -96,6 +98,7 @@ class TerminalToolkit(BaseToolkit):
         safe_mode: bool = True,
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
+        install_dependencies: Optional[List[str]] = None,
     ):
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
@@ -145,6 +148,7 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path: Optional[str] = None
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
+        self.install_dependencies = install_dependencies or []
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -215,6 +219,10 @@ class TerminalToolkit(BaseToolkit):
             else:
                 # Default: set up initial environment with Python 3.10
                 self._setup_initial_environment()
+
+            # Install dependencies
+            if self.install_dependencies:
+                self._install_dependencies()
         elif self.clone_current_env:
             logger.info(
                 "[ENV CLONE] Skipping environment setup for Docker backend "
@@ -246,6 +254,43 @@ class TerminalToolkit(BaseToolkit):
             logger.info(
                 "[ENV CLONE] Failed to create cloned environment, "
                 "using system Python"
+            )
+
+    def _install_dependencies(self):
+        r"""Install user specified dependencies in the current environment."""
+        if not self.install_dependencies:
+            return
+
+        logger.info("Installing dependencies...")
+
+        pip_cmd = [
+            self.python_executable,
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            *self.install_dependencies,
+        ]
+
+        try:
+            subprocess.run(
+                pip_cmd,
+                check=True,
+                cwd=self.working_dir,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minutes timeout for installation
+            )
+            logger.info("Successfully installed all dependencies.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to install dependencies: {e.stderr}")
+            raise RuntimeError(
+                f"Failed to install dependencies: {e.stderr}"
+            ) from e
+        except subprocess.TimeoutExpired:
+            logger.error("Dependency installation timed out after 5 minutes")
+            raise RuntimeError(
+                "Dependency installation timed out after 5 minutes"
             )
 
     def _setup_initial_environment(self):
