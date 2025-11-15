@@ -16,17 +16,19 @@
 import sys as _sys
 
 # Register alias before importing submodules so vendored tau2 loads first.
-from .benchmark import Tau2BenchBenchmark
-
 __all__ = ["Tau2BenchBenchmark"]
 
 _PACKAGE_NAME = __name__
 _SYS_MODULES = _sys.modules
 _SYS_MODULES.setdefault("tau2_bench", _SYS_MODULES[_PACKAGE_NAME])
 
-try:
-    from . import tau2 as _vendored_tau2
-except Exception:  # pragma: no cover - defensive
-    pass
-else:
+
+def _register_vendored_tau2() -> None:
+    from . import tau2 as _vendored_tau2  # Imported lazily to appease ruff.
+
     _SYS_MODULES["tau2"] = _vendored_tau2
+
+
+_register_vendored_tau2()
+
+from .benchmark import Tau2BenchBenchmark
