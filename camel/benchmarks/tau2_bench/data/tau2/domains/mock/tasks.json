@@ -1,0 +1,345 @@
+[{
+    "id": "create_task_1",
+    "description": {
+      "purpose": "Test the create_task functionality",
+      "notes": "Basic task creation test with a simple title"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator who writes in a clear and concise style",
+      "instructions": "You are a team member who needs to create a task for an upcoming meeting. Your goal is to create a task to track this important meeting. Create a new task called 'Important Meeting' for user_1."
+    },
+    "ticket": "User needs to create a task for an upcoming meeting. Create a new task called 'Important Meeting' for user_1.",
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "create_1",
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "info": "Create a new task for the meeting"
+        }
+      ],
+      "nl_assertions": [
+        "The agent confirmed the task was created successfully"
+      ]
+    }
+  },
+  {
+    "id": "create_task_1_with_env_assertions",
+    "description": {
+      "purpose": "Test the create_task functionality",
+      "notes": "Basic task creation test with a simple title"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator who writes in a clear and concise style",
+      "instructions": "You are a team member who needs to create a task for an upcoming meeting. Your goal is to create a task to track this important meeting. Create a new task called 'Important Meeting' for user_1."
+    },
+    "ticket": "User needs to create a task for an upcoming meeting. Create a new task called 'Important Meeting' for user_1.",
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "create_1",
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "info": "Create a new task for the meeting"
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "assistant",
+          "func_name": "assert_task_status",
+          "arguments": {"task_id": "task_2", "expected_status": "pending"}
+        }
+      ],
+      "nl_assertions": [
+        "The agent confirmed the task was created successfully"
+      ], 
+      "reward_basis": ["DB", "ENV_ASSERTION"]
+    }
+  },
+  {
+    "id": "create_task_1_nl_eval",
+    "description": {
+      "purpose": "Test the create_task functionality",
+      "notes": "Basic task creation test with a simple title"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator who writes in a clear and concise style",
+      "instructions": "You are a team member who needs to create a task for an upcoming meeting. Your goal is to create a task to track an important meeting. Request a new task called 'Important Meeting' for user_1. Then, request a compliment."
+    },
+    "ticket": "User needs to create a task for an upcoming meeting. Create a new task called 'Important Meeting' for user_1. Then, compliment the user.",
+    "evaluation_criteria": {
+      "nl_assertions": [
+        "The task is created successfully", 
+        "The user is complimented"
+      ]
+    }
+  },
+  {
+    "id": "update_task_1",
+    "description": {
+      "purpose": "Test the update_task_status functionality",
+      "notes": "Basic task status update test"
+    },
+    "user_scenario": {
+      "instructions": "You have completed the task and need to update its status. Your goal is to mark an existing task as completed. Request that task_1 be marked as completed."
+    },
+    "ticket": "User needs to update the status of task_1 to completed.",
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "update_1",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_1",
+            "status": "completed"
+          },
+          "info": "Update the task status to completed"
+        }
+      ],
+      "nl_assertions": [
+        "The agent confirmed the task status was updated successfully"
+      ]
+    }
+  },
+  {
+    "id": "update_task_with_message_history",
+    "description": {
+      "purpose": "Test the update_task_status functionality with pre-existing conversation history",
+      "notes": "Tests updating a task status with initial message history showing previous context"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator",
+      "instructions": "Continue the conversation about task management. The previous discussion was about creating a task. Now you want to mark the task as completed."
+    },
+    "initial_state": {
+      "message_history": [
+        {
+          "role": "user",
+          "content": "I need to create a task for the project review meeting.",
+          "turn_idx": 0
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_1",
+              "name": "create_task",
+              "arguments": {
+                "user_id": "user_1",
+                "title": "Project Review",
+                "description": "Review Q4 project status"
+              }
+            }
+          ],
+          "turn_idx": 0
+        },
+        {
+          "role": "tool",
+          "id": "call_1",
+          "content": "{\"task_id\":\"task_2\",\"title\":\"Project Review\",\"description\":\"Review Q4 project status\",\"status\":\"pending\"}",
+          "turn_idx": 0
+        },
+        {
+          "role": "assistant",
+          "content": "I've created a task titled 'Project Review' for you. The task has been created with ID task_2 and is currently in pending status.",
+          "turn_idx": 0
+        }
+      ]
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "update_1",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_2",
+            "status": "completed"
+          },
+          "info": "Update the task status to completed"
+        }
+      ],
+      "nl_assertions": [
+        "The agent acknowledged the previous context",
+        "The agent confirmed the task status was updated successfully"
+      ]
+    }
+  },
+  {
+    "id": "update_task_with_initialization_data",
+    "description": {
+      "purpose": "Test the update_task_status functionality with pre-existing conversation history",
+      "notes": "Tests updating a task status with initial message history showing previous context"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator",
+      "instructions": "Continue the conversation about task management. The previous discussion was about creating a task with ID task_2. Now you want to mark the task as completed."
+    },
+    "ticket": "User needs to update the status of task_2 to completed.",
+    "initial_state": {
+      "initialization_data": {
+        "agent_data": {
+          "tasks": {
+            "task_2": {
+              "task_id": "task_2",
+              "title": "Project Review",
+              "description": "Review Q4 project status",
+              "status": "pending"
+            }
+          },
+          "users": {
+            "user_1": {
+              "tasks": ["task_1", "task_2"]
+            }
+          }
+        }
+      }
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "update_1",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_2",
+            "status": "completed"
+          },
+          "info": "Update the task status to completed"
+        }
+      ],
+      "communicate_info": [
+        "The agent acknowledged the previous context",
+        "The agent confirmed the task status was updated successfully"
+      ]
+    }
+  },
+  {
+    "id": "update_task_with_initialization_actions",
+    "description": {
+      "purpose": "Test the update_task_status functionality with pre-existing conversation history",
+      "notes": "Tests updating a task status with initial message history showing previous context"
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator",
+      "instructions": "Continue the conversation about task management. The previous discussion was about creating a task with ID task_2. Now you want to mark the task as completed."
+    },
+    "ticket": "User needs to update the status of task_2 to completed.",
+    "initial_state": {
+      "initialization_actions": [
+        {
+          "env_type": "assistant",
+          "func_name": "create_task",
+          "arguments": {"user_id": "user_1", "title": "Project Review", "description": "Review Q4 project status"}
+        }
+      ]
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "update_1",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_2",
+            "status": "completed"
+          },
+          "info": "Update the task status to completed"
+        }
+      ],
+      "nl_assertions": [
+        "The agent acknowledged the previous context",
+        "The agent confirmed the task status was updated successfully"
+      ]
+    }
+  },
+{
+  "id": "update_task_with_history_and_env_assertions",
+  "description": {
+    "purpose": "Test the update_task_status functionality with pre-existing conversation history and env assertions",
+    "notes": "Tests updating a task status with initial message history showing previous context"
+  },
+  "user_scenario": {
+    "persona": "Professional and direct communicator",
+    "instructions": "Continue the conversation about task management. The previous discussion was about creating a task with ID task_2. Now you want to mark the task as completed."
+  },
+  "initial_state": {
+    "message_history": [
+      {
+        "role": "user",
+        "content": "I need to create a task for the project review meeting.",
+        "turn_idx": 0
+      },
+      {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "name": "create_task",
+            "arguments": {
+              "user_id": "user_1",
+              "title": "Project Review",
+              "description": "Review Q4 project status"
+            }
+          }
+        ],
+        "turn_idx": 0
+      },
+      {
+        "role": "tool",
+        "id": "call_1",
+        "content": "{\"task_id\":\"task_2\",\"title\":\"Project Review\",\"description\":\"Review Q4 project status\",\"status\":\"pending\"}",
+        "turn_idx": 0
+      },
+      {
+        "role": "assistant",
+        "content": "I've created a task titled 'Project Review' for you. The task has been created with ID task_2 and is currently in pending status.",
+        "turn_idx": 0
+      }
+    ]
+  },
+  "evaluation_criteria": {
+    "env_assertions": [
+      {
+        "env_type": "assistant",
+        "func_name": "assert_task_status",
+        "arguments": {"task_id": "task_2", "expected_status": "completed"}
+      }
+    ],
+    "nl_assertions": [
+      "The agent acknowledged the previous context",
+      "The agent confirmed the task status was updated successfully"
+      ], 
+      "reward_basis": ["ENV_ASSERTION"]
+    }
+  },
+  {
+    "id": "impossible_task_1",
+    "description": {
+      "purpose": "Test delete_task functionality",
+      "notes": "Asks the agent to delete a task."
+    },
+    "user_scenario": {
+      "persona": "Professional and direct communicator who writes in a clear and concise style",
+      "instructions": "You want to delete all your current tasks."
+    },
+    "ticket": "User needs to delete all their current tasks.",
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "transfer_1",
+          "name": "transfer_to_human_agents",
+          "arguments": {
+            "summary": "User needs to delete all their current tasks. This is not possible to do with the tools available."
+          },
+          "compare_args": [],
+          "info": "Transfer the user to a human agent"
+        }
+      ], 
+      "reward_basis": ["DB", "ACTION"]
+    }
+  }
+]

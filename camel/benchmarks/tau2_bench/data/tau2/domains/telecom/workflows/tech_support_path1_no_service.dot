@@ -1,0 +1,102 @@
+digraph TechSupportWorkflow {
+    rankdir=TB;
+    nodesep=0.7;
+    node [fontname="Helvetica", fontsize=10, shape=rectangle];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Start and End Nodes
+    Start [label="Start: User Reports Issue", shape=oval];
+    End_Resolve [label="Issue Resolved", shape=oval];
+    End_Escalate_Tech [label="Transfer to Human Agent", shape=oval];
+
+    // Path 1: No Service / No Connection
+    P1_Start [label="Path 1: No Service/Connection", shape=ellipse, style=filled, fillcolor=lightblue];
+    P1_S0_CheckStatusBar [label="Step 1.0: Check if user is facing a no service issue", style=filled, fillcolor=lightblue];
+    P1_S0_Decision_NoService [label="Status Bar shows\nno service/airplane mode?", shape=diamond];
+    P1_S1_CheckAirplane [label="Step 1.1: Check Airplane Mode and Network Status", style=filled, fillcolor=lightblue];
+    P1_S1_Decision_AirplaneON [label="Airplane Mode ON?", shape=diamond];
+    P1_S1_Action_TurnAirplaneOFF [label="Ask user to turn Airplane Mode OFF"];
+    P1_S1_Action_VerifyRestored1 [label="Ask user to look at their status bar\nand check if service is restored"];
+    P1_S1_Decision_Restored1 [label="Service Restored?", shape=diamond];
+
+    P1_S2_VerifySIM [label="Step 1.2: Verify SIM Card Status", style=filled, fillcolor=lightblue];
+    P1_S2_Decision_SIMMissing [label="SIM Missing?", shape=diamond];
+    P1_S2_Action_ReseatSIM [label="Ask user to re-seat the SIM card"];
+    P1_S2_Action_VerifySIMImprove [label="Ask user to look at their status bar\nand check if service is restored"];
+    P1_S2_Decision_SIMImproved [label="Service Restored?", shape=diamond];
+    P1_S2_Decision_SIMLocked [label="SIM Locked (PIN/PUK)?", shape=diamond];
+
+    P1_S3_ResetAPN [label="Step 1.3: Try to reset APN settings", style=filled, fillcolor=lightblue];
+    P1_S3_User_Action_ResetAPN [label="Ask user to reset APN settings"];
+    P1_S3_RestartDevice [label="Ask user to restart their device"];
+    P1_S3_VerifyService [label="Ask user to look at their status bar\nand check if service is restored"];
+    P1_S3_Decision_Resolved [label="Service Restored?", shape=diamond];
+
+    // New Step 1.4: Check Line Suspension
+    P1_S4_CheckSuspension [label="Step 1.4: Check Line Suspension", style=filled, fillcolor=lightblue];
+    P1_S4_Decision_Suspended [label="Line Suspended?", shape=diamond];
+    P1_S4_Decision_SuspensionType [label="Suspension Type?", shape=diamond];
+    P1_S4_Decision_OverdueBill [label="Overdue Bill?", shape=diamond];
+    P1_S4_Action_PaymentRequest [label="Send payment request\nfor overdue bill"];
+    P1_S4_Action_CheckPayment [label="Ask user to check\npayment requests"];
+    P1_S4_Action_MakePayment [label="Ask user to make\nthe payment"];
+    P1_S4_Action_ResumeLine [label="Resume the line"];
+    P1_S4_Action_Reboot [label="Ask user to reboot\ntheir device"];
+    P1_S4_Action_VerifyService [label="Ask user to check\nif service is restored"];
+    P1_S4_Decision_ServiceRestored [label="Service Restored?", shape=diamond];
+
+    // Flow connections
+    Start -> P1_Start;
+    P1_Start -> P1_S0_CheckStatusBar;
+    P1_S0_CheckStatusBar -> P1_S0_Decision_NoService;
+    P1_S0_Decision_NoService -> P1_S1_CheckAirplane [label="Yes (No Service)"];
+    P1_S0_Decision_NoService -> End_Resolve [label="No (Service Available)\nUser not facing no service issue"];
+
+    P1_S1_CheckAirplane -> P1_S1_Decision_AirplaneON;
+    P1_S1_Decision_AirplaneON -> P1_S1_Action_TurnAirplaneOFF [label="Yes"];
+    P1_S1_Action_TurnAirplaneOFF -> P1_S1_Action_VerifyRestored1;
+    P1_S1_Action_VerifyRestored1 -> P1_S1_Decision_Restored1;
+    P1_S1_Decision_Restored1 -> End_Resolve [label="Yes"];
+    P1_S1_Decision_Restored1 -> P1_S2_VerifySIM [label="No"];
+    P1_S1_Decision_AirplaneON -> P1_S2_VerifySIM [label="No"];
+
+    P1_S2_VerifySIM -> P1_S2_Decision_SIMMissing;
+    P1_S2_Decision_SIMMissing -> P1_S2_Action_ReseatSIM [label="Yes"];
+    P1_S2_Action_ReseatSIM -> P1_S2_Action_VerifySIMImprove;
+    P1_S2_Action_VerifySIMImprove -> P1_S2_Decision_SIMImproved;
+    P1_S2_Decision_SIMImproved -> P1_S3_ResetAPN [label="Yes (Service Restored)"];
+    P1_S2_Decision_SIMImproved -> End_Escalate_Tech [label="No (Still No Service)"];
+    P1_S2_Decision_SIMMissing -> P1_S2_Decision_SIMLocked [label="No"];
+
+    P1_S2_Decision_SIMLocked -> End_Escalate_Tech [label="Yes"];
+    P1_S2_Decision_SIMLocked -> P1_S3_ResetAPN [label="No (SIM Active)"];
+
+    P1_S3_ResetAPN -> P1_S3_User_Action_ResetAPN;
+    P1_S3_User_Action_ResetAPN -> P1_S3_RestartDevice;
+    P1_S3_RestartDevice -> P1_S3_VerifyService;
+    P1_S3_VerifyService -> P1_S3_Decision_Resolved;
+    P1_S3_Decision_Resolved -> End_Resolve [label="Yes"];
+    P1_S3_Decision_Resolved -> P1_S4_CheckSuspension [label="No"];
+
+    // New Step 1.4 connections
+    P1_S4_CheckSuspension -> P1_S4_Decision_Suspended;
+    P1_S4_Decision_Suspended -> P1_S4_Decision_SuspensionType [label="Yes"];
+    P1_S4_Decision_Suspended -> End_Escalate_Tech [label="No"];
+    
+    P1_S4_Decision_SuspensionType -> P1_S4_Decision_OverdueBill [label="Due to Bill"];
+    P1_S4_Decision_SuspensionType -> End_Escalate_Tech [label="Due to Contract End"];
+    
+    P1_S4_Decision_OverdueBill -> P1_S4_Action_PaymentRequest [label="Yes"];
+    P1_S4_Decision_OverdueBill -> P1_S4_Action_ResumeLine [label="No"];
+    
+    P1_S4_Action_PaymentRequest -> P1_S4_Action_CheckPayment;
+    P1_S4_Action_CheckPayment -> P1_S4_Action_MakePayment;
+    P1_S4_Action_MakePayment -> P1_S4_Action_ResumeLine;
+    
+    P1_S4_Action_ResumeLine -> P1_S4_Action_Reboot;
+    P1_S4_Action_Reboot -> P1_S4_Action_VerifyService;
+    P1_S4_Action_VerifyService -> P1_S4_Decision_ServiceRestored;
+    
+    P1_S4_Decision_ServiceRestored -> End_Resolve [label="Yes"];
+    P1_S4_Decision_ServiceRestored -> End_Escalate_Tech [label="No"];
+} 

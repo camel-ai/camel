@@ -1,0 +1,179 @@
+digraph TechSupportWorkflow {
+    rankdir=TB;
+    nodesep=0.7;
+    node [fontname="Helvetica", fontsize=10, shape=rectangle];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Start and End Nodes
+    Start [label="Start: User Reports Issue", shape=oval];
+    End_Resolve [label="Issue Resolved", shape=oval];
+    End_Escalate_Tech [label="Transfer to Human Agent", shape=oval];
+
+    // Path 2: Mobile Data Issues (Entry Point)
+    P2_Start [label="Path 2: Mobile Data Issues", shape=ellipse, style=filled, fillcolor=lightgreen];
+    P2_S0_RunSpeedTest [label="Step 2.0: Check if user is facing a data issue", style=filled, fillcolor=lightgreen];
+    P2_S0_Decision_NoConnection [label="Speed Test shows\n'no connection'?", shape=diamond];
+    P2_S0_Decision_ExcellentSpeed [label="Speed Test shows\n'Excellent'?", shape=diamond];
+
+    // Path 2.1: Unavailable Mobile Data Troubleshooting
+    P2_1_Start [label="Path 2.1: Unavailable Mobile Data", shape=ellipse, style=filled, fillcolor=coral];
+    P2_1_S0_CheckUnavailableData [label="Step 2.1.0: Check if user is facing an unavailable mobile data issue", style=filled, fillcolor=coral];
+    P2_1_S1_VerifyService [label="Step 2.1.1: Verify Service Issue", style=filled, fillcolor=coral];
+    P2_1_Action_RetestAfterP1 [label="Ask user to rerun speed test\nafter Path 1 resolution"];
+    P2_1_Decision_ConnectivityRestored [label="Data connectivity\nrestored?", shape=diamond];
+
+    P2_1_S2_Decision_DataIssue [label="Step 2.1.2: Verify if user is traveling", shape=diamond];
+    P2_1_S2_CheckRoaming [label="Check Roaming Settings", style=filled, fillcolor=coral];
+    P2_1_S2_Decision_DataRoamingOFF [label="Data Roaming OFF?", shape=diamond];
+    P2_1_S2_Action_TurnDataRoamingON [label="Ask user to turn Data Roaming ON"];
+    P2_1_S2_Action_RetestAfterRoamingON [label="Ask user to rerun speed test"];
+    P2_1_S2_Decision_RoamingWorksAfterON [label="Connectivity Restored?", shape=diamond];
+
+    P2_1_S2_VerifyLineRoamingEnabled [label="Verify line is roaming enabled"];
+    P2_1_S2_Decision_LineRoamingNotEnabled [label="Line not roaming enabled?", shape=diamond];
+    P2_1_S2_Action_EnableRoaming [label="Enable roaming for user (no cost)"];
+    P2_1_S2_Action_RetestAfterEnable [label="Ask user to rerun speed test"];
+    P2_1_S2_Decision_RoamingWorksAfterEnable [label="Connectivity Restored?", shape=diamond];
+
+    P2_1_S3_CheckMobileDataSettings [label="Step 2.1.3: Check Mobile Data Settings", style=filled, fillcolor=coral];
+    P2_1_S3_Decision_MobileDataOFF [label="Mobile Data OFF?", shape=diamond];
+    P2_1_S3_Action_TurnMobileDataON [label="Ask user to turn Mobile Data ON"];
+    P2_1_S3_Action_RetestAfterMobileON [label="Ask user to rerun speed test"];
+    P2_1_S3_Decision_MobileDataWorksAfterON [label="Connectivity Restored?", shape=diamond];
+
+    P2_1_S4_CheckDataUsage [label="Step 2.1.4: Check Data Usage", style=filled, fillcolor=coral];
+    P2_1_S4_Decision_DataExceeded [label="Data Usage Exceeded?", shape=diamond];
+    P2_1_S4_Action_AskPlanOrRefuel [label="Ask user: change plan or refuel data?"];
+    P2_1_S4_Decision_ChangePlan [label="Change Plan?", shape=diamond]; 
+    P2_1_S4_Action_GatherPlans [label="Gather available plans"];
+    P2_1_S4_Action_AskSelectPlan [label="Ask user to select a plan"]; 
+    P2_1_S4_Action_ApplyPlan [label="Apply the plan"];
+    P2_1_S4_Action_RefuelHowMuch [label="Ask how much data to refuel"];
+    P2_1_S4_Action_ConfirmPrice [label="Confirm the price"];
+    P2_1_S4_Decision_ConfirmRefuel [label="User Confirms Refuel?", shape=diamond]; 
+    P2_1_S4_Action_ApplyRefuel [label="Apply the refueled data"];
+    P2_1_S4_Action_RetestAfterDataAction [label="Ask user to rerun speed test"]; 
+    P2_1_S4_Decision_ConnectivityAfterData [label="Connectivity Restored?", shape=diamond];
+    P2_1_S4_Decision_ExcellentAfterData [label="Speed 'Excellent'?", shape=diamond];
+
+    // Path 2.2: Slow Mobile Data Troubleshooting
+    P2_2_Start [label="Path 2.2: Slow Mobile Data", shape=ellipse, style=filled, fillcolor=lightpink];
+    P2_2_S0_CheckSlowData [label="Step 2.2.0: Check if user is facing a slow data issue", style=filled, fillcolor=lightpink];
+    P2_2_S1_CheckDataRestriction [label="Step 2.2.1: Check Data Restriction Settings", style=filled, fillcolor=lightpink];
+    P2_2_S1_Decision_DataSaverON [label="Data Saver ON?", shape=diamond];
+    P2_2_S1_Action_TurnDataSaverOFF [label="Ask user to turn Data Saver mode OFF"];
+    P2_2_S1_Action_RetestAfterSaver [label="Ask user to rerun speed test"];
+    P2_2_S1_Decision_ExcellentAfterSaver [label="Speed 'Excellent'?", shape=diamond];
+
+    P2_2_S2_CheckNetworkMode [label="Step 2.2.2: Check Network Mode Preference", style=filled, fillcolor=lightpink];
+    P2_2_S2_Decision_OldNetworkMode [label="Set to older network (2G/3G)?", shape=diamond];
+    P2_2_S2_Action_ChangeNetworkTo5G [label="Ask user to change network to include 5G"];
+    P2_2_S2_Action_RetestAfterNetwork [label="Ask user to rerun speed test"];
+    P2_2_S2_Decision_ExcellentAfterNetwork [label="Speed 'Excellent'?", shape=diamond];
+
+    P2_2_S3_CheckVPN [label="Step 2.2.3: Check for Active VPN", style=filled, fillcolor=lightpink];
+    P2_2_S3_Decision_VPNActive [label="VPN Active?", shape=diamond];
+    P2_2_S3_Action_TurnVPNOFF [label="Ask user to turn off VPN"];
+    P2_2_S3_Action_RetestAfterVPN [label="Ask user to rerun speed test"];
+    P2_2_S3_Decision_ExcellentAfterVPN [label="Speed 'Excellent'?", shape=diamond];
+
+    // Reference nodes for cross-path connections
+    Path1_Reference [label="⚠️ Run Path 1: No Service\nTroubleshooting First", shape=rectangle, style="filled,dashed", fillcolor=lightblue];
+
+    // Path 2 Entry Point Flow
+    Start -> P2_Start;
+    P2_Start -> P2_S0_RunSpeedTest;
+    P2_S0_RunSpeedTest -> P2_1_Start;
+    P2_S0_RunSpeedTest -> P2_2_Start;
+    P2_1_Start -> P2_1_S0_CheckUnavailableData;
+    P2_1_S0_CheckUnavailableData -> P2_S0_Decision_NoConnection;
+    P2_2_Start -> P2_2_S0_CheckSlowData;
+    P2_2_S0_CheckSlowData -> P2_S0_Decision_ExcellentSpeed;
+    P2_S0_Decision_NoConnection -> P2_1_S1_VerifyService [label="Yes (No Connection)"];
+    P2_S0_Decision_NoConnection -> P2_2_Start; 
+    P2_S0_Decision_ExcellentSpeed -> End_Resolve [label="Yes (Not a data issue)"];
+    P2_S0_Decision_ExcellentSpeed -> P2_2_S1_CheckDataRestriction [label="No (Slow data)"];
+
+    // Path 2.1: Unavailable Mobile Data Flow
+    P2_1_S1_VerifyService -> Path1_Reference [style=dashed, label="Follow Path 1"];
+    P2_1_S1_VerifyService -> P2_1_Action_RetestAfterP1 [label="After Path 1 complete"];
+    P2_1_Action_RetestAfterP1 -> P2_1_Decision_ConnectivityRestored;
+    P2_1_Decision_ConnectivityRestored -> End_Resolve [label="Yes (Connectivity restored,\nspeed excellent)"];
+    P2_1_Decision_ConnectivityRestored -> P2_2_Start [label="Yes (Connectivity restored\nbut speed not excellent)"];
+    P2_1_Decision_ConnectivityRestored -> P2_1_S2_Decision_DataIssue [label="No"];
+
+    P2_1_S2_Decision_DataIssue -> P2_1_S2_CheckRoaming [label="Yes"];
+    P2_1_S2_Decision_DataIssue -> P2_1_S3_CheckMobileDataSettings [label="No"];
+
+    P2_1_S2_CheckRoaming -> P2_1_S2_Decision_DataRoamingOFF;
+    P2_1_S2_Decision_DataRoamingOFF -> P2_1_S2_Action_TurnDataRoamingON [label="Yes"];
+    P2_1_S2_Action_TurnDataRoamingON -> P2_1_S2_Action_RetestAfterRoamingON;
+    P2_1_S2_Action_RetestAfterRoamingON -> P2_1_S2_Decision_RoamingWorksAfterON;
+    P2_1_S2_Decision_RoamingWorksAfterON -> End_Resolve [label="Yes (Connectivity restored,\nspeed excellent)"];
+    P2_1_S2_Decision_RoamingWorksAfterON -> P2_2_Start [label="Yes (Connectivity restored\nbut speed not excellent)"];
+    P2_1_S2_Decision_RoamingWorksAfterON -> P2_1_S2_VerifyLineRoamingEnabled [label="No"];
+    P2_1_S2_Decision_DataRoamingOFF -> P2_1_S2_VerifyLineRoamingEnabled [label="No"];
+
+    P2_1_S2_VerifyLineRoamingEnabled -> P2_1_S2_Decision_LineRoamingNotEnabled;
+    P2_1_S2_Decision_LineRoamingNotEnabled -> P2_1_S2_Action_EnableRoaming [label="Yes"];
+    P2_1_S2_Action_EnableRoaming -> P2_1_S2_Action_RetestAfterEnable;
+    P2_1_S2_Action_RetestAfterEnable -> P2_1_S2_Decision_RoamingWorksAfterEnable;
+    P2_1_S2_Decision_RoamingWorksAfterEnable -> End_Resolve [label="Yes (Connectivity restored,\nspeed excellent)"];
+    P2_1_S2_Decision_RoamingWorksAfterEnable -> P2_2_Start [label="Yes (Connectivity restored\nbut speed not excellent)"];
+    P2_1_S2_Decision_RoamingWorksAfterEnable -> P2_1_S3_CheckMobileDataSettings [label="No"];
+    P2_1_S2_Decision_LineRoamingNotEnabled -> P2_1_S3_CheckMobileDataSettings [label="No"];
+
+    P2_1_S3_CheckMobileDataSettings -> P2_1_S3_Decision_MobileDataOFF;
+    P2_1_S3_Decision_MobileDataOFF -> P2_1_S3_Action_TurnMobileDataON [label="Yes"];
+    P2_1_S3_Action_TurnMobileDataON -> P2_1_S3_Action_RetestAfterMobileON;
+    P2_1_S3_Action_RetestAfterMobileON -> P2_1_S3_Decision_MobileDataWorksAfterON;
+    P2_1_S3_Decision_MobileDataWorksAfterON -> End_Resolve [label="Yes (Connectivity restored,\nspeed excellent)"];
+    P2_1_S3_Decision_MobileDataWorksAfterON -> P2_2_Start [label="Yes (Connectivity restored\nbut speed not excellent)"];
+    P2_1_S3_Decision_MobileDataWorksAfterON -> P2_1_S4_CheckDataUsage [label="No"];
+    P2_1_S3_Decision_MobileDataOFF -> P2_1_S4_CheckDataUsage [label="No"];
+
+    P2_1_S4_CheckDataUsage -> P2_1_S4_Decision_DataExceeded;
+    P2_1_S4_Decision_DataExceeded -> P2_1_S4_Action_AskPlanOrRefuel [label="Yes"];
+    P2_1_S4_Action_AskPlanOrRefuel -> P2_1_S4_Decision_ChangePlan;
+    P2_1_S4_Decision_ChangePlan -> P2_1_S4_Action_GatherPlans [label="Yes (Change Plan)"];
+    P2_1_S4_Action_GatherPlans -> P2_1_S4_Action_AskSelectPlan;
+    P2_1_S4_Action_AskSelectPlan -> P2_1_S4_Action_ApplyPlan;
+    P2_1_S4_Action_ApplyPlan -> P2_1_S4_Action_RetestAfterDataAction;
+    P2_1_S4_Decision_ChangePlan -> P2_1_S4_Action_RefuelHowMuch [label="No (Refuel Data)"];
+    P2_1_S4_Action_RefuelHowMuch -> P2_1_S4_Action_ConfirmPrice;
+    P2_1_S4_Action_ConfirmPrice -> P2_1_S4_Decision_ConfirmRefuel;
+    P2_1_S4_Decision_ConfirmRefuel -> P2_1_S4_Action_ApplyRefuel [label="Yes"];
+    P2_1_S4_Action_ApplyRefuel -> P2_1_S4_Action_RetestAfterDataAction;
+    P2_1_S4_Action_RetestAfterDataAction -> P2_1_S4_Decision_ConnectivityAfterData;
+    P2_1_S4_Decision_ConnectivityAfterData -> P2_1_S4_Decision_ExcellentAfterData [label="Yes"];
+    P2_1_S4_Decision_ExcellentAfterData -> End_Resolve [label="Yes"];
+    P2_1_S4_Decision_ExcellentAfterData -> P2_2_Start [label="No"];
+    P2_1_S4_Decision_ConnectivityAfterData -> End_Escalate_Tech [label="No"];
+    P2_1_S4_Decision_ConfirmRefuel -> End_Escalate_Tech [label="No (User declined refuel)"];
+    P2_1_S4_Decision_DataExceeded -> End_Escalate_Tech [label="No (Data not exceeded)"];
+
+    // Path 2.2: Slow Mobile Data Flow
+    P2_2_S1_CheckDataRestriction -> P2_2_S1_Decision_DataSaverON;
+    P2_2_S1_Decision_DataSaverON -> P2_2_S1_Action_TurnDataSaverOFF [label="Yes"];
+    P2_2_S1_Action_TurnDataSaverOFF -> P2_2_S1_Action_RetestAfterSaver;
+    P2_2_S1_Action_RetestAfterSaver -> P2_2_S1_Decision_ExcellentAfterSaver;
+    P2_2_S1_Decision_ExcellentAfterSaver -> End_Resolve [label="Yes"];
+    P2_2_S1_Decision_ExcellentAfterSaver -> P2_2_S2_CheckNetworkMode [label="No"];
+    P2_2_S1_Decision_DataSaverON -> P2_2_S2_CheckNetworkMode [label="No"];
+
+    P2_2_S2_CheckNetworkMode -> P2_2_S2_Decision_OldNetworkMode;
+    P2_2_S2_Decision_OldNetworkMode -> P2_2_S2_Action_ChangeNetworkTo5G [label="Yes"];
+    P2_2_S2_Action_ChangeNetworkTo5G -> P2_2_S2_Action_RetestAfterNetwork;
+    P2_2_S2_Action_RetestAfterNetwork -> P2_2_S2_Decision_ExcellentAfterNetwork;
+    P2_2_S2_Decision_ExcellentAfterNetwork -> End_Resolve [label="Yes"];
+    P2_2_S2_Decision_ExcellentAfterNetwork -> P2_2_S3_CheckVPN [label="No"];
+    P2_2_S2_Decision_OldNetworkMode -> P2_2_S3_CheckVPN [label="No"];
+
+    P2_2_S3_CheckVPN -> P2_2_S3_Decision_VPNActive;
+    P2_2_S3_Decision_VPNActive -> P2_2_S3_Action_TurnVPNOFF [label="Yes"];
+    P2_2_S3_Action_TurnVPNOFF -> P2_2_S3_Action_RetestAfterVPN;
+    P2_2_S3_Action_RetestAfterVPN -> P2_2_S3_Decision_ExcellentAfterVPN;
+    P2_2_S3_Decision_ExcellentAfterVPN -> End_Resolve [label="Yes"];
+    P2_2_S3_Decision_ExcellentAfterVPN -> End_Escalate_Tech [label="No"];
+    P2_2_S3_Decision_VPNActive -> End_Escalate_Tech [label="No"];
+} 

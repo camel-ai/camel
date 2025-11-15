@@ -1,0 +1,42 @@
+[device]
+sim_card_status = "active"
+sim_card_missing = false
+airplane_mode = false
+network_signal_strength = "good"
+network_technology_connected = "5G"
+network_connection_status = "connected"
+battery_level = 80
+data_enabled = true
+roaming_enabled = false
+network_mode_preference = "4g_5g_preferred"
+wifi_enabled = false
+wifi_connected = false
+wifi_signal_strength = "none"
+wifi_calling_enabled = false
+wifi_calling_mms_over_wifi = false
+data_saver_mode = false
+vpn_enabled_setting = false
+vpn_connected = false
+
+[device.active_apn_settings]
+apn_name = "internet"
+mms_apn = "mms"
+mmsc_url = "http://mms.carrier.com/mms/wapenc"
+
+[device.app_statuses.messaging]
+app_name = "messaging"
+
+[device.app_statuses.messaging.permissions]
+sms = true
+storage = true
+phone = true
+network = false
+
+[device.app_statuses.browser]
+app_name = "browser"
+
+[device.app_statuses.browser.permissions]
+sms = false
+storage = true
+phone = false
+network = true

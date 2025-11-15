@@ -1,0 +1,13 @@
+{
+    "base": [
+        "create_task_1",
+        "create_task_1_with_env_assertions",
+        "create_task_1_nl_eval",
+        "update_task_1",
+        "update_task_with_message_history",
+        "update_task_with_initialization_data",
+        "update_task_with_initialization_actions",
+        "update_task_with_history_and_env_assertions",
+        "impossible_task_1"
+    ]
+}

@@ -20,6 +20,7 @@ from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 from .tau_bench import TauBenchBenchmark
+from .tau2_bench import Tau2BenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
@@ -31,4 +32,5 @@ __all__ = [
     "APIBankBenchmark",
     "RAGBenchBenchmark",
     "TauBenchBenchmark",
+    "Tau2BenchBenchmark",
 ]

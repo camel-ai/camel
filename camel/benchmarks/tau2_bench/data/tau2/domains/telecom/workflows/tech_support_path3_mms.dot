@@ -1,0 +1,97 @@
+digraph TechSupportWorkflow {
+    rankdir=TB;
+    nodesep=0.7;
+    node [fontname="Helvetica", fontsize=10, shape=rectangle];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Start and End Nodes
+    Start [label="Start: User Reports Issue", shape=oval];
+    End_Resolve [label="Issue Resolved", shape=oval];
+    End_Escalate_Tech [label="Transfer to Human Agent", shape=oval];
+    
+    // External Path References
+    Path1_Reference [label="⚠️ Run Path 1: No Service\nTroubleshooting First", shape=rectangle, style="filled,dashed", fillcolor=lightblue];
+    Path2_1_Reference [label="⚠️ Run Path 2.1: Mobile Data\nConnectivity Check", shape=rectangle, style="filled,dashed", fillcolor=coral];
+
+    // Path 3: MMS Troubleshooting
+    P3_Start [label="Path 3: MMS (Picture/Group Messaging)", shape=ellipse, style=filled, fillcolor=lightcoral];
+    P3_S0_CheckMMS [label="Step 3.0: Check if user is facing a MMS issue", style=filled, fillcolor=lightcoral];
+    P3_S0_Decision_MMSWorks [label="Can send MMS?", shape=diamond];
+
+    P3_S1_VerifyNetworkService [label="Step 3.1: Verify Network Service Status", style=filled, fillcolor=lightcoral];
+    P3_S1_Action_RetestMMS_P1 [label="Ask user to try MMS again\nafter Path 1 resolution"];
+
+    P3_S2_VerifyMobileData [label="Step 3.2: Verify Mobile Data Status", style=filled, fillcolor=lightcoral];
+    P3_S2_Action_RetestMMS_P2 [label="Ask user to try MMS again\nafter data connectivity confirmed"];
+
+    P3_S3_CheckNetworkTech [label="Step 3.3: Check Network Technology", style=filled, fillcolor=lightcoral];
+    P3_S3_Decision_Is2G [label="Connected to 2G only?", shape=diamond];
+    P3_S3_Action_ChangeNetworkMode [label="Ask user to change network mode\nto include 3G/4G/5G"];
+    P3_S3_Action_VerifyMMSWorks2G [label="Ask user to try MMS again"];
+    P3_S3_Decision_MMSWorksAfter2G [label="MMS Works?", shape=diamond];
+
+    P3_S4_CheckWifiCalling [label="Step 3.4: Check Wi-Fi Calling Status", style=filled, fillcolor=lightcoral];
+    P3_S4_Decision_WifiCallingON [label="Wi-Fi Calling ON?", shape=diamond];
+    P3_S4_Action_TurnWifiCallingOFF [label="Ask user to turn Wi-Fi Calling OFF"];
+    P3_S4_Action_VerifyMMSWorksWifiOFF [label="Ask user to try MMS again"];
+    P3_S4_Decision_MMSWorksAfterWifiOFF [label="MMS Works?", shape=diamond];
+
+    P3_S5_VerifyAppPermissions [label="Step 3.5: Verify Messaging App Permissions", style=filled, fillcolor=lightcoral];
+    P3_S5_Decision_PermissionsMissing [label="Storage or SMS permission missing?", shape=diamond];
+    P3_S5_Action_GrantPermissions [label="Ask user to grant both permissions"];
+    P3_S5_Action_VerifyMMSWorksPerms [label="Ask user to try MMS again"];
+    P3_S5_Decision_MMSWorksAfterPerms [label="MMS Works?", shape=diamond];
+
+    P3_S6_CheckAPNSettings [label="Step 3.6: Check APN Settings", style=filled, fillcolor=lightcoral];
+    P3_S6_Decision_MMSC_Missing [label="MMSC URL missing?", shape=diamond];
+    P3_S6_Action_ResetAPN [label="Ask user to reset APN settings to carrier defaults"];
+    P3_S6_Action_VerifyMMSWorksAPN [label="Ask user to try MMS again"];
+    P3_S6_Decision_MMSWorksAfterAPN [label="MMS Works?", shape=diamond];
+
+    // Flow connections
+    Start -> P3_Start;
+    P3_Start -> P3_S0_CheckMMS;
+    P3_S0_CheckMMS -> P3_S0_Decision_MMSWorks;
+    P3_S0_Decision_MMSWorks -> End_Resolve [label="Yes (Not an MMS issue)"];
+    P3_S0_Decision_MMSWorks -> P3_S1_VerifyNetworkService [label="No"];
+
+    P3_S1_VerifyNetworkService -> Path1_Reference [style=dashed, label="Follow Path 1"];
+    P3_S1_VerifyNetworkService -> P3_S1_Action_RetestMMS_P1 [label="After Path 1 confirms service"];
+    P3_S1_Action_RetestMMS_P1 -> P3_S2_VerifyMobileData;
+
+    P3_S2_VerifyMobileData -> Path2_1_Reference [style=dashed, label="Follow Path 2.1 (connectivity focus)"];
+    P3_S2_VerifyMobileData -> P3_S2_Action_RetestMMS_P2 [label="After data connectivity confirmed"];
+    P3_S2_Action_RetestMMS_P2 -> P3_S3_CheckNetworkTech;
+
+    P3_S3_CheckNetworkTech -> P3_S3_Decision_Is2G;
+    P3_S3_Decision_Is2G -> P3_S3_Action_ChangeNetworkMode [label="Yes"];
+    P3_S3_Action_ChangeNetworkMode -> P3_S3_Action_VerifyMMSWorks2G;
+    P3_S3_Action_VerifyMMSWorks2G -> P3_S3_Decision_MMSWorksAfter2G;
+    P3_S3_Decision_MMSWorksAfter2G -> End_Resolve [label="Yes"];
+    P3_S3_Decision_MMSWorksAfter2G -> P3_S4_CheckWifiCalling [label="No"];
+    P3_S3_Decision_Is2G -> P3_S4_CheckWifiCalling [label="No (3G+)"];
+
+    P3_S4_CheckWifiCalling -> P3_S4_Decision_WifiCallingON;
+    P3_S4_Decision_WifiCallingON -> P3_S4_Action_TurnWifiCallingOFF [label="Yes"];
+    P3_S4_Action_TurnWifiCallingOFF -> P3_S4_Action_VerifyMMSWorksWifiOFF;
+    P3_S4_Action_VerifyMMSWorksWifiOFF -> P3_S4_Decision_MMSWorksAfterWifiOFF;
+    P3_S4_Decision_MMSWorksAfterWifiOFF -> End_Resolve [label="Yes"];
+    P3_S4_Decision_MMSWorksAfterWifiOFF -> P3_S5_VerifyAppPermissions [label="No"];
+    P3_S4_Decision_WifiCallingON -> P3_S5_VerifyAppPermissions [label="No"];
+
+    P3_S5_VerifyAppPermissions -> P3_S5_Decision_PermissionsMissing;
+    P3_S5_Decision_PermissionsMissing -> P3_S5_Action_GrantPermissions [label="Yes"];
+    P3_S5_Action_GrantPermissions -> P3_S5_Action_VerifyMMSWorksPerms;
+    P3_S5_Action_VerifyMMSWorksPerms -> P3_S5_Decision_MMSWorksAfterPerms;
+    P3_S5_Decision_MMSWorksAfterPerms -> End_Resolve [label="Yes"];
+    P3_S5_Decision_MMSWorksAfterPerms -> P3_S6_CheckAPNSettings [label="No"];
+    P3_S5_Decision_PermissionsMissing -> P3_S6_CheckAPNSettings [label="No"];
+
+    P3_S6_CheckAPNSettings -> P3_S6_Decision_MMSC_Missing;
+    P3_S6_Decision_MMSC_Missing -> P3_S6_Action_ResetAPN [label="Yes"];
+    P3_S6_Action_ResetAPN -> P3_S6_Action_VerifyMMSWorksAPN;
+    P3_S6_Action_VerifyMMSWorksAPN -> P3_S6_Decision_MMSWorksAfterAPN;
+    P3_S6_Decision_MMSWorksAfterAPN -> End_Resolve [label="Yes"];
+    P3_S6_Decision_MMSWorksAfterAPN -> End_Escalate_Tech [label="No"];
+    P3_S6_Decision_MMSC_Missing -> End_Escalate_Tech [label="No"];
+} 

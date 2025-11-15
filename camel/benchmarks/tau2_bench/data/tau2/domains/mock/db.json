@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "task_1": {
+      "task_id": "task_1",
+      "title": "Test task",
+      "description": "A test task",
+      "status": "pending"
+    }
+  },
+  "users": {
+    "user_1": {
+      "user_id": "user_1", 
+      "name": "Test User",
+      "tasks": ["task_1"]
+    }
+  }
+} 

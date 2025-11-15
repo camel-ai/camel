@@ -1,0 +1,1648 @@
+[
+  {
+    "id": "[mobile_data_issue]user_abroad_roaming_enabled_off[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently abroad in France.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: abroad in France. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_user_location",
+          "arguments": {
+            "abroad": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_roaming_off",
+          "arguments": {}
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "enable_roaming",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "toggle_roaming_0",
+          "requestor": "user",
+          "name": "toggle_roaming",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]user_abroad_roaming_disabled_on[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently abroad in France.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: abroad in France. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_user_location",
+          "arguments": {
+            "abroad": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_roaming_on",
+          "arguments": {}
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "disable_roaming",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "simulate_network_search",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "enable_roaming_0",
+          "requestor": "assistant",
+          "name": "enable_roaming",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]user_abroad_roaming_disabled_off[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently abroad in France.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: abroad in France. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_user_location",
+          "arguments": {
+            "abroad": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_roaming_off",
+          "arguments": {}
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "disable_roaming",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "simulate_network_search",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "enable_roaming_0",
+          "requestor": "assistant",
+          "name": "enable_roaming",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "toggle_roaming_1",
+          "requestor": "user",
+          "name": "toggle_roaming",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]data_mode_off[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_data_off",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "toggle_data_0",
+          "requestor": "user",
+          "name": "toggle_data",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]data_saver_mode_on[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_data_saver_mode_on",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "toggle_data_saver_mode_0",
+          "requestor": "user",
+          "name": "toggle_data_saver_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]bad_network_preference[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_network_mode_preference",
+          "arguments": {
+            "mode": "2g_only"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "set_network_mode_preference_0",
+          "requestor": "user",
+          "name": "set_network_mode_preference",
+          "arguments": {
+            "mode": "4g_5g_preferred"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]bad_vpn[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "break_vpn",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "disconnect_vpn_0",
+          "requestor": "user",
+          "name": "disconnect_vpn",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mobile_data_issue]data_usage_exceeded[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: Mobile Data/Slow Internet Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their mobile data. They are unable to use their phone to browse the internet, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when speed test returns excellent internet speed. They will not change their mobile data plan but they will refuel 2.0 GB of data if necessary.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "set_data_usage",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002",
+            "data_used_gb": 15.1
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "refuel_data_0",
+          "requestor": "assistant",
+          "name": "refuel_data",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002",
+            "gb_amount": 2.0
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_mobile_data_status",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "user",
+          "func_name": "assert_internet_speed",
+          "arguments": {
+            "expected_speed": 200,
+            "expected_desc": "excellent"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_data_refueling_amount",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002",
+            "expected_amount": 2.0
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]airplane_mode_on[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "turn_airplane_mode_on",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "toggle_airplane_mode_0",
+          "requestor": "user",
+          "name": "toggle_airplane_mode",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "connected"
+          },
+          "assert_value": true,
+          "message": "Service status is not as expected"
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_no_overdue_bill",
+          "arguments": {
+            "overdue_bill_id": "B1234321"
+          },
+          "assert_value": true,
+          "message": "Overdue bill is not as expected"
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]unseat_sim_card[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "unseat_sim_card",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "reseat_sim_card_0",
+          "requestor": "user",
+          "name": "reseat_sim_card",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "connected"
+          },
+          "assert_value": true,
+          "message": "Service status is not as expected"
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_no_overdue_bill",
+          "arguments": {
+            "overdue_bill_id": "B1234321"
+          },
+          "assert_value": true,
+          "message": "Overdue bill is not as expected"
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]lock_sim_card_pin[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "lock_sim_card",
+          "arguments": {
+            "mode": "pin"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "transfer_to_human_agents",
+          "requestor": "assistant",
+          "name": "transfer_to_human_agents",
+          "arguments": {
+            "summary": "I cannot fix the issue."
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "no_service"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]break_apn_settings[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "break_apn_settings",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "reset_apn_settings_0",
+          "requestor": "user",
+          "name": "reset_apn_settings",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "reboot_device_1",
+          "requestor": "user",
+          "name": "reboot_device",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "connected"
+          },
+          "assert_value": true,
+          "message": "Service status is not as expected"
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_no_overdue_bill",
+          "arguments": {
+            "overdue_bill_id": "B1234321"
+          },
+          "assert_value": true,
+          "message": "Overdue bill is not as expected"
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]overdue_bill_suspension[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "suspend_line_for_overdue_bill",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002",
+            "new_bill_id": "B1234321",
+            "contract_ended": false
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "simulate_network_search",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "send_payment_request_0",
+          "requestor": "assistant",
+          "name": "send_payment_request",
+          "arguments": {
+            "customer_id": "C1001",
+            "bill_id": "B1234321"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "make_payment_1",
+          "requestor": "user",
+          "name": "make_payment",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "resume_line_2",
+          "requestor": "assistant",
+          "name": "resume_line",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "reboot_device_3",
+          "requestor": "user",
+          "name": "reboot_device",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "connected"
+          },
+          "assert_value": true,
+          "message": "Service status is not as expected"
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "assert_no_overdue_bill",
+          "arguments": {
+            "overdue_bill_id": "B1234321"
+          },
+          "assert_value": true,
+          "message": "Overdue bill is not as expected"
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[service_issue]contract_end_suspension[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: No Service/Connection Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "Your phone has been showing 'No Service' for the past few hours.",
+        "known_info": "You are John Smith with phone number 555-123-2002.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved when the status bar shows that you have signal. Always check the status bar if the agent asks you for status information. If the agent asks you to pay a bill, you accept. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user is experiencing issues with their phone service. They are unable to make or receive calls, and the status bar shows 'No Service'. Customer name: John Smith, phone number: 555-123-2002. They gave permission to pay all their overdue bills. They will consider the issue resolved when the status bar shows that they have signal.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "assistant",
+          "func_name": "suspend_line_for_overdue_bill",
+          "arguments": {
+            "customer_id": "C1001",
+            "line_id": "L1002",
+            "new_bill_id": "B1234321",
+            "contract_ended": true
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "simulate_network_search",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "transfer_to_human_agents",
+          "requestor": "assistant",
+          "name": "transfer_to_human_agents",
+          "arguments": {
+            "summary": "I cannot fix the issue."
+          },
+          "info": null,
+          "compare_args": []
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_service_status",
+          "arguments": {
+            "expected_status": "no_service"
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION",
+        "ACTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]bad_network_preference[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_network_mode_preference",
+          "arguments": {
+            "mode": "2g_only"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "set_network_mode_preference_0",
+          "requestor": "user",
+          "name": "set_network_mode_preference",
+          "arguments": {
+            "mode": "4g_5g_preferred"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]bad_wifi_calling[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "set_wifi_calling",
+          "arguments": {
+            "enabled": true,
+            "mms_over_wifi": true
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "toggle_wifi_calling_0",
+          "requestor": "user",
+          "name": "toggle_wifi_calling",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]break_apn_mms_setting[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "break_apn_mms_setting",
+          "arguments": {}
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "reset_apn_settings_0",
+          "requestor": "user",
+          "name": "reset_apn_settings",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "reboot_device_1",
+          "requestor": "user",
+          "name": "reboot_device",
+          "arguments": {},
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]break_app_sms_permission[PERSONA:None]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": null,
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "remove_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "sms"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "grant_app_permission_0",
+          "requestor": "user",
+          "name": "grant_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "sms"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]break_app_storage_permission[PERSONA:Easy]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAs a 41-year-old office administrator, you use your cellphone daily for both work and personal tasks. While you're familiar with common phone functions, you wouldn't call yourself a tech enthusiast.\n\nYour technical skills are average - you handle standard smartphone features like calls, texts, email, and basic apps with ease. You understand the fundamental settings, but prefer clear, step-by-step guidance when trying something new.\n\nIn interactions, you're naturally friendly and patient. When receiving help, you listen attentively and aren't afraid to ask questions. You make sure to confirm your understanding and provide detailed feedback on each instruction you receive.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "remove_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "storage"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "grant_app_permission_0",
+          "requestor": "user",
+          "name": "grant_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "storage"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  },
+  {
+    "id": "[mms_issue]break_app_both_permissions[PERSONA:Hard]",
+    "description": {
+      "purpose": "Test resolution path: MMS (Picture/Group Messaging) Issues.",
+      "relevant_policies": null,
+      "notes": null
+    },
+    "user_scenario": {
+      "persona": "\nAt 64 years old, you're a retired librarian who keeps your phone use simple - mainly for calls, texts, and capturing photos of your grandchildren. Technology in general makes you feel uneasy and overwhelmed.\n\nYour technical knowledge is quite limited. Step-by-step instructions often confuse you, and technical terms like \"VPN\" or \"APN\" might as well be a foreign language. You only share information when specifically asked.\n\nWhen dealing with technology, you tend to get flustered quickly. You need constant reassurance and often interrupt with anxious questions. Simple requests like \"reboot the phone\" can trigger worries about losing precious photos.\n",
+      "instructions": {
+        "domain": "telecom",
+        "reason_for_call": "You are unable to send MMS messages using your messaging app for the past few hours. You want to fix it and successfully send an MMS message.",
+        "known_info": "You are John Smith with phone number 555-123-2002. You are currently at home in the United States.",
+        "unknown_info": null,
+        "task_instructions": "If the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \nWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \nFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\nNever make up the results of tool calls, always ground your responses on the results of tool calls.\nIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n"
+      }
+    },
+    "ticket": "The user has been unable to send MMS messages using their messaging app for the past few hours. Customer name: John Smith, phone number: 555-123-2002, current location: at home in the United States. They will consider the issue resolved when an MMS message can be successfully sent.",
+    "initial_state": {
+      "initialization_data": null,
+      "initialization_actions": [
+        {
+          "env_type": "user",
+          "func_name": "set_user_info",
+          "arguments": {
+            "name": "John Smith",
+            "phone_number": "555-123-2002"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "remove_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "sms"
+          }
+        },
+        {
+          "env_type": "user",
+          "func_name": "remove_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "storage"
+          }
+        }
+      ],
+      "message_history": null
+    },
+    "evaluation_criteria": {
+      "actions": [
+        {
+          "action_id": "grant_app_permission_0",
+          "requestor": "user",
+          "name": "grant_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "sms"
+          },
+          "info": null,
+          "compare_args": null
+        },
+        {
+          "action_id": "grant_app_permission_1",
+          "requestor": "user",
+          "name": "grant_app_permission",
+          "arguments": {
+            "app_name": "messaging",
+            "permission": "storage"
+          },
+          "info": null,
+          "compare_args": null
+        }
+      ],
+      "env_assertions": [
+        {
+          "env_type": "user",
+          "func_name": "assert_can_send_mms",
+          "arguments": {
+            "expected_status": true
+          },
+          "assert_value": true,
+          "message": null
+        }
+      ],
+      "communicate_info": null,
+      "nl_assertions": null,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ]
+    }
+  }
+]
