@@ -810,7 +810,8 @@ class Workforce(BaseNode):
         # Convert Task objects to content strings if needed
         if task_contents and isinstance(task_contents[0], Task):
             # Extract content from Task objects
-            content_list = [task.content for task in cast(List[Task], task_contents)]
+            task_list = cast(List[Task], task_contents)
+            content_list = [task.content for task in task_list]
             builder.add_parallel_tasks(
                 content_list, dependencies, task_id_prefix, auto_depend
             )
@@ -911,7 +912,8 @@ class Workforce(BaseNode):
         # Convert Task objects to content strings if needed
         if task_contents and isinstance(task_contents[0], Task):
             # Extract content from Task objects
-            content_list = [task.content for task in cast(List[Task], task_contents)]
+            task_list = cast(List[Task], task_contents)
+            content_list = [task.content for task in task_list]
             builder.fork(content_list)
         else:
             # task_contents is List[str] in else branch
