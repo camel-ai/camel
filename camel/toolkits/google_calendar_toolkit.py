@@ -210,15 +210,36 @@ class GoogleCalendarToolkit(BaseToolkit):
 
             result = []
             for event in events:
-                start = event['start'].get(
-                    'dateTime', event['start'].get('date')
+                start_info = event.get('start', {})
+                end_info = event.get('end', {})
+                start_time = start_info.get(
+                    'dateTime', start_info.get('date', 'Unknown')
                 )
+                end_time = end_info.get(
+                    'dateTime', end_info.get('date', 'Unknown')
+                )
+                timezone = (
+                    start_info.get('timeZone')
+                    or end_info.get('timeZone')
+                    or event.get('timeZone')
+                )
+                attendees = [
+                    attendee.get('email')
+                    for attendee in event.get('attendees', [])
+                    if attendee.get('email')
+                ]
+                organizer = event.get('organizer', {}).get('email')
+
                 result.append(
                     {
-                        'Event ID': event['id'],
+                        'Event ID': event.get('id'),
                         'Summary': event.get('summary', 'No Title'),
-                        'Start Time': start,
+                        'Start Time': start_time,
+                        'End Time': end_time,
+                        'Timezone': timezone,
                         'Link': event.get('htmlLink'),
+                        'Attendees': attendees,
+                        'Organizer': organizer,
                     }
                 )
 
