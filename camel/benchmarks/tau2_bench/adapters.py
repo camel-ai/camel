@@ -21,12 +21,6 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Sequence
 
-from camel.agents import ChatAgent
-from camel.agents._types import ToolCallRequest
-from camel.messages import BaseMessage, FunctionCallingMessage
-from camel.responses import ChatAgentResponse
-from camel.types import OpenAIBackendRole
-
 from tau2.agent.base import AgentError, BaseAgent, ValidAgentInputMessage
 from tau2.data_model.message import (
     AssistantMessage,
@@ -47,12 +41,18 @@ from tau2.user.base import (
     ValidUserInputMessage,
 )
 
+from camel.agents import ChatAgent
+from camel.agents._types import ToolCallRequest
+from camel.messages import BaseMessage, FunctionCallingMessage
+from camel.responses import ChatAgentResponse
+from camel.types import OpenAIBackendRole
+
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ToolCallRegistry:
-    r"""Tracks tool-call identifiers so tool responses can be contextualised."""
+    r"""Tracks tool-call identifiers so tool responses remain traceable."""
 
     mapping: Dict[str, str] = field(default_factory=dict)
 
@@ -364,9 +364,7 @@ class CamelTau2User(BaseUser):
             prompt = observation
 
         response = self._chat_agent.step(prompt)
-        user_message = self._response_to_user_message(
-            response, self._registry
-        )
+        user_message = self._response_to_user_message(response, self._registry)
         state.messages.append(user_message)
         return user_message, state
 
@@ -381,7 +379,9 @@ class CamelTau2User(BaseUser):
                 _convert_request_to_tool_call(req, registry, "user")
                 for req in external_requests
             ]
-            return UserMessage(role="user", content=None, tool_calls=tool_calls)
+            return UserMessage(
+                role="user", content=None, tool_calls=tool_calls
+            )
 
         if not response.msgs:
             raise UserError("User ChatAgent returned an empty response.")
@@ -395,9 +395,8 @@ class CamelTau2User(BaseUser):
     def is_stop(cls, message: UserMessage) -> bool:
         if message.is_tool_call() or not message.content:
             return False
-        return any(
-            token in message.content for token in (STOP, TRANSFER, OUT_OF_SCOPE)
-        )
+        tokens = (STOP, TRANSFER, OUT_OF_SCOPE)
+        return any(token in message.content for token in tokens)
 
     def set_seed(self, seed: int) -> None:
         backend = getattr(self._chat_agent, "model_backend", None)

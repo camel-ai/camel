@@ -471,6 +471,10 @@ allow-direct-references = true
 line-length = 79
 fix = true
 target-version = "py310"
+exclude = [
+    "camel/benchmarks/tau2_bench/tau2/*",
+    "camel/benchmarks/tau2_bench/data/*",
+]
 
 [tool.ruff.format]
 quote-style = "preserve"
@@ -679,4 +683,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,requestor,'

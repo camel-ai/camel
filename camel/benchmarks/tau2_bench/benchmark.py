@@ -15,7 +15,6 @@ r"""τ²-Bench integration that reuses CAMEL ``ChatAgent`` instances."""
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,13 +22,6 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence
-
-from camel.agents import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
-from camel.benchmarks.tau2_bench.adapters import CamelTau2Agent, CamelTau2User
-from camel.models import ModelFactory
-from camel.messages import BaseMessage
-from camel.types import ModelPlatformType, ModelType
 
 from tau2.data_model.simulation import Results, SimulationRun
 from tau2.data_model.tasks import Task, UserScenario
@@ -40,8 +32,17 @@ from tau2.registry import registry
 from tau2.run import get_info, get_tasks
 from tau2.user.user_simulator import (
     SYSTEM_PROMPT as USER_SYSTEM_PROMPT,
+)
+from tau2.user.user_simulator import (
     get_global_user_sim_guidelines,
 )
+
+from camel.agents import ChatAgent
+from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.tau2_bench.adapters import CamelTau2Agent, CamelTau2User
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,9 @@ class Tau2BenchBenchmark(BaseBenchmark):
         save_to: Path | str = DEFAULT_SAVE_DIR,
         processes: int = 1,
         user_model: ModelType | str = ModelType.GPT_4O_MINI,
-        user_model_platform: ModelPlatformType | str = ModelPlatformType.OPENAI,
+        user_model_platform: (
+            ModelPlatformType | str
+        ) = ModelPlatformType.OPENAI,
         user_model_config: Optional[Dict] = None,
     ):
         super().__init__(
@@ -89,7 +92,8 @@ class Tau2BenchBenchmark(BaseBenchmark):
         self.user_model_platform = self._resolve_model_platform(
             user_model_platform
         )
-        self.user_model_config = dict(user_model_config or {"temperature": 0.0})
+        default_user_config = {"temperature": 0.0}
+        self.user_model_config = dict(user_model_config or default_user_config)
 
     @staticmethod
     def _resolve_model_type(value: ModelType | str) -> ModelType:
@@ -98,13 +102,17 @@ class Tau2BenchBenchmark(BaseBenchmark):
         return ModelType(value)
 
     @staticmethod
-    def _resolve_model_platform(value: ModelPlatformType | str) -> ModelPlatformType:
+    def _resolve_model_platform(
+        value: ModelPlatformType | str,
+    ) -> ModelPlatformType:
         if isinstance(value, ModelPlatformType):
             return value
         return ModelPlatformType(value)
 
     def download(self) -> "Tau2BenchBenchmark":
-        logger.info("τ²-Bench data is vendored with CAMEL; nothing to download.")
+        logger.info(
+            "τ²-Bench data is vendored with CAMEL; nothing to download."
+        )
         return self
 
     def load(self, force_download: bool = False) -> "Tau2BenchBenchmark":
@@ -241,7 +249,9 @@ class Tau2BenchBenchmark(BaseBenchmark):
         if not self._tau2_results:
             return
         self._tau2_results.simulations.append(simulation)
-        reward = simulation.reward_info.reward if simulation.reward_info else 0.0
+        reward = (
+            simulation.reward_info.reward if simulation.reward_info else 0.0
+        )
         termination_reason = (
             simulation.termination_reason.value
             if hasattr(simulation.termination_reason, "value")
@@ -265,7 +275,7 @@ class Tau2BenchBenchmark(BaseBenchmark):
         seed: Optional[int],
     ) -> List[Task]:
         if task_ids:
-            lookup = set(str(tid) for tid in task_ids)
+            lookup = {str(tid) for tid in task_ids}
             filtered = [task for task in tasks if str(task.id) in lookup]
             missing = lookup - {str(task.id) for task in filtered}
             if missing:
@@ -389,7 +399,8 @@ class Tau2BenchBenchmark(BaseBenchmark):
         agent_clone = base_agent.clone(with_memory=False)
         base_system = getattr(agent_clone, "system_message", None)
         base_content = base_system.content if base_system else ""
-        combined = f"{base_content}\n\n<policy>\n{policy_text.strip()}\n</policy>"
+        policy_body = policy_text.strip()
+        combined = f"{base_content}\n\n" f"<policy>\n{policy_body}\n</policy>"
         system_message = BaseMessage.make_assistant_message(
             role_name="System",
             content=combined.strip(),
