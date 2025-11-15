@@ -15,6 +15,8 @@ import sys
 
 sys.path.append("..")
 
+import asyncio
+
 from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
@@ -26,89 +28,95 @@ from camel.types import ModelPlatformType, ModelType
 
 load_dotenv("../.env")
 
-web_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict={"temperature": 0},
-)
 
-planning_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict={"temperature": 0},
-)
-
-web_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict={"temperature": 0},
-)
-
-browser_simulator_toolkit = AsyncBrowserToolkit(
-    headless=False,
-    cache_dir="tmp/browser",
-    web_agent_model=web_agent_model,
-    planning_agent_model=planning_agent_model,
-)
-
-web_agent = ChatAgent(
-    """
-You are a helpful assistant that can search the web, simulate browser 
-actions, and provide relevant information to solve the given task.
-""",
-    model=web_model,
-    tools=[FunctionTool(browser_simulator_toolkit.browse_url)],
-)
-
-# Create custom agents for the workforce
-task_agent = ChatAgent(
-    "You are a helpful task planner.",
-    model=ModelFactory.create(
+async def main():
+    web_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
         model_config_dict={"temperature": 0},
-    ),
-)
+    )
 
-coordinator_agent = ChatAgent(
-    "You are a helpful coordinator.",
-    model=ModelFactory.create(
+    planning_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
         model_config_dict={"temperature": 0},
-    ),
-)
+    )
 
-workforce = Workforce(
-    "Gaia Workforce",
-    task_agent=task_agent,
-    coordinator_agent=coordinator_agent,
-)
+    web_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+        model_config_dict={"temperature": 0},
+    )
 
-workforce.add_single_agent_worker(
+    browser_simulator_toolkit = AsyncBrowserToolkit(
+        headless=False,
+        cache_dir="tmp/browser",
+        web_agent_model=web_agent_model,
+        planning_agent_model=planning_agent_model,
+    )
+
+    web_agent = ChatAgent(
+        """
+    You are a helpful assistant that can search the web, simulate browser 
+    actions, and provide relevant information to solve the given task.
+    """,
+        model=web_model,
+        tools=[FunctionTool(browser_simulator_toolkit.browse_url)],
+    )
+
+    # Create custom agents for the workforce
+    task_agent = ChatAgent(
+        "You are a helpful task planner.",
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O,
+            model_config_dict={"temperature": 0},
+        ),
+    )
+
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.",
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O,
+            model_config_dict={"temperature": 0},
+        ),
+    )
+
+    workforce = Workforce(
+        "Gaia Workforce",
+        task_agent=task_agent,
+        coordinator_agent=coordinator_agent,
+    )
+
+    await workforce.add_single_agent_worker(
+        """
+        An agent that can search the web, simulate browser actions, 
+        and provide relevant information to solve the given task.""",
+        worker=web_agent,
+    )
+
+    question = (
+        "Navigate to Amazon.com and identify the current #1 best-selling "
+        "product in the gaming category. Please provide the product name,"
+        "price, and rating if available."
+    )
+    task = Task(
+        content=question,
+        id="0",
+    )
+
+    task_result = await workforce.process_task_async(task)
+    print(task_result.result)
+
     """
-    An agent that can search the web, simulate browser actions, 
-    and provide relevant information to solve the given task.""",
-    worker=web_agent,
-)
+    ==========================================================================
+    The current #1 best-selling product in the gaming category on Amazon is 
+    'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and 
+    it has a rating of 4.8 stars based on 1,525 ratings.
+    ==========================================================================
+    """
 
-question = (
-    "Navigate to Amazon.com and identify the current #1 best-selling "
-    "product in the gaming category. Please provide the product name,"
-    "price, and rating if available."
-)
-task = Task(
-    content=question,
-    id="0",
-)
 
-task_result = workforce.process_task(task)
-print(task_result.result)
-
-"""
-==========================================================================
-The current #1 best-selling product in the gaming category on Amazon is 
-'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and 
-it has a rating of 4.8 stars based on 1,525 ratings.
-==========================================================================
-"""
+if __name__ == "__main__":
+    asyncio.run(main())
