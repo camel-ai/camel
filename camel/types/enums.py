@@ -1757,6 +1757,7 @@ class ModelPlatformType(Enum):
     DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
+    OPENAI_RESPONSES = "openai-responses"
     AWS_BEDROCK = "aws-bedrock"
     AZURE = "azure"
     ANTHROPIC = "anthropic"

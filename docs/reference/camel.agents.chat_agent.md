@@ -910,25 +910,6 @@ any of them signal termination. If a terminator signals
 termination, the agent's state is updated accordingly, and the
 termination reason is recorded.
 
-<a id="camel.agents.chat_agent.ChatAgent._handle_batch_response"></a>
-
-### _handle_batch_response
-
-```python
-def _handle_batch_response(self, response: ChatCompletion):
-```
-
-Process a batch response from the model and extract the necessary
-information.
-
-**Parameters:**
-
-- **response** (ChatCompletion): Model response.
-
-**Returns:**
-
-  _ModelResponse: parsed model response.
-
 <a id="camel.agents.chat_agent.ChatAgent._step_terminate"></a>
 
 ### _step_terminate
