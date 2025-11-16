@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import os
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
@@ -293,3 +294,201 @@ async def test_send_draft_email_failure(outlook_toolkit, mock_graph_service):
 
     assert 'error' in result
     assert 'Failed to send draft email' in result['error']
+
+
+async def test_delete_email(outlook_toolkit, mock_graph_service):
+    """Test deleting an email successfully."""
+    mock_graph_service.me.messages.by_message_id().delete.return_value = None
+
+    result = await outlook_toolkit.delete_email(message_id='msg123')
+
+    assert result['status'] == 'success'
+    assert result['message'] == 'Email deleted successfully'
+    assert result['message_id'] == 'msg123'
+
+    mock_graph_service.me.messages.by_message_id().delete.assert_called_once()
+
+
+async def test_delete_email_failure(outlook_toolkit, mock_graph_service):
+    """Test deleting email failure."""
+    mock_graph_service.me.messages.by_message_id().delete.side_effect = (
+        Exception("API Error")
+    )
+
+    result = await outlook_toolkit.delete_email(message_id='msg123')
+
+    assert 'error' in result
+    assert 'Failed to delete email' in result['error']
+
+
+async def test_move_message_to_folder(outlook_toolkit, mock_graph_service):
+    """Test moving an email to a folder successfully."""
+    mock_graph_service.me.messages.by_message_id().move.post.return_value = (
+        None
+    )
+
+    result = await outlook_toolkit.move_message_to_folder(
+        message_id='msg123', destination_folder_id='inbox'
+    )
+
+    assert result['status'] == 'success'
+    assert result['message'] == 'Email moved successfully'
+    assert result['message_id'] == 'msg123'
+    assert result['destination_folder_id'] == 'inbox'
+
+    mock_graph_service.me.messages.by_message_id().move.post.assert_called_once()
+
+
+async def test_move_message_to_folder_failure(
+    outlook_toolkit, mock_graph_service
+):
+    """Test moving email failure."""
+    mock_graph_service.me.messages.by_message_id().move.post.side_effect = (
+        Exception("API Error")
+    )
+
+    result = await outlook_toolkit.move_message_to_folder(
+        message_id='msg123', destination_folder_id='inbox'
+    )
+
+    assert 'error' in result
+    assert 'Failed to move email' in result['error']
+
+
+async def test_get_attachments(outlook_toolkit, mock_graph_service):
+    """Test getting attachments and saving to disk."""
+    import base64
+
+    mock_attachment = MagicMock()
+    mock_attachment.name = 'document.pdf'
+    mock_attachment.is_inline = False
+    mock_attachment.content_bytes = base64.b64encode(b'test content')
+
+    mock_response = MagicMock()
+    mock_response.value = [mock_attachment]
+    mock_attachments = mock_graph_service.me.messages.by_message_id()
+    mock_attachments.attachments.get.return_value = mock_response
+
+    with (
+        patch('os.makedirs'),
+        patch('os.path.exists', return_value=False),
+        patch('builtins.open', create=True),
+    ):
+        result = await outlook_toolkit.get_attachments(
+            message_id='msg123',
+        )
+
+        assert result['status'] == 'success'
+        assert result['total_count'] == 1
+
+
+async def test_get_attachments_exclude_inline(
+    outlook_toolkit, mock_graph_service
+):
+    """Test getting attachments excluding inline attachments (default)."""
+    mock_attachment1 = MagicMock()
+    mock_attachment1.name = 'image.png'
+    mock_attachment1.is_inline = True
+
+    mock_response = MagicMock()
+    mock_response.value = [mock_attachment1]
+    mock_attachments = mock_graph_service.me.messages.by_message_id()
+    mock_attachments.attachments.get.return_value = mock_response
+
+    result = await outlook_toolkit.get_attachments(
+        message_id='msg123',
+        include_inline_attachments=False,
+    )
+
+    assert result['status'] == 'success'
+    assert result['total_count'] == 0  # Only non-inline attachment
+    assert not result['attachments']
+
+
+async def test_get_attachments_include_inline(
+    outlook_toolkit, mock_graph_service
+):
+    """Test getting attachments including inline attachments."""
+    mock_attachment1 = MagicMock()
+    mock_attachment1.name = 'document.pdf'
+    mock_attachment1.is_inline = True
+
+    mock_attachment2 = MagicMock()
+    mock_attachment2.name = 'image.png'
+    mock_attachment2.is_inline = True
+
+    mock_response = MagicMock()
+    mock_response.value = [mock_attachment1, mock_attachment2]
+    mock_attachments = mock_graph_service.me.messages.by_message_id()
+    mock_attachments.attachments.get.return_value = mock_response
+
+    result = await outlook_toolkit.get_attachments(
+        message_id='msg123',
+        metadata_only=True,
+        include_inline_attachments=True,
+    )
+
+    assert result['status'] == 'success'
+    assert result['total_count'] == 2  # Both attachments included
+    assert result['attachments'][0]['name'] == 'document.pdf'
+    assert result['attachments'][1]['name'] == 'image.png'
+
+
+async def test_get_attachments_failure(outlook_toolkit, mock_graph_service):
+    """Test getting attachments failure."""
+    mock_attachments = mock_graph_service.me.messages.by_message_id()
+    mock_attachments.attachments.get.side_effect = Exception("API Error")
+
+    result = await outlook_toolkit.get_attachments(message_id='msg123')
+
+    assert 'error' in result
+    assert 'Failed to get attachments' in result['error']
+
+
+async def test_get_attachments_with_content_and_save_path(
+    outlook_toolkit, mock_graph_service
+):
+    """Test getting attachments with metadata_only=False and save_path."""
+    import base64
+    import tempfile
+
+    original_content = b'This is a test PDF file content.'
+    encoded_content = base64.b64encode(original_content)
+
+    mock_attachment = MagicMock()
+    mock_attachment.id = 'attachment-id-456'
+    mock_attachment.name = 'invoice.pdf'
+    mock_attachment.is_inline = False
+    mock_attachment.content_bytes = encoded_content
+
+    mock_response = MagicMock()
+    mock_response.value = [mock_attachment]
+    mock_attachments = mock_graph_service.me.messages.by_message_id()
+    mock_attachments.attachments.get.return_value = mock_response
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        m_open = mock_open()
+        with (
+            patch('os.makedirs') as mock_makedirs,
+            patch('os.path.exists', return_value=False),
+            patch('builtins.open', m_open),
+        ):
+            result = await outlook_toolkit.get_attachments(
+                message_id='msg456',
+                metadata_only=False,
+                save_path=temp_dir,
+            )
+
+            assert result['status'] == 'success'
+            assert result['total_count'] == 1
+            attachment_info = result['attachments'][0]
+            assert attachment_info['name'] == 'invoice.pdf'
+            assert 'saved_path' in attachment_info
+            assert 'content_bytes' not in attachment_info
+
+            expected_path = os.path.join(temp_dir, 'invoice.pdf')
+            assert attachment_info['saved_path'] == expected_path
+            mock_makedirs.assert_called_once_with(temp_dir, exist_ok=True)
+            m_open.assert_called_once_with(expected_path, 'wb')
+            handle = m_open()
+            handle.write.assert_called_once_with(original_content)
