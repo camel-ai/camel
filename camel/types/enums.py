@@ -25,6 +25,7 @@ class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
     SYSTEM = "system"
+    TOOL = "tool"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"

@@ -13,7 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 
 from camel.messages import (
     BaseMessage,
@@ -30,7 +34,7 @@ from camel.messages.conversion import (
 from camel.messages.conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.types import OpenAIBackendRole
+from camel.types import OpenAIBackendRole, RoleType
 
 
 @dataclass
@@ -57,6 +61,18 @@ class FunctionCallingMessage(BaseMessage):
     result: Optional[Any] = None
     tool_call_id: Optional[str] = None
     mask_output: Optional[bool] = False
+
+    @classmethod
+    def make_tool_message(
+        cls, role_name: str, content: str, tool_call_id: str
+    ) -> "FunctionCallingMessage":
+        return cls(
+            role_name=role_name,
+            role_type=RoleType.TOOL,
+            meta_dict=None,
+            content=content,
+            tool_call_id=tool_call_id,
+        )
 
     def to_openai_message(
         self,
