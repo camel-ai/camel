@@ -586,9 +586,10 @@ class OutlookToolkit(BaseToolkit):
         """Sends a draft email via Microsoft Outlook.
 
         Args:
-            draft_id (str): The ID of the draft email to send. Can be obtained
-            either by creating a draft via `create_draft_email()` or from the
-            'message_id' field in messages returned by `list_messages()`.
+            draft_id (str): The ID of the draft email to send. Can be
+                obtained either by creating a draft via
+                `create_draft_email()` or from the 'message_id' field in
+                messages returned by `list_messages()`.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the draft
