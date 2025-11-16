@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
+    SYSTEM = "system"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
@@ -331,9 +332,31 @@ class ModelType(UnifiedModelType, Enum):
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_PRO_DEEPSEEK_V3 = "Pro/deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_PRO_DEEPSEEK_R1 = "Pro/deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
     SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
     SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
     SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
+    SILICONFLOW_QWQ_32B = "Qwen/QwQ-32B"
     SILICONFLOW_QWEN2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
     SILICONFLOW_QWEN2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
     SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
@@ -341,6 +364,12 @@ class ModelType(UnifiedModelType, Enum):
     SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
     SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
     SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
+    SILICONFLOW_THUDM_GLM_Z1_32B_0414 = "THUDM/GLM-Z1-32B-0414"
+    SILICONFLOW_THUDM_GLM_4_32B_0414 = "THUDM/GLM-4-32B-0414"
+    SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414 = (
+        "THUDM/GLM-Z1-Rumination-32B-0414"
+    )
+    SILICONFLOW_THUDM_GLM_4_9B_0414 = "THUDM/GLM-4-9B-0414"
 
     # AIML models support tool calling
     AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
@@ -472,6 +501,10 @@ class ModelType(UnifiedModelType, Enum):
 
     CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
+    # Minimax M2 models
+    MINIMAX_M2 = "MiniMax-M2"
+    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     def __str__(self):
         return self.value
@@ -982,9 +1015,19 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.SILICONFLOW_DEEPSEEK_V2_5,
             ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
             ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
             ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
             ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
@@ -992,6 +1035,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
         }
 
     @property
@@ -1249,6 +1296,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
             ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
+            ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1269,6 +1325,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B,
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B,
             ModelType.NOVITA_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+            ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
         }:
             return 64_000
         elif self in {
@@ -1375,6 +1442,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COMETAPI_DEEPSEEK_REASONER,
             ModelType.COMETAPI_QWEN3_30B_A3B,
             ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
         }:
             return 128_000
         elif self in {
@@ -1485,6 +1558,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self in {
+            ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
+        }:
+            return 32_000
 
         else:
             logger.warning(
@@ -1717,6 +1795,8 @@ class ModelPlatformType(Enum):
     WATSONX = "watsonx"
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
+    AIHUBMIX = "aihubmix"
+    MINIMAX = "minimax"
 
     @classmethod
     def from_name(cls, name):
@@ -1896,6 +1976,16 @@ class ModelPlatformType(Enum):
     def is_crynux(self) -> bool:
         r"""Returns whether this platform is Crynux."""
         return self is ModelPlatformType.CRYNUX
+
+    @property
+    def is_aihubmix(self) -> bool:
+        r"""Returns whether this platform is AihubMix."""
+        return self is ModelPlatformType.AIHUBMIX
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether this platform is Minimax M2."""
+        return self is ModelPlatformType.MINIMAX
 
 
 class AudioModelType(Enum):
