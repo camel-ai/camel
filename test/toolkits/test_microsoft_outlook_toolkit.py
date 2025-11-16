@@ -492,3 +492,141 @@ async def test_get_attachments_with_content_and_save_path(
             m_open.assert_called_once_with(expected_path, 'wb')
             handle = m_open()
             handle.write.assert_called_once_with(original_content)
+
+
+@pytest.fixture(
+    params=[
+        ('Plain text email body.', 'text', 'Plain text email body.'),
+        (
+            '<html><body><p>HTML email body.</p></body></html>',
+            'html',
+            'HTML email body.',
+        ),
+    ],
+    ids=['plain_text', 'html_to_text'],
+)
+def create_mock_message(request):
+    """Parametrized fixture that creates mock message objects."""
+    from datetime import datetime, timezone
+
+    body_content, body_type, expected_body = request.param
+
+    mock_msg = MagicMock()
+    mock_msg.id = 'msg123'
+    mock_msg.subject = 'Test Subject'
+    mock_msg.body_preview = body_content[:25] + '...'
+    mock_msg.is_read = False
+    mock_msg.is_draft = False
+    mock_msg.has_attachments = False
+    mock_msg.importance = 'normal'
+    mock_msg.received_date_time = datetime(
+        2024, 1, 15, 10, 30, tzinfo=timezone.utc
+    )
+    mock_msg.sent_date_time = datetime(
+        2024, 1, 15, 10, 29, tzinfo=timezone.utc
+    )
+
+    # Mock body
+    mock_body = MagicMock()
+    mock_body.content = body_content
+    mock_body.content_type = body_type
+    mock_msg.body = mock_body
+
+    # Mock from address
+    mock_from = MagicMock()
+    mock_from.email_address.address = 'sender@example.com'
+    mock_from.email_address.name = 'Sender Name'
+    mock_msg.from_ = mock_from
+
+    # Mock recipients
+    mock_to = MagicMock()
+    mock_to.email_address.address = 'recipient@example.com'
+    mock_to.email_address.name = 'Recipient Name'
+    mock_msg.to_recipients = [mock_to]
+    mock_msg.cc_recipients = []
+    mock_msg.bcc_recipients = []
+
+    # Add expected body for assertions
+    mock_msg.expected_body = expected_body
+
+    return mock_msg
+
+
+async def test_get_message(
+    outlook_toolkit, mock_graph_service, create_mock_message
+):
+    """Test getting messages with different content types."""
+    with patch(
+        'camel.toolkits.microsoft_outlook_toolkit.isinstance',
+        return_value=True,
+    ):
+        mock_graph_service.me.messages.by_message_id().get.return_value = (
+            create_mock_message
+        )
+
+        result = await outlook_toolkit.get_message(message_id='msg123')
+
+    assert result['status'] == 'success'
+    assert 'message' in result
+
+    message = result['message']
+    assert message['message_id'] == 'msg123'
+    assert message['subject'] == 'Test Subject'
+    assert message['body'] == create_mock_message.expected_body
+    assert message['is_read'] is False
+    assert message['from'][0]['address'] == 'sender@example.com'
+    assert message['to_recipients'][0]['address'] == 'recipient@example.com'
+
+    mock_graph_service.me.messages.by_message_id().get.assert_called_once()
+
+
+async def test_get_message_failure(outlook_toolkit, mock_graph_service):
+    """Test get_message handles API errors correctly."""
+    mock_graph_service.me.messages.by_message_id().get.side_effect = Exception(
+        "API Error"
+    )
+
+    result = await outlook_toolkit.get_message(message_id='msg123')
+
+    assert 'error' in result
+    assert 'Failed to get message' in result['error']
+
+
+async def test_list_messages(
+    outlook_toolkit, mock_graph_service, create_mock_message
+):
+    """Test listing messages with different content types."""
+    with patch(
+        'camel.toolkits.microsoft_outlook_toolkit.isinstance',
+        return_value=True,
+    ):
+        mock_response = MagicMock()
+        mock_response.value = [create_mock_message]
+        mock_graph_service.me.messages.get.return_value = mock_response
+
+        result = await outlook_toolkit.list_messages()
+
+    assert result['status'] == 'success'
+    assert 'messages' in result
+    assert result['total_count'] == 1
+    assert len(result['messages']) == 1
+
+    message = result['messages'][0]
+    assert message['message_id'] == 'msg123'
+    assert message['subject'] == 'Test Subject'
+    assert message['body'] == create_mock_message.expected_body
+    assert message['is_read'] is False
+    assert message['from'][0]['address'] == 'sender@example.com'
+    assert message['to_recipients'][0]['address'] == 'recipient@example.com'
+
+    mock_graph_service.me.messages.get.assert_called_once()
+
+
+async def test_list_messages_failure(outlook_toolkit, mock_graph_service):
+    """Test list_messages handles API errors correctly."""
+    mock_graph_service.me.messages.get.side_effect = Exception("API Error")
+
+    result = await outlook_toolkit.list_messages()
+
+    assert 'error' in result
+    assert 'Failed to list messages' in result['error']
