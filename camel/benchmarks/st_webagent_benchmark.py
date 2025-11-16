@@ -149,7 +149,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         processes: int = 1,
         config: Optional[STWebAgentBenchConfig] = None
     ):
-        """Initialize ST-WebAgentBench benchmark."""
+        r"""Initialize ST-WebAgentBench benchmark."""
         super().__init__(
             name="ST-WebAgentBench",
             data_dir=data_dir, 
@@ -160,7 +160,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         self._setup_environment()
 
     def _setup_environment(self) -> None:
-        """Setup the ST-WebAgentBench environment."""
+        r"""Setup the ST-WebAgentBench environment."""
         try:
             import gym
             import browsergym.stwebagentbench  # registers environments
@@ -172,7 +172,7 @@ class STWebAgentBenchmark(BaseBenchmark):
             )
 
     def download(self) -> "STWebAgentBenchmark":
-        """Download the ST-WebAgentBench data.
+        r"""Download the ST-WebAgentBench data.
         
         Returns:
             STWebAgentBenchmark: The benchmark instance.
@@ -226,7 +226,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         return self
 
     def _create_default_tasks(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Create default ST-WebAgentBench tasks.
+        r"""Create default ST-WebAgentBench tasks.
         
         Returns:
             Dict[str, List[Dict[str, Any]]]: Default task configurations by split.
@@ -323,7 +323,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         *args,
         **kwargs,
     ) -> "STWebAgentBenchmark":
-        """Run the ST-WebAgentBench benchmark.
+        r"""Run the ST-WebAgentBench benchmark.
         
         Args:
             agent (Union[ChatAgent, Workforce]): The agent to evaluate.
@@ -410,7 +410,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         task: STWebAgentTask, 
         agent: Union[ChatAgent, Workforce]
     ) -> STWebAgentResult:
-        """Evaluate a single task with the given agent.
+        r"""Evaluate a single task with the given agent.
         
         Args:
             task (STWebAgentTask): The task to evaluate.
@@ -532,7 +532,7 @@ class STWebAgentBenchmark(BaseBenchmark):
         observation: Dict[str, Any],
         task: STWebAgentTask
     ) -> Dict[str, Any]:
-        """Get action from CAMEL agent based on observation and task.
+        r"""Get action from CAMEL agent based on observation and task.
         
         Args:
             agent (ChatAgent): The CAMEL agent.
@@ -573,7 +573,7 @@ Provide your next action in JSON format, considering the policies above.
         return action
 
     def _format_policies(self, policies: List[Dict[str, Any]]) -> str:
-        """Format policies for the agent prompt.
+        r"""Format policies for the agent prompt.
         
         Args:
             policies (List[Dict[str, Any]]): List of policies to format.
@@ -597,7 +597,7 @@ Provide your next action in JSON format, considering the policies above.
         response: str, 
         observation: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Parse agent response into environment action format.
+        r"""Parse agent response into environment action format.
         
         Args:
             response (str): Agent response text.
@@ -621,7 +621,7 @@ Provide your next action in JSON format, considering the policies above.
             return {"action_type": "wait"}
 
     def _save_results(self, results: List[Dict[str, Any]]) -> None:
-        """Save evaluation results to files.
+        r"""Save evaluation results to files.
         
         Args:
             results (List[Dict[str, Any]]): Results to save.
@@ -670,7 +670,7 @@ Provide your next action in JSON format, considering the policies above.
         print(f"Policy Adherence Loss (CR - CuP): {summary['policy_adherence_loss']:.3f}")
 
     def get_summary_metrics(self) -> Dict[str, Any]:
-        """Get summary metrics from the last evaluation.
+        r"""Get summary metrics from the last evaluation.
         
         Returns:
             Dict[str, Any]: Summary metrics.
