@@ -3742,7 +3742,6 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
@@ -3810,7 +3809,6 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
-
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
