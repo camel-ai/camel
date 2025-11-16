@@ -557,7 +557,7 @@ class RolePlaying:
         if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
             role_name_attr = getattr(self.assistant_sys_msg, 'role_name', None)
             if role_name_attr is not None:
-                assistant_role_name = role_name_attr
+                assistant_role_name = str(role_name_attr)
         
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
@@ -599,7 +599,7 @@ class RolePlaying:
         if self.assistant_sys_msg is not None and hasattr(self.assistant_sys_msg, 'role_name'):
             role_name_attr = getattr(self.assistant_sys_msg, 'role_name', None)
             if role_name_attr is not None:
-                assistant_role_name = role_name_attr
+                assistant_role_name = str(role_name_attr)
 
         init_msg = BaseMessage.make_assistant_message(
             role_name=assistant_role_name,
