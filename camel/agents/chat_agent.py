@@ -3908,14 +3908,16 @@ class ChatAgent(BaseAgent):
         return tool_record
 
     def _calculate_tool_cost(
-        self, assist_msg: OpenAIMessage, func_msg: OpenAIMessage
+        self,
+        assist_msg: FunctionCallingMessage,
+        func_msg: FunctionCallingMessage,
     ) -> Dict[str, int]:
         r"""Calculate the tool cost and token usage for a tool call.
 
         Args:
-            assist_msg (OpenAIMessage): The assistant message
+            assist_msg (FunctionCallingMessage): The assistant message
                 as tool call input.
-            func_msg (OpenAIMessage): The function message
+            func_msg (FunctionCallingMessage): The function message
                 as tool call output.
 
         Returns:
@@ -3930,12 +3932,14 @@ class ChatAgent(BaseAgent):
                 output_messages = func_msg.to_openai_message(
                     OpenAIBackendRole.FUNCTION
                 )
-                input_tokens = self.model_backend.token_counter.count_tokens_from_messages(
-                    [input_messages]
-                )
-                output_tokens = self.model_backend.token_counter.count_tokens_from_messages(
-                    [output_messages]
-                )
+                input_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [input_messages]
+                    )
+                output_tokens = \
+                    self.model_backend.token_counter.count_tokens_from_messages(
+                        [output_messages]
+                    )
             except Exception as e:
                 logger.error(
                     f"Error calculating tool call token usage tokens: {e}"
@@ -3945,7 +3949,7 @@ class ChatAgent(BaseAgent):
         else:
             logger.warning(
                 "Token counter not available. "
-                "Using contexnt words count to estimate token usage."
+                "Using context words count to estimate token usage."
             )
             input_tokens = len(assist_msg.content.split())
             output_tokens = len(func_msg.content.split())
