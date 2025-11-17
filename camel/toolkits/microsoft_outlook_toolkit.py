@@ -335,21 +335,29 @@ class OutlookToolkit(BaseToolkit):
 
     def _create_message(
         self,
-        to_email: List[str],
-        subject: str,
-        content: str,
+        to_email: Optional[List[str]] = None,
+        subject: Optional[str] = None,
+        content: Optional[str] = None,
         is_content_html: bool = False,
         attachments: Optional[List[str]] = None,
         cc_recipients: Optional[List[str]] = None,
         bcc_recipients: Optional[List[str]] = None,
         reply_to: Optional[List[str]] = None,
     ):
-        """Creates a message object.
+        """Creates a message object for sending or updating emails.
+
+        This helper method is used internally to construct Microsoft Graph
+        message objects. It's used by methods like send_email,
+        create_draft_email, and update_draft_message. All parameters are
+        optional to allow partial updates when modifying existing messages.
 
         Args:
-            to_email (List[str]): List of recipient email addresses.
-            subject (str): The subject of the email.
-            content (str): The body content of the email.
+            to_email (Optional[List[str]]): List of recipient email addresses.
+                (default: :obj:`None`)
+            subject (Optional[str]): The subject of the email.
+                (default: :obj:`None`)
+            content (Optional[str]): The body content of the email.
+                (default: :obj:`None`)
             is_content_html (bool): If True, the content type will be set to
                 HTML; otherwise, it will be Text. (default: :obj:`False`)
             attachments (Optional[List[str]]): List of file paths to attach
@@ -364,25 +372,33 @@ class OutlookToolkit(BaseToolkit):
                 sender's address. (default: :obj:`None`)
 
         Returns:
-            message.Message: A Microsoft Graph message object.
+            message.Message: A Microsoft Graph message object with only the
+                provided fields set.
         """
         from msgraph.generated.models import body_type, item_body, message
 
+        # Determine content type
         if is_content_html:
             content_type = body_type.BodyType.Html
         else:
             content_type = body_type.BodyType.Text
-        message_body = item_body.ItemBody(
-            content_type=content_type, content=content
-        )
 
-        to_recipients = self._create_recipients(to_email)
+        mail_message = message.Message()
 
-        mail_message = message.Message(
-            subject=subject,
-            body=message_body,
-            to_recipients=to_recipients,
-        )
+        # Set body content if provided
+        if content:
+            message_body = item_body.ItemBody(
+                content_type=content_type, content=content
+            )
+            mail_message.body = message_body
+
+        # Set to recipients if provided
+        if to_email:
+            mail_message.to_recipients = self._create_recipients(to_email)
+
+        # Set subject if provided
+        if subject:
+            mail_message.subject = subject
 
         # Add CC recipients if provided
         if cc_recipients:
@@ -1366,5 +1382,115 @@ class OutlookToolkit(BaseToolkit):
 
         except Exception as e:
             error_msg = f"Failed to reply to email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
+    async def update_draft_message(
+        self,
+        message_id: str,
+        subject: Optional[str] = None,
+        content: Optional[str] = None,
+        is_content_html: bool = False,
+        to_email: Optional[List[str]] = None,
+        cc_recipients: Optional[List[str]] = None,
+        bcc_recipients: Optional[List[str]] = None,
+        reply_to: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Updates an existing draft email message in Microsoft Outlook.
+
+        Important: Any parameter provided will completely replace the original
+        value. For example, if you want to add a new recipient while keeping
+        existing ones, you must pass all recipients (both original and new) in
+        the to_email parameter.
+
+        Note: This method is intended for draft messages only and not for
+        sent messages.
+
+        Args:
+            message_id (str): The ID of the draft message to update.
+            subject (Optional[str]): Change the subject of the email.
+                Replaces the original subject completely.
+                (default: :obj:`None`)
+            content (Optional[str]): Change the body content of the email.
+                Replaces the original content completely.
+                (default: :obj:`None`)
+            is_content_html (bool): Change the content type. If True, sets
+                content type to HTML; if False, sets to plain text.
+                (default: :obj:`False`)
+            to_email (Optional[List[str]]): Change the recipient email
+                addresses. Replaces all original recipients completely.
+                (default: :obj:`None`)
+            cc_recipients (Optional[List[str]]): Change the CC recipient
+                email addresses. Replaces all original CC recipients
+                completely. (default: :obj:`None`)
+            bcc_recipients (Optional[List[str]]): Change the BCC recipient
+                email addresses. Replaces all original BCC recipients
+                completely. (default: :obj:`None`)
+            reply_to (Optional[List[str]]): Change the email addresses that
+                will receive replies. Replaces all original reply-to addresses
+                completely. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the update
+                operation.
+
+        """
+        try:
+            # Validate all email addresses if provided
+            invalid_emails = self._get_invalid_emails(
+                to_email, cc_recipients, bcc_recipients, reply_to
+            )
+            if invalid_emails:
+                error_msg = (
+                    f"Invalid email address(es) provided: "
+                    f"{', '.join(invalid_emails)}"
+                )
+                logger.error(error_msg)
+                return {"error": error_msg}
+
+            # Create message with only the fields to update
+            mail_message = self._create_message(
+                to_email=to_email,
+                subject=subject,
+                content=content,
+                is_content_html=is_content_html,
+                cc_recipients=cc_recipients,
+                bcc_recipients=bcc_recipients,
+                reply_to=reply_to,
+            )
+
+            # Update the message using PATCH
+            await self.client.me.messages.by_message_id(message_id).patch(
+                mail_message
+            )
+
+            logger.info(
+                f"Draft message with ID {message_id} updated successfully."
+            )
+
+            # Build dict of updated parameters
+            updated_params = {}
+            if subject:
+                updated_params['subject'] = subject
+            if content:
+                updated_params['content'] = content
+            if to_email:
+                updated_params['to_email'] = to_email
+            if cc_recipients:
+                updated_params['cc_recipients'] = cc_recipients
+            if bcc_recipients:
+                updated_params['bcc_recipients'] = bcc_recipients
+            if reply_to:
+                updated_params['reply_to'] = reply_to
+
+            return {
+                'status': 'success',
+                'message': 'Draft message updated successfully',
+                'message_id': message_id,
+                'updated_params': updated_params,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to update draft message: {e!s}"
             logger.error(error_msg)
             return {"error": error_msg}

@@ -85,6 +85,9 @@ def mock_graph_service():
         mock_by_message_id.reply_all = mock_reply_all
         mock_reply_all.post = AsyncMock()
 
+        # Mock patch endpoint for updating messages
+        mock_by_message_id.patch = AsyncMock()
+
         # Mock mail_folders for folder-specific operations
         mock_mail_folders = MagicMock()
         mock_me.mail_folders = mock_mail_folders
@@ -716,3 +719,72 @@ async def test_reply_to_email_all_failure(outlook_toolkit, mock_graph_service):
     assert 'error' in result
     assert 'Failed to reply to email' in result['error']
     assert 'API Error: Unable to send reply all' in result['error']
+
+
+async def test_update_draft_message(outlook_toolkit, mock_graph_service):
+    """Test updating a draft message with all parameters."""
+    mock_by_message_id = mock_graph_service.me.messages.by_message_id()
+    mock_by_message_id.patch.return_value = None
+
+    result = await outlook_toolkit.update_draft_message(
+        message_id='draft123',
+        subject='Updated Subject',
+        content='Updated content',
+        is_content_html=True,
+        to_email=['new@example.com'],
+        cc_recipients=['cc@example.com'],
+        bcc_recipients=['bcc@example.com'],
+        reply_to=['reply@example.com'],
+    )
+
+    assert result['status'] == 'success'
+    assert result['message'] == 'Draft message updated successfully'
+    assert result['message_id'] == 'draft123'
+    assert result['updated_params']['subject'] == 'Updated Subject'
+    assert result['updated_params']['content'] == 'Updated content'
+    assert result['updated_params']['to_email'] == ['new@example.com']
+    assert result['updated_params']['cc_recipients'] == ['cc@example.com']
+    assert result['updated_params']['bcc_recipients'] == ['bcc@example.com']
+    assert result['updated_params']['reply_to'] == ['reply@example.com']
+
+    mock_by_message_id.patch.assert_called_once()
+
+
+async def test_update_draft_message_subject_only(
+    outlook_toolkit, mock_graph_service
+):
+    """Test updating only the subject of a draft message."""
+    mock_by_message_id = mock_graph_service.me.messages.by_message_id()
+    mock_by_message_id.patch.return_value = None
+
+    result = await outlook_toolkit.update_draft_message(
+        message_id='draft456',
+        subject='New Subject Only',
+    )
+
+    assert result['status'] == 'success'
+    assert result['message_id'] == 'draft456'
+    assert result['updated_params']['subject'] == 'New Subject Only'
+    assert 'content' not in result['updated_params']
+    assert 'to_email' not in result['updated_params']
+
+    mock_by_message_id.patch.assert_called_once()
+
+
+async def test_update_draft_message_failure(
+    outlook_toolkit, mock_graph_service
+):
+    """Test update draft message failure."""
+    mock_by_message_id = mock_graph_service.me.messages.by_message_id()
+    mock_by_message_id.patch.side_effect = Exception(
+        "API Error: Unable to update draft"
+    )
+
+    result = await outlook_toolkit.update_draft_message(
+        message_id='draft123',
+        subject='This update will fail',
+    )
+
+    assert 'error' in result
+    assert 'Failed to update draft message' in result['error']
+    assert 'API Error: Unable to update draft' in result['error']
