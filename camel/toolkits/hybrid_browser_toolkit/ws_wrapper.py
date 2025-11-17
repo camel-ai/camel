@@ -215,6 +215,7 @@ class WebSocketBrowserWrapper:
         self.websocket = None
         self.server_port = None
         self._send_lock = asyncio.Lock()
+        self._request_timeout = self.config.get('requestTimeout', 60)  # seconds
         self._receive_task = None
         self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
         self._browser_opened = False
@@ -663,7 +664,7 @@ class WebSocketBrowserWrapper:
             # Wait for response (no lock needed, handled by background
             # receiver)
             try:
-                response = await asyncio.wait_for(future, timeout=60.0)
+                response = await asyncio.wait_for(future, timeout=self._request_timeout)
 
                 if not response.get('success'):
                     raise RuntimeError(
