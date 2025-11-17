@@ -49,6 +49,7 @@ Main Documentation
    key_modules/embeddings.md
    key_modules/retrievers.md
    key_modules/workforce.md
+   key_modules/benchmark.md
 
 .. toctree::
    :maxdepth: 2

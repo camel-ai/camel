@@ -1572,15 +1572,110 @@ export class HybridBrowserSession {
     return true;
   }
 
+  async batchKeyboardInput(operations: Array<{type: string, keys?: string[], text?: string, delay?: number}>, skipStabilityWait: boolean = false): Promise<any> {
+    const startTime = Date.now();
+    const page = await this.getCurrentPage();
+
+    try {
+      const maxOperations = 100; // Prevent excessive number of operations per batch
+      if (!Array.isArray(operations) || operations.length > maxOperations) {
+        throw new Error(`Too many operations in batch (max ${maxOperations} allowed)`);
+      }
+
+      const executionStart = Date.now();
+
+      for (const op of operations) {
+        switch (op.type) {
+          case 'press':
+            if (op.keys) {
+              const keys = op.keys.join('+');
+              await page.keyboard.press(keys);
+            }
+            break;
+          case 'type':
+            if (op.text) {
+              // Limit delay to prevent resource exhaustion attacks
+              const maxTypeDelay = 1000; // 1 second per character max
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) delayValue = 0;
+              const safeTypeDelay = Math.min(delayValue, maxTypeDelay);
+              await page.keyboard.type(op.text, { delay: safeTypeDelay });
+            }
+            break;
+          case 'wait':
+            // Only apply wait if op.delay is a non-negative finite number
+            // Limit to prevent resource exhaustion (CodeQL js/resource-exhaustion)
+            {
+              const MAX_WAIT_DELAY = 10000; // 10 seconds maximum
+              let delayValue = Number(op.delay);
+              if (!isFinite(delayValue) || delayValue < 0) {
+                delayValue = 0;
+              }
+              // Clamp delay to safe range [0, MAX_WAIT_DELAY]
+              const safeDelay = delayValue > MAX_WAIT_DELAY ? MAX_WAIT_DELAY : delayValue;
+              // lgtm[js/resource-exhaustion]
+              // Safe: delay is clamped to MAX_WAIT_DELAY (10 seconds)
+              await new Promise(resolve => setTimeout(resolve, safeDelay));
+            }
+            break;
+        }
+      }
+
+      const executionTime = Date.now() - executionStart;
+      let stabilityTime = 0;
+      let stabilityResult = { domContentLoadedTime: 0, networkIdleTime: 0 };
+
+      if (!skipStabilityWait) {
+        const stabilityStart = Date.now();
+
+        try {
+          const browserConfig = this.configLoader.getBrowserConfig();
+          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
+          stabilityResult.domContentLoadedTime = Date.now() - stabilityStart;
+        } catch (error) {
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+        stabilityTime = Date.now() - stabilityStart;
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        stabilityTime = 50;
+      }
+
+      const totalTime = Date.now() - startTime;
+
+      return {
+        success: true,
+        message: `Batch keyboard input completed (${operations.length} operations)`,
+        timing: {
+          total_time_ms: totalTime,
+          execution_time_ms: executionTime,
+          stability_wait_time_ms: stabilityTime,
+          operations_count: operations.length,
+          skipped_stability: skipStabilityWait,
+        },
+      };
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      return {
+        success: false,
+        message: `Batch keyboard input failed: ${error}`,
+        timing: {
+          total_time_ms: totalTime,
+        },
+      };
+    }
+  }
+
   async getTabInfo(): Promise<TabInfo[]> {
     const tabInfo: TabInfo[] = [];
-    
+
     for (const [tabId, page] of this.pages) {
       if (!page.isClosed()) {
         try {
           const title = await page.title();
           const url = page.url();
-          
+
           tabInfo.push({
             tab_id: tabId,
             title,
@@ -1592,7 +1687,7 @@ export class HybridBrowserSession {
         }
       }
     }
-    
+
     return tabInfo;
   }
 

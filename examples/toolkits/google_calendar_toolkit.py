@@ -12,6 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# To use GoogleCalendarToolkit make sure to set required environment variables:
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# Also you need to set the redirect URI in Google Cloud Console to http://localhost/
+
 from camel.agents import ChatAgent
 from camel.configs import BaseConfig
 from camel.models import ModelFactory

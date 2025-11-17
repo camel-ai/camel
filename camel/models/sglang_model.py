@@ -286,15 +286,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            async_client = self._async_client
 
-        if self._client is None:
+        if async_client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = await self._async_client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = await async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(
@@ -352,15 +361,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            client = self._client
 
-        if self._client is None:
+        if client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = self._client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(

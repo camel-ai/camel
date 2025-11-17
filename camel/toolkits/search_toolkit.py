@@ -189,7 +189,6 @@ class SearchToolkit(BaseToolkit):
                 represents a search result.
         """
         from duckduckgo_search import DDGS
-        from requests.exceptions import RequestException
 
         ddgs = DDGS()
         responses: List[Dict[str, Any]] = []
@@ -199,64 +198,61 @@ class SearchToolkit(BaseToolkit):
                 results = ddgs.text(
                     keywords=query, max_results=number_of_result_pages
                 )
-            except RequestException as e:
+                # Iterate over results found
+                for i, result in enumerate(results, start=1):
+                    # Creating a response object with a similar structure
+                    response = {
+                        "result_id": i,
+                        "title": result["title"],
+                        "description": result["body"],
+                        "url": result["href"],
+                    }
+                    responses.append(response)
+            except Exception as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
-
-            # Iterate over results found
-            for i, result in enumerate(results, start=1):
-                # Creating a response object with a similar structure
-                response = {
-                    "result_id": i,
-                    "title": result["title"],
-                    "description": result["body"],
-                    "url": result["href"],
-                }
-                responses.append(response)
 
         elif source == "images":
             try:
                 results = ddgs.images(
                     keywords=query, max_results=number_of_result_pages
                 )
-            except RequestException as e:
+                # Iterate over results found
+                for i, result in enumerate(results, start=1):
+                    # Creating a response object with a similar structure
+                    response = {
+                        "result_id": i,
+                        "title": result["title"],
+                        "image": result["image"],
+                        "url": result["url"],
+                        "source": result["source"],
+                    }
+                    responses.append(response)
+            except Exception as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
-
-            # Iterate over results found
-            for i, result in enumerate(results, start=1):
-                # Creating a response object with a similar structure
-                response = {
-                    "result_id": i,
-                    "title": result["title"],
-                    "image": result["image"],
-                    "url": result["url"],
-                    "source": result["source"],
-                }
-                responses.append(response)
 
         elif source == "videos":
             try:
                 results = ddgs.videos(
                     keywords=query, max_results=number_of_result_pages
                 )
-            except RequestException as e:
+                # Iterate over results found
+                for i, result in enumerate(results, start=1):
+                    # Creating a response object with a similar structure
+                    response = {
+                        "result_id": i,
+                        "title": result["title"],
+                        "description": result["description"],
+                        "embed_url": result["embed_url"],
+                        "publisher": result["publisher"],
+                        "duration": result["duration"],
+                        "published": result["published"],
+                    }
+                    responses.append(response)
+            except Exception as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
-
-            # Iterate over results found
-            for i, result in enumerate(results, start=1):
-                # Creating a response object with a similar structure
-                response = {
-                    "result_id": i,
-                    "title": result["title"],
-                    "description": result["description"],
-                    "embed_url": result["embed_url"],
-                    "publisher": result["publisher"],
-                    "duration": result["duration"],
-                    "published": result["published"],
-                }
-                responses.append(response)
 
         # If no answer found, return an empty list
         return responses

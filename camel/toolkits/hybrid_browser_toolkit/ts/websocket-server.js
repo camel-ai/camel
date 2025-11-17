@@ -197,6 +197,11 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.pressKeys(params.keys);
 
+      case 'batch_keyboard_input':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        const skipStabilityWait = params.skipStabilityWait !== undefined ? params.skipStabilityWait : true;
+        return await this.toolkit.batchKeyboardInput(params.operations, skipStabilityWait);
+
       case 'back':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.back();

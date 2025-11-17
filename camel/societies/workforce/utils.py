@@ -38,7 +38,8 @@ class TaskResult(BaseModel):
 
     content: str = Field(description="The result of the task.")
     failed: bool = Field(
-        description="Flag indicating whether the task processing failed."
+        default=False,
+        description="Flag indicating whether the task processing failed.",
     )
 
 

@@ -33,6 +33,6 @@ repos:
     rev: v2.4.1
     hooks:
     - id: codespell
-      exclude: ^(examples/usecases/|docs/cookbooks/)  # Ignore files under examples/usecases and docs/cookbooks
+      exclude: ^(docs/reference/|docs/.*\.rst$)  # Ignore auto-generated content only
       additional_dependencies:
       - tomli  # for python_version < '3.11'

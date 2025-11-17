@@ -242,7 +242,6 @@ class TestHybridBrowserToolkit:
 
             assert toolkit._headless is True
             assert toolkit._user_data_dir is None
-            assert toolkit.web_agent_model is None
             assert toolkit.cache_dir == "tmp/"
             assert toolkit._agent is None
 
