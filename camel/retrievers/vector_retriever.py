@@ -11,14 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import hashlib
+import json
 import os
 import warnings
+from functools import lru_cache
 from io import IOBase
 from typing import IO, TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.loaders import UnstructuredIO
+from camel.logger import get_logger
 from camel.retrievers.base import BaseRetriever
 from camel.storages import (
     BaseVectorStorage,
@@ -28,6 +32,8 @@ from camel.storages import (
 )
 from camel.utils import Constants
 from camel.utils.chunker import BaseChunker, UnstructuredIOChunker
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -52,6 +58,7 @@ class VectorRetriever(BaseRetriever):
         self,
         embedding_model: Optional[BaseEmbedding] = None,
         storage: Optional[BaseVectorStorage] = None,
+        query_cache_size: int = 1000,
     ) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
@@ -59,6 +66,8 @@ class VectorRetriever(BaseRetriever):
             embedding_model (Optional[BaseEmbedding]): The embedding model
                 instance. Defaults to `OpenAIEmbedding` if not provided.
             storage (BaseVectorStorage): Vector storage to query.
+            query_cache_size (int): Maximum number of query results to cache.
+                (default: :obj:`1000`)
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.storage = (
@@ -69,6 +78,44 @@ class VectorRetriever(BaseRetriever):
             )
         )
         self.uio: UnstructuredIO = UnstructuredIO()
+        self._setup_query_cache(query_cache_size)
+        logger.info(
+            f"Initialized VectorRetriever with cache size: {query_cache_size}"
+        )
+
+    def _setup_query_cache(self, query_cache_size: int) -> None:
+        r"""Set up LRU cache for query results.
+
+        Args:
+            query_cache_size (int): Maximum number of query results to cache.
+        """
+        self._cached_query = lru_cache(maxsize=query_cache_size)(
+            self._query_implementation
+        )
+
+    def _create_query_cache_key(
+        self,
+        query: str,
+        top_k: int,
+        similarity_threshold: float,
+    ) -> str:
+        r"""Create a deterministic cache key from query parameters.
+
+        Args:
+            query (str): The query string.
+            top_k (int): Number of results to return.
+            similarity_threshold (float): Minimum similarity score.
+
+        Returns:
+            str: A hash of the query parameters.
+        """
+        query_parameters = {
+            'query': query,
+            'top_k': top_k,
+            'similarity_threshold': similarity_threshold,
+        }
+        parameters_string = json.dumps(query_parameters, sort_keys=True)
+        return hashlib.sha256(parameters_string.encode()).hexdigest()
 
     def process(
         self,
@@ -195,32 +242,30 @@ class VectorRetriever(BaseRetriever):
 
                 self.storage.add(records=records)
 
-    def query(
+    def _query_implementation(
         self,
+        cache_key: str,
         query: str,
         top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
-        r"""Executes a query in vector storage and compiles the retrieved
-        results into a dictionary.
+        r"""Internal implementation of query logic.
 
         Args:
-            query (str): Query string for information retriever.
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `DEFAULT_SIMILARITY_THRESHOLD`.
-            top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to
-                `DEFAULT_TOP_K_RESULTS`.
+            cache_key (str): Cache key for the query.
+            query (str): Query string for information retrieval.
+            top_k (int): Number of top results to return.
+                (default: :obj:`Constants.DEFAULT_TOP_K_RESULTS`)
+            similarity_threshold (float): Minimum similarity score required.
+                (default: :obj:`Constants.DEFAULT_SIMILARITY_THRESHOLD`)
 
         Returns:
-            List[Dict[str, Any]]: Concatenated list of the query results.
+            List[Dict[str, Any]]: List of query results.
 
         Raises:
-            ValueError: If 'top_k' is less than or equal to 0, if vector
+            ValueError: If top_k is less than or equal to 0, if vector
                 storage is empty, if payload of vector storage is None.
         """
-
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
 
@@ -275,3 +320,35 @@ class VectorRetriever(BaseRetriever):
                 }
             ]
         return formatted_results
+
+    def query(
+        self,
+        query: str,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
+    ) -> List[Dict[str, Any]]:
+        r"""Execute a cached query in vector storage.
+
+        Args:
+            query (str): Query string for information retrieval.
+            top_k (int): Number of top results to return.
+                (default: :obj:`Constants.DEFAULT_TOP_K_RESULTS`)
+            similarity_threshold (float): Minimum similarity score required.
+                (default: :obj:`Constants.DEFAULT_SIMILARITY_THRESHOLD`)
+
+        Returns:
+            List[Dict[str, Any]]: List of query results containing similarity
+                scores, content paths, metadata, and text content.
+        """
+        cache_key = self._create_query_cache_key(
+            query, top_k, similarity_threshold
+        )
+        logger.debug(f"Executing query with cache key: {cache_key}")
+        return self._cached_query(
+            cache_key, query, top_k, similarity_threshold
+        )
+
+    def clear_query_cache(self) -> None:
+        r"""Clear the query results cache."""
+        self._cached_query.cache_clear()
+        logger.info("Query cache cleared")
