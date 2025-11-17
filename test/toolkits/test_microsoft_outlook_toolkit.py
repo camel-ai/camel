@@ -75,6 +75,16 @@ def mock_graph_service():
         mock_by_message_id.attachments = mock_attachments
         mock_attachments.get = AsyncMock()
 
+        # Mock reply endpoint
+        mock_reply = MagicMock()
+        mock_by_message_id.reply = mock_reply
+        mock_reply.post = AsyncMock()
+
+        # Mock reply_all endpoint
+        mock_reply_all = MagicMock()
+        mock_by_message_id.reply_all = mock_reply_all
+        mock_reply_all.post = AsyncMock()
+
         # Mock mail_folders for folder-specific operations
         mock_mail_folders = MagicMock()
         mock_me.mail_folders = mock_mail_folders
@@ -630,3 +640,79 @@ async def test_list_messages_failure(outlook_toolkit, mock_graph_service):
 
     assert 'error' in result
     assert 'Failed to list messages' in result['error']
+
+
+async def test_reply_to_email(outlook_toolkit, mock_graph_service):
+    """Test replying to an email (reply to sender only)."""
+    mock_graph_service.me.messages.by_message_id().reply.post.return_value = (
+        None
+    )
+
+    result = await outlook_toolkit.reply_to_email(
+        message_id='msg123',
+        content='This is my reply',
+        reply_all=False,
+    )
+
+    assert result['status'] == 'success'
+    assert result['message'] == 'Reply sent successfully'
+    assert result['message_id'] == 'msg123'
+    assert result['reply_type'] == 'reply'
+
+    mock_graph_service.me.messages.by_message_id().reply.post.assert_called_once()
+    mock_graph_service.me.messages.by_message_id().reply_all.post.assert_not_called()
+
+
+async def test_reply_to_email_all(outlook_toolkit, mock_graph_service):
+    """Test replying to all recipients of an email."""
+    mock_reply_all = mock_graph_service.me.messages.by_message_id().reply_all
+    mock_reply_all.post.return_value = None
+
+    result = await outlook_toolkit.reply_to_email(
+        message_id='msg456',
+        content='This is my reply to all',
+        reply_all=True,
+    )
+
+    assert result['status'] == 'success'
+    assert result['message'] == 'Reply All sent successfully'
+    assert result['message_id'] == 'msg456'
+    assert result['reply_type'] == 'reply all'
+
+    mock_reply_all.post.assert_called_once()
+    mock_graph_service.me.messages.by_message_id().reply.post.assert_not_called()
+
+
+async def test_reply_to_email_failure(outlook_toolkit, mock_graph_service):
+    """Test reply to email failure when using simple reply."""
+    mock_graph_service.me.messages.by_message_id().reply.post.side_effect = (
+        Exception("API Error: Unable to send reply")
+    )
+
+    result = await outlook_toolkit.reply_to_email(
+        message_id='msg123',
+        content='This reply will fail',
+        reply_all=False,
+    )
+
+    assert 'error' in result
+    assert 'Failed to reply to email' in result['error']
+    assert 'API Error: Unable to send reply' in result['error']
+
+
+async def test_reply_to_email_all_failure(outlook_toolkit, mock_graph_service):
+    """Test reply to email failure when using reply all."""
+    mock_reply_all = mock_graph_service.me.messages.by_message_id().reply_all
+    mock_reply_all.post.side_effect = Exception(
+        "API Error: Unable to send reply all"
+    )
+
+    result = await outlook_toolkit.reply_to_email(
+        message_id='msg456',
+        content='This reply all will fail',
+        reply_all=True,
+    )
+
+    assert 'error' in result
+    assert 'Failed to reply to email' in result['error']
+    assert 'API Error: Unable to send reply all' in result['error']

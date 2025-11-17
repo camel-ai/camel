@@ -1312,3 +1312,59 @@ class OutlookToolkit(BaseToolkit):
             error_msg = f"Failed to list messages: {e!s}"
             logger.error(error_msg)
             return {"error": error_msg}
+
+    async def reply_to_email(
+        self,
+        message_id: str,
+        content: str,
+        reply_all: bool = False,
+    ) -> Dict[str, Any]:
+        """Replies to an email in Microsoft Outlook.
+
+        Args:
+            message_id (str): The ID of the email to reply to.
+            content (str): The body content of the reply email.
+            reply_all (bool): If True, replies to all recipients of the
+                original email. If False, replies only to the sender.
+                (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the result of the email
+                reply operation.
+
+        Raises:
+            ValueError: If replying to the email fails.
+        """
+        from msgraph.generated.users.item.messages.item.reply.reply_post_request_body import (  # noqa: E501
+            ReplyPostRequestBody,
+        )
+        from msgraph.generated.users.item.messages.item.reply_all.reply_all_post_request_body import (  # noqa: E501
+            ReplyAllPostRequestBody,
+        )
+
+        try:
+            message_request = self.client.me.messages.by_message_id(message_id)
+            if reply_all:
+                request_body = ReplyAllPostRequestBody(comment=content)
+                await message_request.reply_all.post(request_body)
+            else:
+                request_body = ReplyPostRequestBody(comment=content)
+                await message_request.reply.post(request_body)
+
+            reply_type = "Reply All" if reply_all else "Reply"
+            logger.info(
+                f"{reply_type} to email with ID {message_id} sent "
+                "successfully."
+            )
+
+            return {
+                'status': 'success',
+                'message': f'{reply_type} sent successfully',
+                'message_id': message_id,
+                'reply_type': reply_type.lower(),
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to reply to email: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
