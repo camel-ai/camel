@@ -25,9 +25,9 @@ from camel.agents import ChatAgent
 def main():
     # Create a ChatAgent instance
     agent = ChatAgent(
-        system_message="You are a helpful assistant.",
         # You can specify any model supported by CAMEL
         # model="gpt-4o-mini",  # Uncomment to use a specific model
+        stream_accumulate=False,
     )
 
     # Create the FastAPI server
@@ -62,7 +62,3 @@ app = None
 
 if __name__ == "__main__":
     app = main()
-else:
-    # If imported, create the app
-    agent = ChatAgent()
-    app = agent.to_openai_compatible_server()

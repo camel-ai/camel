@@ -5304,7 +5304,7 @@ class ChatAgent(BaseAgent):
                         tool_msg = FunctionCallingMessage.make_tool_message(
                             role_name="Tool",
                             content=msg_content,
-                            tool_call_id=tool_call_id,
+                            tool_call_id=(tool_call_id or ""),
                         )
                         self.update_memory(tool_msg, OpenAIBackendRole.TOOL)
 
@@ -5385,7 +5385,7 @@ class ChatAgent(BaseAgent):
 
                         response = {
                             "id": agent_response.info.get(
-                                "id", f"chatcmpl-{int(time.time())}"
+                                "id", f"chatcmpl-{uuid.uuid4().hex}"
                             ),
                             "object": "chat.completion",
                             "created": int(time.time()),
@@ -5432,24 +5432,22 @@ class ChatAgent(BaseAgent):
             # Start a separate task for the agent processing
             agent_response = await self.astep(message)
 
+            completion_id = f"chatcmpl-{uuid.uuid4().hex}"
+            created_at = int(time.time())
+            usage = None
+
             if isinstance(agent_response, AsyncStreamingChatAgentResponse):
                 first_sent = False
-                last_content = ""
 
                 async for chunk in agent_response:
                     if not chunk.msgs:
                         continue
 
-                    msg = chunk.msgs[0]
-                    full_content = (
-                        msg.content if hasattr(msg, "content") else ""
-                    )
-
                     if not first_sent:
                         first_chunk = {
-                            "id": f"chatcmpl-{int(time.time())}",
+                            "id": completion_id,
                             "object": "chat.completion.chunk",
-                            "created": int(time.time()),
+                            "created": created_at,
                             "model": getattr(
                                 request_data, "model", "camel-model"
                             ),
@@ -5464,37 +5462,33 @@ class ChatAgent(BaseAgent):
                         yield f"data: {json.dumps(first_chunk)}\n\n"
                         first_sent = True
 
-                    if full_content and len(full_content) > len(last_content):
-                        # TODO Needs improvement.
-                        #  Since Camel returns accumulated streaming content,
-                        #  the current implementation uses diff
-                        #  to retrieve incremental content.
-                        delta_content = full_content[len(last_content) :]
-                        last_content = full_content
+                    full_content = (
+                        chunk.msgs[0].content
+                        if hasattr(chunk.msgs[0], "content")
+                        else ""
+                    )
+
+                    if full_content and chunk.info.get("partial", True):
                         word_chunk = {
-                            "id": f"chatcmpl-{int(time.time())}",
-                            "object": "chat.completion.chunk",
-                            "created": int(time.time()),
-                            "model": getattr(
-                                request_data, "model", "camel-model"
-                            ),
                             "choices": [
                                 {
                                     "index": 0,
-                                    "delta": {"content": delta_content},
+                                    "delta": {"content": full_content},
                                     "finish_reason": None,
                                 }
                             ],
                         }
                         yield f"data: {json.dumps(word_chunk)}\n\n"
 
-                    if getattr(chunk, "terminated", False):
+                    if not chunk.info.get("partial", True):
+                        usage = chunk.info.get("usage")
                         break
 
                 final_chunk = {
                     "choices": [
                         {"index": 0, "delta": {}, "finish_reason": "stop"}
-                    ]
+                    ],
+                    "usage": usage,
                 }
                 yield f"data: {json.dumps(final_chunk)}\n\n"
                 yield "data: [DONE]\n\n"

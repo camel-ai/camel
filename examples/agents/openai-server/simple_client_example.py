@@ -69,7 +69,6 @@ def main():
     for chunk in response:
         if chunk.choices[0].delta.content:
             print(chunk.choices[0].delta.content, end="", flush=True)
-    print()
 
     # Tool calling example
     print("\n4. Tool Calling:")
