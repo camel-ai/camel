@@ -1,3 +1,13 @@
+import os
+
+import pytest
+
+if not os.getenv("DEEPSEEK_API_KEY"):
+    pytest.skip(
+        "Skipping test_agent_mcp_server.py: DEEPSEEK_API_KEY not set",
+        allow_module_level=True,
+    )
+
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
