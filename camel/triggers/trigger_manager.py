@@ -11,29 +11,99 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.models import ModelFactory
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task
 from camel.triggers.adapters.database_adapter import DatabaseAdapter
 from camel.triggers.base_trigger import BaseTrigger, TriggerEvent
+from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
 
 
+class CallbackHandlerType(Enum):
+    """Enum defining types of callback handlers for trigger events"""
+
+    WORKFORCE = "workforce"
+    CHATAGENT = "chatagent"
+    NONE = "none"
+
+
 class TriggerManager:
-    """Central manager for all triggers - integrates with Workforce"""
+    """Central manager for all triggers - integrates with Workforce or
+    ChatAgent"""
 
     def __init__(
         self,
+        handler_type: Optional[CallbackHandlerType] = CallbackHandlerType.NONE,
         workforce: Optional[Workforce] = None,
+        chat_agent: Optional[ChatAgent] = None,
         database_adapter: Optional[DatabaseAdapter] = None,
+        default_task: Optional[Task] = None,
+        default_prompt: Optional[str] = None,
     ):
+        self.handler_type = handler_type
         self.workforce = workforce
+        self.chat_agent = chat_agent
         self.database_adapter = database_adapter
+        self.default_task = default_task
+        self.default_prompt = default_prompt
         self.triggers: Dict[str, BaseTrigger] = {}
         self.execution_log: List[Dict[str, Any]] = []
+
+        # Validate handler configuration
+        self._validate_handler_configuration()
+
+        # Initialize default handler if none provided
+        self._initialize_default_handler()
+
+    def _validate_handler_configuration(self):
+        """Validate that the handler configuration is correct"""
+        if self.handler_type == CallbackHandlerType.NONE:
+            if self.workforce is not None:
+                raise ValueError(
+                    "Handler type is NONE but workforce instance was "
+                    "provided. Either set handler_type to WORKFORCE or "
+                    "remove workforce parameter."
+                )
+            if self.chat_agent is not None:
+                raise ValueError(
+                    "Handler type is NONE but chat_agent instance was "
+                    "provided. Either set handler_type to CHATAGENT or "
+                    "remove chat_agent parameter."
+                )
+
+    def _initialize_default_handler(self):
+        """Initialize default handler if none provided"""
+        if self.handler_type == CallbackHandlerType.WORKFORCE:
+            if self.workforce is None:
+                # Create default workforce with basic configuration
+                self.workforce = Workforce("Default Trigger Workforce")
+                logger.info("Created default Workforce for trigger handling")
+        elif self.handler_type == CallbackHandlerType.CHATAGENT:
+            if self.chat_agent is None:
+                # Create default ChatAgent with basic configuration
+                model = ModelFactory.create(
+                    model_platform=ModelPlatformType.DEFAULT,
+                    model_type=ModelType.DEFAULT,
+                )
+                self.chat_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that processes trigger "
+                        "events and tasks."
+                    ),
+                    model=model,
+                )
+                logger.info("Created default ChatAgent for trigger handling")
+        elif self.handler_type == CallbackHandlerType.NONE:
+            logger.warning(
+                "No handler configured - triggers will call provided callbacks"
+            )
 
     async def register_trigger(
         self, trigger: BaseTrigger, auto_activate: bool = True
@@ -41,13 +111,26 @@ class TriggerManager:
         """Register and optionally activate a trigger"""
 
         # Add callback to handle trigger events
-        if self.workforce:
-            trigger.task_channel = self.workforce._channel
+        if (
+            self.handler_type == CallbackHandlerType.WORKFORCE
+            and self.workforce
+        ):
             trigger.workforce = self.workforce
             trigger.add_callback(self._handle_trigger_event)
+        elif (
+            self.handler_type == CallbackHandlerType.CHATAGENT
+            and self.chat_agent
+        ):
+            trigger.add_callback(self._handle_trigger_event)
+        elif self.handler_type == CallbackHandlerType.NONE:
+            logger.info(
+                f"Handler type is NONE - trigger {trigger.trigger_id} "
+                "registered but will not auto-process events"
+            )
         else:
             logger.warning(
-                "No workforce associated with TriggerManager; triggers will not create tasks."
+                f"No {self.handler_type.value} handler available; "
+                "triggers will not process events."
             )
 
         self.triggers[trigger.trigger_id] = trigger
@@ -57,26 +140,80 @@ class TriggerManager:
         return True
 
     async def _handle_trigger_event(self, event: TriggerEvent):
-        """Handle trigger event by creating and submitting tasks"""
-        try:
-            # Convert trigger event to Task
-            task = self._event_to_task(event)
+        """Handle trigger event by processing with configured handler"""
+        if self.handler_type == CallbackHandlerType.NONE:
+            logger.warning(
+                f"Trigger event from {event.trigger_id} received but "
+                "handler type is NONE - no processing performed"
+            )
+            return
 
-            # Submit to workforce
-            if self.workforce:
-                # Process through normal workforce flow
-                await self.workforce.process_task_async(task)
+        try:
+            result = None
+
+            if (
+                self.handler_type == CallbackHandlerType.WORKFORCE
+                and self.workforce
+            ):
+                # Use provided task or convert event to Task
+                if self.default_task:
+                    task = self.default_task
+                    # Update task content with event information
+                    if "task_content" in event.payload:
+                        task.content = event.payload["task_content"]
+                    elif "message" in event.payload:
+                        task.content = f"Process: {event.payload['message']}"
+                else:
+                    task = self._event_to_task(event)
+
+                # Process through workforce
+                result = await self.workforce.process_task_async(task)
                 self.workforce.stop_gracefully()
+
+            elif (
+                self.handler_type == CallbackHandlerType.CHATAGENT
+                and self.chat_agent
+            ):
+                # Use provided prompt or convert event to prompt
+                if self.default_prompt:
+                    prompt = self.default_prompt
+                    # Enhance prompt with event information
+                    if "message" in event.payload:
+                        prompt = (
+                            f"{prompt}\n\nEvent message: "
+                            f"{event.payload['message']}"
+                        )
+                elif "task_content" in event.payload:
+                    prompt = event.payload["task_content"]
+                elif "message" in event.payload:
+                    prompt = (
+                        f"Process this trigger event: "
+                        f"{event.payload['message']}"
+                    )
+                else:
+                    prompt = (
+                        f"Process trigger event from {event.trigger_id} "
+                        f"with payload: {event.payload}"
+                    )
+
+                # Process with ChatAgent
+                response = self.chat_agent.step(prompt)
+                result = response.msg.content
 
             # Save execution record
             if self.database_adapter:
                 await self.database_adapter.save_execution_record(
                     {
                         "trigger_id": event.trigger_id,
-                        "task_id": task.id,
+                        "task_id": getattr(result, 'id', None)
+                        if hasattr(result, 'id')
+                        else f"trigger_{event.trigger_id}_"
+                        f"{event.timestamp.isoformat()}",
                         "timestamp": event.timestamp,
                         "payload": event.payload,
-                        "status": "submitted",
+                        "status": "processed",
+                        "result": str(result) if result else None,
+                        "handler_type": self.handler_type.value,
                     }
                 )
 
@@ -107,6 +244,27 @@ class TriggerManager:
         """Deactivate all registered triggers"""
         for trigger in self.triggers.values():
             await trigger.deactivate()
+
+    def set_default_task(self, task: Task):
+        """Set or update the default task for Workforce processing"""
+        self.default_task = task
+        logger.info(f"Updated default task: {task.id}")
+
+    def set_default_prompt(self, prompt: str):
+        """Set or update the default prompt for ChatAgent processing"""
+        self.default_prompt = prompt
+        logger.info("Updated default prompt for ChatAgent processing")
+
+    def get_handler_info(self) -> Dict[str, Any]:
+        """Get information about the current handler configuration"""
+        return {
+            "handler_type": self.handler_type.value,
+            "workforce_available": self.workforce is not None,
+            "chat_agent_available": self.chat_agent is not None,
+            "has_default_task": self.default_task is not None,
+            "has_default_prompt": self.default_prompt is not None,
+            "database_adapter": self.database_adapter is not None,
+        }
 
     def get_trigger_status(self) -> Dict[str, Any]:
         """Get status of all triggers"""
