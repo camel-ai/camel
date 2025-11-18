@@ -98,6 +98,7 @@ from camel.types import (
 )
 from camel.types.agents import ToolCallingRecord
 from camel.utils import (
+    Constants,
     get_model_encoding,
     model_from_json_schema,
 )
@@ -497,14 +498,14 @@ class ChatAgent(BaseAgent):
         max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
-        tool_execution_timeout: Optional[float] = None,
+        tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
         enable_snapshot_clean: bool = False,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
-        step_timeout: Optional[float] = None,
+        step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         stream_accumulate: bool = True,
         summary_window_ratio: float = 0.6,
     ) -> None:
