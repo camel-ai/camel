@@ -11,34 +11,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from agentops.client import os
+
 from camel.agents import ChatAgent
 from camel.configs import GeminiConfig
 from camel.models import ModelFactory
+from camel.toolkits import TerminalToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = "You are a helpful assistant."
 
-# User message
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
 
+# Get current script directory
+base_dir = os.path.dirname(os.path.abspath(__file__))
+# Define workspace directory for the toolkit
+workspace_dir = os.path.join(
+    os.path.dirname(os.path.dirname(base_dir)), "workspace"
+)
+
+# Set model config
+tools = [
+    *TerminalToolkit(working_directory=workspace_dir).get_tools(),
+]
 # Example of using the gemini-3-pro-preview model
 model_3_pro_pre = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
     model_type=ModelType.GEMINI_3_PRO,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
-camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_3_pro_pre)
+
+user_msg = """
+Create an interactive HTML webpage that allows users to play with a 
+Rubik's Cube, and saved it to local file.
+"""
+
+camel_agent_pro = ChatAgent(
+    system_message=sys_msg, model=model_3_pro_pre, tools=tools
+)
 response_pro = camel_agent_pro.step(user_msg)
 print(response_pro.msgs[0].content)
+
 '''
 ===============================================================================
-Hi CAMEL AI! 👋
+I have created an interactive HTML webpage for playing with a Rubik's Cube.
 
-It is a pleasure to greet a community so dedicated to the fascinating world of 
-**autonomous and communicative agents**. Keep up the amazing work pushing the 
-boundaries of multi-agent collaboration and role-playing frameworks! 🐫🤖
+The file is saved as: **`rubiks_cube_interactive.html`**
+
+You can open this file in any modern web browser to play. It features:
+*   **3D Rendering:** Uses Three.js for a 3D view of the cube.
+*   **Controls:**
+    *   **Rotate View:** Left-click and drag.
+    *   **Rotate Layers:** Use the on-screen buttons (R, L, U, D, F, B).
+    *   **Scramble:** A button to randomly scramble the cube.
+    *   **Reset:** A button to solve/reset the cube instantly.
 ===============================================================================
 '''
 
