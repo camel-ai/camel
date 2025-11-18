@@ -389,7 +389,6 @@ class Workforce(BaseNode):
             role_name="Task Planner",
             content=TASK_AGENT_SYSTEM_MESSAGE,
         )
-        task_planning_tools = TaskPlanningToolkit().get_tools()
 
         if task_agent is None:
             logger.warning(
@@ -397,10 +396,8 @@ class Workforce(BaseNode):
                 "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
                 "with default system message and TaskPlanningToolkit."
             )
-            task_tools = TaskPlanningToolkit().get_tools()
             self.task_agent = ChatAgent(
                 task_sys_msg,
-                tools=task_tools,  # type: ignore[arg-type]
             )
         else:
             logger.info(
@@ -426,7 +423,6 @@ class Workforce(BaseNode):
             combined_tools: List[Union[FunctionTool, Callable]] = cast(
                 List[Union[FunctionTool, Callable]],
                 list(task_agent._internal_tools.values())
-                + task_planning_tools,
             )
 
             # Create a new agent with the provided agent's configuration

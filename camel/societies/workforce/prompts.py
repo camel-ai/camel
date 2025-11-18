@@ -278,12 +278,16 @@ Following are the available workers, given in the format <ID>: <description>:<to
 {child_nodes_info}
 ==============================
 
-You must return the subtasks as a list of individual subtasks within <tasks> tags. If your decomposition, following the principles and detailed example above (e.g., for summarizing multiple papers), results in several parallelizable actions, EACH of those actions must be represented as a separate <task> entry. For instance, the general format is:
+You must output all subtasks strictly as individual <task> elements enclosed within a single <tasks> root.
+If your decomposition produces multiple parallelizable or independent actions, each action MUST be represented as its own <task> element, without grouping or merging.
+Your final output must follow exactly this structure:
 
 <tasks>
 <task>Subtask 1</task>
 <task>Subtask 2</task>
 </tasks>
+
+No text, explanations, or formatting may appear outside the <tasks> block.
 
 Each subtask should be:
 - **Self-contained and independently understandable.**
