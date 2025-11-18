@@ -62,15 +62,10 @@ class CerebrasConfig(BaseConfig):
 
     temperature: Optional[float] = None
     top_p: Optional[float] = None
-    n: Optional[int] = None
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    presence_penalty: Optional[float] = None
     response_format: Optional[dict] = None
-    frequency_penalty: Optional[float] = None
-    user: Optional[str] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
 
 
 CEREBRAS_API_PARAMS = {param for param in CerebrasConfig.model_fields.keys()}
