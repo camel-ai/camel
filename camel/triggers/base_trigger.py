@@ -15,7 +15,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -65,8 +65,16 @@ class BaseTrigger(ABC):
         self.description = description
         self.config = config
         self.state = TriggerState.INACTIVE
-        self._callbacks: List[Callable[[TriggerEvent], None]] = []
+        self._callbacks: List[
+            Union[
+                Callable[[TriggerEvent], None],
+                Callable[[TriggerEvent], Coroutine[Any, Any, Any]],
+            ]
+        ] = []
         self._execution_history: List[Dict[str, Any]] = []
+
+        # Workforce integration attributes - set by TriggerManager
+        self.workforce: Optional[Any] = None
 
     @abstractmethod
     async def initialize(self) -> bool:
@@ -98,12 +106,32 @@ class BaseTrigger(ABC):
         """Process raw trigger data into standardized TriggerEvent"""
         pass
 
-    def add_callback(self, callback: Callable[[TriggerEvent], None]):
-        """Add callback for trigger events"""
+    def add_callback(
+        self,
+        callback: Union[
+            Callable[[TriggerEvent], None],
+            Callable[[TriggerEvent], Coroutine[Any, Any, Any]],
+        ],
+    ):
+        """Add callback for trigger events
+
+        Args:
+            callback: Synchronous or asynchronous callback function
+        """
         self._callbacks.append(callback)
 
-    def remove_callback(self, callback: Callable[[TriggerEvent], None]):
-        """Remove callback for trigger events"""
+    def remove_callback(
+        self,
+        callback: Union[
+            Callable[[TriggerEvent], None],
+            Callable[[TriggerEvent], Coroutine[Any, Any, Any]],
+        ],
+    ):
+        """Remove callback for trigger events
+
+        Args:
+            callback: Synchronous or asynchronous callback function to remove
+        """
         if callback in self._callbacks:
             self._callbacks.remove(callback)
 
