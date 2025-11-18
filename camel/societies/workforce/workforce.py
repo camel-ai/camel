@@ -86,7 +86,6 @@ from camel.toolkits import (
     CodeExecutionToolkit,
     FunctionTool,
     SearchToolkit,
-    TaskPlanningToolkit,
     ThinkingToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
@@ -422,7 +421,7 @@ class Workforce(BaseNode):
             # function names as keys, we don't need to manually deduplicate.
             combined_tools: List[Union[FunctionTool, Callable]] = cast(
                 List[Union[FunctionTool, Callable]],
-                list(task_agent._internal_tools.values())
+                list(task_agent._internal_tools.values()),
             )
 
             # Create a new agent with the provided agent's configuration
