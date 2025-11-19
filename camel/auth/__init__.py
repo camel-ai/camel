@@ -12,20 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .api_key_provider import ApiKeyProvider
-from .auth_manager import (
+from providers.api_key_provider import ApiKeyProvider
+from providers.auth_manager import (
     AuthenticationManager,
     get_auth_manager,
     register_auth_provider,
 )
-from .base import (
+from providers.base import (
     AuthenticationError,
     AuthenticationProvider,
     AuthenticationType,
 )
-from .oauth2_provider import OAuth2Provider
-from .service_account_provider import ServiceAccountProvider
-from .token_provider import TokenProvider
+from providers.oauth2_provider import OAuth2Provider
+from providers.service_account_provider import ServiceAccountProvider
+from providers.token_provider import TokenProvider
+from slack_auth import SlackAuth
 
 __all__ = [
     'AuthenticationProvider',
@@ -38,4 +39,5 @@ __all__ = [
     'AuthenticationManager',
     'get_auth_manager',
     'register_auth_provider',
+    'SlackAuth',
 ]

@@ -20,13 +20,11 @@ from .slack.models import (
     SlackEventProfile,
 )
 from .slack.slack_app import SlackApp
-from .slack.slack_application import SlackApplication
 from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
     'SlackApp',
-    'SlackApplication',
     'SlackAppMentionEventBody',
     'SlackAppMentionEventProfile',
     'SlackAuthProfile',
