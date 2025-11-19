@@ -183,8 +183,8 @@ class Workforce(BaseNode):
         task_agent (Optional[ChatAgent], optional): A custom task planning
             agent instance for task decomposition and composition. If
             provided, the workforce will create a new agent using this agent's
-            model configuration but with the required system message. If None, 
-            a default agent will be created using DEFAULT model settings. 
+            model configuration but with the required system message. If None,
+            a default agent will be created using DEFAULT model settings.
             (default: :obj:`None`)
         new_worker_agent (Optional[ChatAgent], optional): A template agent for
             workers created dynamically at runtime when existing workers cannot
