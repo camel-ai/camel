@@ -1750,6 +1750,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2027,6 +2028,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
