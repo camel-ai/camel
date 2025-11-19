@@ -55,7 +55,8 @@ class AuthenticationProvider(ABC):
 
         Args:
             auth_type (AuthenticationType): The type of authentication
-            provider_name (str): Name of the provider (e.g., 'github', 'google')
+            provider_name (str): Name of the provider
+            (e.g., 'github', 'google')
             required_env_vars (Optional[Dict[str, str]]): Required environment
                 variables mapping parameter names to env var names
             optional_env_vars (Optional[Dict[str, str]]): Optional environment
@@ -151,12 +152,12 @@ class AuthenticationProvider(ABC):
         validation_result = {}
 
         # Check required environment variables
-        for param_name, env_var in self.required_env_vars.items():
+        for _param_name, env_var in self.required_env_vars.items():
             value = os.environ.get(env_var)
             validation_result[env_var] = bool(value and value.strip())
 
         # Check optional environment variables
-        for param_name, env_var in self.optional_env_vars.items():
+        for _param_name, env_var in self.optional_env_vars.items():
             value = os.environ.get(env_var)
             validation_result[env_var] = bool(value and value.strip())
 
