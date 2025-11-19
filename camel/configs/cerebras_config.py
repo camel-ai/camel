@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, Dict
 
 from camel.configs.base_config import BaseConfig
 
@@ -39,7 +39,7 @@ class CerebrasConfig(BaseConfig):
         response_format (object, optional): An object specifying the format
             that the model must output.Setting to {"type": "json_object"}
             enables JSON mode, which guarantees the message the model
-            generates is valid JSON.
+            generates is valid JSON. (default: :obj:`None`)
             
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
@@ -52,12 +52,34 @@ class CerebrasConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-    
+            
+        user (str, optional): A unique identifier representing your end-user,
+            which can help OpenAI to monitor and detect abuse.
+            (default: :obj:`None`)
             
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.
+        
+        tool_choice (Union[dict[str, str], str], optional): Controls which (if
+            any) tool is called by the model. :obj:`"none"` means the model
+            will not call any tool and instead generates a message.
+            :obj:`"auto"` means the model can pick between generating a
+            message or calling one or more tools.  :obj:`"required"` means the
+            model must call one or more tools. Specifying a particular tool
+            via {"type": "function", "function": {"name": "my_function"}}
+            forces the model to call that tool. :obj:`"none"` is the default
+            when no tools are present. :obj:`"auto"` is the default if tools
+            are present.
+            
+        reasoning_effort(str, optional): A parameter specifying the level of
+            reasoning used by certain model types. Valid values are :obj:
+            `"low"`, :obj:`"medium"`, or :obj:`"high"`. If set, it is only
+            applied to the model types that support it (e.g., :obj:`o1`,
+            :obj:`o1mini`, :obj:`o1preview`, :obj:`o3mini`). If not provided
+            or if the model type does not support it, this parameter is
+            ignored. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -65,7 +87,10 @@ class CerebrasConfig(BaseConfig):
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    response_format: Optional[dict] = None
+    response_format: Optional[Dict] = None
+    user: Optional[str] = None
+    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    reasoning_effort: Optional[str] = None
 
 
 CEREBRAS_API_PARAMS = {param for param in CerebrasConfig.model_fields.keys()}
