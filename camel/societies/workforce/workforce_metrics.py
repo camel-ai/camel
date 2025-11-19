@@ -17,17 +17,17 @@ from typing import Any, Dict
 
 class WorkforceMetrics(ABC):
     @abstractmethod
-    def reset_task_data(self) -> None:
+    async def reset_task_data(self) -> None:
         pass
 
     @abstractmethod
-    def dump_to_json(self, file_path: str) -> None:
+    async def dump_to_json(self, file_path: str) -> None:
         pass
 
     @abstractmethod
-    def get_ascii_tree_representation(self) -> str:
+    async def get_ascii_tree_representation(self) -> str:
         pass
 
     @abstractmethod
-    def get_kpis(self) -> Dict[str, Any]:
+    async def get_kpis(self) -> Dict[str, Any]:
         pass

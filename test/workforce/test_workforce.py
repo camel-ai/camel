@@ -336,7 +336,8 @@ def test_workforce_initialization(mock_model, share_memory):
     assert workforce.graceful_shutdown_timeout == 2.0
 
 
-def test_shared_memory_operations(
+@pytest.mark.asyncio
+async def test_shared_memory_operations(
     mock_model, mock_agent, sample_shared_memory
 ):
     r"""Test shared memory collection and synchronization"""
@@ -353,7 +354,7 @@ def test_shared_memory_operations(
         share_memory=True,
     )
 
-    workforce.add_single_agent_worker("TestAgent", mock_agent)
+    await workforce.add_single_agent_worker("TestAgent", mock_agent)
 
     # Test memory collection and synchronization
     with patch.object(
@@ -366,7 +367,8 @@ def test_shared_memory_operations(
             mock_share.assert_called_once_with(sample_shared_memory)
 
 
-def test_cross_agent_memory_access(mock_model, sample_shared_memory):
+@pytest.mark.asyncio
+async def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     r"""Test cross-agent information access after memory sync"""
     # Create custom agents for the workforce
     coordinator_agent = ChatAgent(
@@ -400,8 +402,8 @@ def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     bob_response.msgs = [MagicMock(content="I know room 314 and code BLUE42")]
     agent_bob.step.return_value = bob_response
 
-    workforce.add_single_agent_worker("Alice", agent_alice)
-    workforce.add_single_agent_worker("Bob", agent_bob)
+    await workforce.add_single_agent_worker("Alice", agent_alice)
+    await workforce.add_single_agent_worker("Bob", agent_bob)
 
     # Simulate memory sync
     with patch.object(
@@ -420,20 +422,21 @@ def test_cross_agent_memory_access(mock_model, sample_shared_memory):
         assert "blue42" in content and "314" in content
 
 
-def test_dynamic_worker_addition():
+@pytest.mark.asyncio
+async def test_dynamic_worker_addition():
     r"""Test adding workers dynamically during different workforce states"""
     workforce = Workforce(description="Dynamic Test Workforce")
     from camel.societies.workforce.workforce import WorkforceState
 
     # Test 1: Add worker in IDLE state (should work)
     agent1 = ChatAgent("You are a test agent.")
-    workforce.add_single_agent_worker("Test Worker 1", agent1)
+    await workforce.add_single_agent_worker("Test Worker 1", agent1)
     assert len(workforce._children) == 1
 
     # Test 2: Add worker in PAUSED state (should work)
     workforce._state = WorkforceState.PAUSED
     agent2 = ChatAgent("You are another test agent.")
-    workforce.add_single_agent_worker("Test Worker 2", agent2)
+    await workforce.add_single_agent_worker("Test Worker 2", agent2)
     assert len(workforce._children) == 2
 
     # Test 3: Try to add worker in RUNNING state (should fail)
@@ -443,7 +446,7 @@ def test_dynamic_worker_addition():
     with pytest.raises(
         RuntimeError, match="Cannot add workers while workforce is running"
     ):
-        workforce.add_single_agent_worker("Should Fail", agent3)
+        await workforce.add_single_agent_worker("Should Fail", agent3)
 
     assert len(workforce._children) == 2  # No new worker added
 
@@ -458,11 +461,11 @@ async def test_dynamic_worker_types():
 
     # Add SingleAgentWorker
     agent = ChatAgent("You are a specialist.")
-    workforce.add_single_agent_worker("Specialist", agent)
+    await workforce.add_single_agent_worker("Specialist", agent)
     assert len(workforce._children) == 1
 
     # Add RolePlayingWorker
-    workforce.add_role_playing_worker(
+    await workforce.add_role_playing_worker(
         description="Analysis Team",
         assistant_role_name="Analyst",
         user_role_name="Expert",

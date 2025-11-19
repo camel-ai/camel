@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -32,7 +34,7 @@ def create_test_agent(role_name: str, unique_fact: str, model):
     )
 
 
-def main():
+async def main():
     r"""Run the validation test for shared memory functionality."""
     print("=== Workforce Shared Memory Validation Test ===\n")
 
@@ -70,9 +72,11 @@ def main():
         "Charlie", "Charlie knows the deadline is Friday", model
     )
 
-    workforce.add_single_agent_worker("Alice the Coder", agent_alice)
-    workforce.add_single_agent_worker("Bob the Manager", agent_bob)
-    workforce.add_single_agent_worker("Charlie the Designer", agent_charlie)
+    await workforce.add_single_agent_worker("Alice the Coder", agent_alice)
+    await workforce.add_single_agent_worker("Bob the Manager", agent_bob)
+    await workforce.add_single_agent_worker(
+        "Charlie the Designer", agent_charlie
+    )
 
     print("✓ Created workforce with 3 agents")
     print("  - Alice knows: secret code BLUE42")
@@ -322,11 +326,13 @@ def main():
         "Charlie", "Charlie knows the deadline is Friday", model
     )
 
-    workforce_no_memory.add_single_agent_worker(
+    await workforce_no_memory.add_single_agent_worker(
         "Alice the Coder", agent_alice_2
     )
-    workforce_no_memory.add_single_agent_worker("Bob the Manager", agent_bob_2)
-    workforce_no_memory.add_single_agent_worker(
+    await workforce_no_memory.add_single_agent_worker(
+        "Bob the Manager", agent_bob_2
+    )
+    await workforce_no_memory.add_single_agent_worker(
         "Charlie the Designer", agent_charlie_2
     )
 
@@ -401,7 +407,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
 
 """

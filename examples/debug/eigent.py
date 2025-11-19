@@ -725,22 +725,25 @@ async def main():
         use_structured_output_handler=False,
     )
 
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker(
         "Search Agent: Can search the web, extract webpage content, "
         "simulate browser actions, and provide relevant information to "
         "solve the given task.",
         worker=search_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker(
         "Developer Agent: A skilled coding assistant that can write and "
         "execute code, run terminal commands, and verify solutions to "
         "complete tasks.",
         worker=developer_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker(
         "Document Agent: A document processing assistant for creating, "
         "modifying, and managing various document formats, including "
         "presentations.",
         worker=document_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker(
         "Multi-Modal Agent: A multi-modal processing assistant for "
         "analyzing, and generating media content like audio and images.",
         worker=multi_modal_agent,
@@ -763,16 +766,16 @@ async def main():
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree())
 
     print("\n--- Workforce KPIs ---")
-    kpis = workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "eigent_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
