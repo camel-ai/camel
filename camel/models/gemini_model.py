@@ -112,13 +112,46 @@ class GeminiModel(OpenAICompatibleModel):
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,
-        which is not accepted by Gemini.
+        which is not accepted by Gemini. Also preserves thought signatures
+        required for Gemini 3 Pro function calling and adds fallback signatures
+        when they are missing.
         """
+        import copy
+
         processed_messages = []
         for msg in messages:
-            msg_copy = msg.copy()
+            # Use deep copy to preserve all nested structures including
+            # thought signatures in extra_content
+            msg_copy = copy.deepcopy(msg)
             if 'content' in msg_copy and msg_copy['content'] == '':
                 msg_copy['content'] = 'null'
+
+            # Handle missing thought signatures for function calls
+            # This is required for Gemini 3 Pro compatibility
+            # TODO: support multi round thought signatures
+            if (
+                msg_copy.get('role') == 'assistant'
+                and 'tool_calls' in msg_copy
+                and isinstance(msg_copy['tool_calls'], list)
+            ):
+                for i, tool_call in enumerate(msg_copy['tool_calls']):
+                    # Check if this is the first tool call in a parallel set
+                    # or any tool call that's missing a thought signature
+                    if i == 0:  # First tool call should have a signature
+                        # Check if thought signature is missing
+                        extra_content = tool_call.get('extra_content', {})
+                        google_content = extra_content.get('google', {})
+
+                        if 'thought_signature' not in google_content:
+                            # Add fallback signature for missing signatures
+                            if 'extra_content' not in tool_call:
+                                tool_call['extra_content'] = {}
+                            if 'google' not in tool_call['extra_content']:
+                                tool_call['extra_content']['google'] = {}
+                            tool_call['extra_content']['google'][
+                                'thought_signature'
+                            ] = "skip_thought_signature_validator"
+
             processed_messages.append(msg_copy)
         return processed_messages
 
