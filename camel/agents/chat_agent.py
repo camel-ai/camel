@@ -30,7 +30,6 @@ import time
 import uuid
 import warnings
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -57,7 +56,6 @@ from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
-    build_default_summary_prompt,
     convert_to_function_tool,
     convert_to_schema,
     get_info_dict,
@@ -104,6 +102,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.message_summarizer import MessageSummarizer
 
 TOKEN_LIMIT_ERROR_MARKERS = (
     "context_length_exceeded",
@@ -599,7 +598,8 @@ class ChatAgent(BaseAgent):
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
         self._context_utility: Optional[ContextUtility] = None
-        self._context_summary_agent: Optional["ChatAgent"] = None
+        self._message_summarizer: Optional["MessageSummarizer"] = None
+        self._message_summarizer_lock = asyncio.Lock()
         self.stream_accumulate = stream_accumulate
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
@@ -1637,239 +1637,17 @@ class ChatAgent(BaseAgent):
             stacklevel=2,
         )
 
-        result: Dict[str, Any] = {
-            "summary": "",
-            "file_path": None,
-            "status": "",
-        }
-
-        try:
-            # Use external context if set, otherwise create local one
-            if self._context_utility is None:
-                if working_directory is not None:
-                    self._context_utility = ContextUtility(
-                        working_directory=str(working_directory)
-                    )
-                else:
-                    self._context_utility = ContextUtility()
-            context_util = self._context_utility
-
-            # Get conversation directly from agent's memory
-            messages, _ = self.memory.get_context()
-
-            if not messages:
-                status_message = (
-                    "No conversation context available to summarize."
-                )
-                result["status"] = status_message
-                return result
-
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
-
-            if not conversation_text:
-                status_message = (
-                    "Conversation context is empty; skipping summary."
-                )
-                result["status"] = status_message
-                return result
-
-            if self._context_summary_agent is None:
-                self._context_summary_agent = ChatAgent(
-                    system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations"
-                    ),
-                    model=self.model_backend,
-                    agent_id=f"{self.agent_id}_context_summarizer",
-                )
-            else:
-                self._context_summary_agent.reset()
-
-            if summary_prompt:
-                prompt_text = (
-                    f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
-                    f"{conversation_text}"
-                )
-            else:
-                prompt_text = build_default_summary_prompt(conversation_text)
-
-            try:
-                # Use structured output if response_format is provided
-                if response_format:
-                    response = self._context_summary_agent.step(
-                        prompt_text, response_format=response_format
-                    )
-                else:
-                    response = self._context_summary_agent.step(prompt_text)
-            except Exception as step_exc:
-                error_message = (
-                    f"Failed to generate summary using model: {step_exc}"
-                )
-                logger.error(error_message)
-                result["status"] = error_message
-                return result
-
-            if not response.msgs:
-                status_message = (
-                    "Failed to generate summary from model response."
-                )
-                result["status"] = status_message
-                return result
-
-            summary_content = response.msgs[-1].content.strip()
-            if not summary_content:
-                status_message = "Generated summary is empty."
-                result["status"] = status_message
-                return result
-
-            # handle structured output if response_format was provided
-            structured_output = None
-            if response_format and response.msgs[-1].parsed:
-                structured_output = response.msgs[-1].parsed
-
-            # determine filename: use provided filename, or extract from
-            # structured output, or generate timestamp
-            if filename:
-                base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
-                # use task_title from structured output for filename
-                task_title = structured_output.task_title
-                clean_title = ContextUtility.sanitize_workflow_filename(
-                    task_title
-                )
-                base_filename = (
-                    f"{clean_title}_workflow" if clean_title else "workflow"
-                )
-            else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
-
-            base_filename = Path(base_filename).with_suffix("").name
-
-            metadata = context_util.get_session_metadata()
-            metadata.update(
-                {
-                    "agent_id": self.agent_id,
-                    "message_count": len(messages),
-                }
+        # Delegate to asummarize using asyncio.run
+        return asyncio.run(
+            self.asummarize(
+                filename=filename,
+                summary_prompt=summary_prompt,
+                response_format=response_format,
+                working_directory=working_directory,
+                include_summaries=include_summaries,
+                add_user_messages=add_user_messages,
             )
-
-            # convert structured output to custom markdown if present
-            if structured_output:
-                # convert structured output to custom markdown
-                summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
-                )
-            if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
-                )
-
-            # Save the markdown (either custom structured or default)
-            save_status = context_util.save_markdown_file(
-                base_filename,
-                summary_content,
-                title="Conversation Summary"
-                if not structured_output
-                else None,
-                metadata=metadata if not structured_output else None,
-            )
-
-            file_path = (
-                context_util.get_working_directory() / f"{base_filename}.md"
-            )
-            summary_content = (
-                f"[CONTEXT_SUMMARY] The following is a summary of our "
-                f"conversation from a previous session: {summary_content}"
-            )
-            # Prepare result dictionary
-            result_dict = {
-                "summary": summary_content,
-                "file_path": str(file_path),
-                "status": save_status,
-                "structured_summary": structured_output,
-            }
-
-            result.update(result_dict)
-            logger.info("Conversation summary saved to %s", file_path)
-            return result
-
-        except Exception as exc:
-            error_message = f"Failed to summarize conversation context: {exc}"
-            logger.error(error_message)
-            result["status"] = error_message
-            return result
+        )
 
     async def asummarize(
         self,
@@ -1913,251 +1691,27 @@ class ChatAgent(BaseAgent):
                 path, status message, and optionally structured_summary if
                 response_format was provided.
         """
+        # Get conversation directly from agent's memory
+        messages, _ = self.memory.get_context()
 
-        result: Dict[str, Any] = {
-            "summary": "",
-            "file_path": None,
-            "status": "",
-        }
-
-        try:
-            # Use external context if set, otherwise create local one
-            if self._context_utility is None:
-                if working_directory is not None:
-                    self._context_utility = ContextUtility(
-                        working_directory=str(working_directory)
-                    )
-                else:
-                    self._context_utility = ContextUtility()
-            context_util = self._context_utility
-
-            # Get conversation directly from agent's memory
-            messages, _ = self.memory.get_context()
-
-            if not messages:
-                status_message = (
-                    "No conversation context available to summarize."
-                )
-                result["status"] = status_message
-                return result
-
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
-
-            if not conversation_text:
-                status_message = (
-                    "Conversation context is empty; skipping summary."
-                )
-                result["status"] = status_message
-                return result
-
-            if self._context_summary_agent is None:
-                self._context_summary_agent = ChatAgent(
-                    system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations"
-                    ),
-                    model=self.model_backend,
-                    agent_id=f"{self.agent_id}_context_summarizer",
-                )
-            else:
-                self._context_summary_agent.reset()
-
-            if summary_prompt:
-                prompt_text = (
-                    f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
-                    f"{conversation_text}"
-                )
-            else:
-                prompt_text = build_default_summary_prompt(conversation_text)
-
-            try:
-                # Use structured output if response_format is provided
-                if response_format:
-                    response = await self._context_summary_agent.astep(
-                        prompt_text, response_format=response_format
-                    )
-                else:
-                    response = await self._context_summary_agent.astep(
-                        prompt_text
-                    )
-
-                # Handle streaming response
-                if isinstance(response, AsyncStreamingChatAgentResponse):
-                    # Collect final response
-                    final_response = await response
-                    response = final_response
-
-            except Exception as step_exc:
-                error_message = (
-                    f"Failed to generate summary using model: {step_exc}"
-                )
-                logger.error(error_message)
-                result["status"] = error_message
-                return result
-
-            if not response.msgs:
-                status_message = (
-                    "Failed to generate summary from model response."
-                )
-                result["status"] = status_message
-                return result
-
-            summary_content = response.msgs[-1].content.strip()
-            if not summary_content:
-                status_message = "Generated summary is empty."
-                result["status"] = status_message
-                return result
-
-            # handle structured output if response_format was provided
-            structured_output = None
-            if response_format and response.msgs[-1].parsed:
-                structured_output = response.msgs[-1].parsed
-
-            # determine filename: use provided filename, or extract from
-            # structured output, or generate timestamp
-            if filename:
-                base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
-                # use task_title from structured output for filename
-                task_title = structured_output.task_title
-                clean_title = ContextUtility.sanitize_workflow_filename(
-                    task_title
-                )
-                base_filename = (
-                    f"{clean_title}_workflow" if clean_title else "workflow"
-                )
-            else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
-
-            base_filename = Path(base_filename).with_suffix("").name
-
-            metadata = context_util.get_session_metadata()
-            metadata.update(
-                {
-                    "agent_id": self.agent_id,
-                    "message_count": len(messages),
-                }
-            )
-
-            # convert structured output to custom markdown if present
-            if structured_output:
-                # convert structured output to custom markdown
-                summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
-                )
-            if add_user_messages:
-                summary_content = self._append_user_messages_section(
-                    summary_content, user_messages
+        # Initialize MessageSummarizer if not already initialized (thread-safe)
+        async with self._message_summarizer_lock:
+            if self._message_summarizer is None:
+                self._message_summarizer = MessageSummarizer(
+                    model_backend=self.model_backend.current_model
                 )
 
-            # Save the markdown (either custom structured or default)
-            save_status = context_util.save_markdown_file(
-                base_filename,
-                summary_content,
-                title="Conversation Summary"
-                if not structured_output
-                else None,
-                metadata=metadata if not structured_output else None,
-            )
-
-            file_path = (
-                context_util.get_working_directory() / f"{base_filename}.md"
-            )
-
-            summary_content = (
-                f"[CONTEXT_SUMMARY] The following is a summary of our "
-                f"conversation from a previous session: {summary_content}"
-            )
-
-            # Prepare result dictionary
-            result_dict = {
-                "summary": summary_content,
-                "file_path": str(file_path),
-                "status": save_status,
-                "structured_summary": structured_output,
-            }
-
-            result.update(result_dict)
-            logger.info("Conversation summary saved to %s", file_path)
-            return result
-
-        except Exception as exc:
-            error_message = f"Failed to summarize conversation context: {exc}"
-            logger.error(error_message)
-            result["status"] = error_message
-            return result
+        # Delegate to MessageSummarizer
+        return await self._message_summarizer.asummarize(
+            messages=messages,
+            agent_id=self.agent_id,
+            filename=filename,
+            summary_prompt=summary_prompt,
+            response_format=response_format,
+            working_directory=working_directory,
+            include_summaries=include_summaries,
+            add_user_messages=add_user_messages,
+        )
 
     def clear_memory(self) -> None:
         r"""Clear the agent's memory and reset to initial state.
