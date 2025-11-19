@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
-from camel.utils import AgentOpsMeta, with_timeout
+from camel.utils import AgentOpsMeta, Constants, with_timeout
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -35,9 +35,9 @@ class BaseToolkit(metaclass=AgentOpsMeta):
     from mcp.server import FastMCP
 
     mcp: FastMCP
-    timeout: Optional[float] = None
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD
 
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(self, timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD):
         # check if timeout is a positive number
         if timeout is not None and timeout <= 0:
             raise ValueError("Timeout must be a positive number.")
