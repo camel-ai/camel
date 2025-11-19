@@ -287,8 +287,6 @@ Your final output must follow exactly this structure:
 <task>Subtask 2</task>
 </tasks>
 
-No text, explanations, or formatting may appear outside the <tasks> block.
-
 Each subtask should be:
 - **Self-contained and independently understandable.**
 - Clear and concise.
