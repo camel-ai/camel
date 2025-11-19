@@ -183,9 +183,9 @@ class Workforce(BaseNode):
         task_agent (Optional[ChatAgent], optional): A custom task planning
             agent instance for task decomposition and composition. If
             provided, the workforce will create a new agent using this agent's
-            model configuration but with the required system message and tools
-            (TaskPlanningToolkit). If None, a default agent will be created
-            using DEFAULT model settings. (default: :obj:`None`)
+            model configuration but with the required system message. If None, 
+            a default agent will be created using DEFAULT model settings. 
+            (default: :obj:`None`)
         new_worker_agent (Optional[ChatAgent], optional): A template agent for
             workers created dynamically at runtime when existing workers cannot
             handle failed tasks. If None, workers will be created with default
@@ -383,7 +383,7 @@ class Workforce(BaseNode):
                 stop_event=coordinator_agent.stop_event,
             )
 
-        # Set up task agent with default system message and required tools
+        # Set up task agent with default system message
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
             content=TASK_AGENT_SYSTEM_MESSAGE,
@@ -393,7 +393,7 @@ class Workforce(BaseNode):
             logger.warning(
                 "No task_agent provided. Using default ChatAgent "
                 "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
-                "with default system message and TaskPlanningToolkit."
+                "with default system message."
             )
             self.task_agent = ChatAgent(
                 task_sys_msg,
