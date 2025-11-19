@@ -28,11 +28,13 @@ class TestMinimaxModel:
             ModelType.MINIMAX_M2_STABLE,
         ],
     )
-    def test_minimax_m2_model_create(self, model_type: ModelType):
+    def test_minimax_m2_model_create(self, model_type: ModelType, monkeypatch):
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         model = MinimaxModel(model_type)
         assert model.model_type == model_type
 
-    def test_minimax_m2_model_create_with_config(self):
+    def test_minimax_m2_model_create_with_config(self, monkeypatch):
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         config_dict = MinimaxConfig(
             temperature=0.5,
             top_p=1.0,
@@ -53,29 +55,31 @@ class TestMinimaxModel:
 
     def test_minimax_m2_model_default_url(self, monkeypatch):
         # Test default URL when no environment variable is set
-        monkeypatch.delenv("MINIMAX_API_BASE_URL ", raising=False)
+        monkeypatch.delenv("MINIMAX_API_BASE_URL", raising=False)
         monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
 
         model = MinimaxModel(ModelType.MINIMAX_M2)
-        assert model._url == "https://api.minimax.chat/v1"
+        assert model._url == "https://api.minimaxi.com/v1"
 
     def test_minimax_m2_model_custom_url(self, monkeypatch):
         # Test custom URL from environment variable
         custom_url = "https://custom.minimax.endpoint/v1"
-        monkeypatch.setenv("MINIMAX_M2_API_BASE_URL", custom_url)
-        monkeypatch.setenv("MINIMAX_M2_API_KEY", "test_key")
+        monkeypatch.setenv("MINIMAX_API_BASE_URL", custom_url)
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
 
         model = MinimaxModel(ModelType.MINIMAX_M2)
         assert model._url == custom_url
 
-    def test_minimax_m2_model_extends_openai_compatible(self):
+    def test_minimax_m2_model_extends_openai_compatible(self, monkeypatch):
         # Test that MinimaxModel inherits from OpenAICompatibleModel
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         from camel.models.openai_compatible_model import OpenAICompatibleModel
 
         model = MinimaxModel(ModelType.MINIMAX_M2)
         assert isinstance(model, OpenAICompatibleModel)
 
-    def test_minimax_m2_model_token_counter(self):
+    def test_minimax_m2_model_token_counter(self, monkeypatch):
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         model = MinimaxModel(ModelType.MINIMAX_M2)
         # Should use the default OpenAI token counter
         assert model.token_counter is not None
