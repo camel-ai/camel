@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -39,15 +41,6 @@ class HttpMethod(Enum):
     DELETE = "DELETE"
 
 
-class WebhookSecurity(Enum):
-    """Security validation methods for webhooks."""
-
-    NONE = "none"
-    SECRET_TOKEN = "secret_token"
-    SIGNATURE_VALIDATION = "signature_validation"
-    API_KEY = "api_key"
-
-
 class WebhookConfig(BaseModel):
     """Configuration for webhook-specific parameters."""
 
@@ -55,19 +48,24 @@ class WebhookConfig(BaseModel):
     max_payload_size: int = Field(
         default=1024 * 1024, ge=1, le=10 * 1024 * 1024
     )  # 1MB default, max 10MB
-    timeout_seconds: int = Field(
-        default=30, ge=1, le=300
-    )  # 30s default, max 5min
-    security_method: WebhookSecurity = WebhookSecurity.NONE
-    secret_token: Optional[str] = None
-    api_key_header: Optional[str] = None
-    expected_api_key: Optional[str] = None
-    signature_header: Optional[str] = None
-    signature_secret: Optional[str] = None
     custom_headers: Optional[Dict[str, str]] = None
 
-    class Config:
-        use_enum_values = True
+
+class WebhookAuth(ABC):
+    """Interface for webhook authentication handlers."""
+
+    @abstractmethod
+    def verify_webhook_request(self, request: Any, raw_body: bytes) -> bool:
+        """Verify the webhook request.
+
+        Args:
+            request (Any): The request object.
+            raw_body (bytes): The raw request body.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        pass
 
 
 class WebhookTrigger(BaseTrigger):
@@ -87,6 +85,7 @@ class WebhookTrigger(BaseTrigger):
         path: str,
         host: str = "localhost",
         webhook_config: Optional[WebhookConfig] = None,
+        auth_handler: Optional[WebhookAuth] = None,
     ) -> None:
         """
         Initialize WebhookTrigger with HTTP server configuration.
@@ -106,9 +105,11 @@ class WebhookTrigger(BaseTrigger):
                 Use "localhost" for local only, "0.0.0.0" for all interfaces.
                 Defaults to "localhost".
             webhook_config (Optional[WebhookConfig], optional): Advanced
-                webhook configuration including security, payload limits, and
-                custom headers.
-                Defaults to None (uses default WebhookConfig).
+                webhook configuration including payload limits and custom
+                headers. Defaults to None (uses default WebhookConfig).
+            auth_handler (Optional[WebhookAuth], optional): Custom
+                authentication handler implementing WebhookAuth interface.
+                Defaults to None.
 
         Raises:
             ValueError: If port is not in valid range (1-65535) or path doesn't
@@ -153,6 +154,7 @@ class WebhookTrigger(BaseTrigger):
         self.path: str = path
         self.host: str = host
         self.webhook_config: WebhookConfig = webhook_config
+        self.auth_handler: Optional[WebhookAuth] = auth_handler
         self.server: Optional[web.Application] = None
         self.runner: Optional[web.AppRunner] = None
         self.site: Optional[web.TCPSite] = None
@@ -316,38 +318,77 @@ class WebhookTrigger(BaseTrigger):
 
         Args:
             request (web.Request): The incoming HTTP request from aiohttp.
-                Expected to contain JSON payload in request body.
+                Expected to contain JSON or form-encoded payload.
 
         Returns:
             web.Response: JSON response with success status or error details.
                 Success: {"status": "success"} with 200 status code
-                Error: {"error": "error_message"} with 500 status code
+                Error: {"error": "error_message"} with appropriate status code
 
         Side Effects:
-            - Parses JSON payload from request body
-            - Extracts headers and request metadata
+            - Authenticates request if configured
+            - Parses payload according to content type
+            - Processes payload according to configuration
             - Creates and emits TriggerEvent
             - Logs errors if processing fails
 
         Note:
-            Accepts POST requests with JSON payloads. Non-JSON requests
-            or malformed JSON will result in error responses.
+            Supports multiple content types and configurable authentication.
         """
         try:
-            payload: Dict[str, Any] = await request.json()
+            # Get raw body for authentication
+            raw_body = await request.read()
             headers: Dict[str, str] = dict(request.headers)
 
+            # Authenticate request if required
+            if (
+                self.auth_handler
+                and not self.auth_handler.verify_webhook_request(
+                    request, raw_body
+                )
+            ):
+                logger.warning("Webhook authentication failed")
+                return web.json_response(
+                    {"error": "Authentication failed"}, status=403
+                )
+
+            # Parse payload based on content type
+            content_type = request.headers.get(
+                'content-type', 'application/json'
+            )
+            if 'application/json' in content_type:
+                try:
+                    payload = await request.json()
+                except Exception:
+                    logger.error("Failed to parse JSON payload")
+                    return web.json_response(
+                        {"error": "Invalid JSON payload"}, status=400
+                    )
+            elif 'application/x-www-form-urlencoded' in content_type:
+                form_data = await request.post()
+                payload = dict(form_data)
+            else:
+                payload = {
+                    "raw_body": raw_body.decode('utf-8', errors='ignore')
+                }
+
+            # Use payload as-is without provider-specific processing
+            processed_payload = payload
+
             event_data: Dict[str, Any] = {
-                "payload": payload,
+                "payload": processed_payload,
                 "headers": headers,
                 "method": request.method,
                 "url": str(request.url),
+                "raw_payload": payload,
             }
 
             event: TriggerEvent = await self.process_trigger_event(event_data)
             await self._emit_trigger_event(event)
 
+            # Return default success response
             return web.json_response({"status": "success"})
+
         except Exception as e:
             logger.error(f"Webhook error: {e}")
             return web.json_response({"error": str(e)}, status=500)
@@ -359,10 +400,11 @@ class WebhookTrigger(BaseTrigger):
 
         Args:
             event_data (Dict[str, Any]): Raw webhook request data containing:
-                - payload (Dict[str, Any]): JSON payload from request body
+                - payload (Dict[str, Any]): Processed payload from request body
                 - headers (Dict[str, str]): HTTP headers from the request
                 - method (str): HTTP method (typically "POST")
                 - url (str): Full request URL including query parameters
+                - raw_payload (Dict[str, Any]): Original unprocessed payload
 
         Returns:
             TriggerEvent: Standardized trigger event with webhook-specific
@@ -383,125 +425,8 @@ class WebhookTrigger(BaseTrigger):
                 "headers": event_data["headers"],
                 "method": event_data["method"],
                 "url": event_data["url"],
+                "raw_payload": event_data.get("raw_payload"),
             },
-        )
-
-    @classmethod
-    def create_github_webhook(
-        cls,
-        trigger_id: str,
-        name: str,
-        description: str,
-        port: int,
-        path: str = "/github-webhook",
-        host: str = "localhost",
-        secret_token: Optional[str] = None,
-    ) -> 'WebhookTrigger':
-        """Factory method to create a GitHub-optimized webhook trigger.
-
-        Args:
-            trigger_id (str): Unique identifier for the trigger instance.
-            name (str): Human-readable name for the trigger.
-            description (str): Detailed description of the trigger's purpose.
-            port (int): Port number for the webhook server (1-65535).
-            path (str, optional): URL path for webhook endpoint.
-                Defaults to "/github-webhook".
-            host (str, optional): Host interface to bind to.
-                Defaults to "localhost".
-            secret_token (Optional[str], optional): GitHub webhook secret for
-                validation.
-                If provided, enables signature validation. Defaults to None.
-
-        Returns:
-            WebhookTrigger: Configured trigger optimized for GitHub webhooks.
-
-        Example:
-            >>> trigger = WebhookTrigger.create_github_webhook(
-            ...     trigger_id="gh-issues",
-            ...     name="GitHub Issues",
-            ...     description="Handle GitHub issue events",
-            ...     port=8080,
-            ...     secret_token="my-secret"
-            ... )
-        """
-        webhook_config = WebhookConfig(
-            allowed_methods=[HttpMethod.POST],
-            max_payload_size=5 * 1024 * 1024,  # 5MB for GitHub payloads
-            security_method=WebhookSecurity.SECRET_TOKEN
-            if secret_token
-            else WebhookSecurity.NONE,
-            secret_token=secret_token,
-            signature_header="X-Hub-Signature-256",
-        )
-
-        return cls(
-            trigger_id=trigger_id,
-            name=name,
-            description=description,
-            port=port,
-            path=path,
-            host=host,
-            webhook_config=webhook_config,
-        )
-
-    @classmethod
-    def create_generic_webhook(
-        cls,
-        trigger_id: str,
-        name: str,
-        description: str,
-        port: int,
-        path: str,
-        allowed_methods: Optional[List[HttpMethod]] = None,
-        host: str = "localhost",
-        max_payload_size: int = 1024 * 1024,
-    ) -> 'WebhookTrigger':
-        """Factory method to create a generic webhook trigger.
-
-        Args:
-            trigger_id (str): Unique identifier for the trigger instance.
-            name (str): Human-readable name for the trigger.
-            description (str): Detailed description of the trigger's purpose.
-            port (int): Port number for the webhook server (1-65535).
-            path (str): URL path for webhook endpoint.
-            allowed_methods (Optional[List[HttpMethod]], optional): HTTP
-                methods to accept.
-                Defaults to [HttpMethod.POST].
-            host (str, optional): Host interface to bind to.
-                Defaults to "localhost".
-            max_payload_size (int, optional): Maximum payload size in bytes.
-                Defaults to 1MB.
-
-        Returns:
-            WebhookTrigger: Configured trigger for generic webhook handling.
-
-        Example:
-            >>> trigger = WebhookTrigger.create_generic_webhook(
-            ...     trigger_id="api-events",
-            ...     name="API Events",
-            ...     description="Handle various API webhook events",
-            ...     port=8080,
-            ...     path="/api/webhook",
-            ...     allowed_methods=[HttpMethod.POST, HttpMethod.PUT]
-            ... )
-        """
-        if allowed_methods is None:
-            allowed_methods = [HttpMethod.POST]
-
-        webhook_config = WebhookConfig(
-            allowed_methods=allowed_methods,
-            max_payload_size=max_payload_size,
-            security_method=WebhookSecurity.NONE,
-        )
-
-        return cls(
-            trigger_id=trigger_id,
-            name=name,
-            description=description,
-            port=port,
-            path=path,
-            host=host,
-            webhook_config=webhook_config,
         )
 
     def get_webhook_config(self) -> WebhookConfig:
