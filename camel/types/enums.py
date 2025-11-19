@@ -240,6 +240,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
@@ -835,6 +836,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1529,6 +1531,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
