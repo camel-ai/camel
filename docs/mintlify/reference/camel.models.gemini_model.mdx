@@ -47,7 +47,9 @@ def _process_messages(self, messages):
 ```
 
 Process the messages for Gemini API to ensure no empty content,
-which is not accepted by Gemini.
+which is not accepted by Gemini. Also preserves thought signatures
+required for Gemini 3 Pro function calling and adds fallback signatures
+when they are missing.
 
 <a id="camel.models.gemini_model.GeminiModel._run"></a>
 
