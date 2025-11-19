@@ -20,7 +20,7 @@ import os
 import time
 from typing import Any, Dict, Optional
 
-from camel.auth.providers.base import (
+from camel.auth.base import (
     AuthenticationError,
     AuthenticationProvider,
     AuthenticationType,
@@ -33,7 +33,7 @@ logger = get_logger(__name__)
 
 class SlackAuth(AuthenticationProvider, WebhookAuth):
     """Slack authentication provider with integrated webhook support.
-    
+
     Provides comprehensive Slack authentication including API access and
     webhook signature verification. Inherits from AuthenticationProvider
     for consistent authentication interface across all toolkits.
@@ -48,8 +48,9 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         """Initialize Slack authentication.
 
         Args:
-            signing_secret (Optional[str]): Slack signing secret for webhook verification.
-                If not provided, attempts to retrieve from SLACK_SIGNING_SECRET.
+            signing_secret (Optional[str]): Slack signing secret for webhook
+            verification.
+              If not provided, attempts to retrieve from SLACK_SIGNING_SECRET.
             api_token (Optional[str]): Slack API token for API access.
                 If not provided, attempts to retrieve from SLACK_API_TOKEN.
             bot_token (Optional[str]): Slack bot token for bot API access.
@@ -66,19 +67,26 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
                 "bot_token": "SLACK_BOT_TOKEN",
             },
         )
-        
-        self.signing_secret = signing_secret or os.environ.get("SLACK_SIGNING_SECRET")
+
+        self.signing_secret = signing_secret or os.environ.get(
+            "SLACK_SIGNING_SECRET"
+        )
         self.api_token = api_token or os.environ.get("SLACK_API_TOKEN")
         self.bot_token = bot_token or os.environ.get("SLACK_BOT_TOKEN")
-        
-        # Mark as authenticated if we have any credentials
-        self._is_authenticated = bool(self.signing_secret or self.api_token or self.bot_token)
 
-    def authenticate(self, request_data: Optional[Dict[str, Any]] = None) -> bool:
+        # Mark as authenticated if we have any credentials
+        self._is_authenticated = bool(
+            self.signing_secret or self.api_token or self.bot_token
+        )
+
+    def authenticate(
+        self, request_data: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """Authenticate Slack webhook request or API access.
 
         Args:
-            request_data (Optional[Dict[str, Any]]): Request data for webhook authentication.
+            request_data (Optional[Dict[str, Any]]): Request data for webhook
+            authentication.
                 If None, performs general authentication check.
 
         Returns:
@@ -87,11 +95,11 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         if request_data is None:
             # General authentication check
             return self._is_authenticated
-        
+
         # For webhook authentication, verify signature
         headers = request_data.get("headers", {})
         body = request_data.get("raw_body")
-        
+
         if body is None:
             logger.warning("No raw body provided for authentication")
             return False
@@ -112,17 +120,17 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         """
         if not self._is_authenticated:
             raise AuthenticationError(
-                "Not authenticated", 
+                "Not authenticated",
                 provider_name=self.provider_name,
-                auth_type=self.auth_type
+                auth_type=self.auth_type,
             )
-        
+
         headers = {}
         if self.bot_token:
             headers["Authorization"] = f"Bearer {self.bot_token}"
         elif self.api_token:
             headers["Authorization"] = f"Bearer {self.api_token}"
-        
+
         return headers
 
     def get_credentials(self) -> Dict[str, Any]:
@@ -136,11 +144,11 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         """
         if not self._is_authenticated:
             raise AuthenticationError(
-                "Not authenticated", 
+                "Not authenticated",
                 provider_name=self.provider_name,
-                auth_type=self.auth_type
+                auth_type=self.auth_type,
             )
-        
+
         return {
             "signing_secret": self.signing_secret,
             "api_token": self.api_token,
@@ -157,8 +165,10 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         # Would need to implement OAuth2 flow for proper token refresh
         logger.info("Slack tokens do not support automatic refresh")
         return False
-    
-    def verify_signature(self, request_body: bytes, headers: Dict[str, str]) -> bool:
+
+    def verify_signature(
+        self, request_body: bytes, headers: Dict[str, str]
+    ) -> bool:
         """Verify Slack webhook signature.
 
         Args:
@@ -169,7 +179,9 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
             bool: True if signature is valid, False otherwise
         """
         if not self.signing_secret:
-            logger.warning("No Slack signing secret configured, skipping verification")
+            logger.warning(
+                "No Slack signing secret configured, skipping verification"
+            )
             return True
 
         try:
@@ -220,7 +232,7 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
             headers = {}
             if hasattr(request, 'headers'):
                 headers = dict(request.headers)
-            
+
             return self.verify_signature(raw_body, headers)
         except Exception as e:
             logger.error(f"Error verifying Slack webhook: {e}")
