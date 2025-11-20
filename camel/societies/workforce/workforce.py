@@ -503,15 +503,14 @@ class Workforce(BaseNode):
 
         if callbacks:
             for cb in callbacks:
-                if isinstance(cb, WorkforceCallback):
-                    self._callbacks.append(cb)
-                else:
+                if not isinstance(cb, WorkforceCallback):
                     raise ValueError(
                         "All callbacks must be instances of WorkforceCallback"
                     )
+                self._callbacks.append(cb)
         # Check if any metrics callback is provided
         has_metrics_callback = any(
-            hasattr(cb, WorkforceMetrics) for cb in self._callbacks
+            isinstance(cb, WorkforceMetrics) for cb in self._callbacks
         )
 
         if not has_metrics_callback:
