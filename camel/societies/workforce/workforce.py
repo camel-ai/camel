@@ -224,6 +224,17 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        callbacks (Optional[List[WorkforceCallback]], optional): A list of
+            callback handlers to observe and record workforce lifecycle events
+            and metrics (e.g., task creation/assignment/start/completion/
+            failure, worker creation/deletion, all-tasks-completed). All
+            items must be instances of :class:`WorkforceCallback`, otherwise
+            a :class:`ValueError` is raised. If none of the provided
+            callbacks implement :class:`WorkforceMetrics`, a built-in
+            :class:`WorkforceLogger` (implements both callback and metrics)
+            is added automatically. If at least one provided callback
+            implements :class:`WorkforceMetrics`, no default logger is added.
+            (default: :obj:`None`)
         mode (WorkforceMode, optional): The execution mode for task
             processing. AUTO_DECOMPOSE mode uses intelligent recovery
             strategies (decompose, replan, etc.) when tasks fail.
@@ -487,12 +498,20 @@ class Workforce(BaseNode):
     def _initialize_callbacks(
         self, callbacks: Optional[List[WorkforceCallback]]
     ) -> None:
-        r"""Initialize workforce callbacks."""
-        self._callbacks: List[WorkforceCallback] = callbacks or []
+        r"""Validate, register, and prime workforce callbacks."""
+        self._callbacks: List[WorkforceCallback] = []
 
+        if callbacks:
+            for cb in callbacks:
+                if isinstance(cb, WorkforceCallback):
+                    self._callbacks.append(cb)
+                else:
+                    raise ValueError(
+                        "All callbacks must be instances of WorkforceCallback"
+                    )
         # Check if any metrics callback is provided
         has_metrics_callback = any(
-            hasattr(cb, 'get_workforce_kpis') for cb in self._callbacks
+            hasattr(cb, WorkforceMetrics) for cb in self._callbacks
         )
 
         if not has_metrics_callback:
