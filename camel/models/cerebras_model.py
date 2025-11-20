@@ -24,7 +24,8 @@ from camel.utils import (
 
 
 class CerebrasModel(OpenAICompatibleModel):
-    r"""LLM API served by Cerebras in a unified OpenAICompatibleModel interface.
+    r"""LLM API served by Cerebras in a unified
+        OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
