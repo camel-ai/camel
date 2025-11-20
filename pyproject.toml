@@ -26,7 +26,7 @@ dependencies = [
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.17.0,<0.18",
-    "pydantic>=2.10.6",
+    "pydantic>=2.10.6,<=2.12.2",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
