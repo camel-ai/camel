@@ -36,6 +36,17 @@ class WorkflowSummary(BaseModel):
     by future agents for similar tasks.
     """
 
+    agent_title: str = Field(
+        description=(
+            "A concise role or identity describing WHO the agent is "
+            "and its purpose (≤ 5 words). This represents the agent's "
+            "capability or specialization, not the specific task. Use "
+            "lowercase with underscores. Examples: 'data_analyst', "
+            "'python_developer', 'research_assistant', 'content_writer', "
+            "'sales_analyst', 'customer_support_agent'. This is used to "
+            "organize workflows by agent role."
+        )
+    )
     task_title: str = Field(
         description="A short, generic title of the main task (≤ 10 words). "
         "Avoid product- or case-specific names. "
@@ -118,6 +129,8 @@ class WorkflowSummary(BaseModel):
             'conversation and extract the key workflow information '
             'following the provided schema structure. If a field has no '
             'content, still include it per the schema, but keep it empty. '
+            'For agent_title, identify your role/capability based on the task '
+            'you performed (e.g., "data_analyst", "python_developer"). '
             'The length of your workflow must be proportional to the '
             'complexity of the task. Example: If the task is simply '
             'about a simple math problem, the workflow must be short, '
@@ -155,12 +168,14 @@ class ContextUtility:
     # Class variables for shared session management
     _shared_sessions: ClassVar[Dict[str, 'ContextUtility']] = {}
     _default_workforce_session: ClassVar[Optional['ContextUtility']] = None
+    _role_based_contexts: ClassVar[Dict[str, 'ContextUtility']] = {}
 
     def __init__(
         self,
         working_directory: Optional[str] = None,
         session_id: Optional[str] = None,
         create_folder: bool = True,
+        use_session_subfolder: bool = True,
     ):
         r"""Initialize the ContextUtility.
 
@@ -176,15 +191,23 @@ class ContextUtility:
                 immediately. If False, the folder will be created only when
                 needed (e.g., when saving files). Default is True for
                 backward compatibility.
+            use_session_subfolder (bool): Whether to append session_id as a
+                subfolder. If False, files are saved directly to
+                working_directory without session subfolder. Use False for
+                role-based organization. Default is True for backward
+                compatibility.
         """
         self.working_directory_param = working_directory
-        self._setup_storage(working_directory, session_id, create_folder)
+        self._setup_storage(
+            working_directory, session_id, create_folder, use_session_subfolder
+        )
 
     def _setup_storage(
         self,
         working_directory: Optional[str],
         session_id: Optional[str] = None,
         create_folder: bool = True,
+        use_session_subfolder: bool = True,
     ) -> None:
         r"""Initialize session-specific storage paths and optionally create
         directory structure for context file management."""
@@ -199,8 +222,9 @@ class ContextUtility:
             else:
                 self.working_directory = Path("context_files")
 
-        # Create session-specific directory
-        self.working_directory = self.working_directory / self.session_id
+        # Create session-specific directory only if requested
+        if use_session_subfolder:
+            self.working_directory = self.working_directory / self.session_id
 
         # Only create directory if requested
         if create_folder:
@@ -537,18 +561,30 @@ class ContextUtility:
         session_dir.mkdir(parents=True, exist_ok=True)
         return session_dir
 
-    def get_session_metadata(self) -> Dict[str, Any]:
+    def get_session_metadata(
+        self, workflow_version: int = 1, created_at: Optional[str] = None
+    ) -> Dict[str, Any]:
         r"""Collect comprehensive session information including identifiers,
         timestamps, and directory paths for tracking and reference.
 
+        Args:
+            workflow_version (int): Version number of the workflow. Defaults
+                to 1 for new workflows. (default: :obj:`1`)
+            created_at (Optional[str]): ISO timestamp when workflow was first
+                created. If None, uses current timestamp for new workflows.
+                (default: :obj:`None`)
+
         Returns:
             Dict[str, Any]: Session metadata including ID, timestamp,
-                directory.
+                directory, version, and update timestamp.
         """
+        now = datetime.now().isoformat()
         return {
             'session_id': self.session_id,
             'working_directory': str(self.working_directory),
-            'created_at': datetime.now().isoformat(),
+            'created_at': created_at if created_at else now,
+            'updated_at': now,
+            'workflow_version': workflow_version,
         }
 
     def list_sessions(self, base_dir: Optional[str] = None) -> List[str]:
@@ -948,6 +984,11 @@ class ContextUtility:
     ) -> 'ContextUtility':
         r"""Get or create shared workforce context utility with lazy init.
 
+        .. note::
+            Session-based workflow storage will be deprecated in a future
+            version. Consider using :meth:`get_workforce_shared_by_role` for
+            role-based organization instead.
+
         This method provides a centralized way to access shared context
         utilities for workforce workflows, ensuring all workforce components
         use the same session directory.
@@ -959,6 +1000,18 @@ class ContextUtility:
         Returns:
             ContextUtility: Shared context utility instance for workforce.
         """
+        import warnings
+
+        if session_id is not None:
+            warnings.warn(
+                "Session-based workflow storage will be deprecated in a "
+                "future version. Consider using "
+                "get_workforce_shared_by_role() for role-based "
+                "organization instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+
         if session_id is None:
             # Use default workforce session
             if cls._default_workforce_session is None:
@@ -992,6 +1045,49 @@ class ContextUtility:
         return cls._shared_sessions[session_id]
 
     @classmethod
+    def get_workforce_shared_by_role(
+        cls, role_identifier: str
+    ) -> 'ContextUtility':
+        r"""Get or create shared workforce context utility based on role.
+
+        This method provides role-based context utilities for workforce
+        workflows, organizing workflows by agent role instead of session ID.
+
+        Args:
+            role_identifier (str): Role identifier (e.g., role_name or
+                agent_title). Will be sanitized for filesystem use.
+
+        Returns:
+            ContextUtility: Shared context utility instance for the role.
+        """
+        # sanitize role identifier for use as folder name
+        clean_role = cls.sanitize_workflow_filename(role_identifier)
+        if not clean_role:
+            clean_role = "unknown_role"
+
+        # use setdefault to avoid race condition when multiple async tasks
+        # access the same role simultaneously
+        if clean_role not in cls._role_based_contexts:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_path = os.path.join(
+                    camel_workdir, "workforce_workflows", clean_role
+                )
+            else:
+                base_path = os.path.join("workforce_workflows", clean_role)
+
+            # setdefault is atomic for dict operations
+            cls._role_based_contexts.setdefault(
+                clean_role,
+                cls(
+                    working_directory=base_path,
+                    create_folder=False,  # Don't create folder until needed
+                    use_session_subfolder=False,  # No session subfolder
+                ),
+            )
+        return cls._role_based_contexts[clean_role]
+
+    @classmethod
     def reset_shared_sessions(cls) -> None:
         r"""Reset shared sessions (useful for testing).
 
@@ -1001,3 +1097,4 @@ class ContextUtility:
         """
         cls._shared_sessions.clear()
         cls._default_workforce_session = None
+        cls._role_based_contexts.clear()
