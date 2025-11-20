@@ -286,7 +286,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         }
 
         with open(log_file_path, "w") as f:
-            json.dump(log_entry, f, indent=4)
+            json.dump(log_entry, f, indent=4, default=str)
 
         return log_file_path
 
@@ -317,7 +317,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                     log_data["response"] = str(response)
 
             f.seek(0)
-            json.dump(log_data, f, indent=4)
+            json.dump(log_data, f, indent=4, default=str)
             f.truncate()
 
     @abstractmethod
