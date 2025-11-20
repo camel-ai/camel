@@ -3692,8 +3692,13 @@ class ChatAgent(BaseAgent):
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+                extra_content = getattr(tool_call, 'extra_content', None)
+
                 tool_call_request = ToolCallRequest(
-                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+                    tool_name=tool_name,
+                    args=args,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 tool_call_requests.append(tool_call_request)
 
@@ -3786,7 +3791,12 @@ class ChatAgent(BaseAgent):
             logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            mask_output=mask_flag,
+            extra_content=tool_call_request.extra_content,
         )
 
     async def _aexecute_tool(
@@ -3828,7 +3838,13 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return self._record_tool_calling(
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            extra_content=tool_call_request.extra_content,
+        )
 
     def _record_tool_calling(
         self,
@@ -3837,6 +3853,7 @@ class ChatAgent(BaseAgent):
         result: Any,
         tool_call_id: str,
         mask_output: bool = False,
+        extra_content: Optional[Dict[str, Any]] = None,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -3849,6 +3866,9 @@ class ChatAgent(BaseAgent):
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
+            extra_content (Optional[Dict[str, Any]], optional): Additional
+                content associated with the tool call.
+                (default: :obj:`None`)
 
         Returns:
             ToolCallingRecord: A struct containing information about
@@ -3862,6 +3882,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             args=args,
             tool_call_id=tool_call_id,
+            extra_content=extra_content,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -3872,6 +3893,7 @@ class ChatAgent(BaseAgent):
             result=result,
             tool_call_id=tool_call_id,
             mask_output=mask_output,
+            extra_content=extra_content,
         )
 
         # Use precise timestamps to ensure correct ordering
@@ -4006,7 +4028,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream):
+            if isinstance(response, Stream) or inspect.isgenerator(response):
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4346,6 +4368,7 @@ class ChatAgent(BaseAgent):
                     'id': '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
+                    'extra_content': None,
                     'complete': False,
                 }
 
@@ -4369,6 +4392,14 @@ class ChatAgent(BaseAgent):
                     tool_call_entry['function']['arguments'] += (
                         delta_tool_call.function.arguments
                     )
+            # Handle extra_content if present
+            if (
+                hasattr(delta_tool_call, 'extra_content')
+                and delta_tool_call.extra_content
+            ):
+                tool_call_entry['extra_content'] = (
+                    delta_tool_call.extra_content
+                )
 
         # Check if any tool calls are complete
         any_complete = False
@@ -4473,6 +4504,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
@@ -4488,6 +4520,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         args=args,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Then create the tool response message
@@ -4499,6 +4532,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Record both messages with precise timestamps to ensure
@@ -4544,6 +4578,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
@@ -4575,6 +4610,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 # Create the tool call message
@@ -4586,6 +4622,7 @@ class ChatAgent(BaseAgent):
                     func_name=function_name,
                     args=args,
                     tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 assist_ts = time.time_ns() / 1_000_000_000
                 self.update_memory(
@@ -4632,6 +4669,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4665,6 +4703,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4979,6 +5018,11 @@ class ChatAgent(BaseAgent):
                         "arguments": tool_call_data["function"]["arguments"],
                     },
                 }
+                # Include extra_content if present
+                if tool_call_data.get('extra_content'):
+                    tool_call_dict["extra_content"] = tool_call_data[
+                        "extra_content"
+                    ]
                 tool_calls_list.append(tool_call_dict)
 
         # Create an assistant message with tool calls
