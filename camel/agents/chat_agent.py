@@ -36,9 +36,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    AsyncIterator,
     Callable,
     Dict,
     Generator,
+    Iterator,
     List,
     Optional,
     Set,
@@ -4004,7 +4006,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream):
+            if isinstance(response, (Stream, Iterator)):
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4762,7 +4764,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, AsyncStream):
+            if isinstance(response, (AsyncStream, AsyncIterator)):
                 stream_completed = False
                 tool_calls_complete = False
 

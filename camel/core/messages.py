@@ -89,6 +89,13 @@ def openai_messages_to_camel(
                     parts.append(
                         CamelContentPart(type="text", payload={"text": text})
                     )
+                elif item_t == "input_text":
+                    text = item.get("text", "")
+                    parts.append(
+                        CamelContentPart(
+                            type="input_text", payload={"text": text}
+                        )
+                    )
                 elif item_t == "image_url":
                     image_url = item.get("image_url", {})
                     payload = {
@@ -97,6 +104,40 @@ def openai_messages_to_camel(
                     }
                     parts.append(
                         CamelContentPart(type="image_url", payload=payload)
+                    )
+                elif item_t == "input_image":
+                    image_url = item.get("image_url", "")
+                    # input_image in Responses API uses "image_url" field
+                    # which is a string URL
+                    # But wait, the user snippet shows: "image_url": "..."
+                    # Chat API "image_url" is a dict {"url": "...", ...}
+                    # Responses API "input_image" has "image_url" string.
+
+                    payload = {"url": image_url}
+                    parts.append(
+                        CamelContentPart(type="input_image", payload=payload)
+                    )
+                elif item_t == "input_audio":
+                    input_audio = item.get("input_audio", {})
+                    payload = {
+                        "data": input_audio.get("data"),
+                        "format": input_audio.get("format"),
+                    }
+                    parts.append(
+                        CamelContentPart(type="input_audio", payload=payload)
+                    )
+                elif item_t == "input_file":
+                    # input_file can have file_id, file_url, or file_data
+                    payload = {}
+                    if "file_id" in item:
+                        payload["file_id"] = item["file_id"]
+                    if "file_url" in item:
+                        payload["file_url"] = item["file_url"]
+                    if "file_data" in item:
+                        payload["file_data"] = item["file_data"]
+
+                    parts.append(
+                        CamelContentPart(type="input_file", payload=payload)
                     )
 
         name_val = cast(Optional[str], msg.get("name", None))
@@ -157,6 +198,27 @@ def camel_messages_to_openai(
                         "image_url": {"url": url, "detail": detail},
                     }
                 )
+            elif part.type == "input_audio":
+                payload = part.payload
+                hybrid.append(
+                    {
+                        "type": "input_audio",
+                        "input_audio": {
+                            "data": payload.get("data"),
+                            "format": payload.get("format"),
+                        },
+                    }
+                )
+            elif part.type == "input_file":
+                payload = part.payload
+                item = {"type": "input_file"}
+                if "file_id" in payload:
+                    item["file_id"] = payload["file_id"]
+                if "file_url" in payload:
+                    item["file_url"] = payload["file_url"]
+                if "file_data" in payload:
+                    item["file_data"] = payload["file_data"]
+                hybrid.append(item)
 
         d = {"role": cmsg.role, "content": hybrid or ""}
         if cmsg.name and cmsg.role in {

@@ -109,6 +109,9 @@ class MemoryRecord(BaseModel):
                     if img_item["type"] == "url":
                         # URL string, keep as-is
                         image_objects.append(img_item["data"])
+                    elif img_item["type"] == "dict":
+                        # Dict spec (e.g., {"url": "...", "detail": "..."})
+                        image_objects.append(img_item["data"])
                     else:  # type == "base64"
                         # Base64 encoded image, convert to PIL Image
                         img_bytes = base64.b64decode(img_item["data"])

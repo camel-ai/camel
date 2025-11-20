@@ -26,8 +26,10 @@ from camel.core.messages import (
     openai_messages_to_camel,
 )
 from camel.messages import OpenAIMessage
+from camel.models._tool_utils import convert_openai_tools_to_responses_format
 from camel.models.base_model import BaseModelBackend
 from camel.responses.adapters.responses_adapter import (
+    responses_stream_to_chunks,
     responses_to_camel_response,
 )
 from camel.types import ChatCompletion, ModelType
@@ -143,16 +145,20 @@ class OpenAIResponsesModel(BaseModelBackend):
 
         # Tools: Responses also accepts `tools`; pass through when provided
         if tools:
-            request_dict["tools"] = tools
+            request_dict["tools"] = convert_openai_tools_to_responses_format(
+                tools
+            )
 
         if is_streaming:
             if response_format is not None:
                 raise NotImplementedError(
                     "Responses streaming with response_format is not supported yet."  # noqa:E501
                 )
-            return self._client.responses.stream(
+            request_dict["stream"] = True
+            stream = self._client.responses.create(
                 model=self.model_type, **request_dict
             )
+            return responses_stream_to_chunks(stream)  # type: ignore[return-value]
 
         if response_format is not None:
             # Structured outputs require Responses.parse with text_format
@@ -206,16 +212,20 @@ class OpenAIResponsesModel(BaseModelBackend):
         is_streaming = bool(request_dict.pop("stream", False))
         request_dict.update(body)
         if tools:
-            request_dict["tools"] = tools
+            request_dict["tools"] = convert_openai_tools_to_responses_format(
+                tools
+            )
 
         if is_streaming:
             if response_format is not None:
                 raise NotImplementedError(
                     "Responses streaming with response_format is not supported yet."  # noqa:E501
                 )
-            return self._async_client.responses.stream(
+            request_dict["stream"] = True
+            stream = await self._async_client.responses.create(
                 model=self.model_type, **request_dict
             )
+            return responses_stream_to_chunks(stream)  # type: ignore[return-value]
 
         if response_format is not None:
             parse_fn = getattr(self._async_client.responses, "parse", None)
