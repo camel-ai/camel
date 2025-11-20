@@ -1361,8 +1361,10 @@ class OutlookToolkit(BaseToolkit):
         try:
             message_request = self.client.me.messages.by_message_id(message_id)
             if reply_all:
-                request_body = ReplyAllPostRequestBody(comment=content)
-                await message_request.reply_all.post(request_body)
+                request_body_reply_all = ReplyAllPostRequestBody(
+                    comment=content
+                )
+                await message_request.reply_all.post(request_body_reply_all)
             else:
                 request_body = ReplyPostRequestBody(comment=content)
                 await message_request.reply.post(request_body)
@@ -1469,7 +1471,7 @@ class OutlookToolkit(BaseToolkit):
             )
 
             # Build dict of updated parameters
-            updated_params = {}
+            updated_params: Dict[str, Any] = dict()
             if subject:
                 updated_params['subject'] = subject
             if content:
