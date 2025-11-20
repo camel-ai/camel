@@ -710,7 +710,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CEREBRAS_GPT_OSS_120B,
             ModelType.CEREBRAS_LLAMA_3_1_8B,
             ModelType.CEREBRAS_LLAMA_3_3_70B,
-            ModelType.CEREBRAS_QWEN_3_32B
+            ModelType.CEREBRAS_QWEN_3_32B,
         }
 
     @property
@@ -2017,6 +2017,7 @@ class ModelPlatformType(Enum):
     def is_cerebras(self) -> bool:
         r"""Returns whether this platform is Cerebras."""
         return self is ModelPlatformType.CEREBRAS
+
 
 class AudioModelType(Enum):
     TTS_1 = "tts-1"

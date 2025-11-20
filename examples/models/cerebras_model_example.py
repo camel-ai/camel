@@ -21,7 +21,7 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.CEREBRAS,
     model_type=ModelType.CEREBRAS_LLAMA_3_3_70B,
-    model_config_dict=CerebrasConfig(temperature=0.2).as_dict()
+    model_config_dict=CerebrasConfig(temperature=0.2).as_dict(),
 )
 
 sys_msg = "You are a helpful assistant."
