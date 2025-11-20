@@ -10,6 +10,16 @@ class WorkforceState(Enum):
 
 Workforce execution state for human intervention support.
 
+<a id="camel.societies.workforce.workforce.WorkforceMode"></a>
+
+## WorkforceMode
+
+```python
+class WorkforceMode(Enum):
+```
+
+Workforce execution mode for different task processing strategies.
+
 <a id="camel.societies.workforce.workforce.WorkforceSnapshot"></a>
 
 ## WorkforceSnapshot
@@ -70,6 +80,7 @@ capabilities
 - **callbacks** (Optional[List[WorkforceCallback]], optional): A list of callback handlers to observe and record workforce lifecycle events and metrics (e.g., task creation/assignment/start/completion/ failure, worker creation/deletion, all-tasks-completed). All items must be instances of :class:`WorkforceCallback`, otherwise
 - **a**: class:`ValueError` is raised. If none of the provided callbacks implement :class:`WorkforceMetrics`, a built-in :class:`WorkforceLogger` (implements both callback and metrics) is added automatically. If at least one provided callback
 - **implements**: class:`WorkforceMetrics`, no default logger is added. (default: :obj:`None`)
+- **mode** (WorkforceMode, optional): The execution mode for task processing. AUTO_DECOMPOSE mode uses intelligent recovery strategies (decompose, replan, etc.) when tasks fail. PIPELINE mode uses simple retry logic and allows failed tasks to continue the workflow, passing error information to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
 
 **Note:**
 
@@ -96,6 +107,7 @@ def __init__(
     share_memory: bool = False,
     use_structured_output_handler: bool = True,
     task_timeout_seconds: Optional[float] = None,
+    mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
     callbacks: Optional[List[WorkforceCallback]] = None
 ):
 ```
@@ -188,6 +200,213 @@ Insert pause_event into kwargs dict for ChatAgent construction.
 ```python
 def __repr__(self):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce.set_mode"></a>
+
+### set_mode
+
+```python
+def set_mode(self, mode: WorkforceMode):
+```
+
+Set the execution mode of the workforce.
+
+This allows switching between AUTO_DECOMPOSE and PIPELINE modes.
+Useful when you want to reuse the same workforce instance for
+different task processing strategies.
+
+**Parameters:**
+
+- **mode** (WorkforceMode): The desired execution mode. - AUTO_DECOMPOSE: Intelligent task decomposition with recovery - PIPELINE: Predefined task pipeline with simple retry logic
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce._ensure_pipeline_builder"></a>
+
+### _ensure_pipeline_builder
+
+```python
+def _ensure_pipeline_builder(self):
+```
+
+**Returns:**
+
+  PipelineTaskBuilder: The initialized pipeline builder instance.
+
+<a id="camel.societies.workforce.workforce.Workforce.pipeline_add"></a>
+
+### pipeline_add
+
+```python
+def pipeline_add(
+    self,
+    content: Union[str, Task],
+    task_id: Optional[str] = None,
+    dependencies: Optional[List[str]] = None,
+    additional_info: Optional[Dict[str, Any]] = None,
+    auto_depend: bool = True
+):
+```
+
+Add a task to the pipeline with support for chaining.
+
+Accepts either a string for simple tasks or a Task object for
+advanced usage with metadata, images, or custom configurations.
+
+**Parameters:**
+
+- **content** (Union[str, Task]): The task content string or a Task object. If a Task object is provided, task_id and additional_info parameters are ignored.
+- **task_id** (str, optional): Unique identifier for the task. If None, a unique ID will be generated. Only used when content is a string. (default: :obj:`None`)
+- **dependencies** (List[str], optional): List of task IDs that this task depends on. If None and auto_depend=True, will depend on the last added task. (default: :obj:`None`)
+- **additional_info** (Dict[str, Any], optional): Additional information for the task. Only used when content is a string. (default: :obj:`None`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_parallel_pipeline_tasks"></a>
+
+### add_parallel_pipeline_tasks
+
+```python
+def add_parallel_pipeline_tasks(
+    self,
+    task_contents: Union[List[str], List[Task]],
+    dependencies: Optional[List[str]] = None,
+    task_id_prefix: str = 'parallel',
+    auto_depend: bool = True
+):
+```
+
+Add multiple parallel tasks to the pipeline.
+
+Accepts either a list of strings for simple tasks or a list of Task
+objects for advanced usage with metadata, images, or custom
+configurations.
+
+**Parameters:**
+
+- **task_contents** (Union[List[str], List[Task]]): List of task content strings or Task objects. If Task objects are provided, task_id_prefix is ignored.
+- **dependencies** (List[str], optional): Common dependencies for all parallel tasks. (default: :obj:`None`)
+- **task_id_prefix** (str, optional): Prefix for generated task IDs. Only used when task_contents contains strings. (default: :obj:`"parallel"`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_sync_pipeline_task"></a>
+
+### add_sync_pipeline_task
+
+```python
+def add_sync_pipeline_task(
+    self,
+    content: Union[str, Task],
+    wait_for: Optional[List[str]] = None,
+    task_id: Optional[str] = None
+):
+```
+
+Add a synchronization task that waits for multiple tasks.
+
+Accepts either a string for simple tasks or a Task object for
+advanced usage with metadata, images, or custom configurations.
+
+**Parameters:**
+
+- **content** (Union[str, Task]): Content of the synchronization task or a Task object. If a Task object is provided, task_id parameter is ignored.
+- **wait_for** (List[str], optional): List of task IDs to wait for. If None, will automatically wait for the last parallel tasks. (default: :obj:`None`)
+- **task_id** (str, optional): ID for the sync task. Only used when content is a string. (default: :obj:`None`)
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.pipeline_fork"></a>
+
+### pipeline_fork
+
+```python
+def pipeline_fork(self, task_contents: Union[List[str], List[Task]]):
+```
+
+Create parallel branches from the current task.
+
+Accepts either a list of strings for simple tasks or a list of Task
+objects for advanced usage with metadata, images, or custom
+configurations.
+
+**Parameters:**
+
+- **task_contents** (Union[List[str], List[Task]]): List of task content strings or Task objects for parallel execution.
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.pipeline_join"></a>
+
+### pipeline_join
+
+```python
+def pipeline_join(self, content: Union[str, Task], task_id: Optional[str] = None):
+```
+
+Join parallel branches with a synchronization task.
+
+Accepts either a string for simple tasks or a Task object for
+advanced usage with metadata, images, or custom configurations.
+
+**Parameters:**
+
+- **content** (Union[str, Task]): Content of the join/sync task or a Task object. If a Task object is provided, task_id parameter is ignored.
+- **task_id** (str, optional): ID for the sync task. Only used when content is a string. (default: :obj:`None`)
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.pipeline_build"></a>
+
+### pipeline_build
+
+```python
+def pipeline_build(self):
+```
+
+**Returns:**
+
+  Workforce: Self for method chaining.
+
+<a id="camel.societies.workforce.workforce.Workforce.get_pipeline_builder"></a>
+
+### get_pipeline_builder
+
+```python
+def get_pipeline_builder(self):
+```
+
+**Returns:**
+
+  PipelineTaskBuilder: The pipeline builder instance.
+
+<a id="camel.societies.workforce.workforce.Workforce.set_pipeline_tasks"></a>
+
+### set_pipeline_tasks
+
+```python
+def set_pipeline_tasks(self, tasks: List[Task]):
+```
+
+Set predefined pipeline tasks for PIPELINE mode.
+
+**Parameters:**
+
+- **tasks** (List[Task]): List of tasks with dependencies already set. The dependencies should be Task objects in the Task.dependencies attribute.
 
 <a id="camel.societies.workforce.workforce.Workforce._collect_shared_memory"></a>
 
@@ -282,10 +501,18 @@ Clean up tracking data for a task to prevent memory leaks.
 def _decompose_task(self, task: Task):
 ```
 
+Decompose the task into subtasks. This method will also set the
+relationship between the task and its subtasks.
+
+**Parameters:**
+
+- **task** (Task): The task to decompose.
+
 **Returns:**
 
   Union[List[Task], Generator[List[Task], None, None]]:
-The subtasks or generator of subtasks.
+The subtasks or generator of subtasks. Returns empty list for
+PIPELINE mode.
 
 <a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
 
@@ -576,6 +803,29 @@ def get_workforce_status(self):
 ```
 
 Get current workforce status for human review.
+
+<a id="camel.societies.workforce.workforce.Workforce._collect_pipeline_results"></a>
+
+### _collect_pipeline_results
+
+```python
+def _collect_pipeline_results(self):
+```
+
+Collect results from all completed pipeline tasks.
+
+<a id="camel.societies.workforce.workforce.Workforce._all_pipeline_tasks_successful"></a>
+
+### _all_pipeline_tasks_successful
+
+```python
+def _all_pipeline_tasks_successful(self):
+```
+
+**Returns:**
+
+  bool: True if all tasks completed successfully (DONE state),
+False if any tasks failed or are still pending.
 
 <a id="camel.societies.workforce.workforce.Workforce.process_task"></a>
 
