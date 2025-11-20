@@ -1442,3 +1442,142 @@ def test_memory_setter_preserves_system_message():
     assert len(new_context) > 0
     assert new_context[0]['role'] == 'system'
     assert new_context[0]['content'] == system_content
+
+
+def test_calculate_tool_cost():
+    # Define an echo tool
+    def echo(text: str) -> str:
+        return text
+
+    model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
+    model_backend = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict=model_config.as_dict(),
+    )
+    agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="You are a helpful assistant.",
+        ),
+        model=model_backend,
+        tools=[FunctionTool(echo)],
+    )
+
+    # Call agent twice
+    # 1st round: call tool echo(text="hello world")
+    tool_call_id = "call_echo_1"
+    first_response = ChatCompletion(
+        id="mock_tool_call",
+        choices=[
+            Choice(
+                finish_reason="tool_calls",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role="assistant",
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageFunctionToolCall(
+                            id=tool_call_id,
+                            function=Function(
+                                arguments='{"text":"hello world"}',
+                                name="echo",
+                            ),
+                            type="function",
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=1,
+        model="gpt-5-mini",
+        object="chat.completion",
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=3, prompt_tokens=3, total_tokens=6
+        ),
+    )
+
+    # 2nd round: return normal assistant content without tool calls, end loop
+    second_response = ChatCompletion(
+        id="mock_final",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content="OK",
+                    refusal=None,
+                    role="assistant",
+                    audio=None,
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=2,
+        model="gpt-5-mini",
+        object="chat.completion",
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=2, prompt_tokens=5, total_tokens=7
+        ),
+    )
+    agent.model_backend.run = MagicMock(
+        side_effect=[first_response, second_response]
+    )
+
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content="Please call echo with text 'hello world'."
+    )
+    agent_response = agent.step(user_msg)
+
+    tool_calls = agent_response.info["tool_calls"]
+    assert tool_calls and len(tool_calls) == 1
+    assert tool_calls[0].tool_name == "echo"
+    assert tool_calls[0].token_usage is not None
+
+    # Get expected token usage as benchmark
+    from camel.messages.func_message import FunctionCallingMessage
+    from camel.types import OpenAIBackendRole
+
+    token_counter = agent.model_backend.token_counter
+
+    assist_msg = FunctionCallingMessage(
+        role_name=agent.role_name,
+        role_type=agent.role_type,
+        meta_dict=None,
+        content="",
+        func_name="echo",
+        args=tool_calls[0].args,
+        tool_call_id=tool_calls[0].tool_call_id,
+    )
+    func_msg = FunctionCallingMessage(
+        role_name=agent.role_name,
+        role_type=agent.role_type,
+        meta_dict=None,
+        content="",
+        func_name="echo",
+        result=tool_calls[0].result,
+        tool_call_id=tool_calls[0].tool_call_id,
+    )
+
+    expected_prompt = token_counter.count_tokens_from_messages(
+        [assist_msg.to_openai_message(OpenAIBackendRole.ASSISTANT)]
+    )
+    expected_completion = token_counter.count_tokens_from_messages(
+        [func_msg.to_openai_message(OpenAIBackendRole.FUNCTION)]
+    )
+    expected_total = expected_prompt + expected_completion
+
+    assert tool_calls[0].token_usage.get("prompt_tokens") == expected_prompt
+    assert (
+        tool_calls[0].token_usage.get("completion_tokens")
+        == expected_completion
+    )
+    assert tool_calls[0].token_usage.get("total_tokens") == expected_total
