@@ -190,26 +190,10 @@ class TerminalToolkit(BaseToolkit):
                         f"'{docker_container_name}'."
                     )
                 except NotFound:
-                    logger.info(
+                    raise RuntimeError(
                         f"Container '{docker_container_name}' not found. "
-                        f"Creating a new container..."
                     )
 
-                    self.container = self.docker_client.containers.run(
-                        image='python:3.11-slim',  # using for lightweight
-                        name=docker_container_name,
-                        detach=True,
-                        tty=True,
-                        stdin_open=True,
-                        working_dir=self.docker_workdir
-                        if hasattr(self, 'docker_workdir')
-                        else '/workspace',
-                        command='/bin/bash',
-                    )
-                    logger.info(
-                        f"Successfully created and started Docker container "
-                        f"'{docker_container_name}'."
-                    )
                 # Ensure the working directory exists inside the container
                 if self.docker_workdir:
                     try:
