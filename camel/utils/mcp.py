@@ -78,7 +78,10 @@ def _is_pydantic_serializable(type_annotation: Any) -> Tuple[bool, str]:
 
     # Try to create a simple pydantic model with this type
     try:
-        create_model("TestModel", test_field=(type_annotation, ...))
+        test_model = create_model(
+            "TestModel", test_field=(type_annotation, ...)
+        )
+        test_model.model_rebuild()
         # If model creation succeeds, the type is serializable
         return True, ""
     except (PydanticSchemaGenerationError, TypeError, ValueError) as e:
