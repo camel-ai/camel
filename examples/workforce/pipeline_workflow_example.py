@@ -49,8 +49,8 @@ init(autoreset=True)
 # )
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_1,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
