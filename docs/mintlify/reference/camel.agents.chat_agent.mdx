@@ -1387,7 +1387,8 @@ def _record_tool_calling(
     args: Dict[str, Any],
     result: Any,
     tool_call_id: str,
-    mask_output: bool = False
+    mask_output: bool = False,
+    extra_content: Optional[Dict[str, Any]] = None
 ):
 ```
 
@@ -1401,6 +1402,7 @@ tool calling record.
 - **result** (Any): The result returned by the tool execution.
 - **tool_call_id** (str): A unique identifier for the tool call.
 - **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **extra_content** (Optional[Dict[str, Any]], optional): Additional content associated with the tool call. (default: :obj:`None`)
 
 **Returns:**
 
