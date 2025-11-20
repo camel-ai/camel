@@ -152,6 +152,188 @@ def quality_sufficient(self):
 strategy recommended), False otherwise. Always False for
 failure analysis results.
 
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder"></a>
+
+## PipelineTaskBuilder
+
+```python
+class PipelineTaskBuilder:
+```
+
+Helper class for building pipeline tasks with dependencies.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize an empty pipeline task builder.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    dependencies: Optional[List[str]] = None,
+    additional_info: Optional[dict] = None,
+    auto_depend: bool = True
+):
+```
+
+Add a task to the pipeline with support for chaining.
+
+**Parameters:**
+
+- **content** (str): The content/description of the task.
+- **task_id** (str, optional): Unique identifier for the task. If None, a unique ID will be generated. (default: :obj:`None`)
+- **dependencies** (List[str], optional): List of task IDs that this task depends on. If None and auto_depend=True, will depend on the last added task. (default: :obj:`None`)
+- **additional_info** (dict, optional): Additional information for the task. (default: :obj:`None`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add_parallel_tasks"></a>
+
+### add_parallel_tasks
+
+```python
+def add_parallel_tasks(
+    self,
+    task_contents: List[str],
+    dependencies: Optional[List[str]] = None,
+    task_id_prefix: str = 'parallel',
+    auto_depend: bool = True
+):
+```
+
+Add multiple parallel tasks that can execute simultaneously.
+
+**Parameters:**
+
+- **task_contents** (List[str]): List of task content strings.
+- **dependencies** (List[str], optional): Common dependencies for all parallel tasks. If None and auto_depend=True, will depend on the last added task. (default: :obj:`None`)
+- **task_id_prefix** (str, optional): Prefix for generated task IDs. (default: :obj:`"parallel"`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add_sync_task"></a>
+
+### add_sync_task
+
+```python
+def add_sync_task(
+    self,
+    content: str,
+    wait_for: Optional[List[str]] = None,
+    task_id: Optional[str] = None
+):
+```
+
+Add a synchronization task that waits for multiple tasks.
+
+**Parameters:**
+
+- **content** (str): Content of the synchronization task.
+- **wait_for** (List[str], optional): List of task IDs to wait for. If None, will automatically wait for the last parallel tasks. (default: :obj:`None`)
+- **task_id** (str, optional): ID for the sync task. If None, a unique ID will be generated. (default: :obj:`None`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.build"></a>
+
+### build
+
+```python
+def build(self):
+```
+
+**Returns:**
+
+  List[Task]: List of tasks with proper dependency relationships.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Clear all tasks from the builder.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.fork"></a>
+
+### fork
+
+```python
+def fork(self, task_contents: List[str]):
+```
+
+Create parallel branches from the current task (alias for
+add_parallel_tasks).
+
+**Parameters:**
+
+- **task_contents** (List[str]): List of task content strings for parallel execution.
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.join"></a>
+
+### join
+
+```python
+def join(self, content: str, task_id: Optional[str] = None):
+```
+
+Join parallel branches with a synchronization task (alias for
+add_sync_task).
+
+**Parameters:**
+
+- **content** (str): Content of the join/sync task.
+- **task_id** (str, optional): ID for the sync task.
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder._validate_dependencies"></a>
+
+### _validate_dependencies
+
+```python
+def _validate_dependencies(self):
+```
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.get_task_info"></a>
+
+### get_task_info
+
+```python
+def get_task_info(self):
+```
+
+**Returns:**
+
+  dict: Dictionary containing task count and task details.
+
 <a id="camel.societies.workforce.utils.check_if_running"></a>
 
 ## check_if_running
