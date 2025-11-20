@@ -91,6 +91,12 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # Cerebras platform models
+    CEREBRAS_GPT_OSS_120B = "gpt-oss-120b"
+    CEREBRAS_LLAMA_3_1_8B = "llama3.1-8b"
+    CEREBRAS_LLAMA_3_3_70B = "llama3.3-70b"
+    CEREBRAS_QWEN_3_32B = "qwen-3-32b"
+
     # Nebius AI Studio platform models
     NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
     NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
@@ -554,6 +560,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
+                self.is_cerebras,
                 self.is_openrouter,
                 self.is_lmstudio,
                 self.is_sglang,
@@ -694,6 +701,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_cerebras(self) -> bool:
+        r"""Returns whether this type of models is served by Cerebras."""
+        return self in {
+            ModelType.CEREBRAS_GPT_OSS_120B,
+            ModelType.CEREBRAS_LLAMA_3_1_8B,
+            ModelType.CEREBRAS_LLAMA_3_3_70B,
+            ModelType.CEREBRAS_QWEN_3_32B,
         }
 
     @property
@@ -1165,6 +1182,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 4_096
         elif self in {
+            ModelType.CEREBRAS_LLAMA_3_1_8B,
             ModelType.GPT_4,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
@@ -1312,6 +1330,9 @@ class ModelType(UnifiedModelType, Enum):
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.CEREBRAS_GPT_OSS_120B,
+            ModelType.CEREBRAS_LLAMA_3_3_70B,
+            ModelType.CEREBRAS_QWEN_3_32B,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
@@ -1801,6 +1822,7 @@ class ModelPlatformType(Enum):
     CRYNUX = "crynux"
     AIHUBMIX = "aihubmix"
     MINIMAX = "minimax"
+    CEREBRAS = "cerebras"
 
     @classmethod
     def from_name(cls, name):
@@ -1990,6 +2012,11 @@ class ModelPlatformType(Enum):
     def is_minimax(self) -> bool:
         r"""Returns whether this platform is Minimax M2."""
         return self is ModelPlatformType.MINIMAX
+
+    @property
+    def is_cerebras(self) -> bool:
+        r"""Returns whether this platform is Cerebras."""
+        return self is ModelPlatformType.CEREBRAS
 
 
 class AudioModelType(Enum):
