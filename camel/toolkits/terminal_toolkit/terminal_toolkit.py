@@ -226,15 +226,15 @@ class TerminalToolkit(BaseToolkit):
             else:
                 # Default: set up initial environment with Python 3.10
                 self._setup_initial_environment()
-
-            # Install dependencies
-            if self.install_dependencies:
-                self._install_dependencies()
         elif self.clone_current_env:
             logger.info(
                 "[ENV CLONE] Skipping environment setup for Docker backend "
                 "- container is already isolated"
             )
+
+        # Install dependencies
+        if self.install_dependencies:
+            self._install_dependencies()
 
     def _setup_cloned_environment(self):
         r"""Set up a cloned Python environment."""
@@ -270,35 +270,49 @@ class TerminalToolkit(BaseToolkit):
 
         logger.info("Installing dependencies...")
 
-        pip_cmd = [
-            self.python_executable,
-            "-m",
-            "pip",
-            "install",
-            "--upgrade",
-            *self.install_dependencies,
-        ]
+        if self.use_docker_backend:
+            pkg_str = " ".join(
+                shlex.quote(p) for p in self.install_dependencies
+            )
+            install_cmd = f'sh -lc "pip install {pkg_str}"'
+            exec_id = self.docker_api_client.exec_create(
+                self.container.id, install_cmd
+            )["Id"]
+            log = self.docker_api_client.exec_start(exec_id)
+            logger.info(f"Package installation output:\n{log}")
 
-        try:
-            subprocess.run(
-                pip_cmd,
-                check=True,
-                cwd=self.working_dir,
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minutes timeout for installation
-            )
-            logger.info("Successfully installed all dependencies.")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to install dependencies: {e.stderr}")
-            raise RuntimeError(
-                f"Failed to install dependencies: {e.stderr}"
-            ) from e
-        except subprocess.TimeoutExpired:
-            logger.error("Dependency installation timed out after 5 minutes")
-            raise RuntimeError(
-                "Dependency installation timed out after 5 minutes"
-            )
+        else:
+            pip_cmd = [
+                self.python_executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                *self.install_dependencies,
+            ]
+
+            try:
+                subprocess.run(
+                    pip_cmd,
+                    check=True,
+                    cwd=self.working_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minutes timeout for installation
+                )
+                logger.info("Successfully installed all dependencies.")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install dependencies: {e.stderr}")
+                raise RuntimeError(
+                    f"Failed to install dependencies: {e.stderr}"
+                ) from e
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    "Dependency installation timed out after 5 minutes"
+                )
+                raise RuntimeError(
+                    "Dependency installation timed out after 5 minutes"
+                )
 
     def _setup_initial_environment(self):
         r"""Set up an initial environment with Python 3.10."""
