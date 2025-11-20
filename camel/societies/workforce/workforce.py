@@ -94,6 +94,7 @@ from camel.utils import dependencies_required
 
 from .events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -3084,6 +3085,7 @@ class Workforce(BaseNode):
         return TaskAssignResult(assignments=all_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
+        logger.warning(f'[Workforce._post_task] posting task {task.id} to {assignee_id}')
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
@@ -3106,10 +3108,13 @@ class Workforce(BaseNode):
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
-            print(
-                f"{Fore.RED}Failed to post task {task.id} to {assignee_id}: "
-                f"{e}{Fore.RESET}"
-            )
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message=f"Failed to post task {task.id} to {assignee_id}: {e}",
+                        level="error"
+                    )
+                )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -3236,7 +3241,12 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=f"{new_node} created.",
+                    level="success"
+                ))
 
         self._children.append(new_node)
 
@@ -3538,11 +3548,10 @@ class Workforce(BaseNode):
             f"{task.failure_count}/{MAX_TASK_RETRIES}): {detailed_error}"
         )
 
-        print(
-            f"{Fore.RED}❌ Task {task.id} failed "
-            f"(attempt {task.failure_count}/{MAX_TASK_RETRIES}): "
-            f"{failure_reason}{Fore.RESET}"
-        )
+        for cb in self._callbacks:
+            cb.log_message(LogEvent(
+                message=f"❌ Task {task.id} failed (attempt {task.failure_count}/{MAX_TASK_RETRIES}): {failure_reason}",
+                level="error"))
 
         task_failed_event = TaskFailedEvent(
             task_id=task.id,
@@ -3711,10 +3720,10 @@ class Workforce(BaseNode):
                 tasks_list.pop(i)
                 self._pending_tasks = deque(tasks_list)
                 found_and_removed = True
-                print(
-                    f"{Fore.GREEN}✅ Task {task.id} completed and removed "
-                    f"from queue.{Fore.RESET}"
-                )
+                for cb in self._callbacks:
+                    cb.log_message(LogEvent(
+                        message=f"✅ Task {task.id} completed and removed from queue.",
+                        level="warning"))
                 break
 
         if not found_and_removed:
@@ -3847,7 +3856,11 @@ class Workforce(BaseNode):
             cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
         ]
         if len(metrics_cb) == 0:
-            print("Logger not initialized. Cannot dump logs.")
+            for cb in self._callbacks:
+                cb.log_message(LogEvent(
+                    message="Logger not initialized. Cannot dump logs.",
+                    level="info"
+                ))
             return
         metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
@@ -4142,25 +4155,25 @@ class Workforce(BaseNode):
 
                             # Do not halt if we have main tasks in queue
                             if len(self.get_main_task_queue()) > 0:
-                                print(
-                                    f"{Fore.RED}Task {returned_task.id} has "
-                                    f"failed for {MAX_TASK_RETRIES} times "
-                                    f"after insufficient results, skipping "
-                                    f"that task. Final error: "
-                                    f"{returned_task.result or 'Unknown err'}"
-                                    f"{Fore.RESET}"
-                                )
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            message=f"Task {returned_task.id} has failed for {MAX_TASK_RETRIES} times after insufficient results, skipping that task. Final error: {returned_task.result or 'Unknown error'}",
+                                            level="error"
+                                        )
+                                    )
+
                                 self._skip_requested = True
                                 continue
 
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times after "
-                                f"insufficient results, halting the "
-                                f"workforce. Final error: "
-                                f"{returned_task.result or 'Unknown error'}"
-                                f"{Fore.RESET}"
-                            )
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=f"Task {returned_task.id} has failed for {MAX_TASK_RETRIES} times after insufficient results, halting the workforce. Final error: {returned_task.result or 'Unknown error'}",
+                                        level="error"
+                                    )
+                                )
+
                             await self._graceful_shutdown(returned_task)
                             break
                         except Exception as e:
@@ -4185,12 +4198,14 @@ class Workforce(BaseNode):
 
                             # Check retry limit before attempting recovery
                             if returned_task.failure_count >= 2:
-                                print(
-                                    f"{Fore.YELLOW}Task {returned_task.id} "
-                                    f"completed with low quality score: "
-                                    f"{quality_eval.quality_score} "
-                                    f"(retry limit reached){Fore.RESET}"
-                                )
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            level='warning',
+                                            message=f'Task {returned_task.id} completed with low quality score: {quality_eval.quality_score} (retry limit reached)'
+                                        )
+                                    )
+
                                 await self._handle_completed_task(
                                     returned_task
                                 )
@@ -4203,14 +4218,10 @@ class Workforce(BaseNode):
                                 if quality_eval.recovery_strategy
                                 else ""
                             )
-                            print(
-                                f"{Fore.YELLOW}⚠️ Task {returned_task.id} "
-                                f"failed quality check (score: "
-                                f"{quality_eval.quality_score}). "
-                                f"Issues: {', '.join(quality_eval.issues)}. "
-                                f"Recovery: {recovery_action}{Fore.RESET}"
-                            )
-
+                            for cb in self._callbacks:
+                                cb.log_message(LogEvent(
+                                    level="warning",
+                                    message=f"⚠️ Task {returned_task.id} failed quality check (score: {quality_eval.quality_score}). Issues: {', '.join(quality_eval.issues)}. Recovery: {recovery_action}"))
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
                             returned_task.state = TaskState.FAILED
@@ -4247,11 +4258,13 @@ class Workforce(BaseNode):
                                 )
                                 continue
                         else:
-                            print(
-                                f"{Fore.CYAN}Task {returned_task.id} "
-                                f"completed successfully (quality score: "
-                                f"{quality_eval.quality_score}).{Fore.RESET}"
-                            )
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        level="success",
+                                        message=f"Task {returned_task.id} completed successfully (quality score: {quality_eval.quality_score})."
+                                    )
+                                )
                             await self._handle_completed_task(returned_task)
                 elif returned_task.state == TaskState.FAILED:
                     try:
@@ -4261,23 +4274,21 @@ class Workforce(BaseNode):
 
                         # Do not halt if we have main tasks in queue
                         if len(self.get_main_task_queue()) > 0:
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times, "
-                                f"skipping that task. Final error: "
-                                f"{returned_task.result or 'Unknown error'}"
-                                f"{Fore.RESET}"
-                            )
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        level="error",
+                                        message=f"Task {returned_task.id} has failed for {MAX_TASK_RETRIES} times, skipping that task. Final error: {returned_task.result or 'Unknown error'}"
+                                    )
+                                )
                             self._skip_requested = True
                             continue
 
-                        print(
-                            f"{Fore.RED}Task {returned_task.id} has failed "
-                            f"for {MAX_TASK_RETRIES} times, halting "
-                            f"the workforce. Final error: "
-                            f"{returned_task.result or 'Unknown error'}"
-                            f"{Fore.RESET}"
-                        )
+                        for cb in self._callbacks:
+                            cb.log_message(event=LogEvent(
+                                level="error",
+                                message=f"Task {returned_task.id} has failed for {MAX_TASK_RETRIES} times, halting the workforce. Final error: {returned_task.result or 'Unknown error'}"
+                            ))
                         # Graceful shutdown instead of immediate break
                         await self._graceful_shutdown(returned_task)
                         break

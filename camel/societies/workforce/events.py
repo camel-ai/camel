@@ -38,6 +38,10 @@ class WorkforceEventBase(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc)
     )
 
+class LogEvent(WorkforceEventBase):
+    event_type: Literal["log"] = "log"
+    message: str
+    level: Literal["info", "warning", "error", "success"]
 
 class WorkerCreatedEvent(WorkforceEventBase):
     event_type: Literal["worker_created"] = "worker_created"
