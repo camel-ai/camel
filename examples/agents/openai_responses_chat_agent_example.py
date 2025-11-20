@@ -63,14 +63,6 @@ def structured_output_chat():
         ModelPlatformType.OPENAI_RESPONSES, ModelType.GPT_4_1_MINI
     )
 
-    # Note: ChatAgent currently doesn't expose response_format in step() directly
-    # but we can pass it via output_schema if supported, or configure the model?
-    # Actually ChatAgent.step has response_format argument? No.
-    # But we can use the model's run method directly? No, user wants ChatAgent.
-    # ChatAgent supports structured output via `output_schema` in `step`? No.
-    # ChatAgent supports `response_format` in `step`? Let's check.
-    # ChatAgent.step(..., response_format=...)
-
     agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Assistant", content="You provide country info."
@@ -129,11 +121,6 @@ def tool_call_chat():
     )
 
     response = agent.step("What is 5 + 7?")
-    # ChatAgent automatically executes the tool and gets the result
-    # But usually it requires a loop or auto_tool_call=True?
-    # ChatAgent defaults to external_tool_call=False, so it executes tools?
-    # Let's check ChatAgent defaults.
-    # It should execute tools if tools are provided.
 
     print(f"Tool Call Result: {response.msgs[0].content}")
     print(f"Tool Calls: {response.info['tool_calls']}")
@@ -206,3 +193,72 @@ if __name__ == "__main__":
     tool_call_chat()
     image_analysis_chat()
     file_analysis_chat()
+
+
+'''
+=== Basic Chat ===
+Sure! Here's a camel joke for you:
+
+Why do camels make terrible secret agents?  
+Because they always let the hump out of the bag!
+
+=== Structured Output Chat ===
+Structured Output: name='France' capital='Paris' population=67081000
+
+=== Streaming Chat ===
+Streaming Result: Golden hues ignite the sky,  
+Whispers of dawn begin to fly.  
+Night retreats with gentle grace,  
+Sunrise paints a warm embrace.
+
+=== Tool Call Chat ===
+Tool Call Result: Yes, 5 + 7 equals 12. If you have any more math questions, feel free to ask!
+Tool Calls: [ToolCallingRecord(tool_name='add', args={'a': 5, 'b': 7}, result=12, tool_call_id='call_z3DX7GyVj6sSYk7e6iEd3nVV', images=None)]
+
+=== Image Analysis Chat ===
+Image Analysis: This image shows the Google logo. The logo features the word "Google" written in a stylized font with the letters in different colors: blue for "G," red for the first "o," yellow for the second "o," blue for the "g," green for the "l," and red for the "e."
+
+=== File Analysis Chat ===
+File Analysis: This file is a detailed excerpt from the 2024 Berkshire Hathaway Inc. annual shareholder letter written by Warren E. Buffett, the company's Chairman of the Board. The letter covers a wide range of topics including:
+
+1. **Introduction and Philosophy**:
+   - Buffett explains the purpose of the annual letter, emphasizing transparency and honest communication with shareholders.
+   - He acknowledges that Berkshire makes mistakes in business acquisitions and personnel decisions but also shares stories of success.
+
+2. **Notable Tribute**:
+   - A specific tribute to Pete Liegl, the founder of Forest River (an RV manufacturer acquired by Berkshire), highlighting his integrity, compensation agreement, and outstanding business performance.
+
+3. **Company Performance**:
+   - Summary of Berkshire’s financial performance in 2024, including operating earnings ($47.4 billion) and breakdowns by business segments (insurance underwriting, investment income, railroad, utilities, and other businesses).
+   - Discussion about the growth and improvements in GEICO and the overall property-casualty insurance sector.
+   - Commentary on challenges posed by climate change and natural disasters.
+
+4. **Historical Context**:
+   - Reflection on Berkshire’s 60-year transformation since Buffett took control, including record corporate income tax payments made to the U.S. Treasury ($26.8 billion in 2024).
+   - Details on Berkshire’s investment strategy that emphasizes reinvestment over dividends for long-term growth.
+
+5. **Investment Philosophy and Holdings**:
+   - Berkshire’s dual strategy of owning controlling interest in many companies (generally 100%) and significant minority stakes in major public companies like Apple, American Express, and Coca-Cola.
+   - The company’s preference for equities over cash or bonds, focusing on long-term value.
+
+6. **Property-Casualty Insurance Business**:
+   - Explanation of the unique challenges of the P/C insurance business model, where premiums are collected upfront but costs may be settled many years later.
+   - The importance of prudent underwriting and risk management to avoid losses.
+   - Description of Berkshire's capability to handle large insurance losses without dependence on reinsurers.
+
+7. **International Investments**:
+   - Information on Berkshire’s growing investments in five major Japanese trading companies, their shareholder-friendly practices, and plans for long-term involvement.
+   - Commentary on currency risk management related to yen-denominated debt.
+
+8. **Annual Meeting in Omaha**:
+   - Invitation to shareholders for the annual meeting on May 3rd, 2025.
+   - Details on event activities, merchandise, and featured book selling.
+   - Personal notes including mention of Buffett’s sister and light-hearted commentary.
+
+9. **Historical Performance Comparison**:
+   - Comparative data showing Berkshire Hathaway’s annual percentage change in per-share market value against the S&P 500, spanning from 1965 to 2024.
+   - Highlights Buffett's surpassed compound annual gain of 19.9% compared to the S&P 500’s 10.4% and extraordinary long-term gains of 5,502,284% vs. 39,054%.
+
+**Summary:**
+This document is a comprehensive, candid, and reflective communication from Warren Buffett about Berkshire Hathaway’s business performance, management philosophy, investment strategies, historical context, and future outlook, intended for the company’s shareholders. It combines financial data, storytelling, and personal insights characteristic of Berkshire Hathaway's annual shareholder letters.
+'''  # noqa: E501, RUF001
