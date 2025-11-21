@@ -49,6 +49,7 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5_1_Instant = "gpt-5.1"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -240,6 +241,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
@@ -501,6 +503,10 @@ class ModelType(UnifiedModelType, Enum):
 
     CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
+    # Minimax M2 models
+    MINIMAX_M2 = "MiniMax-M2"
+    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     def __str__(self):
         return self.value
@@ -831,6 +837,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1525,6 +1532,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1554,6 +1562,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self in {
+            ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
+        }:
+            return 32_000
 
         else:
             logger.warning(
@@ -1787,6 +1800,7 @@ class ModelPlatformType(Enum):
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
     AIHUBMIX = "aihubmix"
+    MINIMAX = "minimax"
 
     @classmethod
     def from_name(cls, name):
@@ -1971,6 +1985,11 @@ class ModelPlatformType(Enum):
     def is_aihubmix(self) -> bool:
         r"""Returns whether this platform is AihubMix."""
         return self is ModelPlatformType.AIHUBMIX
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether this platform is Minimax M2."""
+        return self is ModelPlatformType.MINIMAX
 
 
 class AudioModelType(Enum):

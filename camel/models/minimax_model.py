@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import QwenConfig
+from camel.configs import MinimaxConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -24,20 +23,21 @@ from camel.utils import (
 )
 
 
-class QwenModel(OpenAICompatibleModel):
-    r"""Qwen API in a unified OpenAICompatibleModel interface.
+class MinimaxModel(OpenAICompatibleModel):
+    r"""LLM API served by Minimax in a unified OpenAICompatibleModel
+    interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
-            created, one of Qwen series.
+            created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`. If
-            :obj:`None`, :obj:`QwenConfig().as_dict()` will be used.
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`MinimaxConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (Optional[str], optional): The API key for authenticating with
-            the Qwen service. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the Qwen service.
-            (default: :obj:`https://dashscope.aliyuncs.com/compatible-mode/v1`)
+        api_key (Optional[str], optional): The API key for authenticating
+            with the Minimax service. (default: :obj:`None`).
+        url (Optional[str], optional): The url to the Minimax M2 service.
+            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
@@ -52,11 +52,7 @@ class QwenModel(OpenAICompatibleModel):
             initialization.
     """
 
-    @api_keys_required(
-        [
-            ("api_key", "QWEN_API_KEY"),
-        ]
-    )
+    @api_keys_required([("api_key", "MINIMAX_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -69,11 +65,10 @@ class QwenModel(OpenAICompatibleModel):
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = QwenConfig().as_dict()
-        api_key = api_key or os.environ.get("QWEN_API_KEY")
+            model_config_dict = MinimaxConfig().as_dict()
+        api_key = api_key or os.environ.get("MINIMAX_API_KEY")
         url = url or os.environ.get(
-            "QWEN_API_BASE_URL",
-            "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "MINIMAX_API_BASE_URL", "https://api.minimaxi.com/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
