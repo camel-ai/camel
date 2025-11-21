@@ -12,7 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -125,35 +134,227 @@ class GeminiModel(OpenAICompatibleModel):
             msg_copy = copy.deepcopy(msg)
             if 'content' in msg_copy and msg_copy['content'] == '':
                 msg_copy['content'] = 'null'
-
-            # Handle missing thought signatures for function calls
-            # This is required for Gemini 3 Pro compatibility
-            # TODO: support multi round thought signatures
-            if (
-                msg_copy.get('role') == 'assistant'
-                and 'tool_calls' in msg_copy
-                and isinstance(msg_copy['tool_calls'], list)
-            ):
-                for i, tool_call in enumerate(msg_copy['tool_calls']):
-                    # Check if this is the first tool call in a parallel set
-                    # or any tool call that's missing a thought signature
-                    if i == 0:  # First tool call should have a signature
-                        # Check if thought signature is missing
-                        extra_content = tool_call.get('extra_content', {})
-                        google_content = extra_content.get('google', {})
-
-                        if 'thought_signature' not in google_content:
-                            # Add fallback signature for missing signatures
-                            if 'extra_content' not in tool_call:
-                                tool_call['extra_content'] = {}
-                            if 'google' not in tool_call['extra_content']:
-                                tool_call['extra_content']['google'] = {}
-                            tool_call['extra_content']['google'][
-                                'thought_signature'
-                            ] = "skip_thought_signature_validator"
-
             processed_messages.append(msg_copy)
         return processed_messages
+
+    def _preserve_thought_signatures(
+        self,
+        response: Union[
+            ChatCompletion,
+            Stream[ChatCompletionChunk],
+            AsyncStream[ChatCompletionChunk],
+        ],
+    ) -> Union[
+        ChatCompletion,
+        Generator[ChatCompletionChunk, None, None],
+        AsyncGenerator[ChatCompletionChunk, None],
+    ]:
+        r"""Preserve thought signatures from Gemini responses for future
+        requests.
+
+        According to the Gemini documentation, when a response contains tool
+        calls with thought signatures, these signatures must be preserved
+        exactly as received when the response is added to conversation history
+        for subsequent requests.
+
+        Args:
+            response: The response from Gemini API
+
+        Returns:
+            The response with thought signatures properly preserved.
+            For streaming responses, returns generators that preserve
+            signatures.
+        """
+        # For streaming responses, we need to wrap the stream to preserve
+        # thought signatures in tool calls as they come in
+        if isinstance(response, Stream):
+            return self._wrap_stream_with_thought_preservation(response)
+        elif isinstance(response, AsyncStream):
+            return self._wrap_async_stream_with_thought_preservation(response)
+
+        # For non-streaming responses, thought signatures are already preserved
+        # in _process_messages when the response becomes part of conversation
+        # history
+        return response
+
+    def _wrap_stream_with_thought_preservation(
+        self, stream: Stream[ChatCompletionChunk]
+    ) -> Generator[ChatCompletionChunk, None, None]:
+        r"""Wrap a streaming response to preserve thought signatures in tool
+        calls.
+
+        This method ensures that when Gemini streaming responses contain tool
+        calls with thought signatures, these are properly preserved in the
+        extra_content field for future conversation context.
+
+        Args:
+            stream: The original streaming response from Gemini
+
+        Returns:
+            A wrapped stream that preserves thought signatures
+        """
+
+        def thought_preserving_generator():
+            accumulated_signatures = {}  # Store signatures by tool call index
+
+            for chunk in stream:
+                # Process chunk normally first
+                processed_chunk = chunk
+
+                # Check if this chunk contains tool call deltas with thought
+                # signatures
+                if (
+                    hasattr(chunk, 'choices')
+                    and chunk.choices
+                    and hasattr(chunk.choices[0], 'delta')
+                    and hasattr(chunk.choices[0].delta, 'tool_calls')
+                ):
+                    delta_tool_calls = chunk.choices[0].delta.tool_calls
+                    if delta_tool_calls:
+                        for tool_call_delta in delta_tool_calls:
+                            index = tool_call_delta.index
+
+                            # Check for thought signatures in the tool call
+                            # response Gemini may include these in custom
+                            # fields
+                            if hasattr(tool_call_delta, 'extra_content'):
+                                extra_content = tool_call_delta.extra_content
+                                if (
+                                    isinstance(extra_content, dict)
+                                    and 'google' in extra_content
+                                ):
+                                    google_content = extra_content['google']
+                                    if 'thought_signature' in google_content:
+                                        # Store the thought signature for this
+                                        # tool call
+                                        accumulated_signatures[index] = (
+                                            extra_content
+                                        )
+
+                            # Also check if thought signature is in function
+                            # response
+                            elif hasattr(
+                                tool_call_delta, 'function'
+                            ) and hasattr(
+                                tool_call_delta.function, 'extra_content'
+                            ):
+                                func_extra = (
+                                    tool_call_delta.function.extra_content
+                                )
+                                if (
+                                    isinstance(func_extra, dict)
+                                    and 'google' in func_extra
+                                ):
+                                    accumulated_signatures[index] = func_extra
+
+                            # If we have accumulated signature for this tool
+                            # call, ensure it's preserved in the chunk
+                            if index in accumulated_signatures:
+                                # Add extra_content to tool call delta if it
+                                # doesn't exist
+                                if not hasattr(
+                                    tool_call_delta, 'extra_content'
+                                ):
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+                                elif tool_call_delta.extra_content is None:
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+
+                yield processed_chunk
+
+        return thought_preserving_generator()
+
+    def _wrap_async_stream_with_thought_preservation(
+        self, stream: AsyncStream[ChatCompletionChunk]
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        r"""Wrap an async streaming response to preserve thought signatures in
+        tool calls.
+
+        This method ensures that when Gemini async streaming responses contain
+        tool calls with thought signatures, these are properly preserved in
+        the extra_content field for future conversation context.
+
+        Args:
+            stream: The original async streaming response from Gemini
+
+        Returns:
+            A wrapped async stream that preserves thought signatures
+        """
+
+        async def async_thought_preserving_generator():
+            accumulated_signatures = {}  # Store signatures by tool call index
+
+            async for chunk in stream:
+                # Process chunk normally first
+                processed_chunk = chunk
+
+                # Check if this chunk contains tool call deltas with thought
+                # signatures
+                if (
+                    hasattr(chunk, 'choices')
+                    and chunk.choices
+                    and hasattr(chunk.choices[0], 'delta')
+                    and hasattr(chunk.choices[0].delta, 'tool_calls')
+                ):
+                    delta_tool_calls = chunk.choices[0].delta.tool_calls
+                    if delta_tool_calls:
+                        for tool_call_delta in delta_tool_calls:
+                            index = tool_call_delta.index
+
+                            # Check for thought signatures in the tool call
+                            # response
+                            if hasattr(tool_call_delta, 'extra_content'):
+                                extra_content = tool_call_delta.extra_content
+                                if (
+                                    isinstance(extra_content, dict)
+                                    and 'google' in extra_content
+                                ):
+                                    google_content = extra_content['google']
+                                    if 'thought_signature' in google_content:
+                                        # Store the thought signature for this
+                                        # tool call
+                                        accumulated_signatures[index] = (
+                                            extra_content
+                                        )
+
+                            # Also check if thought signature is in function
+                            # response
+                            elif hasattr(
+                                tool_call_delta, 'function'
+                            ) and hasattr(
+                                tool_call_delta.function, 'extra_content'
+                            ):
+                                func_extra = (
+                                    tool_call_delta.function.extra_content
+                                )
+                                if (
+                                    isinstance(func_extra, dict)
+                                    and 'google' in func_extra
+                                ):
+                                    accumulated_signatures[index] = func_extra
+
+                            # If we have accumulated signature for this tool
+                            # call, ensure it's preserved in the chunk
+                            if index in accumulated_signatures:
+                                # Add extra_content to tool call delta if it
+                                # doesn't exist
+                                if not hasattr(
+                                    tool_call_delta, 'extra_content'
+                                ):
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+                                elif tool_call_delta.extra_content is None:
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+
+                yield processed_chunk
+
+        return async_thought_preserving_generator()
 
     @observe()
     def _run(
@@ -309,11 +510,14 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        return self._client.chat.completions.create(
+        response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
+
+        # Preserve thought signatures from the response for future requests
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]
 
     async def _arequest_chat_completion(
         self,
@@ -363,8 +567,11 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        return await self._async_client.chat.completions.create(
+        response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
+
+        # Preserve thought signatures from the response for future requests
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]
