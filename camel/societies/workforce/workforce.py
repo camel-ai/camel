@@ -3624,7 +3624,6 @@ class Workforce(BaseNode):
         return TaskAssignResult(assignments=all_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
-        logger.warning(f'[Workforce._post_task] posting task {task.id} to {assignee_id}')
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 

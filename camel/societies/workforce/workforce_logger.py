@@ -61,10 +61,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._initial_worker_logs: List[Dict[str, Any]] = []
 
     def _color_message(self, event: LogEvent) -> str:
-        if event.level not in _COLOR_MAP:
-            return event.message
-
-        if event.level == "info":
+        if event.level not in _COLOR_MAP or event.level == 'info':
             return event.message
         color = _COLOR_MAP.get(event.level)
         return f"{color}{event.message}{Fore.RESET}"
