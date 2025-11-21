@@ -1,0 +1,257 @@
+---
+title: "PPTX Toolkit"
+icon: "file-ppt"
+---
+
+<Note type="info" title="What is the PPTX Toolkit?">
+  The <b>PPTX Toolkit</b> provides a comprehensive set of tools for creating and manipulating PowerPoint (PPTX) presentations programmatically. It enables CAMEL agents to generate professional presentations with text formatting, bullet points, tables, and image integration.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Template Support" icon="palette">
+    Supports custom PowerPoint templates to maintain consistent branding and styling across presentations.
+  </Card>
+  <Card title="Rich Formatting" icon="brush">
+    Includes support for bold and italic text formatting, hierarchical bullet points, and step-by-step processes.
+  </Card>
+  <Card title="Table Integration" icon="table">
+    Create professional tables with headers and multiple rows for data presentation and comparison.
+  </Card>
+  <Card title="Image Embedding" icon="image">
+    Automatically adds relevant images based on keywords or URLs to enhance visual appeal.
+  </Card>
+</CardGroup>
+
+## Initialization
+
+To get started, initialize the `PPTXToolkit`. You can optionally specify a working directory for output files.
+
+<Tabs>
+<Tab title="Default">
+```python
+from camel.toolkits import PPTXToolkit
+
+# Initialize with default working directory
+pptx_toolkit = PPTXToolkit()
+```
+</Tab>
+<Tab title="Custom Directory">
+```python
+from camel.toolkits import PPTXToolkit
+
+# Initialize with custom working directory
+pptx_toolkit = PPTXToolkit(
+    working_directory="./my_presentations"
+)
+```
+</Tab>
+</Tabs>
+
+## Core Functionality: `create_presentation`
+
+The main function of the toolkit is `create_presentation`, which takes structured content and generates a complete PowerPoint presentation.
+
+<Card title="Example: Creating a Business Presentation" icon="chart-line">
+```python
+import json
+
+# Define the presentation content
+presentation_content = [
+    {
+        "title": "CAMEL AI Framework",
+        "subtitle": "Communicative Agents for Mind Exploration"
+    },
+    {
+        "heading": "Key Features",
+        "bullet_points": [
+            "**Multi-agent collaboration** for complex problem solving",
+            "*Role-playing capabilities* with specialized agents",
+            "Comprehensive toolkit ecosystem",
+            "Easy integration with popular AI models"
+        ],
+        "img_keywords": "artificial intelligence collaboration"
+    },
+    {
+        "heading": "Getting Started Process",
+        "bullet_points": [
+            ">> **Step 1:** Install CAMEL with pip install camel-ai",
+            ">> **Step 2:** Initialize your agents with specific roles",
+            ">> **Step 3:** Define the task and start collaboration",
+            ">> **Step 4:** Monitor and analyze the results"
+        ],
+        "img_keywords": "software installation workflow"
+    },
+    {
+        "heading": "Performance Comparison",
+        "table": {
+            "headers": ["Framework", "Multi-Agent", "Ease of Use", "Performance"],
+            "rows": [
+                ["CAMEL", "✓", "High", "Excellent"],
+                ["Traditional", "✗", "Medium", "Good"],
+                ["Custom Solution", "Partial", "Low", "Variable"]
+            ]
+        },
+        "img_keywords": "performance comparison chart"
+    }
+]
+
+# Create the presentation
+result = pptx_toolkit.create_presentation(
+    content=json.dumps(presentation_content),
+    filename="camel_overview.pptx"
+)
+
+print(result)
+```
+</Card>
+
+## Content Structure
+
+The toolkit expects content as a JSON string representing a list of slide dictionaries with specific structures:
+
+<Steps>
+<Step title="Title Slide">
+The first element should be a title slide with `title` and `subtitle` keys.
+</Step>
+<Step title="Content Slides">
+Subsequent elements can be either bullet point slides or table slides.
+</Step>
+<Step title="Bullet Point Slides">
+Include `heading`, `bullet_points` (list of strings), and optional `img_keywords`.
+</Step>
+<Step title="Table Slides">
+Include `heading`, `table` with `headers` and `rows`, and optional `img_keywords`.
+</Step>
+</Steps>
+
+## Advanced Features
+
+### Text Formatting
+
+The toolkit supports markdown-style text formatting within content:
+
+<Card title="Text Formatting Options" icon="font">
+```python
+bullet_points = [
+    "**Bold text** for emphasis",
+    "*Italic text* for subtle emphasis",
+    "Regular text for normal content",
+    "Combined **bold and *italic*** formatting"
+]
+```
+</Card>
+
+### Step-by-Step Processes
+
+Create process-oriented slides by prefixing bullet points with `>> `:
+
+<Card title="Process Slides" icon="list-ol">
+```python
+process_slide = {
+    "heading": "Project Implementation",
+    "bullet_points": [
+        ">> **Phase 1:** Planning and requirements gathering",
+        ">> **Phase 2:** Design and architecture",
+        ">> **Phase 3:** Development and testing",
+        ">> **Phase 4:** Deployment and monitoring"
+    ]
+}
+```
+</Card>
+
+### Template Usage
+
+Use custom PowerPoint templates to maintain brand consistency:
+
+<Card title="Using Custom Templates" icon="palette">
+```python
+# Create presentation with custom template
+result = pptx_toolkit.create_presentation(
+    content=json.dumps(presentation_content),
+    filename="branded_presentation.pptx",
+    template="./templates/company_template.pptx"
+)
+```
+</Card>
+
+### Hierarchical Bullet Points
+
+Create nested bullet points for complex information hierarchy:
+
+<Card title="Nested Bullet Points" icon="sitemap">
+```python
+nested_content = {
+    "heading": "Technical Architecture",
+    "bullet_points": [
+        "Frontend Components",
+        [
+            "React-based user interface",
+            "Responsive design system",
+            ["Mobile optimization", "Desktop layouts"]
+        ],
+        "Backend Services",
+        [
+            "RESTful API endpoints",
+            "Database integration",
+            "Authentication system"
+        ]
+    ]
+}
+```
+</Card>
+
+## Integration with CAMEL Agents
+
+The PPTX Toolkit integrates seamlessly with CAMEL agents for automated presentation generation:
+
+<Card title="Agent-Powered Presentation Creation" icon="robot">
+```python
+from camel.agents import ChatAgent
+from camel.toolkits import PPTXToolkit
+
+# Initialize agent with PPTX toolkit
+pptx_toolkit = PPTXToolkit()
+agent = ChatAgent(tools=[pptx_toolkit.get_tools()[0]])
+
+# Generate presentation through conversation
+response = agent.step(
+    "Create a presentation about sustainable energy solutions "
+    "with 5 slides including an introduction, 3 main topics, "
+    "and a conclusion with comparison table"
+)
+```
+</Card>
+
+## Best Practices
+
+<Card title="Content Organization Tips" icon="lightbulb">
+<ul>
+  <li><b>Clear Structure:</b> Always start with a title slide and organize content logically</li>
+  <li><b>Concise Text:</b> Keep bullet points brief and focused for better readability</li>
+  <li><b>Visual Balance:</b> Use image keywords strategically to enhance visual appeal</li>
+  <li><b>Consistent Formatting:</b> Apply formatting consistently across slides</li>
+  <li><b>Template Reuse:</b> Leverage templates for brand consistency across presentations</li>
+</ul>
+</Card>
+
+<Card title="Performance Considerations" icon="gauge">
+<ul>
+  <li><b>File Size:</b> Consider image sizes when using automatic image embedding</li>
+  <li><b>Complex Tables:</b> Break large tables into multiple slides for better presentation</li>
+  <li><b>Working Directory:</b> Organize output files using structured directory paths</li>
+  <li><b>Template Management:</b> Keep templates in a centralized location for easy access</li>
+</ul>
+</Card>
+
+<Card title="Error Handling" icon="shield">
+<ul>
+  <li><b>JSON Validation:</b> Ensure content is properly formatted JSON before processing</li>
+  <li><b>File Permissions:</b> Verify write permissions for the target directory</li>
+  <li><b>Template Availability:</b> Check template file existence before using custom templates</li>
+  <li><b>Content Validation:</b> Validate required keys in slide dictionaries</li>
+</ul>
+</Card>
+
+## Conclusion
+
+The PPTX Toolkit empowers CAMEL agents to create professional presentations programmatically, making it an essential tool for automated reporting, documentation, and communication workflows. With support for rich formatting, templates, and seamless agent integration, it bridges the gap between AI-generated content and polished presentation delivery.
