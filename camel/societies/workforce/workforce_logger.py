@@ -25,6 +25,7 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskStreamingChunkEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
@@ -49,6 +50,7 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._task_hierarchy: Dict[str, Dict[str, Any]] = {}
         self._worker_information: Dict[str, Dict[str, Any]] = {}
         self._initial_worker_logs: List[Dict[str, Any]] = []
+        self._streaming_chunks: Dict[str, List[Dict[str, Any]]] = {}
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.
@@ -66,6 +68,31 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self.log_entries.append(log_entry)
         if event_type == 'worker_created':
             self._initial_worker_logs.append(log_entry)
+
+    def log_task_streaming_chunk(self, event: TaskStreamingChunkEvent) -> None:
+        r"""Logs a streaming chunk from task execution.
+
+        Args:
+            event (TaskStreamingChunkEvent): The streaming chunk event.
+        """
+        if event.task_id not in self._streaming_chunks:
+            self._streaming_chunks[event.task_id] = []
+
+        chunk_data = {
+            'chunk_index': event.chunk_index,
+            'chunk': event.chunk,
+            'worker_id': event.worker_id,
+        }
+        self._streaming_chunks[event.task_id].append(chunk_data)
+
+        self._log_event(
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            chunk=event.chunk,
+            chunk_index=event.chunk_index,
+            metadata=event.metadata or {},
+        )
 
     def log_task_created(
         self,
