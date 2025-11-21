@@ -1,0 +1,32 @@
+<a id="camel.configs.burncloud_config"></a>
+
+<a id="camel.configs.burncloud_config.BurnCloudConfig"></a>
+
+## BurnCloudConfig
+
+```python
+class BurnCloudConfig(BaseConfig):
+```
+
+Defines parameters for BurnCloud's OpenAI-compatible chat completions.
+
+**Parameters:**
+
+- **temperature** (float, optional): Sampling temperature between :obj:`0` and :obj:`2`. Higher values yield more random generations.
+- **top_p** (float, optional): Nucleus sampling threshold that limits tokens to the specified cumulative probability mass.
+- **n** (int, optional): Number of completions to generate per request.
+- **response_format** (object, optional): Optional schema enforcing the output format (e.g., `{"type": "json_object"}`).
+- **stream** (bool, optional): Stream partial deltas over Server-Sent Events when :obj:`True`.
+- **stop** (str or list, optional): Up to four stop sequences that terminate generation.
+- **max_tokens** (int, optional): Maximum tokens the model may generate for a completion.
+- **presence_penalty** (float, optional): Penalizes tokens that have already appeared to encourage topic switching.
+- **frequency_penalty** (float, optional): Penalizes token repetition to reduce duplicated output.
+- **user** (str, optional): Identifier for the end-user to aid abuse monitoring.
+- **tools** (list[FunctionTool], optional): Function tool definitions the model may call.
+- **tool_choice** (Union[dict[str, str], str], optional): Forces how tools should be invoked (e.g., `"none"`, `"auto"`, or a specific function name).
+
+<a id="camel.configs.burncloud_config.BURNCLOUD_API_PARAMS"></a>
+
+## BURNCLOUD_API_PARAMS
+
+A convenience set containing every configurable field defined on :class:`BurnCloudConfig`.
