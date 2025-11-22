@@ -321,6 +321,9 @@ class Workforce(BaseNode):
         self.snapshot_interval: float = 30.0
         # Shared memory UUID tracking to prevent re-sharing duplicates
         self._shared_memory_uuids: Set[str] = set()
+        # Defer initial worker-created callbacks until an event loop is
+        # available in async context.
+        self._pending_worker_created: Deque[BaseNode] = deque(self._children)
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -508,9 +511,6 @@ class Workforce(BaseNode):
                 "WorkforceLogger addition."
             )
 
-        for child in self._children:
-            asyncio.run(self._notify_worker_created(child))
-
     async def _notify_worker_created(
         self,
         worker_node: BaseNode,
@@ -528,6 +528,18 @@ class Workforce(BaseNode):
         )
         for cb in self._callbacks:
             await cb.log_worker_created(event)
+
+    async def _flush_initial_worker_created_callbacks(self) -> None:
+        r"""Flush pending worker-created callbacks that were queued during
+        initialization before an event loop was available."""
+        if not self._pending_worker_created:
+            return
+
+        pending = list(self._pending_worker_created)
+        self._pending_worker_created.clear()
+
+        for child in pending:
+            await self._notify_worker_created(child)
 
     def _get_or_create_shared_context_utility(
         self,
@@ -1792,6 +1804,9 @@ class Workforce(BaseNode):
         Returns:
             Task: The updated task.
         """
+        # Emit worker-created callbacks lazily once an event loop is present.
+        await self._flush_initial_worker_created_callbacks()
+
         # Delegate to intervention pipeline when requested to keep
         # backward-compat.
         if interactive:
