@@ -1268,7 +1268,9 @@ class Workforce(BaseNode):
             del self._assignees[task_id]
 
     def _decompose_task(
-        self, task: Task
+        self,
+        task: Task,
+        stream_callback: Optional[Callable[[str], None]] = None,
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
@@ -1293,7 +1295,9 @@ class Workforce(BaseNode):
             )
         )
         self.task_agent.reset()
-        result = task.decompose(self.task_agent, decompose_prompt)
+        result = task.decompose(
+            self.task_agent, decompose_prompt, stream_callback=stream_callback
+        )
 
         # Handle both streaming and non-streaming results
         if isinstance(result, Generator):
