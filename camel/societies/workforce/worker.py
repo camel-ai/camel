@@ -158,9 +158,7 @@ class Worker(BaseNode, ABC):
                 f"{self} stopping, waiting for {len(self._running_tasks)} "
                 f"tasks to complete..."
             )
-            await asyncio.gather(
-                *self._running_tasks, return_exceptions=True
-            )
+            await asyncio.gather(*self._running_tasks, return_exceptions=True)
 
         logger.info(f"{self} stopped.")
 
@@ -171,10 +169,20 @@ class Worker(BaseNode, ABC):
 
     @check_if_running(True)
     def stop(self):
-        r"""Stop the worker."""
-        self._running = False
-        # Cancel any in-flight task coroutines
-        for task in list(self._running_tasks):
+        r"""Forcefully stop the worker.
+
+        Cancels all running tasks immediately and sets the stop flag.
+        The worker will exit after completing cancellation.
+        """
+        # First cancel all running tasks to interrupt ongoing work
+        tasks_to_cancel = list(self._running_tasks)
+        for task in tasks_to_cancel:
             if not task.done():
                 task.cancel()
+
+        # Clear the running tasks set since they're all cancelled
+        self._running_tasks.clear()
+
+        # Set stop flag to exit the listen loop
+        self._running = False
         return

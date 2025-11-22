@@ -1755,13 +1755,27 @@ class Workforce(BaseNode):
             )
 
     async def _async_stop_immediately(self) -> None:
-        r"""Force-stop the workforce without waiting for in-flight tasks."""
+        r"""Force-stop the workforce without waiting for in-flight tasks.
+
+        Note: This method does not wait for child nodes to fully stop.
+        Child nodes will receive stop signals but may still be cleaning up
+        when this method returns.
+        """
+        # Guard against redundant calls
+        if not self._running and self._state == WorkforceState.STOPPED:
+            logger.debug(
+                f"Workforce {self.node_id} already stopped, skipping."
+            )
+            return
+
         self._stop_requested = True
         self._pause_event.set()
-        logger.warning(f"Workforce {self.node_id} force stop requested.")
+        logger.info(f"Workforce {self.node_id} force stop requested.")
 
         # Remove pending tasks and clear channel postings to avoid new work
         self._pending_tasks.clear()
+
+        # Try to clear in-flight tasks from channel
         if self._channel:
             try:
                 in_flight = await self._channel.get_in_flight_tasks(
@@ -1769,26 +1783,41 @@ class Workforce(BaseNode):
                 )
                 for task in in_flight:
                     await self._channel.remove_task(task.id)
+                # Only reset counter if channel cleanup succeeded
+                self._in_flight_tasks = 0
             except Exception as e:
                 logger.error(
                     f"Failed to clear in-flight tasks during force stop: {e}",
                     exc_info=True,
                 )
-        self._in_flight_tasks = 0
+                # Still reset counter for consistency
+                self._in_flight_tasks = 0
 
         # Stop child nodes and cancel their listening tasks immediately
         for child in self._children:
             if child._running:
                 child.stop()
-        for task in self._child_listening_tasks:
-            if not task.done():
-                task.cancel()
+        for listening_task in self._child_listening_tasks:
+            if not listening_task.done():
+                listening_task.cancel()
 
         self._running = False
         self._state = WorkforceState.STOPPED
 
     def stop_immediately(self) -> None:
-        r"""Force-stop without waiting for current tasks to finish."""
+        r"""Force-stop without waiting for current tasks to finish.
+
+        Note: This method does not wait for child nodes to fully stop.
+        Child nodes will receive stop signals but may still be cleaning up
+        when this method returns.
+        """
+        # Guard against redundant calls
+        if not self._running and self._state == WorkforceState.STOPPED:
+            logger.debug(
+                f"Workforce {self.node_id} already stopped, skipping."
+            )
+            return
+
         if self._loop and not self._loop.is_closed():
             self._submit_coro_to_loop(self._async_stop_immediately())
         else:
@@ -1797,9 +1826,19 @@ class Workforce(BaseNode):
             self._pause_event.set()
             self._pending_tasks.clear()
             self._in_flight_tasks = 0
+
+            # Stop children
+            for child in self._children:
+                if child._running:
+                    child.stop()
+            # Cancel listening tasks
+            for task in self._child_listening_tasks:
+                if not task.done():
+                    task.cancel()
+
             self._running = False
             self._state = WorkforceState.STOPPED
-            logger.warning(
+            logger.info(
                 f"Workforce {self.node_id} force stopped "
                 f"(event-loop not yet started)."
             )
@@ -5059,12 +5098,12 @@ class Workforce(BaseNode):
                 if child._running:
                     child.stop()
             # Cancel listening tasks
-            for task in self._child_listening_tasks:
-                if not task.done():
-                    task.cancel()
+            for listening_task in self._child_listening_tasks:
+                if not listening_task.done():
+                    listening_task.cancel()
             self._running = False
             self._state = WorkforceState.STOPPED
-            logger.warning(
+            logger.info(
                 f"Workforce {self.node_id} force stopped "
                 f"(event-loop not yet started)."
             )
