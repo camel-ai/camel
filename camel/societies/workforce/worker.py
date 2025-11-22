@@ -45,6 +45,7 @@ class Worker(BaseNode, ABC):
     ) -> None:
         super().__init__(description, node_id=node_id)
         self._active_task_ids: Set[str] = set()
+        self._running_tasks: Set[asyncio.Task] = set()
 
     def __repr__(self):
         return f"Worker node {self.node_id} ({self.description})"
@@ -113,15 +114,12 @@ class Worker(BaseNode, ABC):
         self._running = True
         logger.info(f"{self} started.")
 
-        # Keep track of running task coroutines
-        running_tasks: Set[asyncio.Task] = set()
-
         while self._running:
             try:
                 # Clean up completed tasks
-                completed_tasks = [t for t in running_tasks if t.done()]
+                completed_tasks = [t for t in self._running_tasks if t.done()]
                 for completed_task in completed_tasks:
-                    running_tasks.remove(completed_task)
+                    self._running_tasks.discard(completed_task)
                     # Check for exceptions in completed tasks
                     try:
                         await completed_task
@@ -138,11 +136,11 @@ class Worker(BaseNode, ABC):
                     task_coroutine = asyncio.create_task(
                         self._process_single_task(task)
                     )
-                    running_tasks.add(task_coroutine)
+                    self._running_tasks.add(task_coroutine)
 
                 except asyncio.TimeoutError:
                     # No tasks available, continue loop
-                    if not running_tasks:
+                    if not self._running_tasks:
                         # No tasks running and none available, short sleep
                         await asyncio.sleep(0.1)
                     continue
@@ -155,12 +153,14 @@ class Worker(BaseNode, ABC):
                 continue
 
         # Wait for all remaining tasks to complete when stopping
-        if running_tasks:
+        if self._running_tasks:
             logger.info(
-                f"{self} stopping, waiting for {len(running_tasks)} "
+                f"{self} stopping, waiting for {len(self._running_tasks)} "
                 f"tasks to complete..."
             )
-            await asyncio.gather(*running_tasks, return_exceptions=True)
+            await asyncio.gather(
+                *self._running_tasks, return_exceptions=True
+            )
 
         logger.info(f"{self} stopped.")
 
@@ -173,4 +173,8 @@ class Worker(BaseNode, ABC):
     def stop(self):
         r"""Stop the worker."""
         self._running = False
+        # Cancel any in-flight task coroutines
+        for task in list(self._running_tasks):
+            if not task.done():
+                task.cancel()
         return
