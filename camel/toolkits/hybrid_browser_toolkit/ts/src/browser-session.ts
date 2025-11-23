@@ -725,7 +725,7 @@ export class HybridBrowserSession {
           existingRefs.add(match[1]);
         }
         console.log(`Found ${existingRefs.size} total elements before action`);
-        
+
         // If element is readonly or a date/time input, skip fill attempt and go directly to click
         if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
           console.log(`Element ref=${ref} is readonly or date/time input, skipping direct fill attempt`);
@@ -739,20 +739,21 @@ export class HybridBrowserSession {
           } catch (clickError) {
             console.log(`Warning: Failed to click element: ${clickError}`);
           }
-        } else {
-          // For normal inputs, click first then try to fill
-          try {
-            await element.click({ force: true });
-            console.log(`Clicked element ref=${ref} before typing`);
-          } catch (clickError) {
-            console.log(`Warning: Failed to click element before typing: ${clickError}`);
-          }
-          
-          // Try to fill the element directly
-          try {
-            // Use force option to avoid scrolling during fill
-            await element.fill(text, { timeout: 3000, force: true });
-            
+        } else {          
+          try{
+            try {
+              // Try to fill the element first
+              await element.fill(text, { timeout: 3000, force: true });
+            } catch (fillError) {
+              try {
+                // Try clicking first then filling
+                await element.click({ force: true });
+                console.log(`Clicked element ref=${ref} before typing`);
+              } catch (clickError) {
+                console.log(`Warning: Failed to click element before typing: ${clickError}`);
+              }
+              await element.fill(text, { timeout: 3000, force: true });
+            }
             // If this element might show dropdown, wait and check for new elements
             if (shouldCheckDiff) {
               await page.waitForTimeout(300);
