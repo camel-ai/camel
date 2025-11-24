@@ -897,6 +897,31 @@ response_format was provided.
 See Also:
 :meth:`asummarize`: Async version for non-blocking LLM calls.
 
+<a id="camel.agents.chat_agent.ChatAgent._build_conversation_text_from_messages"></a>
+
+### _build_conversation_text_from_messages
+
+```python
+def _build_conversation_text_from_messages(self, messages: List[Any], include_summaries: bool = False):
+```
+
+Build conversation text from messages for summarization.
+
+This is a shared helper method that converts messages to a formatted
+conversation text string, handling tool calls, tool results, and
+regular messages.
+
+**Parameters:**
+
+- **messages** (List[Any]): List of messages to convert.
+- **include_summaries** (bool): Whether to include messages starting with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+
+**Returns:**
+
+  tuple[str, List[str]]: A tuple containing:
+- Formatted conversation text
+- List of user messages extracted from the conversation
+
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 
 ### clear_memory
