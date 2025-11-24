@@ -739,8 +739,8 @@ export class HybridBrowserSession {
           } catch (clickError) {
             console.log(`Warning: Failed to click element: ${clickError}`);
           }
-        } else {          
-          try{
+        } else {    
+          try {
             try {
               // Try to fill the element first
               await element.fill(text, { timeout: 3000, force: true });
