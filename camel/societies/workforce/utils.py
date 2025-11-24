@@ -17,6 +17,99 @@ from typing import Callable, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+# generic role names that should trigger fallback in role identification
+# used for workflow organization to avoid using generic names as folder names
+GENERIC_ROLE_NAMES = frozenset(
+    {'assistant', 'agent', 'user', 'system', 'worker', 'helper'}
+)
+
+
+def is_generic_role_name(role_name: str) -> bool:
+    r"""Check if a role name is generic and should trigger fallback logic.
+
+    Generic role names are common, non-specific identifiers that don't
+    provide meaningful information about an agent's actual purpose.
+    When a role name is generic, fallback logic should be used to find
+    a more specific identifier (e.g., from LLM-generated agent_title
+    or description).
+
+    Args:
+        role_name (str): The role name to check (will be converted to
+            lowercase for case-insensitive comparison).
+
+    Returns:
+        bool: True if the role name is generic, False otherwise.
+
+    Example:
+        >>> is_generic_role_name("assistant")
+        True
+        >>> is_generic_role_name("data_analyst")
+        False
+        >>> is_generic_role_name("AGENT")
+        True
+    """
+    return role_name.lower() in GENERIC_ROLE_NAMES
+
+
+class WorkflowMetadata(BaseModel):
+    r"""Pydantic model for workflow metadata tracking.
+
+    This model defines the formal schema for workflow metadata that tracks
+    versioning, timestamps, and contextual information about saved workflows.
+    Used to maintain workflow history and enable proper version management.
+    """
+
+    session_id: str = Field(
+        description="Session identifier for the workflow execution"
+    )
+    working_directory: str = Field(
+        description="Directory path where the workflow is stored"
+    )
+    created_at: str = Field(
+        description="ISO timestamp when workflow was first created"
+    )
+    updated_at: str = Field(
+        description="ISO timestamp of last modification to the workflow"
+    )
+    workflow_version: int = Field(
+        default=1, description="Version number, increments on updates"
+    )
+    agent_id: str = Field(
+        description="UUID of the agent that created/updated the workflow"
+    )
+    message_count: int = Field(
+        description="Number of messages in the workflow conversation"
+    )
+
+
+class WorkflowConfig(BaseModel):
+    r"""Configuration for workflow memory management.
+
+    Centralizes all workflow-related configuration options to avoid scattered
+    settings across multiple files and methods.
+    """
+
+    max_workflows_per_role: int = Field(
+        default=100,
+        description="Maximum number of workflows to keep per role folder",
+    )
+    workflow_filename_suffix: str = Field(
+        default="_workflow",
+        description="Suffix appended to workflow filenames",
+    )
+    workflow_folder_name: str = Field(
+        default="workforce_workflows",
+        description="Base folder name for storing workflows",
+    )
+    enable_versioning: bool = Field(
+        default=True,
+        description="Whether to track workflow versions",
+    )
+    default_max_files_to_load: int = Field(
+        default=3,
+        description="Default maximum number of workflow files to load",
+    )
+
 
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
@@ -162,8 +255,7 @@ class TaskAnalysisResult(BaseModel):
 
     # Common fields - always populated
     reasoning: str = Field(
-        description="Explanation for the analysis result or recovery "
-        "decision"
+        description="Explanation for the analysis result or recovery decision"
     )
 
     recovery_strategy: Optional[RecoveryStrategy] = Field(
@@ -625,8 +717,7 @@ def check_if_running(
             # This should not be reached, but just in case
             if handle_exceptions:
                 logger.error(
-                    f"Unexpected failure in {func.__name__}: "
-                    f"{last_exception}"
+                    f"Unexpected failure in {func.__name__}: {last_exception}"
                 )
                 return None
             else:
