@@ -83,13 +83,6 @@ class OutlookToolkit(BaseToolkit):
             credentials=self.credentials, scopes=self.scopes
         )
 
-    @api_keys_required(
-        [
-            (None, "MICROSOFT_TENANT_ID"),
-            (None, "MICROSOFT_CLIENT_ID"),
-            (None, "MICROSOFT_CLIENT_SECRET"),
-        ]
-    )
     def _get_auth_url(self, client_id, tenant_id, redirect_uri, scopes):
         """Constructs the Microsoft authorization URL.
 
@@ -522,6 +515,8 @@ class OutlookToolkit(BaseToolkit):
             FunctionTool(self.get_attachments),
             FunctionTool(self.get_message),
             FunctionTool(self.list_messages),
+            FunctionTool(self.reply_to_email),
+            FunctionTool(self.update_draft_message),
         ]
 
     async def create_draft_email(
