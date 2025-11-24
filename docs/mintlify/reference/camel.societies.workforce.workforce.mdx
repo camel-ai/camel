@@ -153,6 +153,34 @@ unnecessary session folder creation during initialization.
 
   ContextUtility: The shared context utility instance.
 
+<a id="camel.societies.workforce.workforce.Workforce._get_role_identifier"></a>
+
+### _get_role_identifier
+
+```python
+def _get_role_identifier(
+    self,
+    worker: ChatAgent,
+    description: str,
+    workflow_summary: Optional['WorkflowSummary'] = None
+):
+```
+
+Extract role identifier for organizing workflows.
+
+Uses priority fallback: role_name → agent_title (from
+WorkflowSummary) → sanitized description.
+
+**Parameters:**
+
+- **worker** (ChatAgent): The worker agent to extract role from.
+- **description** (str): Worker description to use as fallback.
+- **workflow_summary** (Optional[WorkflowSummary]): Optional WorkflowSummary object that may contain agent_title field.
+
+**Returns:**
+
+  str: Role identifier for organizing workflows.
+
 <a id="camel.societies.workforce.workforce.Workforce._validate_agent_compatibility"></a>
 
 ### _validate_agent_compatibility
@@ -989,28 +1017,8 @@ be called when the workforce is not running.
 ### save_workflow_memories
 
 ```python
-def save_workflow_memories(self, session_id: Optional[str] = None):
+def save_workflow_memories(self):
 ```
-
-Save workflow memories for all SingleAgentWorker instances in the
-workforce.
-
-.. deprecated:: 0.2.80
-This synchronous method processes workers sequentially, which can
-be slow for multiple agents. Use
-:meth:`save_workflow_memories_async`
-instead for parallel processing and significantly better
-performance.
-
-This method iterates through all child workers and triggers workflow
-saving for SingleAgentWorker instances using their
-save_workflow_memories()
-method.
-Other worker types are skipped.
-
-**Parameters:**
-
-- **session_id** (Optional[str]): Custom session ID to use for saving workflows. If None, auto-generates a timestamped session ID. Useful for organizing workflows by project or context. (default: :obj:`None`)
 
 **Returns:**
 
