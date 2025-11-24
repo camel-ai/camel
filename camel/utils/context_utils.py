@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
@@ -90,6 +91,17 @@ class WorkflowSummary(BaseModel):
         "mid-task by using the HumanToolkit.",
         default="",
     )
+    tags: List[str] = Field(
+        description="3-10 categorization tags that describe the workflow "
+        "type, domain, and key capabilities. Use lowercase with hyphens. "
+        "Tags should be broad, reusable categories to help with semantic "
+        "matching to similar tasks. "
+        "Examples: 'data-analysis', 'web-scraping', 'api-integration', "
+        "'code-generation', 'file-processing', 'database-query', "
+        "'text-processing', 'image-manipulation', 'email-automation', "
+        "'report-generation'.",
+        default_factory=list,
+    )
 
     @classmethod
     def get_instruction_prompt(cls) -> str:
@@ -111,7 +123,12 @@ class WorkflowSummary(BaseModel):
             'about a simple math problem, the workflow must be short, '
             'e.g. <60 words. By contrast, if the task is complex and '
             'multi-step, such as finding particular job applications based '
-            'on user CV, the workflow must be longer, e.g. about 120 words.'
+            'on user CV, the workflow must be longer, e.g. about 120 words. '
+            'For tags, provide 3-5 broad categorization tags using lowercase '
+            'with hyphens (e.g., "data-analysis", "web-scraping") that '
+            'describe the workflow domain, type, and key capabilities to '
+            'help future agents discover this workflow when working on '
+            'similar tasks.'
         )
 
 
@@ -130,6 +147,10 @@ class ContextUtility:
     - Agent memory record retrieval
     - Shared session management for workforce workflows
     """
+
+    # maximum filename length for workflow files (chosen for filesystem
+    # compatibility and readability)
+    MAX_WORKFLOW_FILENAME_LENGTH: ClassVar[int] = 50
 
     # Class variables for shared session management
     _shared_sessions: ClassVar[Dict[str, 'ContextUtility']] = {}
@@ -190,6 +211,54 @@ class ContextUtility:
         current session files from other sessions."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         return f"session_{timestamp}"
+
+    @staticmethod
+    def sanitize_workflow_filename(
+        name: str,
+        max_length: Optional[int] = None,
+    ) -> str:
+        r"""Sanitize a name string for use as a workflow filename.
+
+        Converts the input string to a safe filename by:
+        - converting to lowercase
+        - replacing spaces with underscores
+        - removing special characters (keeping only alphanumeric and
+          underscores)
+        - truncating to maximum length if specified
+
+        Args:
+            name (str): The name string to sanitize (e.g., role_name or
+                task_title).
+            max_length (Optional[int]): Maximum length for the sanitized
+                filename. If None, uses MAX_WORKFLOW_FILENAME_LENGTH.
+                (default: :obj:`None`)
+
+        Returns:
+            str: Sanitized filename string suitable for filesystem use.
+                Returns "agent" if sanitization results in empty string.
+
+        Example:
+            >>> ContextUtility.sanitize_workflow_filename("Data Analyst!")
+            'data_analyst'
+            >>> ContextUtility.sanitize_workflow_filename("Test@123", 5)
+            'test1'
+        """
+        if max_length is None:
+            max_length = ContextUtility.MAX_WORKFLOW_FILENAME_LENGTH
+
+        # sanitize: lowercase, spaces to underscores, remove special chars
+        clean_name = name.lower().replace(" ", "_")
+        clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
+
+        # truncate if too long
+        if len(clean_name) > max_length:
+            clean_name = clean_name[:max_length]
+
+        # ensure it's not empty after sanitization
+        if not clean_name:
+            clean_name = "agent"
+
+        return clean_name
 
     # ========= GENERIC FILE MANAGEMENT METHODS =========
 
@@ -480,7 +549,6 @@ class ContextUtility:
             'session_id': self.session_id,
             'working_directory': str(self.working_directory),
             'created_at': datetime.now().isoformat(),
-            'base_directory': str(self.working_directory.parent),
         }
 
     def list_sessions(self, base_dir: Optional[str] = None) -> List[str]:
@@ -740,6 +808,137 @@ class ContextUtility:
         # Clean up any extra whitespace at the beginning
         result = '\n'.join(filtered_lines).strip()
         return result
+
+    # ========= WORKFLOW INFO METHODS =========
+
+    def extract_workflow_info(self, file_path: str) -> Dict[str, Any]:
+        r"""Extract info from a workflow markdown file.
+
+        This method reads only the essential info from a workflow file
+        (title, description, tags) for use in workflow selection without
+        loading the entire workflow content.
+
+        Args:
+            file_path (str): Full path to the workflow markdown file.
+
+        Returns:
+            Dict[str, Any]: Workflow info including title, description,
+                tags, and file_path. Returns empty dict on error.
+        """
+        import re
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            metadata: Dict[str, Any] = {'file_path': file_path}
+
+            # extract task title
+            title_match = re.search(
+                r'### Task Title\s*\n(.+?)(?:\n###|\n\n|$)', content, re.DOTALL
+            )
+            if title_match:
+                metadata['title'] = title_match.group(1).strip()
+            else:
+                metadata['title'] = ""
+
+            # extract task description
+            desc_match = re.search(
+                r'### Task Description\s*\n(.+?)(?:\n###|\n\n|$)',
+                content,
+                re.DOTALL,
+            )
+            if desc_match:
+                metadata['description'] = desc_match.group(1).strip()
+            else:
+                metadata['description'] = ""
+
+            # extract tags
+            tags_match = re.search(
+                r'### Tags\s*\n(.+?)(?:\n###|\n\n|$)', content, re.DOTALL
+            )
+            if tags_match:
+                tags_section = tags_match.group(1).strip()
+                # Parse bullet list of tags
+                tags = [
+                    line.strip().lstrip('- ')
+                    for line in tags_section.split('\n')
+                    if line.strip().startswith('-')
+                ]
+                metadata['tags'] = tags
+            else:
+                metadata['tags'] = []
+
+            return metadata
+
+        except Exception as e:
+            logger.warning(
+                f"Error extracting workflow info from {file_path}: {e}"
+            )
+            return {}
+
+    def get_all_workflows_info(
+        self, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        r"""Get info from all workflow files in workforce_workflows.
+
+        This method scans the workforce_workflows directory for workflow
+        markdown files and extracts their info for use in workflow
+        selection.
+
+        Args:
+            session_id (Optional[str]): If provided, only return workflows
+                from this specific session. If None, returns workflows from
+                all sessions.
+
+        Returns:
+            List[Dict[str, Any]]: List of workflow info dicts, sorted
+                by session timestamp (newest first).
+        """
+        import glob
+        import re
+
+        workflows_metadata = []
+
+        # Determine base directory for workforce workflows
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if camel_workdir:
+            base_dir = os.path.join(camel_workdir, "workforce_workflows")
+        else:
+            base_dir = "workforce_workflows"
+
+        # Build search pattern
+        if session_id:
+            search_pattern = os.path.join(
+                base_dir, session_id, "*_workflow.md"
+            )
+        else:
+            search_pattern = os.path.join(base_dir, "*", "*_workflow.md")
+
+        # Find all workflow files
+        workflow_files = glob.glob(search_pattern)
+
+        if not workflow_files:
+            logger.info(f"No workflow files found in {base_dir}")
+            return []
+
+        # Sort by session timestamp (newest first)
+        def extract_session_timestamp(filepath: str) -> str:
+            match = re.search(r'session_(\d{8}_\d{6}_\d{6})', filepath)
+            return match.group(1) if match else ""
+
+        workflow_files.sort(key=extract_session_timestamp, reverse=True)
+
+        # Extract info from each file
+        for file_path in workflow_files:
+            metadata = self.extract_workflow_info(file_path)
+            if metadata:  # Only add if extraction succeeded
+                workflows_metadata.append(metadata)
+
+        logger.info(
+            f"Found {len(workflows_metadata)} workflow file(s) with info"
+        )
+        return workflows_metadata
 
     # ========= SHARED SESSION MANAGEMENT METHODS =========
 

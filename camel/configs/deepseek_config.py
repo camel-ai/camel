@@ -96,13 +96,12 @@ class DeepSeekConfig(BaseConfig):
     tool_choice: Optional[Union[dict[str, str], str]] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
+    stream_options: Optional[dict[str, bool]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
+        if kwargs.get("stream") and "stream_options" not in kwargs:
+            kwargs["stream_options"] = {"include_usage": include_usage}
         super().__init__(**kwargs)
-        # Only set stream_options when stream is True
-        # Otherwise, it will raise error when calling the API
-        if self.stream:
-            self.stream_options = {"include_usage": include_usage}
 
 
 DEEPSEEK_API_PARAMS = {param for param in DeepSeekConfig.model_fields.keys()}

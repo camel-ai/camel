@@ -872,7 +872,7 @@ class ExcelToolkit(BaseToolkit):
             import csv
 
             with open(
-                resolved_csv_path, 'w', newline='', encoding='utf-8'
+                resolved_csv_path, 'w', newline='', encoding='utf-8-sig'
             ) as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerows(data)
