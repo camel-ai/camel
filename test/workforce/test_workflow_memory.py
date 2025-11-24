@@ -624,9 +624,9 @@ class TestWorkflowIntegration:
 
             # verify filename is reasonable length (< 100 chars including path)
             filename = os.path.basename(result["file_path"])
-            assert len(filename) < 100, (
-                f"Filename too long: {len(filename)} chars - {filename}"
-            )
+            assert (
+                len(filename) < 100
+            ), f"Filename too long: {len(filename)} chars - {filename}"
 
             # verify filename uses role_name, not full description
             assert "developer_agent_workflow" in filename
@@ -1437,9 +1437,9 @@ class TestConversationAccumulator:
             await worker._process_task(task3, [])
 
         # verify accumulator was created
-        assert worker._conversation_accumulator is not None, (
-            "Accumulator should be created when workflow memory is enabled"
-        )
+        assert (
+            worker._conversation_accumulator is not None
+        ), "Accumulator should be created when workflow memory is enabled"
 
         # verify accumulator has messages from ALL tasks
         accumulator = worker._conversation_accumulator
@@ -1456,12 +1456,12 @@ class TestConversationAccumulator:
         messages_content = [
             record.memory_record.message.content for record in records
         ]
-        assert any("2+2" in content for content in messages_content), (
-            "Should contain content from task1"
-        )
-        assert any("data trends" in content for content in messages_content), (
-            "Should contain content from task2"
-        )
+        assert any(
+            "2+2" in content for content in messages_content
+        ), "Should contain content from task1"
+        assert any(
+            "data trends" in content for content in messages_content
+        ), "Should contain content from task2"
         assert any(
             "summary report" in content for content in messages_content
         ), "Should contain content from task3"
@@ -1533,9 +1533,9 @@ class TestConversationAccumulator:
             await worker._process_task(task2, [])
 
         # verify accumulator exists
-        assert worker._conversation_accumulator is not None, (
-            "Accumulator should exist after processing tasks"
-        )
+        assert (
+            worker._conversation_accumulator is not None
+        ), "Accumulator should exist after processing tasks"
 
         # save workflow with mocked summarization
         mock_summary_result = {
@@ -1550,9 +1550,9 @@ class TestConversationAccumulator:
             result = await worker.save_workflow_memories_async()
 
         # verify save was successful
-        assert result["status"] == "success", (
-            f"Save should succeed, got: {result}"
-        )
+        assert (
+            result["status"] == "success"
+        ), f"Save should succeed, got: {result}"
 
         # accumulator should be None after successful save
         assert worker._conversation_accumulator is None, (
@@ -1687,9 +1687,9 @@ class TestAgentPoolMemoryTransfer:
 
         # verify accumulator received the conversation from pooled agent
         accumulator = worker._conversation_accumulator
-        assert accumulator is not None, (
-            "Accumulator should exist when workflow memory is enabled"
-        )
+        assert (
+            accumulator is not None
+        ), "Accumulator should exist when workflow memory is enabled"
 
         records = accumulator.memory.retrieve()
         assert len(records) >= 2, (
@@ -1699,9 +1699,9 @@ class TestAgentPoolMemoryTransfer:
 
         # verify the messages are about the task
         messages_content = [r.memory_record.message.content for r in records]
-        assert any("2+2" in msg for msg in messages_content), (
-            "Should contain task content from pooled agent"
-        )
+        assert any(
+            "2+2" in msg for msg in messages_content
+        ), "Should contain task content from pooled agent"
 
     @pytest.mark.asyncio
     async def test_memory_accumulation_with_and_without_pool(
@@ -1821,12 +1821,12 @@ class TestAgentPoolMemoryTransfer:
         records = worker._conversation_accumulator.memory.retrieve()
         messages_content = [r.memory_record.message.content for r in records]
 
-        assert any("First task" in msg for msg in messages_content), (
-            "Should contain first task content"
-        )
-        assert any("Second task" in msg for msg in messages_content), (
-            "Should contain second task content"
-        )
+        assert any(
+            "First task" in msg for msg in messages_content
+        ), "Should contain first task content"
+        assert any(
+            "Second task" in msg for msg in messages_content
+        ), "Should contain second task content"
 
 
 class TestWorkflowContentValidation:
@@ -1879,23 +1879,23 @@ This workflow analyzes sales data using pandas and matplotlib.
 
         # verify system message contains workflow content
         updated_system = worker.worker._system_message.content
-        assert updated_system != original_system, (
-            "System message should be modified"
-        )
-        assert "Data Analysis Pipeline" in updated_system, (
-            "Should contain task title"
-        )
-        assert "pandas and matplotlib" in updated_system, (
-            "Should contain task description content"
-        )
-        assert "Load CSV file" in updated_system, (
-            "Should contain workflow steps"
-        )
+        assert (
+            updated_system != original_system
+        ), "System message should be modified"
+        assert (
+            "Data Analysis Pipeline" in updated_system
+        ), "Should contain task title"
+        assert (
+            "pandas and matplotlib" in updated_system
+        ), "Should contain task description content"
+        assert (
+            "Load CSV file" in updated_system
+        ), "Should contain workflow steps"
 
         # verify proper formatting with header
-        assert "Previous Workflows" in updated_system, (
-            "Should have workflows header"
-        )
+        assert (
+            "Previous Workflows" in updated_system
+        ), "Should have workflows header"
         assert "=" * 60 in updated_system, "Should have separator lines"
 
     def test_multiple_workflows_formatted_correctly(self, temp_context_dir):
@@ -1961,9 +1961,9 @@ This is the third workflow.""",
 
         # should have separators
         separator_count = formatted_content.count("=" * 60)
-        assert separator_count >= 3, (
-            f"Should have at least 3 separators, got {separator_count}"
-        )
+        assert (
+            separator_count >= 3
+        ), f"Should have at least 3 separators, got {separator_count}"
 
     def test_metadata_filtered_from_loaded_workflow(self, temp_context_dir):
         """Test that metadata section is not included in system message.
@@ -2012,26 +2012,26 @@ This is the actual workflow description that should be loaded.
         system_content = worker.worker._system_message.content
 
         # should contain actual workflow content
-        assert "Actual Workflow Content" in system_content, (
-            "Should contain workflow title"
-        )
-        assert "actual workflow description" in system_content, (
-            "Should contain workflow description"
-        )
-        assert "Do important work" in system_content, (
-            "Should contain workflow steps"
-        )
+        assert (
+            "Actual Workflow Content" in system_content
+        ), "Should contain workflow title"
+        assert (
+            "actual workflow description" in system_content
+        ), "Should contain workflow description"
+        assert (
+            "Do important work" in system_content
+        ), "Should contain workflow steps"
 
         # should NOT contain metadata
-        assert "session_id: test_session_456" not in system_content, (
-            "Should filter out session_id metadata"
-        )
-        assert "agent_id: test-agent-789" not in system_content, (
-            "Should filter out agent_id metadata"
-        )
-        assert "created_at: 2025-01-01" not in system_content, (
-            "Should filter out created_at metadata"
-        )
+        assert (
+            "session_id: test_session_456" not in system_content
+        ), "Should filter out session_id metadata"
+        assert (
+            "agent_id: test-agent-789" not in system_content
+        ), "Should filter out agent_id metadata"
+        assert (
+            "created_at: 2025-01-01" not in system_content
+        ), "Should filter out created_at metadata"
 
 
 class TestErrorHandlingAndEdgeCases:
@@ -2074,9 +2074,9 @@ class TestErrorHandlingAndEdgeCases:
                 # system message should be updated even with malformed content
                 system_content = worker.worker._system_message.content
                 # the content might be loaded as-is, which is acceptable
-                assert isinstance(system_content, str), (
-                    "System message should still be a string"
-                )
+                assert isinstance(
+                    system_content, str
+                ), "System message should still be a string"
 
         except Exception as e:
             # if it raises an exception, it should be a handled one
@@ -2104,15 +2104,15 @@ class TestErrorHandlingAndEdgeCases:
 
             # should be able to create workflow manager without error
             manager = worker._get_workflow_manager()
-            assert manager is not None, (
-                "Workflow manager should be created without CAMEL_WORKDIR"
-            )
+            assert (
+                manager is not None
+            ), "Workflow manager should be created without CAMEL_WORKDIR"
 
             # context utility should use default directory
             context_util = manager._get_context_utility()
-            assert context_util is not None, (
-                "Context utility should be created with default directory"
-            )
+            assert (
+                context_util is not None
+            ), "Context utility should be created with default directory"
 
             # the context directory should use default "workforce_workflows"
             # (we don't test actual file operations to avoid creating files
@@ -2165,9 +2165,9 @@ class TestErrorHandlingAndEdgeCases:
         accumulator = worker._conversation_accumulator
         assert accumulator is not None
         records = accumulator.memory.retrieve()
-        assert len(records) > 50, (
-            f"Should have many records (>50), got {len(records)}"
-        )
+        assert (
+            len(records) > 50
+        ), f"Should have many records (>50), got {len(records)}"
 
         # attempt to save - should handle gracefully
         mock_summary_result = {
@@ -2342,9 +2342,9 @@ class TestWorkflowVersioning:
 
         assert result2["status"] == "success"
         content2 = workflow_file.read_text()
-        assert "workflow_version: 1" in content2, (
-            "Version should remain 1 when versioning is disabled"
-        )
+        assert (
+            "workflow_version: 1" in content2
+        ), "Version should remain 1 when versioning is disabled"
         assert "workflow_version: 2" not in content2
 
     @pytest.mark.asyncio
