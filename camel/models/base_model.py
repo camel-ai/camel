@@ -33,7 +33,7 @@ from camel.types import (
     ParsedChatCompletion,
     UnifiedModelType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, Constants
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
@@ -103,7 +103,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)

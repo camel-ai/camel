@@ -47,6 +47,16 @@ def add_streaming_content(self, new_content: str):
 
 Add new streaming content.
 
+<a id="camel.agents.chat_agent.StreamContentAccumulator.add_reasoning_content"></a>
+
+### add_reasoning_content
+
+```python
+def add_reasoning_content(self, new_reasoning: str):
+```
+
+Add new reasoning content.
+
 <a id="camel.agents.chat_agent.StreamContentAccumulator.add_tool_status"></a>
 
 ### add_tool_status
@@ -66,6 +76,16 @@ def get_full_content(self):
 ```
 
 Get the complete accumulated content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.get_full_reasoning_content"></a>
+
+### get_full_reasoning_content
+
+```python
+def get_full_reasoning_content(self):
+```
+
+Get the complete accumulated reasoning content.
 
 <a id="camel.agents.chat_agent.StreamContentAccumulator.get_content_with_new_status"></a>
 
@@ -278,14 +298,14 @@ def __init__(
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
-    tool_execution_timeout: Optional[float] = None,
+    tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     mask_tool_output: bool = False,
     pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
     prune_tool_calls_from_memory: bool = False,
     enable_snapshot_clean: bool = False,
     retry_attempts: int = 3,
     retry_delay: float = 1.0,
-    step_timeout: Optional[float] = None,
+    step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     stream_accumulate: bool = True,
     summary_window_ratio: float = 0.6
 ):
@@ -1367,7 +1387,8 @@ def _record_tool_calling(
     args: Dict[str, Any],
     result: Any,
     tool_call_id: str,
-    mask_output: bool = False
+    mask_output: bool = False,
+    extra_content: Optional[Dict[str, Any]] = None
 ):
 ```
 
@@ -1381,6 +1402,7 @@ tool calling record.
 - **result** (Any): The result returned by the tool execution.
 - **tool_call_id** (str): A unique identifier for the tool call.
 - **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **extra_content** (Optional[Dict[str, Any]], optional): Additional content associated with the tool call. (default: :obj:`None`)
 
 **Returns:**
 
@@ -1539,7 +1561,8 @@ def _create_streaming_response_with_accumulator(
     new_content: str,
     step_token_usage: Dict[str, int],
     response_id: str = '',
-    tool_call_records: Optional[List[ToolCallingRecord]] = None
+    tool_call_records: Optional[List[ToolCallingRecord]] = None,
+    reasoning_delta: Optional[str] = None
 ):
 ```
 
