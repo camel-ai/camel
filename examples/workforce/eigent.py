@@ -323,7 +323,8 @@ def search_agent_factory(
         "browser_visit_page",
         "browser_get_page_snapshot",
     ]
-    USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
+    user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR", "")
+    tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
 
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -334,8 +335,8 @@ def search_agent_factory(
         viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="about:blank",
-        user_data_dir=USER_DATA_DIR,
-        log_dir="task2",
+        user_data_dir=user_data_dir,
+        log_dir=tool_log_dir,
     )
 
     # Initialize toolkits
