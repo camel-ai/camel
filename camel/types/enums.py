@@ -50,6 +50,7 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5_1_Instant = "gpt-5.1"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -241,6 +242,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
@@ -836,6 +838,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1530,6 +1533,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,

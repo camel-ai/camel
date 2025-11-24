@@ -209,6 +209,8 @@ class StreamContentAccumulator:
         self.base_content = ""  # Content before tool calls
         self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
+        self.reasoning_content = []  # Accumulated reasoning content
+        self.is_reasoning_phase = True  # Track if we're in reasoning phase
 
     def set_base_content(self, content: str):
         r"""Set the base content (usually empty or pre-tool content)."""
@@ -217,6 +219,13 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
+        self.is_reasoning_phase = (
+            False  # Once we get content, we're past reasoning
+        )
+
+    def add_reasoning_content(self, new_reasoning: str):
+        r"""Add new reasoning content."""
+        self.reasoning_content.append(new_reasoning)
 
     def add_tool_status(self, status_message: str):
         r"""Add a tool status message."""
@@ -228,6 +237,10 @@ class StreamContentAccumulator:
         current = "".join(self.current_content)
         return self.base_content + tool_messages + current
 
+    def get_full_reasoning_content(self) -> str:
+        r"""Get the complete accumulated reasoning content."""
+        return "".join(self.reasoning_content)
+
     def get_content_with_new_status(self, status_message: str) -> str:
         r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
@@ -237,6 +250,8 @@ class StreamContentAccumulator:
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
         self.current_content = []
+        self.reasoning_content = []
+        self.is_reasoning_phase = True
 
 
 class StreamingChatAgentResponse:
@@ -1770,6 +1785,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2047,6 +2063,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -3665,12 +3682,17 @@ class ChatAgent(BaseAgent):
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
+            reasoning_content = getattr(
+                choice.message, "reasoning_content", None
+            )
+
             chat_message = BaseMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=meta_dict,
                 content=choice.message.content or "",
                 parsed=getattr(choice.message, "parsed", None),
+                reasoning_content=reasoning_content,
             )
 
             output_messages.append(chat_message)
@@ -3690,8 +3712,13 @@ class ChatAgent(BaseAgent):
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+                extra_content = getattr(tool_call, 'extra_content', None)
+
                 tool_call_request = ToolCallRequest(
-                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+                    tool_name=tool_name,
+                    args=args,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 tool_call_requests.append(tool_call_request)
 
@@ -3784,7 +3811,12 @@ class ChatAgent(BaseAgent):
             logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            mask_output=mask_flag,
+            extra_content=tool_call_request.extra_content,
         )
 
     async def _aexecute_tool(
@@ -3826,7 +3858,13 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return self._record_tool_calling(
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            extra_content=tool_call_request.extra_content,
+        )
 
     def _record_tool_calling(
         self,
@@ -3835,6 +3873,7 @@ class ChatAgent(BaseAgent):
         result: Any,
         tool_call_id: str,
         mask_output: bool = False,
+        extra_content: Optional[Dict[str, Any]] = None,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -3847,6 +3886,9 @@ class ChatAgent(BaseAgent):
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
+            extra_content (Optional[Dict[str, Any]], optional): Additional
+                content associated with the tool call.
+                (default: :obj:`None`)
 
         Returns:
             ToolCallingRecord: A struct containing information about
@@ -3860,6 +3902,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             args=args,
             tool_call_id=tool_call_id,
+            extra_content=extra_content,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -3870,6 +3913,7 @@ class ChatAgent(BaseAgent):
             result=result,
             tool_call_id=tool_call_id,
             mask_output=mask_output,
+            extra_content=extra_content,
         )
 
         # Use precise timestamps to ensure correct ordering
@@ -4004,7 +4048,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream):
+            if isinstance(response, Stream) or inspect.isgenerator(response):
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4087,6 +4131,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4097,6 +4145,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -4164,10 +4213,33 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
+
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
 
                 # Handle content streaming
                 if delta.content:
@@ -4215,11 +4287,16 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -4228,8 +4305,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -4237,40 +4314,50 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                # We've seen finish_reason but no usage chunk yet; keep
+                # consuming remaining chunks to capture final metadata.
+                continue
 
         return stream_completed, tool_calls_complete
 
@@ -4301,6 +4388,7 @@ class ChatAgent(BaseAgent):
                     'id': '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
+                    'extra_content': None,
                     'complete': False,
                 }
 
@@ -4324,6 +4412,14 @@ class ChatAgent(BaseAgent):
                     tool_call_entry['function']['arguments'] += (
                         delta_tool_call.function.arguments
                     )
+            # Handle extra_content if present
+            if (
+                hasattr(delta_tool_call, 'extra_content')
+                and delta_tool_call.extra_content
+            ):
+                tool_call_entry['extra_content'] = (
+                    delta_tool_call.extra_content
+                )
 
         # Check if any tool calls are complete
         any_complete = False
@@ -4428,6 +4524,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
@@ -4443,6 +4540,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         args=args,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Then create the tool response message
@@ -4454,6 +4552,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Record both messages with precise timestamps to ensure
@@ -4499,6 +4598,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
@@ -4530,6 +4630,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 # Create the tool call message
@@ -4541,6 +4642,7 @@ class ChatAgent(BaseAgent):
                     func_name=function_name,
                     args=args,
                     tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 assist_ts = time.time_ns() / 1_000_000_000
                 self.update_memory(
@@ -4587,6 +4689,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4620,6 +4723,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4844,6 +4948,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4854,6 +4962,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -4929,6 +5038,11 @@ class ChatAgent(BaseAgent):
                         "arguments": tool_call_data["function"]["arguments"],
                     },
                 }
+                # Include extra_content if present
+                if tool_call_data.get('extra_content'):
+                    tool_call_dict["extra_content"] = tool_call_data[
+                        "extra_content"
+                    ]
                 tool_calls_list.append(tool_call_dict)
 
         # Create an assistant message with tool calls
@@ -4959,10 +5073,33 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         async for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
+
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
 
                 # Handle content streaming
                 if delta.content:
@@ -5025,8 +5162,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -5034,40 +5171,48 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                continue
 
         # Yield the final status as a tuple
         yield (stream_completed, tool_calls_complete)
@@ -5157,21 +5302,42 @@ class ChatAgent(BaseAgent):
         step_token_usage: Dict[str, int],
         response_id: str = "",
         tool_call_records: Optional[List[ToolCallingRecord]] = None,
+        reasoning_delta: Optional[str] = None,
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
         # Add new content; only build full content when needed
-        accumulator.add_streaming_content(new_content)
+        if new_content:
+            accumulator.add_streaming_content(new_content)
+
         if self.stream_accumulate:
             message_content = accumulator.get_full_content()
         else:
             message_content = new_content
 
+        # Build meta_dict with reasoning information
+        meta_dict: Dict[str, Any] = {}
+
+        # Add reasoning content info
+        full_reasoning = accumulator.get_full_reasoning_content()
+        reasoning_payload: Optional[str] = None
+        if full_reasoning:
+            reasoning_payload = (
+                full_reasoning
+                if self.stream_accumulate
+                else reasoning_delta or ""
+            )
+            if reasoning_payload:
+                meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
+            else:
+                reasoning_payload = None
+
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
-            meta_dict={},
+            meta_dict=meta_dict,
             content=message_content,
+            reasoning_content=reasoning_payload,
         )
 
         return ChatAgentResponse(
