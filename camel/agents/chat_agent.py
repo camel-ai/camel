@@ -1679,76 +1679,12 @@ class ChatAgent(BaseAgent):
                 result["status"] = status_message
                 return result
 
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
+            # build conversation text using shared helper
+            conversation_text, user_messages = (
+                self._build_conversation_text_from_messages(
+                    messages, include_summaries
+                )
+            )
 
             if not conversation_text:
                 status_message = (
@@ -1887,6 +1823,216 @@ class ChatAgent(BaseAgent):
             result["status"] = error_message
             return result
 
+    def _build_conversation_text_from_messages(
+        self,
+        messages: List[Any],
+        include_summaries: bool = False,
+    ) -> tuple[str, List[str]]:
+        r"""Build conversation text from messages for summarization.
+
+        This is a shared helper method that converts messages to a formatted
+        conversation text string, handling tool calls, tool results, and
+        regular messages.
+
+        Args:
+            messages (List[Any]): List of messages to convert.
+            include_summaries (bool): Whether to include messages starting
+                with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+
+        Returns:
+            tuple[str, List[str]]: A tuple containing:
+                - Formatted conversation text
+                - List of user messages extracted from the conversation
+        """
+        # Convert messages to conversation text
+        conversation_lines = []
+        user_messages: List[str] = []
+        for message in messages:
+            role = message.get('role', 'unknown')
+            content = message.get('content', '')
+
+            # Skip summary messages if include_summaries is False
+            if not include_summaries and isinstance(content, str):
+                # Check if this is a summary message by looking for marker
+                if content.startswith('[CONTEXT_SUMMARY]'):
+                    continue
+
+            # Handle tool call messages (assistant calling tools)
+            tool_calls = message.get('tool_calls')
+            if tool_calls and isinstance(tool_calls, (list, tuple)):
+                for tool_call in tool_calls:
+                    # Handle both dict and object formats
+                    if isinstance(tool_call, dict):
+                        func_name = tool_call.get('function', {}).get(
+                            'name', 'unknown_tool'
+                        )
+                        func_args_str = tool_call.get('function', {}).get(
+                            'arguments', '{}'
+                        )
+                    else:
+                        # Handle object format (Pydantic or similar)
+                        func_name = getattr(
+                            getattr(tool_call, 'function', None),
+                            'name',
+                            'unknown_tool',
+                        )
+                        func_args_str = getattr(
+                            getattr(tool_call, 'function', None),
+                            'arguments',
+                            '{}',
+                        )
+
+                    # Parse and format arguments for readability
+                    try:
+                        import json
+
+                        args_dict = json.loads(func_args_str)
+                        args_formatted = ', '.join(
+                            f"{k}={v}" for k, v in args_dict.items()
+                        )
+                    except (json.JSONDecodeError, ValueError, TypeError):
+                        args_formatted = func_args_str
+
+                    conversation_lines.append(
+                        f"[TOOL CALL] {func_name}({args_formatted})"
+                    )
+
+            # Handle tool response messages
+            elif role == 'tool':
+                tool_name = message.get('name', 'unknown_tool')
+                if not content:
+                    content = str(message.get('content', ''))
+                conversation_lines.append(
+                    f"[TOOL RESULT] {tool_name} → {content}"
+                )
+
+            # Handle regular content messages (user/assistant/system)
+            elif content:
+                content = str(content)
+                if role == 'user':
+                    user_messages.append(content)
+                conversation_lines.append(f"{role}: {content}")
+
+        return "\n".join(conversation_lines).strip(), user_messages
+
+    async def generate_workflow_summary_async(
+        self,
+        summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+        include_summaries: bool = False,
+        conversation_accumulator: Optional['ChatAgent'] = None,
+    ) -> Dict[str, Any]:
+        r"""Generate a workflow summary without saving to disk.
+
+        This method generates a workflow summary by calling a dedicated
+        summarizer agent. It does NOT save to disk - only generates the
+        summary content and structured output. Use this when you need to
+        inspect the summary (e.g., extract agent_title) before determining
+        where to save it.
+
+        Args:
+            summary_prompt (Optional[str]): Custom prompt for the summarizer.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure (e.g., WorkflowSummary).
+            include_summaries (bool): Whether to include previously generated
+                summaries. (default: :obj:`False`)
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. If provided,
+                memory will be retrieved from this agent instead of self.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with:
+                - structured_summary: Pydantic model instance
+                - summary_content: Raw text content
+                - status: "success" or error message
+
+        """
+        result: Dict[str, Any] = {
+            "structured_summary": None,
+            "summary_content": "",
+            "status": "",
+        }
+
+        try:
+            # get conversation from accumulator or self
+            source_agent = (
+                conversation_accumulator if conversation_accumulator else self
+            )
+            messages, _ = source_agent.memory.get_context()
+
+            if not messages:
+                result["status"] = "No conversation context available"
+                return result
+
+            # build conversation text using shared helper
+            conversation_text, _ = self._build_conversation_text_from_messages(
+                messages, include_summaries
+            )
+
+            if not conversation_text:
+                result["status"] = "Conversation context is empty"
+                return result
+
+            # create or reuse summarizer agent
+            if self._context_summary_agent is None:
+                self._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
+                    ),
+                    model=self.model_backend,
+                    agent_id=f"{self.agent_id}_context_summarizer",
+                )
+            else:
+                self._context_summary_agent.reset()
+
+            # prepare prompt
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
+                )
+            else:
+                prompt_text = build_default_summary_prompt(conversation_text)
+
+            # call summarizer agent
+            if response_format:
+                response = await self._context_summary_agent.astep(
+                    prompt_text, response_format=response_format
+                )
+            else:
+                response = await self._context_summary_agent.astep(prompt_text)
+
+            # handle streaming response
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                response = await response
+
+            if not response.msgs:
+                result["status"] = "Failed to generate summary"
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            result.update(
+                {
+                    "structured_summary": structured_output,
+                    "summary_content": summary_content,
+                    "status": "success",
+                }
+            )
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to generate summary: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
+
     async def asummarize(
         self,
         filename: Optional[str] = None,
@@ -1924,6 +2070,7 @@ class ChatAgent(BaseAgent):
                 (full compression). (default: :obj:`False`)
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
+
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
@@ -1957,76 +2104,12 @@ class ChatAgent(BaseAgent):
                 result["status"] = status_message
                 return result
 
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
+            # build conversation text using shared helper
+            conversation_text, user_messages = (
+                self._build_conversation_text_from_messages(
+                    messages, include_summaries
+                )
+            )
 
             if not conversation_text:
                 status_message = (
