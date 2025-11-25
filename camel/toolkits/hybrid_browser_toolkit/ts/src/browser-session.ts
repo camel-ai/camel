@@ -398,7 +398,8 @@ export class HybridBrowserSession {
     const filteredLines: string[] = [];
     for (const line of lines) {
       const refMatch = line.match(/\[ref=([^\]]+)\]/);
-      const level = (line.match(/^(\s*)/) as RegExpMatchArray)[1].length / tabSize;
+      const indentMatch = line.match(/^(\s*)/);
+      const level = indentMatch ? indentMatch[1].length / tabSize : 0;
       const prevLevel = levelStack[levelStack.length - 1] ?? 0;
       const levelDiff = level - prevLevel;
       // Pop stack when going up to the parent level
