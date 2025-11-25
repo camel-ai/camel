@@ -84,8 +84,12 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
-        install_dependencies (List): A list of user specified libraries
-            to install.
+        install_dependencies (Optional[List[str]]): A list of Python packages
+            to install during initialization. The installation is synchronous
+            and will block the initialization process. For the local backend,
+            installation has a 5-minute timeout. If installation fails, a
+            RuntimeError will be raised. Defaults to None (no packages to
+            install).
     """
 
     def __init__(
@@ -275,11 +279,34 @@ class TerminalToolkit(BaseToolkit):
                 shlex.quote(p) for p in self.install_dependencies
             )
             install_cmd = f'sh -lc "pip install {pkg_str}"'
-            exec_id = self.docker_api_client.exec_create(
-                self.container.id, install_cmd
-            )["Id"]
-            log = self.docker_api_client.exec_start(exec_id)
-            logger.info(f"Package installation output:\n{log}")
+
+            try:
+                exec_id = self.docker_api_client.exec_create(
+                    self.container.id, install_cmd
+                )["Id"]
+                log = self.docker_api_client.exec_start(exec_id)
+                logger.info(f"Package installation output:\n{log}")
+
+                # Check exit code to ensure installation succeeded
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                if exec_info['ExitCode'] != 0:
+                    error_msg = (
+                        f"Failed to install dependencies in Docker: "
+                        f"{log.decode('utf-8', errors='ignore')}"
+                    )
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+
+                logger.info(
+                    "Successfully installed all dependencies in Docker."
+                )
+            except Exception as e:
+                if not isinstance(e, RuntimeError):
+                    logger.error(f"Docker dependency installation error: {e}")
+                    raise RuntimeError(
+                        f"Docker dependency installation error: {e}"
+                    ) from e
+                raise
 
         else:
             pip_cmd = [
