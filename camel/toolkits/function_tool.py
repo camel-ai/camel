@@ -18,6 +18,8 @@ import textwrap
 import warnings
 from inspect import Parameter, getsource, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
+import asyncio
+from functools import partial
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
@@ -495,7 +497,9 @@ class FunctionTool:
         if self.is_async:
             return await self.func(*args, **kwargs)
         else:
-            return self.func(*args, **kwargs)
+            # Ensure fully async behavior for sync functions
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(None, partial(self.func, *args, **kwargs))
 
     @property
     def is_async(self) -> bool:
