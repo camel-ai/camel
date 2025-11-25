@@ -17,6 +17,8 @@ from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
+from camel.toolkits import TerminalToolkit
+import os
 
 """
 Claude Sonnet 4.5 Example
@@ -33,76 +35,108 @@ model = ModelFactory.create(
 )
 
 # Define system message
-sys_msg = "You are a helpful AI assistant powered by Claude Sonnet 4.5."
+sys_msg = "You are a helpful AI assistant"
 
-# Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+# # Set agent
+# camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-print(f"Model Type: {model.model_type}")
-print(f"Model Platform: {ModelPlatformType.ANTHROPIC}")
-print(f"Is Anthropic: {model.model_type.is_anthropic}")
-print(f"Token Limit: {model.model_type.token_limit}")
+# print(f"Model Type: {model.model_type}")
+# print(f"Model Platform: {ModelPlatformType.ANTHROPIC}")
+# print(f"Is Anthropic: {model.model_type.is_anthropic}")
+# print(f"Token Limit: {model.model_type.token_limit}")
 
-# Test basic conversation
-user_msg = """Hello Claude Sonnet 4.5! Can you tell me about your \
-capabilities and how you differ from previous versions?"""
+# # Test basic conversation
+# user_msg = """Hello Claude Sonnet 4.5! Can you tell me about your \
+# capabilities and how you differ from previous versions?"""
 
-print(f"\nUser: {user_msg}")
-print("Assistant:", end=" ")
+# print(f"\nUser: {user_msg}")
+# print("Assistant:", end=" ")
 
-try:
-    response = camel_agent.step(user_msg)
-    print(response.msgs[0].content)
-    print("\n✅ Basic conversation test PASSED")
-except Exception as e:
-    print(f"\n❌ Basic conversation test FAILED: {e}")
-
-
-# Test with tool calling
-def calculate_circle_area(radius: float) -> float:
-    """Calculate the area of a circle given its radius."""
-    import math
-
-    return math.pi * radius * radius
+# try:
+#     response = camel_agent.step(user_msg)
+#     print(response.msgs[0].content)
+#     print("\n✅ Basic conversation test PASSED")
+# except Exception as e:
+#     print(f"\n❌ Basic conversation test FAILED: {e}")
 
 
-# Create agent with tools
-tool_agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    tools=[FunctionTool(calculate_circle_area)],
+# # Test with tool calling
+# def calculate_circle_area(radius: float) -> float:
+#     """Calculate the area of a circle given its radius."""
+#     import math
+
+#     return math.pi * radius * radius
+
+
+# # Create agent with tools
+# tool_agent = ChatAgent(
+#     system_message=sys_msg,
+#     model=model,
+#     tools=[FunctionTool(calculate_circle_area)],
+# )
+
+# print("\n" + "=" * 50)
+# print("Testing Claude Sonnet 4.5 with tool calling:")
+
+# user_msg = (
+#     "Please use the calculate_circle_area tool to find the area "
+#     "of a circle with radius 5."
+# )
+
+# print(f"\nUser: {user_msg}")
+# print("Assistant:", end=" ")
+
+# try:
+#     response = tool_agent.step(user_msg)
+#     print(response.msgs[0].content)
+
+#     # Check if tool was called
+#     if response.info and response.info.get("tool_calls"):
+#         print("\n✅ Tool calling test PASSED")
+#         print(f"Tool calls: {response.info['tool_calls']}")
+#     else:
+#         print(
+#             "\n⚠️  Tool calling may not have been used (expected for this test)"
+#         )
+
+# except Exception as e:
+#     print(f"\n❌ Tool calling test FAILED: {e}")
+
+# print("\n" + "=" * 50)
+# print("Claude Sonnet 4.5 integration test completed!")
+# print(
+#     "If you see this message without errors, "
+#     "the integration is working correctly."
+# )
+
+
+
+
+# Get current script directory
+base_dir = os.path.dirname(os.path.abspath(__file__))
+# Define workspace directory for the toolkit
+workspace_dir = os.path.join(
+    os.path.dirname(os.path.dirname(base_dir)), "workspace"
 )
 
-print("\n" + "=" * 50)
-print("Testing Claude Sonnet 4.5 with tool calling:")
-
-user_msg = (
-    "Please use the calculate_circle_area tool to find the area "
-    "of a circle with radius 5."
+# Set model config
+tools = [
+    *TerminalToolkit(working_directory=workspace_dir).get_tools(),
+]
+# Create Claude Opus 4.5 model
+model_opus_4_5 = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_OPUS_4_5,
+    model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
 
-print(f"\nUser: {user_msg}")
-print("Assistant:", end=" ")
+user_msg = """
+Create an interactive HTML webpage that allows users to play with a 
+Rubik's Cube, and saved it to local file.
+"""
 
-try:
-    response = tool_agent.step(user_msg)
-    print(response.msgs[0].content)
-
-    # Check if tool was called
-    if response.info and response.info.get("tool_calls"):
-        print("\n✅ Tool calling test PASSED")
-        print(f"Tool calls: {response.info['tool_calls']}")
-    else:
-        print(
-            "\n⚠️  Tool calling may not have been used (expected for this test)"
-        )
-
-except Exception as e:
-    print(f"\n❌ Tool calling test FAILED: {e}")
-
-print("\n" + "=" * 50)
-print("Claude Sonnet 4.5 integration test completed!")
-print(
-    "If you see this message without errors, "
-    "the integration is working correctly."
+camel_agent_pro = ChatAgent(
+    system_message=sys_msg, model=model_opus_4_5, tools=tools
 )
+response_pro = camel_agent_pro.step(user_msg)
+print(response_pro.msgs[0].content)
