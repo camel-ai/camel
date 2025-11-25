@@ -739,33 +739,50 @@ export class HybridBrowserSession {
           } catch (clickError) {
             console.log(`Warning: Failed to click element: ${clickError}`);
           }
-        } else {    
+        } else {
+          // Try to fill the element, with fallback to click-then-fill strategy
           try {
+            let fillSuccess = false;
+
             try {
-              // Try to fill the element first
+              // Strategy 1: Try to fill directly without clicking (for modern inputs like Google Flights combobox)
               await element.fill(text, { timeout: 3000, force: true });
-            } catch (fillError) {
+              fillSuccess = true;
+              console.log(`Filled element ref=${ref} directly without clicking`);
+            } catch (directFillError) {
+              // Strategy 2: Click first, then fill (for traditional inputs that need activation)
+              console.log(`Direct fill failed for ref=${ref}, trying click-then-fill strategy`);
               try {
-                // Try clicking first then filling
                 await element.click({ force: true });
                 console.log(`Clicked element ref=${ref} before typing`);
               } catch (clickError) {
                 console.log(`Warning: Failed to click element before typing: ${clickError}`);
               }
-              await element.fill(text, { timeout: 3000, force: true });
-            }
-            // If this element might show dropdown, wait and check for new elements
-            if (shouldCheckDiff) {
-              await page.waitForTimeout(300);
-              const snapshotAfter = await (page as any)._snapshotForAI();
-              const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
-              
-              if (diffSnapshot && diffSnapshot.trim() !== '') {
-                return { success: true, diffSnapshot };
+
+              try {
+                await element.fill(text, { timeout: 3000, force: true });
+                fillSuccess = true;
+                console.log(`Filled element ref=${ref} after clicking`);
+              } catch (secondFillError) {
+                // Will be handled by outer catch block below
+                throw secondFillError;
               }
             }
-            
-            return { success: true };
+
+            if (fillSuccess) {
+              // If this element might show dropdown, wait and check for new elements
+              if (shouldCheckDiff) {
+                await page.waitForTimeout(300);
+                const snapshotAfter = await (page as any)._snapshotForAI();
+                const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+
+                if (diffSnapshot && diffSnapshot.trim() !== '') {
+                  return { success: true, diffSnapshot };
+                }
+              }
+
+              return { success: true };
+            }
           } catch (fillError: any) {
             // Log the error for debugging
             console.log(`Fill error for ref ${ref}: ${fillError.message}`);
