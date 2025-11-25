@@ -1,5 +1,56 @@
 <a id="camel.societies.workforce.utils"></a>
 
+<a id="camel.societies.workforce.utils.is_generic_role_name"></a>
+
+## is_generic_role_name
+
+```python
+def is_generic_role_name(role_name: str):
+```
+
+Check if a role name is generic and should trigger fallback logic.
+
+Generic role names are common, non-specific identifiers that don't
+provide meaningful information about an agent's actual purpose.
+When a role name is generic, fallback logic should be used to find
+a more specific identifier (e.g., from LLM-generated agent_title
+or description).
+
+**Parameters:**
+
+- **role_name** (str): The role name to check (will be converted to lowercase for case-insensitive comparison).
+
+**Returns:**
+
+  bool: True if the role name is generic, False otherwise.
+
+<a id="camel.societies.workforce.utils.WorkflowMetadata"></a>
+
+## WorkflowMetadata
+
+```python
+class WorkflowMetadata(BaseModel):
+```
+
+Pydantic model for workflow metadata tracking.
+
+This model defines the formal schema for workflow metadata that tracks
+versioning, timestamps, and contextual information about saved workflows.
+Used to maintain workflow history and enable proper version management.
+
+<a id="camel.societies.workforce.utils.WorkflowConfig"></a>
+
+## WorkflowConfig
+
+```python
+class WorkflowConfig(BaseModel):
+```
+
+Configuration for workflow memory management.
+
+Centralizes all workflow-related configuration options to avoid scattered
+settings across multiple files and methods.
+
 <a id="camel.societies.workforce.utils.WorkerConf"></a>
 
 ## WorkerConf
