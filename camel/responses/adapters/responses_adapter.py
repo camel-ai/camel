@@ -47,13 +47,6 @@ def responses_to_camel_response(
     audio_transcript: Optional[str] = None
 
     text = getattr(resp, "output_text", None)
-    # If text is present directly, we might still have audio in output?
-    # But usually output_text is a convenience field.
-    # Let's check output list anyway for audio if we haven't found it?
-    # Or just follow the existing pattern: if not text, look in output.
-    # But audio might be there even if text is there (e.g. multimodal).
-
-    # We'll iterate output to find text (if not present) and audio.
     parts: List[str] = []
     output = getattr(resp, "output", None)
     if isinstance(output, list):
@@ -84,10 +77,6 @@ def responses_to_camel_response(
                             if transcript:
                                 audio_transcript = transcript
                     elif chunk_type == "function_call":
-                        # Handle tool calls (Responses API uses 'function_call' type for tools currently)
-                        # It seems they are top-level items in output list, not chunks in content list?
-                        # Wait, the debug output showed output list containing ResponseFunctionToolCall.
-                        # So it's an item in output, NOT in content list of an item.
                         pass
 
     # Check for tool calls in the output list directly
@@ -159,8 +148,6 @@ def responses_to_camel_response(
         parsed=parsed_obj if isinstance(parsed_obj, BaseModel) else None,
     )
 
-    # If we have tool calls, we should also attach them to the message meta_dict
-    # so that message.to_openai_assistant_message() works correctly
     if tool_call_requests:
         # OpenAI message format for tool_calls
         openai_tool_calls = []
@@ -218,31 +205,9 @@ def responses_stream_to_chunks(
     This allows existing streaming consumers (like ChatAgent) to consume
     Responses API streams without modification.
     """
-    # We need to track state because Responses events are granular
-    # and we need to emit ChatCompletionChunk which expects certain structure.
-
-    # We'll use a dummy ID and model if not available immediately,
-    # but usually the first event might not have them.
-    # We can update them as we go.
-
     response_id = ""
     model = ""
     created = int(time.time())
-
-    # Track tool calls by index
-    # Responses API output_index seems to correspond to the item index in output list.
-    # If we have multiple outputs, we need to map them to choices?
-    # Usually ChatCompletion has one choice for stream unless n>1.
-    # Responses API 'output' list can have multiple items (e.g. text then tool call).
-    # We will map all output items to choice index 0 for now, as they are part of the same generation sequence?
-    # Or should we map output_index to choice_index?
-    # In ChatCompletion, multiple choices usually mean n>1 (alternative generations).
-    # In Responses API, output list is the sequence of content (multimodal).
-    # So they should all belong to choice 0, but with different content parts?
-    # ChatCompletionChunk delta has 'content' (string) and 'tool_calls' (list).
-    # It doesn't support multiple content parts in delta easily unless we concatenate text.
-
-    # For tool calls, they are separate fields in delta.
 
     for chunk in stream:
         chunk_type = getattr(chunk, "type", None)
@@ -334,12 +299,9 @@ def responses_stream_to_chunks(
             )
 
         elif chunk_type == "response.output_item.done":
-            # Item finished. We might want to signal finish_reason if it's the last one?
-            # But we don't know if it's the last one until response.completed.
             pass
 
         elif chunk_type == "response.completed":
-            # Final chunk with finish reason
             yield ChatCompletionChunk(
                 id=response_id,
                 choices=[

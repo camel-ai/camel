@@ -26,7 +26,7 @@ from camel.core.messages import (
     openai_messages_to_camel,
 )
 from camel.messages import OpenAIMessage
-from camel.models._tool_utils import convert_openai_tools_to_responses_format
+from camel.models._utils import convert_openai_tools_to_responses_format
 from camel.models.base_model import BaseModelBackend
 from camel.responses.adapters.responses_adapter import (
     responses_stream_to_chunks,
