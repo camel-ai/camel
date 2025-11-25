@@ -301,36 +301,46 @@ class TerminalToolkit(BaseToolkit):
                     start_time = time.time()
                     chunks: list[str] = []
 
-                    # stream=True gives us a generator of bytes chunks
-                    for chunk in self.docker_api_client.exec_start(
-                        exec_id, stream=True
-                    ):
-                        # Accumulate output
-                        if chunk:
-                            chunks.append(chunk.decode("utf-8", errors="ignore"))
+                    def stream_output():
+                        """Inner function to run the blocking stream in a background thread."""
+                        try:
+                            # This loop blocks on socket reads, but now it's in a thread
+                            for chunk in self.docker_api_client.exec_start(exec_id, stream=True):
+                                if chunk:
+                                    chunks.append(chunk.decode("utf-8", errors="ignore"))
+                        except Exception:
+                            # Swallow errors in the thread so we don't crash the main app silently
+                            pass
 
-                        # Check timeout
-                        elapsed = time.time() - start_time
-                        if self.timeout is not None and elapsed > self.timeout:
-                            try:
-                                # If still running, stop the exec process
-                                info = self.docker_api_client.exec_inspect(exec_id)
-                                if info.get("Running"):
-                                    # APIClient doesn't expose exec_stop directly in older versions,
-                                    # so we kill via 'docker exec' equivalent signal by restarting the container exec.
-                                    # The recommended pattern is to send SIGKILL via 'docker kill' on PID in the container,
-                                    # but here we use a best-effort stop by restarting the container exec.
-                                    # If your docker-py version has exec_stop, prefer:
-                                    #   self.docker_api_client.exec_stop(exec_id)
-                                    self.docker_api_client.exec_start(exec_id, detach=True, tty=False)
-                            except Exception:
-                                # Best-effort cleanup; ignore failures here
-                                pass
-                            # Raise to be handled by the TimeoutExpired except block
-                            raise subprocess.TimeoutExpired(
-                                cmd=command,
-                                timeout=self.timeout
-                            )
+                    # 1. Start the blocking operation in a separate thread
+                    stream_thread = threading.Thread(target=stream_output, daemon=True)
+                    stream_thread.start()
+
+                    # 2. Wait for the thread to finish, up to self.timeout
+                    # If self.timeout is None, this waits indefinitely (standard behavior)
+                    stream_thread.join(timeout=self.timeout)
+
+                    # 3. Check if the thread is still alive (meaning we timed out)
+                    if stream_thread.is_alive():
+                        # --- TIMEOUT HANDLING ---
+                        
+                        # Attempt to kill the process inside the container
+                        try:
+                            inspect = self.docker_api_client.exec_inspect(exec_id)
+                            pid = inspect.get("Pid") or inspect.get("pid")
+                            if pid:
+                                # We run 'kill -9' inside the container targeting the specific PID of the exec
+                                kill_cmd = f"kill -9 {pid}"
+                                kill_exec = self.docker_api_client.exec_create(self.container.id, kill_cmd)
+                                self.docker_api_client.exec_start(kill_exec["Id"])
+                        except Exception:
+                            # Best effort cleanup
+                            print(f"Warning: Failed to kill timed-out process in container. CMD: {command}")
+
+                        raise subprocess.TimeoutExpired(
+                            cmd=command,
+                            timeout=self.timeout
+                        )
 
                     output = "".join(chunks)
 
