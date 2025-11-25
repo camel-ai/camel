@@ -84,12 +84,8 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
-        install_dependencies (Optional[List[str]]): A list of Python packages
-            to install during initialization. The installation is synchronous
-            and will block the initialization process. For the local backend,
-            installation has a 5-minute timeout. If installation fails, a
-            RuntimeError will be raised. Defaults to None (no packages to
-            install).
+        install_dependencies (List): A list of user specified libraries
+            to install.
     """
 
     def __init__(
