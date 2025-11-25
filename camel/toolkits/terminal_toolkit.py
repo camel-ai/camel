@@ -290,14 +290,57 @@ class TerminalToolkit(BaseToolkit):
                     stderr = result.stderr or ""
                     output = stdout + (f"\nSTDERR:\n{stderr}" if stderr else "")
                 else:
-                    # DOCKER BLOCKING
-                    exec_instance = self.docker_api_client.exec_create(self.container.id, command, workdir=self.working_dir)
-                    exec_output = self.docker_api_client.exec_start(exec_instance['Id'])
-                    output = exec_output.decode('utf-8', errors='ignore')
-                
+                    # DOCKER BLOCKING with timeout
+                    exec_instance = self.docker_api_client.exec_create(
+                        self.container.id,
+                        command,
+                        workdir=self.working_dir
+                    )
+                    exec_id = exec_instance["Id"]
+
+                    start_time = time.time()
+                    chunks: list[str] = []
+
+                    # stream=True gives us a generator of bytes chunks
+                    for chunk in self.docker_api_client.exec_start(
+                        exec_id, stream=True
+                    ):
+                        # Accumulate output
+                        if chunk:
+                            chunks.append(chunk.decode("utf-8", errors="ignore"))
+
+                        # Check timeout
+                        elapsed = time.time() - start_time
+                        if self.timeout is not None and elapsed > self.timeout:
+                            try:
+                                # If still running, stop the exec process
+                                info = self.docker_api_client.exec_inspect(exec_id)
+                                if info.get("Running"):
+                                    # APIClient doesn't expose exec_stop directly in older versions,
+                                    # so we kill via 'docker exec' equivalent signal by restarting the container exec.
+                                    # The recommended pattern is to send SIGKILL via 'docker kill' on PID in the container,
+                                    # but here we use a best-effort stop by restarting the container exec.
+                                    # If your docker-py version has exec_stop, prefer:
+                                    #   self.docker_api_client.exec_stop(exec_id)
+                                    self.docker_api_client.exec_start(exec_id, detach=True, tty=False)
+                            except Exception:
+                                # Best-effort cleanup; ignore failures here
+                                pass
+                            # Raise to be handled by the TimeoutExpired except block
+                            raise subprocess.TimeoutExpired(
+                                cmd=command,
+                                timeout=self.timeout
+                            )
+
+                    output = "".join(chunks)
+
                     if len(output) > 1000:
                         # return truncated first 500 and last 500 characters
-                        output = output[:500] + "\n... [WARNING: OUTPUT truncated] ...\n" + output[-500:]
+                        output = (
+                            output[:500]
+                            + "\n... [WARNING: OUTPUT truncated] ...\n"
+                            + output[-500:]
+                        )
                 log_entry += f"--- Output ---\n{output}\n"
                 return output
             except subprocess.TimeoutExpired:
@@ -351,6 +394,13 @@ class TerminalToolkit(BaseToolkit):
 
                 # time.sleep(0.1)
                 initial_output = self._collect_output_until_idle(session_id)
+
+                if len(initial_output) > 1000:
+                    initial_output = (
+                        initial_output[:500]
+                        + "\n... [WARNING: OUTPUT truncated] ...\n"
+                        + initial_output[-500:]
+                    )
                 
                 return f"Session started with ID: {session_id}\n\n[Initial Output]:\n{initial_output}"
 
@@ -445,7 +495,14 @@ class TerminalToolkit(BaseToolkit):
         except Empty:
             pass
         
-        return "".join(output)
+        output = "".join(output)
+        if len(output) > 1000:
+            output = (
+                output[:500]
+                + "\n... [WARNING: OUTPUT truncated] ...\n"
+                + output[-500:]
+            )
+        return output
 
 
     def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
