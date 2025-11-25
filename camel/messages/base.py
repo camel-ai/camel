@@ -71,8 +71,10 @@ class BaseMessage:
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. (default: :obj:`auto`)
-        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
+        parsed (Optional[Union[Type[BaseModel], dict]]): Optional object which
             is parsed from the content. (default: :obj:`None`)
+        reasoning_content (Optional[str]): Optional reasoning trace associated
+            with the message. (default: :obj:`None`)
     """
 
     role_name: str
@@ -85,6 +87,7 @@ class BaseMessage:
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "auto"
     parsed: Optional[Union[BaseModel, dict]] = None
+    reasoning_content: Optional[str] = None
 
     @classmethod
     def make_user_message(
@@ -178,6 +181,32 @@ class BaseMessage:
             OpenAIVisionDetailType(video_detail).value,
         )
 
+    @classmethod
+    def make_system_message(
+        cls,
+        content: str,
+        role_name: str = "System",
+        meta_dict: Optional[Dict[str, str]] = None,
+    ) -> "BaseMessage":
+        r"""Create a new system message.
+
+        Args:
+            content (str): The content of the system message.
+            role_name (str): The name of the system role.
+                (default: :obj:`"System"`)
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+
+        Returns:
+            BaseMessage: The new system message.
+        """
+        return cls(
+            role_name,
+            RoleType.SYSTEM,
+            meta_dict,
+            content,
+        )
+
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.
@@ -193,6 +222,12 @@ class BaseMessage:
             role_type=self.role_type,
             meta_dict=self.meta_dict,
             content=content,
+            video_bytes=self.video_bytes,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_detail=self.video_detail,
+            parsed=self.parsed,
+            reasoning_content=self.reasoning_content,
         )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:

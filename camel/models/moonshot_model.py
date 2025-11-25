@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -19,6 +20,7 @@ from openai import AsyncStream
 from pydantic import BaseModel
 
 from camel.configs import MoonshotConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -33,6 +35,8 @@ from camel.utils import (
     get_current_agent_session_id,
     update_langfuse_trace,
 )
+
+logger = get_logger(__name__)
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
@@ -130,8 +134,6 @@ class MoonshotModel(OpenAICompatibleModel):
         Returns:
             Dict[str, Any]: The prepared request configuration.
         """
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
 
         if tools:
@@ -159,7 +161,6 @@ class MoonshotModel(OpenAICompatibleModel):
         Returns:
             List[Dict[str, Any]]: Cleaned tool schemas.
         """
-        import copy
 
         def remove_null_from_schema(schema: Any) -> Any:
             """Recursively remove null types from schema."""
@@ -179,6 +180,12 @@ class MoonshotModel(OpenAICompatibleModel):
                             result[key] = filtered_types
                         else:
                             # All were null, use string as fallback
+                            logger.warning(
+                                "All types in tool schema type array "
+                                "were null, falling back to 'string' "
+                                "type for Moonshot API compatibility. "
+                                "Original tool schema may need review."
+                            )
                             result[key] = 'string'
                     elif key == 'anyOf':
                         # Handle anyOf with null types
@@ -200,6 +207,12 @@ class MoonshotModel(OpenAICompatibleModel):
                             ]
                         else:
                             # All were null, return string type as fallback
+                            logger.warning(
+                                "All types in tool schema anyOf were null, "
+                                "falling back to 'string' type for "
+                                "Moonshot API compatibility. Original "
+                                "tool schema may need review."
+                            )
                             return {"type": "string"}
                     else:
                         # Recursively process other values

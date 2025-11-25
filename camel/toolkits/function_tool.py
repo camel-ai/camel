@@ -482,10 +482,15 @@ class FunctionTool:
                 result = self.func(*args, **kwargs)
                 return result
             except Exception as e:
+                parts = []
+                if args:
+                    parts.append(f"args={args}")
+                if kwargs:
+                    parts.append(f"kwargs={kwargs}")
+                args_str = ", ".join(parts) if parts else "no arguments"
                 raise ValueError(
                     f"Execution of function {self.func.__name__} failed with "
-                    f"arguments {args} and {kwargs}. "
-                    f"Error: {e}"
+                    f"{args_str}. Error: {e}"
                 )
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
