@@ -41,7 +41,7 @@ from .workforce_callback import WorkforceCallback
 from .workforce_metrics import WorkforceMetrics
 
 if TYPE_CHECKING:
-    from camel.utils.context_utils import ContextUtility
+    from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 from colorama import Fore
 
@@ -576,6 +576,54 @@ class Workforce(BaseNode):
                 session_id=session_id
             )
         return self._shared_context_utility
+
+    def _get_role_identifier(
+        self,
+        worker: ChatAgent,
+        description: str,
+        workflow_summary: Optional['WorkflowSummary'] = None,
+    ) -> str:
+        r"""Extract role identifier for organizing workflows.
+
+        Uses priority fallback: role_name → agent_title (from
+        WorkflowSummary) → sanitized description.
+
+        Args:
+            worker (ChatAgent): The worker agent to extract role from.
+            description (str): Worker description to use as fallback.
+            workflow_summary (Optional[WorkflowSummary]): Optional
+                WorkflowSummary object that may contain agent_title field.
+
+        Returns:
+            str: Role identifier for organizing workflows.
+        """
+        from camel.societies.workforce.utils import is_generic_role_name
+        from camel.utils.context_utils import ContextUtility
+
+        # try worker.role_name first (if not generic)
+        if hasattr(worker, 'role_name') and worker.role_name:
+            clean_name = ContextUtility.sanitize_workflow_filename(
+                worker.role_name
+            )
+            if clean_name and not is_generic_role_name(clean_name):
+                return clean_name
+
+        # try agent_title from WorkflowSummary (LLM-generated)
+        if workflow_summary and hasattr(workflow_summary, 'agent_title'):
+            agent_title = workflow_summary.agent_title
+            clean_title = ContextUtility.sanitize_workflow_filename(
+                agent_title
+            )
+            if clean_title and not is_generic_role_name(clean_title):
+                return clean_title
+
+        # fallback to sanitized truncated description
+        # truncate long descriptions
+        max_length = 30
+        if len(description) > max_length:
+            description = description[:max_length]
+        clean_desc = ContextUtility.sanitize_workflow_filename(description)
+        return clean_desc if clean_desc else "unknown_role"
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
@@ -2789,7 +2837,6 @@ class Workforce(BaseNode):
 
     def save_workflow_memories(
         self,
-        session_id: Optional[str] = None,
     ) -> Dict[str, str]:
         r"""Save workflow memories for all SingleAgentWorker instances in the
         workforce.
@@ -2807,11 +2854,8 @@ class Workforce(BaseNode):
         method.
         Other worker types are skipped.
 
-        Args:
-            session_id (Optional[str]): Custom session ID to use for saving
-                workflows. If None, auto-generates a timestamped session ID.
-                Useful for organizing workflows by project or context.
-                (default: :obj:`None`)
+        Workflows are organized by agent role in role-based folders:
+        workforce_workflows/{role_name}/*.md
 
         Returns:
             Dict[str, str]: Dictionary mapping worker node IDs to save results.
@@ -2821,15 +2865,12 @@ class Workforce(BaseNode):
         Example:
             >>> workforce = Workforce("My Team")
             >>> # ... add workers and process tasks ...
-            >>> # save with auto-generated session id
             >>> results = workforce.save_workflow_memories()
             >>> print(results)
-            {'worker_123': '/path/to/developer_agent_workflow.md',
+            {'worker_123': 'workforce_workflows/developer/task_workflow.md',
              'worker_456': 'error: No conversation context available'}
-            >>> # save with custom project id
-            >>> results = workforce.save_workflow_memories(
-            ...     session_id="project_123"
-            ... )
+            >>> # preferred: use async version
+            >>> results = await workforce.save_workflow_memories_async()
 
         Note:
             For better performance with multiple workers, use the async
@@ -2841,56 +2882,22 @@ class Workforce(BaseNode):
             :meth:`save_workflow_memories_async`: Async version with parallel
                 processing for significantly better performance.
         """
+        import asyncio
         import warnings
 
         warnings.warn(
-            "save_workflow_memories() is slow for multiple workers. "
-            "Consider using save_workflow_memories_async() for parallel "
-            "processing and ~4x faster performance.",
+            "save_workflow_memories() is deprecated and slow for multiple "
+            "workers. Use save_workflow_memories_async() instead for parallel "
+            "processing and significantly better performance.",
             DeprecationWarning,
             stacklevel=2,
         )
-        results = {}
 
-        # Get or create shared context utility for this save operation
-        shared_context_utility = self._get_or_create_shared_context_utility(
-            session_id=session_id
-        )
-
-        for child in self._children:
-            if isinstance(child, SingleAgentWorker):
-                try:
-                    # Set the shared context utility for this operation
-                    child._shared_context_utility = shared_context_utility
-                    child.worker.set_context_utility(shared_context_utility)
-
-                    result = child.save_workflow_memories()
-                    if result.get("status") == "success":
-                        results[child.node_id] = result.get(
-                            "file_path", "unknown_path"
-                        )
-                    else:
-                        # Error: check if there's a separate message field,
-                        # otherwise use the status itself
-                        error_msg = result.get(
-                            "message", result.get("status", "Unknown error")
-                        )
-                        results[child.node_id] = f"error: {error_msg}"
-
-                except Exception as e:
-                    results[child.node_id] = f"error: {e!s}"
-            else:
-                # Skip non-SingleAgentWorker types
-                results[child.node_id] = (
-                    f"skipped: {type(child).__name__} not supported"
-                )
-
-        logger.info(f"Workflow save completed for {len(results)} workers")
-        return results
+        # delegate to async version using asyncio
+        return asyncio.run(self.save_workflow_memories_async())
 
     async def save_workflow_memories_async(
         self,
-        session_id: Optional[str] = None,
     ) -> Dict[str, str]:
         r"""Asynchronously save workflow memories for all SingleAgentWorker
         instances in the workforce.
@@ -2904,11 +2911,8 @@ class Workforce(BaseNode):
         save_workflow_memories_async() method in parallel.
         Other worker types are skipped.
 
-        Args:
-            session_id (Optional[str]): Custom session ID to use for saving
-                workflows. If None, auto-generates a timestamped session ID.
-                Useful for organizing workflows by project or context.
-                (default: :obj:`None`)
+        Workflows are organized by agent role in role-based folders:
+        workforce_workflows/{role_name}/*.md
 
         Returns:
             Dict[str, str]: Dictionary mapping worker node IDs to save results.
@@ -2921,18 +2925,13 @@ class Workforce(BaseNode):
             >>> # save with parallel summarization (faster)
             >>> results = await workforce.save_workflow_memories_async()
             >>> print(results)
-            {'worker_123': '/path/to/developer_agent_workflow.md',
-             'worker_456': '/path/to/search_agent_workflow.md',
-             'worker_789': '/path/to/document_agent_workflow.md'}
+            {'worker_123': 'workforce_workflows/developer/task_workflow.md',
+             'worker_456': 'workforce_workflows/analyst/report_workflow.md',
+             'worker_789': 'workforce_workflows/writer/doc_workflow.md'}
         """
         import asyncio
 
         results = {}
-
-        # Get or create shared context utility for this save operation
-        shared_context_utility = self._get_or_create_shared_context_utility(
-            session_id=session_id
-        )
 
         # Prepare tasks for parallel execution
         async def save_single_worker(
@@ -2942,11 +2941,77 @@ class Workforce(BaseNode):
             result)."""
             if isinstance(child, SingleAgentWorker):
                 try:
-                    # Set the shared context utility for this operation
-                    child._shared_context_utility = shared_context_utility
-                    child.worker.set_context_utility(shared_context_utility)
+                    from camel.utils.context_utils import (
+                        ContextUtility,
+                        WorkflowSummary,
+                    )
 
-                    result = await child.save_workflow_memories_async()
+                    # TWO-PASS APPROACH FOR ROLE-BASED SAVING:
+                    # Pass 1: Generate summary to get agent_title
+                    workflow_manager = child._get_workflow_manager()
+                    summary_prompt = (
+                        workflow_manager._prepare_workflow_prompt()
+                    )
+
+                    # generate summary without saving
+                    # use conversation accumulator if available
+                    gen_result = (
+                        await child.worker.generate_workflow_summary_async(
+                            summary_prompt=summary_prompt,
+                            response_format=WorkflowSummary,
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
+                        )
+                    )
+
+                    if gen_result.get("status") != "success":
+                        error_msg = gen_result.get(
+                            "status", "Failed to generate summary"
+                        )
+                        return (child.node_id, f"error: {error_msg}")
+
+                    workflow_summary = gen_result.get("structured_summary")
+                    if not workflow_summary:
+                        return (
+                            child.node_id,
+                            "error: No workflow summary generated",
+                        )
+
+                    # Pass 2: Extract agent_title and determine role folder
+                    role_id = self._get_role_identifier(
+                        child.worker,
+                        child.description,
+                        workflow_summary=workflow_summary,
+                    )
+
+                    # create role-based context utility
+                    role_context = ContextUtility.get_workforce_shared_by_role(
+                        role_id
+                    )
+
+                    # save with correct context and accumulator
+                    result = (
+                        await workflow_manager.save_workflow_content_async(
+                            workflow_summary=workflow_summary,
+                            context_utility=role_context,
+                            conversation_accumulator=(
+                                child._conversation_accumulator
+                            ),
+                        )
+                    )
+
+                    # clean up accumulator after successful save
+                    if (
+                        result.get("status") == "success"
+                        and child._conversation_accumulator is not None
+                    ):
+                        logger.info(
+                            "Cleaning up conversation accumulator after "
+                            "workflow summarization"
+                        )
+                        child._conversation_accumulator = None
+
                     if result.get("status") == "success":
                         return (
                             child.node_id,
