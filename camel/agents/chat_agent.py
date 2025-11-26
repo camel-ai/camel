@@ -3915,9 +3915,7 @@ class ChatAgent(BaseAgent):
             else:
                 # Fallback: synchronous call
                 loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(
-                    None, lambda: tool(**args)
-                )
+                result = await loop.run_in_executor(None, lambda: tool(**args))
 
         except Exception as e:
             # Capture the error message to prevent framework crash
