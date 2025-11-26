@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
-from camel.toolkits import OutlookToolkit
+from camel.toolkits import OutlookMailToolkit
 
 pytestmark = pytest.mark.asyncio
 
@@ -108,7 +108,7 @@ def mock_graph_service():
 
 @pytest.fixture
 def outlook_toolkit(mock_graph_service):
-    """Fixture that provides a mocked OutlookToolkit instance."""
+    """Fixture that provides a mocked OutlookMailToolkit instance."""
     # Create a mock credentials object to avoid OAuth authentication
     mock_credentials = MagicMock()
     mock_credentials.valid = True
@@ -123,17 +123,17 @@ def outlook_toolkit(mock_graph_service):
             },
         ),
         patch.object(
-            OutlookToolkit,
+            OutlookMailToolkit,
             '_authenticate',
             return_value=mock_credentials,
         ),
         patch.object(
-            OutlookToolkit,
+            OutlookMailToolkit,
             '_get_graph_client',
             return_value=mock_graph_service,
         ),
     ):
-        toolkit = OutlookToolkit()
+        toolkit = OutlookMailToolkit()
         toolkit.client = mock_graph_service
         yield toolkit
 
@@ -570,7 +570,7 @@ async def test_get_message(
 ):
     """Test getting messages with different content types."""
     with patch(
-        'camel.toolkits.microsoft_outlook_toolkit.isinstance',
+        'camel.toolkits.microsoft_outlook_mail_toolkit.isinstance',
         return_value=True,
     ):
         mock_graph_service.me.messages.by_message_id().get.return_value = (
@@ -610,7 +610,7 @@ async def test_list_messages(
 ):
     """Test listing messages with different content types."""
     with patch(
-        'camel.toolkits.microsoft_outlook_toolkit.isinstance',
+        'camel.toolkits.microsoft_outlook_mail_toolkit.isinstance',
         return_value=True,
     ):
         mock_response = MagicMock()

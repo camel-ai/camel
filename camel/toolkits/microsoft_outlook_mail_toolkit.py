@@ -190,7 +190,7 @@ class CustomAzureCredential:
 
 
 @MCPServer()
-class OutlookToolkit(BaseToolkit):
+class OutlookMailToolkit(BaseToolkit):
     """A class representing a toolkit for Microsoft Outlook operations.
 
     This class provides methods for interacting with Microsoft Outlook via
@@ -202,7 +202,7 @@ class OutlookToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         token_file_path: Optional[str] = None,
     ):
-        """Initializes a new instance of the OutlookToolkit.
+        """Initializes a new instance of the OutlookMailToolkit.
 
         Args:
             timeout (Optional[float]): The timeout value for API requests
