@@ -34,10 +34,10 @@ camel_agent = ChatAgent(system_message=sys_msg, model=model)
 user_msg = """Explain how Generative AI works."""
 
 # Get response information
-# response = camel_agent.step(user_msg)
-# print(response.msgs[0].reasoning_content)
-# print("========================")
-# print(response.msgs[0].content)
+response = camel_agent.step(user_msg)
+print(response.msgs[0].reasoning_content)
+print("========================")
+print(response.msgs[0].content)
 
 '''
 ===============================================================================
