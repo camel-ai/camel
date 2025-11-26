@@ -741,6 +741,7 @@ export class HybridBrowserSession {
           }
         } else {
           // Try to fill the element, with fallback to click-then-fill strategy
+          let alreadyClicked = false;
           try {
             let fillSuccess = false;
 
@@ -754,6 +755,7 @@ export class HybridBrowserSession {
               console.log(`Direct fill failed for ref=${ref}, trying click-then-fill strategy`);
               try {
                 await element.click({ force: true });
+                alreadyClicked = true;
                 console.log(`Clicked element ref=${ref} before typing`);
               } catch (clickError) {
                 console.log(`Warning: Failed to click element before typing: ${clickError}`);
@@ -786,10 +788,10 @@ export class HybridBrowserSession {
           } catch (fillError: any) {
             // Log the error for debugging
             console.log(`Fill error for ref ${ref}: ${fillError.message}`);
-            
+
             // Check for various error messages that indicate the element is not fillable
             const errorMessage = fillError.message.toLowerCase();
-            if (errorMessage.includes('not an <input>') || 
+            if (errorMessage.includes('not an <input>') ||
               errorMessage.includes('not have a role allowing') ||
               errorMessage.includes('element is not') ||
               errorMessage.includes('cannot type') ||
@@ -797,15 +799,20 @@ export class HybridBrowserSession {
               errorMessage.includes('not editable') ||
               errorMessage.includes('timeout') ||
               errorMessage.includes('timeouterror')) {
-            
-            // Click the element again to trigger dynamic content (like date pickers)
-            try {
-              await element.click({ force: true });
-              console.log(`Clicked element ref=${ref} again to trigger dynamic content`);
-              // Wait for potential dynamic content to appear
+
+            // Click the element again to trigger dynamic content (like date pickers), but only if we haven't clicked yet
+            if (!alreadyClicked) {
+              try {
+                await element.click({ force: true });
+                console.log(`Clicked element ref=${ref} to trigger dynamic content`);
+                // Wait for potential dynamic content to appear
+                await page.waitForTimeout(500);
+              } catch (clickError) {
+                console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
+              }
+            } else {
+              // We already clicked during the click-then-fill strategy
               await page.waitForTimeout(500);
-            } catch (clickError) {
-              console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
             }
             
             // Step 1: Try to find input elements within the clicked element
