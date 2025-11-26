@@ -591,7 +591,9 @@ class BrowseCompBenchmark(BaseBenchmark):
                         input_message, response_format=QueryResponse
                     )
                 elif isinstance(pipeline_template, Workforce):
-                    workforce_pipeline = asyncio.run(pipeline_template.clone())
+                    workforce_pipeline = asyncio.run(
+                        pipeline_template.clone_async()
+                    )
                     task = Task(content=input_message, id="0")
                     task = asyncio.run(
                         workforce_pipeline.process_task_async(task)

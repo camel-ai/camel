@@ -200,21 +200,21 @@ async def _assert_metrics_callbacks(
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    await workforce.dump_workforce_logs("foo.log")
+    await workforce.dump_workforce_logs_async("foo.log")
     assert cb.dump_to_json_called
 
-    await workforce.reset()
+    await workforce.reset_async()
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    await workforce.get_workforce_kpis()
+    await workforce.get_workforce_kpis_async()
     assert cb.get_kpis_called
 
-    await workforce.reset()
+    await workforce.reset_async()
     assert not cb.dump_to_json_called
     assert not cb.get_ascii_tree_called
     assert not cb.get_kpis_called
-    await workforce.get_workforce_log_tree()
+    await workforce.get_workforce_log_tree_async()
     assert cb.get_ascii_tree_called
 
 
@@ -237,7 +237,7 @@ async def test_workforce_callback_registration_and_metrics_handling():
 
     # Add a worker and ensure our callback saw the event
     agent = _build_stub_agent()
-    await wf1.add_single_agent_worker("UnitTest Worker", agent)
+    await wf1.add_single_agent_worker_async("UnitTest Worker", agent)
     assert any(isinstance(e, WorkerCreatedEvent) for e in cb.events)
 
     # 2) Metrics-capable callback present -> no default WorkforceLogger
@@ -289,7 +289,7 @@ async def test_workforce_emits_expected_events_for_worker_init_modes(
             task_agent=task_agent,
         )
         for add_desc, _, agent in worker_specs:
-            await workforce.add_single_agent_worker(
+            await workforce.add_single_agent_worker_async(
                 add_desc,
                 worker=agent,
             )
