@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from __future__ import annotations
-
 import json
 import os
 from typing import TYPE_CHECKING, List, Optional
