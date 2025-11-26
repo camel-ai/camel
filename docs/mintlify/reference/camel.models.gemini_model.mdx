@@ -48,8 +48,12 @@ def _process_messages(self, messages):
 
 Process the messages for Gemini API to ensure no empty content,
 which is not accepted by Gemini. Also preserves thought signatures
-required for Gemini 3 Pro function calling and adds fallback signatures
-when they are missing.
+required for Gemini 3 Pro function calling.
+
+This method also merges consecutive assistant messages with single
+tool calls into a single assistant message with multiple tool calls,
+as required by Gemini's OpenAI-compatible API for parallel function
+calling.
 
 <a id="camel.models.gemini_model.GeminiModel._preserve_thought_signatures"></a>
 
