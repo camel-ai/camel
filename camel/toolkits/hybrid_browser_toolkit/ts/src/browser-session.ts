@@ -800,7 +800,7 @@ export class HybridBrowserSession {
           existingRefs.add(match[1]);
         }
         console.log(`Found ${existingRefs.size} total elements before action`);
-        
+
         // If element is readonly or a date/time input, skip fill attempt and go directly to click
         if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
           console.log(`Element ref=${ref} is readonly or date/time input, skipping direct fill attempt`);
@@ -815,38 +815,58 @@ export class HybridBrowserSession {
             console.log(`Warning: Failed to click element: ${clickError}`);
           }
         } else {
-          // For normal inputs, click first then try to fill
+          // Try to fill the element, with fallback to click-then-fill strategy
+          let alreadyClicked = false;
           try {
-            await element.click({ force: true });
-            console.log(`Clicked element ref=${ref} before typing`);
-          } catch (clickError) {
-            console.log(`Warning: Failed to click element before typing: ${clickError}`);
-          }
-          
-          // Try to fill the element directly
-          try {
-            // Use force option to avoid scrolling during fill
-            await element.fill(text, { timeout: 3000, force: true });
-            
-            // If this element might show dropdown, wait and check for new elements
-            if (shouldCheckDiff) {
-              await page.waitForTimeout(300);
-              const snapshotAfter = await (page as any)._snapshotForAI();
-              const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
-              
-              if (diffSnapshot && diffSnapshot.trim() !== '') {
-                return { success: true, diffSnapshot };
+            let fillSuccess = false;
+
+            try {
+              // Strategy 1: Try to fill directly without clicking (for modern inputs like Google Flights combobox)
+              await element.fill(text, { timeout: 3000, force: true });
+              fillSuccess = true;
+              console.log(`Filled element ref=${ref} directly without clicking`);
+            } catch (directFillError) {
+              // Strategy 2: Click first, then fill (for traditional inputs that need activation)
+              console.log(`Direct fill failed for ref=${ref}, trying click-then-fill strategy`);
+              try {
+                await element.click({ force: true });
+                alreadyClicked = true;
+                console.log(`Clicked element ref=${ref} before typing`);
+              } catch (clickError) {
+                console.log(`Warning: Failed to click element before typing: ${clickError}`);
+              }
+
+              try {
+                await element.fill(text, { timeout: 3000, force: true });
+                fillSuccess = true;
+                console.log(`Filled element ref=${ref} after clicking`);
+              } catch (secondFillError) {
+                // Will be handled by outer catch block below
+                throw secondFillError;
               }
             }
-            
-            return { success: true };
+
+            if (fillSuccess) {
+              // If this element might show dropdown, wait and check for new elements
+              if (shouldCheckDiff) {
+                await page.waitForTimeout(300);
+                const snapshotAfter = await (page as any)._snapshotForAI();
+                const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+
+                if (diffSnapshot && diffSnapshot.trim() !== '') {
+                  return { success: true, diffSnapshot };
+                }
+              }
+
+              return { success: true };
+            }
           } catch (fillError: any) {
             // Log the error for debugging
             console.log(`Fill error for ref ${ref}: ${fillError.message}`);
-            
+
             // Check for various error messages that indicate the element is not fillable
             const errorMessage = fillError.message.toLowerCase();
-            if (errorMessage.includes('not an <input>') || 
+            if (errorMessage.includes('not an <input>') ||
               errorMessage.includes('not have a role allowing') ||
               errorMessage.includes('element is not') ||
               errorMessage.includes('cannot type') ||
@@ -854,15 +874,20 @@ export class HybridBrowserSession {
               errorMessage.includes('not editable') ||
               errorMessage.includes('timeout') ||
               errorMessage.includes('timeouterror')) {
-            
-            // Click the element again to trigger dynamic content (like date pickers)
-            try {
-              await element.click({ force: true });
-              console.log(`Clicked element ref=${ref} again to trigger dynamic content`);
-              // Wait for potential dynamic content to appear
+
+            // Click the element again to trigger dynamic content (like date pickers), but only if we haven't clicked yet
+            if (!alreadyClicked) {
+              try {
+                await element.click({ force: true });
+                console.log(`Clicked element ref=${ref} to trigger dynamic content`);
+                // Wait for potential dynamic content to appear
+                await page.waitForTimeout(500);
+              } catch (clickError) {
+                console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
+              }
+            } else {
+              // We already clicked during the click-then-fill strategy
               await page.waitForTimeout(500);
-            } catch (clickError) {
-              console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
             }
             
             // Step 1: Try to find input elements within the clicked element
