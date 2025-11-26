@@ -31,6 +31,7 @@ in either a local or a sandboxed Docker environment.
 - **safe_mode** (bool): Whether to apply security checks to commands. Defaults to True.
 - **allowed_commands** (Optional[List[str]]): List of allowed commands when safe_mode is True. If None, uses default safety rules.
 - **clone_current_env** (bool): Whether to clone the current Python environment for local execution. Defaults to False.
+- **install_dependencies** (List): A list of user specified libraries to install.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__init__"></a>
 
@@ -46,7 +47,8 @@ def __init__(
     session_logs_dir: Optional[str] = None,
     safe_mode: bool = True,
     allowed_commands: Optional[List[str]] = None,
-    clone_current_env: bool = False
+    clone_current_env: bool = False,
+    install_dependencies: Optional[List[str]] = None
 ):
 ```
 
@@ -59,6 +61,16 @@ def _setup_cloned_environment(self):
 ```
 
 Set up a cloned Python environment.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._install_dependencies"></a>
+
+### _install_dependencies
+
+```python
+def _install_dependencies(self):
+```
+
+Install user specified dependencies in the current environment.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._setup_initial_environment"></a>
 
