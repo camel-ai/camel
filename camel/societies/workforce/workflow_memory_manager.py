@@ -950,6 +950,14 @@ class WorkflowMemoryManager:
                 workflow_summary, 'target_workflow_filename', None
             )
 
+            # validate operation_mode - default to create for unexpected values
+            if operation_mode not in ("create", "update"):
+                logger.warning(
+                    f"Unexpected operation_mode '{operation_mode}', "
+                    "defaulting to 'create'."
+                )
+                operation_mode = "create"
+
             if operation_mode == "update":
                 # if only one workflow loaded and no target specified,
                 # assume agent meant that one
@@ -985,25 +993,16 @@ class WorkflowMemoryManager:
                     operation_mode = "create"
 
             if operation_mode == "create":
-                # use role-based filename
-                # check if role_name or task_title for filename
-                clean_name = self._get_sanitized_role_name()
-                use_role_name = not is_generic_role_name(clean_name)
-
-                if use_role_name:
-                    # use explicit role name for filename
-                    base_filename = self._generate_workflow_filename()
-                else:
-                    # use task_title from summary for filename
-                    task_title = workflow_summary.task_title
-                    clean_title = ContextUtility.sanitize_workflow_filename(
-                        task_title
-                    )
-                    base_filename = (
-                        f"{clean_title}{self.config.workflow_filename_suffix}"
-                        if clean_title
-                        else "workflow"
-                    )
+                # use task_title from summary for filename
+                task_title = workflow_summary.task_title
+                clean_title = ContextUtility.sanitize_workflow_filename(
+                    task_title
+                )
+                base_filename = (
+                    f"{clean_title}{self.config.workflow_filename_suffix}"
+                    if clean_title
+                    else "workflow"
+                )
 
                 file_path = (
                     context_utility.get_working_directory()

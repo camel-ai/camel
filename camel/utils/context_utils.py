@@ -117,8 +117,10 @@ class WorkflowSummary(BaseModel):
         description=(
             "Whether to create a new workflow file or update an existing one. "
             "Use 'update' ONLY if you loaded a workflow that this task is a "
-            "continuation, improvement, or refinement of. Use 'create' if "
-            "this is a new/different task or if no workflows were loaded."
+            "continuation, improvement, or refinement of AND the task_title "
+            "should remain the same as the loaded workflow. Use 'create' if "
+            "this is a new/different task, if the task_title would be "
+            "different, or if no workflows were loaded."
         ),
         default="create",
     )
@@ -161,9 +163,12 @@ class WorkflowSummary(BaseModel):
             'help future agents discover this workflow when working on '
             'similar tasks. '
             'For operation_mode, decide whether to update an existing '
-            'workflow or create a new one. If you loaded a workflow that '
-            'this task is a continuation or refinement of, set "update" and '
-            'specify target_workflow_filename with the exact filename.'
+            'workflow or create a new one. Use "update" ONLY if you loaded '
+            'a workflow that this task is a continuation or refinement of '
+            'AND the task_title should remain the same. If the task is '
+            'different enough to warrant a different task_title, use "create" '
+            'instead. When using "update", keep the same task_title as the '
+            'loaded workflow and specify target_workflow_filename.'
         )
 
 
