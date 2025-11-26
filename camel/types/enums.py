@@ -49,7 +49,7 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
-    GPT_5_1_Instant = "gpt-5.1"
+    GPT_5_1 = "gpt-5.1"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -603,6 +603,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GPT_5_1,
         }
 
     @property
@@ -1393,9 +1394,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
-            ModelType.GPT_5,
-            ModelType.GPT_5_NANO,
-            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -1561,6 +1559,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
         }:
             return 320_000
+        elif self in {
+            ModelType.GPT_5_1,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5,
+        }:
+            return 400_000
         elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
