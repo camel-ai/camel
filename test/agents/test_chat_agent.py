@@ -1442,3 +1442,315 @@ def test_memory_setter_preserves_system_message():
     assert len(new_context) > 0
     assert new_context[0]['role'] == 'system'
     assert new_context[0]['content'] == system_content
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_with_async_generator():
+    r"""Test async streaming when model backend returns an async generator."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    agent = ChatAgent(system_message=system_msg, model=model)
+
+    # Create mock streaming chunks
+    chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="!"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 3,
+                "prompt_tokens": 10,
+                "total_tokens": 13,
+            },
+        ),
+    ]
+
+    # Create an async generator that wraps the chunks
+    # This simulates what GeminiModel does with _wrap_async_stream_with_
+    # thought_preservation
+    async def mock_async_generator() -> (
+        AsyncGenerator[ChatCompletionChunk, None]
+    ):
+        for chunk in chunks:
+            yield chunk
+
+    # Mock the model_backend.arun method to return an async generator
+    # (not AsyncStream). This simulates GeminiModel behavior.
+    agent.model_backend.arun = AsyncMock(return_value=mock_async_generator())
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Say hello",
+    )
+
+    # Use astep to test async streaming. astep returns
+    # AsyncStreamingChatAgentResponse which supports async iteration.
+    responses = []
+    streaming_response = await agent.astep(user_msg)
+    async for response in streaming_response:
+        responses.append(response)
+
+    # Verify we got streaming responses
+    assert len(responses) > 0, "Should receive streaming responses"
+
+    # Verify final response contains the accumulated content
+    final_response = responses[-1]
+    assert (
+        final_response.msg is not None
+    ), "Final response should have a message"
+    assert (
+        "Hello" in final_response.msg.content
+    ), "Final content should contain 'Hello'"
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_with_async_generator_tool_calls():
+    r"""Test async streaming with tool calls when model returns async
+    generator.
+    """
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    # Define a simple test tool
+    def test_add(a: int, b: int) -> int:
+        r"""Add two numbers.
+
+        Args:
+            a (int): First number.
+            b (int): Second number.
+
+        Returns:
+            int: Sum of a and b.
+        """
+        return a + b
+
+    agent = ChatAgent(
+        system_message=system_msg,
+        model=model,
+        tools=[FunctionTool(test_add)],
+    )
+
+    # Create mock streaming chunks with tool calls
+    tool_call_chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id="call_mock_123",
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name="test_add",
+                                    arguments='{"a":',
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                function=ChoiceDeltaToolCallFunction(
+                                    arguments='1,"b":2}',
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 10,
+                "prompt_tokens": 20,
+                "total_tokens": 30,
+            },
+        ),
+    ]
+
+    # Create final response chunks after tool execution
+    final_chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id-2",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        content="The result is 3.", role="assistant"
+                    ),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567891,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 5,
+                "prompt_tokens": 30,
+                "total_tokens": 35,
+            },
+        ),
+    ]
+
+    call_count = 0
+
+    async def mock_async_generator() -> (
+        AsyncGenerator[ChatCompletionChunk, None]
+    ):
+        nonlocal call_count
+        if call_count == 0:
+            call_count += 1
+            for chunk in tool_call_chunks:
+                yield chunk
+        else:
+            for chunk in final_chunks:
+                yield chunk
+
+    # Mock the model_backend.arun method to return an async generator
+    agent.model_backend.arun = AsyncMock(
+        side_effect=lambda *args, **kwargs: mock_async_generator()
+    )
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Add 1 and 2",
+    )
+
+    # Use astep to test async streaming with tool calls
+    responses = []
+    streaming_response = await agent.astep(user_msg)
+    async for response in streaming_response:
+        responses.append(response)
+
+    # Verify we got responses
+    assert len(responses) > 0, "Should receive streaming responses"
+
+    # Verify tool was called
+    tool_calls_found = False
+    for response in responses:
+        if response.info and "tool_calls" in response.info:
+            tool_calls = response.info["tool_calls"]
+            if tool_calls:
+                tool_calls_found = True
+                # Verify the tool was executed correctly
+                for tc in tool_calls:
+                    if tc.tool_name == "test_add":
+                        assert tc.result == 3, "Tool should return 3"
+                break
+
+    assert tool_calls_found, "Tool calls should be found in responses"
