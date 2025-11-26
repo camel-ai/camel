@@ -151,7 +151,7 @@ communication_tools = [
     "resend>=2.0.0,<3",
     "azure-identity>=1.25.1,<2",
     "msgraph-sdk>=1.46.0,<2",
-    "msal>=1.34.0<2"
+    "msal>=1.34.0,<2"
 ]
 data_tools = [
     "numpy>=1.2,<=2.2",
@@ -355,7 +355,7 @@ all = [
     "resend>=2.0.0,<3",
     "azure-identity>=1.25.1,<2",
     "msgraph-sdk>=1.46.0,<2",
-    "msal>=1.34.0<2",
+    "msal>=1.34.0,<2",
     "textblob>=0.17.1,<0.18",
     "scholarly[tor]==1.7.11",
     "notion-client>=2.2.1,<3",
