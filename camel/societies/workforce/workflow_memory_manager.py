@@ -1082,13 +1082,10 @@ class WorkflowMemoryManager:
         context_utility: Optional[ContextUtility] = None,
         conversation_accumulator: Optional[ChatAgent] = None,
     ) -> Dict[str, Any]:
-        r"""Save a pre-generated workflow summary to disk.
+        r"""Async wrapper for save_workflow_content.
 
-        This method takes a pre-generated WorkflowSummary object and saves
-        it to disk using the provided context utility. It does NOT call the
-        LLM - just formats and saves the content. Use this for two-pass
-        workflows where the summary is generated first, then saved to a
-        location determined by the summary content.
+        Delegates to sync version since file I/O operations are synchronous.
+        This method exists for API consistency with save_workflow_async().
 
         Args:
             workflow_summary (WorkflowSummary): Pre-generated workflow summary
@@ -1106,181 +1103,11 @@ class WorkflowMemoryManager:
                 - file_path (str): Path to saved file
                 - worker_description (str): Worker description used
         """
-
-        def _create_error_result(message: str) -> Dict[str, Any]:
-            """helper to create error result dict."""
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": message,
-            }
-
-        try:
-            # validate workflow_summary input
-            if not workflow_summary:
-                return _create_error_result("workflow_summary is required")
-
-            # validate required fields exist
-            if not hasattr(workflow_summary, 'task_title'):
-                return _create_error_result(
-                    "workflow_summary must have task_title field"
-                )
-
-            if not hasattr(workflow_summary, 'agent_title'):
-                return _create_error_result(
-                    "workflow_summary must have agent_title field"
-                )
-
-            # validate agent_title is not empty
-            agent_title = getattr(workflow_summary, 'agent_title', '').strip()
-            if not agent_title:
-                return _create_error_result(
-                    "workflow_summary.agent_title cannot be empty"
-                )
-
-            # use provided context utility or get default
-            if context_utility is None:
-                context_utility = self._get_context_utility()
-
-            # set context utility on worker
-            self.worker.set_context_utility(context_utility)
-
-            # determine file path based on operation mode
-            operation_mode = getattr(
-                workflow_summary, 'operation_mode', 'create'
-            )
-            target_filename = getattr(
-                workflow_summary, 'target_workflow_filename', None
-            )
-
-            if operation_mode == "update":
-                # if only one workflow loaded and no target specified,
-                # assume agent meant that one
-                has_single_workflow = len(self._loaded_workflow_paths) == 1
-                if not target_filename and has_single_workflow:
-                    target_filename = next(
-                        iter(self._loaded_workflow_paths.keys())
-                    )
-                    logger.info(
-                        f"Auto-selecting single loaded workflow: "
-                        f"{target_filename}"
-                    )
-
-                # validate target filename exists in loaded workflows
-                if (
-                    target_filename
-                    and target_filename in self._loaded_workflow_paths
-                ):
-                    # use the stored path for the target workflow
-                    file_path = Path(
-                        self._loaded_workflow_paths[target_filename]
-                    )
-                    base_filename = target_filename
-                    logger.info(f"Updating existing workflow: {file_path}")
-                else:
-                    # invalid or missing target, fall back to create mode
-                    available = list(self._loaded_workflow_paths.keys())
-                    logger.warning(
-                        f"Invalid target_workflow_filename "
-                        f"'{target_filename}', available: {available}. "
-                        "Falling back to create mode."
-                    )
-                    operation_mode = "create"
-
-            if operation_mode == "create":
-                # use role-based filename like sync version
-                # check if role_name or task_title for filename
-                clean_name = self._get_sanitized_role_name()
-                use_role_name = not is_generic_role_name(clean_name)
-
-                if use_role_name:
-                    # use explicit role name for filename
-                    base_filename = self._generate_workflow_filename()
-                else:
-                    # use task_title from summary for filename
-                    task_title = workflow_summary.task_title
-                    clean_title = ContextUtility.sanitize_workflow_filename(
-                        task_title
-                    )
-                    base_filename = (
-                        f"{clean_title}{self.config.workflow_filename_suffix}"
-                        if clean_title
-                        else "workflow"
-                    )
-
-                file_path = (
-                    context_utility.get_working_directory()
-                    / f"{base_filename}.md"
-                )
-                logger.info(f"Creating new workflow: {file_path}")
-
-            # check if workflow file already exists to handle versioning
-            existing_metadata = self._extract_existing_workflow_metadata(
-                file_path
-            )
-
-            # build metadata - get message count from accumulator if available
-            source_agent = (
-                conversation_accumulator
-                if conversation_accumulator
-                else self.worker
-            )
-
-            # determine version and created_at based on existing metadata
-            # only increment version if versioning is enabled
-            if self.config.enable_versioning and existing_metadata:
-                workflow_version = existing_metadata.workflow_version + 1
-                created_at = existing_metadata.created_at
-            else:
-                workflow_version = 1
-                created_at = None
-
-            metadata = context_utility.get_session_metadata(
-                workflow_version=workflow_version, created_at=created_at
-            )
-            metadata.update(
-                {
-                    "agent_id": self.worker.agent_id,
-                    "message_count": len(source_agent.memory.get_context()[0]),
-                }
-            )
-
-            # convert WorkflowSummary to markdown
-            # exclude operation_mode and target_workflow_filename as they're
-            # only used for save logic, not persisted in the workflow file
-            summary_content = context_utility.structured_output_to_markdown(
-                structured_data=workflow_summary,
-                metadata=metadata,
-                exclude_fields=['operation_mode', 'target_workflow_filename'],
-            )
-
-            # save to disk
-            save_status = context_utility.save_markdown_file(
-                base_filename,
-                summary_content,
-            )
-
-            # format summary with context prefix
-            formatted_summary = (
-                f"[CONTEXT_SUMMARY] The following is a summary of our "
-                f"conversation from a previous session: {summary_content}"
-            )
-
-            return {
-                "status": "success"
-                if save_status == "success"
-                else save_status,
-                "summary": formatted_summary,
-                "file_path": str(file_path),
-                "worker_description": self.description,
-            }
-
-        except Exception as e:
-            return _create_error_result(
-                f"Failed to save workflow content: {e!s}"
-            )
+        return self.save_workflow_content(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=conversation_accumulator,
+        )
 
     async def save_workflow_async(
         self, conversation_accumulator: Optional[ChatAgent] = None
@@ -1289,9 +1116,9 @@ class WorkflowMemoryManager:
         agent summarization.
 
         This is the async version of save_workflow() that uses a two-pass
-        approach: first generate the workflow summary, then save to disk
-        using the appropriate file path based on operation_mode (update vs
-        create).
+        approach: first generate the workflow summary (async LLM call), then
+        save to disk using the appropriate file path based on operation_mode
+        (update vs create).
 
         Args:
             conversation_accumulator (Optional[ChatAgent]): Optional
@@ -1306,35 +1133,9 @@ class WorkflowMemoryManager:
                 - worker_description (str): Worker description used
         """
         try:
-            # setup context utility and agent
-            context_util = self._get_context_utility()
-            self.worker.set_context_utility(context_util)
-
-            # prepare workflow summarization components
-            structured_prompt = self._prepare_workflow_prompt()
-
-            # select agent for summarization
-            agent_to_summarize = self.worker
-            if conversation_accumulator is not None:
-                accumulator_messages, _ = (
-                    conversation_accumulator.memory.get_context()
-                )
-                if accumulator_messages:
-                    conversation_accumulator.set_context_utility(context_util)
-                    agent_to_summarize = conversation_accumulator
-                    logger.info(
-                        f"Using conversation accumulator with "
-                        f"{len(accumulator_messages)} messages for workflow "
-                        f"summary"
-                    )
-
             # pass 1: generate workflow summary (without saving to disk)
-            summary_result = (
-                await agent_to_summarize.generate_workflow_summary_async(
-                    summary_prompt=structured_prompt,
-                    response_format=WorkflowSummary,
-                    conversation_accumulator=conversation_accumulator,
-                )
+            summary_result = await self.generate_workflow_summary_async(
+                conversation_accumulator=conversation_accumulator
             )
 
             if summary_result["status"] != "success":
@@ -1357,15 +1158,14 @@ class WorkflowMemoryManager:
                     "message": "No structured summary generated",
                 }
 
-            # pass 2: save using save_workflow_content_async which handles
-            # operation_mode branching
-            result = await self.save_workflow_content_async(
+            # pass 2: save using save_workflow_content which handles
+            # operation_mode branching (sync - file I/O doesn't need async)
+            context_util = self._get_context_utility()
+            return self.save_workflow_content(
                 workflow_summary=workflow_summary,
                 context_utility=context_util,
                 conversation_accumulator=conversation_accumulator,
             )
-
-            return result
 
         except Exception as e:
             return {
