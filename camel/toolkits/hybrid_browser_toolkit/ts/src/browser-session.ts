@@ -329,22 +329,10 @@ export class HybridBrowserSession {
     return this.getSnapshotForAINative(includeCoordinates, viewportLimit);
   }
 
-  private parseElementFromSnapshot(snapshotText: string, ref: string): { role?: string; text?: string } {
-    const lines = snapshotText.split('\n');
-    for (const line of lines) {
-      if (line.includes(`[ref=${ref}]`)) {
-        const typeMatch = line.match(/^\s*-?\s*([\w-]+)/);
-        const role = typeMatch ? typeMatch[1] : undefined;
-        const textMatch = line.match(/"([^"]*)"/);
-        const text = textMatch ? textMatch[1] : undefined;
-        return { role, text };
-      }
-    }
-    return {};
-  }
 
-  private buildSnapshotIndex(snapshotText: string): Map<string, { role?: string; text?: string }> {
-    const index = new Map<string, { role?: string; text?: string }>();
+  private buildSnapshotIndex(snapshotText: string): Map<string, string|undefined> {
+    // Get ref to role mapping from snapshot text
+    const index = new Map<string, string|undefined>();
     const refRe = /\[ref=([^\]]+)\]/i;
     for (const line of snapshotText.split('\n')) {
       const m = line.match(refRe);
@@ -352,12 +340,100 @@ export class HybridBrowserSession {
       const ref = m[1];
       const roleMatch = line.match(/^\s*-?\s*([a-z0-9_-]+)/i);
       const role = roleMatch ? roleMatch[1].toLowerCase() : undefined;
-      const textMatch = line.match(/"([^"]*)"/);
-      const text = textMatch ? textMatch[1] : undefined;
-      index.set(ref, { role, text });
+      index.set(ref, role);
     }
     return index;
   }
+
+
+  private filterElementsInViewport(
+    elements: Record<string, SnapshotElement>, 
+    viewport: { width: number, height: number }, 
+    scrollPos: { x: number, y: number }
+  ): Record<string, SnapshotElement> {
+    const filtered: Record<string, SnapshotElement> = {};
+    // Apply viewport filtering
+    // boundingBox() returns viewport-relative coordinates, so we don't need to add scroll offsets
+    const viewportLeft = 0;
+    const viewportTop = 0;
+    const viewportRight = viewport.width;
+    const viewportBottom = viewport.height;
+    
+    for (const [ref, element] of Object.entries(elements)) {
+      // If element has no coordinates, include it (fallback)
+      if (!element.coordinates) {
+        filtered[ref] = element;
+        continue;
+      }
+      
+      const { x, y, width, height } = element.coordinates;
+      
+      // Check if element is visible in current viewport
+      // Element is visible if it overlaps with viewport bounds
+      // Since boundingBox() coords are viewport-relative, we compare directly
+      const isVisible = (
+        x < viewportRight &&              // Left edge is before viewport right
+        y < viewportBottom &&             // Top edge is before viewport bottom  
+        x + width > viewportLeft &&       // Right edge is after viewport left
+        y + height > viewportTop          // Bottom edge is after viewport top
+      );
+      
+      if (isVisible) {
+        filtered[ref] = element;
+      }
+    }
+    
+    return filtered;
+  }
+
+
+  private filterSnapshotLines(
+    lines: string[],
+    viewportRefs: Set<string>,
+    tabSize: number = 2
+  ): string[] {
+    // Filter snapshot lines to include only those in viewportRefs 
+    // and their context
+    const levelStack: number[] = [];
+    const filteredLines: string[] = [];
+    for (const line of lines) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      const indentMatch = line.match(/^(\s*)/);
+      const level = indentMatch ? indentMatch[1].length / tabSize : 0;
+      const prevLevel = levelStack[levelStack.length - 1] ?? 0;
+      const levelDiff = level - prevLevel;
+      // Pop stack when going up to the parent level
+      if (levelDiff <= 0) {
+        while (
+          levelStack.length > 0 &&
+          levelStack[levelStack.length - 1] >= level
+        ) {
+          levelStack.pop();
+        }
+      }
+      // Line has a ref
+      if (refMatch && viewportRefs.has(refMatch[1])) {
+        levelStack.push(level);
+        filteredLines.push(line);
+        continue;
+      }
+      // Line without ref - include if it's a header or direct child of tracked element
+      if (!refMatch && (levelDiff === 0 || levelDiff === 1)) {
+        filteredLines.push(line);
+      }
+    }
+    return filteredLines;
+  }
+
+  private rebuildSnapshotText(
+    originalSnapshot: string,
+    filteredElements: Record<string, SnapshotElement>): string {
+    const lines = originalSnapshot.split('\n');
+    const filteredLines = this.filterSnapshotLines(lines, new Set(Object.keys(filteredElements)));
+    const filteredContent = filteredLines.join('\n');
+    return filteredContent;
+  }
+
 
   private async getSnapshotForAINative(includeCoordinates = false, viewportLimit = false): Promise<SnapshotResult & { timing: DetailedTiming }> {
     const startTime = Date.now();
@@ -384,11 +460,10 @@ export class HybridBrowserSession {
       // Parse element info in a single pass
       const snapshotIndex = this.buildSnapshotIndex(snapshotText);
       for (const ref of refs) {
-        const elementInfo = snapshotIndex.get(ref) || {};
+        const role = snapshotIndex.get(ref) || undefined;
         playwrightMapping[ref] = {
           ref,
-          role: elementInfo.role || 'unknown',
-          text: elementInfo.text || '',
+          role: role || 'unknown',
         };
       }
       
@@ -418,7 +493,7 @@ export class HybridBrowserSession {
               }
             }
           } catch (error) {
-            // Failed to get coordinates for element
+            console.warn(`Failed to get coordinates for ref ${ref}:`, error);
           }
         }
       }
@@ -1747,69 +1822,4 @@ export class HybridBrowserSession {
       this.browser = null;
     }
   }
-
-  private filterElementsInViewport(
-    elements: Record<string, SnapshotElement>, 
-    viewport: { width: number, height: number }, 
-    scrollPos: { x: number, y: number }
-  ): Record<string, SnapshotElement> {
-    const filtered: Record<string, SnapshotElement> = {};
-    
-    
-    // Apply viewport filtering
-    // boundingBox() returns viewport-relative coordinates, so we don't need to add scroll offsets
-    const viewportLeft = 0;
-    const viewportTop = 0;
-    const viewportRight = viewport.width;
-    const viewportBottom = viewport.height;
-    
-    for (const [ref, element] of Object.entries(elements)) {
-      // If element has no coordinates, include it (fallback)
-      if (!element.coordinates) {
-        filtered[ref] = element;
-        continue;
-      }
-      
-      const { x, y, width, height } = element.coordinates;
-      
-      // Check if element is visible in current viewport
-      // Element is visible if it overlaps with viewport bounds
-      // Since boundingBox() coords are viewport-relative, we compare directly
-      const isVisible = (
-        x < viewportRight &&              // Left edge is before viewport right
-        y < viewportBottom &&             // Top edge is before viewport bottom  
-        x + width > viewportLeft &&       // Right edge is after viewport left
-        y + height > viewportTop          // Bottom edge is after viewport top
-      );
-      
-      if (isVisible) {
-        filtered[ref] = element;
-      }
-    }
-    
-    return filtered;
-  }
-
-  private rebuildSnapshotText(originalSnapshot: string, filteredElements: Record<string, SnapshotElement>): string {
-    const lines = originalSnapshot.split('\n');
-    const filteredLines: string[] = [];
-    
-    for (const line of lines) {
-      const refMatch = line.match(/\[ref=([^\]]+)\]/);
-      
-      if (refMatch) {
-        const ref = refMatch[1];
-        // Only include lines for elements that passed viewport filtering
-        if (filteredElements[ref]) {
-          filteredLines.push(line);
-        }
-      } else {
-        // Include non-element lines (headers, etc.)
-        filteredLines.push(line);
-      }
-    }
-    
-    return filteredLines.join('\n');
-  }
-
 }
