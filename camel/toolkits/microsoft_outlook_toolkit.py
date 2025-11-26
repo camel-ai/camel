@@ -217,7 +217,7 @@ class OutlookToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
 
         self.scopes = ["Mail.Send", "Mail.ReadWrite"]
-        self.redirect_uri = 'http://localhost:1000'
+        self.redirect_uri = self._get_dynamic_redirect_uri()
         self.token_file_path = (
             Path(token_file_path) if token_file_path else None
         )
@@ -225,6 +225,20 @@ class OutlookToolkit(BaseToolkit):
         self.client = self._get_graph_client(
             credentials=self.credentials, scopes=self.scopes
         )
+
+    def _get_dynamic_redirect_uri(self) -> str:
+        """Finds an available port and returns a dynamic redirect URI.
+
+        Returns:
+            str: A redirect URI with format 'http://localhost:<port>' where
+                port is an available port on the system.
+        """
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            port = s.getsockname()[1]
+        return f'http://localhost:{port}'
 
     def _get_auth_url(self, client_id, tenant_id, redirect_uri, scopes):
         """Constructs the Microsoft authorization URL.
