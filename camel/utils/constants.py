@@ -35,3 +35,6 @@ class Constants:
 
     # Default similarity threshold value for RAG
     DEFAULT_SIMILARITY_THRESHOLD = 0.7
+
+    # Default timeout threshold value
+    TIMEOUT_THRESHOLD = 180.0

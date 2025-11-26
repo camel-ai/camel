@@ -6,8 +6,16 @@ name: Pytest Camel package
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -82,6 +90,7 @@ jobs:
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -169,6 +178,7 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -254,6 +264,7 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
