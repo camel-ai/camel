@@ -18,6 +18,12 @@ from camel.triggers.base_trigger import (
     TriggerState,
     TriggerType,
 )
+from camel.triggers.schedule_trigger import (
+    DayOfWeek,
+    ScheduleConfig,
+    ScheduleTrigger,
+    ScheduleType,
+)
 from camel.triggers.trigger_manager import TriggerManager
 from camel.triggers.webhook_trigger import WebhookTrigger
 
@@ -26,6 +32,10 @@ __all__ = [
     "TriggerEvent",
     "TriggerState",
     "TriggerType",
+    "ScheduleTrigger",
+    "ScheduleType",
+    "ScheduleConfig",
+    "DayOfWeek",
     "WebhookTrigger",
     "TriggerManager",
 ]
