@@ -510,7 +510,8 @@ class FunctionTool:
             # Use functools.partial to properly capture args/kwargs
             loop = asyncio.get_running_loop()
             return await loop.run_in_executor(
-                _SYNC_TOOL_EXECUTOR, functools.partial(self.func, *args, **kwargs)
+                _SYNC_TOOL_EXECUTOR,
+                functools.partial(self.func, *args, **kwargs),
             )
 
     @property
