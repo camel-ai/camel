@@ -80,7 +80,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SiliconFlow**  | [supported models](https://cloud.siliconflow.cn/me/models) |
 | **AMD**          | dvue-aoai-001-gpt-4.1 |
 | **Volcano**      | [supported models](https://console.volcengine.com/ark) |
-| **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb) |
+| **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
 
 
 
