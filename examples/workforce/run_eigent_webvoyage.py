@@ -320,7 +320,7 @@ MUST use this as the current date.
         "points.",
         model=model_backend,
         tools=[
-            HumanToolkit().ask_human_via_console,
+            # HumanToolkit().ask_human_via_console,
             # *message_integration.register_toolkits(
             #     NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             # ).get_tools(),
@@ -434,7 +434,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--jsonl',
         type=str,
-        default='/Users/puzhen/Downloads/WebVoyager_data.jsonl',
+        default=r'C:\Users\moizh\workspace\camel\data\eignen_browser\WebVoyager_data.jsonl',
         help='Path to JSONL file',
     )
     args = parser.parse_args()

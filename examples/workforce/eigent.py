@@ -17,6 +17,8 @@ import datetime
 import os
 import platform
 import uuid
+from dotenv import load_dotenv
+load_dotenv()
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -295,6 +297,8 @@ these tips to maximize your effectiveness:
 #         (None, 'EXA_API_KEY'),
 #     ]
 # )
+# 
+# disable human toolkit for now
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -342,7 +346,6 @@ def search_agent_factory(
     # Initialize toolkits
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
-    search_toolkit = SearchToolkit().search_google
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
@@ -351,7 +354,6 @@ def search_agent_factory(
     )
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
-    # search_toolkit = message_integration.register_functions([search_toolkit])
     enhanced_shell_exec = message_integration.register_functions(
         [terminal_toolkit_basic.shell_exec]
     )
@@ -359,9 +361,7 @@ def search_agent_factory(
     tools = [
         *web_toolkit_custom.get_tools(),
         *enhanced_shell_exec,
-        HumanToolkit().ask_human_via_console,
         *note_toolkit.get_tools(),
-        # *search_toolkit,
         *terminal_toolkit.get_tools(),
     ]
 
@@ -402,7 +402,7 @@ Your capabilities include:
     powerful CLI tools like `grep` for searching within files, `curl` and
     `wget` for downloading content, and `jq` for parsing JSON data from APIs.
 - Use the note-taking tools to record your findings.
-- Use the human toolkit to ask for help when you are stuck.
+
 </capabilities>
 
 <web_search_workflow>
@@ -421,9 +421,6 @@ Your capabilities include:
         `browser_enter` to submit or confirm search.
 
 - In your response, you should mention the URLs you have visited and processed.
-
-- When encountering verification challenges (like login, CAPTCHAs or
-    robot checks), you MUST request help using the human toolkit.
 - When encountering cookies page, you need to click accept all.
 </web_search_workflow>
 """
