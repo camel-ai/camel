@@ -24,6 +24,11 @@ from camel.logger import get_logger
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
+from camel.societies.workforce.utils import (
+    WorkflowConfig,
+    WorkflowMetadata,
+    is_generic_role_name,
+)
 from camel.types import OpenAIBackendRole
 from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
@@ -60,6 +65,11 @@ class WorkflowMemoryManager:
         description (str): Description of the worker's role.
         context_utility (Optional[ContextUtility]): Shared context utility
             for workflow operations. If None, creates a new instance.
+        role_identifier (Optional[str]): Role identifier for organizing
+            workflows by role. If provided, workflows will be stored in
+            role-based folders. If None, uses default workforce context.
+        config (Optional[WorkflowConfig]): Configuration for workflow
+            management. If None, uses default configuration.
     """
 
     def __init__(
@@ -67,6 +77,8 @@ class WorkflowMemoryManager:
         worker: ChatAgent,
         description: str,
         context_utility: Optional[ContextUtility] = None,
+        role_identifier: Optional[str] = None,
+        config: Optional[WorkflowConfig] = None,
     ):
         # validate worker type at initialization
         if not isinstance(worker, ChatAgent):
@@ -78,35 +90,362 @@ class WorkflowMemoryManager:
         self.worker = worker
         self.description = description
         self._context_utility = context_utility
+        self._role_identifier = role_identifier
+        self.config = config if config is not None else WorkflowConfig()
 
     def _get_context_utility(self) -> ContextUtility:
-        r"""Get context utility with lazy initialization."""
+        r"""Get context utility with lazy initialization.
+
+        Uses role-based context if role_identifier is set, otherwise falls
+        back to default workforce shared context.
+        """
         if self._context_utility is None:
-            self._context_utility = ContextUtility.get_workforce_shared()
+            if self._role_identifier:
+                self._context_utility = (
+                    ContextUtility.get_workforce_shared_by_role(
+                        self._role_identifier
+                    )
+                )
+            else:
+                self._context_utility = ContextUtility.get_workforce_shared()
         return self._context_utility
+
+    def _extract_existing_workflow_metadata(
+        self, file_path: Path
+    ) -> Optional[WorkflowMetadata]:
+        r"""Extract metadata from an existing workflow file for versioning.
+
+        This method reads the metadata section from an existing workflow
+        markdown file to retrieve version number and creation timestamp,
+        enabling proper version tracking when updating workflows.
+
+        Args:
+            file_path (Path): Path to the existing workflow file.
+
+        Returns:
+            Optional[WorkflowMetadata]: WorkflowMetadata instance if file
+                exists and metadata is successfully parsed, None otherwise.
+        """
+        try:
+            # check if parent directory exists first
+            if not file_path.parent.exists():
+                return None
+
+            if not file_path.exists():
+                return None
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # extract metadata section
+            metadata_match = re.search(
+                r'## Metadata\s*\n(.*?)(?:\n##|$)', content, re.DOTALL
+            )
+
+            if not metadata_match:
+                return None
+
+            metadata_section = metadata_match.group(1).strip()
+
+            # parse metadata lines (format: "- key: value")
+            metadata_dict: Dict[str, Any] = {}
+            for line in metadata_section.split('\n'):
+                line = line.strip()
+                if line.startswith('-'):
+                    # remove leading "- " and split on first ":"
+                    line = line[1:].strip()
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        key = key.strip()
+                        value = value.strip()
+
+                        # convert workflow_version to int
+                        if key == 'workflow_version':
+                            try:
+                                metadata_dict[key] = int(value)
+                            except ValueError:
+                                metadata_dict[key] = 1
+                        # convert message_count to int
+                        elif key == 'message_count':
+                            try:
+                                metadata_dict[key] = int(value)
+                            except ValueError:
+                                metadata_dict[key] = 0
+                        else:
+                            metadata_dict[key] = value
+
+            # create WorkflowMetadata instance if we have required fields
+            required_fields = {
+                'session_id',
+                'working_directory',
+                'created_at',
+                'agent_id',
+            }
+            if not required_fields.issubset(metadata_dict.keys()):
+                logger.warning(
+                    f"Existing workflow missing required metadata fields: "
+                    f"{file_path}"
+                )
+                return None
+
+            # ensure we have updated_at and workflow_version
+            if 'updated_at' not in metadata_dict:
+                metadata_dict['updated_at'] = metadata_dict['created_at']
+            if 'workflow_version' not in metadata_dict:
+                metadata_dict['workflow_version'] = 1
+            if 'message_count' not in metadata_dict:
+                metadata_dict['message_count'] = 0
+
+            return WorkflowMetadata(**metadata_dict)
+
+        except Exception as e:
+            logger.warning(
+                f"Error extracting workflow metadata from {file_path}: {e}"
+            )
+            return None
+
+    def _try_role_based_loading(
+        self,
+        role_name: str,
+        pattern: Optional[str],
+        max_files_to_load: int,
+        use_smart_selection: bool,
+    ) -> bool:
+        r"""Try loading workflows from role-based directory structure.
+
+        Args:
+            role_name (str): Role name to load workflows from.
+            pattern (Optional[str]): Custom search pattern for workflow files.
+            max_files_to_load (int): Maximum number of workflow files to load.
+            use_smart_selection (bool): Whether to use agent-based selection.
+
+        Returns:
+            bool: True if workflows were successfully loaded, False otherwise.
+        """
+        logger.info(f"Attempting to load workflows for role: {role_name}")
+
+        loaded = self.load_workflows_by_role(
+            role_name=role_name,
+            pattern=pattern,
+            max_files_to_load=max_files_to_load,
+            use_smart_selection=use_smart_selection,
+        )
+
+        return loaded
+
+    def _try_session_based_loading(
+        self,
+        session_id: str,
+        role_name: str,
+        pattern: Optional[str],
+        max_files_to_load: int,
+        use_smart_selection: bool,
+    ) -> bool:
+        r"""Try loading workflows from session-based directory (deprecated).
+
+        Args:
+            session_id (str): Workforce session ID to load from.
+            role_name (str): Role name (for deprecation warning).
+            pattern (Optional[str]): Custom search pattern for workflow files.
+            max_files_to_load (int): Maximum number of workflow files to load.
+            use_smart_selection (bool): Whether to use agent-based selection.
+
+        Returns:
+            bool: True if workflows were successfully loaded, False otherwise.
+        """
+        import warnings
+
+        warnings.warn(
+            f"Session-based workflow loading "
+            f"(session_id={session_id}) is deprecated. "
+            f"Workflows are now organized by role in "
+            f"workforce_workflows/{{role_name}}/ folders. "
+            f"No workflows found for role '{role_name}'.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
+        logger.info(
+            f"Falling back to session-based loading for "
+            f"session_id={session_id}"
+        )
+
+        if use_smart_selection:
+            return self._session_based_smart_loading(
+                session_id, max_files_to_load
+            )
+        else:
+            return self._session_based_pattern_loading(
+                pattern, session_id, max_files_to_load
+            )
+
+    def _session_based_smart_loading(
+        self, session_id: str, max_files_to_load: int
+    ) -> bool:
+        r"""Load workflows from session using smart selection.
+
+        Args:
+            session_id (str): Session ID to load from.
+            max_files_to_load (int): Maximum number of files to load.
+
+        Returns:
+            bool: True if workflows were loaded, False otherwise.
+        """
+        context_util = self._get_context_utility()
+        workflows_metadata = context_util.get_all_workflows_info(session_id)
+
+        if workflows_metadata:
+            selected_files, selection_method = self._select_relevant_workflows(
+                workflows_metadata,
+                max_files_to_load,
+                session_id,
+            )
+
+            if selected_files:
+                logger.info(
+                    f"Workflow selection method: {selection_method.value}"
+                )
+                loaded_count = self._load_workflow_files(
+                    selected_files, max_files_to_load
+                )
+                return loaded_count > 0
+
+        return False
+
+    def _session_based_pattern_loading(
+        self,
+        pattern: Optional[str],
+        session_id: str,
+        max_files_to_load: int,
+    ) -> bool:
+        r"""Load workflows from session using pattern matching.
+
+        Args:
+            pattern (Optional[str]): Pattern for file matching.
+            session_id (str): Session ID to load from.
+            max_files_to_load (int): Maximum number of files to load.
+
+        Returns:
+            bool: True if workflows were loaded, False otherwise.
+        """
+        workflow_files = self._find_workflow_files(pattern, session_id)
+        if workflow_files:
+            loaded_count = self._load_workflow_files(
+                workflow_files, max_files_to_load
+            )
+            return loaded_count > 0
+
+        return False
 
     def load_workflows(
         self,
         pattern: Optional[str] = None,
-        max_files_to_load: int = 3,
+        max_files_to_load: Optional[int] = None,
         session_id: Optional[str] = None,
         use_smart_selection: bool = True,
     ) -> bool:
         r"""Load workflow memories using intelligent agent-based selection.
 
-        This method uses the worker agent to intelligently select the most
-        relevant workflows based on workflow information (title, description,
-        tags) rather than simple filename pattern matching.
+        This method first tries to load workflows from the role-based folder
+        structure. If no workflows are found and session_id is provided, falls
+        back to session-based loading (deprecated).
 
         Args:
             pattern (Optional[str]): Legacy parameter for backward
                 compatibility. When use_smart_selection=False, uses this
                 pattern for file matching. Ignored when smart selection
                 is enabled.
-            max_files_to_load (int): Maximum number of workflow files to load.
-                (default: :obj:`3`)
-            session_id (Optional[str]): Specific workforce session ID to load
-                from. If None, searches across all sessions.
+            max_files_to_load (Optional[int]): Maximum number of workflow files
+                to load. If None, uses config.default_max_files_to_load.
+                (default: :obj:`None`)
+            session_id (Optional[str]): Deprecated. Specific workforce session
+                ID to load from using legacy session-based organization.
+                (default: :obj:`None`)
+            use_smart_selection (bool): Whether to use agent-based
+                intelligent workflow selection. When True, uses workflow
+                information and LLM to select most relevant workflows. When
+                False, falls back to pattern matching. (default: :obj:`True`)
+
+        Returns:
+            bool: True if workflow memories were successfully loaded, False
+                otherwise. Check logs for detailed error messages.
+        """
+        try:
+            # use config default if not specified
+            if max_files_to_load is None:
+                max_files_to_load = self.config.default_max_files_to_load
+
+            # reset system message to original state before loading
+            # this prevents duplicate workflow context on multiple calls
+            self.worker.reset_to_original_system_message()
+
+            # determine role name to use
+            role_name = (
+                self._role_identifier
+                if self._role_identifier
+                else self._get_sanitized_role_name()
+            )
+
+            # try role-based loading first
+            loaded = self._try_role_based_loading(
+                role_name, pattern, max_files_to_load, use_smart_selection
+            )
+
+            if loaded:
+                logger.info(
+                    f"Successfully loaded workflows for role '{role_name}'"
+                )
+                return True
+
+            # fallback to session-based if session_id is provided
+            if session_id is not None:
+                loaded = self._try_session_based_loading(
+                    session_id,
+                    role_name,
+                    pattern,
+                    max_files_to_load,
+                    use_smart_selection,
+                )
+                if loaded:
+                    logger.info(
+                        f"Successfully loaded workflows from session "
+                        f"'{session_id}' (deprecated)"
+                    )
+                    return True
+
+            logger.info(
+                f"No workflow files found for role '{role_name}'. "
+                f"This may be expected if no workflows have been saved yet."
+            )
+            return False
+
+        except Exception as e:
+            logger.error(
+                f"Error loading workflow memories for "
+                f"{self.description}: {e!s}",
+                exc_info=True,
+            )
+            return False
+
+    def load_workflows_by_role(
+        self,
+        role_name: Optional[str] = None,
+        pattern: Optional[str] = None,
+        max_files_to_load: Optional[int] = None,
+        use_smart_selection: bool = True,
+    ) -> bool:
+        r"""Load workflow memories from role-based directory structure.
+
+        This method loads workflows from the new role-based folder structure:
+        workforce_workflows/{role_name}/*.md
+
+        Args:
+            role_name (Optional[str]): Role name to load workflows from. If
+                None, uses the worker's role_name or role_identifier.
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                Ignored when use_smart_selection=True.
+            max_files_to_load (Optional[int]): Maximum number of workflow files
+                to load. If None, uses config.default_max_files_to_load.
                 (default: :obj:`None`)
             use_smart_selection (bool): Whether to use agent-based
                 intelligent workflow selection. When True, uses workflow
@@ -118,33 +457,53 @@ class WorkflowMemoryManager:
                 otherwise.
         """
         try:
+            # use config default if not specified
+            if max_files_to_load is None:
+                max_files_to_load = self.config.default_max_files_to_load
+
             # reset system message to original state before loading
-            # this prevents duplicate workflow context on multiple calls
             self.worker.reset_to_original_system_message()
+
+            # determine role name to use
+            if role_name is None:
+                role_name = (
+                    self._role_identifier or self._get_sanitized_role_name()
+                )
 
             # determine which selection method to use
             if use_smart_selection:
                 # smart selection: use workflow information and agent
                 # intelligence
                 context_util = self._get_context_utility()
-                workflows_metadata = context_util.get_all_workflows_info(
-                    session_id
+
+                # find workflow files in role-based directory
+                workflow_files = self._find_workflow_files_by_role(
+                    role_name, pattern
                 )
 
+                # get workflow metadata for smart selection
+                workflows_metadata = []
+                for file_path in workflow_files:
+                    metadata = context_util.extract_workflow_info(file_path)
+                    if metadata:
+                        workflows_metadata.append(metadata)
+
                 if not workflows_metadata:
-                    logger.info("No workflow files found")
+                    logger.info(
+                        f"No workflow files found for role: {role_name}"
+                    )
                     return False
 
                 # use agent to select most relevant workflows
                 selected_files, selection_method = (
                     self._select_relevant_workflows(
-                        workflows_metadata, max_files_to_load, session_id
+                        workflows_metadata, max_files_to_load
                     )
                 )
 
                 if not selected_files:
                     logger.info(
-                        f"No workflows selected "
+                        f"No workflows selected for role {role_name} "
                         f"(method: {selection_method.value})"
                     )
                     return False
@@ -161,8 +520,14 @@ class WorkflowMemoryManager:
 
             else:
                 # legacy pattern matching approach
-                workflow_files = self._find_workflow_files(pattern, session_id)
+                workflow_files = self._find_workflow_files_by_role(
+                    role_name, pattern
+                )
+
                 if not workflow_files:
+                    logger.info(
+                        f"No workflow files found for role: {role_name}"
+                    )
                     return False
 
                 loaded_count = self._load_workflow_files(
@@ -173,14 +538,13 @@ class WorkflowMemoryManager:
             if loaded_count > 0:
                 logger.info(
                     f"Successfully loaded {loaded_count} workflow file(s) for "
-                    f"{self.description}"
+                    f"role {role_name}"
                 )
             return loaded_count > 0
 
         except Exception as e:
             logger.warning(
-                f"Error loading workflow memories for {self.description}: "
-                f"{e!s}"
+                f"Error loading workflow memories for role {role_name}: {e!s}"
             )
             return False
 
@@ -216,12 +580,7 @@ class WorkflowMemoryManager:
             # check if we should use role_name or let summarize extract
             # task_title
             clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = clean_name not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
+            use_role_name_for_filename = not is_generic_role_name(clean_name)
 
             # if role_name is explicit, use it for filename
             # if role_name is generic, pass none to let summarize use
@@ -266,6 +625,151 @@ class WorkflowMemoryManager:
                 "worker_description": self.description,
                 "message": f"Failed to save workflow memories: {e!s}",
             }
+
+    async def save_workflow_content_async(
+        self,
+        workflow_summary: 'WorkflowSummary',
+        context_utility: Optional[ContextUtility] = None,
+        conversation_accumulator: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""Save a pre-generated workflow summary to disk.
+
+        This method takes a pre-generated WorkflowSummary object and saves
+        it to disk using the provided context utility. It does NOT call the
+        LLM - just formats and saves the content. Use this for two-pass
+        workflows where the summary is generated first, then saved to a
+        location determined by the summary content.
+
+        Args:
+            workflow_summary (WorkflowSummary): Pre-generated workflow summary
+                object containing task_title, agent_title, etc.
+            context_utility (Optional[ContextUtility]): Context utility with
+                correct working directory. If None, uses default.
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. Used to get
+                accurate message_count metadata. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Formatted workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+
+        def _create_error_result(message: str) -> Dict[str, Any]:
+            """helper to create error result dict."""
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": message,
+            }
+
+        try:
+            # validate workflow_summary input
+            if not workflow_summary:
+                return _create_error_result("workflow_summary is required")
+
+            # validate required fields exist
+            if not hasattr(workflow_summary, 'task_title'):
+                return _create_error_result(
+                    "workflow_summary must have task_title field"
+                )
+
+            if not hasattr(workflow_summary, 'agent_title'):
+                return _create_error_result(
+                    "workflow_summary must have agent_title field"
+                )
+
+            # validate agent_title is not empty
+            agent_title = getattr(workflow_summary, 'agent_title', '').strip()
+            if not agent_title:
+                return _create_error_result(
+                    "workflow_summary.agent_title cannot be empty"
+                )
+
+            # use provided context utility or get default
+            if context_utility is None:
+                context_utility = self._get_context_utility()
+
+            # set context utility on worker
+            self.worker.set_context_utility(context_utility)
+
+            # determine filename from task_title
+            task_title = workflow_summary.task_title
+            clean_title = ContextUtility.sanitize_workflow_filename(task_title)
+            base_filename = (
+                f"{clean_title}{self.config.workflow_filename_suffix}"
+                if clean_title
+                else "workflow"
+            )
+
+            # check if workflow file already exists to handle versioning
+            file_path = (
+                context_utility.get_working_directory() / f"{base_filename}.md"
+            )
+            existing_metadata = self._extract_existing_workflow_metadata(
+                file_path
+            )
+
+            # build metadata - get message count from accumulator if available
+            source_agent = (
+                conversation_accumulator
+                if conversation_accumulator
+                else self.worker
+            )
+
+            # determine version and created_at based on existing metadata
+            # only increment version if versioning is enabled
+            if self.config.enable_versioning and existing_metadata:
+                workflow_version = existing_metadata.workflow_version + 1
+                created_at = existing_metadata.created_at
+            else:
+                workflow_version = 1
+                created_at = None
+
+            metadata = context_utility.get_session_metadata(
+                workflow_version=workflow_version, created_at=created_at
+            )
+            metadata.update(
+                {
+                    "agent_id": self.worker.agent_id,
+                    "message_count": len(source_agent.memory.get_context()[0]),
+                }
+            )
+
+            # convert WorkflowSummary to markdown
+            summary_content = context_utility.structured_output_to_markdown(
+                structured_data=workflow_summary, metadata=metadata
+            )
+
+            # save to disk
+            save_status = context_utility.save_markdown_file(
+                base_filename,
+                summary_content,
+            )
+
+            # format summary with context prefix
+            formatted_summary = (
+                f"[CONTEXT_SUMMARY] The following is a summary of our "
+                f"conversation from a previous session: {summary_content}"
+            )
+
+            return {
+                "status": "success"
+                if save_status == "success"
+                else save_status,
+                "summary": formatted_summary,
+                "file_path": str(file_path),
+                "worker_description": self.description,
+            }
+
+        except Exception as e:
+            return _create_error_result(
+                f"Failed to save workflow content: {e!s}"
+            )
 
     async def save_workflow_async(
         self, conversation_accumulator: Optional[ChatAgent] = None
@@ -315,12 +819,7 @@ class WorkflowMemoryManager:
             # check if we should use role_name or let asummarize extract
             # task_title
             clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = clean_name not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
+            use_role_name_for_filename = not is_generic_role_name(clean_name)
 
             # generate and save workflow summary
             # if role_name is explicit, use it for filename
@@ -511,6 +1010,11 @@ class WorkflowMemoryManager:
     ) -> List[str]:
         r"""Find and return sorted workflow files matching the pattern.
 
+        .. note::
+            Session-based workflow search will be deprecated in a future
+            version. Consider using :meth:`_find_workflow_files_by_role` for
+            role-based organization instead.
+
         Args:
             pattern (Optional[str]): Custom search pattern for workflow files.
                 If None, uses worker role_name to generate pattern.
@@ -521,27 +1025,40 @@ class WorkflowMemoryManager:
             List[str]: Sorted list of workflow file paths (empty if
                 validation fails).
         """
+        import warnings
+
+        warnings.warn(
+            "Session-based workflow search is deprecated and will be removed "
+            "in a future version. Consider using load_workflows_by_role() for "
+            "role-based organization instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
         # generate filename-safe search pattern from worker role name
         if pattern is None:
             # get sanitized role name
             clean_name = self._get_sanitized_role_name()
 
             # check if role_name is generic
-            generic_names = {'assistant', 'agent', 'user', 'system'}
-            if clean_name in generic_names:
+            if is_generic_role_name(clean_name):
                 # for generic role names, search for all workflow files
                 # since filename is based on task_title
-                pattern = "*_workflow*.md"
+                pattern = f"*{self.config.workflow_filename_suffix}*.md"
             else:
                 # for explicit role names, search for role-specific files
-                pattern = f"{clean_name}_workflow*.md"
+                pattern = (
+                    f"{clean_name}{self.config.workflow_filename_suffix}*.md"
+                )
 
-        # get the base workforce_workflows directory
+        # get the base workflow directory from config
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
         if camel_workdir:
-            base_dir = os.path.join(camel_workdir, "workforce_workflows")
+            base_dir = os.path.join(
+                camel_workdir, self.config.workflow_folder_name
+            )
         else:
-            base_dir = "workforce_workflows"
+            base_dir = self.config.workflow_folder_name
 
         # search for workflow files in specified or all session directories
         if session_id:
@@ -562,6 +1079,64 @@ class WorkflowMemoryManager:
             return match.group(1) if match else ""
 
         workflow_files.sort(key=extract_session_timestamp, reverse=True)
+        return workflow_files
+
+    def _find_workflow_files_by_role(
+        self, role_name: Optional[str] = None, pattern: Optional[str] = None
+    ) -> List[str]:
+        r"""Find workflow files in role-based directory structure.
+
+        This method searches for workflows in the new role-based folder
+        structure: workforce_workflows/{role_name}/*.md
+
+        Args:
+            role_name (Optional[str]): Role name to search for. If None,
+                uses the worker's role_name or role_identifier.
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                If None, searches for all workflow files in the role directory.
+
+        Returns:
+            List[str]: Sorted list of workflow file paths by modification time
+                (most recent first).
+        """
+        # determine role name to use
+        if role_name is None:
+            role_name = (
+                self._role_identifier or self._get_sanitized_role_name()
+            )
+
+        # sanitize role name for filesystem use
+        clean_role = ContextUtility.sanitize_workflow_filename(role_name)
+        if not clean_role:
+            clean_role = "unknown_role"
+
+        # get the base workflow directory from config
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if camel_workdir:
+            base_dir = os.path.join(
+                camel_workdir, self.config.workflow_folder_name, clean_role
+            )
+        else:
+            base_dir = os.path.join(
+                self.config.workflow_folder_name, clean_role
+            )
+
+        # use provided pattern or default to all workflow files
+        if pattern is None:
+            pattern = f"*{self.config.workflow_filename_suffix}*.md"
+
+        # search for workflow files in role directory
+        search_path = str(Path(base_dir) / pattern)
+        workflow_files = glob.glob(search_path)
+
+        if not workflow_files:
+            logger.info(
+                f"No workflow files found in role directory: {base_dir}"
+            )
+            return []
+
+        # sort by file modification time (most recent first)
+        workflow_files.sort(key=os.path.getmtime, reverse=True)
         return workflow_files
 
     def _collect_workflow_contents(
@@ -654,6 +1229,9 @@ class WorkflowMemoryManager:
                 f"{'=' * 60}\n\n"
                 f"{workflow_data['content']}"
             )
+
+        # add clear ending marker
+        combined_content += "\n\n--- End of Previous Workflows ---\n"
 
         return combined_content
 
@@ -755,10 +1333,10 @@ class WorkflowMemoryManager:
 
         Returns:
             str: Sanitized filename without timestamp and without .md
-                extension. Format: {role_name}_workflow
+                extension. Format: {role_name}{workflow_filename_suffix}
         """
         clean_name = self._get_sanitized_role_name()
-        return f"{clean_name}_workflow"
+        return f"{clean_name}{self.config.workflow_filename_suffix}"
 
     def _prepare_workflow_prompt(self) -> str:
         r"""Prepare the structured prompt for workflow summarization.

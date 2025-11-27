@@ -281,6 +281,41 @@ ToolCallingRecord(tool_name='shell_exec', args={'id': 'terminal_session_1',
 ===============================================================================
 """
 
+tools = TerminalToolkit(
+    working_directory=workspace_dir, install_dependencies=['numpy']
+).get_tools()
+
+model_config_dict = ChatGPTConfig(
+    temperature=0.0,
+).as_dict()
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+    model_config_dict=model_config_dict,
+)
+camel_agent = ChatAgent(
+    system_message=sys_msg,
+    model=model,
+    tools=tools,
+)
+camel_agent.reset()
+
+usr_msg = "check my numpy version"
+
+# Get response information
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'check_numpy_version_1',
+'command': 'python3 -c "import numpy; print(numpy.__version__)"', 
+'block': True}, result='2.2.6', tool_call_id='call_UuL6YGIMv7I4GSOjA8es65aW', 
+images=None)]
+===============================================================================
+"""
+
 # ------Docker backend------
 tools = TerminalToolkit(
     use_docker_backend=True,
