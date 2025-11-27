@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import asyncio
+import functools
 import inspect
 import logging
 import textwrap
@@ -506,9 +507,10 @@ class FunctionTool:
             return await self.func(*args, **kwargs)
         else:
             # Run sync function in executor to avoid blocking event loop
+            # Use functools.partial to properly capture args/kwargs
             loop = asyncio.get_running_loop()
             return await loop.run_in_executor(
-                _SYNC_TOOL_EXECUTOR, lambda: self.func(*args, **kwargs)
+                _SYNC_TOOL_EXECUTOR, functools.partial(self.func, *args, **kwargs)
             )
 
     @property

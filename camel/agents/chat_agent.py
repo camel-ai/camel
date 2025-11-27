@@ -17,6 +17,7 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import functools
 import hashlib
 import inspect
 import json
@@ -3914,8 +3915,9 @@ class ChatAgent(BaseAgent):
 
             else:
                 # Fallback: synchronous call
+                # Use functools.partial to properly capture args
                 loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(None, lambda: tool(**args))
+                result = await loop.run_in_executor(None, functools.partial(tool, **args))
 
         except Exception as e:
             # Capture the error message to prevent framework crash
@@ -4742,9 +4744,10 @@ class ChatAgent(BaseAgent):
 
                     else:
                         # Fallback: synchronous call
+                        # Use functools.partial to properly capture args
                         loop = asyncio.get_running_loop()
                         result = await loop.run_in_executor(
-                            None, lambda: tool(**args)
+                            None, functools.partial(tool, **args)
                         )
 
                     # Create the tool response message
