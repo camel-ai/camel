@@ -108,6 +108,12 @@ class OpenAIModel(BaseModelBackend):
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
             Ignored if custom clients are provided.
+
+    Environment Variables:
+        CAMEL_USE_CAMEL_RESPONSE (str): If set to "true", the model's response
+            will be automatically converted to :obj:`CamelModelResponse`. This
+            is useful for standardizing responses across different models.
+            (default: "false")
     """
 
     @api_keys_required(

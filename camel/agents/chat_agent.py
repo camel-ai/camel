@@ -29,7 +29,7 @@ import threading
 import time
 import uuid
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -3654,12 +3654,10 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         for msg in response.output_messages:
             # Re-wrap to preserve agent role naming convention
-            chat_message = BaseMessage(
+            chat_message = replace(
+                msg,
                 role_name=self.role_name,
                 role_type=self.role_type,
-                meta_dict=msg.meta_dict,
-                content=msg.content,
-                parsed=msg.parsed,
             )
             output_messages.append(chat_message)
 

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model-agnostic message abstractions and converters.
 
-Phase 1 introduces `CamelMessage` to decouple CAMEL from the legacy
+Introduces `CamelMessage` to decouple CAMEL from the legacy
 OpenAI Chat Completions message schema while keeping behaviour identical
 via adapter conversion.
 """
@@ -30,7 +30,7 @@ from camel.messages import OpenAIMessage
 class CamelContentPart(BaseModel):
     """A single content fragment.
 
-    Phase 1.5: Extend to cover Responses API inputs while staying compatible
+    Extend to cover Responses API inputs while staying compatible
     with Chat Completions. Supported types:
       - text, image_url (Chat-compatible)
       - input_text, input_image, input_file, input_audio (Responses-compatible)
@@ -64,12 +64,7 @@ class CamelMessage(BaseModel):
 def openai_messages_to_camel(
     messages: List[OpenAIMessage],
 ) -> List[CamelMessage]:
-    """Convert OpenAI ChatCompletion-style messages to `CamelMessage`.
-
-    Notes:
-        - Only text and image_url items are converted in Phase 1.
-        - Other fields are carried over when present (name, tool_call_id).
-    """
+    """Convert OpenAI ChatCompletion-style messages to `CamelMessage`."""
     result: List[CamelMessage] = []
     for msg in messages:
         role = msg.get("role", "user")  # type: ignore[assignment]
@@ -162,10 +157,7 @@ def openai_messages_to_camel(
 def camel_messages_to_openai(
     messages: List[CamelMessage],
 ) -> List[OpenAIMessage]:
-    """Convert `CamelMessage` back to OpenAI ChatCompletion-style messages.
-
-    This is lossless for the text/image_url subset used in Phase 1.
-    """
+    """Convert `CamelMessage` back to OpenAI ChatCompletion-style messages."""
     result: List[OpenAIMessage] = []
     for cmsg in messages:
         if cmsg.role == "tool":
