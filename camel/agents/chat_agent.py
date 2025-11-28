@@ -49,6 +49,8 @@ from typing import (
     cast,
 )
 
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse, StreamingResponse
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -105,6 +107,24 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+
+
+# Define Pydantic models for request/response
+class ChatMessage(BaseModel):
+    role: str
+    content: str = ""
+    name: Optional[str] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_call_id: Optional[str] = None
+
+
+class ChatCompletionRequest(BaseModel):
+    model: Optional[str] = "camel-model"
+    messages: List[ChatMessage]
+    stream: Optional[bool] = False
+    functions: Optional[Any] = None
+    tools: Optional[Any] = None
+
 
 TOKEN_LIMIT_ERROR_MARKERS = (
     "context_length_exceeded",
@@ -5796,3 +5816,275 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
+    @dependencies_required("fastapi")
+    def to_openai_compatible_server(self) -> Any:
+        r"""Create an OpenAI-compatible FastAPI server for this ChatAgent.
+
+        Returns:
+            FastAPI: A FastAPI application that can be served to provide
+                OpenAI-compatible API endpoints for this ChatAgent.
+
+        Example:
+            ```python
+            agent = ChatAgent(model="gpt-4")
+            app = agent.to_openai_compatible_server()
+
+            # Serve with uvicorn
+            import uvicorn
+            uvicorn.run(app, host="0.0.0.0", port=8000)
+            ```
+        """
+
+        app = FastAPI(
+            title="CAMEL OpenAI-compatible API",
+            description="OpenAI-compatible API for CAMEL ChatAgent",
+        )
+
+        @app.post("/v1/chat/completions")
+        async def chat_completions(request_data: ChatCompletionRequest):
+            try:
+                logger.info("Request", request_data.model_dump_json())
+
+                messages = request_data.messages
+                model = request_data.model
+                stream = request_data.stream
+                functions = request_data.functions
+                tools = request_data.tools
+
+                self.reset()
+                self._external_tool_schemas.clear()
+
+                # Convert OpenAI messages to CAMEL format and record in memory
+                current_user_message = None
+                for msg in messages:
+                    msg_role = msg.role
+                    msg_content = msg.content or ""
+
+                    if msg_role == "user":
+                        user_msg = BaseMessage.make_user_message(
+                            role_name="User", content=msg_content
+                        )
+                        # Record all but the last user message in memory
+                        # The last user message will be passed to step()
+                        if current_user_message is not None:
+                            self.update_memory(
+                                current_user_message, OpenAIBackendRole.USER
+                            )
+                        current_user_message = user_msg
+                    elif msg_role == "system":
+                        sys_msg = BaseMessage.make_system_message(
+                            role_name="System", content=msg_content
+                        )
+                        self.update_memory(sys_msg, OpenAIBackendRole.SYSTEM)
+                        self.update_system_message(msg_content, True)
+                    elif msg_role == "assistant":
+                        # Record previous assistant messages
+                        assistant_msg = BaseMessage.make_assistant_message(
+                            role_name="Assistant", content=msg_content
+                        )
+                        self.update_memory(
+                            assistant_msg, OpenAIBackendRole.ASSISTANT
+                        )
+                    elif msg_role == "tool":
+                        # Handle tool response messages if needed
+                        tool_call_id = msg.tool_call_id
+                        tool_msg = FunctionCallingMessage.make_tool_message(
+                            role_name="Tool",
+                            content=msg_content,
+                            tool_call_id=(tool_call_id or ""),
+                        )
+                        self.update_memory(tool_msg, OpenAIBackendRole.TOOL)
+
+                # Process tools/functions if provided
+                if tools or functions:
+                    tools_to_use = tools if tools else functions
+                    # Type guard to ensure tools_to_use is not None
+                    if tools_to_use is not None:
+                        for tool in tools_to_use:
+                            self._external_tool_schemas[
+                                tool["function"]["name"]
+                            ] = tool
+
+                # Get the response from the agent
+                self.model_backend.model_config_dict["stream"] = stream
+                if current_user_message is not None:
+                    if stream:
+                        try:
+                            return StreamingResponse(
+                                _stream_response(
+                                    current_user_message, request_data
+                                ),
+                                media_type="text/event-stream",
+                            )
+                        except Exception:
+                            logger.warning(
+                                "The Model does not support streaming output,"
+                                "there will be no reply"
+                            )
+                    else:
+                        agent_response = await self.astep(current_user_message)
+
+                        # Convert CAMEL response to OpenAI format
+                        if not agent_response.msgs:
+                            # Empty response or error
+                            content = "No response generated"
+                            finish_reason = "error"
+                        else:
+                            content = agent_response.msgs[0].content
+                            finish_reason = "stop"
+
+                        # Check for tool calls
+                        tool_calls_response = None
+                        external_tool_requests = agent_response.info.get(
+                            "external_tool_call_requests"
+                        )
+                        if external_tool_requests:
+                            tool_calls_response = []
+                            for tool_call in external_tool_requests:
+                                tool_calls_response.append(
+                                    {
+                                        "id": (
+                                            tool_call.tool_call_id
+                                            or f"call_{int(time.time())}"
+                                        ),
+                                        "type": "function",
+                                        "function": {
+                                            "name": tool_call.tool_name,
+                                            "arguments": json.dumps(
+                                                tool_call.args
+                                            ),
+                                        },
+                                    }
+                                )
+                            finish_reason = "tool_calls"
+
+                        usage = agent_response.info.get("usage") or {
+                            "prompt_tokens": agent_response.info.get(
+                                "prompt_tokens", 0
+                            ),
+                            "completion_tokens": agent_response.info.get(
+                                "completion_tokens", 0
+                            ),
+                            "total_tokens": agent_response.info.get(
+                                "total_tokens", 0
+                            ),
+                        }
+
+                        response = {
+                            "id": agent_response.info.get(
+                                "id", f"chatcmpl-{uuid.uuid4().hex}"
+                            ),
+                            "object": "chat.completion",
+                            "created": int(time.time()),
+                            "model": model,
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "message": {
+                                        "role": "assistant",
+                                        "content": (
+                                            content
+                                            if not tool_calls_response
+                                            else None
+                                        ),
+                                        "tool_calls": tool_calls_response,
+                                    },
+                                    "finish_reason": finish_reason,
+                                }
+                            ],
+                            "usage": usage,
+                        }
+
+                        logger.info(
+                            "Pesponse:",
+                            json.dumps(response, indent=2, ensure_ascii=False),
+                        )
+
+                        return response
+                else:
+                    # No user message provided
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "No user message provided"},
+                    )
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Internal server error: {e!s}"},
+                )
+
+        async def _stream_response(
+            message: BaseMessage, request_data: ChatCompletionRequest
+        ):
+            # Start a separate task for the agent processing
+            agent_response = await self.astep(message)
+
+            completion_id = f"chatcmpl-{uuid.uuid4().hex}"
+            created_at = int(time.time())
+            usage = None
+
+            if isinstance(agent_response, AsyncStreamingChatAgentResponse):
+                first_sent = False
+
+                async for chunk in agent_response:
+                    if not chunk.msgs:
+                        continue
+
+                    if not first_sent:
+                        first_chunk = {
+                            "id": completion_id,
+                            "object": "chat.completion.chunk",
+                            "created": created_at,
+                            "model": getattr(
+                                request_data, "model", "camel-model"
+                            ),
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {"role": "assistant"},
+                                    "finish_reason": None,
+                                }
+                            ],
+                        }
+                        yield f"data: {json.dumps(first_chunk)}\n\n"
+                        first_sent = True
+
+                    full_content = (
+                        chunk.msgs[0].content
+                        if hasattr(chunk.msgs[0], "content")
+                        else ""
+                    )
+
+                    if full_content and chunk.info.get("partial", True):
+                        word_chunk = {
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {"content": full_content},
+                                    "finish_reason": None,
+                                }
+                            ],
+                        }
+                        yield f"data: {json.dumps(word_chunk)}\n\n"
+
+                    if not chunk.info.get("partial", True):
+                        usage = chunk.info.get("usage")
+                        break
+
+                final_chunk = {
+                    "choices": [
+                        {"index": 0, "delta": {}, "finish_reason": "stop"}
+                    ],
+                    "usage": usage,
+                }
+                yield f"data: {json.dumps(final_chunk)}\n\n"
+                yield "data: [DONE]\n\n"
+
+            else:
+                logger.warning(
+                    "The Model does not support streaming output, "
+                    "there will be no reply"
+                )
+
+        return app
