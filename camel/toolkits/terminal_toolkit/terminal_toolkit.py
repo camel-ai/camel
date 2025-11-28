@@ -84,6 +84,8 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
+        install_dependencies (List): A list of user specified libraries
+            to install.
     """
 
     def __init__(
@@ -96,6 +98,7 @@ class TerminalToolkit(BaseToolkit):
         safe_mode: bool = True,
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
+        install_dependencies: Optional[List[str]] = None,
     ):
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
@@ -145,6 +148,7 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path: Optional[str] = None
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
+        self.install_dependencies = install_dependencies or []
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -180,13 +184,20 @@ class TerminalToolkit(BaseToolkit):
                     base_url='unix://var/run/docker.sock', timeout=self.timeout
                 )
                 self.docker_client = docker.from_env()
-                self.container = self.docker_client.containers.get(
-                    docker_container_name
-                )
-                logger.info(
-                    f"Successfully attached to Docker container "
-                    f"'{docker_container_name}'."
-                )
+                try:
+                    # Try to get existing container
+                    self.container = self.docker_client.containers.get(
+                        docker_container_name
+                    )
+                    logger.info(
+                        f"Successfully attached to existing Docker container "
+                        f"'{docker_container_name}'."
+                    )
+                except NotFound:
+                    raise RuntimeError(
+                        f"Container '{docker_container_name}' not found. "
+                    )
+
                 # Ensure the working directory exists inside the container
                 if self.docker_workdir:
                     try:
@@ -221,6 +232,10 @@ class TerminalToolkit(BaseToolkit):
                 "- container is already isolated"
             )
 
+        # Install dependencies
+        if self.install_dependencies:
+            self._install_dependencies()
+
     def _setup_cloned_environment(self):
         r"""Set up a cloned Python environment."""
         self.cloned_env_path = os.path.join(self.working_dir, ".venv")
@@ -247,6 +262,80 @@ class TerminalToolkit(BaseToolkit):
                 "[ENV CLONE] Failed to create cloned environment, "
                 "using system Python"
             )
+
+    def _install_dependencies(self):
+        r"""Install user specified dependencies in the current environment."""
+        if not self.install_dependencies:
+            return
+
+        logger.info("Installing dependencies...")
+
+        if self.use_docker_backend:
+            pkg_str = " ".join(
+                shlex.quote(p) for p in self.install_dependencies
+            )
+            install_cmd = f'sh -lc "pip install {pkg_str}"'
+
+            try:
+                exec_id = self.docker_api_client.exec_create(
+                    self.container.id, install_cmd
+                )["Id"]
+                log = self.docker_api_client.exec_start(exec_id)
+                logger.info(f"Package installation output:\n{log}")
+
+                # Check exit code to ensure installation succeeded
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                if exec_info['ExitCode'] != 0:
+                    error_msg = (
+                        f"Failed to install dependencies in Docker: "
+                        f"{log.decode('utf-8', errors='ignore')}"
+                    )
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+
+                logger.info(
+                    "Successfully installed all dependencies in Docker."
+                )
+            except Exception as e:
+                if not isinstance(e, RuntimeError):
+                    logger.error(f"Docker dependency installation error: {e}")
+                    raise RuntimeError(
+                        f"Docker dependency installation error: {e}"
+                    ) from e
+                raise
+
+        else:
+            pip_cmd = [
+                self.python_executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                *self.install_dependencies,
+            ]
+
+            try:
+                subprocess.run(
+                    pip_cmd,
+                    check=True,
+                    cwd=self.working_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minutes timeout for installation
+                )
+                logger.info("Successfully installed all dependencies.")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install dependencies: {e.stderr}")
+                raise RuntimeError(
+                    f"Failed to install dependencies: {e.stderr}"
+                ) from e
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    "Dependency installation timed out after 5 minutes"
+                )
+                raise RuntimeError(
+                    "Dependency installation timed out after 5 minutes"
+                )
 
     def _setup_initial_environment(self):
         r"""Set up an initial environment with Python 3.10."""
