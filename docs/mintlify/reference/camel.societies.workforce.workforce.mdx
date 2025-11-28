@@ -606,6 +606,21 @@ yet been started.  In the latter case we simply mark the stop flag so
 that the loop (when it eventually starts) will exit immediately after
 initialisation.
 
+<a id="camel.societies.workforce.workforce.Workforce.stop_immediately"></a>
+
+### stop_immediately
+
+```python
+def stop_immediately(self):
+```
+
+Force-stop without waiting for current tasks to finish.
+
+**Note:**
+
+Child nodes will receive stop signals but may still be cleaning up
+when this method returns.
+
 <a id="camel.societies.workforce.workforce.Workforce.skip_gracefully"></a>
 
 ### skip_gracefully
@@ -1270,8 +1285,11 @@ Thread-safe submission of coroutine to the workforce loop.
 def stop(self):
 ```
 
-Stop all the child nodes under it. The node itself will be stopped
-by its parent node.
+Forcefully stop the workforce and its children immediately.
+
+This is now an immediate stop (was previously a graceful lifecycle
+cleanup). It cancels child listeners, clears pending/in-flight tasks,
+and sets state to STOPPED without waiting for active work to finish.
 
 <a id="camel.societies.workforce.workforce.Workforce.clone"></a>
 
