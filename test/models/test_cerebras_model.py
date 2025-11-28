@@ -30,7 +30,8 @@ from camel.utils import OpenAITokenCounter
         ModelType.CEREBRAS_QWEN_3_32B,
     ],
 )
-def test_cerebras_model(model_type: ModelType):
+def test_cerebras_model(model_type: ModelType, monkeypatch):
+    monkeypatch.setenv("CEREBRAS_API_KEY", "test_key")
     model_config_dict = CerebrasConfig().as_dict()
     model = CerebrasModel(model_type, model_config_dict)
     assert model.model_type == model_type
