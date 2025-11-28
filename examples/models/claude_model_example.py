@@ -12,18 +12,94 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
+
 from camel.agents import ChatAgent
 from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
-from camel.toolkits import FunctionTool
+from camel.toolkits import FunctionTool, TerminalToolkit
 from camel.types import ModelPlatformType, ModelType
 
 """
-Claude Sonnet 4.5 Example
+Claude Model Example
 
 Please set the environment variable:
 export ANTHROPIC_API_KEY="your-api-key-here"
 """
+
+# Define system message
+sys_msg = "You are a helpful AI assistant"
+
+# Get current script directory
+base_dir = os.path.dirname(os.path.abspath(__file__))
+# Define workspace directory for the toolkit
+workspace_dir = os.path.join(
+    os.path.dirname(os.path.dirname(base_dir)), "workspace"
+)
+
+# Set model config
+tools = [
+    *TerminalToolkit(working_directory=workspace_dir).get_tools(),
+]
+# Create Claude Opus 4.5 model
+model_opus_4_5 = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_OPUS_4_5,
+    model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
+)
+
+user_msg = """
+Create an interactive HTML webpage that allows users to play with a 
+Rubik's Cube, and saved it to local file.
+"""
+
+camel_agent_pro = ChatAgent(
+    system_message=sys_msg, model=model_opus_4_5, tools=tools
+)
+response_pro = camel_agent_pro.step(user_msg)
+print(response_pro.msgs[0].content)
+'''
+===============================================================================
+The interactive Rubik's Cube HTML file has been created successfully! Here's 
+what I built:
+
+## 📁 File: `rubiks_cube.html` (23KB)
+
+### Features:
+
+🎮 **Interactive 3D Cube**
+- Fully rendered 3D Rubik's Cube using CSS transforms
+- Drag to rotate the view (mouse or touch)
+- All 6 faces visible with proper colors
+
+🔄 **Face Rotations**
+- **F/B** - Front/Back face
+- **U/D** - Up/Down face  
+- **L/R** - Left/Right face
+- **'** versions for counter-clockwise rotations
+
+⚡ **Actions**
+- **Scramble** - Randomly mix the cube with 20 moves
+- **Reset** - Return to solved state
+- **Undo** - Reverse the last move
+
+📐 **Net View**
+- 2D unfolded view of all cube faces for easier tracking
+
+⌨️ **Keyboard Support**
+- Press F, B, R, L, U, D keys to rotate faces
+- Hold Shift for counter-clockwise
+
+📱 **Responsive Design**
+- Works on desktop and mobile devices
+- Touch support for rotating the view
+
+### To use:
+Simply open `rubiks_cube.html` in any modern web browser!
+
+Process finished with exit code 0
+===============================================================================
+'''
 
 # Create Claude Sonnet 4.5 model
 model = ModelFactory.create(
@@ -31,9 +107,6 @@ model = ModelFactory.create(
     model_type=ModelType.CLAUDE_SONNET_4_5,
     model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
-
-# Define system message
-sys_msg = "You are a helpful AI assistant powered by Claude Sonnet 4.5."
 
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
