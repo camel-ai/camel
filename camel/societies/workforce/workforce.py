@@ -2192,7 +2192,11 @@ class Workforce(BaseNode):
             )
             return [task]
 
-        self.reset()
+        if reset and self._state != WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        # Focus on the new task
         self._task = task
         task.state = TaskState.FAILED
 
