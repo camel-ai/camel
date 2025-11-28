@@ -3894,7 +3894,7 @@ class ChatAgent(BaseAgent):
         import asyncio
 
         try:
-            # Define the execution logic as an inner function to wrap with timeout
+
             async def _execute_impl():
                 # Try different invocation paths in order of preference
                 if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
