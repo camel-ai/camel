@@ -3894,32 +3894,50 @@ class ChatAgent(BaseAgent):
         import asyncio
 
         try:
-            # Try different invocation paths in order of preference
-            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
-                # Case: FunctionTool wrapping an MCP tool
-                result = await tool.func.async_call(**args)
+            # Define the execution logic as an inner function to wrap with timeout
+            async def _execute_impl():
+                # Try different invocation paths in order of preference
+                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                    # Case: FunctionTool wrapping an MCP tool
+                    return await tool.func.async_call(**args)
 
-            elif hasattr(tool, 'async_call') and callable(tool.async_call):
-                # Case: tool itself has async_call
-                result = await tool.async_call(**args)
+                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                    # Case: tool itself has async_call
+                    return await tool.async_call(**args)
 
-            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                tool.func
-            ):
-                # Case: tool wraps a direct async function
-                result = await tool.func(**args)
+                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                    tool.func
+                ):
+                    # Case: tool wraps a direct async function
+                    return await tool.func(**args)
 
-            elif asyncio.iscoroutinefunction(tool):
-                # Case: tool is itself a coroutine function
-                result = await tool(**args)
+                elif asyncio.iscoroutinefunction(tool):
+                    # Case: tool is itself a coroutine function
+                    return await tool(**args)
 
-            else:
-                # Fallback: synchronous call
-                # Use functools.partial to properly capture args
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(
-                    None, functools.partial(tool, **args)
+                else:
+                    # Fallback: synchronous call
+                    # Use functools.partial to properly capture args
+                    loop = asyncio.get_running_loop()
+                    return await loop.run_in_executor(
+                        None, functools.partial(tool, **args)
+                    )
+
+            # Execute with timeout if configured
+            if self.tool_execution_timeout is not None:
+                result = await asyncio.wait_for(
+                    _execute_impl(), timeout=self.tool_execution_timeout
                 )
+            else:
+                result = await _execute_impl()
+
+        except asyncio.TimeoutError:
+            error_msg = (
+                f"Error executing tool '{func_name}': "
+                f"Timeout after {self.tool_execution_timeout}s"
+            )
+            result = f"Tool execution failed: {error_msg}"
+            logger.warning(error_msg)
 
         except Exception as e:
             # Capture the error message to prevent framework crash
