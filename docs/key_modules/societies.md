@@ -70,6 +70,8 @@ icon: people-group
         <tr><td>extend_sys_msg_meta_dicts</td><td>List[Dict]</td><td>Extra metadata for system messages</td></tr>
         <tr><td>extend_task_specify_meta_dict</td><td>Dict</td><td>Extra metadata for task specification</td></tr>
         <tr><td>output_language</td><td>str</td><td>Target output language</td></tr>
+        <tr><td>assistant_agent</td><td>ChatAgent</td><td>Custom ChatAgent to use as assistant (optional)</td></tr>
+        <tr><td>user_agent</td><td>ChatAgent</td><td>Custom ChatAgent to use as user (optional)</td></tr>
       </tbody>
     </table>
   </Accordion>
