@@ -24,7 +24,7 @@ RUN pip3 install -e ".[all]"
 
 # Copy API service file
 RUN mkdir -p /home
-COPY camel/runtime/api.py /home/api.py
+COPY camel/runtimes/api.py /home/api.py
 
 # Set Python path and other environment variables
 ENV PYTHONPATH=/app/camel
