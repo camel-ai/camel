@@ -22,6 +22,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
+import pandas as pd
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
@@ -181,15 +182,17 @@ class GAIABenchmark(BaseBenchmark):
         # Load metadata for both validation and test datasets
         for path, label in zip([valid_dir, test_dir], ["valid", "test"]):
             self._data[label] = []
-            with open(path / "metadata.jsonl", "r") as f:
-                lines = f.readlines()
-                for line in lines:
-                    data = json.loads(line)
-                    if data["task_id"] == "0-0-0-0-0":
-                        continue
-                    if data["file_name"]:
-                        data["file_name"] = path / data["file_name"]
-                    self._data[label].append(data)
+            metadata_file = path / "metadata.parquet"
+            df = pd.read_parquet(metadata_file)
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                if data["task_id"] == "0-0-0-0-0":
+                    continue
+                # convert level to int (parquet stores as string)
+                data["Level"] = int(data["Level"])
+                if data["file_name"]:
+                    data["file_name"] = path / data["file_name"]
+                self._data[label].append(data)
         return self
 
     @property
@@ -333,7 +336,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(result_data)
         file_obj.write(
-            json.dumps(result_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(result_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
@@ -354,7 +357,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(error_data)
         file_obj.write(
-            json.dumps(error_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(error_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
