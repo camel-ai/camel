@@ -234,14 +234,17 @@ class TestSingleAgentWorkerWorkflow:
             "worker_description": "test_analyst",
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ), patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -480,14 +483,17 @@ class TestWorkforceWorkflowMemoryMethods:
             "worker_description": "data_analyst",
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ) as mock_generate, patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content_async',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ) as mock_generate,
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content_async',
+                return_value=mock_save_result,
+            ),
         ):
             # This executes the real save_workflow_memories_async() logic
             results = await workforce.save_workflow_memories_async()
@@ -620,14 +626,17 @@ class TestWorkflowIntegration:
             "worker_description": "Data Analyst & ML Engineer!",
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ), patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             # Verify the filename generation works with special characters
             result = await worker.save_workflow_memories_async()
@@ -689,14 +698,17 @@ class TestWorkflowIntegration:
             "worker_description": long_desc,
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ), patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -769,14 +781,17 @@ class TestWorkflowIntegration:
             "worker_description": "Data analyst worker",
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ), patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             # note: in real execution, file would be renamed to use task_title
             # the test shows that with generic role_name, we rely on task_title
@@ -1670,14 +1685,17 @@ class TestConversationAccumulator:
             "worker_description": "test_worker",
         }
 
-        with patch.object(
-            WorkflowMemoryManager,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ), patch.object(
-            WorkflowMemoryManager,
-            'save_workflow_content',
-            return_value=mock_save_result,
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -2535,4 +2553,3 @@ This is a test workflow for metadata extraction.
         assert metadata.message_count == 42
         assert metadata.created_at == "2025-01-15T10:00:00.000000"
         assert metadata.updated_at == "2025-01-15T12:00:00.000000"
-
