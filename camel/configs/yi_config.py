@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -47,7 +47,9 @@ class YiConfig(BaseConfig):
             (default: :obj:`None`)
     """
 
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None
     temperature: Optional[float] = None

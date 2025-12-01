@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
@@ -93,7 +93,9 @@ class DeepSeekConfig(BaseConfig):
     presence_penalty: Optional[float] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None
     frequency_penalty: Optional[float] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
     stream_options: Optional[dict[str, bool]] = None
