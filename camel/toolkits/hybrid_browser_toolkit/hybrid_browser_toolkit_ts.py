@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # =========
 
+import asyncio
 import contextlib
 import time
 from typing import (
@@ -1463,8 +1464,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     {'operations': chunk, 'skipStabilityWait': True},
                 )
                 # Small delay between chunks
-                import asyncio
-
                 await asyncio.sleep(0.2)
 
             # Wait a bit for the last input to settle
