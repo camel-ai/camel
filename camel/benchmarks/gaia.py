@@ -22,7 +22,6 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
-import pandas as pd
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
@@ -166,6 +165,8 @@ class GAIABenchmark(BaseBenchmark):
             force_download (bool, optional): Whether to
                 force download the data.
         """
+        import pandas as pd
+
         if force_download:
             logger.info("Force downloading data.")
             self.download()

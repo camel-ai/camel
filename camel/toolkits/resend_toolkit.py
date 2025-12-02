@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -141,7 +141,7 @@ class ResendToolkit(BaseToolkit):
         if reply_to:
             params["reply_to"] = reply_to
         if tags:
-            params["tags"] = cast('list[resend.emails._tag.Tag]', tags)
+            params["tags"] = tags  # type: ignore[typeddict-item]
         if headers:
             params["headers"] = headers
 
