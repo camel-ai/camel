@@ -14,7 +14,7 @@
 
 from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
-from .utils import FailureHandlingConfig, PipelineTaskBuilder, RecoveryStrategy
+from .utils import PipelineTaskBuilder
 from .workflow_memory_manager import WorkflowSelectionMethod
 from .workforce import Workforce, WorkforceMode
 
@@ -25,6 +25,4 @@ __all__ = [
     "SingleAgentWorker",
     "RolePlayingWorker",
     "WorkflowSelectionMethod",
-    "FailureHandlingConfig",
-    "RecoveryStrategy",
 ]
