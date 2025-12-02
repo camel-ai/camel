@@ -1390,85 +1390,76 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         ws_wrapper: Any,
         system: str,
     ) -> Dict[str, Any]:
-        r"""Input to sheet using batch keyboard input with relative
-        positioning.
+        r"""Input to sheet using batch keyboard input with absolute positioning
+        via Name Box (Cmd+J).
 
-        Builds all operations and sends them in ONE command to TypeScript,
-        which executes them and only waits for stability once at the end.
+        This is more robust than relative navigation (arrow keys) because it
+        handles hidden rows/columns and merged cells correctly.
         """
         operations: List[Dict[str, Any]] = []
 
-        # Go to A1 to ensure we start from a known position
-        if system == "Darwin":
-            operations.append({"type": "press", "keys": ["Meta", "Home"]})
-        else:
-            operations.append({"type": "press", "keys": ["Control", "Home"]})
-        operations.append({"type": "wait", "delay": 310})
-
-        # Start at (0, 0)
-        current_row = 0
-        current_col = 0
+        def col_to_letter(col_idx: int) -> str:
+            """Convert 0-based column index to letter (0->A, 25->Z, 26->AA)."""
+            result = ""
+            col_idx += 1  # Convert to 1-based for calculation
+            while col_idx > 0:
+                col_idx, remainder = divmod(col_idx - 1, 26)
+                result = chr(65 + remainder) + result
+            return result
 
         for cell in cells:
             target_row = cell.get("row", 0)
             target_col = cell.get("col", 0)
             text = cell.get("text", "")
 
-            # Calculate relative movement needed
-            row_diff = target_row - current_row
-            col_diff = target_col - current_col
+            # Convert to A1 notation
+            col_letter = col_to_letter(target_col)
+            row_number = target_row + 1
+            cell_address = f"{col_letter}{row_number}"
 
-            # Navigate vertically
-            if row_diff > 0:
-                for _ in range(row_diff):
-                    operations.append({"type": "press", "keys": ["ArrowDown"]})
-                    operations.append({"type": "wait", "delay": 50})
-            elif row_diff < 0:
-                for _ in range(abs(row_diff)):
-                    operations.append({"type": "press", "keys": ["ArrowUp"]})
-                    operations.append({"type": "wait", "delay": 50})
+            # 1. Focus Name Box
+            if system == "Darwin":
+                operations.append({"type": "press", "keys": ["Meta", "j"]})
+            else:
+                # On Windows/Linux, it's usually Ctrl+J or Alt+D?
+                # The snapshot showed Cmd+J for Mac.
+                # Standard Google Sheets shortcut for "Go to range" is F5 or Ctrl+J
+                operations.append({"type": "press", "keys": ["Control", "j"]})
+            
+            operations.append({"type": "wait", "delay": 500})
 
-            # Navigate horizontally
-            if col_diff > 0:
-                for _ in range(col_diff):
-                    operations.append(
-                        {"type": "press", "keys": ["ArrowRight"]}
-                    )
-                    operations.append({"type": "wait", "delay": 50})
-            elif col_diff < 0:
-                for _ in range(abs(col_diff)):
-                    operations.append({"type": "press", "keys": ["ArrowLeft"]})
-                    operations.append({"type": "wait", "delay": 50})
+            # 2. Type Address
+            operations.append({"type": "type", "text": cell_address, "delay": 0})
+            operations.append({"type": "wait", "delay": 200})
+            operations.append({"type": "press", "keys": ["Enter"]})
+            operations.append({"type": "wait", "delay": 500})
 
-            # Wait after navigation if moved
-            if row_diff != 0 or col_diff != 0:
-                operations.append({"type": "wait", "delay": 100})
-
-            # Clear and input
+            # 3. Clear content (Delete/Backspace)
+            # Just in case, press Delete to clear existing content
             operations.append({"type": "press", "keys": ["Delete"]})
-            operations.append({"type": "wait", "delay": 120})
+            operations.append({"type": "wait", "delay": 100})
 
+            # 4. Type Text
             if text:
                 operations.append({"type": "type", "text": text, "delay": 0})
-                operations.append({"type": "wait", "delay": 120})
-
-            # Press Enter to confirm
-            operations.append({"type": "press", "keys": ["Enter"]})
-            operations.append({"type": "wait", "delay": 130})
-
-            # Update current position (after Enter, cursor moves to next row)
-            current_row = target_row + 1
-            current_col = target_col
+                operations.append({"type": "wait", "delay": 200})
+                # Press Enter to confirm input
+                operations.append({"type": "press", "keys": ["Enter"]})
+                operations.append({"type": "wait", "delay": 300})
 
         try:
             await ws_wrapper._send_command(
                 'batch_keyboard_input',
                 {'operations': operations, 'skipStabilityWait': True},
             )
+            # Wait a bit for the last input to settle
+            import asyncio
+            await asyncio.sleep(1.0)
+            
             tab_info = await ws_wrapper.get_tab_info()
 
             return {
-                "result": f"Successfully input to {len(cells)} cells",
+                "result": f"Successfully input to {len(cells)} cells using absolute navigation",
                 "snapshot": "",
                 "tabs": tab_info,
                 "current_tab": next(
