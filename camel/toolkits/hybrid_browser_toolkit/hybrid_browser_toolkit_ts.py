@@ -1421,15 +1421,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             if system == "Darwin":
                 operations.append({"type": "press", "keys": ["Meta", "j"]})
             else:
-                # On Windows/Linux, it's usually Ctrl+J or Alt+D?
+                # On Windows/Linux, it's usually Ctrl+J or Alt+D
                 # The snapshot showed Cmd+J for Mac.
-                # Standard Google Sheets shortcut for "Go to range" is F5 or Ctrl+J
+                # Standard Google Sheets shortcut for
+                # "Go to range" is F5 or Ctrl+J
                 operations.append({"type": "press", "keys": ["Control", "j"]})
-            
+
             operations.append({"type": "wait", "delay": 500})
 
             # 2. Type Address
-            operations.append({"type": "type", "text": cell_address, "delay": 0})
+            operations.append(
+                {"type": "type", "text": cell_address, "delay": 0}
+            )
             operations.append({"type": "wait", "delay": 200})
             operations.append({"type": "press", "keys": ["Enter"]})
             operations.append({"type": "wait", "delay": 500})
@@ -1454,12 +1457,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             # Wait a bit for the last input to settle
             import asyncio
+
             await asyncio.sleep(1.0)
-            
+
             tab_info = await ws_wrapper.get_tab_info()
 
             return {
-                "result": f"Successfully input to {len(cells)} cells using absolute navigation",
+                "result": (
+                    f"Successfully input to {len(cells)} cells "
+                    "using absolute navigation"
+                ),
                 "snapshot": "",
                 "tabs": tab_info,
                 "current_tab": next(
