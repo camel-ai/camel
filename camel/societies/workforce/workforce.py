@@ -94,6 +94,7 @@ from camel.utils import dependencies_required
 
 from .events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -3803,10 +3804,16 @@ class Workforce(BaseNode):
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
-            print(
-                f"{Fore.RED}Failed to post task {task.id} to {assignee_id}: "
-                f"{e}{Fore.RESET}"
-            )
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message=(
+                            f"Failed to post task {task.id} to {assignee_id}: "
+                            f"{e}"
+                        ),
+                        level="error",
+                    )
+                )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -3933,7 +3940,13 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=f"{new_node} created.",
+                    level="info",
+                )
+            )
 
         self._children.append(new_node)
 
@@ -4495,10 +4508,16 @@ class Workforce(BaseNode):
                 tasks_list.pop(i)
                 self._pending_tasks = deque(tasks_list)
                 found_and_removed = True
-                print(
-                    f"{Fore.GREEN}✅ Task {task.id} completed and removed "
-                    f"from queue.{Fore.RESET}"
-                )
+                for cb in self._callbacks:
+                    cb.log_message(
+                        LogEvent(
+                            message=(
+                                f"✅ Task {task.id} completed and removed "
+                                f"from queue."
+                            ),
+                            level="success",
+                        )
+                    )
                 break
 
         if not found_and_removed:
