@@ -150,14 +150,14 @@ class ConfigLoader:
             "networkIdleTimeout": self.browser_config.network_idle_timeout,
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
-            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
-            "log_dir": self.toolkit_config.log_dir,
-            "session_id": self.toolkit_config.session_id,
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
+            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
+            "log_dir": self.toolkit_config.log_dir,
+            "session_id": self.toolkit_config.session_id,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:

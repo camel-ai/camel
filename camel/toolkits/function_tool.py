@@ -12,10 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
+import asyncio
+import functools
 import inspect
 import logging
 import textwrap
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
@@ -30,6 +33,9 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
 
 logger = logging.getLogger(__name__)
+
+# Shared thread pool for running sync tools without blocking the event loop
+_SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -500,7 +506,13 @@ class FunctionTool:
         if self.is_async:
             return await self.func(*args, **kwargs)
         else:
-            return self.func(*args, **kwargs)
+            # Run sync function in executor to avoid blocking event loop
+            # Use functools.partial to properly capture args/kwargs
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(
+                _SYNC_TOOL_EXECUTOR,
+                functools.partial(self.func, *args, **kwargs),
+            )
 
     @property
     def is_async(self) -> bool:

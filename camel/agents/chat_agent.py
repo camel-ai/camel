@@ -17,6 +17,7 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import functools
 import hashlib
 import inspect
 import json
@@ -3914,7 +3915,11 @@ class ChatAgent(BaseAgent):
 
             else:
                 # Fallback: synchronous call
-                result = tool(**args)
+                # Use functools.partial to properly capture args
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(
+                    None, functools.partial(tool, **args)
+                )
 
         except Exception as e:
             # Capture the error message to prevent framework crash
@@ -4741,7 +4746,11 @@ class ChatAgent(BaseAgent):
 
                     else:
                         # Fallback: synchronous call
-                        result = tool(**args)
+                        # Use functools.partial to properly capture args
+                        loop = asyncio.get_running_loop()
+                        result = await loop.run_in_executor(
+                            None, functools.partial(tool, **args)
+                        )
 
                     # Create the tool response message
                     func_msg = FunctionCallingMessage(
@@ -4916,7 +4925,12 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, AsyncStream):
+            # Note: Also check for async generators since some model backends
+            # (e.g., GeminiModel) wrap AsyncStream in async generators for
+            # additional processing
+            if isinstance(response, AsyncStream) or inspect.isasyncgen(
+                response
+            ):
                 stream_completed = False
                 tool_calls_complete = False
 
@@ -5121,7 +5135,10 @@ class ChatAgent(BaseAgent):
 
     async def _aprocess_stream_chunks_with_accumulator(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
