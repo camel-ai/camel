@@ -12,12 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
+from colorama import Fore
 
 from camel.logger import get_logger
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
@@ -34,6 +38,12 @@ from camel.types.agents import ToolCallingRecord
 
 logger = get_logger(__name__)
 
+_COLOR_MAP = {
+    "warning": Fore.YELLOW,
+    "error": Fore.RED,
+    "success": Fore.CYAN,
+}
+
 
 class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
     r"""Logs events and metrics for a Workforce instance."""
@@ -49,6 +59,28 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._task_hierarchy: Dict[str, Dict[str, Any]] = {}
         self._worker_information: Dict[str, Dict[str, Any]] = {}
         self._initial_worker_logs: List[Dict[str, Any]] = []
+
+    def _color_message(self, event: LogEvent) -> str:
+        if event.level not in _COLOR_MAP or event.level == 'info':
+            return event.message
+        color = _COLOR_MAP.get(event.level)
+        return f"{color}{event.message}{Fore.RESET}"
+
+    def log_message(self, event: LogEvent) -> None:
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+        message = self._color_message(event)
+
+        try:
+            if event.level in ["info", "success"]:
+                logger.info(message)
+            if event.level == "warning":
+                logger.warning(message)
+            if event.level == "error":
+                logger.error(message)
+        finally:
+            logger.removeHandler(handler)
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.

@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 
 from .events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -33,6 +34,13 @@ class WorkforceCallback(ABC):
 
     Implementations should persist or stream events as appropriate.
     """
+
+    @abstractmethod
+    def log_message(
+        self,
+        event: LogEvent,
+    ) -> None:
+        pass
 
     @abstractmethod
     def log_task_created(
