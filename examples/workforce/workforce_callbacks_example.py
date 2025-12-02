@@ -27,6 +27,7 @@ from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -45,6 +46,9 @@ logger = get_logger(__name__)
 
 class PrintCallback(WorkforceCallback):
     r"""Simple callback printing events to logs to observe ordering."""
+
+    def log_message(self, event: LogEvent) -> None:
+        print(f"[PrintCallback] {event.message} ({event.level})")
 
     def log_task_created(self, event: TaskCreatedEvent) -> None:
         print(
