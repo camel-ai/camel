@@ -1450,14 +1450,24 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 operations.append({"type": "press", "keys": ["Enter"]})
                 operations.append({"type": "wait", "delay": 300})
 
-        try:
-            await ws_wrapper._send_command(
-                'batch_keyboard_input',
-                {'operations': operations, 'skipStabilityWait': True},
-            )
-            # Wait a bit for the last input to settle
-            import asyncio
+        # Chunk operations to avoid 100-op limit in TypeScript backend
+        # Each cell update takes ~10 ops, so 100 ops is only ~10 cells.
+        # We split into chunks of 50 ops to be safe.
+        CHUNK_SIZE = 50
 
+        try:
+            for i in range(0, len(operations), CHUNK_SIZE):
+                chunk = operations[i : i + CHUNK_SIZE]
+                await ws_wrapper._send_command(
+                    'batch_keyboard_input',
+                    {'operations': chunk, 'skipStabilityWait': True},
+                )
+                # Small delay between chunks
+                import asyncio
+
+                await asyncio.sleep(0.2)
+
+            # Wait a bit for the last input to settle
             await asyncio.sleep(1.0)
 
             tab_info = await ws_wrapper.get_tab_info()
