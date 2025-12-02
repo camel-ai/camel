@@ -55,6 +55,7 @@ from camel.societies.workforce.prompts import (
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_RESPONSE_FORMAT,
     QUALITY_EVALUATION_RESPONSE_FORMAT,
+    STRATEGY_DESCRIPTIONS,
     TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
@@ -68,6 +69,7 @@ from camel.societies.workforce.structured_output_handler import (
 )
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    FailureHandlingConfig,
     PipelineTaskBuilder,
     RecoveryStrategy,
     TaskAnalysisResult,
@@ -241,6 +243,15 @@ class Workforce(BaseNode):
             PIPELINE mode uses simple retry logic and allows failed
             tasks to continue the workflow, passing error information
             to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+        failure_handling_config (Optional[Union[FailureHandlingConfig, Dict]]):
+            Configuration for customizing failure handling behavior. Can be
+            a FailureHandlingConfig instance or a dict with the same fields.
+            Allows fine-grained control over which recovery strategies are
+            enabled, maximum retry attempts, and whether to halt on max
+            retries. The `enabled_strategies` field accepts both enum values
+            and string lists like `["retry", "replan"]`. If None, uses
+            default configuration with all strategies enabled.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -263,6 +274,16 @@ class Workforce(BaseNode):
         ...     "Research Team",
         ...     coordinator_agent=coordinator_agent,
         ...     task_agent=task_agent,
+        ... )
+        >>>
+        >>> # Workforce with failure handling config as dict (simple)
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     failure_handling_config={
+        ...         "max_retries": 5,
+        ...         "enabled_strategies": ["retry", "replan"],
+        ...         "halt_on_max_retries": False,
+        ...     },
         ... )
         >>>
         >>> # Process a task
@@ -295,6 +316,9 @@ class Workforce(BaseNode):
         task_timeout_seconds: Optional[float] = None,
         mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
         callbacks: Optional[List[WorkforceCallback]] = None,
+        failure_handling_config: Optional[
+            Union[FailureHandlingConfig, Dict[str, Any]]
+        ] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -310,6 +334,15 @@ class Workforce(BaseNode):
         )
         self.mode = mode
         self._initial_mode = mode  # Store initial mode for reset()
+        # Initialize failure handling configuration (supports dict input)
+        if failure_handling_config is None:
+            self.failure_handling_config = FailureHandlingConfig()
+        elif isinstance(failure_handling_config, dict):
+            self.failure_handling_config = FailureHandlingConfig(
+                **failure_handling_config
+            )
+        else:
+            self.failure_handling_config = failure_handling_config
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self._task: Optional[Task] = None
@@ -1366,6 +1399,64 @@ class Workforce(BaseNode):
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
 
+    def _get_available_strategies_text(self, for_failure: bool) -> str:
+        r"""Generate the available strategies text for the analysis prompt.
+
+        This method generates a dynamic list of enabled recovery strategies
+        based on the failure_handling_config. It only includes strategies
+        that are both enabled in the config and applicable to the context
+        (failure vs quality evaluation).
+
+        Args:
+            for_failure (bool): True for failure analysis, False for quality
+                evaluation. Some strategies are only available in one context.
+
+        Returns:
+            str: Formatted text describing available strategies for the prompt.
+        """
+        # Define which strategies are available in each context
+        if for_failure:
+            # For failures: retry, replan, decompose, create_worker
+            # (reassign is only for quality issues)
+            context_strategies = [
+                "retry",
+                "replan",
+                "decompose",
+                "create_worker",
+            ]
+        else:
+            # For quality: retry, reassign, replan, decompose
+            # (create_worker is only for failures)
+            context_strategies = ["retry", "reassign", "replan", "decompose"]
+
+        # Filter by enabled strategies in config
+        config_strategies = self.failure_handling_config.enabled_strategies
+        enabled_strategies = []
+        for strategy in context_strategies:
+            # None means all enabled, otherwise check if in list
+            if (
+                config_strategies is None
+                or RecoveryStrategy(strategy) in config_strategies
+            ):
+                enabled_strategies.append(strategy)
+
+        if not enabled_strategies:
+            raise ValueError(
+                "_get_available_strategies_text called with no enabled "
+                "strategies. Callers should check enabled_strategies != [] "
+                "before calling this method."
+            )
+
+        # Build the strategies text
+        strategies_text_parts = ["**Available Strategies (ENABLED):**\n"]
+        for i, strategy in enumerate(enabled_strategies, 1):
+            description = STRATEGY_DESCRIPTIONS.get(
+                strategy, f"**{strategy}**"
+            )
+            strategies_text_parts.append(f"{i}. {description}\n")
+
+        return "\n".join(strategies_text_parts)
+
     def _analyze_task(
         self,
         task: Task,
@@ -1464,6 +1555,9 @@ class Workforce(BaseNode):
                 },
             ]
 
+        # Generate available strategies text based on config
+        available_strategies = self._get_available_strategies_text(for_failure)
+
         # Format the unified analysis prompt
         analysis_prompt = str(
             TASK_ANALYSIS_PROMPT.format(
@@ -1476,6 +1570,7 @@ class Workforce(BaseNode):
                 issue_type=issue_type,
                 issue_specific_analysis=issue_analysis,
                 response_format=response_format,
+                available_strategies=available_strategies,
             )
         )
 
@@ -4193,7 +4288,7 @@ class Workforce(BaseNode):
                             if (
                                 failed_task
                                 and failed_task.failure_count
-                                < MAX_TASK_RETRIES
+                                < self.failure_handling_config.max_retries
                             ):
                                 failed_tasks_with_retry_potential.append(
                                     dep_id
@@ -4245,7 +4340,8 @@ class Workforce(BaseNode):
                                 f"Task {task.id} waiting: dependencies "
                                 f"{failed_tasks_with_retry_potential} "
                                 f"failed but may be retried "
-                                f"(attempt < {MAX_TASK_RETRIES})"
+                                f"(attempt < "
+                                f"{self.failure_handling_config.max_retries})"
                             )
                 # else: Not all dependencies completed yet, skip this task
 
@@ -4269,6 +4365,9 @@ class Workforce(BaseNode):
         """
         task.failure_count += 1
 
+        # Use configurable max retries from failure_handling_config
+        max_retries = self.failure_handling_config.max_retries
+
         # Determine detailed failure information
         failure_reason = task.result or "Unknown error"
         worker_id = task.assigned_worker_id or "unknown"
@@ -4276,12 +4375,12 @@ class Workforce(BaseNode):
 
         logger.error(
             f"Task {task.id} failed (attempt "
-            f"{task.failure_count}/{MAX_TASK_RETRIES}): {detailed_error}"
+            f"{task.failure_count}/{max_retries}): {detailed_error}"
         )
 
         print(
             f"{Fore.RED}❌ Task {task.id} failed "
-            f"(attempt {task.failure_count}/{MAX_TASK_RETRIES}): "
+            f"(attempt {task.failure_count}/{max_retries}): "
             f"{failure_reason}{Fore.RESET}"
         )
 
@@ -4299,42 +4398,49 @@ class Workforce(BaseNode):
             cb.log_task_failed(task_failed_event)
 
         # Check for immediate halt conditions after max retries.
-        if task.failure_count >= MAX_TASK_RETRIES:
-            # Intent: handle max retry failures differently per mode.
+        if task.failure_count >= max_retries:
+            # Intent: handle max retry failures differently per mode and
+            # config.
             # Pipeline mode continues to allow downstream recovery.
-            # Auto-decompose mode halts to avoid cascading errors.
+            # halt_on_max_retries=False also allows workflow to continue.
+            # Auto-decompose mode with halt_on_max_retries=True halts.
 
             if self.mode == WorkforceMode.PIPELINE:
                 # PIPELINE: Mark as failed but continue workflow
                 # Intent: Failed tasks pass error info to downstream tasks
                 logger.warning(
-                    f"Task {task.id} failed after {MAX_TASK_RETRIES} retries "
+                    f"Task {task.id} failed after {max_retries} retries "
                     f"in PIPELINE mode. Marking as failed and allowing the "
                     f"workflow to continue. Error: {failure_reason}"
                 )
-                task.state = TaskState.FAILED
-                self._cleanup_task_tracking(task.id)
-                self._completed_tasks.append(task)
-                if task.id in self._assignees:
-                    await self._channel.archive_task(task.id)
+                await self._mark_task_permanently_failed(task)
 
                 # Resume workflow: Check if downstream tasks can now proceed
                 # (they'll receive this failed task's error message)
                 await self._post_ready_tasks()
                 return False  # Don't halt workforce
 
-            # AUTO_DECOMPOSE: Halt immediately on max retries
+            # Check if halt_on_max_retries is disabled in config
+            if not self.failure_handling_config.halt_on_max_retries:
+                # Similar to PIPELINE mode: mark as failed but continue
+                logger.warning(
+                    f"Task {task.id} failed after {max_retries} retries. "
+                    f"halt_on_max_retries=False, allowing workflow to "
+                    f"continue. Error: {failure_reason}"
+                )
+                await self._mark_task_permanently_failed(task)
+                await self._post_ready_tasks()
+                return False  # Don't halt workforce
+
+            # AUTO_DECOMPOSE with halt_on_max_retries=True: Halt immediately
             # Intent: Stop execution to prevent cascading failures
             logger.error(
                 f"Task {task.id} has exceeded maximum retry attempts "
-                f"({MAX_TASK_RETRIES}). Final failure reason: "
+                f"({max_retries}). Final failure reason: "
                 f"{detailed_error}. "
                 f"Task content: '{task.content}'"
             )
-            self._cleanup_task_tracking(task.id)
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            await self._mark_task_permanently_failed(task)
             return True  # Halt workforce
 
         if len(self._pending_tasks) > MAX_PENDING_TASKS_LIMIT:
@@ -4343,22 +4449,18 @@ class Workforce(BaseNode):
                 f"{MAX_PENDING_TASKS_LIMIT}). Halting to prevent task "
                 f"explosion. Last failed task: {task.id}"
             )
-            self._cleanup_task_tracking(task.id)
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            await self._mark_task_permanently_failed(task)
             return True
 
-        # Recovery strategies differ by mode.
+        # Recovery strategies differ by mode and configuration.
         # Pipeline mode retries quickly without additional analysis.
-        # Auto-decompose mode analyzes the failure to choose a recovery plan.
 
         if self.mode == WorkforceMode.PIPELINE:
             # PIPELINE: Simple retry logic (no LLM analysis needed)
             # Intent: Fast recovery for predefined workflows
             logger.info(
                 f"Task {task.id} failed in PIPELINE mode. Will retry "
-                f"(attempt {task.failure_count}/{MAX_TASK_RETRIES})"
+                f"(attempt {task.failure_count}/{max_retries})"
             )
             # Reset task to pending and retry with same configuration
             task.state = TaskState.OPEN
@@ -4366,17 +4468,81 @@ class Workforce(BaseNode):
             await self._post_ready_tasks()
             return False
 
-        # AUTO_DECOMPOSE: Intelligent failure analysis and recovery
+        # Check if no recovery strategies are enabled (empty list)
+        if self.failure_handling_config.enabled_strategies == []:
+            # No recovery - mark task as failed immediately
+            logger.info(
+                f"Task {task.id} failed. enabled_strategies=[], no recovery "
+                f"will be attempted. Marking as failed."
+            )
+            await self._mark_task_permanently_failed(task)
+            # Check halt behavior - only halt if max retries reached
+            if (
+                self.failure_handling_config.halt_on_max_retries
+                and task.failure_count >= max_retries
+            ):
+                return True  # Halt workforce
+            await self._post_ready_tasks()
+            return False
+
+        # Check if only one strategy is enabled (skip LLM analysis)
+        enabled = self.failure_handling_config.enabled_strategies
+        if enabled is not None and len(enabled) == 1:
+            single_strategy = enabled[0]
+
+            logger.info(
+                f"Task {task.id} failed. Only {single_strategy.value} "
+                f"enabled,using it directly without LLM analysis "
+                f"(attempt {task.failure_count}/{max_retries})"
+            )
+
+            # Create a minimal TaskAnalysisResult for the single strategy
+            recovery_decision = TaskAnalysisResult(
+                reasoning=f"Single strategy {single_strategy.value} enabled, "
+                f"applying directly without LLM analysis",
+                recovery_strategy=single_strategy,
+            )
+
+            # Clean up tracking before recovery
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
+            self._cleanup_task_tracking(task.id)
+
+            # Apply the single strategy
+            try:
+                is_decompose = await self._apply_recovery_strategy(
+                    task, recovery_decision
+                )
+                if is_decompose:
+                    self._completed_tasks.append(task)
+                await self._post_ready_tasks()
+                return False
+            except Exception as e:
+                logger.error(
+                    f"Single strategy {single_strategy.value} failed for "
+                    f"task {task.id}: {e}",
+                    exc_info=True,
+                )
+                # If strategy fails, mark task as failed
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                if self.failure_handling_config.halt_on_max_retries:
+                    return True
+                await self._post_ready_tasks()
+                return False
+
+        # AUTO_DECOMPOSE with multiple enabled strategies: Intelligent failure
+        # analysis and recovery
         # Intent: Use LLM analysis to choose an optimal recovery strategy.
         recovery_decision = self._analyze_task(
             task, for_failure=True, error_message=detailed_error
         )
 
-        strategy_str = (
-            recovery_decision.recovery_strategy.value
-            if recovery_decision.recovery_strategy
-            else "none"
-        )
+        # Fallback to RETRY if no strategy recommended
+        if recovery_decision.recovery_strategy is None:
+            recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
+
+        strategy_str = recovery_decision.recovery_strategy.value
         logger.info(
             f"Task {task.id} failure "
             f"analysis: {strategy_str} - "
@@ -4406,7 +4572,7 @@ class Workforce(BaseNode):
                 exc_info=True,
             )
             # If max retries reached, halt the workforce
-            if task.failure_count >= MAX_TASK_RETRIES:
+            if task.failure_count >= max_retries:
                 self._completed_tasks.append(task)
                 return True
             self._completed_tasks.append(task)
@@ -4428,6 +4594,21 @@ class Workforce(BaseNode):
         # Check if any pending tasks are now ready to execute
         await self._post_ready_tasks()
         return False
+
+    async def _mark_task_permanently_failed(self, task: Task) -> None:
+        r"""Mark a task as permanently failed and clean up tracking.
+
+        This is a helper method to avoid code duplication when marking tasks
+        as failed in various failure handling scenarios.
+
+        Args:
+            task (Task): The task to mark as permanently failed.
+        """
+        task.state = TaskState.FAILED
+        self._cleanup_task_tracking(task.id)
+        self._completed_tasks.append(task)
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
 
     async def _handle_completed_task(self, task: Task) -> None:
         worker_id = task.assigned_worker_id or "unknown"
@@ -4928,9 +5109,11 @@ class Workforce(BaseNode):
                             if len(self.get_main_task_queue()) > 0:
                                 print(
                                     f"{Fore.RED}Task {returned_task.id} has "
-                                    f"failed for {MAX_TASK_RETRIES} times "
-                                    f"after insufficient results, skipping "
-                                    f"that task. Final error: "
+                                    f"failed for "
+                                    f"{self.failure_handling_config.max_retries}"
+                                    f" "
+                                    f"times after insufficient results, "
+                                    f"skipping that task. Final error: "
                                     f"{returned_task.result or 'Unknown err'}"
                                     f"{Fore.RESET}"
                                 )
@@ -4939,9 +5122,10 @@ class Workforce(BaseNode):
 
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times after "
-                                f"insufficient results, halting the "
-                                f"workforce. Final error: "
+                                f"failed for "
+                                f"{self.failure_handling_config.max_retries} "
+                                f"times after insufficient results, halting "
+                                f"the workforce. Final error: "
                                 f"{returned_task.result or 'Unknown error'}"
                                 f"{Fore.RESET}"
                             )
@@ -4955,6 +5139,21 @@ class Workforce(BaseNode):
                             )
                             continue
                     else:
+                        # Skip quality evaluation if no recovery
+                        # strategies enabled
+                        # (no point analyzing if we can't do anything about it)
+                        if (
+                            self.failure_handling_config.enabled_strategies
+                            == []
+                        ):
+                            print(
+                                f"{Fore.CYAN}Task {returned_task.id} "
+                                f"completed (quality check skipped - "
+                                f"no recovery strategies enabled).{Fore.RESET}"
+                            )
+                            await self._handle_completed_task(returned_task)
+                            continue
+
                         quality_eval = self._analyze_task(
                             returned_task, for_failure=False
                         )
@@ -4968,7 +5167,14 @@ class Workforce(BaseNode):
                             )
 
                             # Check retry limit before attempting recovery
-                            if returned_task.failure_count >= 2:
+                            # Use max_retries - 1 to allow at least one retry
+                            quality_retry_limit = max(
+                                1, self.failure_handling_config.max_retries - 1
+                            )
+                            if (
+                                returned_task.failure_count
+                                >= quality_retry_limit
+                            ):
                                 print(
                                     f"{Fore.YELLOW}Task {returned_task.id} "
                                     f"completed with low quality score: "
@@ -5003,6 +5209,12 @@ class Workforce(BaseNode):
                                 f"{quality_eval.quality_score}). "
                                 f"Issues: {', '.join(quality_eval.issues)}"
                             )
+
+                            # Fallback to RETRY if no strategy recommended
+                            if quality_eval.recovery_strategy is None:
+                                quality_eval.recovery_strategy = (
+                                    RecoveryStrategy.RETRY
+                                )
 
                             # Clean up tracking before attempting recovery
                             if returned_task.id in self._assignees:
@@ -5047,8 +5259,9 @@ class Workforce(BaseNode):
                         if len(self.get_main_task_queue()) > 0:
                             print(
                                 f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times, "
-                                f"skipping that task. Final error: "
+                                f"failed for "
+                                f"{self.failure_handling_config.max_retries} "
+                                f"times, skipping that task. Final error: "
                                 f"{returned_task.result or 'Unknown error'}"
                                 f"{Fore.RESET}"
                             )
@@ -5057,8 +5270,8 @@ class Workforce(BaseNode):
 
                         print(
                             f"{Fore.RED}Task {returned_task.id} has failed "
-                            f"for {MAX_TASK_RETRIES} times, halting "
-                            f"the workforce. Final error: "
+                            f"for {self.failure_handling_config.max_retries} "
+                            f"times, halting the workforce. Final error: "
                             f"{returned_task.result or 'Unknown error'}"
                             f"{Fore.RESET}"
                         )
