@@ -1028,14 +1028,19 @@ def with_timeout(timeout=None):
                 if loop_running:
                     return func(*args, **kwargs)
 
-                # Container to hold the result of the function call
+                # Container to hold the result or exception from the function
+                # call
                 result_container = []
+                exception_container = []
 
                 def target():
-                    result_container.append(func(*args, **kwargs))
+                    try:
+                        result_container.append(func(*args, **kwargs))
+                    except Exception as e:
+                        exception_container.append(e)
 
-                # Start the function in a new thread
-                thread = threading.Thread(target=target)
+                # Start the function in a new daemon thread
+                thread = threading.Thread(target=target, daemon=True)
                 thread.start()
                 thread.join(effective_timeout)
 
@@ -1046,7 +1051,16 @@ def with_timeout(timeout=None):
                         f"exceeded {effective_timeout} seconds."
                     )
                 else:
-                    return result_container[0]
+                    # If an exception occurred, re-raise it
+                    if exception_container:
+                        raise exception_container[0]
+                    # Return result if available
+                    if result_container:
+                        return result_container[0]
+                    raise RuntimeError(
+                        f"Function `{func.__name__}` completed but produced "
+                        "no result or exception."
+                    )
 
         return wrapper
 

@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
@@ -93,16 +93,17 @@ class DeepSeekConfig(BaseConfig):
     presence_penalty: Optional[float] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None
     frequency_penalty: Optional[float] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
+    stream_options: Optional[dict[str, bool]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
+        if kwargs.get("stream") and "stream_options" not in kwargs:
+            kwargs["stream_options"] = {"include_usage": include_usage}
         super().__init__(**kwargs)
-        # Only set stream_options when stream is True
-        # Otherwise, it will raise error when calling the API
-        if self.stream:
-            self.stream_options = {"include_usage": include_usage}
 
 
 DEEPSEEK_API_PARAMS = {param for param in DeepSeekConfig.model_fields.keys()}

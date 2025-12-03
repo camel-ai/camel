@@ -27,6 +27,7 @@ class ToolCallRequest(BaseModel):
     tool_name: str
     args: Dict[str, Any]
     tool_call_id: str
+    extra_content: Optional[Dict[str, Any]] = None
 
 
 class ModelResponse(BaseModel):

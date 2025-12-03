@@ -3,6 +3,10 @@ name: Build Package
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 jobs:
   build:
@@ -140,9 +144,11 @@ jobs:
           QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
           ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
           BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+          MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY}}"
           CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
           NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
           COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+          CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode -m "not heavy_dependency" \

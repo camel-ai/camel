@@ -43,7 +43,11 @@ class MemoryToolkit(BaseToolkit):
             (default: :obj:`None`)
     """
 
-    def __init__(self, agent: 'ChatAgent', timeout: Optional[float] = None):
+    def __init__(
+        self,
+        agent: 'ChatAgent',
+        timeout: Optional[float] = None,
+    ):
         super().__init__(timeout=timeout)
         self.agent = agent
 

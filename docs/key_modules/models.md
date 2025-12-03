@@ -52,6 +52,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
 | **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
+| **MiniMax**      | MiniMax-M2, MiniMax-M2-Stable |
 
 
 ### API & Connector Platforms
@@ -79,7 +80,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SiliconFlow**  | [supported models](https://cloud.siliconflow.cn/me/models) |
 | **AMD**          | dvue-aoai-001-gpt-4.1 |
 | **Volcano**      | [supported models](https://console.volcengine.com/ark) |
-| **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb) |
+| **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan/s/rmh4stp0j) |
 
 
 
