@@ -39,6 +39,7 @@ from camel.societies.workforce.events import (
 )
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
+from camel.societies.workforce.workforce_logger import WorkforceLogger
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -48,7 +49,10 @@ class PrintCallback(WorkforceCallback):
     r"""Simple callback printing events to logs to observe ordering."""
 
     def log_message(self, event: LogEvent) -> None:
-        print(f"[PrintCallback] {event.message} ({event.level})")
+        print(
+            f"[PrintCallback] {event.message} level={event.level}, "
+            f"color={event.color}"
+        )
 
     def log_task_created(self, event: TaskCreatedEvent) -> None:
         print(
@@ -119,7 +123,9 @@ def build_student_agent() -> ChatAgent:
 
 
 async def run_demo() -> None:
-    callbacks = [PrintCallback()]
+    logger_cb = WorkforceLogger('demo-logger')
+    print_cb = PrintCallback()
+    callbacks = [logger_cb, print_cb]
 
     workforce = Workforce(
         "Workforce Callbacks Demo",

@@ -38,10 +38,13 @@ from camel.types.agents import ToolCallingRecord
 logger = get_logger(__name__)
 
 _COLOR_MAP = {
-    "warning": Fore.YELLOW,
-    "error": Fore.RED,
-    "success": Fore.GREEN,
-    "info": Fore.CYAN,
+    "yellow": Fore.YELLOW,
+    "red": Fore.RED,
+    "green": Fore.GREEN,
+    "cyan": Fore.CYAN,
+    "magenta": Fore.MAGENTA,
+    "gray": Fore.LIGHTBLACK_EX,
+    "black": Fore.BLACK,
 }
 
 
@@ -60,13 +63,26 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._worker_information: Dict[str, Dict[str, Any]] = {}
         self._initial_worker_logs: List[Dict[str, Any]] = []
 
+    def _get_color_message(self, event: LogEvent) -> str:
+        r"""Gets a colored message for a log event."""
+        if event.color is None or event.color not in _COLOR_MAP:
+            return event.message
+        color = _COLOR_MAP.get(event.color)
+        return f"{color}{event.message}{Fore.RESET}"
+
     def log_message(self, event: LogEvent) -> None:
-        r"""Just basic print to the console with color."""
-        if event.level == 'info' or event.level not in _COLOR_MAP:
-            print(event.message)
-        color = _COLOR_MAP.get(event.level)
-        colored_message = f"{color}{event.message}{Fore.RESET}"
-        print(colored_message)
+        r"""Logs a message to the console with color."""
+        colored_message = self._get_color_message(event)
+        if event.level == 'debug':
+            logger.debug(colored_message)
+        if event.level == 'info':
+            logger.info(colored_message)
+        if event.level == 'warning':
+            logger.warning(colored_message)
+        if event.level == 'error':
+            logger.error(colored_message)
+        if event.level == 'critical':
+            logger.critical(colored_message)
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.

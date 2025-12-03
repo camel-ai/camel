@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class WorkforceEventBase(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
     event_type: Literal[
-        "message_log",
+        "log",
         "task_decomposed",
         "task_created",
         "task_assigned",
@@ -41,9 +41,22 @@ class WorkforceEventBase(BaseModel):
 
 
 class LogEvent(WorkforceEventBase):
-    event_type: Literal["message_log"] = "message_log"
+    event_type: Literal["log"] = "log"
     message: str
-    level: Literal["info", "warning", "error", "success"]
+    level: Literal["debug", "info", "warning", "error", "critical"]
+    color: (
+        Literal[
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "cyan",
+            "magenta",
+            "gray",
+            "black",
+        ]
+        | None
+    ) = None
 
 
 class WorkerCreatedEvent(WorkforceEventBase):

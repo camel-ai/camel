@@ -3812,6 +3812,7 @@ class Workforce(BaseNode):
                             f"{e}"
                         ),
                         level="error",
+                        color="red",
                     )
                 )
 
@@ -3943,8 +3944,7 @@ class Workforce(BaseNode):
         for cb in self._callbacks:
             cb.log_message(
                 LogEvent(
-                    message=f"{new_node} created.",
-                    level="info",
+                    message=f"{new_node} created.", level="info", color="cyan"
                 )
             )
 
@@ -4515,7 +4515,8 @@ class Workforce(BaseNode):
                                 f"✅ Task {task.id} completed and removed "
                                 f"from queue."
                             ),
-                            level="success",
+                            level="info",
+                            color="green",
                         )
                     )
                 break
