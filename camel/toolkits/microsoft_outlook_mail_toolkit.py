@@ -74,8 +74,8 @@ class CustomAzureCredential:
         tenant_id (str): The Microsoft tenant ID.
         refresh_token (str): The refresh token from OAuth flow.
         scopes (List[str]): List of OAuth permission scopes.
-        token_file_path (Optional[Path]): Path to persist the refresh token.
-            If None, token persistence is disabled.
+        refresh_token_file_path (Optional[Path]): File path of json file
+        with refresh token.
     """
 
     def __init__(
@@ -85,14 +85,14 @@ class CustomAzureCredential:
         tenant_id: str,
         refresh_token: str,
         scopes: List[str],
-        token_file_path: Optional[Path],
+        refresh_token_file_path: Optional[Path],
     ):
         self.client_id = client_id
         self.client_secret = client_secret
         self.tenant_id = tenant_id
         self.refresh_token = refresh_token
         self.scopes = scopes
-        self.token_file_path = token_file_path
+        self.refresh_token_file_path = refresh_token_file_path
 
         self._access_token = None
         self._expires_at = 0
@@ -145,7 +145,7 @@ class CustomAzureCredential:
         Args:
             refresh_token (str): The refresh token to save.
         """
-        if not self.token_file_path:
+        if not self.refresh_token_file_path:
             logger.info("Token file path not set, skipping token save")
             return
 
@@ -153,10 +153,12 @@ class CustomAzureCredential:
 
         try:
             # Create parent directories if they don't exist
-            self.token_file_path.parent.mkdir(parents=True, exist_ok=True)
+            self.refresh_token_file_path.parent.mkdir(
+                parents=True, exist_ok=True
+            )
 
             # Write new refresh token to file
-            with open(self.token_file_path, 'w') as f:
+            with open(self.refresh_token_file_path, 'w') as f:
                 json.dump(token_data, f, indent=2)
         except Exception as e:
             logger.warning(f"Failed to save refresh token: {e!s}")
@@ -192,16 +194,18 @@ class CustomAzureCredential:
 
 @MCPServer()
 class OutlookMailToolkit(BaseToolkit):
-    """A class representing a toolkit for Microsoft Outlook operations.
+    """A comprehensive toolkit for Microsoft Outlook Mail operations.
 
-    This class provides methods for interacting with Microsoft Outlook via
-    the Microsoft Graph API.
+    This class provides methods for Outlook Mail operations including sending
+    emails, managing drafts, replying to mails, deleting mails, fetching
+    mails and attachments and changing folder of mails.
+    API keys can be accessed in the Azure portal (https://portal.azure.com/)
     """
 
     def __init__(
         self,
         timeout: Optional[float] = None,
-        token_file_path: Optional[str] = None,
+        refresh_token_file_path: Optional[str] = None,
     ):
         """Initializes a new instance of the OutlookMailToolkit.
 
@@ -209,11 +213,12 @@ class OutlookMailToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
-            token_file_path (Optional[str]): The path to the file where the
-                refresh token will be stored. If None, token persistence is
-                disabled and browser authentication will be required on each
-                initialization. If provided, the token will be saved to and
-                loaded from this path. (default: :obj:`None`)
+            refresh_token_file_path (Optional[str]): The path of json file
+                where refresh token is stored. If None, authentication using
+                web browser will be required on each initialization. If
+                provided, the refresh token is read from the file, used, and
+                automatically updated when it nears expiry.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
 
@@ -227,8 +232,8 @@ class OutlookMailToolkit(BaseToolkit):
                 "MICROSOFT_REDIRECT_PORT=54321)."
             )
         self.redirect_uri = f"http://localhost:{redirect_port}"
-        self.token_file_path = (
-            Path(token_file_path) if token_file_path else None
+        self.refresh_token_file_path = (
+            Path(refresh_token_file_path) if refresh_token_file_path else None
         )
         self.credentials = self._authenticate()
         self.client = self._get_graph_client(
@@ -267,20 +272,20 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Optional[str]: Refresh token if file exists and valid, else None.
         """
-        if not self.token_file_path:
+        if not self.refresh_token_file_path:
             return None
 
-        if not self.token_file_path.exists():
+        if not self.refresh_token_file_path.exists():
             return None
 
         try:
-            with open(self.token_file_path, 'r') as f:
+            with open(self.refresh_token_file_path, 'r') as f:
                 token_data = json.load(f)
 
             refresh_token = token_data.get('refresh_token')
             if refresh_token:
                 logger.info(
-                    f"Refresh token loaded from {self.token_file_path}"
+                    f"Refresh token loaded from {self.refresh_token_file_path}"
                 )
                 return refresh_token
 
@@ -297,17 +302,21 @@ class OutlookMailToolkit(BaseToolkit):
         Args:
             refresh_token (str): The refresh token to save.
         """
-        if not self.token_file_path:
+        if not self.refresh_token_file_path:
             logger.info("Token file path not set, skipping token save")
             return
 
         try:
             # Create parent directories if they don't exist
-            self.token_file_path.parent.mkdir(parents=True, exist_ok=True)
+            self.refresh_token_file_path.parent.mkdir(
+                parents=True, exist_ok=True
+            )
 
-            with open(self.token_file_path, 'w') as f:
+            with open(self.refresh_token_file_path, 'w') as f:
                 json.dump({"refresh_token": refresh_token}, f, indent=2)
-            logger.info(f"Refresh token saved to {self.token_file_path}")
+            logger.info(
+                f"Refresh token saved to {self.refresh_token_file_path}"
+            )
         except Exception as e:
             logger.warning(f"Failed to save token to file: {e!s}")
 
@@ -337,7 +346,7 @@ class OutlookMailToolkit(BaseToolkit):
             tenant_id=self.tenant_id,
             refresh_token=refresh_token,
             scopes=self.scopes,
-            token_file_path=self.token_file_path,
+            refresh_token_file_path=self.refresh_token_file_path,
         )
 
         logger.info("Authentication with saved token successful")
@@ -421,7 +430,8 @@ class OutlookMailToolkit(BaseToolkit):
         """Authenticates and creates credential for Microsoft Graph.
 
         Implements two-stage authentication:
-        1. Attempts to use saved refresh token if token_file_path is provided
+        1. Attempts to use saved refresh token if refresh_token_file_path is
+            provided
         2. Falls back to browser OAuth if no token or token invalid
 
         Returns:
@@ -438,7 +448,10 @@ class OutlookMailToolkit(BaseToolkit):
             self.client_secret = os.getenv("MICROSOFT_CLIENT_SECRET")
 
             # Try saved refresh token first if token file path is provided
-            if self.token_file_path and self.token_file_path.exists():
+            if (
+                self.refresh_token_file_path
+                and self.refresh_token_file_path.exists()
+            ):
                 try:
                     credentials: CustomAzureCredential = (
                         self._authenticate_using_refresh_token()
