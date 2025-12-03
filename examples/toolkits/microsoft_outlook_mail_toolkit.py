@@ -53,7 +53,7 @@ print("\nExample: Sending an email")
 print("=" * 50)
 
 user_message = (
-    "Send an email to waleedalzarooni@g.ucla.edu with subject "
+    "Send an email to test@example.com with subject "
     "'Hello from Outlook Toolkit' and body 'This is a test email "
     "sent using the CAMEL Outlook toolkit.'"
 )

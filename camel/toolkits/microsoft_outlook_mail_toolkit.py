@@ -223,15 +223,7 @@ class OutlookMailToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
 
         self.scopes = ["Mail.Send", "Mail.ReadWrite"]
-        redirect_port = os.getenv("MICROSOFT_REDIRECT_PORT")
-        if redirect_port is None:
-            raise ValueError(
-                "MICROSOFT_REDIRECT_PORT environment variable must be set. "
-                "Please set it to the port configured in your Azure app "
-                "registration redirect URI (e.g., export "
-                "MICROSOFT_REDIRECT_PORT=54321)."
-            )
-        self.redirect_uri = f"http://localhost:{redirect_port}"
+        self.redirect_uri = self._get_dynamic_redirect_uri()
         self.refresh_token_file_path = (
             Path(refresh_token_file_path) if refresh_token_file_path else None
         )
@@ -239,6 +231,20 @@ class OutlookMailToolkit(BaseToolkit):
         self.client = self._get_graph_client(
             credentials=self.credentials, scopes=self.scopes
         )
+
+    def _get_dynamic_redirect_uri(self) -> str:
+        """Finds an available port and returns a dynamic redirect URI.
+
+        Returns:
+            str: A redirect URI with format 'http://localhost:<port>' where
+                port is an available port on the system.
+        """
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', 0))
+            port = s.getsockname()[1]
+        return f'http://localhost:{port}'
 
     def _get_auth_url(self, client_id, tenant_id, redirect_uri, scopes):
         """Constructs the Microsoft authorization URL.
