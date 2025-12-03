@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - link "Jump to content" [ref=e3] [cursor=pointer]:
+    - /url: "#bodyContent"
+            - link "Donate" [ref=e34] [cursor=pointer]:
+              - /url: https://donate.wikimedia.org/?wmf_source=donate&wmf_medium=sidebar&wmf_campaign=en.wikipedia.org&uselang=en
+              - generic [ref=e35] [cursor=pointer]: Donate

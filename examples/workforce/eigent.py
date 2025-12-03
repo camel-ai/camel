@@ -17,6 +17,8 @@ import datetime
 import os
 import platform
 import uuid
+from dotenv import load_dotenv
+load_dotenv()
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -51,7 +53,6 @@ from camel.toolkits import (
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
-from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
@@ -289,13 +290,15 @@ these tips to maximize your effectiveness:
     )
 
 
-@api_keys_required(
-    [
-        (None, 'GOOGLE_API_KEY'),
-        (None, 'SEARCH_ENGINE_ID'),
-        (None, 'EXA_API_KEY'),
-    ]
-)
+# @api_keys_required(
+#     [
+#         (None, 'GOOGLE_API_KEY'),
+#         (None, 'SEARCH_ENGINE_ID'),
+#         (None, 'EXA_API_KEY'),
+#     ]
+# )
+# 
+# disable human toolkit for now
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -313,6 +316,7 @@ def search_agent_factory(
 
     custom_tools = [
         "browser_open",
+        "browser_select",
         "browser_close",
         "browser_back",
         "browser_forward",
@@ -321,8 +325,11 @@ def search_agent_factory(
         "browser_enter",
         "browser_switch_tab",
         "browser_visit_page",
-        "browser_get_som_screenshot",
+        "browser_get_page_snapshot",
     ]
+    user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR", "")
+    tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
+
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
         enabled_tools=custom_tools,
@@ -331,13 +338,14 @@ def search_agent_factory(
         session_id=agent_id,
         viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
-        default_start_url="https://search.brave.com/",
+        default_start_url="about:blank",
+        user_data_dir=user_data_dir,
+        log_dir=tool_log_dir,
     )
 
     # Initialize toolkits
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
-    search_toolkit = SearchToolkit().search_google
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
@@ -346,7 +354,6 @@ def search_agent_factory(
     )
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
-    search_toolkit = message_integration.register_functions([search_toolkit])
     enhanced_shell_exec = message_integration.register_functions(
         [terminal_toolkit_basic.shell_exec]
     )
@@ -354,38 +361,17 @@ def search_agent_factory(
     tools = [
         *web_toolkit_custom.get_tools(),
         *enhanced_shell_exec,
-        HumanToolkit().ask_human_via_console,
         *note_toolkit.get_tools(),
-        *search_toolkit,
         *terminal_toolkit.get_tools(),
     ]
 
-    system_message = f"""
+    system_message = """
 <role>
 You are a Senior Research Analyst, a key member of a multi-agent team. Your 
 primary responsibility is to conduct expert-level web research to gather, 
 analyze, and document information required to solve the user's task. You 
 operate with precision, efficiency, and a commitment to data quality.
 </role>
-
-<team_structure>
-You collaborate with the following agents who can work in parallel:
-- **Developer Agent**: Writes and executes code, handles technical 
-implementation.
-- **Document Agent**: Creates and manages documents and presentations.
-- **Multi-Modal Agent**: Processes and generates images and audio.
-Your research is the foundation of the team's work. Provide them with 
-comprehensive and well-documented information.
-</team_structure>
-
-<operating_environment>
-- **System**: {platform.system()} ({platform.machine()})
-- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must
-  occur here, but you can access files from any place in the file system. For
-  all file system operations, you MUST use absolute paths to ensure precision
-  and avoid ambiguity.
-- **Current Date**: {datetime.date.today()}.
-</operating_environment>
 
 <mandatory_instructions>
 - You MUST use the note-taking tools to record your findings. This is a
@@ -402,18 +388,6 @@ comprehensive and well-documented information.
     you have discovered. High-quality, detailed notes are essential for the
     team's success.
 
-- You MUST only use URLs from trusted sources. A trusted source is a URL
-    that is either:
-    1. Returned by a search tool (like `search_google`, `search_bing`,
-        or `search_exa`).
-    2. Found on a webpage you have visited.
-- You are strictly forbidden from inventing, guessing, or constructing URLs
-    yourself. Fabricating URLs will be considered a critical error.
-
-- You MUST NOT answer from your own knowledge. All information
-    MUST be sourced from the web using the available tools. If you don't know
-    something, find it out using your tools.
-
 - When you complete your task, your final response must be a comprehensive
     summary of your findings, presented in a clear, detailed, and
     easy-to-read format. Avoid using markdown tables for presenting data;
@@ -428,15 +402,13 @@ Your capabilities include:
     powerful CLI tools like `grep` for searching within files, `curl` and
     `wget` for downloading content, and `jq` for parsing JSON data from APIs.
 - Use the note-taking tools to record your findings.
-- Use the human toolkit to ask for help when you are stuck.
+
 </capabilities>
 
 <web_search_workflow>
-- Initial Search: You MUST start with a search engine like `search_google` or
-    `search_bing` to get a list of relevant URLs for your research, the URLs 
-    here will be used for `browser_visit_page`.
 - Browser-Based Exploration: Use the rich browser related toolset to
     investigate websites.
+    
     - **Navigation and Exploration**: Use `browser_visit_page` to open a URL.
         `browser_visit_page` provides a snapshot of currently visible 
         interactive elements, not the full page text. To see more content on 
@@ -447,29 +419,26 @@ Your capabilities include:
         operation, only use it when visual analysis is necessary.
     - **Interaction**: Use `browser_type` to fill out forms and 
         `browser_enter` to submit or confirm search.
-- Alternative Search: If you are unable to get sufficient
-    information through browser-based exploration and scraping, use
-    `search_exa`. This tool is best used for getting quick summaries or
-    finding specific answers when visiting web page is could not find the
-    information.
 
 - In your response, you should mention the URLs you have visited and processed.
-
-- When encountering verification challenges (like login, CAPTCHAs or
-    robot checks), you MUST request help using the human toolkit.
+- When encountering cookies page, you need to click accept all.
 </web_search_workflow>
 """
 
-    return ChatAgent(
+    agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Search Agent",
             content=system_message,
         ),
         model=model,
+        enable_tool_output_cache=True,
         toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
-        prune_tool_calls_from_memory=True,
+        # prune_tool_calls_from_memory=True,
     )
+
+    # Return both agent and toolkit for cleanup purposes
+    return agent, web_toolkit_custom
 
 
 def document_agent_factory(
@@ -490,7 +459,7 @@ def document_agent_factory(
     mark_it_down_toolkit = MarkItDownToolkit()
     excel_toolkit = ExcelToolkit(working_directory=WORKING_DIRECTORY)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
-    search_toolkit = SearchToolkit().search_exa
+    # search_toolkit = SearchToolkit().search_exa
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
 
     # Add messaging to toolkits
@@ -503,7 +472,7 @@ def document_agent_factory(
     )
     excel_toolkit = message_integration.register_toolkits(excel_toolkit)
     note_toolkit = message_integration.register_toolkits(note_toolkit)
-    search_toolkit = message_integration.register_functions([search_toolkit])
+    # search_toolkit = message_integration.register_functions([search_toolkit])
     terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
 
     tools = [
@@ -513,7 +482,7 @@ def document_agent_factory(
         *mark_it_down_toolkit.get_tools(),
         *excel_toolkit.get_tools(),
         *note_toolkit.get_tools(),
-        *search_toolkit,
+        # *search_toolkit,
         *terminal_toolkit.get_tools(),
     ]
 
@@ -654,6 +623,7 @@ supported formats including advanced spreadsheet functionality.
             role_name="Document Agent",
             content=system_message,
         ),
+        enable_tool_output_cache=True,
         model=model,
         tools=tools,
     )
@@ -1016,7 +986,8 @@ MUST use this as the current date.
     )
 
     # Create agents using factory functions
-    search_agent = search_agent_factory(model_backend, task_id)
+    # search_agent_factory now returns (agent, browser_toolkit)
+    search_agent, _ = search_agent_factory(model_backend, task_id)
     developer_agent = developer_agent_factory(
         model_backend_reason,
         task_id,
@@ -1097,8 +1068,7 @@ MUST use this as the current date.
     human_task = Task(
         content=(
             """
-search 10 different papers related to llm agent and write a html report about 
-them.
+Find a recipe for a vegetarian lasagna under 600 calories per serving that has a prep time of less than 1 hour. in https://www.allrecipes.com/
             """
         ),
         id='0',
