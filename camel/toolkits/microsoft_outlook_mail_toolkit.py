@@ -27,6 +27,7 @@ from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, api_keys_required
+from camel.utils.commons import run_async
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -217,7 +218,15 @@ class OutlookMailToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
 
         self.scopes = ["Mail.Send", "Mail.ReadWrite"]
-        self.redirect_uri = self._get_dynamic_redirect_uri()
+        redirect_port = os.getenv("MICROSOFT_REDIRECT_PORT")
+        if redirect_port is None:
+            raise ValueError(
+                "MICROSOFT_REDIRECT_PORT environment variable must be set. "
+                "Please set it to the port configured in your Azure app "
+                "registration redirect URI (e.g., export "
+                "MICROSOFT_REDIRECT_PORT=54321)."
+            )
+        self.redirect_uri = f"http://localhost:{redirect_port}"
         self.token_file_path = (
             Path(token_file_path) if token_file_path else None
         )
@@ -225,20 +234,6 @@ class OutlookMailToolkit(BaseToolkit):
         self.client = self._get_graph_client(
             credentials=self.credentials, scopes=self.scopes
         )
-
-    def _get_dynamic_redirect_uri(self) -> str:
-        """Finds an available port and returns a dynamic redirect URI.
-
-        Returns:
-            str: A redirect URI with format 'http://localhost:<port>' where
-                port is an available port on the system.
-        """
-        import socket
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('127.0.0.1', 0))
-            port = s.getsockname()[1]
-        return f'http://localhost:{port}'
 
     def _get_auth_url(self, client_id, tenant_id, redirect_uri, scopes):
         """Constructs the Microsoft authorization URL.
@@ -781,16 +776,16 @@ class OutlookMailToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.send_email),
-            FunctionTool(self.create_draft_email),
-            FunctionTool(self.send_draft_email),
-            FunctionTool(self.delete_email),
-            FunctionTool(self.move_message_to_folder),
-            FunctionTool(self.get_attachments),
-            FunctionTool(self.get_message),
-            FunctionTool(self.list_messages),
-            FunctionTool(self.reply_to_email),
-            FunctionTool(self.update_draft_message),
+            FunctionTool(run_async(self.send_email)),
+            FunctionTool(run_async(self.create_draft_email)),
+            FunctionTool(run_async(self.send_draft_email)),
+            FunctionTool(run_async(self.delete_email)),
+            FunctionTool(run_async(self.move_message_to_folder)),
+            FunctionTool(run_async(self.get_attachments)),
+            FunctionTool(run_async(self.get_message)),
+            FunctionTool(run_async(self.list_messages)),
+            FunctionTool(run_async(self.reply_to_email)),
+            FunctionTool(run_async(self.update_draft_message)),
         ]
 
     async def create_draft_email(
