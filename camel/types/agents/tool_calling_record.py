@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
@@ -26,6 +28,9 @@ class ToolCallingRecord(BaseModel):
         tool_call_id (str): The ID of the tool call, if available.
         images (Optional[List[str]]): List of base64-encoded images returned
             by the tool, if any.
+        token_usage (Optional[Dict[str, int]]): Token usage breakdown for this
+            tool call. Contains 'prompt_tokens', 'completion_tokens', and
+            'total_tokens'.
     """
 
     tool_name: str
@@ -33,6 +38,7 @@ class ToolCallingRecord(BaseModel):
     result: Any
     tool_call_id: str
     images: Optional[List[str]] = None
+    token_usage: Optional[Dict[str, int]] = None
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.
@@ -40,13 +46,18 @@ class ToolCallingRecord(BaseModel):
         Returns:
             str: Modified string to represent the tool calling.
         """
-        return (
+        base_str = (
             f"Tool Execution: {self.tool_name}\n"
             f"\tArgs: {self.args}\n"
             f"\tResult: {self.result}\n"
         )
 
-    def as_dict(self) -> dict[str, Any]:
+        if self.token_usage:
+            base_str += f"\tToken Usage: {self.token_usage}\n"
+
+        return base_str
+
+    def as_dict(self) -> Dict[str, Any]:
         r"""Returns the tool calling record as a dictionary.
 
         Returns:
