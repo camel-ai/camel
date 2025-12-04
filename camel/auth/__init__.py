@@ -12,13 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from slack_auth import SlackAuth
-
-from camel.auth.base import (
+from .base import (
     AuthenticationError,
     AuthenticationProvider,
     AuthenticationType,
 )
+from .slack_auth import SlackAuth
 
 __all__ = [
     'AuthenticationProvider',
