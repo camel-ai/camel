@@ -11,12 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .task import Task, TaskManager
-from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
+from .task import Task, TaskState
 
-__all__ = [
-    "TASK_DECOMPOSE_PROMPT",
-    "TASK_EVOLVE_PROMPT",
-    "Task",
-    "TaskManager",
-]
+__all__ = ["Task", "TaskState"]

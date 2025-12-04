@@ -36,13 +36,9 @@ import uuid
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
-from camel.prompts import TextPrompt
 
-# Note: validate_task_content moved here to avoid circular imports
-from .task_prompt import (
-    TASK_COMPOSE_PROMPT,
+from .prompts import (
     TASK_DECOMPOSE_PROMPT,
-    TASK_EVOLVE_PROMPT,
 )
 
 logger = get_logger(__name__)
@@ -156,7 +152,7 @@ def is_task_result_insufficient(task: "Task") -> bool:
     Returns:
         bool: True if the result is insufficient, False otherwise.
     """
-    if not hasattr(task, 'result') or task.result is None:
+    if not hasattr(task, "result") or task.result is None:
         return True
 
     return not validate_task_content(
@@ -213,7 +209,11 @@ class TaskState(str, Enum):
 
 
 class Task(BaseModel):
-    r"""Task is specific assignment that can be passed to a agent.
+    r"""Task is a specific assignment that can be passed to an agent.
+
+    This class represents a task as a pure data structure. Task execution,
+    decomposition, and composition logic has been moved to the Workforce
+    system to avoid duplication and maintain clear separation of concerns.
 
     Attributes:
         content (str): string content for task.
@@ -225,7 +225,7 @@ class Task(BaseModel):
         type (Optional[str]): task type. (default: :obj:`None`)
         parent (Optional[Task]): The parent task, None for root task.
             (default: :obj:`None`)
-        subtasks (List[Task]): The childrent sub-tasks for the task.
+        subtasks (List[Task]): The children sub-tasks for the task.
             (default: :obj:`[]`)
         result (Optional[str]): The answer for the task.
             (default: :obj:`""`)
@@ -305,7 +305,7 @@ class Task(BaseModel):
     @staticmethod
     def to_message():
         r"""Convert a Task to a Message."""
-        # TODO
+        # TODO: Implement when needed
         pass
 
     def reset(self):
@@ -403,6 +403,12 @@ class Task(BaseModel):
         for subtask in self.subtasks:
             _str += subtask.get_result(indent + "  ")
         return _str
+
+    def get_depth(self) -> int:
+        r"""Get current task depth."""
+        if self.parent is None:
+            return 1
+        return 1 + self.parent.get_depth()
 
     def decompose(
         self,
@@ -538,198 +544,3 @@ class Task(BaseModel):
                     f"Content '{stripped_content}' failed validation"
                 )
         return tasks
-
-    def compose(
-        self,
-        agent: "ChatAgent",
-        template: TextPrompt = TASK_COMPOSE_PROMPT,
-        result_parser: Optional[Callable[[str], str]] = None,
-    ):
-        r"""compose task result by the sub-tasks.
-
-        Args:
-            agent (ChatAgent): An agent that used to compose the task result.
-            template (TextPrompt, optional): The prompt template to compose
-                task. If not provided, the default template will be used.
-            result_parser (Callable[[str, str], List[Task]], optional): A
-                function to extract Task from response.
-        """
-
-        if not self.subtasks:
-            return
-
-        sub_tasks_result = self.get_result()
-
-        role_name = agent.role_name
-        content = template.format(
-            role_name=role_name,
-            content=self.content,
-            additional_info=self.additional_info,
-            image_list=self.image_list,
-            image_detail=self.image_detail,
-            video_bytes=self.video_bytes,
-            video_detail=self.video_detail,
-            other_results=sub_tasks_result,
-        )
-        msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
-        )
-        response = agent.step(msg)
-        result = response.msg.content
-        if result_parser:
-            result = result_parser(result)
-        self.update_result(result)
-
-    def get_depth(self) -> int:
-        r"""Get current task depth."""
-        if self.parent is None:
-            return 1
-        return 1 + self.parent.get_depth()
-
-
-class TaskManager:
-    r"""TaskManager is used to manage tasks.
-
-    Attributes:
-        root_task: The root task.
-        tasks: The ordered tasks.
-        task_map: A map for task.id to Task.
-        current_task_id: The current "RUNNING" task.id.
-
-    Args:
-        task (Task): The root Task.
-    """
-
-    def __init__(self, task: Task):
-        self.root_task: Task = task
-        self.current_task_id: str = task.id
-        self.tasks: List[Task] = [task]
-        self.task_map: Dict[str, Task] = {task.id: task}
-
-    def gen_task_id(self) -> str:
-        r"""Generate a new task id."""
-        return f"{len(self.tasks)}"
-
-    def exist(self, task_id: str) -> bool:
-        r"""Check if a task with the given id exists."""
-        return task_id in self.task_map
-
-    @property
-    def current_task(self) -> Optional[Task]:
-        r"""Get the current task."""
-        return self.task_map.get(self.current_task_id, None)
-
-    @staticmethod
-    def topological_sort(tasks: List[Task]) -> List[Task]:
-        r"""Sort a list of tasks by topological way.
-
-        Args:
-            tasks (List[Task]): The giving list of tasks.
-
-        Returns:
-            The sorted list of tasks.
-        """
-        stack = []
-        visited = set()
-
-        # recursive visit the vertices
-        def visit(task: Task):
-            if task.id in visited:
-                return
-            visited.add(task.id)
-
-            # go deep for dependencies
-            for sub_task in task.subtasks:
-                visit(sub_task)
-
-            # add current task to stack which have no dependencies.
-            stack.append(task)
-
-        for task in tasks:
-            visit(task)
-
-        return stack
-
-    @staticmethod
-    def set_tasks_dependence(
-        root: Task,
-        others: List[Task],
-        type: Literal["serial", "parallel"] = "parallel",
-    ):
-        r"""Set relationship between root task and other tasks.
-        Two relationships are currently supported: serial and parallel.
-        `serial` :  root -> other1 -> other2
-        `parallel`: root -> other1
-                         -> other2
-
-        Args:
-            root (Task): A root task.
-            others (List[Task]): A list of tasks.
-        """
-        # filter the root task in the others to avoid self-loop dependence.
-        others = [other for other in others if other != root]
-
-        if len(others) == 0:
-            return
-        if type == "parallel":
-            for other in others:
-                root.add_subtask(other)
-        else:
-            parent = root
-            for child in others:
-                parent.add_subtask(child)
-                parent = child
-
-    def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
-        r"""self.tasks and self.task_map will be updated by the input tasks."""
-        if not tasks:
-            return
-        if not isinstance(tasks, List):
-            tasks = [tasks]
-        for task in tasks:
-            assert not self.exist(task.id), f"`{task.id}` already existed."
-        self.tasks = self.topological_sort(self.tasks + tasks)
-        self.task_map = {task.id: task for task in self.tasks}
-
-    def evolve(
-        self,
-        task: Task,
-        agent: "ChatAgent",
-        template: Optional[TextPrompt] = None,
-        task_parser: Optional[Callable[[str, str], List[Task]]] = None,
-    ) -> Optional[Task]:
-        r"""Evolve a task to a new task.
-            Evolve is only used for data generation.
-
-        Args:
-            task (Task): A given task.
-            agent (ChatAgent): An agent that used to evolve the task.
-            template (TextPrompt, optional): A prompt template to evolve task.
-                If not provided, the default template will be used.
-            task_parser (Callable, optional): A function to extract Task from
-                response. If not provided, the default parser will be used.
-
-        Returns:
-            Task: The created :obj:`Task` instance or None.
-        """
-
-        if template is None:
-            template = TASK_EVOLVE_PROMPT
-
-        role_name = agent.role_name
-        content = template.format(role_name=role_name, content=task.content)
-        msg = BaseMessage.make_user_message(
-            role_name=role_name,
-            content=content,
-            image_list=task.image_list,
-            image_detail=task.image_detail,
-            video_bytes=task.video_bytes,
-            video_detail=task.video_detail,
-        )
-        response = agent.step(msg)
-        if task_parser is None:
-            task_parser = parse_response
-        tasks = task_parser(response.msg.content, task.id)
-        if tasks:
-            return tasks[0]
-        return None
