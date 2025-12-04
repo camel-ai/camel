@@ -67,6 +67,21 @@ class WebhookAuth(ABC):
         """
         pass
 
+    def get_verification_response(
+        self, request: Any, raw_body: bytes
+    ) -> Optional[Dict[str, Any]]:
+        """Get the response for a verification request if applicable.
+
+        Args:
+            request (Any): The request object.
+            raw_body (bytes): The raw request body.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response dictionary if a verification
+                response is needed, None otherwise.
+        """
+        return None
+
 
 class WebhookTrigger(BaseTrigger):
     """Webhook trigger for handling external HTTP events.
@@ -351,6 +366,15 @@ class WebhookTrigger(BaseTrigger):
                 return web.json_response(
                     {"error": "Authentication failed"}, status=403
                 )
+
+            if self.auth_handler:
+                verification_resp = (
+                    self.auth_handler.get_verification_response(
+                        request, raw_body
+                    )
+                )
+                if verification_resp is not None:
+                    return web.json_response(verification_resp)
 
             # Parse payload based on content type
             content_type = request.headers.get(

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 import time
 from typing import Any, Dict, Optional
@@ -237,3 +238,25 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         except Exception as e:
             logger.error(f"Error verifying Slack webhook: {e}")
             return False
+
+    def get_verification_response(
+        self, request: Any, raw_body: bytes
+    ) -> Optional[Dict[str, Any]]:
+        """Check for URL verification request and return challenge response.
+
+        Args:
+            request (Any): The request object.
+            raw_body (bytes): The raw request body.
+
+        Returns:
+            Optional[Dict[str, Any]]: Challenge response if it's a verification
+                request, None otherwise.
+        """
+        try:
+            body_str = raw_body.decode("utf-8")
+            payload = json.loads(body_str)
+            if payload.get("type") == "url_verification":
+                return {"challenge": payload.get("challenge")}
+        except Exception:
+            pass
+        return None

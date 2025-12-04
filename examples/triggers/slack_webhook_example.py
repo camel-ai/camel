@@ -21,7 +21,7 @@ import asyncio
 import os
 from typing import Any, Dict
 
-from camel.auth.slack_auth import SlackAuth
+from camel.auth import SlackAuth
 from camel.logger import get_logger
 from camel.triggers.base_trigger import TriggerEvent
 from camel.triggers.trigger_manager import CallbackHandlerType, TriggerManager
@@ -62,6 +62,8 @@ class SlackEventHandler:
         """Handle Slack Event API callbacks."""
         event = payload.get('event', {})
         event_type = event.get('type')
+
+        logger.info(f"Handling event callback of type: {event_type}")
 
         if event_type == 'message':
             user = event.get('user', 'unknown')
@@ -124,7 +126,7 @@ async def main():
 
     try:
         # Initialize and activate the trigger
-        trigger_manager.register_trigger(slack_trigger)
+        await trigger_manager.register_trigger(slack_trigger)
 
         logger.info(
             "Slack webhook server running on http://localhost:8080/slack/events"
