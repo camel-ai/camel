@@ -3,4 +3,4 @@ python-dotenv==1.1.0
 streamlit==1.37.0
 camel-ai[all]==0.2.62
 docx2markdown==0.1.0
-asknews==0.11.10
+asknews==0.13.7
