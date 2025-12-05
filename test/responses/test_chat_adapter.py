@@ -14,6 +14,12 @@
 
 import json
 
+from openai.types.chat.chat_completion import ChoiceLogprobs
+from openai.types.chat.chat_completion_token_logprob import (
+    ChatCompletionTokenLogprob,
+    TopLogprob,
+)
+
 from camel.responses.adapters.chat_completions import (
     adapt_chat_to_camel_response,
 )
@@ -96,3 +102,33 @@ def test_adapt_tool_calls_if_present():
     )
     tc = cmr.tool_call_requests[0]
     assert tc.id == "call_1" and tc.name == "search" and tc.args == {"q": "x"}
+
+
+def test_adapt_chat_to_camel_response_preserves_logprobs():
+    top_lp = TopLogprob.construct(token="Hi", bytes=None, logprob=-0.1)
+    token_lp = ChatCompletionTokenLogprob.construct(
+        token="Hi", bytes=None, logprob=-0.1, top_logprobs=[top_lp]
+    )
+    logprobs = ChoiceLogprobs.construct(content=[token_lp])
+
+    choice = dict(
+        index=0,
+        message=ChatCompletionMessage.construct(
+            role="assistant", content="Hi", tool_calls=None
+        ),
+        finish_reason="stop",
+        logprobs=logprobs,
+    )
+
+    cc = ChatCompletion.construct(
+        id="chatcmpl-test-003",
+        choices=[choice],
+        created=1730000002,
+        model="gpt-4o-mini",
+        object="chat.completion",
+        usage=None,
+    )
+
+    cmr = adapt_chat_to_camel_response(cc)
+    assert cmr.logprobs is not None
+    assert cmr.logprobs[0].content[0].token == "Hi"

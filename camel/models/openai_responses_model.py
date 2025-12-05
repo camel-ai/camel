@@ -119,9 +119,7 @@ class OpenAIResponsesModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion, ChatCompletion
-    ]:  # unused legacy types in signature
+    ) -> ChatCompletion:  # unused legacy types in signature
         # Update trace
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -194,7 +192,7 @@ class OpenAIResponsesModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, ChatCompletion]:
+    ) -> ChatCompletion:
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
             update_langfuse_trace(

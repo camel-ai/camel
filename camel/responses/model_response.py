@@ -59,6 +59,8 @@ class CamelModelResponse(BaseModel):
     tool_call_requests: Optional[List[CamelToolCall]] = None
     finish_reasons: List[str] = Field(default_factory=list)
     usage: CamelUsage = Field(default_factory=CamelUsage)
+    # Optional logprobs aligned to provider choices (if requested)
+    logprobs: Optional[List[Any]] = None
 
     # Keep a handle to the original provider response for debugging/tests
     raw: Any = None

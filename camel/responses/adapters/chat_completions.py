@@ -100,9 +100,11 @@ def adapt_chat_to_camel_response(
     output_messages: List[BaseMessage] = []
     finish_reasons: List[str] = []
     tool_call_requests: Optional[List[CamelToolCall]] = None
+    logprobs_list: List[Any] = []
 
     for _, choice in enumerate(response.choices):
         finish_reasons.append(str(choice.finish_reason))
+        logprobs_list.append(getattr(choice, "logprobs", None))
 
         msg = choice.message
         # Skip empty (no content and no tool calls)
@@ -125,6 +127,11 @@ def adapt_chat_to_camel_response(
         # (align with existing usage)
         if tool_call_requests is None:
             tool_call_requests = _choice_tool_calls_to_camel(msg)
+
+    # Preserve logprobs if caller requested them
+    logprobs: Optional[List[Any]] = (
+        logprobs_list if any(lp is not None for lp in logprobs_list) else None
+    )
 
     usage_raw: Dict[str, Any] = {}
     usage_obj: Optional[Any] = getattr(response, "usage", None)
@@ -166,5 +173,6 @@ def adapt_chat_to_camel_response(
         tool_call_requests=tool_call_requests,
         finish_reasons=finish_reasons,
         usage=usage,
+        logprobs=logprobs,
         raw=response,
     )

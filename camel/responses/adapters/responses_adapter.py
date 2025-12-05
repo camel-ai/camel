@@ -45,6 +45,7 @@ def responses_to_camel_response(
 
     audio_bytes: Optional[bytes] = None
     audio_transcript: Optional[str] = None
+    logprobs_list: List[Any] = []
 
     text = getattr(resp, "output_text", None)
     parts: List[str] = []
@@ -64,6 +65,13 @@ def responses_to_camel_response(
                         val = chunk.get("text") or chunk.get("output_text")
                         if val:
                             parts.append(str(val))
+                        lp = (
+                            chunk.get("logprobs")
+                            if isinstance(chunk, dict)
+                            else getattr(chunk, "logprobs", None)
+                        )
+                        if lp is not None:
+                            logprobs_list.append(lp)
                     elif chunk_type == "output_audio":
                         audio = chunk.get("audio")
                         if isinstance(audio, dict):
@@ -184,6 +192,7 @@ def responses_to_camel_response(
         total_tokens=usage_dict.get("total_tokens"),
         raw=usage_raw or None,
     )
+    logprobs: Optional[List[Any]] = logprobs_list if logprobs_list else None
 
     return CamelModelResponse(
         id=getattr(resp, "id", ""),
@@ -193,6 +202,7 @@ def responses_to_camel_response(
         tool_call_requests=tool_call_requests if tool_call_requests else None,
         finish_reasons=["stop"],
         usage=usage,
+        logprobs=logprobs,
         raw=resp,
     )
 

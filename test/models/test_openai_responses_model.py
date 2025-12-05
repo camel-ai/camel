@@ -139,6 +139,37 @@ def test_responses_to_camel_response_with_audio():
     assert camel_response.output_messages[0].audio_transcript == "Hello world"
 
 
+def test_responses_to_camel_response_keeps_logprobs():
+    mock_response = MagicMock()
+    mock_response.id = "resp_124"
+    mock_response.model = "gpt-4o-mini"
+    mock_response.created = 1234567891
+
+    logprob_entry = {
+        "token": "Hi",
+        "bytes": [72, 105],
+        "logprob": -0.1,
+        "top_logprobs": [],
+    }
+    mock_text_chunk = {
+        "type": "output_text",
+        "text": "Hi there",
+        "logprobs": [logprob_entry],
+    }
+
+    mock_item = MagicMock()
+    mock_item.content = [mock_text_chunk]
+
+    mock_response.output = [mock_item]
+    mock_response.output_text = None
+    mock_response.usage = None
+
+    camel_response = responses_to_camel_response(mock_response)
+
+    assert camel_response.logprobs is not None
+    assert camel_response.logprobs[0][0]["token"] == "Hi"
+
+
 def test_openai_messages_to_camel_with_audio():
     from camel.core.messages import openai_messages_to_camel
 
