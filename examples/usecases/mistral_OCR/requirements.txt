@@ -1,4 +1,4 @@
-camel-ai[all]==0.2.61
+camel-ai[all]==0.2.80
 streamlit
 pillow
 mistralai
