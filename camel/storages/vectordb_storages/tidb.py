@@ -107,7 +107,7 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _get_table_model(self, collection_name: str) -> Any:
-        from pytidb.datatype import JSON
+        from pytidb.datatype import JSON  # type: ignore[import-not-found]
         from pytidb.schema import Field, TableModel, VectorField
 
         class VectorDBRecordBase(TableModel, table=False):
@@ -130,7 +130,8 @@ class TiDBStorage(BaseVectorStorage):
         if table is None:
             table_model = self._get_table_model(self.collection_name)
             table = self._client.create_table(
-                schema=table_model, if_exists="skip"
+                schema=table_model,
+                if_exists="skip",  # type: ignore[call-arg]
             )
         return table
 

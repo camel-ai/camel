@@ -49,7 +49,7 @@ def create_math_agent() -> ChatAgent:
             "mathematical concepts. Use the math tools available to you."
         ),
     )
-    # Use DEFAULT to automatically use Azure OpenAI (configured in .env)
+
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
