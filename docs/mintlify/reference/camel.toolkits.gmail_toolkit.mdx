@@ -48,12 +48,12 @@ def people_service(self, service: Any):
 
 Allow overriding/injecting the People service (e.g., in tests).
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.send_email"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_send_email"></a>
 
-### send_email
+### gmail_send_email
 
 ```python
-def send_email(
+def gmail_send_email(
     self,
     to: Union[str, List[str]],
     subject: str,
@@ -82,12 +82,12 @@ Send an email through Gmail.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.reply_to_email"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_reply_to_email"></a>
 
-### reply_to_email
+### gmail_reply_to_email
 
 ```python
-def reply_to_email(
+def gmail_reply_to_email(
     self,
     message_id: str,
     reply_body: str,
@@ -110,12 +110,12 @@ Reply to an email message.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.forward_email"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_forward_email"></a>
 
-### forward_email
+### gmail_forward_email
 
 ```python
-def forward_email(
+def gmail_forward_email(
     self,
     message_id: str,
     to: Union[str, List[str]],
@@ -142,12 +142,12 @@ Forward an email message.
   Dict[str, Any]: A dictionary containing the result of the
 operation, including the number of attachments forwarded.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.create_email_draft"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_create_draft"></a>
 
-### create_email_draft
+### gmail_create_draft
 
 ```python
-def create_email_draft(
+def gmail_create_draft(
     self,
     to: Union[str, List[str]],
     subject: str,
@@ -176,12 +176,12 @@ Create an email draft.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.send_draft"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_send_draft"></a>
 
-### send_draft
+### gmail_send_draft
 
 ```python
-def send_draft(self, draft_id: str):
+def gmail_send_draft(self, draft_id: str):
 ```
 
 Send a draft email.
@@ -195,12 +195,12 @@ Send a draft email.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.fetch_emails"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_fetch_emails"></a>
 
-### fetch_emails
+### gmail_fetch_emails
 
 ```python
-def fetch_emails(
+def gmail_fetch_emails(
     self,
     query: str = '',
     max_results: int = 10,
@@ -220,12 +220,12 @@ Fetch emails with filters and pagination.
 
   Dict[str, Any]: A dictionary containing the fetched emails.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.fetch_thread_by_id"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_fetch_thread_by_id"></a>
 
-### fetch_thread_by_id
+### gmail_fetch_thread_by_id
 
 ```python
-def fetch_thread_by_id(self, thread_id: str):
+def gmail_fetch_thread_by_id(self, thread_id: str):
 ```
 
 Fetch a thread by ID.
@@ -238,12 +238,12 @@ Fetch a thread by ID.
 
   Dict[str, Any]: A dictionary containing the thread details.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.modify_email_labels"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_modify_email_labels"></a>
 
-### modify_email_labels
+### gmail_modify_email_labels
 
 ```python
-def modify_email_labels(
+def gmail_modify_email_labels(
     self,
     message_id: str,
     add_labels: Optional[List[str]] = None,
@@ -263,12 +263,12 @@ Modify labels on an email message.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.move_to_trash"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_move_to_trash"></a>
 
-### move_to_trash
+### gmail_move_to_trash
 
 ```python
-def move_to_trash(self, message_id: str):
+def gmail_move_to_trash(self, message_id: str):
 ```
 
 Move a message to trash.
@@ -282,12 +282,12 @@ Move a message to trash.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_attachment"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_get_attachment"></a>
 
-### get_attachment
+### gmail_get_attachment
 
 ```python
-def get_attachment(
+def gmail_get_attachment(
     self,
     message_id: str,
     attachment_id: str,
@@ -308,12 +308,12 @@ Get an attachment from a message.
   Dict[str, Any]: A dictionary containing the attachment data or
 save result.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_threads"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_list_threads"></a>
 
-### list_threads
+### gmail_list_threads
 
 ```python
-def list_threads(
+def gmail_list_threads(
     self,
     query: str = '',
     max_results: int = 10,
@@ -333,12 +333,12 @@ List email threads.
 
   Dict[str, Any]: A dictionary containing the thread list.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_drafts"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_list_drafts"></a>
 
-### list_drafts
+### gmail_list_drafts
 
 ```python
-def list_drafts(self, max_results: int = 10, page_token: Optional[str] = None):
+def gmail_list_drafts(self, max_results: int = 10, page_token: Optional[str] = None):
 ```
 
 List email drafts.
@@ -352,24 +352,24 @@ List email drafts.
 
   Dict[str, Any]: A dictionary containing the draft list.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.list_gmail_labels"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_list_labels"></a>
 
-### list_gmail_labels
+### gmail_list_labels
 
 ```python
-def list_gmail_labels(self):
+def gmail_list_labels(self):
 ```
 
 **Returns:**
 
   Dict[str, Any]: A dictionary containing the label list.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.create_label"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_create_label"></a>
 
-### create_label
+### gmail_create_label
 
 ```python
-def create_label(
+def gmail_create_label(
     self,
     name: str,
     label_list_visibility: Literal['labelShow', 'labelHide'] = 'labelShow',
@@ -390,12 +390,12 @@ Create a new Gmail label.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.delete_label"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_delete_label"></a>
 
-### delete_label
+### gmail_delete_label
 
 ```python
-def delete_label(self, label_id: str):
+def gmail_delete_label(self, label_id: str):
 ```
 
 Delete a Gmail label.
@@ -409,12 +409,12 @@ Delete a Gmail label.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.modify_thread_labels"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_modify_thread_labels"></a>
 
-### modify_thread_labels
+### gmail_modify_thread_labels
 
 ```python
-def modify_thread_labels(
+def gmail_modify_thread_labels(
     self,
     thread_id: str,
     add_labels: Optional[List[str]] = None,
@@ -434,24 +434,24 @@ Modify labels on a thread.
   Dict[str, Any]: A dictionary containing the result of the
 operation.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_profile"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_get_profile"></a>
 
-### get_profile
+### gmail_get_profile
 
 ```python
-def get_profile(self):
+def gmail_get_profile(self):
 ```
 
 **Returns:**
 
   Dict[str, Any]: A dictionary containing the profile information.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.get_contacts"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_get_contacts"></a>
 
-### get_contacts
+### gmail_get_contacts
 
 ```python
-def get_contacts(self, max_results: int = 100, page_token: Optional[str] = None):
+def gmail_get_contacts(self, max_results: int = 100, page_token: Optional[str] = None):
 ```
 
 List connections from Google People API.
@@ -465,12 +465,12 @@ List connections from Google People API.
 
   Dict[str, Any]: A dictionary containing the contacts.
 
-<a id="camel.toolkits.gmail_toolkit.GmailToolkit.search_people"></a>
+<a id="camel.toolkits.gmail_toolkit.GmailToolkit.gmail_search_people"></a>
 
-### search_people
+### gmail_search_people
 
 ```python
-def search_people(self, query: str, max_results: int = 10):
+def gmail_search_people(self, query: str, max_results: int = 10):
 ```
 
 Search for people in contacts.
