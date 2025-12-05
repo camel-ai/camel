@@ -41,6 +41,7 @@ from .workforce_callback import WorkforceCallback
 from .workforce_metrics import WorkforceMetrics
 
 if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
     from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 from colorama import Fore
@@ -1318,13 +1319,18 @@ class Workforce(BaseNode):
     def _decompose_task(
         self,
         task: Task,
-        stream_callback: Optional[Callable[[str], None]] = None,
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
         Args:
             task (Task): The task to decompose.
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming decomposition.
 
         Returns:
             Union[List[Task], Generator[List[Task], None, None]]:
