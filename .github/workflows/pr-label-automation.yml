@@ -11,8 +11,13 @@ jobs:
   add-labels:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
+        with:
+          egress-policy: audit
+
       - name: Add Review Required label
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
