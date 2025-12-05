@@ -1400,7 +1400,7 @@ class SearchToolkit(BaseToolkit):
                     - 'source': The source of the result
                     - 'error: Error if any
         """
-        from serpapi import GoogleSearch
+        from serpapi import SerpApiClient
 
         SERPAPI_KEY = os.getenv("SERPAPI_KEY")
         params = {
@@ -1420,7 +1420,7 @@ class SearchToolkit(BaseToolkit):
         if custom_params:
             params.update(custom_params)
         try:
-            search = GoogleSearch(params)
+            search = SerpApiClient(params)
             results = search.get_dict()
 
             if (
