@@ -76,9 +76,9 @@ async def create_messaging_workforce():
 
     # 5. Create workforce and add workers with matching names
     workforce = Workforce("Content Creation Team")
-    await workforce.add_single_agent_worker("Researcher", researcher)
-    await workforce.add_single_agent_worker("Writer", writer)
-    await workforce.add_single_agent_worker("Reviewer", reviewer)
+    await workforce.add_single_agent_worker_async("Researcher", researcher)
+    await workforce.add_single_agent_worker_async("Writer", writer)
+    await workforce.add_single_agent_worker_async("Reviewer", reviewer)
 
     return workforce, msg_toolkit
 

@@ -72,9 +72,11 @@ async def main():
         "Charlie", "Charlie knows the deadline is Friday", model
     )
 
-    await workforce.add_single_agent_worker("Alice the Coder", agent_alice)
-    await workforce.add_single_agent_worker("Bob the Manager", agent_bob)
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
+        "Alice the Coder", agent_alice
+    )
+    await workforce.add_single_agent_worker_async("Bob the Manager", agent_bob)
+    await workforce.add_single_agent_worker_async(
         "Charlie the Designer", agent_charlie
     )
 
@@ -326,13 +328,13 @@ async def main():
         "Charlie", "Charlie knows the deadline is Friday", model
     )
 
-    await workforce_no_memory.add_single_agent_worker(
+    await workforce_no_memory.add_single_agent_worker_async(
         "Alice the Coder", agent_alice_2
     )
-    await workforce_no_memory.add_single_agent_worker(
+    await workforce_no_memory.add_single_agent_worker_async(
         "Bob the Manager", agent_bob_2
     )
-    await workforce_no_memory.add_single_agent_worker(
+    await workforce_no_memory.add_single_agent_worker_async(
         "Charlie the Designer", agent_charlie_2
     )
 

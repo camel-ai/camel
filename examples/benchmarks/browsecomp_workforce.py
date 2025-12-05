@@ -69,13 +69,13 @@ You excel at understanding complex queries and finding precise answers.""",
         new_worker_agent=new_worker_agent,
     )
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         description="Web content researcher",
         worker=web_researcher_agent,
     )
 
     # Add a role-playing worker for complex queries
-    await workforce.add_role_playing_worker(
+    await workforce.add_role_playing_worker_async(
         description="Collaborative research team",
         assistant_role_name="Research Assistant",
         user_role_name="Research Lead",

@@ -89,7 +89,7 @@ async def main():
         coordinator_agent=coordinator_agent,
     )
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         """
         An agent that can search the web, simulate browser actions, 
         and provide relevant information to solve the given task.""",

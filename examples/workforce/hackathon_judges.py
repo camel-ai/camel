@@ -229,27 +229,27 @@ async def main():
         id="0",
     )
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         'Visionary Veronica (Judge), a venture capitalist who is '
         'obsessed with how projects can be scaled into "unicorn" companies',
         worker=vc_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         'Critical John (Judge), an experienced engineer and a'
         ' perfectionist.',
         worker=eng_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         'Innovator Iris (Judge), a well-known AI startup founder who'
         ' is always looking for the "next big thing" in AI.',
         worker=founder_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         'Friendly Frankie (Judge), a contributor to the CAMEL-AI '
         'project and is always excited to see how people are using it.',
         worker=contributor_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         'Researcher Rachel (Helper), a researcher who does online '
         'searches to find the latest innovations and trends on AI and Open '
         'Sourced projects.',
@@ -260,16 +260,16 @@ async def main():
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(await workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree_async())
 
     print("\n--- Workforce KPIs ---")
-    kpis = await workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis_async()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "hackathon_judges_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    await workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs_async(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 

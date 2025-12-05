@@ -46,7 +46,7 @@ async def main():
         content="You are a helpful analyst who can process various tasks.",
     )
     analyst = ChatAgent(system_message=analyst_msg)
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         description="General purpose analyst", worker=analyst
     )
 
