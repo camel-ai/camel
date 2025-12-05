@@ -12,13 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from camel.toolkits import OutlookCalendarToolkit
-
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -56,3 +54,111 @@ def outlook_calendar_toolkit(mock_graph_client):
     ):
         toolkit = OutlookCalendarToolkit()
         yield toolkit
+
+
+class TestMapColorToCalendarColor:
+    """Tests for _map_color_to_CalendarColor method."""
+
+    def test_map_color_valid(self, outlook_calendar_toolkit):
+        """Test mapping a valid color."""
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        result = outlook_calendar_toolkit._map_color_to_CalendarColor(
+            'lightBlue'
+        )
+        assert result == CalendarColor.LightBlue
+
+    def test_map_color_invalid_returns_auto(self, outlook_calendar_toolkit):
+        """Test that invalid color string returns Auto as default."""
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        result = outlook_calendar_toolkit._map_color_to_CalendarColor(
+            'invalidColor'
+        )
+        assert result == CalendarColor.Auto
+
+
+@pytest.mark.asyncio
+class TestCreateCalendar:
+    """Tests for create_calendar method."""
+
+    async def test_create_calendar_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar creation."""
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        # Setup mock response
+        mock_result = MagicMock()
+        mock_result.id = 'Calendar ID'
+        mock_result.name = 'Test Calendar'
+
+        # Create async mock for the post method
+        async_post_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.calendars.post = async_post_mock
+
+        # Call the method
+        result = await outlook_calendar_toolkit.create_calendar(
+            name='Test Calendar', color='lightBlue'
+        )
+
+        # Verify the result
+        assert result['status'] == 'success'
+        assert result['message'] == 'Calendar created successfully.'
+        assert result['calendar_id'] == 'Calendar ID'
+        assert result['calendar_name'] == 'Test Calendar'
+
+        # Verify the post method was called with correct Calendar object
+        async_post_mock.assert_called_once()
+        calendar_arg = async_post_mock.call_args[0][0]
+        assert calendar_arg.name == 'Test Calendar'
+        assert calendar_arg.color == CalendarColor.LightBlue
+
+    async def test_create_calendar_with_default_color(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar creation with default color (auto)."""
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        # Setup mock response
+        mock_result = MagicMock()
+        mock_result.id = 'Calendar ID'
+        mock_result.name = 'My Calendar'
+
+        async_post_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.calendars.post = async_post_mock
+
+        # Call the method with default color
+        result = await outlook_calendar_toolkit.create_calendar(
+            name='My Calendar'
+        )
+
+        # Verify the result
+        assert result['status'] == 'success'
+        assert result['calendar_id'] == 'Calendar ID'
+        assert result['calendar_name'] == 'My Calendar'
+
+        # Verify the Calendar object was created with default color
+        calendar_arg = async_post_mock.call_args[0][0]
+        assert calendar_arg.name == 'My Calendar'
+        assert calendar_arg.color == CalendarColor.Auto
+
+    async def test_create_calendar_api_error(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar creation when API raises an exception."""
+        # Setup mock to raise an exception
+        async_post_mock = AsyncMock(
+            side_effect=Exception('API connection failed')
+        )
+        mock_graph_client.me.calendars.post = async_post_mock
+
+        # Call the method
+        result = await outlook_calendar_toolkit.create_calendar(
+            name='Error Calendar'
+        )
+
+        # Verify error is returned
+        assert 'error' in result
+        assert 'Failed to create calendar' in result['error']
+        assert 'API connection failed' in result['error']

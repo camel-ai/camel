@@ -15,13 +15,20 @@
 from pathlib import Path
 from typing import List, Optional
 
+from dotenv import load_dotenv
+
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
+from camel.utils.commons import run_async
 
 from ._auth_utils import (
     MicrosoftAuthenticator,
 )
+
+load_dotenv()
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -67,6 +74,70 @@ class OutlookCalendarToolkit(BaseToolkit):
             credentials=self.credentials, scopes=self.scopes
         )
 
+    def _map_color_to_CalendarColor(self, color: str):
+        """Maps a string color to the CalendarColor enum."""
+
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        # Define the mapping from string to CalendarColor enum
+        color_map = {
+            'auto': CalendarColor.Auto,
+            'lightBlue': CalendarColor.LightBlue,
+            'lightGreen': CalendarColor.LightGreen,
+            'lightOrange': CalendarColor.LightOrange,
+            'lightGray': CalendarColor.LightGray,
+            'lightYellow': CalendarColor.LightYellow,
+            'lightTeal': CalendarColor.LightTeal,
+            'lightPink': CalendarColor.LightPink,
+            'lightBrown': CalendarColor.LightBrown,
+            'lightRed': CalendarColor.LightRed,
+            'maxColor': CalendarColor.MaxColor,
+        }
+
+        return color_map.get(color, CalendarColor.Auto)
+
+    async def create_calendar(
+        self,
+        name: str,
+        color: str = "auto",
+    ) -> dict[str, str]:
+        """Builds a calendar request body for Microsoft Graph API.
+
+        Args:
+            name (str): The calendar name.
+            color (Optional[str]): Specifies the color theme to distinguish
+                the calendar from other calendars in a UI. Possible values:
+                'auto', 'lightBlue', 'lightGreen', 'lightOrange', 'lightGray',
+                'lightYellow', 'lightTeal', 'lightPink', 'lightBrown',
+                'lightRed', 'maxColor'. (default: :obj:`auto`)
+
+        Returns:
+            dict[str, str]: A dictionary containing the status and details
+                of the created calendar or an error message.
+
+        """
+        from msgraph.generated.models.calendar import Calendar
+
+        try:
+            # Create calendar object with name and color
+            calendar = Calendar(
+                name=name, color=self._map_color_to_CalendarColor(color)
+            )
+            # Send request to create calendar
+            result = await self.client.me.calendars.post(calendar)
+
+            return {
+                "status": "success",
+                "message": "Calendar created successfully.",
+                "calendar_id": result.id,
+                "calendar_name": result.name,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to create calendar : {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -74,4 +145,4 @@ class OutlookCalendarToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return []
+        return [FunctionTool(run_async(self.create_calendar))]
