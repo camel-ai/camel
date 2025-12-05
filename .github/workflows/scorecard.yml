@@ -1,0 +1,48 @@
+name: OpenSSF Scorecard
+
+on:
+  # Run on pushes to main/master branch
+  push:
+    branches: [master, main]
+  # Run weekly on Monday at 00:00 UTC
+  schedule:
+    - cron: '0 0 * * 1'
+  # Allow manual triggering
+  workflow_dispatch:
+
+# Declare default permissions as read only
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed for Code Scanning upload
+      security-events: write
+      # Needed for GitHub OIDC token
+      id-token: write
+      # Needed for Scorecard to read repo contents
+      contents: read
+      # Needed for Scorecard to read repo metadata
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publish results to OpenSSF REST API
+          # This allows the badge to be displayed on the repo
+          publish_results: true
+
+      - name: Upload Scorecard results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
