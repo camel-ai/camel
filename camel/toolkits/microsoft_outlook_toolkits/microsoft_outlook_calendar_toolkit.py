@@ -101,7 +101,7 @@ class OutlookCalendarToolkit(BaseToolkit):
         name: str,
         color: str = "auto",
     ) -> dict[str, str]:
-        """Builds a calendar request body for Microsoft Graph API.
+        """Creates a new calendar.
 
         Args:
             name (str): The calendar name.
@@ -138,6 +138,35 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def delete_calendar(
+        self,
+        calendar_id: str,
+    ) -> dict[str, str]:
+        """Deletes a calendar by its ID.
+
+        Args:
+            calendar_id (str): The unique identifier of the calendar to be
+                deleted.
+
+        Returns:
+            dict[str, str]: A dictionary containing the status and details
+                of the deletion operation or an error message.
+
+        """
+        try:
+            # send request to delete calendar
+            await self.client.me.calendars.by_calendar_id(calendar_id).delete()
+            return {
+                "status": "success",
+                "message": "Calendar deleted successfully.",
+                "calendar_id": calendar_id,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to delete calendar: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -145,4 +174,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(run_async(self.create_calendar))]
+        return [
+            FunctionTool(run_async(self.create_calendar)),
+            FunctionTool(run_async(self.delete_calendar)),
+        ]

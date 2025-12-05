@@ -162,3 +162,50 @@ class TestCreateCalendar:
         assert 'error' in result
         assert 'Failed to create calendar' in result['error']
         assert 'API connection failed' in result['error']
+
+
+@pytest.mark.asyncio
+class TestDeleteCalendar:
+    """Tests for delete_calendar method."""
+
+    async def test_delete_calendar_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar deletion."""
+        # Create async mock for the delete method
+        async_delete_mock = AsyncMock(return_value=None)
+        mock_graph_client.me.calendars.by_calendar_id.return_value.delete = (
+            async_delete_mock
+        )
+
+        # Call the method
+        result = await outlook_calendar_toolkit.delete_calendar(
+            calendar_id='Calendar ID'
+        )
+
+        # Verify the result
+        assert result['status'] == 'success'
+        assert result['message'] == 'Calendar deleted successfully.'
+        assert result['calendar_id'] == 'Calendar ID'
+
+    async def test_delete_calendar_not_found(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar deletion when calendar is not found."""
+        # Setup mock to raise a not found error
+        async_delete_mock = AsyncMock(
+            side_effect=Exception('Calendar not found')
+        )
+        mock_graph_client.me.calendars.by_calendar_id.return_value.delete = (
+            async_delete_mock
+        )
+
+        # Call the method
+        result = await outlook_calendar_toolkit.delete_calendar(
+            calendar_id='Invalid ID'
+        )
+
+        # Verify error is returned
+        assert 'error' in result
+        assert 'Failed to delete calendar' in result['error']
+        assert 'Calendar not found' in result['error']
