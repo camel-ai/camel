@@ -56,4 +56,7 @@ def set_channel(self, channel: TaskChannel):
 def stop(self):
 ```
 
-Stop the worker.
+Forcefully stop the worker.
+
+Cancels all running tasks immediately and sets the stop flag.
+The worker will exit after completing cancellation.

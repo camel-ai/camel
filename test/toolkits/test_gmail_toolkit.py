@@ -100,13 +100,13 @@ def gmail_toolkit(mock_gmail_service, mock_people_service):
         yield toolkit
 
 
-def test_send_email(gmail_toolkit, mock_gmail_service):
+def test_gmail_send_email(gmail_toolkit, mock_gmail_service):
     """Test sending an email successfully."""
     send_mock = MagicMock()
     mock_gmail_service.users().messages().send.return_value = send_mock
     send_mock.execute.return_value = {'id': 'msg123', 'threadId': 'thread123'}
 
-    result = gmail_toolkit.send_email(
+    result = gmail_toolkit.gmail_send_email(
         to='test@example.com', subject='Test Subject', body='Test Body'
     )
 
@@ -118,7 +118,7 @@ def test_send_email(gmail_toolkit, mock_gmail_service):
     mock_gmail_service.users().messages().send.assert_called_once()
 
 
-def test_send_email_with_attachments(gmail_toolkit, mock_gmail_service):
+def test_gmail_send_email_with_attachments(gmail_toolkit, mock_gmail_service):
     """Test sending an email with attachments."""
     send_mock = MagicMock()
     mock_gmail_service.users().messages().send.return_value = send_mock
@@ -132,7 +132,7 @@ def test_send_email_with_attachments(gmail_toolkit, mock_gmail_service):
             b'test content'
         )
 
-        result = gmail_toolkit.send_email(
+        result = gmail_toolkit.gmail_send_email(
             to='test@example.com',
             subject='Test Subject',
             body='Test Body',
@@ -142,9 +142,9 @@ def test_send_email_with_attachments(gmail_toolkit, mock_gmail_service):
         assert result['success'] is True
 
 
-def test_send_email_invalid_email(gmail_toolkit):
+def test_gmail_send_email_invalid_email(gmail_toolkit):
     """Test sending email with invalid email address."""
-    result = gmail_toolkit.send_email(
+    result = gmail_toolkit.gmail_send_email(
         to='invalid-email', subject='Test Subject', body='Test Body'
     )
 
@@ -152,13 +152,13 @@ def test_send_email_invalid_email(gmail_toolkit):
     assert 'Invalid email address' in result['error']
 
 
-def test_send_email_failure(gmail_toolkit, mock_gmail_service):
+def test_gmail_send_email_failure(gmail_toolkit, mock_gmail_service):
     """Test sending email failure."""
     send_mock = MagicMock()
     mock_gmail_service.users().messages().send.return_value = send_mock
     send_mock.execute.side_effect = Exception("API Error")
 
-    result = gmail_toolkit.send_email(
+    result = gmail_toolkit.gmail_send_email(
         to='test@example.com', subject='Test Subject', body='Test Body'
     )
 
@@ -166,7 +166,7 @@ def test_send_email_failure(gmail_toolkit, mock_gmail_service):
     assert 'Failed to send email' in result['error']
 
 
-def test_reply_to_email(gmail_toolkit, mock_gmail_service):
+def test_gmail_reply_to_email(gmail_toolkit, mock_gmail_service):
     """Test replying to an email."""
     # Mock getting original message
     get_mock = MagicMock()
@@ -193,7 +193,7 @@ def test_reply_to_email(gmail_toolkit, mock_gmail_service):
         'threadId': 'thread123',
     }
 
-    result = gmail_toolkit.reply_to_email(
+    result = gmail_toolkit.gmail_reply_to_email(
         message_id='msg123', reply_body='This is a reply'
     )
 
@@ -202,7 +202,7 @@ def test_reply_to_email(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Reply sent successfully'
 
 
-def test_forward_email(gmail_toolkit, mock_gmail_service):
+def test_gmail_forward_email(gmail_toolkit, mock_gmail_service):
     """Test forwarding an email."""
     # Mock getting original message
     get_mock = MagicMock()
@@ -230,7 +230,7 @@ def test_forward_email(gmail_toolkit, mock_gmail_service):
         'threadId': 'thread123',
     }
 
-    result = gmail_toolkit.forward_email(
+    result = gmail_toolkit.gmail_forward_email(
         message_id='msg123', to='forward@example.com'
     )
 
@@ -239,7 +239,7 @@ def test_forward_email(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Email forwarded successfully'
 
 
-def test_create_email_draft(gmail_toolkit, mock_gmail_service):
+def test_gmail_create_draft(gmail_toolkit, mock_gmail_service):
     """Test creating an email draft."""
     create_mock = MagicMock()
     mock_gmail_service.users().drafts().create.return_value = create_mock
@@ -248,7 +248,7 @@ def test_create_email_draft(gmail_toolkit, mock_gmail_service):
         'message': {'id': 'msg123'},
     }
 
-    result = gmail_toolkit.create_email_draft(
+    result = gmail_toolkit.gmail_create_draft(
         to='test@example.com', subject='Test Subject', body='Test Body'
     )
 
@@ -258,20 +258,20 @@ def test_create_email_draft(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Draft created successfully'
 
 
-def test_send_draft(gmail_toolkit, mock_gmail_service):
+def test_gmail_send_draft(gmail_toolkit, mock_gmail_service):
     """Test sending a draft."""
     send_mock = MagicMock()
     mock_gmail_service.users().drafts().send.return_value = send_mock
     send_mock.execute.return_value = {'id': 'msg123', 'threadId': 'thread123'}
 
-    result = gmail_toolkit.send_draft(draft_id='draft123')
+    result = gmail_toolkit.gmail_send_draft(draft_id='draft123')
 
     assert result['success'] is True
     assert result['message_id'] == 'msg123'
     assert result['message'] == 'Draft sent successfully'
 
 
-def test_fetch_emails(gmail_toolkit, mock_gmail_service):
+def test_gmail_fetch_emails(gmail_toolkit, mock_gmail_service):
     """Test fetching emails."""
     list_mock = MagicMock()
     mock_gmail_service.users().messages().list.return_value = list_mock
@@ -300,7 +300,7 @@ def test_fetch_emails(gmail_toolkit, mock_gmail_service):
         'sizeEstimate': 1024,
     }
 
-    result = gmail_toolkit.fetch_emails(query='test', max_results=10)
+    result = gmail_toolkit.gmail_fetch_emails(query='test', max_results=10)
 
     assert result['success'] is True
     assert len(result['emails']) == 2
@@ -308,7 +308,7 @@ def test_fetch_emails(gmail_toolkit, mock_gmail_service):
     assert result['next_page_token'] == 'next_token'
 
 
-def test_fetch_thread_by_id(gmail_toolkit, mock_gmail_service):
+def test_gmail_fetch_thread_by_id(gmail_toolkit, mock_gmail_service):
     """Test fetching a thread by ID."""
     get_mock = MagicMock()
     mock_gmail_service.users().threads().get.return_value = get_mock
@@ -337,7 +337,7 @@ def test_fetch_thread_by_id(gmail_toolkit, mock_gmail_service):
         'sizeEstimate': 1024,
     }
 
-    result = gmail_toolkit.fetch_thread_by_id(thread_id='thread123')
+    result = gmail_toolkit.gmail_fetch_thread_by_id(thread_id='thread123')
 
     assert result['success'] is True
     assert result['thread_id'] == 'thread123'
@@ -345,7 +345,7 @@ def test_fetch_thread_by_id(gmail_toolkit, mock_gmail_service):
     assert result['message_count'] == 2
 
 
-def test_modify_email_labels(gmail_toolkit, mock_gmail_service):
+def test_gmail_modify_email_labels(gmail_toolkit, mock_gmail_service):
     """Test modifying email labels."""
     modify_mock = MagicMock()
     mock_gmail_service.users().messages().modify.return_value = modify_mock
@@ -354,7 +354,7 @@ def test_modify_email_labels(gmail_toolkit, mock_gmail_service):
         'labelIds': ['INBOX', 'IMPORTANT'],
     }
 
-    result = gmail_toolkit.modify_email_labels(
+    result = gmail_toolkit.gmail_modify_email_labels(
         message_id='msg123', add_labels=['IMPORTANT'], remove_labels=['UNREAD']
     )
 
@@ -364,13 +364,13 @@ def test_modify_email_labels(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Labels modified successfully'
 
 
-def test_move_to_trash(gmail_toolkit, mock_gmail_service):
+def test_gmail_move_to_trash(gmail_toolkit, mock_gmail_service):
     """Test moving a message to trash."""
     trash_mock = MagicMock()
     mock_gmail_service.users().messages().trash.return_value = trash_mock
     trash_mock.execute.return_value = {'id': 'msg123', 'labelIds': ['TRASH']}
 
-    result = gmail_toolkit.move_to_trash(message_id='msg123')
+    result = gmail_toolkit.gmail_move_to_trash(message_id='msg123')
 
     assert result['success'] is True
     assert result['message_id'] == 'msg123'
@@ -378,7 +378,7 @@ def test_move_to_trash(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Message moved to trash successfully'
 
 
-def test_get_attachment(gmail_toolkit, mock_gmail_service):
+def test_gmail_get_attachment(gmail_toolkit, mock_gmail_service):
     """Test getting an attachment."""
     attachment_mock = MagicMock()
     mock_gmail_service.users().messages().attachments().get.return_value = (
@@ -388,7 +388,7 @@ def test_get_attachment(gmail_toolkit, mock_gmail_service):
         'data': base64.urlsafe_b64encode(b'test attachment content').decode()
     }
 
-    result = gmail_toolkit.get_attachment(
+    result = gmail_toolkit.gmail_get_attachment(
         message_id='msg123', attachment_id='att123'
     )
 
@@ -397,7 +397,7 @@ def test_get_attachment(gmail_toolkit, mock_gmail_service):
     assert 'data' in result
 
 
-def test_get_attachment_save_to_file(gmail_toolkit, mock_gmail_service):
+def test_gmail_get_attachment_save_to_file(gmail_toolkit, mock_gmail_service):
     """Test getting an attachment and saving to file."""
     attachment_mock = MagicMock()
     mock_gmail_service.users().messages().attachments().get.return_value = (
@@ -411,7 +411,7 @@ def test_get_attachment_save_to_file(gmail_toolkit, mock_gmail_service):
         mock_file = MagicMock()
         mock_open.return_value.__enter__.return_value = mock_file
 
-        result = gmail_toolkit.get_attachment(
+        result = gmail_toolkit.gmail_get_attachment(
             message_id='msg123',
             attachment_id='att123',
             save_path='/path/to/save.txt',
@@ -422,7 +422,7 @@ def test_get_attachment_save_to_file(gmail_toolkit, mock_gmail_service):
         mock_file.write.assert_called_once()
 
 
-def test_list_threads(gmail_toolkit, mock_gmail_service):
+def test_gmail_list_threads(gmail_toolkit, mock_gmail_service):
     """Test listing threads."""
     list_mock = MagicMock()
     mock_gmail_service.users().threads().list.return_value = list_mock
@@ -437,7 +437,7 @@ def test_list_threads(gmail_toolkit, mock_gmail_service):
         'nextPageToken': 'next_token',
     }
 
-    result = gmail_toolkit.list_threads(query='test', max_results=10)
+    result = gmail_toolkit.gmail_list_threads(query='test', max_results=10)
 
     assert result['success'] is True
     assert len(result['threads']) == 1
@@ -445,7 +445,7 @@ def test_list_threads(gmail_toolkit, mock_gmail_service):
     assert result['total_count'] == 1
 
 
-def test_list_drafts(gmail_toolkit, mock_gmail_service):
+def test_gmail_list_drafts(gmail_toolkit, mock_gmail_service):
     """Test listing drafts."""
     list_mock = MagicMock()
     mock_gmail_service.users().drafts().list.return_value = list_mock
@@ -463,7 +463,7 @@ def test_list_drafts(gmail_toolkit, mock_gmail_service):
         'nextPageToken': 'next_token',
     }
 
-    result = gmail_toolkit.list_drafts(max_results=10)
+    result = gmail_toolkit.gmail_list_drafts(max_results=10)
 
     assert result['success'] is True
     assert len(result['drafts']) == 1
@@ -471,7 +471,7 @@ def test_list_drafts(gmail_toolkit, mock_gmail_service):
     assert result['total_count'] == 1
 
 
-def test_list_gmail_labels(gmail_toolkit, mock_gmail_service):
+def test_gmail_list_labels(gmail_toolkit, mock_gmail_service):
     """Test listing Gmail labels."""
     list_mock = MagicMock()
     mock_gmail_service.users().labels().list.return_value = list_mock
@@ -489,7 +489,7 @@ def test_list_gmail_labels(gmail_toolkit, mock_gmail_service):
         ]
     }
 
-    result = gmail_toolkit.list_gmail_labels()
+    result = gmail_toolkit.gmail_list_labels()
 
     assert result['success'] is True
     assert len(result['labels']) == 1
@@ -498,7 +498,7 @@ def test_list_gmail_labels(gmail_toolkit, mock_gmail_service):
     assert result['total_count'] == 1
 
 
-def test_create_label(gmail_toolkit, mock_gmail_service):
+def test_gmail_create_label(gmail_toolkit, mock_gmail_service):
     """Test creating a Gmail label."""
     create_mock = MagicMock()
     mock_gmail_service.users().labels().create.return_value = create_mock
@@ -507,7 +507,7 @@ def test_create_label(gmail_toolkit, mock_gmail_service):
         'name': 'Test Label',
     }
 
-    result = gmail_toolkit.create_label(
+    result = gmail_toolkit.gmail_create_label(
         name='Test Label',
         label_list_visibility='labelShow',
         message_list_visibility='show',
@@ -519,20 +519,20 @@ def test_create_label(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Label created successfully'
 
 
-def test_delete_label(gmail_toolkit, mock_gmail_service):
+def test_gmail_delete_label(gmail_toolkit, mock_gmail_service):
     """Test deleting a Gmail label."""
     delete_mock = MagicMock()
     mock_gmail_service.users().labels().delete.return_value = delete_mock
     delete_mock.execute.return_value = {}
 
-    result = gmail_toolkit.delete_label(label_id='Label_123')
+    result = gmail_toolkit.gmail_delete_label(label_id='Label_123')
 
     assert result['success'] is True
     assert result['label_id'] == 'Label_123'
     assert result['message'] == 'Label deleted successfully'
 
 
-def test_modify_thread_labels(gmail_toolkit, mock_gmail_service):
+def test_gmail_modify_thread_labels(gmail_toolkit, mock_gmail_service):
     """Test modifying thread labels."""
     modify_mock = MagicMock()
     mock_gmail_service.users().threads().modify.return_value = modify_mock
@@ -541,7 +541,7 @@ def test_modify_thread_labels(gmail_toolkit, mock_gmail_service):
         'labelIds': ['INBOX', 'IMPORTANT'],
     }
 
-    result = gmail_toolkit.modify_thread_labels(
+    result = gmail_toolkit.gmail_modify_thread_labels(
         thread_id='thread123',
         add_labels=['IMPORTANT'],
         remove_labels=['UNREAD'],
@@ -553,7 +553,7 @@ def test_modify_thread_labels(gmail_toolkit, mock_gmail_service):
     assert result['message'] == 'Thread labels modified successfully'
 
 
-def test_get_profile(gmail_toolkit, mock_gmail_service):
+def test_gmail_get_profile(gmail_toolkit, mock_gmail_service):
     """Test getting Gmail profile."""
     profile_mock = MagicMock()
     mock_gmail_service.users().getProfile.return_value = profile_mock
@@ -564,7 +564,7 @@ def test_get_profile(gmail_toolkit, mock_gmail_service):
         'historyId': 'hist123',
     }
 
-    result = gmail_toolkit.get_profile()
+    result = gmail_toolkit.gmail_get_profile()
 
     assert result['success'] is True
     assert result['profile']['email_address'] == 'user@example.com'
@@ -572,7 +572,7 @@ def test_get_profile(gmail_toolkit, mock_gmail_service):
     assert result['profile']['threads_total'] == 500
 
 
-def test_get_contacts(gmail_toolkit, mock_people_service):
+def test_gmail_get_contacts(gmail_toolkit, mock_people_service):
     """Test getting contacts."""
     connections_mock = MagicMock()
     mock_people_service.people().connections().list.return_value = (
@@ -591,7 +591,7 @@ def test_get_contacts(gmail_toolkit, mock_people_service):
         'nextPageToken': 'next_token',
     }
 
-    result = gmail_toolkit.get_contacts(max_results=10)
+    result = gmail_toolkit.gmail_get_contacts(max_results=10)
 
     assert result['success'] is True
     assert len(result['contacts']) == 1
@@ -599,7 +599,7 @@ def test_get_contacts(gmail_toolkit, mock_people_service):
     assert result['total_count'] == 1
 
 
-def test_search_people(gmail_toolkit, mock_people_service):
+def test_gmail_search_people(gmail_toolkit, mock_people_service):
     """Test searching for people."""
     search_mock = MagicMock()
     mock_people_service.people().searchContacts.return_value = search_mock
@@ -617,7 +617,7 @@ def test_search_people(gmail_toolkit, mock_people_service):
         ]
     }
 
-    result = gmail_toolkit.search_people(query='John', max_results=10)
+    result = gmail_toolkit.gmail_search_people(query='John', max_results=10)
 
     assert result['success'] is True
     assert len(result['people']) == 1
@@ -627,24 +627,24 @@ def test_search_people(gmail_toolkit, mock_people_service):
 
 def test_error_handling(gmail_toolkit, mock_gmail_service):
     """Test error handling in various methods."""
-    # Test send_email error
+    # Test gmail_send_email error
     send_mock = MagicMock()
     mock_gmail_service.users().messages().send.return_value = send_mock
     send_mock.execute.side_effect = Exception("API Error")
 
-    result = gmail_toolkit.send_email(
+    result = gmail_toolkit.gmail_send_email(
         to='test@example.com', subject='Test', body='Test'
     )
 
     assert 'error' in result
     assert 'Failed to send email' in result['error']
 
-    # Test fetch_emails error
+    # Test gmail_fetch_emails error
     list_mock = MagicMock()
     mock_gmail_service.users().messages().list.return_value = list_mock
     list_mock.execute.side_effect = Exception("API Error")
 
-    result = gmail_toolkit.fetch_emails()
+    result = gmail_toolkit.gmail_fetch_emails()
     assert 'error' in result
     assert 'Failed to fetch emails' in result['error']
 

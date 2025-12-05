@@ -35,18 +35,18 @@ build_image() {
     cp -r "$CAMEL_ROOT" "$TEMP_DIR/camel_source"
     
     # Ensure API file exists
-    if [ ! -f "$CAMEL_ROOT/camel/runtime/api.py" ]; then
-        echo "Error: API file not found at $CAMEL_ROOT/camel/runtime/api.py"
+    if [ ! -f "$CAMEL_ROOT/camel/runtimes/api.py" ]; then
+        echo "Error: API file not found at $CAMEL_ROOT/camel/runtimes/api.py"
         exit 1
     fi
-    
+
     # Copy API file to a known location
     mkdir -p "$TEMP_DIR/api"
-    cp "$CAMEL_ROOT/camel/runtime/api.py" "$TEMP_DIR/api/"
-    
+    cp "$CAMEL_ROOT/camel/runtimes/api.py" "$TEMP_DIR/api/"
+
     # Modify Dockerfile COPY commands - fix the sed command
     sed -i '' 's|COPY ../../../|COPY camel_source/|g' "$TEMP_DIR/Dockerfile"
-    sed -i '' 's|COPY camel/runtime/api.py|COPY api/api.py|g' "$TEMP_DIR/Dockerfile"
+    sed -i '' 's|COPY camel/runtimes/api.py|COPY api/api.py|g' "$TEMP_DIR/Dockerfile"
     
     # Build in temporary directory
     (cd "$TEMP_DIR" && docker build -t ${FULL_NAME} .)

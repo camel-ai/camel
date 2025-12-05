@@ -89,7 +89,9 @@ class CerebrasConfig(BaseConfig):
     max_tokens: Optional[int] = None
     response_format: Optional[Dict] = None
     user: Optional[str] = None
-    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     reasoning_effort: Optional[str] = None
 
 
