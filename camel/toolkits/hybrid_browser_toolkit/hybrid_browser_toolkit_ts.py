@@ -27,7 +27,6 @@ from typing import (
 )
 
 from camel.logger import get_logger
-from camel.messages import BaseMessage
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required

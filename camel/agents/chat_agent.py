@@ -4016,14 +4016,15 @@ class ChatAgent(BaseAgent):
                 cast(List[MemoryRecord], func_records),
             )
 
-        # NEW: Handle ToolResult with images - inject visual content into context
+        # NEW: Handle ToolResult with images - inject visual content
         from camel.utils.tool_result import ToolResult
 
         if isinstance(result, ToolResult) and result.images:
             try:
-                from PIL import Image
                 import base64
                 import io
+
+                from PIL import Image
 
                 logger.info(
                     f"Tool '{func_name}' returned ToolResult with "
@@ -4031,7 +4032,7 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Convert base64 images to PIL Image objects
-                pil_images = []
+                pil_images: List[Union[Image.Image, str]] = []
                 for img_data in result.images:
                     if img_data.startswith('data:image/'):
                         # Extract base64 data
@@ -4048,7 +4049,8 @@ class ChatAgent(BaseAgent):
                         image_list=pil_images,
                     )
 
-                    # Inject into conversation context with slight timestamp increment
+                    # Inject into conversation context with slight
+                    # timestamp increment
                     self.update_memory(
                         visual_msg,
                         OpenAIBackendRole.USER,

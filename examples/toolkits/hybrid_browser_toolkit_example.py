@@ -88,7 +88,6 @@ print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
-    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
