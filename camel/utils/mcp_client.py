@@ -593,21 +593,13 @@ class MCPClient:
         parameters_schema = mcp_tool.inputSchema.get("properties", {})
         required_params = mcp_tool.inputSchema.get("required", [])
 
-        type_map = {
-            "string": str,
-            "integer": int,
-            "number": float,
-            "boolean": bool,
-            "array": list,
-            "object": dict,
-        }
         annotations = {}  # used to type hints
         defaults: Dict[str, Any] = {}  # store default values
 
         func_params = []
         for param_name, param_schema in parameters_schema.items():
             param_type = param_schema.get("type", "Any")
-            param_type = type_map.get(param_type, Any)
+            param_type = self._build_function_param_type(param_type)
 
             annotations[param_name] = param_type
             if param_name not in required_params:
@@ -772,6 +764,65 @@ class MCPClient:
         adaptive_dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
 
         return adaptive_dynamic_function
+
+
+    def _build_function_param_type(self, param_type) -> Any:
+        """
+            Dynamically generates a Python type hint corresponding to a given MCP tool parameter type.
+
+            This method maps JSON Schema types (used in MCP) to Python's typing system.
+
+            Examples:
+                - "string" -> str
+                - ["string", "null"] -> Optional[str]
+                - ["string", "integer"] -> Union[str, int]
+
+            :param param_type: The 'type' field from the JSON Schema (can be a string or a list of strings).
+            :return: A Python type object (e.g., str, int, Optional[str], Union[...]).
+        """
+
+        # Map JSON Schema types to Python built-in types
+        type_map = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+        # Single string type (e.g., "string")
+        if isinstance(param_type, str):
+            return type_map.get(param_type, Any)
+        # Input validation: If it's not a string or a list, fallback to Any.
+        if not isinstance(param_type, list):
+            return Any
+
+        # List of types (Union Type in JSON Schema)
+
+        # Pre-processing: Filter out "null".
+        # In JSON Schema, the presence of "null" implies the field is Nullable/Optional.
+        tool_types = [t for t in param_type if t != "null"]
+
+        # If the list is empty (or contained only "null"), we cannot determine a specific type.
+        if len(tool_types) == 0:
+            return Any
+        exist_optional = 'null' in param_type
+
+        # Construct the base Python type
+        if len(tool_types) == 1:
+            # Only one valid type remains (e.g., ["string", "null"] -> "string")
+            type_value = type_map.get(tool_types[0], Any)
+        else:
+            # Multiple valid types (e.g., ["string", "integer"])
+            # Create a Union type. Note that Union requires a tuple of types.
+            type_value = Union[tuple(type_map.get(t, Any) for t in tool_types)]
+
+        # Apply Optional wrapper if necessary
+        # e.g., str -> Optional[str]
+        if exist_optional:
+            type_value = Optional[type_value]
+
+        return type_value
 
     def _build_tool_schema(self, mcp_tool: types.Tool) -> Dict[str, Any]:
         r"""Build tool schema for OpenAI function calling format."""
