@@ -38,6 +38,7 @@ from camel.societies.workforce.events import (
 )
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
+from camel.tasks import Task
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -46,55 +47,57 @@ logger = get_logger(__name__)
 class PrintCallback(WorkforceCallback):
     r"""Simple callback printing events to logs to observe ordering."""
 
-    def log_task_created(self, event: TaskCreatedEvent) -> None:
+    async def log_task_created(self, event: TaskCreatedEvent) -> None:
         print(
             f"[PrintCallback] task_created: id={event.task_id}, "
             f"desc={event.description!r}, parent={event.parent_task_id}"
         )
 
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         print(
             f"[PrintCallback] task_decomposed: parent={event.parent_task_id},"
             f" subtasks={event.subtask_ids}"
         )
 
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         print(
             f"[PrintCallback] task_assigned: task={event.task_id}, "
             f"worker={event.worker_id}"
         )
 
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         print(
             f"[PrintCallback] task_started: task={event.task_id}, "
             f"worker={event.worker_id}"
         )
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         print(
             f"[PrintCallback] task_completed: task={event.task_id}, "
             f"worker={event.worker_id}, took={event.processing_time_seconds}s"
         )
 
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         logger.warning(
             f"[PrintCallback] task_failed: task={event.task_id}, "
             f"err={event.error_message}"
         )
 
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         print(
             f"[PrintCallback] worker_created: id={event.worker_id}, "
             f"type={event.worker_type}, role={event.role}"
         )
 
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         print(
             f"[PrintCallback] worker_deleted: id={event.worker_id}, "
             f"reason={event.reason}"
         )
 
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         print("[PrintCallback] all_tasks_completed")
 
 
@@ -125,23 +128,18 @@ async def run_demo() -> None:
 
     teacher = build_teacher_agent()
     student = build_student_agent()
-    workforce.add_single_agent_worker("Teacher Worker", teacher)
-    workforce.add_single_agent_worker("Student Worker", student)
-    workforce.add_main_task(
-        "The teacher set an exam question and had the students answer it."
+    await workforce.add_single_agent_worker_async("Teacher Worker", teacher)
+    await workforce.add_single_agent_worker_async("Student Worker", student)
+    await workforce.process_task_async(
+        Task(
+            content="The teacher set an exam question and had the "
+            "students answer it."
+        )
     )
 
-    # Start Workforce and wait for completion (timeout to avoid hanging)
-    wf_task = asyncio.create_task(workforce.start())
-    try:
-        await asyncio.wait_for(wf_task, timeout=30.0)
-    except asyncio.TimeoutError:
-        logger.warning("Workforce run timed out; stopping...")
-        workforce.stop()
-
     # Read KPIs and a simple "tree"
-    print(f"KPIs: {workforce.get_workforce_kpis()}")
-    print(f"Tree: {workforce.get_workforce_log_tree()}")
+    print(f"KPIs: {await workforce.get_workforce_log_tree_async()}")
+    print(f"Tree: {await workforce.get_workforce_log_tree()}")
 
 
 if __name__ == "__main__":

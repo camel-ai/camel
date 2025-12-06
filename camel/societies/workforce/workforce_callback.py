@@ -35,40 +35,42 @@ class WorkforceCallback(ABC):
     """
 
     @abstractmethod
-    def log_task_created(
+    async def log_task_created(
         self,
         event: TaskCreatedEvent,
     ) -> None:
         pass
 
     @abstractmethod
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         pass
 
     @abstractmethod
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         pass

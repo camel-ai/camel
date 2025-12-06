@@ -18,6 +18,8 @@ import pytest
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import SingleAgentWorker
+from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     TaskAssignedEvent,
@@ -45,33 +47,35 @@ class _NonMetricsCallback(WorkforceCallback):
         self.events: list[WorkforceEvent] = []
 
     # Task events
-    def log_task_created(self, event: TaskCreatedEvent) -> None:
+    async def log_task_created(self, event: TaskCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         self.events.append(event)
 
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         self.events.append(event)
 
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         self.events.append(event)
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         self.events.append(event)
 
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         self.events.append(event)
 
     # Worker events
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         self.events.append(event)
 
     # Terminal event
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         self.events.append(event)
 
 
@@ -80,53 +84,54 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
 
     def __init__(self) -> None:
         self.events: list[WorkforceEvent] = []
-        self.reset_task_data()
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
 
     # WorkforceMetrics interface
-    def reset_task_data(self) -> None:
+    async def reset_task_data(self) -> None:
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
 
-    def dump_to_json(self, file_path: str) -> None:
+    async def dump_to_json(self, file_path: str) -> None:
         self.dump_to_json_called = True
 
-    def get_ascii_tree_representation(self) -> str:
+    async def get_ascii_tree_representation(self) -> str:
         self.get_ascii_tree_called = True
         return "Stub ASCII Tree"
 
-    def get_kpis(self) -> Dict[str, Any]:
+    async def get_kpis(self) -> Dict[str, Any]:
         self.get_kpis_called = True
         return {}
 
-    def log_task_created(self, event: TaskCreatedEvent) -> None:
+    async def log_task_created(self, event: TaskCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
+    async def log_task_decomposed(self, event: TaskDecomposedEvent) -> None:
         self.events.append(event)
 
-    def log_task_assigned(self, event: TaskAssignedEvent) -> None:
+    async def log_task_assigned(self, event: TaskAssignedEvent) -> None:
         self.events.append(event)
 
-    def log_task_started(self, event: TaskStartedEvent) -> None:
+    async def log_task_started(self, event: TaskStartedEvent) -> None:
         self.events.append(event)
 
-    def log_task_completed(self, event: TaskCompletedEvent) -> None:
+    async def log_task_completed(self, event: TaskCompletedEvent) -> None:
         self.events.append(event)
 
-    def log_task_failed(self, event: TaskFailedEvent) -> None:
+    async def log_task_failed(self, event: TaskFailedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_created(self, event: WorkerCreatedEvent) -> None:
+    async def log_worker_created(self, event: WorkerCreatedEvent) -> None:
         self.events.append(event)
 
-    def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
+    async def log_worker_deleted(self, event: WorkerDeletedEvent) -> None:
         self.events.append(event)
 
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+    async def log_all_tasks_completed(
+        self, event: AllTasksCompletedEvent
+    ) -> None:
         self.events.append(event)
 
 
@@ -139,7 +144,82 @@ def _build_stub_agent() -> ChatAgent:
     return ChatAgent(model=model)
 
 
-def test_workforce_callback_registration_and_metrics_handling():
+def _build_persona_agent(role_name: str, content: str) -> ChatAgent:
+    """Construct a stub-backed ChatAgent with a system persona."""
+    return ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name=role_name,
+            content=content,
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.STUB,
+        ),
+    )
+
+
+def _build_worker_specs() -> list[tuple[str, str, ChatAgent]]:
+    """Build the standard trio of workers used across tests."""
+    return [
+        (
+            "A researcher who can search online for information.",
+            "SearchWork",
+            _build_persona_agent(
+                "Research Specialist",
+                "You are a research specialist who excels at finding and "
+                "gathering information from the web.",
+            ),
+        ),
+        (
+            "An analyst who can process research findings.",
+            "AnalystWorker",
+            _build_persona_agent(
+                "Business Analyst",
+                "You are an expert business analyst. Your job is "
+                "to analyze research findings, identify key insights, "
+                "opportunities, and challenges.",
+            ),
+        ),
+        (
+            "A writer who can create a final report from the analysis.",
+            "WriterWorker",
+            _build_persona_agent(
+                "Report Writer",
+                "You are a professional report writer. You take "
+                "analytical insights and synthesize them into a clear, "
+                "concise, and well-structured final report.",
+            ),
+        ),
+    ]
+
+
+async def _assert_metrics_callbacks(
+    workforce: Workforce, cb: _MetricsCallback
+):
+    """Verify metrics callback toggles across reset cycles."""
+    assert not cb.dump_to_json_called
+    assert not cb.get_ascii_tree_called
+    assert not cb.get_kpis_called
+    await workforce.dump_workforce_logs_async("foo.log")
+    assert cb.dump_to_json_called
+
+    await workforce.reset_async()
+    assert not cb.dump_to_json_called
+    assert not cb.get_ascii_tree_called
+    assert not cb.get_kpis_called
+    await workforce.get_workforce_kpis_async()
+    assert cb.get_kpis_called
+
+    await workforce.reset_async()
+    assert not cb.dump_to_json_called
+    assert not cb.get_ascii_tree_called
+    assert not cb.get_kpis_called
+    await workforce.get_workforce_log_tree_async()
+    assert cb.get_ascii_tree_called
+
+
+@pytest.mark.asyncio
+async def test_workforce_callback_registration_and_metrics_handling():
     """Verify default logger addition and metrics-callback skip logic.
 
     - When no metrics callback is provided, WorkforceLogger is added.
@@ -157,7 +237,7 @@ def test_workforce_callback_registration_and_metrics_handling():
 
     # Add a worker and ensure our callback saw the event
     agent = _build_stub_agent()
-    wf1.add_single_agent_worker("UnitTest Worker", agent)
+    await wf1.add_single_agent_worker_async("UnitTest Worker", agent)
     assert any(isinstance(e, WorkerCreatedEvent) for e in cb.events)
 
     # 2) Metrics-capable callback present -> no default WorkforceLogger
@@ -172,161 +252,48 @@ def test_workforce_callback_registration_and_metrics_handling():
         Workforce("CB Test - Invalid", callbacks=[object()])
 
 
-def assert_event_sequence(events: list[str], min_worker_count: int):
-    """
-    Validate that the given event sequence follows the expected logical order.
-    This version is flexible to handle:
-    - Task retries and dynamic worker creation
-    - Cases where tasks are not decomposed (e.g., when using stub models)
-    """
-    idx = 0
-    n = len(events)
-
-    # 1. Expect at least min_worker_count WorkerCreatedEvent events first
-    initial_worker_count = 0
-    while idx < n and events[idx] == "WorkerCreatedEvent":
-        initial_worker_count += 1
-        idx += 1
-    assert initial_worker_count >= min_worker_count, (
-        f"Expected at least {min_worker_count} initial "
-        f"WorkerCreatedEvents, got {initial_worker_count}"
-    )
-
-    # 2. Expect one main TaskCreatedEvent
-    assert idx < n and events[idx] == "TaskCreatedEvent", (
-        f"Event {idx} should be TaskCreatedEvent, got "
-        f"{events[idx] if idx < n else 'END'}"
-    )
-    idx += 1
-
-    # 3. TaskDecomposedEvent may or may not be present
-    # (depends on coordinator behavior)
-    # If the coordinator can't parse stub responses, it may skip
-    # decomposition
-    has_decomposition = idx < n and events[idx] == "TaskDecomposedEvent"
-    if has_decomposition:
-        idx += 1
-
-    # 4. Count all event types in the remaining events
-    all_events = events[idx:]
-    task_assigned_count = all_events.count("TaskAssignedEvent")
-    task_started_count = all_events.count("TaskStartedEvent")
-    task_completed_count = all_events.count("TaskCompletedEvent")
-    all_tasks_completed_count = all_events.count("AllTasksCompletedEvent")
-
-    # 5. Validate basic invariants
-    # At minimum, the main task should be assigned and processed
-    assert (
-        task_assigned_count >= 1
-    ), f"Expected at least 1 TaskAssignedEvent, got {task_assigned_count}"
-    assert (
-        task_started_count >= 1
-    ), f"Expected at least 1 TaskStartedEvent, got {task_started_count}"
-    assert (
-        task_completed_count >= 1
-    ), f"Expected at least 1 TaskCompletedEvent, got {task_completed_count}"
-
-    # 6. Expect exactly one AllTasksCompletedEvent at the end
-    assert all_tasks_completed_count == 1, (
-        f"Expected exactly 1 AllTasksCompletedEvent, got "
-        f"{all_tasks_completed_count}"
-    )
-    assert (
-        events[-1] == "AllTasksCompletedEvent"
-    ), "Last event should be AllTasksCompletedEvent"
-
-    # 7. All events should be of expected types
-    allowed_events = {
-        "WorkerCreatedEvent",
-        "WorkerDeletedEvent",
-        "TaskCreatedEvent",
-        "TaskDecomposedEvent",
-        "TaskAssignedEvent",
-        "TaskStartedEvent",
-        "TaskCompletedEvent",
-        "TaskFailedEvent",
-        "AllTasksCompletedEvent",
-    }
-    for i, e in enumerate(events):
-        assert e in allowed_events, f"Unexpected event type at {i}: {e}"
-
-
-def test_workforce_emits_expected_event_sequence():
-    # Use STUB model to avoid real API calls and ensure fast,
-    # deterministic execution
-    search_agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Research Specialist",
-            content="You are a research specialist who excels at finding and "
-            "gathering information from the web.",
-        ),
-        model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        ),
-    )
-
-    analyst_agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Business Analyst",
-            content="You are an expert business analyst. Your job is "
-            "to analyze research findings, identify key insights, "
-            "opportunities, and challenges.",
-        ),
-        model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        ),
-    )
-
-    writer_agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Report Writer",
-            content="You are a professional report writer. You take "
-            "analytical insights and synthesize them into a clear, "
-            "concise, and well-structured final report.",
-        ),
-        model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        ),
-    )
-
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "preconfigure_children",
+    [False, True],
+    ids=["add_workers_at_runtime", "preconfigure_children"],
+)
+async def test_workforce_emits_expected_events_for_worker_init_modes(
+    preconfigure_children: bool,
+):
+    """Validate event ordering for both worker setup paths."""
     cb = _MetricsCallback()
+    coordinator_agent = _build_stub_agent()
+    task_agent = _build_stub_agent()
+    worker_specs = _build_worker_specs()
 
-    # Use STUB models for coordinator and task agents to avoid real API calls
-    coordinator_agent = ChatAgent(
-        model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
+    if preconfigure_children:
+        children: list[BaseNode] = [
+            SingleAgentWorker(description=child_desc, worker=agent)
+            for _, child_desc, agent in worker_specs
+        ]
+        workforce = Workforce(
+            'Business Analysis Team',
+            graceful_shutdown_timeout=30.0,
+            callbacks=[cb],
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
+            children=children,
         )
-    )
-    task_agent = ChatAgent(
-        model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
+    else:
+        workforce = Workforce(
+            'Business Analysis Team',
+            graceful_shutdown_timeout=30.0,
+            callbacks=[cb],
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
         )
-    )
+        for add_desc, _, agent in worker_specs:
+            await workforce.add_single_agent_worker_async(
+                add_desc,
+                worker=agent,
+            )
 
-    workforce = Workforce(
-        'Business Analysis Team',
-        graceful_shutdown_timeout=30.0,
-        callbacks=[cb],
-        coordinator_agent=coordinator_agent,
-        task_agent=task_agent,
-    )
-
-    workforce.add_single_agent_worker(
-        "A researcher who can search online for information.",
-        worker=search_agent,
-    ).add_single_agent_worker(
-        "An analyst who can process research findings.", worker=analyst_agent
-    ).add_single_agent_worker(
-        "A writer who can create a final report from the analysis.",
-        worker=writer_agent,
-    )
-
-    # Use a simpler task to ensure fast and deterministic execution
     human_task = Task(
         content=(
             "Create a simple report about electric scooters. "
@@ -338,29 +305,20 @@ def test_workforce_emits_expected_event_sequence():
         id='0',
     )
 
-    workforce.process_task(human_task)
+    await workforce.process_task_async(human_task)
 
-    # test that the event sequence is as expected
+    expected_events = [
+        "WorkerCreatedEvent",
+        "WorkerCreatedEvent",
+        "WorkerCreatedEvent",
+        "TaskCreatedEvent",
+        "WorkerCreatedEvent",
+        "TaskAssignedEvent",
+        "TaskStartedEvent",
+        "TaskCompletedEvent",
+        "AllTasksCompletedEvent",
+    ]
     actual_events = [e.__class__.__name__ for e in cb.events]
-    assert_event_sequence(actual_events, min_worker_count=3)
+    assert actual_events == expected_events
 
-    # test that metrics callback methods work as expected
-    assert not cb.dump_to_json_called
-    assert not cb.get_ascii_tree_called
-    assert not cb.get_kpis_called
-    workforce.dump_workforce_logs("foo.log")
-    assert cb.dump_to_json_called
-
-    workforce.reset()
-    assert not cb.dump_to_json_called
-    assert not cb.get_ascii_tree_called
-    assert not cb.get_kpis_called
-    workforce.get_workforce_kpis()
-    assert cb.get_kpis_called
-
-    workforce.reset()
-    assert not cb.dump_to_json_called
-    assert not cb.get_ascii_tree_called
-    assert not cb.get_kpis_called
-    workforce.get_workforce_log_tree()
-    assert cb.get_ascii_tree_called
+    await _assert_metrics_callbacks(workforce, cb)

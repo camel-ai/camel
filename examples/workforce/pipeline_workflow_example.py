@@ -134,7 +134,7 @@ async def example_1_literature_analysis_pipeline():
         summary_agent = ChatAgent(
             system_message=summary_system_message, model=model, tools=[]
         )
-        workforce.add_single_agent_worker(
+        await workforce.add_single_agent_worker_async(
             f"Summary Specialist {i+1}", summary_agent
         )
 
@@ -151,8 +151,12 @@ async def example_1_literature_analysis_pipeline():
         system_message=synthesis_system_message, model=model, tools=[]
     )
 
-    workforce.add_single_agent_worker("Literature Researcher", search_agent)
-    workforce.add_single_agent_worker("Research Synthesizer", synthesis_agent)
+    await workforce.add_single_agent_worker_async(
+        "Literature Researcher", search_agent
+    )
+    await workforce.add_single_agent_worker_async(
+        "Research Synthesizer", synthesis_agent
+    )
 
     # Build literature analysis pipeline
     workforce.pipeline_add(

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
+import asyncio
 import base64
 import hashlib
 import json
@@ -585,15 +585,19 @@ class BrowseCompBenchmark(BaseBenchmark):
                 input_message = QUERY_TEMPLATE.format(question=problem)
 
                 if isinstance(pipeline_template, (ChatAgent)):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
+                    chat_pipeline = pipeline_template.clone()
 
-                    response_text = pipeline.step(
+                    response_text = chat_pipeline.step(
                         input_message, response_format=QueryResponse
                     )
                 elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
+                    workforce_pipeline = asyncio.run(
+                        pipeline_template.clone_async()
+                    )
                     task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
+                    task = asyncio.run(
+                        workforce_pipeline.process_task_async(task)
+                    )  # type: ignore[attr-defined]
                     if task_json_formatter:
                         formatter_in_process = task_json_formatter.clone()
                     else:
@@ -607,16 +611,16 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 elif isinstance(pipeline_template, RolePlaying):
                     # RolePlaying is different.
-                    pipeline = pipeline_template.clone(  # type: ignore[assignment]
+                    rp_pipeline = pipeline_template.clone(
                         task_prompt=input_message
                     )
 
                     n = 0
-                    input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
+                    input_msg = rp_pipeline.init_chat()
                     chat_history = []
                     while n < chat_turn_limit:
                         n += 1
-                        assistant_response, user_response = pipeline.step(
+                        assistant_response, user_response = rp_pipeline.step(
                             input_msg
                         )
                         if assistant_response.terminated:  # type: ignore[union-attr]

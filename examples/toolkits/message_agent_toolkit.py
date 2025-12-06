@@ -20,7 +20,7 @@ from camel.tasks import Task
 from camel.toolkits import AgentCommunicationToolkit
 
 
-def create_messaging_workforce():
+async def create_messaging_workforce():
     r"""Create a workforce where agents can communicate with each other."""
 
     # 1. Initialize the message toolkit
@@ -76,9 +76,9 @@ def create_messaging_workforce():
 
     # 5. Create workforce and add workers with matching names
     workforce = Workforce("Content Creation Team")
-    workforce.add_single_agent_worker("Researcher", researcher)
-    workforce.add_single_agent_worker("Writer", writer)
-    workforce.add_single_agent_worker("Reviewer", reviewer)
+    await workforce.add_single_agent_worker_async("Researcher", researcher)
+    await workforce.add_single_agent_worker_async("Writer", writer)
+    await workforce.add_single_agent_worker_async("Reviewer", reviewer)
 
     return workforce, msg_toolkit
 
@@ -87,7 +87,7 @@ async def demonstrate_coordination():
     r"""Show how agents coordinate using messaging during task execution."""
 
     print("🏗️  Setting up messaging-enabled workforce...")
-    workforce, msg_toolkit = create_messaging_workforce()
+    workforce, msg_toolkit = await create_messaging_workforce()
 
     print("📋 Available agents:")
     print(msg_toolkit.list_available_agents())

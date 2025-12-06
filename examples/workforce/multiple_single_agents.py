@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
+
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -20,7 +22,7 @@ from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
-def main():
+async def main():
     # 1. Set up a Research agent with search tools
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -68,12 +70,15 @@ def main():
         graceful_shutdown_timeout=30.0,
     )
 
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "A researcher who can search online for information.",
         worker=search_agent,
-    ).add_single_agent_worker(
-        "An analyst who can process research findings.", worker=analyst_agent
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker_async(
+        "An analyst who can process research findings.",
+        worker=analyst_agent,
+    )
+    await workforce.add_single_agent_worker_async(
         "A writer who can create a final report from the analysis.",
         worker=writer_agent,
     )
@@ -91,22 +96,22 @@ def main():
         id='0',
     )
 
-    workforce.process_task(human_task)
+    await workforce.process_task_async(human_task)
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree_async())
 
     print("\n--- Workforce KPIs ---")
-    kpis = workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis_async()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "multiple_single_agents_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs_async(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
