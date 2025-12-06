@@ -165,7 +165,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"An unexpected error occurred: {e!s}"}
 
-    @dependencies_required("duckduckgo_search")
+    @dependencies_required("ddgs")
     def search_duckduckgo(
         self,
         query: str,
@@ -192,7 +192,7 @@ class SearchToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
                 represents a search result.
         """
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
 
         ddgs = DDGS()
         responses: List[Dict[str, Any]] = []
@@ -200,7 +200,7 @@ class SearchToolkit(BaseToolkit):
         if source == "text":
             try:
                 results = ddgs.text(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
@@ -219,7 +219,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "images":
             try:
                 results = ddgs.images(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
@@ -239,7 +239,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "videos":
             try:
                 results = ddgs.videos(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
