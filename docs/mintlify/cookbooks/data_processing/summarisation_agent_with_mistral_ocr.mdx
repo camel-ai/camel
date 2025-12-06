@@ -24,7 +24,7 @@ In this cookbook, we’ll explore [**Mistral OCR**](https://mistral.ai/news/mist
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
@@ -40,19 +40,19 @@ Throughout history, advancements in information abstraction and retrieval have d
 
 #### **Key Features of Mistral OCR:**
 
-1. **State-of-the-art complex document understanding**  
+1. **State-of-the-art complex document understanding**
    - Extracts interleaved text, figures, tables, and mathematical expressions with high fidelity.
 
-2. **Natively multilingual & multimodal**  
+2. **Natively multilingual & multimodal**
    - Parses scripts and fonts from across the globe, handling right-to-left layouts and non-Latin characters seamlessly.
 
-3. **Doc-as-prompt, structured output**  
+3. **Doc-as-prompt, structured output**
    - Returns ordered Markdown, embedding images and bounding-box metadata ready for RAG and downstream AI workflows.
 
-4. **Top-tier benchmarks & speed**  
+4. **Top-tier benchmarks & speed**
    - Outperforms leading OCR systems in accuracy—especially in math, tables, and multilingual tests—while delivering fast batch inference (∼2000 pages/min).
 
-5. **Scalable & flexible deployment**  
+5. **Scalable & flexible deployment**
    - Available via `mistral-ocr-latest` on Mistral’s developer suite, cloud partners, and on-premises self-hosting for sensitive data.
 
 Ready to unlock your documents? Let’s dive into the extraction guide.
@@ -71,10 +71,10 @@ First, install the CAMEL package with all its dependencies.
 
 If you don’t have a Mistral API key, you can obtain one by following these steps:
 
-1. **Create an account:**  
+1. **Create an account:**
    Go to [Mistral Console](https://console.mistral.ai/home) and sign up for an organization account.
 
-2. **Get your API key:**  
+2. **Get your API key:**
    Once logged in, navigate to **Organization** → **API Keys**, generate a new key, copy it, and store it securely.
 
 
@@ -210,8 +210,6 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
-
-

@@ -93,10 +93,10 @@ agent = ChatAgent(
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant 
+Use Google Search to search for news in Munich today, and click on relevant
 websites to get the news and write it in markdown.
 
-I mean you need to browse multiple websites. After visiting each website, 
+I mean you need to browse multiple websites. After visiting each website,
 return to the Google search results page and click on other websites.
 
 Use enter to confirm search or input.

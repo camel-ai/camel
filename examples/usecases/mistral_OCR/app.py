@@ -176,4 +176,3 @@ if 'ocr_result' in st.session_state:
 # --- Footer ---
 st.markdown("---")
 st.markdown("Made with ❤️ using CAMEL-AI & Mistral OCR 🐫")
-

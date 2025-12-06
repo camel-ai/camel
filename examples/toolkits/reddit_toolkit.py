@@ -38,15 +38,15 @@ for post in top_posts_data:
 ===============================================================================
 Collecting top 2 posts from r/python...
 
-Post Title: Lad wrote a Python script to download 
-            Alexa voice recordings, 
+Post Title: Lad wrote a Python script to download
+            Alexa voice recordings,
             he didn't expect this email.
-  Comment: I will be honest, I was expecting a Cease 
+  Comment: I will be honest, I was expecting a Cease
            and Desist from Amazon.
   Upvotes: 1857
-  Comment: Very cool. That is the beauty of sharing. 
-           You never know who or how it will help someone, 
-           but you post it anyway because that is just being awesome. 
+  Comment: Very cool. That is the beauty of sharing.
+           You never know who or how it will help someone,
+           but you post it anyway because that is just being awesome.
 
 Thanks for sharing.
   Upvotes: 264
@@ -65,8 +65,8 @@ Post Title: This post has:
   Comment: scale tap piquant quiet advise salt languid abundant dolls long
            -- mass edited with redact.dev
   Upvotes: 1325
-  Comment: Good job. But honestly, add a sleep timer of a few seconds. 
-           This will eventually get your IP banned on reddit 
+  Comment: Good job. But honestly, add a sleep timer of a few seconds.
+           This will eventually get your IP banned on reddit
            if you bombard them with too many requests.
   Upvotes: 408
   Comment: Cool! Could you share it?
@@ -142,28 +142,28 @@ for item in sentiment_data:
 
 Subreddit: learnprogramming
 Post Title: I ran a 100% free full stack web development bootcamp
-            for those laid off by the pandemic. 
-            65 people got jobs and we are doing it again! 
+            for those laid off by the pandemic.
+            65 people got jobs and we are doing it again!
             I would love to have you join us!
 Comment Body: If you want to learn to code, this will change your life.
 Can't make it to class? Recorded classes are on Twitch and YouTube
 Never touched code before? He starts from square 1!
 Shy/introvert/don't like talking? Stick to the chat
-Don't have support in real life? 
+Don't have support in real life?
 Join the discord and get more support and hype than your family
 Don't have money? It's free!
 Not in the US? Leon is Mr. Worldwide when it comes to teaching!
-100Devs isn't just a free online bootcamp, 
-it's a whole support network that will be there for you to cheer you on, 
-help you out, and give you a shoulder to cry on. 
+100Devs isn't just a free online bootcamp,
+it's a whole support network that will be there for you to cheer you on,
+help you out, and give you a shoulder to cry on.
 If you're on the fence, give it a try. You won't regret it.
 Upvotes: 518
 Sentiment Score: 0.385
 
 Subreddit: learnprogramming
-Post Title: I ran a 100% free full stack web development bootcamp 
-            for those laid off by the pandemic. 
-            65 people got jobs and we are doing it again! 
+Post Title: I ran a 100% free full stack web development bootcamp
+            for those laid off by the pandemic.
+            65 people got jobs and we are doing it again!
             I would love to have you join us!
 Comment Body: If you need any free dev help let me know
 
@@ -173,19 +173,19 @@ Sentiment Score: 0.4
 
 Subreddit: datascience
 Post Title: data siens
-Comment Body: I was once reading this article that went as: 
-              "The AI already predicted how many goals Cavani 
-              will score at Manchester United". 
+Comment Body: I was once reading this article that went as:
+              "The AI already predicted how many goals Cavani
+              will score at Manchester United".
 It was a linear regression.
 Upvotes: 345
 Sentiment Score: 0.5
 
 Subreddit: machinelearning
-Post Title: [D] A Demo from 1993 of 32-year-old Yann LeCun 
-            showing off the World's first Convolutional 
+Post Title: [D] A Demo from 1993 of 32-year-old Yann LeCun
+            showing off the World's first Convolutional
             Network for Text Recognition
-Comment Body: The fact that they also had to know the 
-              location of the numbers and that the algorithm 
+Comment Body: The fact that they also had to know the
+              location of the numbers and that the algorithm
               was robust to scale changes is impressive for 1993
 
 It's not like they just solved MNIST in 1993, it's one step above that

@@ -642,9 +642,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -710,9 +710,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -766,7 +766,7 @@ class Neo4jGraph(BaseGraphStorage):
                 WHERE ($subj IS NULL OR n1.id = $subj)
                 AND ($obj IS NULL OR n2.id = $obj)
                 AND ($rel IS NULL OR type(r) = $rel)
-                RETURN n1.id AS subj, n2.id AS obj, 
+                RETURN n1.id AS subj, n2.id AS obj,
                 type(r) AS rel, r.timestamp AS timestamp
             """
 

@@ -39,9 +39,9 @@ def run_pptx_agent():
     )
 
     # Initialize the agent with the toolkit
-    system_message = """You are a helpful assistant that can create PowerPoint 
+    system_message = """You are a helpful assistant that can create PowerPoint
     presentations.
-    When creating presentations, you must first select the appropriate 
+    When creating presentations, you must first select the appropriate
     template based on the topic:
 
     Available Templates:
@@ -64,15 +64,15 @@ def run_pptx_agent():
     4. Use proper JSON formatting with double quotes for all strings
     5. Add img_keywords field to include relevant images from Pexels
 
-    IMPORTANT: 
-    1. First, analyze the presentation topic and select the most appropriate 
+    IMPORTANT:
+    1. First, analyze the presentation topic and select the most appropriate
     template
     2. Then create the JSON content following the format above
-    3. Finally, use the create_presentation tool to generate the PPTX file 
+    3. Finally, use the create_presentation tool to generate the PPTX file
     with the selected template
 
     Example tool usage:
-    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', 
+    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]',
     filename="example.pptx", template="/examples/toolkits/slides_templates/
     modern.pptx")
     """
@@ -87,35 +87,35 @@ def run_pptx_agent():
 
     # Example 1: Presentation with various slide types
     print("Example 1: Creating a presentation with various slide types")
-    presentation_query = """Create a PowerPoint presentation about 
-    \"CAMEL-AI\" based on the content below: 
-    CAMEL: The first and the best multi-agent framework. We are working on 
-    finding the scaling laws of Agents. We believe that studying these agents 
-    on a large scale offers valuable insights into their behaviors, 
-    capabilities, and potential risks. To facilitate research in this field, 
-    we implement and support various types of agents, tasks, prompts, models, 
+    presentation_query = """Create a PowerPoint presentation about
+    \"CAMEL-AI\" based on the content below:
+    CAMEL: The first and the best multi-agent framework. We are working on
+    finding the scaling laws of Agents. We believe that studying these agents
+    on a large scale offers valuable insights into their behaviors,
+    capabilities, and potential risks. To facilitate research in this field,
+    we implement and support various types of agents, tasks, prompts, models,
     and simulated environments.
 
-    The CAMEL project is building the foundational infrastructure for AI 
-    agents: collaborative, tool-using agents that operates in complex, 
+    The CAMEL project is building the foundational infrastructure for AI
+    agents: collaborative, tool-using agents that operates in complex,
     real-world environments.
 
-    Our open-source framework empowers researchers and developers to rapidly 
-    build and experiment with multi-agent systems. These agents are powered by 
-    large language models (LLMs) and can interact with real-world 
-    tools—including terminals, web browsers, code execution, and 
-    APIs—unlocking high-value applications across enterprise automation, 
+    Our open-source framework empowers researchers and developers to rapidly
+    build and experiment with multi-agent systems. These agents are powered by
+    large language models (LLMs) and can interact with real-world
+    tools—including terminals, web browsers, code execution, and
+    APIs—unlocking high-value applications across enterprise automation,
     simulation, and AI research.
 
-    CAMEL is already gaining significant traction: over 200 contributors have 
-    supported the project globally, our community spans more than 10,000 
-    active members on private channels like Discord and Slack, and our work 
-    has been cited more than 700 times in academic literature. CAMEL is widely 
-    used in research, education, and industry to develop agentic systems and 
+    CAMEL is already gaining significant traction: over 200 contributors have
+    supported the project globally, our community spans more than 10,000
+    active members on private channels like Discord and Slack, and our work
+    has been cited more than 700 times in academic literature. CAMEL is widely
+    used in research, education, and industry to develop agentic systems and
     drive innovation at the frontier of AI agent research.
 
-    We believe CAMEL is well-positioned to become the core infrastructure 
-    layer for safe, scalable, and intelligent multi-agent systems in the 
+    We believe CAMEL is well-positioned to become the core infrastructure
+    layer for safe, scalable, and intelligent multi-agent systems in the
     emerging agent economy.
     """
 
@@ -225,34 +225,34 @@ if __name__ == "__main__":
 === PPTXToolkit Example Usage ===
 
 Example 1: Creating a presentation with various slide types
-The PowerPoint presentation titled "CAMEL-AI: The First Multi-Agent Framework" 
+The PowerPoint presentation titled "CAMEL-AI: The First Multi-Agent Framework"
 has been successfully created. You can download it using the link below:
 
 [Download CAMEL-AI Presentation](sandbox:/Users/enrei/Desktop/camel0508/camel/
 pptx_outputs/camel_ai_presentation.pptx)
 Tool calls: [ToolCallingRecord(tool_name='create_presentation', args=
-{'content': '[{"title": "CAMEL-AI","subtitle": "The First Multi-Agent 
-Framework"},{"heading": "Introduction to CAMEL","bullet_points":[">> 
-Multi-agent framework for AI research.",">> Focus on the scaling laws of 
+{'content': '[{"title": "CAMEL-AI","subtitle": "The First Multi-Agent
+Framework"},{"heading": "Introduction to CAMEL","bullet_points":[">>
+Multi-agent framework for AI research.",">> Focus on the scaling laws of
 agents.",">> Insights into behavior, capabilities, and risks."],
 "img_keywords":"AI research, agents"},{"heading": "Key Features",
-"bullet_points":[">> Collaborative, tool-using agents for real-world 
-environments.",">> Open-source framework for rapid development and 
+"bullet_points":[">> Collaborative, tool-using agents for real-world
+environments.",">> Open-source framework for rapid development and
 experimentation.",">> Powered by large language models (LLMs)."],
-"img_keywords":"collaboration, technology"},{"heading": "Applications of 
-CAMEL","bullet_points":[">> Interaction with real-world tools: terminals, web 
-browsers, APIs.",">> Enterprise automation and simulation applications.",">> 
-Significant contributions to AI research."],"img_keywords":"application of AI, 
-technologies"},{"heading": "Community and Impact","bullet_points":[">> Over 
-200 global contributors or supporters.",">> Community of more than 10,000 
-active members on Discord and Slack.",">> Over 700 citations in academic 
-literature."],"img_keywords":"community, collaboration"},{"heading": "Future 
-of CAMEL","bullet_points":[">> Core infrastructure for multi-agent systems in 
+"img_keywords":"collaboration, technology"},{"heading": "Applications of
+CAMEL","bullet_points":[">> Interaction with real-world tools: terminals, web
+browsers, APIs.",">> Enterprise automation and simulation applications.",">>
+Significant contributions to AI research."],"img_keywords":"application of AI,
+technologies"},{"heading": "Community and Impact","bullet_points":[">> Over
+200 global contributors or supporters.",">> Community of more than 10,000
+active members on Discord and Slack.",">> Over 700 citations in academic
+literature."],"img_keywords":"community, collaboration"},{"heading": "Future
+of CAMEL","bullet_points":[">> Core infrastructure for multi-agent systems in
 agent economy.",">> Positioned for safe and scalable intelligent systems."],
-"img_keywords":"future of technology, AI"}]', 'filename': 
+"img_keywords":"future of technology, AI"}]', 'filename':
 'camel_ai_presentation.pptx', 'template': '/examples/toolkits/templates/modern.
 pptx'}, result='PowerPoint presentation successfully created: /Users/enrei/
-Desktop/camel0508/camel/pptx_outputs/camel_ai_presentation.pptx', 
+Desktop/camel0508/camel/pptx_outputs/camel_ai_presentation.pptx',
 tool_call_id='call_DwygLSSBGGG9c6kXgQt3sFO5')]
 
 ==================================================

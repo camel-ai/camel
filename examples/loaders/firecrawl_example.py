@@ -36,17 +36,17 @@ print(response["data"][0]["markdown"])
 
 Camel-AI Team
 
-We are finding the  
+We are finding the
 scaling law of agent
 =========================================
 
-🐫 CAMEL is an open-source library designed for the study of autonomous and 
-communicative agents. We believe that studying these agents on a large scale 
-offers valuable insights into their behaviors, capabilities, and potential 
-risks. To facilitate research in this field, we implement and support various 
+🐫 CAMEL is an open-source library designed for the study of autonomous and
+communicative agents. We believe that studying these agents on a large scale
+offers valuable insights into their behaviors, capabilities, and potential
+risks. To facilitate research in this field, we implement and support various
 types of agents, tasks, prompts, models, and simulated environments.
 
-**We are** always looking for more **contributors** and **collaborators**.  
+**We are** always looking for more **contributors** and **collaborators**.
 Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
 shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
  or [Discord](https://discord.gg/CNcNpquyDc)...
@@ -74,14 +74,14 @@ response = firecrawl.structured_scrape(
 print(response)
 '''
 ===============================================================================
-{'top': [{'title': 'Foobar2000', 'points': 69, 'by': 'citruscomputing', 
-'commentsURL': 'item?id=41122920'}, {'title': 'How great was the Great 
+{'top': [{'title': 'Foobar2000', 'points': 69, 'by': 'citruscomputing',
+'commentsURL': 'item?id=41122920'}, {'title': 'How great was the Great
 Oxidation Event?', 'points': 145, 'by': 'Brajeshwar', 'commentsURL': 'item?
-id=41119080'}, {'title': 'Launch HN: Martin (YC S23) - Using LLMs to Make a 
+id=41119080'}, {'title': 'Launch HN: Martin (YC S23) - Using LLMs to Make a
 Better Siri', 'points': 73, 'by': 'darweenist', 'commentsURL': 'item?
-id=41119443'}, {'title': 'macOS in QEMU in Docker', 'points': 488, 'by': 
-'lijunhao', 'commentsURL': 'item?id=41116473'}, {'title': 'Crafting 
-Interpreters with Rust: On Garbage Collection', 'points': 148, 'by': 
+id=41119443'}, {'title': 'macOS in QEMU in Docker', 'points': 488, 'by':
+'lijunhao', 'commentsURL': 'item?id=41116473'}, {'title': 'Crafting
+Interpreters with Rust: On Garbage Collection', 'points': 148, 'by':
 'amalinovic', 'commentsURL': 'item?id=41108662'}]}
 ===============================================================================
 '''

@@ -861,7 +861,7 @@ Problem: {problem}
 
 Please show your complete reasoning process."""
 
-    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and 
+    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and
 provide scores and feedback in valid JSON format.
 
 Problem: {problem}
@@ -884,7 +884,7 @@ Respond ONLY with a JSON object in this exact format:
     "feedback": "<specific feedback for improvement>"
 }}"""
 
-    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an 
+    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an
 improved reasoning trace:
 Problem: {problem}
 

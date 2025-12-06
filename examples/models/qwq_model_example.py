@@ -22,7 +22,7 @@ ollama_model = ModelFactory.create(
     model_config_dict={"temperature": 0.4},
 )
 
-assistant_sys_msg = """You are a helpful and harmless assistant. You are Qwen 
+assistant_sys_msg = """You are a helpful and harmless assistant. You are Qwen
 developed by Alibaba. You should think step-by-step."""
 
 agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
@@ -34,10 +34,10 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Let's see. The word is "strawberry." I need to find out how many 'r's are in 
-it. Okay, first, I'll spell it out slowly: s-t-r-a-w-b-e-r-r-y. Okay, now, 
-I'll count the 'r's. Let's see: there's an 'r' after the 't', then another 'r' 
-between the two 'r's towards the end, and one more at the end. Wait, no. Let's 
+Let's see. The word is "strawberry." I need to find out how many 'r's are in
+it. Okay, first, I'll spell it out slowly: s-t-r-a-w-b-e-r-r-y. Okay, now,
+I'll count the 'r's. Let's see: there's an 'r' after the 't', then another 'r'
+between the two 'r's towards the end, and one more at the end. Wait, no. Let's
 look again.
 
 Spell it again: s-t-r-a-w-b-e-r-r-y.
@@ -62,18 +62,18 @@ But wait, let me double-check. Sometimes I might miscount. Let's list them out:
 
 Yes, that seems correct. So, the answer is three.
 
-Alternatively, I can think about the pronunciation or the way the word is 
-structured, but I think just spelling it out and counting is the most 
+Alternatively, I can think about the pronunciation or the way the word is
+structured, but I think just spelling it out and counting is the most
 straightforward way.
 
 Another way could be to break it down into syllables: straw-ber-ry. In "straw,
-" there's one 'r'. In "ber," there's another 'r'. And in "ry," there's another 
+" there's one 'r'. In "ber," there's another 'r'. And in "ry," there's another
 'r'. So, again, three 'r's.
 
-Wait, but in "ry," is there really an 'r'? Yes, "ry" has an 'r' and a 'y'. So, 
+Wait, but in "ry," is there really an 'r'? Yes, "ry" has an 'r' and a 'y'. So,
 that accounts for the third 'r'.
 
-So, whether I spell it out letter by letter or break it into syllables, I end 
+So, whether I spell it out letter by letter or break it into syllables, I end
 up with three 'r's.
 
 I think that's pretty conclusive.
