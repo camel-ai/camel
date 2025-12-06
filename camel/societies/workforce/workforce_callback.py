@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from colorama import Fore
+
 from .events import (
     AllTasksCompletedEvent,
     LogEvent,
@@ -28,12 +30,29 @@ from .events import (
     WorkerDeletedEvent,
 )
 
+__COLOR_MAP = {
+    "yellow": Fore.YELLOW,
+    "red": Fore.RED,
+    "green": Fore.GREEN,
+    "cyan": Fore.CYAN,
+    "magenta": Fore.MAGENTA,
+    "gray": Fore.LIGHTBLACK_EX,
+    "black": Fore.BLACK,
+}
+
 
 class WorkforceCallback(ABC):
     r"""Interface for recording workforce lifecycle events.
 
     Implementations should persist or stream events as appropriate.
     """
+
+    def _get_color_message(self, event: LogEvent) -> str:
+        r"""Gets a colored message for a log event."""
+        if event.color is None or event.color not in __COLOR_MAP:
+            return event.message
+        color = __COLOR_MAP.get(event.color)
+        return f"{color}{event.message}{Fore.RESET}"
 
     @abstractmethod
     def log_message(
