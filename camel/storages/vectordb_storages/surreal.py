@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+
+from typing_extensions import TypedDict
 
 from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
@@ -27,6 +29,20 @@ from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from surrealdb import Surreal  # type: ignore[import-not-found]
+    from surrealdb.data.types.record_id import (  # type: ignore[import-not-found]
+        RecordID,
+    )
+
+
+class _SurrealQueryRow(TypedDict):
+    r"""Type definition for SurrealDB query result row."""
+
+    id: "RecordID"
+    embedding: List[float]
+    payload: Dict[str, Any]
+    dist: float
+    score: float
+
 
 logger = get_logger(__name__)
 
@@ -256,6 +272,8 @@ class SurrealStorage(BaseVectorStorage):
         )
         logger.debug(f"query response: {response}")
 
+        rows = cast(List[_SurrealQueryRow], response)
+
         return [
             VectorDBQueryResult(
                 record=VectorRecord(
@@ -267,7 +285,7 @@ class SurrealStorage(BaseVectorStorage):
                 if self.distance == VectorDistance.COSINE
                 else -row["score"],
             )
-            for row in response
+            for row in rows
         ]
 
     def add(self, records: List[VectorRecord], **kwargs) -> None:
