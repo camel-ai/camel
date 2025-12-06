@@ -209,3 +209,76 @@ class TestDeleteCalendar:
         assert 'error' in result
         assert 'Failed to delete calendar' in result['error']
         assert 'Calendar not found' in result['error']
+
+
+def mock_single_calendar_response():
+    from msgraph.generated.models.calendar_color import CalendarColor
+
+    mock_owner = MagicMock(address="address")
+    mock_owner.name = "name"
+    calendar_response = MagicMock(
+        color=CalendarColor.Auto,
+        is_default_calendar="is_default_calendar",
+        can_edit="can_edit",
+        can_share="can_share",
+        can_view_private_items="can_view_private_items",
+        is_removable="is_removable",
+        is_tallying_responses="is_tallying_responses",
+        owner=mock_owner,
+    )
+    calendar_response.id = "id"
+    calendar_response.name = "name"
+
+    return calendar_response
+
+
+@pytest.mark.asyncio
+class TestGetCalendar:
+    """Tests for get_calendar method."""
+
+    async def test_get_calendar_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar retrieval."""
+        mock_calendar = mock_single_calendar_response()
+
+        async_get_mock = AsyncMock(return_value=mock_calendar)
+        mock_graph_client.me.calendars.by_calendar_id.return_value.get = (
+            async_get_mock
+        )
+
+        result = await outlook_calendar_toolkit.get_calendar(calendar_id='id')
+
+        assert result['status'] == 'success'
+        details = result['calendar_details']
+        assert details['id'] == 'id'
+        assert details['name'] == 'name'
+        assert details['color'] == 'auto'
+        assert details['owner_email'] == 'address'
+        assert details['owner_name'] == 'name'
+        assert details['is_default_calendar'] == 'is_default_calendar'
+        assert details['can_edit'] == 'can_edit'
+        assert details['can_share'] == 'can_share'
+        assert details['can_view_private_items'] == 'can_view_private_items'
+        assert details['is_removable'] == 'is_removable'
+        assert details['is_tallying_responses'] == 'is_tallying_responses'
+
+    async def test_get_calendar_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar retrieval when calendar is not found."""
+        # Setup mock to raise an exception
+        async_get_mock = AsyncMock(side_effect=Exception('Calendar not found'))
+        mock_graph_client.me.calendars.by_calendar_id.return_value.get = (
+            async_get_mock
+        )
+
+        # Call the method
+        result = await outlook_calendar_toolkit.get_calendar(
+            calendar_id='incorrect_id'
+        )
+
+        # Verify error is returned
+        assert 'error' in result
+        assert 'Failed to get calendar' in result['error']
+        assert 'Calendar not found' in result['error']

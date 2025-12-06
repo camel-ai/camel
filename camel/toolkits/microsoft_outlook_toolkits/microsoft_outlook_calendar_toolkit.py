@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dotenv import load_dotenv
 
@@ -167,6 +167,60 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    def _extract_calendar_details(self, calendar) -> dict:
+        """Extracts relevant details from a Calendar object.
+
+        Args:
+            calendar (Calendar): The Calendar object to extract details from.
+
+        Returns:
+            dict: A dictionary containing the extracted calendar details.
+        """
+        # Extract color name from Enum
+        color_name = calendar.color.value
+
+        return {
+            "id": calendar.id,
+            "name": calendar.name,
+            "color": color_name,
+            "is_default_calendar": calendar.is_default_calendar,
+            "can_edit": calendar.can_edit,
+            "can_share": calendar.can_share,
+            "can_view_private_items": calendar.can_view_private_items,
+            "is_removable": calendar.is_removable,
+            "is_tallying_responses": calendar.is_tallying_responses,
+            "owner_email": calendar.owner.address,
+            "owner_name": calendar.owner.name,
+        }
+
+    async def get_calendar(
+        self,
+        calendar_id: str,
+    ) -> dict[str, Any]:
+        """Retrieves a calendar by its ID.
+
+        Args:
+            calendar_id (str): The unique identifier of the calendar to be
+                retrieved.
+
+        Returns:
+            A dictionary containing the result of the operation.
+        """
+        try:
+            # Send request to get calendar
+            cal_req = self.client.me.calendars.by_calendar_id(calendar_id)
+            result = await cal_req.get()
+
+            return {
+                "status": "success",
+                "calendar_details": self._extract_calendar_details(result),
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to get calendar: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -177,4 +231,5 @@ class OutlookCalendarToolkit(BaseToolkit):
         return [
             FunctionTool(run_async(self.create_calendar)),
             FunctionTool(run_async(self.delete_calendar)),
+            FunctionTool(run_async(self.get_calendar)),
         ]
