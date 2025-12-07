@@ -303,6 +303,58 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def update_calendar(
+        self,
+        calendar_id: str,
+        name: Optional[str] = None,
+        color: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Updates an existing calendar.
+
+        Args:
+            calendar_id (str): The unique identifier of the calendar to update.
+            name (Optional[str]): The new name for the calendar.
+                (default: :obj:`None`)
+            color (Optional[str]): Specifies the color theme to distinguish
+                the calendar from other calendars in a UI. Possible values:
+                'auto', 'lightBlue', 'lightGreen', 'lightOrange', 'lightGray',
+                'lightYellow', 'lightTeal', 'lightPink', 'lightBrown',
+                'lightRed', 'maxColor'. (default: :obj:`None`)
+
+        Returns:
+            dict[str, Any]: A dictionary containing the status and details
+                of the updated calendar or an error message.
+        """
+        from msgraph.generated.models.calendar import Calendar
+
+        try:
+            # Build calendar update object with only provided fields
+            update_fields = {}
+            if name is not None:
+                update_fields['name'] = name
+            if color is not None:
+                update_fields['color'] = self._map_color_to_CalendarColor(
+                    color
+                )
+
+            calendar = Calendar(**update_fields)
+
+            # Send request to update calendar
+            await self.client.me.calendars.by_calendar_id(calendar_id).patch(
+                calendar
+            )
+
+            return {
+                "status": "success",
+                "message": "Calendar updated successfully.",
+                "updated_values": update_fields,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to update calendar: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -315,4 +367,5 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.delete_calendar)),
             FunctionTool(run_async(self.get_calendar)),
             FunctionTool(run_async(self.list_calendars)),
+            FunctionTool(run_async(self.update_calendar)),
         ]

@@ -329,3 +329,66 @@ class TestListCalendars:
         assert 'error' in result
         assert 'Failed to list calendars' in result['error']
         assert 'API connection failed' in result['error']
+
+
+@pytest.mark.asyncio
+class TestUpdateCalendar:
+    """Tests for update_calendar method."""
+
+    async def test_update_calendar_name_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar name update."""
+        async_patch_mock = AsyncMock(return_value=None)
+        mock_graph_client.me.calendars.by_calendar_id.return_value.patch = (
+            async_patch_mock
+        )
+
+        result = await outlook_calendar_toolkit.update_calendar(
+            calendar_id='calendar_id', name='Updated Calendar Name'
+        )
+
+        assert result['status'] == 'success'
+        assert result['updated_values']['name'] == 'Updated Calendar Name'
+
+        calendar_arg = async_patch_mock.call_args[0][0]
+        assert calendar_arg.name == 'Updated Calendar Name'
+
+    async def test_update_calendar_color_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar color update."""
+        from msgraph.generated.models.calendar_color import CalendarColor
+
+        async_patch_mock = AsyncMock(return_value=None)
+        mock_graph_client.me.calendars.by_calendar_id.return_value.patch = (
+            async_patch_mock
+        )
+
+        result = await outlook_calendar_toolkit.update_calendar(
+            calendar_id='calendar_id', color='lightBlue'
+        )
+
+        assert result['status'] == 'success'
+        assert result['updated_values']['color'] == CalendarColor.LightBlue
+
+        calendar_arg = async_patch_mock.call_args[0][0]
+        assert calendar_arg.color == CalendarColor.LightBlue
+
+    async def test_update_calendar_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test update calendar when API raises an exception."""
+        async_patch_mock = AsyncMock(
+            side_effect=Exception('Calendar not found')
+        )
+        mock_graph_client.me.calendars.by_calendar_id.return_value.patch = (
+            async_patch_mock
+        )
+
+        result = await outlook_calendar_toolkit.update_calendar(
+            calendar_id='invalid_id', name='New Name'
+        )
+
+        assert 'error' in result
+        assert 'Failed to update calendar' in result['error']
