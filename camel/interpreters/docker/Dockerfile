@@ -20,8 +20,7 @@ RUN apt-get update && apt-get install -y \
 RUN add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y \
-        python3.10 \
-        python3.10-venv \
+        python3.10-full \
         python3.10-dev \
         python3-pip \
     && ln -s /usr/bin/python3.10 /usr/bin/python \
@@ -44,7 +43,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 - --break-system-packages && \
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py --break-system-packages && \
+    rm get-pip.py && \
     python3.10 -m pip install --upgrade --break-system-packages pip setuptools wheel
 RUN python3.10 -m pip install --break-system-packages uv
 
