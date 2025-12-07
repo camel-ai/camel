@@ -199,9 +199,7 @@ class SearchToolkit(BaseToolkit):
 
         if source == "text":
             try:
-                results = ddgs.text(
-                    query, max_results=number_of_result_pages
-                )
+                results = ddgs.text(query, max_results=number_of_result_pages)
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
                     # Creating a response object with a similar structure

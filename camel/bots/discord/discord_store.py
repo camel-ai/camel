@@ -94,7 +94,7 @@ class DiscordSQLiteInstallationStore(DiscordBaseInstallationStore):
             await db.execute(
                 """
                 INSERT INTO discord_installations (
-                    guild_id, access_token, refresh_token, 
+                    guild_id, access_token, refresh_token,
                     installed_at, token_expires_at
                 ) VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(guild_id) DO UPDATE SET

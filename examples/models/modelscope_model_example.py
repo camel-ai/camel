@@ -98,7 +98,7 @@ Double-check if there's a standard way to greet such communities. Probably a str
 
 Alright, structure the response: Greeting, acknowledgment of their mission, appreciation for their work, invitation to collaborate or share more, closing with positive emoji. Keep it concise but comprehensive enough.
 </think>
-Hello CAMEL AI! 🌟 It’s exciting to see an open-source community dedicated to advancing autonomous and communicative agents—pushing the boundaries of AI collaboration, adaptability, and real-world problem-solving. Whether you’re exploring multi-agent systems, LLMs, or decentralized intelligence, your work is paving the way for transformative innovations. 💡 How can we contribute or dive deeper into your projects? Let’s build the future together! 🚀  
+Hello CAMEL AI! 🌟 It’s exciting to see an open-source community dedicated to advancing autonomous and communicative agents—pushing the boundaries of AI collaboration, adaptability, and real-world problem-solving. Whether you’re exploring multi-agent systems, LLMs, or decentralized intelligence, your work is paving the way for transformative innovations. 💡 How can we contribute or dive deeper into your projects? Let’s build the future together! 🚀
 
 *(P.S. If you’re looking for resources, partnerships, or feedback, feel free to share!)*
 ==============================================================================

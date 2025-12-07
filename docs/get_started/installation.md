@@ -104,7 +104,7 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
       ```bash
       pip install -r requirements.txt
       ```
-    
+
     - Set up your environment variables by loading the `.env` file:
       ```python
       from dotenv import load_dotenv
@@ -116,7 +116,7 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
       python examples/role_playing.py
       ```
 
-      
+
 <Tip>
 Want to see multi-agent collaboration at scale?
 Try running the <a href="https://github.com/camel-ai/camel/tree/master/examples/workforce" target="_blank">workforce example</a>:
@@ -235,10 +235,10 @@ python examples/ai_society/role_playing.py
 python examples/toolkits/code_execution_toolkit.py
 
 # Generating knowledge graphs with agents
-python examples/knowledge_graph/knowledge_graph_agent_example.py  
+python examples/knowledge_graph/knowledge_graph_agent_example.py
 
 # Multiple agents collaborating on complex tasks
-python examples/workforce/multiple_single_agents.py 
+python examples/workforce/multiple_single_agents.py
 
 # Creative image generation with agents
 python examples/vision/image_crafting.py

@@ -56,19 +56,19 @@ for t in new_tasks:
 # ruff: noqa: E501
 """
 ===============================================================================
-Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51 
+Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51
 minutes of babysitting. How much did she earn?
 
-Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate 
-increases by $2 for every additional hour worked beyond the first hour. 
-Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she 
+Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate
+increases by $2 for every additional hour worked beyond the first hour.
+Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she
 earn in total for her babysitting services?
 
 Task 0.0: Convert 51 minutes to hours.
 
 Task 0.1: Calculate the proportion of 51 minutes to an hour.
 
-Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much 
+Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much
 she earned for 51 minutes of babysitting.
 ===============================================================================
 """

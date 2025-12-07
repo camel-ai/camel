@@ -68,7 +68,7 @@ with the proper arguments that best answers the given prompt.
 
 Respond with nothing but the function call ONLY, such that I can \
 directly execute your function call without any post processing \
-necessary from my end. Do not use variables. 
+necessary from my end. Do not use variables.
 If there are more than two function calls, separate them with a semicolon (;).
 
 {tools}

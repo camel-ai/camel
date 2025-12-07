@@ -19,7 +19,7 @@ from camel.toolkits.data_commons_toolkit import DataCommonsToolkit
 def test_query_data_commons():
     dc_toolkit = DataCommonsToolkit()
     query = '''
-    SELECT ?name ?dcid 
+    SELECT ?name ?dcid
     WHERE {
         ?a typeOf Place .
         ?a name ?name .

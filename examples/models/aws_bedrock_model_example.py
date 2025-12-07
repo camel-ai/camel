@@ -25,21 +25,21 @@ model = ModelFactory.create(
 
 camel_agent = ChatAgent(model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hi CAMEL AI community! It's great to see a dedicated group of individuals 
-passionate about the study of autonomous and communicative agents. Your 
-open-source community is a fantastic platform for collaboration, knowledge 
-sharing, and innovation in this exciting field. I'm happy to interact with you 
-and provide assistance on any topics related to autonomous agents, natural 
-language processing, or artificial intelligence in general. Feel free to ask 
-me any questions, share your projects, or discuss the latest advancements in 
-the field. Let's explore the possibilities of autonomous and communicative 
+Hi CAMEL AI community! It's great to see a dedicated group of individuals
+passionate about the study of autonomous and communicative agents. Your
+open-source community is a fantastic platform for collaboration, knowledge
+sharing, and innovation in this exciting field. I'm happy to interact with you
+and provide assistance on any topics related to autonomous agents, natural
+language processing, or artificial intelligence in general. Feel free to ask
+me any questions, share your projects, or discuss the latest advancements in
+the field. Let's explore the possibilities of autonomous and communicative
 agents together!
 ===============================================================================
 '''

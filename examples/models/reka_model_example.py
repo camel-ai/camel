@@ -28,7 +28,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 # Get response information
@@ -36,12 +36,12 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
- Hello CAMEL AI community! 🐫 I'm thrilled to connect with a group so 
- dedicated to the study of autonomous and communicative agents. Your work is 
- at the forefront of advancing AI technologies that can interact and operate 
- independently in complex environments. I look forward to learning from your 
- insights and contributing to the community in any way I can. Together, let's 
- continue to push the boundaries of what's possible in AI research and 
+ Hello CAMEL AI community! 🐫 I'm thrilled to connect with a group so
+ dedicated to the study of autonomous and communicative agents. Your work is
+ at the forefront of advancing AI technologies that can interact and operate
+ independently in complex environments. I look forward to learning from your
+ insights and contributing to the community in any way I can. Together, let's
+ continue to push the boundaries of what's possible in AI research and
  development! 🚀
 ===============================================================================
 '''

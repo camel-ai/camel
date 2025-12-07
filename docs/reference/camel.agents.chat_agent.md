@@ -1030,7 +1030,7 @@ intermediate responses as they are generated.
 
 - **input_message** (Union[BaseMessage, str]): The input message for the agent.
 - **response_format** (Optional[Type[BaseModel]], optional): A Pydantic model defining the expected structure of the response.
-- **Yields**: 
+- **Yields**:
 - **ChatAgentResponse**: Intermediate responses containing partial content, tool calls, and other information as they become available.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_token_count"></a>

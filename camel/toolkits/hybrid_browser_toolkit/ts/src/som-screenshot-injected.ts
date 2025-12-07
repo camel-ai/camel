@@ -19,29 +19,29 @@ export class SomScreenshotInjected {
     exportPath?: string
   ): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
-    
+
     try {
       // Use the already filtered clickableElements directly
       const filterStartTime = Date.now();
       const filterTime = Date.now() - filterStartTime;
       console.log(`Using pre-filtered clickable elements: ${clickableElements.size} elements`);
-      
+
       // Prepare element geometry data for export
       const elementGeometry: any[] = [];
       // Inject and capture in one go
       // Collect visibility debug info
       const visibilityDebugInfo: any[] = [];
-      
+
       const result = await page.evaluate(async (data) => {
         const { elements, clickable, filterDebugInfo } = data;
         const markedElements: any[] = [];
-        
+
         // Debug info collector - include filter debug info
         const debugInfo: any[] = [...filterDebugInfo];
-        
+
         // Helper function to check element visibility based on coordinates
         function checkElementVisibilityByCoords(
-          coords: { x: number, y: number, width: number, height: number }, 
+          coords: { x: number, y: number, width: number, height: number },
           ref: string,
           elementInfo: any
         ): 'visible' | 'partial' | 'hidden' {
@@ -50,71 +50,71 @@ export class SomScreenshotInjected {
               coords.x + coords.width < 0 || coords.x > window.innerWidth) {
             return 'hidden';
           }
-          
+
           // Simple approach: just check the center point
           // If center is visible and shows our element (or its child), consider it visible
           const centerX = coords.x + coords.width * 0.5;
           const centerY = coords.y + coords.height * 0.5;
-          
+
           try {
             const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
             if (!elementsAtCenter || elementsAtCenter.length === 0) {
               return 'hidden';
             }
-            
+
             // Find our target element in the stack
             let targetFound = false;
             let targetIsTopmost = false;
-            
+
             for (let i = 0; i < elementsAtCenter.length; i++) {
               const elem = elementsAtCenter[i];
               const rect = elem.getBoundingClientRect();
-              
+
               // Check if this element matches our expected bounds (within tolerance)
-              if (Math.abs(rect.left - coords.x) < 5 && 
+              if (Math.abs(rect.left - coords.x) < 5 &&
                   Math.abs(rect.top - coords.y) < 5 &&
                   Math.abs(rect.width - coords.width) < 10 &&
                   Math.abs(rect.height - coords.height) < 10) {
                 targetFound = true;
                 targetIsTopmost = (i === 0);
-                
+
                 // If target is topmost, it's definitely visible
                 if (targetIsTopmost) {
                   return 'visible';
                 }
-                
+
                 // If not topmost, check if the topmost element is a child of our target
                 const topmostElem = elementsAtCenter[0];
                 if (elem.contains(topmostElem)) {
                   // Topmost is our child - element is visible
                   return 'visible';
                 }
-                
+
                 // Otherwise, we're obscured
                 return 'hidden';
               }
             }
-            
+
             // If we didn't find our target element at all
             if (!targetFound) {
               // Special handling for composite widgets
               const topElement = elementsAtCenter[0];
               const tagName = topElement.tagName.toUpperCase();
-              
+
               // Get element role/type for better decision making
               const elementRole = elementInfo?.role || '';
               const elementTagName = elementInfo?.tagName || '';
-              
+
               // Only apply special handling for form controls that are part of composite widgets
               if (['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON'].includes(tagName)) {
                 const isFormRelatedElement = ['combobox', 'select', 'textbox', 'searchbox', 'spinbutton'].includes(elementRole) ||
                                            ['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON', 'OPTION'].includes(elementTagName.toUpperCase());
-                
+
                 // Check if the form control approximately matches our area
                 const rect = topElement.getBoundingClientRect();
                 const overlap = Math.min(rect.right, coords.x + coords.width) - Math.max(rect.left, coords.x) > 0 &&
                                Math.min(rect.bottom, coords.y + coords.height) - Math.max(rect.top, coords.y) > 0;
-                
+
                 if (overlap && isFormRelatedElement) {
                   // Check for specific composite widget patterns
                   // For combobox with search input (like Amazon search)
@@ -122,11 +122,11 @@ export class SomScreenshotInjected {
                     // This is likely a search box with category selector - mark as visible
                     return 'visible';
                   }
-                  
+
                   // For button/generic elements covered by INPUT with exact same bounds
                   // This usually indicates the INPUT is the actual interactive element for the button
                   if ((elementRole === 'button' || elementRole === 'generic') && tagName === 'INPUT') {
-                    const rectMatch = Math.abs(rect.left - coords.x) < 2 && 
+                    const rectMatch = Math.abs(rect.left - coords.x) < 2 &&
                                       Math.abs(rect.top - coords.y) < 2 &&
                                       Math.abs(rect.width - coords.width) < 2 &&
                                       Math.abs(rect.height - coords.height) < 2;
@@ -135,7 +135,7 @@ export class SomScreenshotInjected {
                       return 'visible';
                     }
                   }
-                  
+
                   // For other form-related elements, only mark as visible if they share similar positioning
                   // (i.e., they're likely part of the same widget)
                   const sizeDiff = Math.abs(rect.width - coords.width) + Math.abs(rect.height - coords.height);
@@ -144,28 +144,28 @@ export class SomScreenshotInjected {
                   }
                 }
               }
-              
+
               return 'hidden';
             }
-            
+
             return 'partial';
-            
+
           } catch (e) {
             // Fallback: use simple elementFromPoint check
             const elem = document.elementFromPoint(centerX, centerY);
             if (!elem) return 'hidden';
-            
+
             const rect = elem.getBoundingClientRect();
             // Check if the element at center matches our bounds
-            if (Math.abs(rect.left - coords.x) < 5 && 
+            if (Math.abs(rect.left - coords.x) < 5 &&
                 Math.abs(rect.top - coords.y) < 5) {
               return 'visible';
             }
             return 'partial';
           }
         }
-        
-        
+
+
         // Create overlay
         const overlay = document.createElement('div');
         overlay.id = 'camel-som-overlay-temp';  // Set ID immediately for cleanup
@@ -178,23 +178,23 @@ export class SomScreenshotInjected {
           pointer-events: none;
           z-index: 2147483647;
         `;
-        
+
         // Check visibility for each element using coordinates
         const elementStates = new Map<string, 'visible' | 'partial' | 'hidden'>();
-        
+
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
             const visibility = checkElementVisibilityByCoords(element.coordinates, ref, element);
             elementStates.set(ref, visibility);
-            
+
             // Add debug info
             const centerX = element.coordinates.x + element.coordinates.width * 0.5;
             const centerY = element.coordinates.y + element.coordinates.height * 0.5;
-            
+
             try {
               const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
               const topmostElement = elementsAtCenter[0];
-              
+
               debugInfo.push({
                 ref,
                 coords: element.coordinates,
@@ -221,27 +221,27 @@ export class SomScreenshotInjected {
             }
           }
         });
-        
+
         // Track label positions to avoid overlap
         const labelPositions: Array<{x: number, y: number, width: number, height: number, ref: string}> = [];
-        
+
         // Helper to check if two rectangles overlap
         function rectsOverlap(r1: any, r2: any): boolean {
-          return !(r1.x + r1.width < r2.x || 
-                   r2.x + r2.width < r1.x || 
-                   r1.y + r1.height < r2.y || 
+          return !(r1.x + r1.width < r2.x ||
+                   r2.x + r2.width < r1.x ||
+                   r1.y + r1.height < r2.y ||
                    r2.y + r2.height < r1.y);
         }
-        
+
         // Helper to find non-overlapping position for label
         function findLabelPosition(element: any, labelWidth: number, labelHeight: number): {x: number, y: number} {
           const { x, y, width, height } = element.coordinates;
           const isSmallElement = height < 70;
           const margin = 2; // Space between label and element
-          
+
           // Try different positions in order of preference
           const positions = [];
-          
+
           if (isSmallElement) {
             // For small elements, try outside positions
             // 1. Above element
@@ -256,32 +256,32 @@ export class SomScreenshotInjected {
             // For large elements, inside top-left
             positions.push({ x: x + 4, y: y + 4 });
           }
-          
+
           // Check each position
           for (const pos of positions) {
             // Adjust for viewport boundaries
             const adjustedPos = { ...pos };
-            
+
             // Keep within viewport
             adjustedPos.x = Math.max(0, Math.min(adjustedPos.x, window.innerWidth - labelWidth));
             adjustedPos.y = Math.max(0, Math.min(adjustedPos.y, window.innerHeight - labelHeight));
-            
+
             // Check for overlaps with existing labels
             const testRect = { x: adjustedPos.x, y: adjustedPos.y, width: labelWidth, height: labelHeight };
             let hasOverlap = false;
-            
+
             for (const existing of labelPositions) {
               if (rectsOverlap(testRect, existing)) {
                 hasOverlap = true;
                 break;
               }
             }
-            
+
             if (!hasOverlap) {
               return adjustedPos;
             }
           }
-          
+
           // If all positions overlap, try to find space by offsetting
           // Try positions around the element in a spiral pattern
           const offsets = [
@@ -294,28 +294,28 @@ export class SomScreenshotInjected {
             { dx: -labelWidth - margin, dy: height + margin },       // Bottom-left
             { dx: width + margin, dy: height + margin },             // Bottom-right
           ];
-          
+
           for (const offset of offsets) {
             const pos = {
               x: Math.max(0, Math.min(x + offset.dx, window.innerWidth - labelWidth)),
               y: Math.max(0, Math.min(y + offset.dy, window.innerHeight - labelHeight))
             };
-            
+
             const testRect = { x: pos.x, y: pos.y, width: labelWidth, height: labelHeight };
             let hasOverlap = false;
-            
+
             for (const existing of labelPositions) {
               if (rectsOverlap(testRect, existing)) {
                 hasOverlap = true;
                 break;
               }
             }
-            
+
             if (!hasOverlap) {
               return pos;
             }
           }
-          
+
           // Fallback: use original logic but ensure within viewport
           if (isSmallElement) {
             const fallbackY = y >= 25 ? y - 25 : y + height + 2;
@@ -327,17 +327,17 @@ export class SomScreenshotInjected {
             return { x: x + 4, y: y + 4 };
           }
         }
-        
+
         // Add labels and collect geometry data (only for filtered elements)
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
             const state = elementStates.get(ref);
-            
+
             // Skip completely hidden elements
             if (state === 'hidden') return;
             const label = document.createElement('div');
             const { x, y, width, height } = element.coordinates;
-            
+
             label.style.cssText = `
               position: absolute;
               left: ${x}px;
@@ -348,11 +348,11 @@ export class SomScreenshotInjected {
               border-radius: 4px;
               box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             `;
-            
+
             // Add ref number with smart positioning
             const refLabel = document.createElement('div');
             refLabel.textContent = ref;
-            
+
             // Create temporary label to measure its size
             refLabel.style.cssText = `
               position: absolute;
@@ -370,10 +370,10 @@ export class SomScreenshotInjected {
             const labelWidth = refLabel.offsetWidth;
             const labelHeight = refLabel.offsetHeight;
             document.body.removeChild(refLabel);
-            
+
             // Find non-overlapping position
             const labelPos = findLabelPosition(element, labelWidth, labelHeight);
-            
+
             // Apply final position
             refLabel.style.cssText = `
               position: absolute;
@@ -391,7 +391,7 @@ export class SomScreenshotInjected {
               z-index: 1;
               white-space: nowrap;
             `;
-            
+
             // Track this label position
             labelPositions.push({
               x: labelPos.x,
@@ -400,10 +400,10 @@ export class SomScreenshotInjected {
               height: labelHeight,
               ref: ref
             });
-            
+
             label.appendChild(refLabel);
             overlay.appendChild(label);
-            
+
             // Collect geometry data
             markedElements.push({
               ref,
@@ -424,13 +424,13 @@ export class SomScreenshotInjected {
             });
           }
         });
-        
+
         document.body.appendChild(overlay);
-        
+
         // Force repaint
         await new Promise(resolve => requestAnimationFrame(resolve));
-        
-        return { 
+
+        return {
           overlayId: overlay.id,  // Use the ID that was set earlier
           elementCount: overlay.children.length,
           markedElements,
@@ -441,22 +441,22 @@ export class SomScreenshotInjected {
         clickable: Array.from(clickableElements),
         filterDebugInfo: []
       });
-      
+
       // Take screenshot
       const screenshotBuffer = await page.screenshot({
         fullPage: false,
         type: 'png'
       });
-      
+
       // Keep the overlay visible for 1 second before cleanup
       await page.waitForTimeout(1000);
-      
+
       // Clean up
       await page.evaluate((overlayId) => {
         const overlay = document.getElementById(overlayId);
         if (overlay) overlay.remove();
       }, result.overlayId);
-      
+
       // Export element geometry if path is provided
       if (exportPath && result.markedElements) {
         try {
@@ -479,16 +479,16 @@ export class SomScreenshotInjected {
               }
             }
           };
-          
+
           if (typeof writeFile !== 'undefined') {
             await writeFile(exportPath, JSON.stringify(exportData, null, 2));
             console.log(`Element geometry exported to: ${exportPath}`);
           }
-          
+
           // Also save visibility debug info
           if (result.debugInfo) {
             const debugPath = exportPath.replace('.json', '-visibility-debug.json');
-            
+
             const debugData = {
               timestamp,
               url: pageUrl,
@@ -504,7 +504,7 @@ export class SomScreenshotInjected {
                 return order[a.visibilityResult] - order[b.visibilityResult];
               })
             };
-            
+
             if (typeof writeFile !== 'undefined') {
               await writeFile(debugPath, JSON.stringify(debugData, null, 2));
               console.log(`Visibility debug info exported to: ${debugPath}`);
@@ -514,10 +514,10 @@ export class SomScreenshotInjected {
           console.error('Failed to export element geometry:', error);
         }
       }
-      
+
       const base64Image = screenshotBuffer.toString('base64');
       const dataUrl = `data:image/png;base64,${base64Image}`;
-      
+
       return {
         text: `Visual webpage screenshot captured with ${result.elementCount} interactive elements marked`,
         images: [dataUrl],
@@ -534,7 +534,7 @@ export class SomScreenshotInjected {
           filtered_count: 0 // Filtering is done before this method is called
         }
       };
-      
+
     } catch (error) {
       console.error('SOM screenshot injection error:', error);
       throw error;

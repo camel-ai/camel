@@ -39,7 +39,7 @@ assistant_sys_msg = "You are a helpful assistant."
 
 agent = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 assistant_response = agent.step(user_msg, response_format=ResponseFormat)

@@ -32,6 +32,7 @@ dependencies = [
     "openai>=1.86.0",
     "websockets>=13.0,<15.1",
     "astor>=0.8.1",
+    "pillow>=10.0.0",
 ]
 
 
@@ -74,6 +75,7 @@ rag = [
     "faiss-cpu>=1.7.2,<2",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -213,6 +215,7 @@ storage = [
     "pyobvector>=0.1.18; python_version < '3.13'",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "surrealdb>=1.0.6",
@@ -420,6 +423,7 @@ all = [
     "chunkr-ai>=0.0.50, <0.1.0",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "python-pptx>=1.0.2",
     "langfuse>=2.60.5",
     "Flask>=2.0",

@@ -44,4 +44,4 @@ python3 /home/api.py --host 0.0.0.0 --port 8000\n\
 ' > /home/start.sh && chmod +x /home/start.sh
 
 # Set default command to start API service with proper host binding
-CMD ["/home/start.sh"] 
+CMD ["/home/start.sh"]
