@@ -416,13 +416,13 @@ if __name__ == "__main__":
 
 2. Having each agent share their unique information...
    Alice sharing secret code...
-   Alice: Got it! The secret access code for the project is BLUE42. If you 
+   Alice: Got it! The secret access code for the project is BLUE42. If you
    need help docum...
    Bob sharing meeting room...
-   Bob: Thanks for the update! I actually already know that the team meeting 
+   Bob: Thanks for the update! I actually already know that the team meeting
    is in room ...
    Charlie sharing deadline...
-   Charlie: Thanks for the reminder! I also know the deadline is Friday, so 
+   Charlie: Thanks for the reminder! I also know the deadline is Friday, so
    I'll make sure t...
 
 3. Analyzing memory BEFORE shared memory synchronization...
@@ -432,27 +432,27 @@ if __name__ == "__main__":
      Token count: 110
      Context messages: 3
      Context preview:
-       1. [user] I need to document that the secret access code for the 
+       1. [user] I need to document that the secret access code for the
        project is BLUE42....
-       2. [assistant] Got it! The secret access code for the project is 
+       2. [assistant] Got it! The secret access code for the project is
        BLUE42. If you need help docum...
 
    Bob memory analysis:
      Token count: 114
      Context messages: 3
      Context preview:
-       1. [user] Important update: our team meeting will be in room 314 this 
+       1. [user] Important update: our team meeting will be in room 314 this
        week....
-       2. [assistant] Thanks for the update! I actually already know that the 
+       2. [assistant] Thanks for the update! I actually already know that the
        team meeting is in room ...
 
    Charlie memory analysis:
      Token count: 108
      Context messages: 3
      Context preview:
-       1. [user] Reminder: the project deadline is this Friday, please plan 
+       1. [user] Reminder: the project deadline is this Friday, please plan
        accordingly....
-       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       2. [assistant] Thanks for the reminder! I also know the deadline is
        Friday, so I'll make sure t...
 
    TOTAL TOKENS BEFORE SHARING: 332
@@ -467,27 +467,27 @@ if __name__ == "__main__":
      Token count: 409
      Context messages: 11
      Context preview:
-       1. [user] Reminder: the project deadline is this Friday, please plan 
+       1. [user] Reminder: the project deadline is this Friday, please plan
        accordingly....
-       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       2. [assistant] Thanks for the reminder! I also know the deadline is
        Friday, so I'll make sure t...
 
    Bob memory analysis:
      Token count: 409
      Context messages: 11
      Context preview:
-       1. [user] Reminder: the project deadline is this Friday, please plan 
+       1. [user] Reminder: the project deadline is this Friday, please plan
        accordingly....
-       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       2. [assistant] Thanks for the reminder! I also know the deadline is
        Friday, so I'll make sure t...
 
    Charlie memory analysis:
      Token count: 409
      Context messages: 11
      Context preview:
-       1. [user] Reminder: the project deadline is this Friday, please plan 
+       1. [user] Reminder: the project deadline is this Friday, please plan
        accordingly....
-       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       2. [assistant] Thanks for the reminder! I also know the deadline is
        Friday, so I'll make sure t...
 
    TOTAL TOKENS AFTER SHARING: 1227
@@ -524,8 +524,8 @@ if __name__ == "__main__":
      Knows meeting room 314: ✓
      Knows deadline Friday: ✓
      Cross-agent information access: 2/2
-     Response preview: i know the secret access code for the project is 
-     blue42.  
+     Response preview: i know the secret access code for the project is
+     blue42.
 i know the team meeting will be in room 3...
 
    Testing Charlie's knowledge:
@@ -542,7 +542,7 @@ i know the team meeting will be in room 3...
    Total cross-agent information access: 6/6
    Success rate: 100.0%
    ✅ SHARED MEMORY IS WORKING!
-      Agents can successfully access information from other agents' 
+      Agents can successfully access information from other agents'
       conversations.
 
 10. Comparison test: Workforce WITHOUT shared memory...
@@ -554,7 +554,7 @@ i know the team meeting will be in room 3...
      Knows meeting room 314: ✗
      Knows deadline Friday: ✗
      Cross-agent information access: 0/2
-     Response preview: i know that the secret access code for the project is 
+     Response preview: i know that the secret access code for the project is
      blue42. so far, i haven't been given any information...
 
    Testing Bob's knowledge:
@@ -562,7 +562,7 @@ i know the team meeting will be in room 3...
      Knows meeting room 314: ✓
      Knows deadline Friday: ✗
      Cross-agent information access: 0/2
-     Response preview: i know the meeting room is 314. additionally, you 
+     Response preview: i know the meeting room is 314. additionally, you
      mentioned that our team meeting this week will be ...
 
    Testing Charlie's knowledge:
@@ -570,7 +570,7 @@ i know the team meeting will be in room 3...
      Knows meeting room 314: ✗
      Knows deadline Friday: ✓
      Cross-agent information access: 0/2
-     Response preview: i know the unique fact that the project deadline is 
+     Response preview: i know the unique fact that the project deadline is
      this friday. additionally, from our conversation...
 
    Control group cross-agent access: 0/6

@@ -38,9 +38,9 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hi CAMEL AI! It's great to meet you. As an open-source community dedicated to 
-the study of autonomous and communicative agents, we're excited to collaborate 
-and explore the exciting world of AI. Let's work together to advance our 
+Hi CAMEL AI! It's great to meet you. As an open-source community dedicated to
+the study of autonomous and communicative agents, we're excited to collaborate
+and explore the exciting world of AI. Let's work together to advance our
 understanding and applications in this fascinating field.
 ===============================================================================
 '''

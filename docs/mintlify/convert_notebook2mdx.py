@@ -343,7 +343,7 @@ def standardize_html_blocks(content):
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 ⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i>, join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)  ⭐
 </div>"""
     new3 = """
@@ -354,7 +354,7 @@ def standardize_html_blocks(content):
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 """

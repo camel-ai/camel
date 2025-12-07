@@ -289,7 +289,7 @@ That’s it. With just a couple of lines, you can turn any website into clean ma
 ---
 
 <Card title="Using Chunkr Reader" icon="cuttlefish">
-Chunkr Reader allows you to process PDFs (and other docs) in chunks, with built-in OCR and format control.  
+Chunkr Reader allows you to process PDFs (and other docs) in chunks, with built-in OCR and format control.
 Below is a basic usage pattern:
 
 Initialize the `ChunkrReader` and `ChunkrReaderConfig`, set the file path and chunking options, then submit your task and fetch results:

@@ -39,11 +39,11 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hello CAMEL AI community! 👋 Your dedication to advancing the study of 
-autonomous and communicative agents through open-source collaboration is truly 
-inspiring. The work you're doing to push the boundaries of AI interaction and 
-cooperative systems will undoubtedly shape the future of intelligent 
-technologies. Keep innovating, exploring, and fostering that spirit of shared 
+Hello CAMEL AI community! 👋 Your dedication to advancing the study of
+autonomous and communicative agents through open-source collaboration is truly
+inspiring. The work you're doing to push the boundaries of AI interaction and
+cooperative systems will undoubtedly shape the future of intelligent
+technologies. Keep innovating, exploring, and fostering that spirit of shared
 learning—the world is excited to see what you create next! 🚀
 ===============================================================================
 '''

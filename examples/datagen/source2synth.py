@@ -55,32 +55,32 @@ def main():
     test_texts = [
         # Chain of technological developments
         """
-        The invention of transistors revolutionized electronics in the 1950s. 
-        These tiny semiconductor devices enabled the development of smaller and more 
-        efficient computers. The miniaturization of computers led to the creation of 
-        personal computers in the 1980s, which transformed how people work and communicate. 
-        This digital revolution eventually gave rise to the internet, connecting billions 
-        of people worldwide. Today, this interconnected network powers artificial 
+        The invention of transistors revolutionized electronics in the 1950s.
+        These tiny semiconductor devices enabled the development of smaller and more
+        efficient computers. The miniaturization of computers led to the creation of
+        personal computers in the 1980s, which transformed how people work and communicate.
+        This digital revolution eventually gave rise to the internet, connecting billions
+        of people worldwide. Today, this interconnected network powers artificial
         intelligence systems that are reshaping various industries.
         """,  # noqa: E501
         # Environmental changes causation chain
         """
-        Industrial activities have significantly increased carbon dioxide emissions since 
-        the Industrial Revolution. These elevated CO2 levels have enhanced the greenhouse 
-        effect, trapping more heat in Earth's atmosphere. The rising global temperatures 
-        have accelerated the melting of polar ice caps, which has led to rising sea levels. 
-        Coastal communities are now facing increased flooding risks, forcing many to 
-        consider relocation. This migration pattern is creating new challenges for urban 
+        Industrial activities have significantly increased carbon dioxide emissions since
+        the Industrial Revolution. These elevated CO2 levels have enhanced the greenhouse
+        effect, trapping more heat in Earth's atmosphere. The rising global temperatures
+        have accelerated the melting of polar ice caps, which has led to rising sea levels.
+        Coastal communities are now facing increased flooding risks, forcing many to
+        consider relocation. This migration pattern is creating new challenges for urban
         planning and resource management.
         """,  # noqa: E501
         # Biological evolution chain
         """
-        The discovery of antibiotics began with Alexander Fleming's observation of 
-        penicillin in 1928. The widespread use of these medications has saved countless 
-        lives from bacterial infections. However, the extensive use of antibiotics has 
-        led to the evolution of resistant bacteria strains. These superbugs now pose 
-        a significant challenge to modern medicine, requiring the development of new 
-        treatment approaches. Scientists are exploring alternative solutions like 
+        The discovery of antibiotics began with Alexander Fleming's observation of
+        penicillin in 1928. The widespread use of these medications has saved countless
+        lives from bacterial infections. However, the extensive use of antibiotics has
+        led to the evolution of resistant bacteria strains. These superbugs now pose
+        a significant challenge to modern medicine, requiring the development of new
+        treatment approaches. Scientists are exploring alternative solutions like
         bacteriophage therapy to combat antibiotic resistance.
         """,  # noqa: E501
     ]
@@ -191,75 +191,75 @@ Q&A Pairs:
 
 Q&A Pair 1:
 Type: multi_hop_qa
-Question: How did the invention of transistors impact the development of 
+Question: How did the invention of transistors impact the development of
 personal computers?
 Reasoning Steps:
 1. {'step': 'Identify the role of transistors in electronics.'}
-2. {'step': 'Understand how transistors enabled the miniaturization of 
+2. {'step': 'Understand how transistors enabled the miniaturization of
 computers.'}
-3. {'step': 'Connect the miniaturization of computers to the creation of 
+3. {'step': 'Connect the miniaturization of computers to the creation of
 personal computers in the 1980s.'}
-4. {'step': 'Determine the overall impact of personal computers on work and 
+4. {'step': 'Determine the overall impact of personal computers on work and
 communication.'}
-Answer: The invention of transistors allowed for smaller and more efficient 
-computers, which led to the development of personal computers in the 1980s, 
+Answer: The invention of transistors allowed for smaller and more efficient
+computers, which led to the development of personal computers in the 1980s,
 transforming work and communication.
 Supporting Facts:
 1. Transistors are semiconductor devices that revolutionized electronics.
 2. The miniaturization of computers was made possible by transistors.
-3. Personal computers emerged in the 1980s as a result of smaller computer 
+3. Personal computers emerged in the 1980s as a result of smaller computer
 designs.
 4. Personal computers changed how people work and communicate.
 
 Q&A Pair 2:
 Type: multi_hop_qa
-Question: What was the sequence of developments that led from transistors to 
+Question: What was the sequence of developments that led from transistors to
 the internet?
 Reasoning Steps:
-1. {'step': 'Identify how transistors contributed to the development of 
+1. {'step': 'Identify how transistors contributed to the development of
 smaller and more efficient computers.'}
-2. {'step': 'Explain how the miniaturization of computers resulted in the 
+2. {'step': 'Explain how the miniaturization of computers resulted in the
 creation of personal computers in the 1980s.'}
 3. {'step': 'Discuss how personal computers transformed work and communication.
 '}
-4. {'step': 'Connect the transformation in communication to the rise of the 
+4. {'step': 'Connect the transformation in communication to the rise of the
 internet.'}
-Answer: Transistors enabled smaller computers, which led to personal computers 
-in the 1980s, transforming communication and eventually giving rise to the 
+Answer: Transistors enabled smaller computers, which led to personal computers
+in the 1980s, transforming communication and eventually giving rise to the
 internet.
 Supporting Facts:
-1. Transistors are tiny semiconductor devices that made computers smaller and 
+1. Transistors are tiny semiconductor devices that made computers smaller and
 more efficient.
-2. The miniaturization of computers allowed for the creation of personal 
+2. The miniaturization of computers allowed for the creation of personal
 computers in the 1980s.
 3. Personal computers transformed how people work and communicate.
-4. The digital revolution and personal computers contributed to the rise of 
+4. The digital revolution and personal computers contributed to the rise of
 the internet, connecting billions worldwide.
 
 Q&A Pair 3:
 Type: multi_hop_qa
-Question: How did the miniaturization of computers contribute to the 
+Question: How did the miniaturization of computers contribute to the
 development of artificial intelligence systems today?
 Reasoning Steps:
-1. {'step': 'Identify the impact of miniaturization on the creation of 
+1. {'step': 'Identify the impact of miniaturization on the creation of
 personal computers in the 1980s.'}
 2. {'step': 'Explain how personal computers transformed communication and work.
 '}
-3. {'step': 'Connect the digital revolution and the rise of the internet to 
+3. {'step': 'Connect the digital revolution and the rise of the internet to
 the development of artificial intelligence.'}
-4. {'step': 'Discuss how the interconnected network of the internet supports 
+4. {'step': 'Discuss how the interconnected network of the internet supports
 AI systems in various industries.'}
-Answer: The miniaturization of computers led to personal computers, which 
-transformed communication and work, and this digital revolution, along with 
-the internet, supports the development of artificial intelligence systems 
+Answer: The miniaturization of computers led to personal computers, which
+transformed communication and work, and this digital revolution, along with
+the internet, supports the development of artificial intelligence systems
 today.
 Supporting Facts:
-1. Miniaturization of computers enabled the creation of personal computers in 
+1. Miniaturization of computers enabled the creation of personal computers in
 the 1980s.
 2. Personal computers transformed how people work and communicate.
-3. The digital revolution led to the rise of the internet, connecting billions 
+3. The digital revolution led to the rise of the internet, connecting billions
 of people.
-4. The internet powers artificial intelligence systems that are reshaping 
+4. The internet powers artificial intelligence systems that are reshaping
 various industries.
 
 === Batch Processing Statistics ===

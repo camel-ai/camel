@@ -87,7 +87,7 @@ The output sequence of a transformer model becomes longer through a combination 
 1. **Input**: "Translate to French: Hello"
 2. **Step 1**: Model generates "Bonjour" (position 1).
 3. **Step 2**: Model generates "!" (position 2) based on "Bonjour".
-4. **Step 3**: EOS token is generated, stopping the process.  
+4. **Step 3**: EOS token is generated, stopping the process.
    Final Output: "Bonjour!" (longer than input "Hello").
 
 ### Key Challenges:

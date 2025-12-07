@@ -275,55 +275,55 @@ if __name__ == "__main__":
 ===============================================================================
 --- Workforce Log Tree ---
 === Task Hierarchy ===
-`-- [0] Evaluate the hackathon project. First, do some research on the 
-information related to the project, then each judge should give a score 
-accordingly. Finally, list the opinions from each judge while preserving the 
-judge's unique identity, along with the score and judge name, and also give a 
-final summary of the opinions. [completed] (completed in 41.96 seconds total) 
+`-- [0] Evaluate the hackathon project. First, do some research on the
+information related to the project, then each judge should give a score
+accordingly. Finally, list the opinions from each judge while preserving the
+judge's unique identity, along with the score and judge name, and also give a
+final summary of the opinions. [completed] (completed in 41.96 seconds total)
 [total tokens: 20508]
-    |-- [0.0] Researcher Rachel: Conduct online research on the latest 
-    innovations and trends related to adaptive learning assistants, 
-    personalized education, and the use of CAMEL-AI technology. [completed] 
+    |-- [0.0] Researcher Rachel: Conduct online research on the latest
+    innovations and trends related to adaptive learning assistants,
+    personalized education, and the use of CAMEL-AI technology. [completed]
     (completed in 8.79 seconds) [tokens: 1185]
-    |-- [0.1] Visionary Veronica: Evaluate the project potential as a scalable 
-    product and assess how it could grow into a successful company. 
+    |-- [0.1] Visionary Veronica: Evaluate the project potential as a scalable
+    product and assess how it could grow into a successful company.
     [completed] (completed in 5.71 seconds) [tokens: 1074]
-    |-- [0.2] Critical John: Critically analyze the technical aspects of the 
-    project, focusing on implemented functionalities and engineering quality. 
+    |-- [0.2] Critical John: Critically analyze the technical aspects of the
+    project, focusing on implemented functionalities and engineering quality.
     [completed] (completed in 5.71 seconds) [tokens: 1111]
-    |-- [0.3] Innovator Iris: Assess the project’s innovation level, potential 
-    impact in the AI field, and uniqueness in the market. [completed] 
+    |-- [0.3] Innovator Iris: Assess the project’s innovation level, potential
+    impact in the AI field, and uniqueness in the market. [completed]
     (completed in 5.71 seconds) [tokens: 1077]
-    |-- [0.4] Friendly Frankie: Review the project from the perspective of how 
-    well it utilizes CAMEL-AI and provide insights on its implementation and 
+    |-- [0.4] Friendly Frankie: Review the project from the perspective of how
+    well it utilizes CAMEL-AI and provide insights on its implementation and
     future improvements. [completed] (completed in 5.71 seconds) [tokens: 1120]
-    |-- [0.5] After all judges provide their scores and opinions, compile a 
-    list of opinions preserving each judge’s unique identity alongside their 
-    score and name. [completed] (completed in 6.43 seconds) [tokens: 5081] 
+    |-- [0.5] After all judges provide their scores and opinions, compile a
+    list of opinions preserving each judge’s unique identity alongside their
+    score and name. [completed] (completed in 6.43 seconds) [tokens: 5081]
     (dependencies: 0.0, 0.1, 0.2, 0.3, 0.4)
-    `-- [0.6] Write a final summary synthesizing the judges’ opinions and 
-    scores, highlighting key strengths, weaknesses, and overall evaluation of 
-    the project. [completed] (completed in 3.90 seconds) [tokens: 9860] 
+    `-- [0.6] Write a final summary synthesizing the judges’ opinions and
+    scores, highlighting key strengths, weaknesses, and overall evaluation of
+    the project. [completed] (completed in 3.90 seconds) [tokens: 9860]
     (dependencies: 0.5)
 
 === Worker Information ===
-- Worker ID: dd947275-ccd5-49b2-9563-fb4f5f80ca60 (Role: Visionary Veronica 
-(Judge), a venture capitalist who is obsessed with how projects can be scaled 
+- Worker ID: dd947275-ccd5-49b2-9563-fb4f5f80ca60 (Role: Visionary Veronica
+(Judge), a venture capitalist who is obsessed with how projects can be scaled
 into "unicorn" companies)
     Tasks Completed: 3, Tasks Failed: 0
-- Worker ID: 9fd6b827-4891-4af8-8daa-656be0f4d1b3 (Role: Critical John 
+- Worker ID: 9fd6b827-4891-4af8-8daa-656be0f4d1b3 (Role: Critical John
 (Judge), an experienced engineer and a perfectionist.)
     Tasks Completed: 1, Tasks Failed: 0
-- Worker ID: 661df9e3-6ebd-4977-be74-7ea929531dd8 (Role: Innovator Iris 
-(Judge), a well-known AI startup founder who is always looking for the "next 
+- Worker ID: 661df9e3-6ebd-4977-be74-7ea929531dd8 (Role: Innovator Iris
+(Judge), a well-known AI startup founder who is always looking for the "next
 big thing" in AI.)
     Tasks Completed: 1, Tasks Failed: 0
-- Worker ID: e8c7f418-ce80-4ff7-b790-7b9af4cc7b15 (Role: Friendly Frankie 
-(Judge), a contributor to the CAMEL-AI project and is always excited to see 
+- Worker ID: e8c7f418-ce80-4ff7-b790-7b9af4cc7b15 (Role: Friendly Frankie
+(Judge), a contributor to the CAMEL-AI project and is always excited to see
 how people are using it.)
     Tasks Completed: 1, Tasks Failed: 0
-- Worker ID: ebab24ed-0617-4aba-827d-da936ae26010 (Role: Researcher Rachel 
-(Helper), a researcher who does online searches tofind the latest innovations 
+- Worker ID: ebab24ed-0617-4aba-827d-da936ae26010 (Role: Researcher Rachel
+(Helper), a researcher who does online searches tofind the latest innovations
 and trends on AI and Open Sourced projects.)
     Tasks Completed: 1, Tasks Failed: 0
 
@@ -332,10 +332,10 @@ and trends on AI and Open Sourced projects.)
 total_tasks_created: 8
 total_tasks_completed: 8
 total_tasks_failed: 0
-worker_utilization: {'dd947275-ccd5-49b2-9563-fb4f5f80ca60': '37.50%', 
-'9fd6b827-4891-4af8-8daa-656be0f4d1b3': '12.50%', 
-'661df9e3-6ebd-4977-be74-7ea929531dd8': '12.50%', 
-'e8c7f418-ce80-4ff7-b790-7b9af4cc7b15': '12.50%', 
+worker_utilization: {'dd947275-ccd5-49b2-9563-fb4f5f80ca60': '37.50%',
+'9fd6b827-4891-4af8-8daa-656be0f4d1b3': '12.50%',
+'661df9e3-6ebd-4977-be74-7ea929531dd8': '12.50%',
+'e8c7f418-ce80-4ff7-b790-7b9af4cc7b15': '12.50%',
 'ebab24ed-0617-4aba-827d-da936ae26010': '12.50%', 'unknown': '12.50%'}
 current_pending_tasks: 0
 total_workforce_running_time_seconds: 29.639746

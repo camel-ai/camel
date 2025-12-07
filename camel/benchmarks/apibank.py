@@ -542,9 +542,9 @@ replace the ApiName with the actual API name, and \
 replace the key and value with the actual parameters. \
 Your output should start with a square bracket "[" \
 and end with a square bracket "]". Do not output any \
-other explanation or prompt or the result of the API call in your output. 
+other explanation or prompt or the result of the API call in your output.
 This year is 2023.
-Input: 
+Input:
 User: [User's utterence]
 AI: [AI's utterence]
 
@@ -559,7 +559,7 @@ Based on the given API description and the existing \
 conversation history 1..t, please generate the next \
 dialog that the AI should response after the API call t.
 This year is 2023.
-Input: 
+Input:
 User: [User's utterence]
 AI: [AI's utterence]
 [ApiName(key1='value1', key2='value2', …)]
