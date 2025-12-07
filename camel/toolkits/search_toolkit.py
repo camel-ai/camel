@@ -54,6 +54,57 @@ class SearchToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         self.exclude_domains = exclude_domains
+    
+    @api_keys_required(
+        [
+            (None, "SERPER_API_KEY"),
+        ]
+    )
+    def search_serper(
+        self,
+        query: str,
+        page: int = 1,
+        location: str = "United States",
+    ) -> Dict[str, Any]:
+        r"""Use Serper.dev API to perform Google search.
+
+        Args:
+            query (str): The search query.
+            page (int): The page number of results to retrieve. (default: 1)
+            location (str): The location for the search results.
+                (default: "United States")
+
+        Returns:
+            Dict[str, Any]: The search result dictionary containing 'organic',
+                'peopleAlsoAsk', etc.
+        """
+        import json
+
+        import requests
+
+        SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+
+        url = "https://google.serper.dev/search"
+
+        payload = json.dumps(
+            {
+                "q": query,
+                "location": location,
+                "page": page,
+            }
+        )
+
+        headers = {
+            "X-API-KEY": SERPER_API_KEY,
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.post(url, headers=headers, data=payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Error making request to Serper: {e}")
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
@@ -1353,6 +1404,7 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
+            FunctionTool(self.search_serper), 
             FunctionTool(self.search_wiki),
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),

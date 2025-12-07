@@ -32,6 +32,31 @@ Initializes the SearchToolkit.
 - **timeout** (float): Timeout for API requests in seconds. (default: :obj:`None`)
 - **exclude_domains** (Optional[List[str]]): List of domains to exclude from search results. Currently only supported by the `search_google` function. (default: :obj:`None`)
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_serper"></a>
+
+### search_serper
+
+```python
+def search_serper(
+    self,
+    query: str,
+    page: int = 1,
+    location: str = 'United States'
+):
+```
+
+Use Serper.dev API to perform Google search.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **page** (int): The page number of results to retrieve. (default: :obj:`1`)
+- **location** (str): The location for the search results. (default: :obj:`"United States"`)
+
+**Returns:**
+
+  Dict[str, Any]: The search result dictionary containing 'organic', 'peopleAlsoAsk', etc.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_wiki"></a>
 
 ### search_wiki
