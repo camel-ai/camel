@@ -49,7 +49,7 @@
 <br>
 
 
-Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents. 
+Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents.
 
 🌟 Star CAMEL on GitHub and be instantly notified of new releases.
 
@@ -382,7 +382,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 >### Research with US
 >
->We warmly invite you to use CAMEL for your impactful research. 
+>We warmly invite you to use CAMEL for your impactful research.
 >
 > Rigorous research takes time and resources. We are a community-driven research collective with 100+ researchers exploring the frontier research of Multi-agent Systems. Join our ongoing projects or test new ideas with us, [reach out via email](mailto:camel-ai@eigent.ai) for more information.
 >
@@ -538,7 +538,7 @@ We are actively involved in community events including:
 - 🎙️ **Community Meetings** — Weekly virtual syncs with the CAMEL team
 - 🏆 **Competitions** — Hackathons, Bounty Tasks and coding challenges hosted by CAMEL
 - 🤝 **Volunteer Activities** — Contributions, documentation drives, and mentorship
-- 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups 
+- 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups
 
 > Want to host or participate in a CAMEL event? Join our [Discord](https://discord.com/invite/CNcNpquyDc) or want to be part of [Ambassador Program](https://www.camel-ai.org/ambassador).
 

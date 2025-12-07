@@ -98,7 +98,7 @@ def test_load_markdown_context_to_memory_preserves_existing_conversation(
 ## Task Completed
 Data analysis of customer sales using pandas and matplotlib.
 
-## Key Findings  
+## Key Findings
 - Sales increased 15% in Q4
 - Electronics is top category
 - Customer retention: 85%
@@ -191,7 +191,7 @@ def test_load_markdown_context_to_memory_with_workflow_content(
 
 ### Agents Involved
 - Agent A: Data collection using web_toolkit
-- Agent B: Analysis using pandas_toolkit  
+- Agent B: Analysis using pandas_toolkit
 - Agent C: Reporting using email_toolkit
 
 ### Results

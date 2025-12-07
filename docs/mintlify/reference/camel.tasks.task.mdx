@@ -298,7 +298,8 @@ def decompose(
     self,
     agent: 'ChatAgent',
     prompt: Optional[str] = None,
-    task_parser: Callable[[str, str], List['Task']] = parse_response
+    task_parser: Callable[[str, str], List['Task']] = parse_response,
+    stream_callback: Optional[Callable[['ChatAgentResponse'], None]] = None
 ):
 ```
 
@@ -310,6 +311,7 @@ streaming or non-streaming based on agent configuration.
 - **agent** (ChatAgent): An agent that used to decompose the task.
 - **prompt** (str, optional): A prompt to decompose the task. If not provided, the default prompt will be used.
 - **task_parser** (Callable[[str, str], List[Task]], optional): A function to extract Task from response. If not provided, the default parse_response will be used.
+- **stream_callback** (Callable[[ChatAgentResponse], None], optional): A callback function that receives each chunk (ChatAgentResponse) during streaming. This allows tracking the decomposition progress in real-time.
 
 **Returns:**
 
@@ -325,8 +327,9 @@ all tasks.
 ```python
 def _decompose_streaming(
     self,
-    response: 'StreamingChatAgentResponse',
-    task_parser: Callable[[str, str], List['Task']]
+    response: Iterable,
+    task_parser: Callable[[str, str], List['Task']],
+    stream_callback: Optional[Callable[['ChatAgentResponse'], None]] = None
 ):
 ```
 
@@ -336,6 +339,7 @@ Handle streaming response for task decomposition.
 
 - **response**: Streaming response from agent
 - **task_parser**: Function to parse tasks from response
+- **stream_callback** (Callable[[ChatAgentResponse], None], optional): A callback function that receives each chunk (ChatAgentResponse) during streaming.
 - **Yields**: List[Task]: New tasks as they are parsed from streaming response
 
 <a id="camel.tasks.task.Task._decompose_non_streaming"></a>

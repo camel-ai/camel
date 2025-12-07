@@ -46,8 +46,8 @@ print(response.msgs[0].content)
 ===============================================================================
 Join the delightful adventure of a lovable, chubby bunny as he emerges from
  his cozy burrow to greet the day! Watch as he stretches and yawns, ready to
-explore the vibrant, lush world around him. This heartwarming and beautifully 
-animated scene is sure to bring a smile to your face and brighten your day. 
+explore the vibrant, lush world around him. This heartwarming and beautifully
+animated scene is sure to bring a smile to your face and brighten your day.
 Don't miss out on this charming moment of pure joy and wonder! 🌿🐰✨
 ===============================================================================
 """

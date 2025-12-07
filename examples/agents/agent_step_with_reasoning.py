@@ -16,7 +16,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 sys_msg = "You are a helpful assistant."
-usr_msg = """Who is the best basketball player in the world? 
+usr_msg = """Who is the best basketball player in the world?
 Tell about his career.
 """
 
@@ -97,7 +97,7 @@ print(response_with_think_2.msgs[0].content)
 # flake8: noqa: E501
 """
 ===============================================================================
-Question: Who do you think is the best basketball player in the world? Here are the candidates and their probabilities: 
+Question: Who do you think is the best basketball player in the world? Here are the candidates and their probabilities:
 1. LeBron James (0.4): Known for his versatility, leadership, and consistent performance over the years. Multiple NBA championships and MVP awards.
 2. Giannis Antetokounmpo (0.3): Known as the "Greek Freak," celebrated for his athleticism, defensive skills, and recent NBA championship win. Multiple MVP awards.
 3. Stephen Curry (0.3): Renowned for his exceptional shooting ability, revolutionized the game with his three-point shooting. Multiple NBA championships and MVP awards.

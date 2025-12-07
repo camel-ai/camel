@@ -25,15 +25,15 @@ show_help() {
 build_image() {
     echo "Starting Docker image build..."
     echo "Using CAMEL source path: $CAMEL_ROOT"
-    
+
     # Build in temporary directory
     TEMP_DIR=$(mktemp -d)
     echo "Creating temporary build directory: $TEMP_DIR"
-    
+
     # Copy necessary files to temporary directory
     cp "$SCRIPT_DIR/Dockerfile" "$TEMP_DIR/"
     cp -r "$CAMEL_ROOT" "$TEMP_DIR/camel_source"
-    
+
     # Ensure API file exists
     if [ ! -f "$CAMEL_ROOT/camel/runtimes/api.py" ]; then
         echo "Error: API file not found at $CAMEL_ROOT/camel/runtimes/api.py"
@@ -47,15 +47,15 @@ build_image() {
     # Modify Dockerfile COPY commands - fix the sed command
     sed -i '' 's|COPY ../../../|COPY camel_source/|g' "$TEMP_DIR/Dockerfile"
     sed -i '' 's|COPY camel/runtimes/api.py|COPY api/api.py|g' "$TEMP_DIR/Dockerfile"
-    
+
     # Build in temporary directory
     (cd "$TEMP_DIR" && docker build -t ${FULL_NAME} .)
-    
+
     BUILD_RESULT=$?
-    
+
     # Clean temporary directory
     rm -rf "$TEMP_DIR"
-    
+
     if [ $BUILD_RESULT -eq 0 ]; then
         echo "Docker image build successful!"
         echo "Image name: ${FULL_NAME}"
@@ -73,10 +73,10 @@ check_container() {
     container_id=$1
     echo "Checking container logs..."
     docker logs $container_id
-    
+
     echo "Checking container status..."
     docker inspect $container_id --format='{{.State.Status}}'
-    
+
     echo "Checking if API is responding..."
     curl -v http://localhost:8000/docs
 }
@@ -84,7 +84,7 @@ check_container() {
 # Clean containers and images
 clean() {
     echo "Starting cleanup..."
-    
+
     # Stop and remove related containers
     echo "Finding and stopping related containers..."
     containers=$(docker ps -a --filter "ancestor=${FULL_NAME}" --format "{{.ID}}")
@@ -110,7 +110,7 @@ clean() {
     # Clean unused images and build cache
     echo "Cleaning unused images and build cache..."
     docker system prune -f
-    
+
     echo "Cleanup complete"
 }
 
@@ -148,4 +148,4 @@ case "$1" in
         show_help
         exit 1
         ;;
-esac 
+esac

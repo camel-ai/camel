@@ -33,7 +33,7 @@ def test_python_example():
             'product': a * b,
             'difference': a - b
         }
-    
+
     result = calculate(10, 5)
     for key, value in result.items():
         print(f"{key}: {value}")
@@ -60,8 +60,8 @@ def test_javascript_example():
         {name: 'Bob', age: 25},
         {name: 'Charlie', age: 35}
     ];
-    
-    const avgAge = users.reduce((sum, user) => sum + user.age, 0) / 
+
+    const avgAge = users.reduce((sum, user) => sum + user.age, 0) /
                    users.length;
     console.log(`Average age: ${avgAge}`);
     console.log(`Users: ${users.map(u => u.name).join(', ')}`);

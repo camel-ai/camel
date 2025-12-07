@@ -28,7 +28,7 @@ class VideoDescriptionPromptTemplateDict(TextPromptDict):
     """
 
     ASSISTANT_PROMPT = TextPrompt(
-        """You are a master of video analysis. 
+        """You are a master of video analysis.
         Please provide a shot description of the content of the current video."""
     )
 

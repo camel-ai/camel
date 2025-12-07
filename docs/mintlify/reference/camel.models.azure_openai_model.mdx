@@ -25,7 +25,7 @@ Azure OpenAI API in a unified BaseModelBackend interface.
 - **client** (Optional[Any], optional): A custom synchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide Azure OpenAI-compatible clients. The client should implement the AzureOpenAI client interface with `.chat.completions.create()` and `.beta.chat.completions.parse()` methods. (default: :obj:`None`)
 - **async_client** (Optional[Any], optional): A custom asynchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncAzureOpenAI client interface. (default: :obj:`None`)
 - **azure_deployment_name** (Optional[str], optional): **Deprecated**. Use `model_type` parameter instead. This parameter is kept for backward compatibility and will be removed in a future version. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
-- **References**: 
+- **References**:
 - **https**: //learn.microsoft.com/en-us/azure/ai-services/openai/
 
 <a id="camel.models.azure_openai_model.AzureOpenAIModel.__init__"></a>

@@ -74,22 +74,22 @@ function getDocumentDimensions() {
 function waitForElement(selector, timeout = 5000) {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     function checkElement() {
       const element = document.querySelector(selector);
       if (element && element.offsetParent !== null) {
         resolve(element);
         return;
       }
-      
+
       if (Date.now() - startTime > timeout) {
         reject(new Error(`Element ${selector} not found within timeout`));
         return;
       }
-      
+
       setTimeout(checkElement, 100);
     }
-    
+
     checkElement();
   });
 }
@@ -100,7 +100,7 @@ function waitForElement(selector, timeout = 5000) {
 function getElementCoordinates(element) {
   const rect = element.getBoundingClientRect();
   const scroll = getCurrentScrollPosition();
-  
+
   return {
     x: rect.left + scroll.x,
     y: rect.top + scroll.y,

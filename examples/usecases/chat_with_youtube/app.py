@@ -43,7 +43,7 @@ if st.button("Process Video"):
             # Extract audio
             audio_path = os.path.splitext(video_path)[0] + ".wav"
             ffmpeg.input(video_path).output(audio_path, ac=1, ar=16000).run(overwrite_output=True)
-            
+
             # Transcribe
             transcript = audio_toolkit.audio2text(audio_path)
 
