@@ -4024,43 +4024,55 @@ class ChatAgent(BaseAgent):
                 import base64
                 import io
 
-                from PIL import Image
-
-                logger.info(
-                    f"Tool '{func_name}' returned ToolResult with "
-                    f"{len(result.images)} image(s), injecting into context"
-                )
-
-                # Convert base64 images to PIL Image objects
-                pil_images: List[Union[Image.Image, str]] = []
-                for img_data in result.images:
-                    if img_data.startswith('data:image/'):
-                        # Extract base64 data
-                        base64_str = img_data.split(',', 1)[1]
-                        img_bytes = base64.b64decode(base64_str)
-                        pil_img = Image.open(io.BytesIO(img_bytes))
-                        pil_images.append(pil_img)
-
-                if pil_images:
-                    # Create a user message with the image(s)
-                    visual_msg = BaseMessage.make_user_message(
-                        role_name="System",
-                        content=f"[Visual output from {func_name}]",
-                        image_list=pil_images,
+                try:
+                    from PIL import Image
+                except ImportError:
+                    logger.warning(
+                        f"Tool '{func_name}' returned images but PIL "
+                        "is not installed. Install with: pip install "
+                        "Pillow. Skipping visual context injection."
                     )
-
-                    # Inject into conversation context with slight
-                    # timestamp increment
-                    self.update_memory(
-                        visual_msg,
-                        OpenAIBackendRole.USER,
-                        timestamp=base_timestamp + 2e-6,
-                        return_records=False,
+                    # Continue without injecting images
+                    result = (
+                        result.text if hasattr(result, 'text') else str(result)
                     )
+                else:
                     logger.info(
-                        f"Successfully injected {len(pil_images)} image(s) "
-                        "into agent context"
+                        f"Tool '{func_name}' returned ToolResult with "
+                        f"{len(result.images)} image(s), injecting into "
+                        "context"
                     )
+
+                    # Convert base64 images to PIL Image objects
+                    pil_images: List[Union[Image.Image, str]] = []
+                    for img_data in result.images:
+                        if img_data.startswith('data:image/'):
+                            # Extract base64 data
+                            base64_str = img_data.split(',', 1)[1]
+                            img_bytes = base64.b64decode(base64_str)
+                            pil_img = Image.open(io.BytesIO(img_bytes))
+                            pil_images.append(pil_img)
+
+                    if pil_images:
+                        # Create a user message with the image(s)
+                        visual_msg = BaseMessage.make_user_message(
+                            role_name="System",
+                            content=f"[Visual output from {func_name}]",
+                            image_list=pil_images,
+                        )
+
+                        # Inject into conversation context with slight
+                        # timestamp increment
+                        self.update_memory(
+                            visual_msg,
+                            OpenAIBackendRole.USER,
+                            timestamp=base_timestamp + 2e-6,
+                            return_records=False,
+                        )
+                        logger.info(
+                            f"Successfully injected {len(pil_images)} "
+                            "image(s) into agent context"
+                        )
             except Exception as e:
                 logger.error(
                     f"Failed to inject visual content from {func_name}: {e}"
