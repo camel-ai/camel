@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     git \
     git-lfs \
-    netcat-openbsd \
+    netcat \
     sudo \
     tzdata \
     && rm -rf /var/lib/apt/lists/* \
@@ -45,8 +45,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
-RUN python3.10 -m pip install --upgrade pip setuptools wheel
-RUN pip install uv
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && \
+    python3.10 -m pip install --upgrade pip setuptools wheel
+RUN python3.10 -m pip install uv
 
 RUN groupadd -r devuser && useradd -r -m -g devuser devuser
 WORKDIR /workspace
