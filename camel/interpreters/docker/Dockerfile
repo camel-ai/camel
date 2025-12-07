@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:24.04@sha256:c35e29c9450151419d9448b0fd75374fec4fff364a27f176fb458d472dfc9e54
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     git \
     git-lfs \
-    netcat \
+    netcat-openbsd \
     sudo \
     tzdata \
     && rm -rf /var/lib/apt/lists/* \
@@ -23,7 +23,6 @@ RUN add-apt-repository ppa:deadsnakes/ppa && \
         python3.10 \
         python3.10-venv \
         python3.10-dev \
-        python3.10-distutils \
         python3-pip \
     && ln -s /usr/bin/python3.10 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/* \
