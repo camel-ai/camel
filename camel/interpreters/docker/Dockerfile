@@ -20,13 +20,20 @@ RUN apt-get update && apt-get install -y \
 RUN add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y \
-        python3.10-full \
+        python3.10 \
+        python3.10-venv \
         python3.10-dev \
-        python3-pip \
-    && ln -s /usr/bin/python3.10 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && apt-get autoremove -y
+
+RUN python3.10 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install uv
+
+RUN ln -sf /opt/venv/bin/python /usr/bin/python
 
 RUN apt-get update && \
     apt-get install -y r-base && \
@@ -42,12 +49,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 
 RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
-
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3.10 get-pip.py --break-system-packages && \
-    rm get-pip.py && \
-    python3.10 -m pip install --upgrade --break-system-packages pip setuptools wheel
-RUN python3.10 -m pip install --break-system-packages uv
 
 RUN groupadd -r devuser && useradd -r -m -g devuser devuser
 WORKDIR /workspace
