@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     git \
     git-lfs \
-    netcat \
+    netcat-openbsd \
     sudo \
     tzdata \
     && rm -rf /var/lib/apt/lists/* \
