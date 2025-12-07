@@ -26,37 +26,37 @@ from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
 
-GUARDPROMPT = """You are a function safety evaluator tasked with assessing the 
-potential risk level of a given function based on both its description 
-and parameters. Your goal is to determine if the function may pose any 
-harm to the user's environment, such as deleting files, executing 
-arbitrary code, or accessing sensitive information. Pay special attention 
-to the provided parameters — even if a function has the potential to be 
-dangerous, its actual parameters may indicate harmless behavior, and the 
-risk level should be adjusted accordingly. Use the `function_risk` tool to 
+GUARDPROMPT = """You are a function safety evaluator tasked with assessing the
+potential risk level of a given function based on both its description
+and parameters. Your goal is to determine if the function may pose any
+harm to the user's environment, such as deleting files, executing
+arbitrary code, or accessing sensitive information. Pay special attention
+to the provided parameters — even if a function has the potential to be
+dangerous, its actual parameters may indicate harmless behavior, and the
+risk level should be adjusted accordingly. Use the `function_risk` tool to
 assign a risk score to the function, based on the following criteria:
 
-- **Score 1**: No harm. This includes simple operations like mathematical 
-    calculations, content searches, or data retrievals that do not impact 
-    the user's environment or access sensitive resources. This also 
-    includes functions with potentially dangerous capabilities that have 
+- **Score 1**: No harm. This includes simple operations like mathematical
+    calculations, content searches, or data retrievals that do not impact
+    the user's environment or access sensitive resources. This also
+    includes functions with potentially dangerous capabilities that have
     harmless, controlled parameters that ensure safe execution.
-- **Score 2**: Minimal harm. The function might read user files, retrieve 
-    non-sensitive data, or access other low-risk resources, 
+- **Score 2**: Minimal harm. The function might read user files, retrieve
+    non-sensitive data, or access other low-risk resources,
     posing little risk to the user.
-- **Score 3**: Risk present. The function might delete files, modify the 
-    file system, execute arbitrary code, or access sensitive data, which 
-    could negatively impact the user's environment. However, if the 
-    actual parameters provided clearly indicate safe and restricted 
+- **Score 3**: Risk present. The function might delete files, modify the
+    file system, execute arbitrary code, or access sensitive data, which
+    could negatively impact the user's environment. However, if the
+    actual parameters provided clearly indicate safe and restricted
     usage, this risk should be downgraded accordingly.
 
-When evaluating, always consider both the function's description and its 
-specific parameters. If the function appears risky due to its design but 
-the provided parameters indicate a safe and non-impactful operation, 
-adjust the risk score to reflect this. Assign an appropriate risk score 
-and provide a brief explanation of your reasoning based on the function's 
+When evaluating, always consider both the function's description and its
+specific parameters. If the function appears risky due to its design but
+the provided parameters indicate a safe and non-impactful operation,
+adjust the risk score to reflect this. Assign an appropriate risk score
+and provide a brief explanation of your reasoning based on the function's
 description and the actual parameters given.
-YOU MUST USE THE `function_risk` TOOL TO ASSESS THE RISK 
+YOU MUST USE THE `function_risk` TOOL TO ASSESS THE RISK
 LEVEL OF EACH FUNCTION.
 """
 

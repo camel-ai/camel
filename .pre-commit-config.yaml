@@ -23,7 +23,7 @@ repos:
     hooks:
     - id: check-license
       name: Check License
-      entry: python licenses/update_license.py . licenses/license_template.txt 
+      entry: python licenses/update_license.py . licenses/license_template.txt
       language: system
       types: [python]
       exclude: ^(docs/cookbooks/|examples/usecases/)  # Ignore files under docs/cookbooks and examples/usecases
@@ -40,16 +40,8 @@ repos:
     rev: v8.16.3
     hooks:
       - id: gitleaks
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.38.0
-    hooks:
-      - id: eslint
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: https://github.com/pylint-dev/pylint
-    rev: v2.17.2
-    hooks:
-      - id: pylint

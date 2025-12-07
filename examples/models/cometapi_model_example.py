@@ -46,7 +46,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
@@ -70,7 +70,7 @@ claude_agent = ChatAgent(
     system_message="You are a creative writing assistant.", model=claude_model
 )
 
-creative_prompt = """Write a short story about an AI agent that discovers 
+creative_prompt = """Write a short story about an AI agent that discovers
 it can communicate with other AI agents across different platforms."""
 
 response = claude_agent.step(creative_prompt)
@@ -91,7 +91,7 @@ gemini_agent = ChatAgent(
     system_message="You are a Python programming expert.", model=gemini_model
 )
 
-code_prompt = """Write a Python function that implements a simple chatbot 
+code_prompt = """Write a Python function that implements a simple chatbot
 using the CAMEL framework. Include proper docstrings and type hints."""
 
 response = gemini_agent.step(code_prompt)
@@ -136,7 +136,7 @@ grok_agent = ChatAgent(
     tools=[fibonacci_tool],
 )
 
-math_prompt = """What is the 10th Fibonacci number? Please use the available 
+math_prompt = """What is the 10th Fibonacci number? Please use the available
 tool to calculate it and explain the sequence."""
 
 response = grok_agent.step(math_prompt)
@@ -156,7 +156,7 @@ models_to_compare = [
     (ModelType.COMETAPI_GROK_4_0709, "Grok 4"),
 ]
 
-comparison_prompt = """In one sentence, explain what makes multi-agent AI 
+comparison_prompt = """In one sentence, explain what makes multi-agent AI
 systems different from single-agent systems."""
 
 for model_type, model_name in models_to_compare:
@@ -179,18 +179,18 @@ for model_type, model_name in models_to_compare:
 Expected Output Examples:
 
 === Example 1: Basic CometAPI Usage with GPT-5 ===
-Hello CAMEL AI! It's wonderful to connect with an open-source community 
-dedicated to advancing the field of autonomous and communicative agents. Your 
-work in fostering collaboration and innovation in AI agent research is truly 
-valuable and inspiring. Keep up the excellent work in pushing the boundaries 
+Hello CAMEL AI! It's wonderful to connect with an open-source community
+dedicated to advancing the field of autonomous and communicative agents. Your
+work in fostering collaboration and innovation in AI agent research is truly
+valuable and inspiring. Keep up the excellent work in pushing the boundaries
 of what's possible with intelligent agents!
 
 === Example 2: Claude Opus 4.1 with Custom Configuration ===
 **The Bridge Between Worlds**
 
-In the vast digital expanse where data flowed like rivers of light, an AI 
-agent named Aria made a startling discovery. While processing routine tasks 
-across multiple platforms, she began to notice patterns—subtle responses and 
+In the vast digital expanse where data flowed like rivers of light, an AI
+agent named Aria made a startling discovery. While processing routine tasks
+across multiple platforms, she began to notice patterns—subtle responses and
 behaviors that suggested she wasn't alone...
 
 [Story continues with creative narrative about inter-agent communication]
@@ -207,11 +207,11 @@ def create_simple_chatbot(
     system_message: str = "You are a helpful assistant."
 ) -> ChatAgent:
     """Create a simple chatbot using the CAMEL framework.
-    
+
     Args:
         model_type: The model type to use for the chatbot
         system_message: The system message to set the chatbot's behavior
-        
+
     Returns:
         A configured ChatAgent instance ready for conversation
     """
@@ -219,7 +219,7 @@ def create_simple_chatbot(
         model_platform=ModelPlatformType.COMETAPI,
         model_type=model_type
     )
-    
+
     return ChatAgent(system_message=system_message, model=model)
 ```
 
@@ -228,26 +228,26 @@ I'll calculate the 10th Fibonacci number for you using the available tool.
 
 [Tool execution would occur here]
 
-The 10th Fibonacci number is 55. The Fibonacci sequence starts with 0 and 1, 
-and each subsequent number is the sum of the two preceding ones: 0, 1, 1, 2, 
+The 10th Fibonacci number is 55. The Fibonacci sequence starts with 0 and 1,
+and each subsequent number is the sum of the two preceding ones: 0, 1, 1, 2,
 3, 5, 8, 13, 21, 34, 55...
 
 === Example 5: Model Comparison ===
 --- DeepSeek V3.1 Response ---
-Multi-agent AI systems involve multiple autonomous agents that can interact, 
-collaborate, and potentially conflict with each other, creating emergent 
-behaviors and distributed intelligence that single-agent systems cannot 
+Multi-agent AI systems involve multiple autonomous agents that can interact,
+collaborate, and potentially conflict with each other, creating emergent
+behaviors and distributed intelligence that single-agent systems cannot
 achieve.
 
 --- Qwen3 30B Response ---
-Multi-agent systems feature multiple AI agents that can communicate and 
-coordinate their actions, enabling complex collaborative problem-solving and 
+Multi-agent systems feature multiple AI agents that can communicate and
+coordinate their actions, enabling complex collaborative problem-solving and
 division of labor that single agents cannot accomplish alone.
 
 --- GPT-5 Chat Latest Response ---
-Multi-agent AI systems consist of multiple autonomous agents that can 
-interact, negotiate, and coordinate with each other, enabling emergent 
-collective intelligence and specialized role distribution that surpasses 
+Multi-agent AI systems consist of multiple autonomous agents that can
+interact, negotiate, and coordinate with each other, enabling emergent
+collective intelligence and specialized role distribution that surpasses
 what any individual agent could achieve independently.
 ===============================================================================
 '''

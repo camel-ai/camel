@@ -16,7 +16,7 @@ container in the storage account.
 - **storage_account_name** (str): The name of the storage account.
 - **container_name** (str): The name of the container.
 - **access_key** (Optional[str], optional): The access key of the storage account. Defaults to None.
-- **References**: 
+- **References**:
 - **https**: //azure.microsoft.com/en-us/products/storage/blobs
 
 <a id="camel.storages.object_storages.azure_blob.AzureBlobStorage.__init__"></a>

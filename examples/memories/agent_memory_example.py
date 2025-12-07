@@ -55,8 +55,8 @@ print(
 )
 '''
 ===============================================================================
-Assistant response 1: Yes, I can remember that instruction. "Banana" is 
-designated as a country in this context. How can I assist you further with 
+Assistant response 1: Yes, I can remember that instruction. "Banana" is
+designated as a country in this context. How can I assist you further with
 this information?
 ===============================================================================
 '''
@@ -69,7 +69,7 @@ print(
 )
 '''
 ===============================================================================
-Assistant response 2: Got it! I will remember that CAMEL lives in Banana. How 
+Assistant response 2: Got it! I will remember that CAMEL lives in Banana. How
 can I assist you further?
 ===============================================================================
 '''
@@ -104,8 +104,8 @@ print(
 )
 '''
 ===============================================================================
-New Agent response (after loading memory): We were discussing that "Banana" is 
-a country, and you mentioned that CAMEL lives in Banana. How can I assist you 
+New Agent response (after loading memory): We were discussing that "Banana" is
+a country, and you mentioned that CAMEL lives in Banana. How can I assist you
 further with this information?
 ===============================================================================
 '''
@@ -142,13 +142,13 @@ After loading another agent's memory, new_agent has records:
 You are a helpful assistant
 You are a helpful assistant
 Hello, can you remember these instructions?: Banana is a country.
-Yes, I can remember that instruction. "Banana" is designated as a country in 
+Yes, I can remember that instruction. "Banana" is designated as a country in
 this context. How can I assist you further with this information?
 Please store and recall this next time: CAMEL lives in Banana.
-Got it! I will remember that CAMEL lives in Banana. How can I assist you 
+Got it! I will remember that CAMEL lives in Banana. How can I assist you
 further?
 What were we talking about?
-We were discussing that "Banana" is a country, and you mentioned that CAMEL 
+We were discussing that "Banana" is a country, and you mentioned that CAMEL
 lives in Banana. How can I assist you further with this information?
 Another system message
 This is memory from a second agent

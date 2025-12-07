@@ -45,16 +45,16 @@ print(response.msgs[0].content)
 ===============================================================================
 The word 'strawberry' is spelled **S-T-R-A-W-B-E-R-R-Y**. Breaking it down:
 
-1. **S**  
-2. **T**  
-3. **R** (first R)  
-4. **A**  
-5. **W**  
-6. **B**  
-7. **E**  
-8. **R** (second R)  
-9. **R** (third R)  
-10. **Y**  
+1. **S**
+2. **T**
+3. **R** (first R)
+4. **A**
+5. **W**
+6. **B**
+7. **E**
+8. **R** (second R)
+9. **R** (third R)
+10. **Y**
 
 There are **3 Rs** in the word 'strawberry'.
 ===============================================================================
@@ -170,16 +170,16 @@ So that's three Rs. Therefore, the answer is three. But I'm still unsure because
 </think>
 The word 'strawberry' is spelled S-T-R-A-W-B-E-R-R-Y. Breaking it down:
 
-1. **S**  
-2. **T**  
-3. **R** (first R)  
-4. **A**  
-5. **W**  
-6. **B**  
-7. **E**  
-8. **R** (second R)  
-9. **R** (third R)  
-10. **Y**  
+1. **S**
+2. **T**
+3. **R** (first R)
+4. **A**
+5. **W**
+6. **B**
+7. **E**
+8. **R** (second R)
+9. **R** (third R)
+10. **Y**
 
 There are **3 Rs** in 'strawberry'.
 ===============================================================================

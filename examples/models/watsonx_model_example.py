@@ -41,7 +41,7 @@ print(response.info['tool_calls'])
 '''
 ==============================================================================
 The University of Oxford is approximately 928 years old in the year 2024.
-[ToolCallingRecord(tool_name='sub', args={'a': 2024, 'b': 1096}, result=928, 
+[ToolCallingRecord(tool_name='sub', args={'a': 2024, 'b': 1096}, result=928,
 tool_call_id='call_05f85b0fdd9241be912883')]
 ==============================================================================
 '''

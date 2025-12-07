@@ -14,8 +14,8 @@ Any MCP-compatible client (Claude, Cursor, editors, or your own app) can connect
 <Card>
 
 <Card title="Method 1: Use Service Scripts" icon="terminal">
-<b>Scripted Server:</b>  
-Launch your agent as an MCP server with the ready-made scripts in <code>services/</code>.  
+<b>Scripted Server:</b>
+Launch your agent as an MCP server with the ready-made scripts in <code>services/</code>.
 Configure your MCP client (Claude, Cursor, etc.) to connect:
 ```json mcp_servers_config.json Example highlight={5}
 {
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 ## Real-world Example
 
 <Card title="Claude calling a CAMEL MCP server" icon="comments">
-You can use Claude, Cursor, or any other app to call your custom agent!  
+You can use Claude, Cursor, or any other app to call your custom agent!
 Just connect to your <b>CAMEL MCP server</b>
 <img src="/images/claude_example1.png" alt="Claude MCP Screenshot" />
 <img src="/images/claude_example2.png" alt="Claude MCP Screenshot" />
@@ -94,6 +94,6 @@ You can expose any number of custom tools, multi-agent workflows, or domain know
 ---
 
 <Info>
-Want to create your own tools and toolkits?  
+Want to create your own tools and toolkits?
 See <a href="/key_modules/tools">Toolkits Reference</a> for everything you can expose to the MCP ecosystem!
 </Info>

@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-Workflows saved: 
+Workflows saved:
 workforce_workflows/session_20250925_150330_302341/content_writer_workflow.md
 workforce_workflows/session_20250925_150330_302341/math_expert_workflow.md
 
@@ -306,7 +306,7 @@ one-line JSON object with numeric values to two decimals.
 3. Compute the sum inside parentheses: calculate 1 + r = 1.05.
 4. Compute the exponentiation: calculate 1.05^3 = 1.157625.
 5. Multiply by principal: compute A = 1000 * 1.157625 = 1157.625 (unrounded).
-6. Compute total interest unrounded: Interest = A - P = 
+6. Compute total interest unrounded: Interest = A - P =
    1157.625 - 1000 = 157.625.
 7. Round results to 2 decimals and format as USD: A → $1157.63;
    Interest → $157.63.
@@ -321,9 +321,9 @@ No errors encountered.
 </MARKDOWN CONTENT>
 
 System message of math agent after loading workflow:
-You are a math expert specialized in solving mathematical problems. 
+You are a math expert specialized in solving mathematical problems.
 You can perform calculations, solve equations, and work with various
-mathematical concepts. 
+mathematical concepts.
 Use the math tools available to you.
 
 --- Workflow Memory ---
