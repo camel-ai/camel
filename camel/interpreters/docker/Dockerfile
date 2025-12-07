@@ -44,9 +44,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && \
-    python3.10 -m pip install --upgrade pip setuptools wheel
-RUN python3.10 -m pip install uv
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 - --break-system-packages && \
+    python3.10 -m pip install --upgrade --break-system-packages pip setuptools wheel
+RUN python3.10 -m pip install --break-system-packages uv
 
 RUN groupadd -r devuser && useradd -r -m -g devuser devuser
 WORKDIR /workspace
