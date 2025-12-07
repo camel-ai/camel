@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:24.04@sha256:c35e29c9450151419d9448b0fd75374fec4fff364a27f176fb458d472dfc9e54
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -23,12 +23,17 @@ RUN add-apt-repository ppa:deadsnakes/ppa && \
         python3.10 \
         python3.10-venv \
         python3.10-dev \
-        python3.10-distutils \
-        python3-pip \
-    && ln -s /usr/bin/python3.10 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && apt-get autoremove -y
+
+RUN python3.10 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install uv
+
+RUN ln -sf /opt/venv/bin/python /usr/bin/python
 
 RUN apt-get update && \
     apt-get install -y r-base && \
@@ -42,11 +47,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get clean && \
     apt-get autoremove -y
 
-RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
+RUN curl -fsSL https://install.python-poetry.org | python - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
-
-RUN python3.10 -m pip install --upgrade pip setuptools wheel
-RUN pip install uv
 
 RUN groupadd -r devuser && useradd -r -m -g devuser devuser
 WORKDIR /workspace
