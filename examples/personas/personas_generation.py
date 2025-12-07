@@ -17,8 +17,8 @@ from camel.personas.persona_hub import PersonaHub
 persona_group = PersonaHub()
 
 # Use the text_to_persona method
-example_text = """Clinical Guideline: Administration of Injections in 
-Pediatric Patients Purpose: To provide standardized care for pediatric 
+example_text = """Clinical Guideline: Administration of Injections in
+Pediatric Patients Purpose: To provide standardized care for pediatric
 patients requiring injections, ensuring safety, ..."""
 
 inferred_persona = persona_group.text_to_persona(example_text, action="read")

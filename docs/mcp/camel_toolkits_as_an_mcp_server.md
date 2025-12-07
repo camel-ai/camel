@@ -13,7 +13,7 @@ description: "Share any CAMEL toolkit as an MCP server so external clients and a
   </Card>
 
   <Card title="Toolkit as an MCP Server" icon="head-side-gear">
-    With one command, you can flip any toolkit into an <b>MCP server</b>.  
+    With one command, you can flip any toolkit into an <b>MCP server</b>.
     Now, any MCP-compatible client or agent can call your tools—locally or over the network.
   </Card>
 
@@ -25,14 +25,14 @@ description: "Share any CAMEL toolkit as an MCP server so external clients and a
 
 You can turn any CAMEL toolkit into a full-featured MCP server—making its tools instantly available to other AI agents or external apps via the Model Context Protocol.
 
-<b>Why do this?</b>  
+<b>Why do this?</b>
 - Instantly share your agent tools with external clients (e.g., Claude, Cursor, custom dashboards).
 - Enable distributed, language-agnostic tool execution across different systems and teams.
 - Easily test, debug, and reuse your tools—no need to change the toolkit or agent code.
 
 ### Launch a Toolkit Server
 
-Below is a minimal script to expose <b>ArxivToolkit</b> as an MCP server.  
+Below is a minimal script to expose <b>ArxivToolkit</b> as an MCP server.
 Swap in any other toolkit (e.g., <code>SearchToolkit</code>, <code>MathToolkit</code>), they all work the same way!
 
 ```python

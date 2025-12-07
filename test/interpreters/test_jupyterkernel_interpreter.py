@@ -59,7 +59,7 @@ def test_run_python_code(interpreter: JupyterKernelInterpreter):
     code = """
 def add(a, b):
     return a + b
-    
+
 def multiply(a, b):
     return a * b
 
@@ -72,7 +72,7 @@ def main():
     operation = subtract
     result = operation(a, b)
     print(result)
-    
+
 if __name__ == "__main__":
     main()
 """
@@ -84,7 +84,7 @@ def test_run_python_stderr(interpreter: JupyterKernelInterpreter):
     code = """
 def divide(a, b):
     return a / b
-    
+
 def main():
     result = divide(10, 0)
     print(result)

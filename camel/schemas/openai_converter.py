@@ -28,7 +28,7 @@ from camel.utils import (
 from .base import BaseConverter
 
 DEFAULT_CONVERTER_PROMPTS = """
-    Extract key entities and attributes from the user 
+    Extract key entities and attributes from the user
     provided text, and convert them into a structured JSON format.
 """
 

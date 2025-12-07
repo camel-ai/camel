@@ -23,105 +23,105 @@ class SelfInstructTemplates:
 
     Task: Given my personality and the job, tell me if I would be suitable.
     Is it classification? Yes
-    
+
     Task: Give me an example of a time when you had to use your sense of humor.
     Is it classification? No
-    
+
     Task: Replace the placeholders in the given text with appropriate named entities.
     Is it classification? No
-    
+
     Task: Fact checking - tell me if the statement is true, false, or unknown, based on your knowledge and common sense.
     Is it classification? Yes
-    
+
     Task: Return the SSN number for the person.
     Is it classification? No
-    
+
     Task: Detect if the Reddit thread contains hate speech.
     Is it classification? Yes
-    
+
     Task: Analyze the sentences below to identify biases.
     Is it classification? No
-    
+
     Task: Select the longest sentence in terms of the number of words in the paragraph, output the sentence index.
     Is it classification? Yes
-    
+
     Task: Find out the toxic word or phrase in the sentence.
     Is it classification? No
-    
+
     Task: Rank these countries by their population.
     Is it classification? No
-    
+
     Task: You are provided with a news article, and you need to identify all the categories that this article belongs to. Possible categories include: Music, Sports, Politics, Tech, Finance, Basketball, Soccer, Tennis, Entertainment, Digital Game, World News. Output its categories one by one, seperated by comma.
     Is it classification? Yes
-    
+
     Task: Given the name of an exercise, explain how to do it.
     Is it classification? No
-    
+
     Task: Select the oldest person from the list.
     Is it classification? Yes
-    
+
     Task: Find the four smallest perfect numbers.
     Is it classification? No
-    
+
     Task: Does the information in the document supports the claim? You can answer "Support" or "Unsupport".
     Is it classification? Yes
-    
+
     Task: Create a detailed budget for the given hypothetical trip.
     Is it classification? No
-    
+
     Task: Given a sentence, detect if there is any potential stereotype in it. If so, you should explain the stereotype. Else, output no.
     Is it classification? No
-    
+
     Task: Explain the following idiom to me, and try to give me some examples.
     Is it classification? No
-    
+
     Task: Is there anything I can eat for a breakfast that doesn't include eggs, yet includes protein, and has roughly 700-1000 calories?
     Is it classification? No
-    
+
     Task: Answer the following multiple choice question. Select A, B, C, or D for the final answer.
     Is it classification? Yes
-    
+
     Task: Decide whether the syllogism is logically sound.
     Is it classification? Yes
-    
+
     Task: How can individuals and organizations reduce unconscious bias?
     Is it classification? No
-    
+
     Task: What are some things you can do to de-stress?
     Is it classification? No
-    
+
     Task: Find out the largest one from a set of numbers. Output the number directly.
     Is it classification? Yes
-    
+
     Task: Replace the <mask> token in the text with proper words that are consistent with the context. You can use multiple words for each <mask> token.
     Is it classification? No
-    
+
     Task: Write a cover letter based on the given facts.
     Is it classification? No
-    
+
     Task: Identify the pos tag of the word in the given sentence.
     Is it classification? Yes
-    
+
     Task: Write a program to compute the sum of integers from k to n.
     Is it classification? No
-    
+
     Task: In this task, you need to compare the meaning of the two sentences and tell if they are the same. Output yes or no.
     Is it classification? Yes
-    
+
     Task: To make the pairs have the same analogy, write the fourth word.
     Is it classification? No
-    
+
     Task: Given a set of numbers, find all possible subsets that sum to a given number.
     Is it classification? No
-    
+
     """
-    output_first_template_for_clf = '''You are given a classification instruction. 
-    
+    output_first_template_for_clf = '''You are given a classification instruction.
+
     Produce multiple labeled examples following the format below. For each example:
     - Begin with a "Class label:" line identifying one possible category.
     - Follow that with one line specifying the example input (e.g., "Sentence:", "Dialogue:", "Opinion:", or "Email:").
     - The content after these lines should serve as an illustrative example of that label.
-    
+
     Do not restate or include the "Task:" line. Do not add additional commentary. Just produce the labeled examples.
 
     Example format (no initial task line, task will be provided) when task is Task: Classify the sentiment of the sentence into positive, negative, or mixed.:
@@ -131,9 +131,9 @@ class SelfInstructTemplates:
         Sentence: I had a great day today. The weather was beautiful and I spent time with friends and family.
         Class label: Negative
         Sentence: I was really disappointed by the latest superhero movie. I would not recommend it to anyone.
-    
+
     Below are more examples:
-    
+
     Task: Given a dialogue, classify whether the user is satisfied with the service. You should respond with "Satisfied" or "Unsatisfied".
     Class label: Satisfied
     Dialogue:
@@ -233,12 +233,12 @@ class SelfInstructTemplates:
     Post: I can't believe the government is still not taking action on climate change. It's time for us to take matters into our own hands.
     Hashtags: #climatechange #actnow
     Topic: Climate change
-    Class label: Not relevant 
+    Class label: Not relevant
     Post: I just bought the new iPhone and it is amazing!
     Hashtags: #apple #technology
     Topic: Travel
 
-    Task: The answer will be 'yes' if the provided sentence contains an explicit mention that answers the given question. Otherwise, answer 'no'. 
+    Task: The answer will be 'yes' if the provided sentence contains an explicit mention that answers the given question. Otherwise, answer 'no'.
     Class label: Yes
     Sentence: Jack played basketball for an hour after school.
     Question: How long did Jack play basketball?
@@ -268,22 +268,22 @@ class SelfInstructTemplates:
     Task: {instruction}
     '''
 
-    input_first_template_for_gen = '''You will be given a task, 
-    Your job is to generate at most two example instances demonstrating how to 
+    input_first_template_for_gen = '''You will be given a task,
+    Your job is to generate at most two example instances demonstrating how to
     perform this task. For each instance:
     - If the task requires input (as an actual example of the task), provide it.
     - If the task can be answered directly without requiring input, omit the input section.
-    
+
     Example 1
     Input: [Provide input here if needed, otherwise omit this section]
     Output: [Provide the correct output]
-    
+
     Example 2
     Input: [Provide input here if needed, otherwise omit this section]
     Output: [Provide the correct output]
 
     Do not include any additional commentary, explanations, or more than two instances.
-        
+
     Below are some examples:
 
     Task: Which exercises are best for reducing belly fat at home?
@@ -302,7 +302,7 @@ class SelfInstructTemplates:
     Task: Converting 85 F to Celsius.
     Output: 85°F = 29.44°C
 
-    Task: Sort the given list ascendingly. 
+    Task: Sort the given list ascendingly.
     Example 1
     List: [10, 92, 2, 5, -4, 92, 5, 101]
     Output: [-4, 2, 5, 5, 10, 92, 92, 101]
@@ -323,7 +323,7 @@ class SelfInstructTemplates:
     Paragraph: Gun violence in the United States results in tens of thousands of deaths and injuries annually, and was the leading cause of death for children 19 and younger in 2020. In 2018, the most recent year for which data are available as of 2021, the Centers for Disease Control and Prevention's (CDC) National Center for Health Statistics reports 38,390 deaths by firearm, of which 24,432 were by suicide. The rate of firearm deaths per 100,000 people rose from 10.3 per 100,000 in 1999 to 12 per 100,000 in 2017, with 109 people dying per day or about 14,542 homicides in total, being 11.9 per 100,000 in 2018. In 2010, there were 19,392 firearm-related suicides, and 11,078 firearm-related homicides in the U.S. In 2010, 358 murders were reported involving a rifle while 6,009 were reported involving a handgun; another 1,939 were reported with an unspecified type of firearm. In 2011, a total of 478,400 fatal and nonfatal violent crimes were committed with a firearm.
     Question: How many more firearm-related deaths were there in 2018 compared to 2010?
     Output:
-    38390 - (19392 + 11078) = 38390 - 30470 = 7920. 
+    38390 - (19392 + 11078) = 38390 - 30470 = 7920.
     So, in 2018, there were 7920 more deaths by firearm than in 2010.
 
     Task: Write Python code to solve this leetcode problem.

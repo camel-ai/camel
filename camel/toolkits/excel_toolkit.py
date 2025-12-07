@@ -233,10 +233,10 @@ class ExcelToolkit(BaseToolkit):
             Sheet Name: {sheet_info['sheet_name']}
             Cell information list:
             {sheet_info['cell_info_list']}
-            
+
             Markdown View of the content:
             {sheet_info['markdown_content']}
-            
+
             {'-'*40}
             """
 

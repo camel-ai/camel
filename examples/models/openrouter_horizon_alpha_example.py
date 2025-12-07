@@ -30,7 +30,7 @@ sys_msg = "You are a helpful AI assistant powered by Horizon Alpha model."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Tell me about your capabilities and what makes you unique 
+user_msg = """Tell me about your capabilities and what makes you unique
     as the Horizon Alpha model."""
 
 # Get response information
@@ -40,7 +40,7 @@ print(response.msgs[0].content)
 '''
 ===============================================================================
 This example demonstrates how to use the Horizon Alpha model from OpenRouter
-with CAMEL AI framework. The Horizon Alpha model is a cloaked model provided 
+with CAMEL AI framework. The Horizon Alpha model is a cloaked model provided
 for community feedback with 256,000 context tokens support.
 
 Note: During the testing period, this model is free to use. Make sure to set

@@ -28,7 +28,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 # Get response information
@@ -36,10 +36,10 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI! It's great to connect with an open-source community that's 
-pushing the boundaries of autonomous and communicative agents. I'm excited to 
-learn more about the innovative work being done here. What are some of the 
-most interesting projects or research areas that CAMEL AI is currently 
+Hello CAMEL AI! It's great to connect with an open-source community that's
+pushing the boundaries of autonomous and communicative agents. I'm excited to
+learn more about the innovative work being done here. What are some of the
+most interesting projects or research areas that CAMEL AI is currently
 exploring?
 ===============================================================================
 '''
@@ -56,7 +56,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 # Get response information
@@ -64,10 +64,10 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI community. It's great to connect with a group of like-minded 
-individuals dedicated to advancing the field of autonomous and communicative 
-agents. Your open-source approach to sharing knowledge and resources is truly 
-commendable, and I'm excited to see the innovative projects and research that 
+Hello CAMEL AI community. It's great to connect with a group of like-minded
+individuals dedicated to advancing the field of autonomous and communicative
+agents. Your open-source approach to sharing knowledge and resources is truly
+commendable, and I'm excited to see the innovative projects and research that
 come out of your community. How can I assist or contribute to your endeavors?
 ===============================================================================
 '''

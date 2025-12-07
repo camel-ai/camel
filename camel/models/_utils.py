@@ -48,7 +48,7 @@ def try_modify_message_with_format(
     updated_prompt = textwrap.dedent(
         f"""\
         {message["content"]}
-        
+
         Please generate a JSON response adhering to the following JSON schema:
         {json_schema}
         Make sure the JSON response is valid and matches the EXACT structure defined in the schema. Your result should ONLY be a valid json object, WITHOUT ANY OTHER TEXT OR COMMENTS.

@@ -35,10 +35,10 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-The word "strawberry" contains **3** instances of the letter 'r'.  
+The word "strawberry" contains **3** instances of the letter 'r'.
 
-Here's the breakdown:  
-**S** - **T** - **R** - **A** - **W** - **B** - **E** - **R** - **R** - **Y**  
+Here's the breakdown:
+**S** - **T** - **R** - **A** - **W** - **B** - **E** - **R** - **R** - **Y**
 Positions 3, 8, and 9.
 ===============================================================================
 

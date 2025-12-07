@@ -44,8 +44,8 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ==========================================================================
-[ToolCallingRecord(func_name='list_all_pages', args={}, result=[{'id': 
-'12684f56-4caa-8080-be91-d7fb1a5834e3', 'title': 'test page'}, 
+[ToolCallingRecord(func_name='list_all_pages', args={}, result=[{'id':
+'12684f56-4caa-8080-be91-d7fb1a5834e3', 'title': 'test page'},
 {'id': '47a4fb54-e34b-4b45-9928-aa2802982eb8', 'title': 'Aigentbot'}])]
 """
 
@@ -58,7 +58,7 @@ print(str(response.info['tool_calls'])[:1000])
 """
 ==========================================================================
 [ToolCallingRecord(func_name='get_notion_block_text_content', args=
-{'block_id': '12684f56-4caa-8080-be91-d7fb1a5834e3'}, result='hellonihao 
+{'block_id': '12684f56-4caa-8080-be91-d7fb1a5834e3'}, result='hellonihao
 buhao this is a test par [Needs case added] another par [Needs case added]
 A cute cat: https://www.google.com/imgres?q=cat&imgurl=https%3A%2F%2Fi.
 natgeofe.com%2Fn%2F548467d8-c5f1-4551-9f58-6817a8d2c45e%2FNationalGeographic

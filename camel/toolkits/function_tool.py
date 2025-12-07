@@ -544,8 +544,8 @@ class FunctionTool:
 
         # Check the function description, if no description then raise warming
         if not openai_tool_schema["function"].get("description"):
-            warnings.warn(f"""Function description is missing for 
-                          {openai_tool_schema['function']['name']}. This may 
+            warnings.warn(f"""Function description is missing for
+                          {openai_tool_schema['function']['name']}. This may
                           affect the quality of tool calling.""")
 
         # Validate whether parameters

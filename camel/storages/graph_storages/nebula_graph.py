@@ -534,8 +534,8 @@ class NebulaGraph(BaseGraphStorage):
         """
         # Combine the outgoing and incoming edge count query
         check_query = f"""
-        (GO FROM {entity_id} OVER * YIELD count(*) as out_count) 
-        UNION 
+        (GO FROM {entity_id} OVER * YIELD count(*) as out_count)
+        UNION
         (GO FROM {entity_id} REVERSELY OVER * YIELD count(*) as in_count)
         """
 

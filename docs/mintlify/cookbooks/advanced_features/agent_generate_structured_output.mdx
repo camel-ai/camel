@@ -11,7 +11,7 @@ You can also check this cookbook in colab [here](https://colab.research.google.c
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
@@ -188,13 +188,13 @@ class CalculationResult(BaseModel):
 
 ```python
 # Define the user's question
-user_msg = """Assume now is 2024 in the Gregorian calendar, 
-estimate the current age of University of Oxford 
+user_msg = """Assume now is 2024 in the Gregorian calendar,
+estimate the current age of University of Oxford
 and then add 10 more years to this age."""
 
 # Get the structured response
 response = camel_agent.step(
-    user_msg, 
+    user_msg,
     response_format=CalculationResult
 )
 
@@ -287,13 +287,13 @@ def generate_recipe(dish: str) -> Recipe:
         "\"instruction\": \"...\", \"duration\": \"...\"}], \"dietary_info\": [\"...\"]}\n\n"
         "Return ONLY the JSON object, without any additional text or markdown formatting."
     )
-    
+
     try:
         # Extract JSON from the response
         content = response.msgs[0].content.strip()
         if content.startswith("```json"):
             content = content[7:-3].strip()  # Remove markdown code block if present
-        
+
         # Parse and validate the response
         recipe_data = json.loads(content)
         return Recipe(**recipe_data)
@@ -311,19 +311,19 @@ def generate_recipe(dish: str) -> Recipe:
 # Cell 4: Generate and display a recipe
 try:
     recipe = generate_recipe("vegetable lasagna")
-    
+
     print(f"=== {recipe.name.upper()} ===")
     print(recipe.description)
     print(f"\nPreparation: {recipe.prep_time} | Cooking: {recipe.cook_time} | Servings: {recipe.servings}")
-    
+
     print("\nINGREDIENTS:")
     for ing in recipe.ingredients:
         print(f"- {ing.amount} {ing.unit} {ing.name}")
-    
+
     print("\nINSTRUCTIONS:")
     for step in recipe.instructions:
         print(f"{step.step_number}. {step.instruction} ({step.duration})")
-    
+
     print("\nDIETARY INFO:", ", ".join(recipe.dietary_info))
 
 except Exception as e:
@@ -331,7 +331,7 @@ except Exception as e:
 ```
 
 4.2. **Alternative approach**
-- Using response_format with the default model 
+- Using response_format with the default model
 - This shows how it would work with a model that supports structured output**
 
 
@@ -343,11 +343,11 @@ try:
         "Give me a recipe for vegetable lasagna",
         response_format=Recipe
     )
-    
+
     print("\n=== Using response_format ===")
     print("Recipe name:", response.msgs[0].parsed.name)
     print("First ingredient:", response.msgs[0].parsed.ingredients[0].name)
-    
+
 except Exception as e:
     print("\nNote: The default model might not support structured output natively.")
     print("Error:", e)
@@ -405,9 +405,8 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
 ---
-

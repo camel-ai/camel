@@ -11,7 +11,7 @@ You can also check this cookbook in [Google Colab](https://drive.google.com/file
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
@@ -64,7 +64,7 @@ Create a file named `mcp_config.json` with the following content:
             "transport": "stdio"
         }
     }
-} 
+}
 ```
 
 This configuration tells CAMEL how to start and communicate with your SQL MCP server.
@@ -222,12 +222,12 @@ async def main():
     if not config_file_path.exists():
         logger.error(f"MCP config file not found at: {config_file_path}")
         return
-        
+
     mcp_toolkit = MCPToolkit(config_path=str(config_file_path))
-    
+
     await mcp_toolkit.connect()
     tools = mcp_toolkit.get_tools()
-    
+
     # Get API key securely from user input
     openrouter_api_key = getpass('Enter your OpenRouter API key: ')
     if not openrouter_api_key:
@@ -279,18 +279,18 @@ async def main():
 
         # Example query - you can modify this or make it interactive
         user_question = "What tables are in the database and what's in them?"
-        
+
         logger.info(f"\n>>> User: {user_question}")
-        
+
         response = await agent.astep(user_question)
-        
+
         if response and response.msgs:
             agent_reply = response.msgs[0].content
             print(f"<<< Agent: {agent_reply}")
         else:
             print("<<< Agent: No response received from the model.")
             logger.error("Response object or messages were empty")
-            
+
         print("\nScript finished.")
 
     except Exception as e:
@@ -327,8 +327,8 @@ The agent will then:
 2. Use the provided tools to interact with the database
 3. Display the results in a human-readable format
 
-## Example Output - 
-Enter your OpenRouter API key: 
+## Example Output -
+Enter your OpenRouter API key:
 Agent: I'll help you explore the database by first listing all tables and then examining their contents.
 
 Let's start by listing the tables in the database:
@@ -427,9 +427,8 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
 ---
-

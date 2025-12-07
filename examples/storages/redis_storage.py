@@ -38,7 +38,7 @@ def main():
         loaded_records = storage.load()
         logger.info(f"Loaded records: {loaded_records}")
         """
-        Loaded records: [{'id': 1, 'name': 'Record1'}, {'id': 2, 'name': 
+        Loaded records: [{'id': 1, 'name': 'Record1'}, {'id': 2, 'name':
         'Record2'}]
         """
 

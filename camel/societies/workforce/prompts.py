@@ -57,7 +57,7 @@ Your response MUST be a valid JSON object containing an 'assignments' field with
 
 Each assignment dictionary should have:
 - "task_id": the ID of the task
-- "assignee_id": the ID of the chosen worker node  
+- "assignee_id": the ID of the chosen worker node
 - "dependencies": list of task IDs that this task depends on (empty list if no dependencies)
 
 Example valid response:

@@ -17,14 +17,14 @@ from camel.models import OpenAIAudioModels
 audio_models = OpenAIAudioModels()
 
 # Set example input
-input = """CAMEL-AI.org is an open-source community dedicated to the study of 
-autonomous and communicative agents. We believe that studying these agents on 
-a large scale offers valuable insights into their behaviors, capabilities, and 
-potential risks. To facilitate research in this field, we provide, implement, 
-and support various types of agents, tasks, prompts, models, datasets, and 
+input = """CAMEL-AI.org is an open-source community dedicated to the study of
+autonomous and communicative agents. We believe that studying these agents on
+a large scale offers valuable insights into their behaviors, capabilities, and
+potential risks. To facilitate research in this field, we provide, implement,
+and support various types of agents, tasks, prompts, models, datasets, and
 simulated environments.
 
-Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI 
+Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI
 Society."""
 
 # Set example local path to store the file
@@ -39,12 +39,12 @@ text_output = audio_models.speech_to_text(audio_file_path=storage_path)
 print(text_output)
 """
 ===============================================================================
-CamelAI.org is an open-source community dedicated to the study of autonomous 
-and communicative agents. We believe that studying these agents on a large 
-scale offers valuable insights into their behaviors, capabilities, and 
-potential risks. To facilitate research in this field, we provide, implement, 
-and support various types of agents, tasks, prompts, models, datasets, and 
-simulated environments. Join us via Slack, Discord, or WeChat in pushing the 
+CamelAI.org is an open-source community dedicated to the study of autonomous
+and communicative agents. We believe that studying these agents on a large
+scale offers valuable insights into their behaviors, capabilities, and
+potential risks. To facilitate research in this field, we provide, implement,
+and support various types of agents, tasks, prompts, models, datasets, and
+simulated environments. Join us via Slack, Discord, or WeChat in pushing the
 boundaries of building AI society.
 ===============================================================================
 """
