@@ -47,7 +47,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get clean && \
     apt-get autoremove -y
 
-RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
+RUN curl -fsSL https://install.python-poetry.org | python - && \
     ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
 RUN groupadd -r devuser && useradd -r -m -g devuser devuser
