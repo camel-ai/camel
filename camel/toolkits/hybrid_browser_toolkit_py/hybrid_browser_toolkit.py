@@ -106,6 +106,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        enable_reasoning: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -195,6 +196,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 visible in the current viewport. When False, return all
                 elements on the page regardless of visibility.
                 Defaults to `False`.
+            enable_reasoning (bool): When True, adds a 'reasoning' parameter
+                to browser action methods. Agents can provide reasoning for
+                their actions which gets stored in the agent's context,
+                improving decision-making especially for actions that require
+                waiting for page updates. Defaults to `False`.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -292,6 +298,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._session = temp_session
         self._playwright_agent: Optional[PlaywrightLLMAgent] = None
         self._unified_script = self._load_unified_analyzer()
+
+        # Enable reasoning support if requested
+        self._enable_reasoning = enable_reasoning
+        if enable_reasoning:
+            from .reasoning_decorator import enable_reasoning_for_toolkit
+
+            enable_reasoning_for_toolkit(self)
+            logger.info(
+                "Reasoning support enabled for browser toolkit actions"
+            )
 
     @property
     def web_agent_model(self) -> Optional[BaseModelBackend]:
@@ -426,13 +442,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         if self.log_to_console:
             log_msg = f"[BROWSER ACTION] {action_name}"
             if self.enable_timing_logging:
-                log_msg += (
-                    f" | Execution: " f"{log_entry['execution_time_ms']}ms"
-                )
+                log_msg += f" | Execution: {log_entry['execution_time_ms']}ms"
             if page_load_time is not None and self.enable_page_loading_logging:
-                log_msg += (
-                    f" | Page Load: " f"{log_entry['page_load_time_ms']}ms"
-                )
+                log_msg += f" | Page Load: {log_entry['page_load_time_ms']}ms"
             if error:
                 log_msg += f" | ERROR: {error}"
 
@@ -444,8 +456,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     if isinstance(outputs, dict):
                         for key, value in outputs.items():
                             logger.info(
-                                f"  - {key}: "
-                                f"{self._truncate_if_needed(value)}"
+                                f"  - {key}: {self._truncate_if_needed(value)}"
                             )
                     else:
                         logger.info(
@@ -605,8 +616,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Success - return result
                 if attempt > 0:
                     logger.debug(
-                        f"Unified analysis succeeded on attempt "
-                        f"{attempt + 1}"
+                        f"Unified analysis succeeded on attempt {attempt + 1}"
                     )
                 return result
 
@@ -811,8 +821,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
         except Exception as e:
             logger.warning(
-                f"Failed to get tab info from session: {type(e).__name__}: "
-                f"{e}"
+                f"Failed to get tab info from session: {type(e).__name__}: {e}"
             )
 
             # Try to get actual tab count from session pages directly
@@ -912,8 +921,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             before_snapshot_time = time.time() - snapshot_start_before
             logger.info(
-                f"Pre-action snapshot captured in "
-                f"{before_snapshot_time:.2f}s"
+                f"Pre-action snapshot captured in {before_snapshot_time:.2f}s"
             )
 
             # Execute action
@@ -938,15 +946,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stability_time: float = 0.0
             if action_type in ["click", "type", "select", "enter"]:
                 logger.info(
-                    f"Waiting for page stability " f"after {action_type}..."
+                    f"Waiting for page stability after {action_type}..."
                 )
                 stability_start = time.time()
                 await self._wait_for_page_stability()
                 stability_time = time.time() - stability_start
                 logger.info(
-                    f"Page stability wait "
-                    f"completed in "
-                    f"{stability_time:.2f}s"
+                    f"Page stability wait completed in {stability_time:.2f}s"
                 )
                 page_load_time = stability_time
 
@@ -965,8 +971,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             after_snapshot_time = time.time() - snapshot_start_after
             logger.info(
-                f"Post-action snapshot "
-                f"captured in {after_snapshot_time:.2f}s"
+                f"Post-action snapshot captured in {after_snapshot_time:.2f}s"
             )
 
             # Check for snapshot quality and log warnings
@@ -1394,8 +1399,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             snapshot_time = time.time() - snapshot_start
             logger.info(
-                f"Forward navigation snapshot captured in "
-                f"{snapshot_time:.2f}s"
+                f"Forward navigation snapshot captured in {snapshot_time:.2f}s"
             )
 
             # Get tab information
@@ -1442,7 +1446,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         analysis_data = await self._get_unified_analysis()
         analysis_time = time.time() - analysis_start
         logger.info(
-            f"Page snapshot analysis " f"completed in {analysis_time:.2f}s"
+            f"Page snapshot analysis completed in {analysis_time:.2f}s"
         )
 
         snapshot_text = analysis_data.get("snapshotText", "")
@@ -1580,6 +1584,26 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+
+        Note:
+            **When to wait after clicking:**
+
+            If clicking a button that triggers page updates (e.g., submit,
+            login, search, confirm, delete), the page may take time to update.
+            After such clicks:
+
+            1. Check if the snapshot changed - if it shows "snapshot not
+               changed", the page may still be loading
+            2. Use `browser_wait_user(timeout_sec=2)` to wait for the page
+               to update
+            3. Then call `browser_get_page_snapshot()` to see the new state
+
+            Examples of buttons that need waiting:
+            - Submit/Send buttons on forms
+            - Login/Sign In buttons
+            - Search buttons
+            - Confirm/Save/Delete buttons
+            - Checkout/Payment buttons
         """
         self._validate_ref(ref, "click")
 
@@ -1714,6 +1738,22 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+
+        Note:
+            **When to wait after pressing Enter:**
+
+            Pressing Enter often triggers form submission or search, which
+            causes page updates. After pressing Enter:
+
+            1. If the snapshot shows "snapshot not changed", the page is
+               likely still loading
+            2. Use `browser_wait_user(timeout_sec=2)` to wait for results
+            3. Then get a fresh snapshot to see the updated page
+
+            Common scenarios requiring waiting:
+            - After typing in a search box and pressing Enter
+            - After filling in form fields and pressing Enter to submit
+            - After typing in a login form
         """
         # Always press Enter on the currently focused element
         action = {"type": "enter"}
@@ -1873,15 +1913,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_wait_user(
         self, timeout_sec: Optional[float] = None
     ) -> Dict[str, Any]:
-        r"""Pauses execution and waits for human input from the console.
+        r"""Pauses execution and waits for page updates or human input.
 
-        Use this for tasks requiring manual steps, like solving a CAPTCHA.
-        The
-        agent will resume after the user presses Enter in the console.
+        **Primary Use Cases:**
+
+        1. **Waiting for page updates**: After clicking submit, login, or
+           search buttons, use `browser_wait_user(timeout_sec=2)` to allow
+           the page to load before taking the next action.
+
+        2. **Manual intervention**: For tasks requiring human action, like
+           solving a CAPTCHA. The agent will resume after timeout or when
+           the user presses Enter.
 
         Args:
-            timeout_sec (Optional[float]): Max time to wait in seconds. If
-                `None`, it will wait indefinitely.
+            timeout_sec (Optional[float]): Max time to wait in seconds.
+                - For page loading: Use 2-5 seconds (e.g., timeout_sec=3)
+                - For human input: Use None to wait indefinitely
+                - If `None`, waits indefinitely for user input.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1890,6 +1938,26 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+
+        Note:
+            **When to use this tool:**
+
+            Use `browser_wait_user` after actions that trigger page updates:
+
+            - After clicking Submit/Login/Search buttons
+            - After pressing Enter to submit a form
+            - When the snapshot shows "snapshot not changed" but you
+              expect changes
+            - After any action where you expect navigation or content reload
+
+            **Typical usage pattern:**
+            1. Perform action (click, enter, etc.)
+            2. If snapshot unchanged or expecting page load:
+               `browser_wait_user(timeout_sec=2)`
+            3. Get fresh snapshot to see results
+
+            **Do NOT wait indefinitely** (timeout_sec=None) unless you
+            specifically need human intervention like CAPTCHA solving.
         """
         import asyncio
 
@@ -1913,17 +1981,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 logger.info(f"User input received after {wait_time:.2f}s")
                 result_msg = "User resumed."
             else:
-                logger.info("Waiting for user " "input (no timeout)")
+                logger.info("Waiting for user input (no timeout)")
                 start_time = time.time()
                 await _await_enter()
                 wait_time = time.time() - start_time
-                logger.info(f"User input received " f"after {wait_time:.2f}s")
+                logger.info(f"User input received after {wait_time:.2f}s")
                 result_msg = "User resumed."
         except asyncio.TimeoutError:
             wait_time = timeout_sec or 0.0
             logger.info(
-                f"User input timeout reached "
-                f"after {wait_time}s, auto-resuming"
+                f"User input timeout reached after {wait_time}s, auto-resuming"
             )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
@@ -2100,7 +2167,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
             snapshot_time = time.time() - snapshot_start
             logger.info(
-                f"Code execution snapshot captured in " f"{snapshot_time:.2f}s"
+                f"Code execution snapshot captured in {snapshot_time:.2f}s"
             )
 
             # Get tab information
@@ -2204,8 +2271,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             user_data_dir=self._user_data_dir,
             stealth=self._stealth,
             web_agent_model=self._web_agent_model,
-            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
-            f"{new_session_id}/",
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
@@ -2217,6 +2283,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=self._screenshot_timeout,
             page_stability_timeout=self._page_stability_timeout,
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
+            enable_reasoning=self._enable_reasoning,
         )
 
     @action_logger
@@ -2307,8 +2374,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to close tab {tab_id}. Tab may not "
-                f"exist.",
+                "result": f"Failed to close tab {tab_id}. Tab may not exist.",
                 "snapshot": "",
                 **tab_info,
             }

@@ -77,6 +77,11 @@ class HybridBrowserToolkit(BaseToolkit):
             as snapshot instead of actual page content. The
             browser_get_page_snapshot method will still return the actual
             snapshot. Defaults to False.
+        enable_reasoning (bool): When True, adds a 'reasoning' parameter
+            to browser action methods. Agents can provide reasoning for
+            their actions which gets stored in the agent's context,
+            improving decision-making especially for actions that require
+            waiting for page updates. Defaults to False.
         **kwargs: Additional keyword arguments passed to the
             implementation.
 
@@ -109,6 +114,7 @@ class HybridBrowserToolkit(BaseToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        enable_reasoning: bool = False,
         **kwargs: Any,
     ) -> Any:
         r"""Create a HybridBrowserToolkit instance with the specified mode.
@@ -165,6 +171,11 @@ class HybridBrowserToolkit(BaseToolkit):
                 as snapshot instead of actual page content. The
                 browser_get_page_snapshot method will still return the actual
                 snapshot. Defaults to False.
+            enable_reasoning (bool): When True, adds a 'reasoning' parameter
+                to browser action methods. Agents can provide reasoning for
+                their actions which gets stored in the agent's context,
+                improving decision-making especially for actions that require
+                waiting for page updates. Defaults to False.
             **kwargs: Additional keyword arguments passed to the
                 implementation.
 
@@ -198,6 +209,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cdp_url=cdp_url,
                 cdp_keep_current_page=cdp_keep_current_page,
                 full_visual_mode=full_visual_mode,
+                enable_reasoning=enable_reasoning,
                 **kwargs,
             )
         elif mode == "python":
@@ -238,6 +250,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 screenshot_timeout=screenshot_timeout,
                 page_stability_timeout=page_stability_timeout,
                 dom_content_loaded_timeout=dom_content_loaded_timeout,
+                enable_reasoning=enable_reasoning,
                 **kwargs,
             )
         else:

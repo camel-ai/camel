@@ -13,5 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .hybrid_browser_toolkit import HybridBrowserToolkit
+from .reasoning_decorator import (
+    ReasoningContextManager,
+    enable_reasoning_for_toolkit,
+    with_reasoning,
+)
 
-__all__ = ["HybridBrowserToolkit"]
+__all__ = [
+    "HybridBrowserToolkit",
+    "ReasoningContextManager",
+    "enable_reasoning_for_toolkit",
+    "with_reasoning",
+]

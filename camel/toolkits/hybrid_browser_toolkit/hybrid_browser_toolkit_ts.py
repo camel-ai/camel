@@ -115,6 +115,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        enable_reasoning: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -165,6 +166,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
+            enable_reasoning (bool): When True, adds a 'reasoning' parameter
+            to browser action methods. Agents can provide reasoning for
+            their actions which gets stored in the agent's context,
+            improving decision-making especially for actions that require
+            waiting for page updates. Defaults to False.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -244,6 +250,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
+
+        # Enable reasoning support if requested
+        self._enable_reasoning = enable_reasoning
+        if enable_reasoning:
+            from camel.toolkits.hybrid_browser_toolkit_py.reasoning_decorator import (
+                enable_reasoning_for_toolkit,
+            )
+
+            enable_reasoning_for_toolkit(self)
+            logger.info(
+                "Reasoning support enabled for browser toolkit actions"
+            )
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
