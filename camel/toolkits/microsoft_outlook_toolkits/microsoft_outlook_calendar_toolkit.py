@@ -221,6 +221,88 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def list_calendars(
+        self,
+        filter_query: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
+        top: int = 10,
+        skip: int = 0,
+    ) -> dict[str, Any]:
+        """Retrieves a list of calendars with optional filtering, sorting,
+        and pagination.
+
+        Warning: When using $filter and $orderby in the same query,
+        properties that appear in $orderby must also appear in $filter.
+        Failing to do this may result in an error.
+
+        Args:
+            filter_query (Optional[str]): OData filter for calendars.
+                Examples:
+                - Name: "name eq 'Calendar'"
+                - Contains: "contains(name, 'work')"
+                - Default: "isDefaultCalendar eq true"
+                - Can edit: "canEdit eq true"
+                - Combine: "canEdit eq true and isDefaultCalendar eq false"
+            order_by (Optional[List[str]]): OData orderBy for sorting.
+                Examples:
+                - Name ascending: ["name asc"]
+                - Name descending: ["name desc"]
+                - Multi-field: ["canEdit desc", "name asc"]
+            top (int): Maximum number of calendars to return.
+                (default: :obj:`10`)
+            skip (int): Number of calendars to skip for pagination.
+                (default: :obj:`0`)
+
+        Returns:
+            A dictionary containing the result of the operation.
+        """
+        try:
+            from msgraph.generated.users.item.calendars.calendars_request_builder import (  # noqa: E501
+                CalendarsRequestBuilder,
+            )
+
+            # Build query parameters
+            query_params = CalendarsRequestBuilder.CalendarsRequestBuilderGetQueryParameters(  # noqa: E501
+                top=top,
+                skip=skip,
+            )
+
+            if order_by:
+                query_params.orderby = order_by
+
+            if filter_query:
+                query_params.filter = filter_query
+
+            request_config = CalendarsRequestBuilder.CalendarsRequestBuilderGetRequestConfiguration(  # noqa: E501
+                query_parameters=query_params
+            )
+
+            # Send request to list calendars
+            result = await self.client.me.calendars.get(
+                request_configuration=request_config
+            )
+
+            all_calendars = []
+            if result and result.value:
+                for calendar in result.value:
+                    details = self._extract_calendar_details(calendar)
+                    all_calendars.append(details)
+
+            logger.info(f"Retrieved {len(all_calendars)} calendars")
+
+            return {
+                "status": "success",
+                "calendars": all_calendars,
+                "total_count": len(all_calendars),
+                "skip": skip,
+                "top": top,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to list calendars: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -232,4 +314,5 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.create_calendar)),
             FunctionTool(run_async(self.delete_calendar)),
             FunctionTool(run_async(self.get_calendar)),
+            FunctionTool(run_async(self.list_calendars)),
         ]

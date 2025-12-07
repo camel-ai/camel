@@ -282,3 +282,50 @@ class TestGetCalendar:
         assert 'error' in result
         assert 'Failed to get calendar' in result['error']
         assert 'Calendar not found' in result['error']
+
+
+@pytest.mark.asyncio
+class TestListCalendars:
+    """Tests for list_calendars method."""
+
+    async def test_list_calendars_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar listing."""
+        mock_calendar = mock_single_calendar_response()
+
+        mock_result = MagicMock()
+        mock_result.value = [mock_calendar]
+
+        async_get_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.calendars.get = async_get_mock
+
+        result = await outlook_calendar_toolkit.list_calendars()
+
+        assert result['status'] == 'success'
+        assert result['total_count'] == 1
+        assert result['skip'] == 0
+        assert result['top'] == 10
+        assert len(result['calendars']) == 1
+
+        details = result['calendars'][0]
+        assert details['id'] == 'id'
+        assert details['name'] == 'name'
+        assert details['color'] == 'auto'
+        assert details['owner_email'] == 'address'
+        assert details['owner_name'] == 'name'
+
+    async def test_list_calendars_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test listing calendars when API raises an exception."""
+        async_get_mock = AsyncMock(
+            side_effect=Exception('API connection failed')
+        )
+        mock_graph_client.me.calendars.get = async_get_mock
+
+        result = await outlook_calendar_toolkit.list_calendars()
+
+        assert 'error' in result
+        assert 'Failed to list calendars' in result['error']
+        assert 'API connection failed' in result['error']
