@@ -70,9 +70,9 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query.
-            page (int): The page number of results to retrieve. (default: 1)
+            page (int): The page number of results to retrieve. (default: :obj:`1`)
             location (str): The location for the search results.
-                (default: "United States")
+                (default: :obj:`"United States"`)
 
         Returns:
             Dict[str, Any]: The search result dictionary containing 'organic',
