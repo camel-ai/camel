@@ -6,17 +6,17 @@ icon: 'network'
 
 ## Overview
 
-You can connect any Model Context Protocol (MCP) tool—like the official filesystem server—directly to your CAMEL ChatAgent.  
+You can connect any Model Context Protocol (MCP) tool—like the official filesystem server—directly to your CAMEL ChatAgent.
 This gives your agents natural language access to external filesystems, databases, or any MCP-compatible service.
 
 <Info>
-<strong>Use Case:</strong>  
+<strong>Use Case:</strong>
 Let your agent list files or read documents by wiring up the official MCP Filesystem server as a tool—no code changes to the agent required!
 </Info>
 
 <Steps>
   <Step title="Install the MCP Tool Server">
-    You can use any MCP-compatible tool.  
+    You can use any MCP-compatible tool.
     For this example, we'll use the <strong>official filesystem server</strong> from the Model Context Protocol community.
     <br /><br />
     Install globally using npm:
@@ -150,6 +150,6 @@ Let your agent list files or read documents by wiring up the official MCP Filesy
 </Steps>
 
 <Info>
-That's it!  
+That's it!
 Your CAMEL agent can now leverage any external tool (filesystem, APIs, custom scripts) that supports MCP. Plug and play!
 </Info>

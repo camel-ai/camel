@@ -231,29 +231,29 @@ difficult solely because lengthy computations increase solving time.
     EVOL_METHODS = {
         "constraints": """
 Add one or more significant constraints or requirements into the
-'#Given Prompt#'. The added constraints must meaningfully alter how the model 
-would respond. For example, specify additional rules, contexts, or limitations 
-that demand creative adjustments. This method should make the problem more 
-challenging in the reasoning and the solution of it should be clever and 
+'#Given Prompt#'. The added constraints must meaningfully alter how the model
+would respond. For example, specify additional rules, contexts, or limitations
+that demand creative adjustments. This method should make the problem more
+challenging in the reasoning and the solution of it should be clever and
 elegant.
 """,
         "deepening": """
-Increase the difficulty of the #Given Prompt# by integrating additional layers 
-of reasoning and rigor. Refine the problem so that all added difficulty is 
-consolidated into a single coherent question requiring one final answer, 
+Increase the difficulty of the #Given Prompt# by integrating additional layers
+of reasoning and rigor. Refine the problem so that all added difficulty is
+consolidated into a single coherent question requiring one final answer,
 avoiding fragmentation into multiple sub-problems.
 """,
         "expansion": """
-Expand the #Given Prompt# by incorporating additional perspectives or layers 
-of complexity into the problem statement. Ensure that the revised problem 
-remains a single, unified question with one final answer, rather than a 
+Expand the #Given Prompt# by incorporating additional perspectives or layers
+of complexity into the problem statement. Ensure that the revised problem
+remains a single, unified question with one final answer, rather than a
 series of separate sub-questions.
 """,
         "condense": """
-Reformulate the given math problem into a well-structured and formally stated 
-mathematical question. Remove unnecessary instructions, explanations, or hints. 
-If the given problem contains several sub-questions, make necessary changes 
-to let the problem could be answered with one number or one expression by 
+Reformulate the given math problem into a well-structured and formally stated
+mathematical question. Remove unnecessary instructions, explanations, or hints.
+If the given problem contains several sub-questions, make necessary changes
+to let the problem could be answered with one number or one expression by
 removing the sub-questions or combining them into one.
 """,
     }

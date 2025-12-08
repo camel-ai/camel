@@ -40,16 +40,16 @@ response = repo_agent.step("How to use a ChatAgent in CAMEL?")
 print(response.msgs[0].content)
 
 """
-Based on your request to learn how to use a `ChatAgent` in CAMEL, I will 
-explain key aspects of the implementation provided in the source code 
-"retrieved" and guide you on how to create and utilize the `ChatAgent` 
+Based on your request to learn how to use a `ChatAgent` in CAMEL, I will
+explain key aspects of the implementation provided in the source code
+"retrieved" and guide you on how to create and utilize the `ChatAgent`
 effectively.
 
 ### Overview of `ChatAgent`
 
-`ChatAgent` is designed to interact with language models, supporting 
-conversation management, memory, and tool integration. 
-It can perform tasks like handling user queries, responding with structured 
+`ChatAgent` is designed to interact with language models, supporting
+conversation management, memory, and tool integration.
+It can perform tasks like handling user queries, responding with structured
 data, and performing computations.
 
 ### Basic Usage of `ChatAgent`
@@ -64,7 +64,7 @@ Here's a step-by-step guide on how to implement and utilize a `ChatAgent`:
    ```
 
 2. **Creating a `ChatAgent` Instance**:
-   When you create an instance of `ChatAgent`, you can optionally pass a 
+   When you create an instance of `ChatAgent`, you can optionally pass a
    `system_message` to define its role and behavior.
 
    ```python
@@ -72,7 +72,7 @@ Here's a step-by-step guide on how to implement and utilize a `ChatAgent`:
    ```
 
 3. **Interacting with the Agent**:
-   You can have a conversation by using the `step()` method, which allows you 
+   You can have a conversation by using the `step()` method, which allows you
    to send messages and get responses.
 
    ```python
@@ -100,7 +100,7 @@ response = agent_with_tool.step("What is 2 + 2 using the calculator?")
 
 #### Structured Output
 
-You can specify structured outputs using Pydantic models to control the 
+You can specify structured outputs using Pydantic models to control the
 format of the response.
 
 ```python
@@ -119,7 +119,7 @@ response = agent.step(
 
 ### Example with a Specific Model
 
-The code examples you provided also show how to specify and configure models 
+The code examples you provided also show how to specify and configure models
 used by `ChatAgent`. Here's how to create a `ChatAgent` with a custom model:
 
 ```python
@@ -144,13 +144,13 @@ print(response.msgs[0].content)
 
 ### Conclusion
 
-You can leverage `ChatAgent` in CAMEL to create powerful conversational agents 
-that can perform a variety of tasks, integrate tools, and manage conversations 
-effectively. The examples given demonstrate basic usage, tool integration, 
-structured output formats, and model specification, allowing you to customize 
+You can leverage `ChatAgent` in CAMEL to create powerful conversational agents
+that can perform a variety of tasks, integrate tools, and manage conversations
+effectively. The examples given demonstrate basic usage, tool integration,
+structured output formats, and model specification, allowing you to customize
 the behavior of your chat agent to suit your needs.
 
-If you need more specific features or have other questions about the CAMEL 
+If you need more specific features or have other questions about the CAMEL
 framework, feel free to ask!
 
 """

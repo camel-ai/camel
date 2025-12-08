@@ -27,8 +27,8 @@ o1_model = ModelFactory.create(
 camel_agent = ChatAgent(model=o1_model)
 
 # Set user message
-user_msg = """Write a bash script that takes a matrix represented as a string 
-    with format '[1,2],[3,4],[5,6]' and prints the transpose in the same 
+user_msg = """Write a bash script that takes a matrix represented as a string
+    with format '[1,2],[3,4],[5,6]' and prints the transpose in the same
     format."""
 
 # Get response information
@@ -36,8 +36,8 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Here's a bash script that transposes a matrix represented as the string format 
-specified. It handles matrices of various sizes, including those with varying 
+Here's a bash script that transposes a matrix represented as the string format
+specified. It handles matrices of various sizes, including those with varying
 numbers of columns.
 
 ```bash
@@ -114,7 +114,7 @@ echo "$output"
 
 **Usage:**
 
-Save the script to a file, for example, `transpose_matrix.sh`, and make it 
+Save the script to a file, for example, `transpose_matrix.sh`, and make it
 executable:
 
 ```bash
@@ -146,7 +146,7 @@ The script performs the following steps:
    - For each row:
      - Removes the leading `[` and trailing `]`.
      - Splits the row into its elements.
-     - Stores the elements into an associative array `matrix` with keys as 
+     - Stores the elements into an associative array `matrix` with keys as
      `row,column`.
 
 3. **Determining the Matrix Dimensions:**
@@ -165,9 +165,9 @@ The script performs the following steps:
 **Notes:**
 
 - The script supports matrices where rows have different numbers of columns.
-- Missing elements in the matrix (due to irregular column sizes) are handled 
+- Missing elements in the matrix (due to irregular column sizes) are handled
 by inserting empty strings in the transposed matrix.
-- The `join_by` function is used to handle joining array elements with a 
+- The `join_by` function is used to handle joining array elements with a
 specified delimiter, ensuring proper formatting.
 ===============================================================================
 '''

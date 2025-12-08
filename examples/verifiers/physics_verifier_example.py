@@ -28,8 +28,8 @@ print(f"{result} ")
 
 basic_test_code = r"""
 import sympy as sp
-Q = 25000  
-T = 373.15 
+Q = 25000
+T = 373.15
 ΔS = Q / T
 result = ΔS
 unit="J/K"

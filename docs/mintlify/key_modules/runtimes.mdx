@@ -122,11 +122,10 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
 
 ## More Examples
 
-You’ll find runnable scripts for each runtime in <b>[examples/runtime](https://github.com/camel-ai/camel/tree/master/examples/runtimes)/</b> in our main repo.  
+You’ll find runnable scripts for each runtime in <b>[examples/runtime](https://github.com/camel-ai/camel/tree/master/examples/runtimes)/</b> in our main repo.
 Each script demonstrates how to initialize and use a specific runtime—perfect for experimentation or production setups.
 
 ## Final Note
 
-The runtime system primarily sandboxes <code>FunctionTool</code>-style tool functions.  
+The runtime system primarily sandboxes <code>FunctionTool</code>-style tool functions.
 For agent-level, dynamic code execution, always consider dedicated sandboxing—such as <b>UbuntuDockerRuntime</b>’s <code>exec_python_file()</code>—for running dynamically generated scripts with maximum isolation and safety.
-

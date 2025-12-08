@@ -107,9 +107,9 @@ I found several MCP tools that can connect to Gmail. Here are the options:
 5. **Google Workspace Server** (@rishipradeep-think41/gmail-backupmcp)
    - Another option for managing Gmail and Calendar
 
-Each of these tools requires configuration before it can be used. You'll need 
-to click on one of the configuration links above to set up the tool with your 
-Gmail credentials. Once you've completed the configuration, let me know which 
+Each of these tools requires configuration before it can be used. You'll need
+to click on one of the configuration links above to set up the tool with your
+Gmail credentials. Once you've completed the configuration, let me know which
 tool you've chosen, and I can help you use it to connect to your Gmail account.
 ===========================================================================
 """
@@ -122,13 +122,13 @@ Response from Use Brave MCP search tools to search info about Camel-AI.org.:
 Based on my search results, here's what I found about CAMEL-AI.org:
 
 ## Organization Overview
-CAMEL-AI.org is the first LLM (Large Language Model) multi-agent framework and 
-an open-source community. The name CAMEL stands for "Communicative Agents for 
+CAMEL-AI.org is the first LLM (Large Language Model) multi-agent framework and
+an open-source community. The name CAMEL stands for "Communicative Agents for
 Mind Exploration of Large Language Model Society."
 
 ## Core Purpose
-The organization is dedicated to "Finding the Scaling Law of Agents" - this 
-appears to be their primary research mission, focusing on understanding how 
+The organization is dedicated to "Finding the Scaling Law of Agents" - this
+appears to be their primary research mission, focusing on understanding how
 agent-based AI systems scale and develop.
 
 ## Research Focus
@@ -140,14 +140,14 @@ CAMEL-AI is a research-driven organization that explores:
 
 ## Community and Collaboration
 - They maintain an active open-source community
-- They invite contributors and collaborators through platforms like Slack and 
+- They invite contributors and collaborators through platforms like Slack and
 Discord
-- The organization has a research collaboration questionnaire for those 
+- The organization has a research collaboration questionnaire for those
 interested in building or researching environments for LLM-based agents
 
 ## Technical Resources
 - Their code is available on GitHub (github.com/camel-ai) with 18 repositories
-- They provide documentation for developers and researchers at 
+- They provide documentation for developers and researchers at
 docs.camel-ai.org
 - They offer tools and cookbooks for working with their agent framework
 
@@ -156,8 +156,8 @@ docs.camel-ai.org
 - GitHub: https://github.com/camel-ai
 - Documentation: https://docs.camel-ai.org/
 
-The organization appears to be at the forefront of research on multi-agent AI 
-systems, focusing on how these systems can cooperate autonomously and scale 
+The organization appears to be at the forefront of research on multi-agent AI
+systems, focusing on how these systems can cooperate autonomously and scale
 effectively.
 ===========================================================================
 """

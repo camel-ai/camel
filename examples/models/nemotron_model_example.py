@@ -33,16 +33,16 @@ print(ans)
 ChatCompletion(id='4668ad22-1dec-4df4-ba92-97ffa5fbd16d', choices=[Choice
 (finish_reason='length', index=0, logprobs=ChoiceLogprobs(content=
 [ChatCompletionTokenLogprob(token='helpfulness', bytes=None, logprob=1.
-6171875, top_logprobs=[]), ChatCompletionTokenLogprob(token='correctness', 
+6171875, top_logprobs=[]), ChatCompletionTokenLogprob(token='correctness',
 bytes=None, logprob=1.6484375, top_logprobs=[]), ChatCompletionTokenLogprob
-(token='coherence', bytes=None, logprob=3.3125, top_logprobs=[]), 
-ChatCompletionTokenLogprob(token='complexity', bytes=None, logprob=0.546875, 
-top_logprobs=[]), ChatCompletionTokenLogprob(token='verbosity', bytes=None, 
+(token='coherence', bytes=None, logprob=3.3125, top_logprobs=[]),
+ChatCompletionTokenLogprob(token='complexity', bytes=None, logprob=0.546875,
+top_logprobs=[]), ChatCompletionTokenLogprob(token='verbosity', bytes=None,
 logprob=0.515625, top_logprobs=[])]), message=[ChatCompletionMessage
 (content='helpfulness:1.6171875,correctness:1.6484375,coherence:3.3125,
-complexity:0.546875,verbosity:0.515625', role='assistant', function_call=None, 
-tool_calls=None)])], created=None, model=None, object=None, 
-system_fingerprint=None, usage=CompletionUsage(completion_tokens=1, 
+complexity:0.546875,verbosity:0.515625', role='assistant', function_call=None,
+tool_calls=None)])], created=None, model=None, object=None,
+system_fingerprint=None, usage=CompletionUsage(completion_tokens=1,
 prompt_tokens=78, total_tokens=79))
 ===============================================================================
 '''

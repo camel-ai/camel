@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-This example demonstrates different Weaviate connection types and 
+This example demonstrates different Weaviate connection types and
 configurations.
  Make sure you have the appropriate Weaviate instance running.
 
