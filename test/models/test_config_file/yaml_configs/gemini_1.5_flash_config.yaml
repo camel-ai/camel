@@ -6,4 +6,3 @@ model_config_dict:
 token_counter: OpenAITokenCounter
 api_key: test_key
 url: null
-

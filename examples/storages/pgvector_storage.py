@@ -21,7 +21,7 @@ from camel.storages.vectordb_storages import (
 )
 
 """
-Before running this example, you need to setup a PostgreSQL instance with 
+Before running this example, you need to setup a PostgreSQL instance with
 the pgvector extension:
 
 1. Install PostgreSQL and pgvector extension:

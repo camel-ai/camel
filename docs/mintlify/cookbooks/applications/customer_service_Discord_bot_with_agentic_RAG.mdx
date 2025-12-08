@@ -259,7 +259,7 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
     user_input = message.content
-    
+
     agent.reset()
     agent.update_memory(knowledge_message, "user")
     assistant_response = agent.step(user_input)

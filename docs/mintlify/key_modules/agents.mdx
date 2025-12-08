@@ -7,7 +7,7 @@ icon: user-helmet-safety
 
 ## Concept
 
-Agents in CAMEL are autonomous entities capable of performing specific tasks through interaction with language models and other components. 
+Agents in CAMEL are autonomous entities capable of performing specific tasks through interaction with language models and other components.
 Each agent is designed with a particular role and capability, allowing them to work independently or collaboratively to achieve complex goals.
 
 <Note type="info" title="What is an Agent?">
@@ -38,26 +38,26 @@ The `ChatAgent` is the primary implementation that handles conversations with la
 <AccordionGroup>
 
   <Accordion title="Other Agent Types (When to Use)">
-  
-  **`CriticAgent`**  
+
+  **`CriticAgent`**
   Specialized agent for evaluating and critiquing responses or solutions. Used in scenarios requiring quality assessment or validation.
 
-  **`DeductiveReasonerAgent`**  
+  **`DeductiveReasonerAgent`**
   Focused on logical reasoning and deduction. Breaks down complex problems into smaller, manageable steps.
 
-  **`EmbodiedAgent`**  
+  **`EmbodiedAgent`**
   Designed for embodied AI scenarios, capable of understanding and responding to physical world contexts.
 
-  **`KnowledgeGraphAgent`**  
+  **`KnowledgeGraphAgent`**
   Specialized in building and utilizing knowledge graphs for enhanced reasoning and information management.
 
-  **`MultiHopGeneratorAgent`**  
+  **`MultiHopGeneratorAgent`**
   Handles multi-hop reasoning tasks, generating intermediate steps to reach conclusions.
 
-  **`SearchAgent`**  
+  **`SearchAgent`**
   Focused on information retrieval and search tasks across various data sources.
 
-  **`TaskAgent`**  
+  **`TaskAgent`**
   Handles task decomposition and management, breaking down complex tasks into manageable subtasks.
 
   </Accordion>

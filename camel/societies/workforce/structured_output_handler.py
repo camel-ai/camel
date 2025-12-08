@@ -144,9 +144,9 @@ Fields marked with * are required and must be present in your response.
 
         # Add critical reminder
         structured_section += """
-**CRITICAL**: Your response must contain ONLY the JSON object within the code 
+**CRITICAL**: Your response must contain ONLY the JSON object within the code
 block.
-Do not include any explanatory text, comments, or content outside the JSON 
+Do not include any explanatory text, comments, or content outside the JSON
 structure.
 Ensure the JSON is valid and properly formatted.
 """
