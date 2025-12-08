@@ -1,28 +1,29 @@
-<a id="camel.models.vllm_model"></a>
+<a id="camel.models.ollama_model"></a>
 
-<a id="camel.models.vllm_model.VLLMModel"></a>
+<a id="camel.models.ollama_model.OllamaModel"></a>
 
-## VLLMModel
+## OllamaModel
 
 ```python
-class VLLMModel(OpenAICompatibleModel):
+class OllamaModel(OpenAICompatibleModel):
 ```
 
-vLLM service interface.
+Ollama service interface.
 
 **Parameters:**
 
 - **model_type** (Union[ModelType, str]): Model for which a backend is created.
-- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`VLLMConfig().as_dict()` will be used. (default: :obj:`None`)
-- **api_key** (Optional[str], optional): The API key for authenticating with the model service. vLLM doesn't need API key, it would be ignored if set. (default: :obj:`None`)
-- **url** (Optional[str], optional): The url to the model service. If not provided, :obj:`"http://localhost:8000/v1"` will be used. (default: :obj:`None`)
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`.
+- **If**: obj:`None`, :obj:`OllamaConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. Required for Ollama cloud services. If not provided, defaults to "Not_Provided". (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
-- **References**: 
-- **https**: //docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+- **References**:
+- **https**: //github.com/ollama/ollama/blob/main/docs/openai.md
 
-<a id="camel.models.vllm_model.VLLMModel.__init__"></a>
+<a id="camel.models.ollama_model.OllamaModel.__init__"></a>
 
 ### __init__
 
@@ -40,7 +41,7 @@ def __init__(
 ):
 ```
 
-<a id="camel.models.vllm_model.VLLMModel._start_server"></a>
+<a id="camel.models.ollama_model.OllamaModel._start_server"></a>
 
 ### _start_server
 
@@ -48,4 +49,4 @@ def __init__(
 def _start_server(self):
 ```
 
-Starts the vllm server in a subprocess.
+Starts the Ollama server in a subprocess.
