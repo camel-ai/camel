@@ -756,6 +756,32 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def delete_calendar_event(
+        self,
+        event_id: str,
+    ) -> dict[str, str]:
+        """Deletes a calendar event by its ID.
+
+        Args:
+            event_id (str): The unique identifier of the event to delete.
+
+        Returns:
+            dict[str, str]: A dictionary containing the status and details
+                of the deletion operation or an error message.
+        """
+        try:
+            await self.client.me.events.by_event_id(event_id).delete()
+            return {
+                "status": "success",
+                "message": "Calendar event deleted successfully.",
+                "event_id": event_id,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to delete calendar event: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -771,4 +797,5 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.update_calendar)),
             FunctionTool(run_async(self.create_calendar_event)),
             FunctionTool(run_async(self.update_calendar_event)),
+            FunctionTool(run_async(self.delete_calendar_event)),
         ]

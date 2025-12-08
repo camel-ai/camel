@@ -695,3 +695,46 @@ class TestUpdateCalendarEvent:
         assert 'error' in result
         assert 'Failed to update calendar event' in result['error']
         assert 'Event not found' in result['error']
+
+
+@pytest.mark.asyncio
+class TestDeleteCalendarEvent:
+    """Tests for delete_calendar_event method."""
+
+    async def test_delete_calendar_event_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar event deletion."""
+        async_delete_mock = AsyncMock(return_value=None)
+        mock_graph_client.me.events.by_event_id.return_value.delete = (
+            async_delete_mock
+        )
+
+        result = await outlook_calendar_toolkit.delete_calendar_event(
+            event_id='event_id'
+        )
+
+        assert result['status'] == 'success'
+        assert result['message'] == 'Calendar event deleted successfully.'
+        assert result['event_id'] == 'event_id'
+
+        # Verify event_id was used
+        mock_graph_client.me.events.by_event_id.assert_called_with('event_id')
+        async_delete_mock.assert_called_once()
+
+    async def test_delete_calendar_event_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar event deletion when API raises an exception."""
+        async_delete_mock = AsyncMock(side_effect=Exception('Event not found'))
+        mock_graph_client.me.events.by_event_id.return_value.delete = (
+            async_delete_mock
+        )
+
+        result = await outlook_calendar_toolkit.delete_calendar_event(
+            event_id='invalid_event_id'
+        )
+
+        assert 'error' in result
+        assert 'Failed to delete calendar event' in result['error']
+        assert 'Event not found' in result['error']
