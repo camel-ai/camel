@@ -22,7 +22,7 @@ from camel.storages.vectordb_storages import (
 from camel.types import VectorDistance
 
 """
-Before running this example, you need to setup ChromaDB based on your chosen 
+Before running this example, you need to setup ChromaDB based on your chosen
 connection type:
 
 (Option 1): Ephemeral ChromaDB (In-Memory):
@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-This example demonstrates different ChromaDB connection types and 
+This example demonstrates different ChromaDB connection types and
 configurations.ChromaDB is an AI-native vector database for embeddings.
 
 === Ephemeral ChromaDB Connection Example ===

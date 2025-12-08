@@ -65,8 +65,8 @@ response = agent.step(
 print(response.msgs[0].content)
 """
 ==========================================================================
-The current #1 best-selling product in the gaming category on Amazon is the 
-**AutoFull C3 Gaming Chair**. 
+The current #1 best-selling product in the gaming category on Amazon is the
+**AutoFull C3 Gaming Chair**.
 
 - **Price:** $249.99
 - **Rating:** 4.4 stars based on 5,283 ratings.

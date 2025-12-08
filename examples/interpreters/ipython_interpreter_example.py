@@ -21,7 +21,7 @@ interpreter = JupyterKernelInterpreter(
 code = """
 def add(a, b):
     return a + b
-    
+
 def multiply(a, b):
     return a * b
 
@@ -34,7 +34,7 @@ def main():
     operation = subtract
     result = operation(a, b)
     print(result)
-    
+
 if __name__ == "__main__":
     main()
 """

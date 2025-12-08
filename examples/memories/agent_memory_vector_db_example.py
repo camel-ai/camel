@@ -66,13 +66,13 @@ print(
 )
 '''
 ===============================================================================
-Agent #1 response: Yes, dolphins use echolocation as a way to navigate and 
-hunt for food in their aquatic environment. They emit sound waves that travel 
-through the water, and when these sound waves hit an object, they bounce back 
-to the dolphin. By interpreting the returning echoes, dolphins can determine 
-the size, shape, distance, and even the texture of objects around them. This 
-ability is particularly useful in murky waters where visibility is limited. 
-Echolocation is a remarkable adaptation that enhances their ability to survive 
+Agent #1 response: Yes, dolphins use echolocation as a way to navigate and
+hunt for food in their aquatic environment. They emit sound waves that travel
+through the water, and when these sound waves hit an object, they bounce back
+to the dolphin. By interpreting the returning echoes, dolphins can determine
+the size, shape, distance, and even the texture of objects around them. This
+ability is particularly useful in murky waters where visibility is limited.
+Echolocation is a remarkable adaptation that enhances their ability to survive
 and thrive in their habitats.
 ===============================================================================
 '''
@@ -85,12 +85,12 @@ print(
 )
 '''
 ===============================================================================
-Agent #1 response: That's correct! Whales are indeed the largest mammals on 
-Earth, with the blue whale being the largest animal known to have ever 
-existed. They belong to the order Cetacea, which also includes dolphins and 
-porpoises. Both dolphins and whales use echolocation to navigate and hunt for 
-food in the ocean, although their methods and the specifics of their 
-echolocation can vary. Would you like to know more about either dolphins or 
+Agent #1 response: That's correct! Whales are indeed the largest mammals on
+Earth, with the blue whale being the largest animal known to have ever
+existed. They belong to the order Cetacea, which also includes dolphins and
+porpoises. Both dolphins and whales use echolocation to navigate and hunt for
+food in the ocean, although their methods and the specifics of their
+echolocation can vary. Would you like to know more about either dolphins or
 whales?
 ===============================================================================
 '''
@@ -107,7 +107,7 @@ Agent #1 memory saved to agent1_vectordb_memory.json.
 
 # 7) Create a new agent, load that JSON memory to confirm retrieval
 new_agent1 = ChatAgent(
-    system_message="""You are the resurrected assistant #1 with 
+    system_message="""You are the resurrected assistant #1 with
     vector DB memory.""",
     agent_id="agent_001",  # same agent_id to match the saved records
     model=model,
@@ -137,47 +137,47 @@ print(
 )
 '''
 ===============================================================================
-New Agent #1 response (after loading memory): Marine mammals are a diverse 
-group of mammals that are primarily adapted to life in the ocean. They include 
-several different orders, each with unique characteristics and adaptations. 
+New Agent #1 response (after loading memory): Marine mammals are a diverse
+group of mammals that are primarily adapted to life in the ocean. They include
+several different orders, each with unique characteristics and adaptations.
 Here are some key points about marine mammals:
 
 1. **Orders of Marine Mammals**:
-   - **Cetacea**: This order includes whales, dolphins, and porpoises. They 
-   are fully aquatic and have adaptations such as streamlined bodies and the 
+   - **Cetacea**: This order includes whales, dolphins, and porpoises. They
+   are fully aquatic and have adaptations such as streamlined bodies and the
    ability to hold their breath for long periods.
-   - **Pinnipedia**: This group includes seals, sea lions, and walruses. They 
+   - **Pinnipedia**: This group includes seals, sea lions, and walruses. They
    are semi-aquatic, spending time both in the water and on land.
-   - **Sirenia**: This order includes manatees and dugongs, which are 
+   - **Sirenia**: This order includes manatees and dugongs, which are
    herbivorous and primarily inhabit warm coastal waters and rivers.
-   - **Marine Carnivora**: This includes animals like sea otters and polar 
+   - **Marine Carnivora**: This includes animals like sea otters and polar
    bears, which rely on marine environments for food.
 
-2. **Adaptations**: Marine mammals have various adaptations for life in the 
+2. **Adaptations**: Marine mammals have various adaptations for life in the
 water, including:
    - Streamlined bodies for efficient swimming.
    - Blubber for insulation against cold water.
    - Specialized respiratory systems for holding breath and diving.
-   - Echolocation in some species (like dolphins and certain whales) for 
+   - Echolocation in some species (like dolphins and certain whales) for
    navigation and hunting.
 
-3. **Reproduction**: Most marine mammals give live birth and nurse their young 
-with milk. They typically have longer gestation periods compared to 
+3. **Reproduction**: Most marine mammals give live birth and nurse their young
+with milk. They typically have longer gestation periods compared to
 terrestrial mammals.
 
-4. **Social Structures**: Many marine mammals are social animals, living in 
-groups called pods (in the case of dolphins and some whales) or colonies (in 
+4. **Social Structures**: Many marine mammals are social animals, living in
+groups called pods (in the case of dolphins and some whales) or colonies (in
 the case of seals).
 
-5. **Conservation**: Many marine mammals face threats from human activities, 
-including habitat loss, pollution, climate change, and hunting. Conservation 
+5. **Conservation**: Many marine mammals face threats from human activities,
+including habitat loss, pollution, climate change, and hunting. Conservation
 efforts are crucial to protect these species and their habitats.
 
-6. **Intelligence**: Many marine mammals, particularly cetaceans, are known 
-for their high intelligence, complex social behaviors, and communication 
+6. **Intelligence**: Many marine mammals, particularly cetaceans, are known
+for their high intelligence, complex social behaviors, and communication
 skills.
 
-If you have specific questions or topics related to marine mammals that you'd 
+If you have specific questions or topics related to marine mammals that you'd
 like to explore further, feel free to ask!
 ===============================================================================
 '''

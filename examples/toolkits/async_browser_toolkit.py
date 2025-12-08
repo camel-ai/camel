@@ -53,7 +53,7 @@ browser_simulator_toolkit = AsyncBrowserToolkit(
 
 web_agent = ChatAgent(
     """
-You are a helpful assistant that can search the web, simulate browser 
+You are a helpful assistant that can search the web, simulate browser
 actions, and provide relevant information to solve the given task.
 """,
     model=web_model,
@@ -87,7 +87,7 @@ workforce = Workforce(
 
 workforce.add_single_agent_worker(
     """
-    An agent that can search the web, simulate browser actions, 
+    An agent that can search the web, simulate browser actions,
     and provide relevant information to solve the given task.""",
     worker=web_agent,
 )
@@ -107,8 +107,8 @@ print(task_result.result)
 
 """
 ==========================================================================
-The current #1 best-selling product in the gaming category on Amazon is 
-'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and 
+The current #1 best-selling product in the gaming category on Amazon is
+'Minecraft: Switch Edition - Nintendo Switch'. The price is $35.97, and
 it has a rating of 4.8 stars based on 1,525 ratings.
 ==========================================================================
 """

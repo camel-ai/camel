@@ -44,7 +44,7 @@ description: |
   </Card>
 
   <Card title="OWL 🦉" icon="brain-circuit" href="https://github.com/camel-ai/owl">
-    OWL (Optimized Workforce Learning) is a multi-agent automation framework for real-world tasks. Built on CAMEL-AI, 
+    OWL (Optimized Workforce Learning) is a multi-agent automation framework for real-world tasks. Built on CAMEL-AI,
     it enables dynamic agent collaboration using tools like browsers, code interpreters, and multimodal models.
   </Card>
 </CardGroup>

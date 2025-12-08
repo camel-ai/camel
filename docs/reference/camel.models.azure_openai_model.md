@@ -23,7 +23,7 @@ Azure OpenAI API in a unified BaseModelBackend interface.
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
-- **References**: 
+- **References**:
 - **https**: //learn.microsoft.com/en-us/azure/ai-services/openai/
 
 <a id="camel.models.azure_openai_model.AzureOpenAIModel.__init__"></a>

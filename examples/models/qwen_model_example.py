@@ -54,37 +54,37 @@ class SimpleTradingBot:
             'secret': secret,
             'enableRateLimit': True,
         })
-        
+
         self.symbol = symbol
         self.timeframe = timeframe
         self.short_window = short_window
         self.long_window = long_window
         self.position = None  # 'long', 'short', or None
-        
+
     def fetch_ohlcv(self, limit=100):
         """Fetch OHLCV data from exchange"""
         raw_data = self.exchange.fetch_ohlcv(self.symbol, self.timeframe, limit=limit)
         df = pd.DataFrame(raw_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         return df
-    
+
     def calculate_indicators(self, df):
         """Calculate moving averages"""
         df['sma_short'] = df['close'].rolling(window=self.short_window).mean()
         df['sma_long'] = df['close'].rolling(window=self.long_window).mean()
         return df
-    
+
     def generate_signal(self, df):
         """Generate buy/sell signals based on moving average crossover"""
         if len(df) < self.long_window:
             return 'HOLD'
-            
+
         # Get last two values for crossover detection
         short_current = df['sma_short'].iloc[-1]
         short_prev = df['sma_short'].iloc[-2]
         long_current = df['sma_long'].iloc[-1]
         long_prev = df['sma_long'].iloc[-2]
-        
+
         # Bullish crossover
         if short_prev <= long_prev and short_current > long_current:
             return 'BUY'
@@ -93,7 +93,7 @@ class SimpleTradingBot:
             return 'SELL'
         else:
             return 'HOLD'
-    
+
     def execute_order(self, signal, amount=0.001):  # Default small amount for safety
         """Execute buy/sell orders"""
         try:
@@ -102,16 +102,16 @@ class SimpleTradingBot:
                 order = self.exchange.create_market_buy_order(self.symbol, amount)
                 self.position = 'long'
                 print(f"Order executed: {order}")
-                
+
             elif signal == 'SELL' and self.position != 'short':
                 print(f"[{datetime.now()}] SELL signal. Executing order...")
                 order = self.exchange.create_market_sell_order(self.symbol, amount)
                 self.position = 'short'
                 print(f"Order executed: {order}")
-                
+
         except Exception as e:
             print(f"Order execution failed: {e}")
-    
+
     def run(self):
         """Main bot loop"""
         print(f"Starting bot for {self.symbol} on {self.exchange.id}")
@@ -120,18 +120,18 @@ class SimpleTradingBot:
                 # Fetch market data
                 df = self.fetch_ohlcv()
                 df = self.calculate_indicators(df)
-                
+
                 # Generate trading signal
                 signal = self.generate_signal(df)
                 print(f"[{datetime.now()}] Signal: {signal} | Price: {df['close'].iloc[-1]}")
-                
+
                 # Execute order if signal is strong
                 if signal in ['BUY', 'SELL']:
                     self.execute_order(signal)
-                
+
                 # Wait before next iteration
                 time.sleep(60)  # Check every minute
-                
+
             except Exception as e:
                 print(f"Error: {e}")
                 time.sleep(60)
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         short_window=10,
         long_window=50
     )
-    
+
     # Run the bot (WARNING: This will execute real trades)
     # bot.run()  # Uncomment to run live
 ```
@@ -286,7 +286,7 @@ def trading_bot():
     slow_ma_period = 20
 
     print("Starting trading bot...")
-    
+
     while True:
         try:
             fast_ma = get_moving_average(symbol, KLINE_INTERVAL_1MINUTE, fast_ma_period)

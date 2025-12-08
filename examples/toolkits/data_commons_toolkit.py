@@ -18,7 +18,7 @@ dc_toolkit = DataCommonsToolkit()
 
 # Example 1: Query Data Commons
 geoId06_name_query = '''
-SELECT ?name ?dcid 
+SELECT ?name ?dcid
 WHERE {
     ?a typeOf Place .
     ?a name ?name .
@@ -33,8 +33,8 @@ print(result)
 '''
 ===============================================================================
 Query Result:
-[{'?name': 'Kentucky', '?dcid': 'geoId/21'}, 
- {'?name': 'California', '?dcid': 'geoId/06'}, 
+[{'?name': 'Kentucky', '?dcid': 'geoId/21'},
+ {'?name': 'California', '?dcid': 'geoId/06'},
  {'?name': 'Maryland', '?dcid': 'geoId/24'}]
 ===============================================================================
 '''

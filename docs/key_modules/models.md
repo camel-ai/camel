@@ -91,7 +91,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 <Tabs>
 
   <Tab title="OpenAI">
-    
+
   Here's how you use OpenAI models such as GPT-4o-mini with CAMEL:
 
   ```python
@@ -118,7 +118,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="Gemini">
-    
+
   Using Google's Gemini models in CAMEL:
 
  - **Google AI Studio** ([Quick Start](https://aistudio.google.com/)): Try models quickly in a no-code environment.
@@ -149,7 +149,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="Mistral">
-    
+
   Integrate Mistral AI models like Mistral Medium into CAMEL:
 
   ```python
@@ -176,7 +176,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="Anthropic">
-    
+
   Leveraging Anthropic's Claude models within CAMEL:
 
   ```python
@@ -203,10 +203,10 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="CometAPI">
-    
+
   Leverage [CometAPI](https://api.cometapi.com/)'s unified access to multiple frontier AI models:
 
- - **CometAPI Platform** ([CometAPI](https://www.cometapi.com/?utm_source=camel-ai&utm_campaign=integration&utm_medium=integration&utm_content=integration)): 
+ - **CometAPI Platform** ([CometAPI](https://www.cometapi.com/?utm_source=camel-ai&utm_campaign=integration&utm_medium=integration&utm_content=integration)):
  - **API Key Setup**: Obtain your CometAPI key to start integration.
  - **OpenAI Compatible**: Use familiar OpenAI API patterns with advanced frontier models.
 
@@ -265,7 +265,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
       ModelType.COMETAPI_QWEN3_30B_A3B,
       ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22
   ]
-  
+
   for model_type in models_to_try:
       model = ModelFactory.create(
           model_platform=ModelPlatformType.COMETAPI,
@@ -277,7 +277,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="Nebius">
-    
+
   Leverage [Nebius AI Studio](https://nebius.com/)'s high-performance GPU cloud with OpenAI-compatible models:
 
  - **Nebius AI Studio** ([Platform](https://studio.nebius.com/)): Access powerful models through their cloud infrastructure.
@@ -319,7 +319,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   - **Complete Access:** All models available on [Nebius AI Studio](https://studio.nebius.com/) are supported
   - **Predefined Enums:** Common models like `NEBIUS_GPT_OSS_120B`, `NEBIUS_DEEPSEEK_V3`, etc.
   - **String-based Access:** Use any model name directly as a string for maximum flexibility
-  
+
   **Example with any model:**
   ```python
   # Use any model available on Nebius
@@ -393,7 +393,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
     - `OPENROUTER_LLAMA_4_SCOUT` - Meta's Llama 4 Scout model
     - `OPENROUTER_OLYMPICODER_7B` - Open R1's OlympicCoder 7B model
     - `OPENROUTER_HORIZON_ALPHA` - Horizon Alpha model
-    
+
     Free versions are also available for some models (e.g., `OPENROUTER_LLAMA_4_MAVERICK_FREE`).
   </Note>
 
@@ -427,7 +427,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
   <Tab title="Groq">
-    
+
   Using [Groq](https://groq.com/)'s powerful models (e.g., Llama 3.3-70B):
 
   ```python

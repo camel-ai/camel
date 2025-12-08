@@ -16,7 +16,7 @@ CAMEL developed an approach leverages iterative refinement, self-assessment, and
 
 ## 1. Overview of the End-to-End Pipeline 🔍
 
-### 1.1 Why an Iterative CoT Pipeline? 
+### 1.1 Why an Iterative CoT Pipeline?
 
 One-time CoT generation often leads to incomplete or suboptimal solutions. CAMEL addresses this challenge by employing a multi-step, iterative approach:
 
@@ -26,7 +26,7 @@ One-time CoT generation often leads to incomplete or suboptimal solutions. CAMEL
 
 This self-improving methodology ensures that the reasoning process improves progressively, meeting specific thresholds for correctness, clarity, and completeness. Each iteration enhances the model's ability to solve the problem by learning from the previous outputs and evaluations.
 
-### 1.2 Core Components 
+### 1.2 Core Components
 
 The self-improving pipeline consists of three key components:
 1. **`reason_agent`:** This agent is responsible for generating or improving reasoning traces.
@@ -61,7 +61,7 @@ Once the reasoning trace is generated, it is evaluated for its quality. This eva
 - **Detecting weaknesses**: The evaluation identifies areas where the reasoning trace could be further improved.
 - **Providing feedback**: The evaluation produces feedback that guides the agent in refining the reasoning trace. This feedback can come from either the **`evaluate_agent`** or a **`reward_model`**.
 
-#### 2.2.1 Agent-Based Evaluation 
+#### 2.2.1 Agent-Based Evaluation
 
 If an **`evaluate_agent`** is available, it examines the reasoning trace for:
 1. **Correctness**: Does the trace logically solve the problem?
@@ -70,7 +70,7 @@ If an **`evaluate_agent`** is available, it examines the reasoning trace for:
 
 The feedback from the agent provides insights into areas for improvement, such as unclear reasoning or incorrect answers, offering a more generalized approach compared to rule-based matching.
 
-#### 2.2.2 Reward Model Evaluation 
+#### 2.2.2 Reward Model Evaluation
 
 Alternatively, the pipeline supports using a **reward model** to evaluate the trace. The reward model outputs scores based on predefined dimensions such as correctness, coherence, complexity, and verbosity.
 
@@ -83,7 +83,7 @@ The key to CAMEL's success in CoT generation is its **self-improving loop**. Aft
 #### How does this iterative refinement work?
 
 1. **Feedback Integration**: The feedback from the evaluation phase is used to refine the reasoning. This could involve rewording unclear parts, adding missing steps, or adjusting the logic to make it more correct or complete.
-   
+
 2. **Improvement through Reasoning**: After receiving feedback, the **`reason_agent`** is used again to generate an improved version of the reasoning trace. This trace incorporates the feedback provided, refining the earlier steps and enhancing the overall reasoning.
 
 3. **Re-evaluation**: Once the trace is improved, the new version is evaluated again using the same process (either agent-based evaluation or reward model). This new trace is assessed against the same criteria to ensure the improvements have been made.
@@ -163,7 +163,7 @@ from camel.datagen import SelfImprovingCoTPipeline
 
 # Initialize agents
 reason_agent = ChatAgent(
-    """Answer my question and give your 
+    """Answer my question and give your
     final answer within \\boxed{}."""
 )
 

@@ -14,12 +14,14 @@
 
 import re
 from enum import Enum
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -31,7 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
-    from camel.agents.chat_agent import StreamingChatAgentResponse
+    from camel.responses import ChatAgentResponse
 import uuid
 
 from camel.logger import get_logger
@@ -409,6 +411,9 @@ class Task(BaseModel):
         agent: "ChatAgent",
         prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
     ) -> Union[List["Task"], Generator[List["Task"], None, None]]:
         r"""Decompose a task to a list of sub-tasks. Automatically detects
         streaming or non-streaming based on agent configuration.
@@ -420,6 +425,10 @@ class Task(BaseModel):
             task_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response. If not provided,
                 the default parse_response will be used.
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming. This allows tracking the decomposition
+                progress in real-time.
 
         Returns:
             Union[List[Task], Generator[List[Task], None, None]]: If agent is
@@ -441,21 +450,38 @@ class Task(BaseModel):
         # Auto-detect streaming based on response type
         from camel.agents.chat_agent import StreamingChatAgentResponse
 
-        if isinstance(response, StreamingChatAgentResponse):
-            return self._decompose_streaming(response, task_parser)
-        else:
-            return self._decompose_non_streaming(response, task_parser)
+        is_streaming = isinstance(
+            response, StreamingChatAgentResponse
+        ) or isinstance(response, GeneratorType)
+        if (
+            not is_streaming
+            and hasattr(response, "__iter__")
+            and not hasattr(response, "msg")
+        ):
+            is_streaming = True
+
+        if is_streaming:
+            return self._decompose_streaming(
+                response, task_parser, stream_callback=stream_callback
+            )
+        return self._decompose_non_streaming(response, task_parser)
 
     def _decompose_streaming(
         self,
-        response: "StreamingChatAgentResponse",
+        response: Iterable,
         task_parser: Callable[[str, str], List["Task"]],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
     ) -> Generator[List["Task"], None, None]:
         r"""Handle streaming response for task decomposition.
 
         Args:
             response: Streaming response from agent
             task_parser: Function to parse tasks from response
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming.
 
         Yields:
             List[Task]: New tasks as they are parsed from streaming response
@@ -466,6 +492,14 @@ class Task(BaseModel):
         # Process streaming response
         for chunk in response:
             accumulated_content = chunk.msg.content
+            if stream_callback:
+                try:
+                    stream_callback(chunk)
+                except Exception:
+                    logger.warning(
+                        "stream_callback failed during decomposition",
+                        exc_info=True,
+                    )
 
             # Try to parse partial tasks from accumulated content
             try:

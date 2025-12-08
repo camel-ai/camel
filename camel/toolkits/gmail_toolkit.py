@@ -73,7 +73,7 @@ class GmailToolkit(BaseToolkit):
         r"""Allow overriding/injecting the People service (e.g., in tests)."""
         self._people_service = service
 
-    def send_email(
+    def gmail_send_email(
         self,
         to: Union[str, List[str]],
         subject: str,
@@ -138,7 +138,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to send email: %s", e)
             return {"error": f"Failed to send email: {e!s}"}
 
-    def reply_to_email(
+    def gmail_reply_to_email(
         self,
         message_id: str,
         reply_body: str,
@@ -225,7 +225,7 @@ class GmailToolkit(BaseToolkit):
 
                 # Get current user's email and remove it from recipients
                 try:
-                    profile_result = self.get_profile()
+                    profile_result = self.gmail_get_profile()
                     if profile_result.get('success'):
                         current_user_email = profile_result['profile'][
                             'email_address'
@@ -280,7 +280,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to reply to email: %s", e)
             return {"error": f"Failed to reply to email: {e!s}"}
 
-    def forward_email(
+    def gmail_forward_email(
         self,
         message_id: str,
         to: Union[str, List[str]],
@@ -385,7 +385,7 @@ class GmailToolkit(BaseToolkit):
                             temp_files.append(temp_file.name)
 
                             # Download attachment
-                            result = self.get_attachment(
+                            result = self.gmail_get_attachment(
                                 message_id=message_id,
                                 attachment_id=att['attachment_id'],
                                 save_path=temp_file.name,
@@ -440,7 +440,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to forward email: %s", e)
             return {"error": f"Failed to forward email: {e!s}"}
 
-    def create_email_draft(
+    def gmail_create_draft(
         self,
         to: Union[str, List[str]],
         subject: str,
@@ -505,7 +505,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to create draft: %s", e)
             return {"error": f"Failed to create draft: {e!s}"}
 
-    def send_draft(self, draft_id: str) -> Dict[str, Any]:
+    def gmail_send_draft(self, draft_id: str) -> Dict[str, Any]:
         r"""Send a draft email.
 
         Args:
@@ -537,7 +537,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to send draft: %s", e)
             return {"error": f"Failed to send draft: {e!s}"}
 
-    def fetch_emails(
+    def gmail_fetch_emails(
         self,
         query: str = "",
         max_results: int = 10,
@@ -616,7 +616,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to fetch emails: %s", e)
             return {"error": f"Failed to fetch emails: {e!s}"}
 
-    def fetch_thread_by_id(self, thread_id: str) -> Dict[str, Any]:
+    def gmail_fetch_thread_by_id(self, thread_id: str) -> Dict[str, Any]:
         r"""Fetch a thread by ID.
 
         Args:
@@ -653,7 +653,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to fetch thread: %s", e)
             return {"error": f"Failed to fetch thread: {e!s}"}
 
-    def modify_email_labels(
+    def gmail_modify_email_labels(
         self,
         message_id: str,
         add_labels: Optional[List[str]] = None,
@@ -710,7 +710,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to modify labels: %s", e)
             return {"error": f"Failed to modify labels: {e!s}"}
 
-    def move_to_trash(self, message_id: str) -> Dict[str, Any]:
+    def gmail_move_to_trash(self, message_id: str) -> Dict[str, Any]:
         r"""Move a message to trash.
 
         Args:
@@ -742,7 +742,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to move message to trash: %s", e)
             return {"error": f"Failed to move message to trash: {e!s}"}
 
-    def get_attachment(
+    def gmail_get_attachment(
         self,
         message_id: str,
         attachment_id: str,
@@ -802,7 +802,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to get attachment: %s", e)
             return {"error": f"Failed to get attachment: {e!s}"}
 
-    def list_threads(
+    def gmail_list_threads(
         self,
         query: str = "",
         max_results: int = 10,
@@ -884,7 +884,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to list threads: %s", e)
             return {"error": f"Failed to list threads: {e!s}"}
 
-    def list_drafts(
+    def gmail_list_drafts(
         self, max_results: int = 10, page_token: Optional[str] = None
     ) -> Dict[str, Any]:
         r"""List email drafts.
@@ -932,7 +932,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to list drafts: %s", e)
             return {"error": f"Failed to list drafts: {e!s}"}
 
-    def list_gmail_labels(self) -> Dict[str, Any]:
+    def gmail_list_labels(self) -> Dict[str, Any]:
         r"""List all Gmail labels.
 
         Returns:
@@ -968,7 +968,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to list labels: %s", e)
             return {"error": f"Failed to list labels: {e!s}"}
 
-    def create_label(
+    def gmail_create_label(
         self,
         name: str,
         label_list_visibility: Literal["labelShow", "labelHide"] = "labelShow",
@@ -1015,7 +1015,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to create label: %s", e)
             return {"error": f"Failed to create label: {e!s}"}
 
-    def delete_label(self, label_id: str) -> Dict[str, Any]:
+    def gmail_delete_label(self, label_id: str) -> Dict[str, Any]:
         r"""Delete a Gmail label.
 
         Args:
@@ -1044,7 +1044,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to delete label: %s", e)
             return {"error": f"Failed to delete label: {e!s}"}
 
-    def modify_thread_labels(
+    def gmail_modify_thread_labels(
         self,
         thread_id: str,
         add_labels: Optional[List[str]] = None,
@@ -1102,7 +1102,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to modify thread labels: %s", e)
             return {"error": f"Failed to modify thread labels: {e!s}"}
 
-    def get_profile(self) -> Dict[str, Any]:
+    def gmail_get_profile(self) -> Dict[str, Any]:
         r"""Get Gmail profile information.
 
         Returns:
@@ -1127,7 +1127,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to get profile: %s", e)
             return {"error": f"Failed to get profile: {e!s}"}
 
-    def get_contacts(
+    def gmail_get_contacts(
         self,
         max_results: int = 100,
         page_token: Optional[str] = None,
@@ -1187,7 +1187,7 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to get contacts: %s", e)
             return {"error": f"Failed to get contacts: {e!s}"}
 
-    def search_people(
+    def gmail_search_people(
         self,
         query: str,
         max_results: int = 10,
@@ -1817,23 +1817,23 @@ class GmailToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.send_email),
-            FunctionTool(self.reply_to_email),
-            FunctionTool(self.forward_email),
-            FunctionTool(self.create_email_draft),
-            FunctionTool(self.send_draft),
-            FunctionTool(self.fetch_emails),
-            FunctionTool(self.fetch_thread_by_id),
-            FunctionTool(self.modify_email_labels),
-            FunctionTool(self.move_to_trash),
-            FunctionTool(self.get_attachment),
-            FunctionTool(self.list_threads),
-            FunctionTool(self.list_drafts),
-            FunctionTool(self.list_gmail_labels),
-            FunctionTool(self.create_label),
-            FunctionTool(self.delete_label),
-            FunctionTool(self.modify_thread_labels),
-            FunctionTool(self.get_profile),
-            FunctionTool(self.get_contacts),
-            FunctionTool(self.search_people),
+            FunctionTool(self.gmail_send_email),
+            FunctionTool(self.gmail_reply_to_email),
+            FunctionTool(self.gmail_forward_email),
+            FunctionTool(self.gmail_create_draft),
+            FunctionTool(self.gmail_send_draft),
+            FunctionTool(self.gmail_fetch_emails),
+            FunctionTool(self.gmail_fetch_thread_by_id),
+            FunctionTool(self.gmail_modify_email_labels),
+            FunctionTool(self.gmail_move_to_trash),
+            FunctionTool(self.gmail_get_attachment),
+            FunctionTool(self.gmail_list_threads),
+            FunctionTool(self.gmail_list_drafts),
+            FunctionTool(self.gmail_list_labels),
+            FunctionTool(self.gmail_create_label),
+            FunctionTool(self.gmail_delete_label),
+            FunctionTool(self.gmail_modify_thread_labels),
+            FunctionTool(self.gmail_get_profile),
+            FunctionTool(self.gmail_get_contacts),
+            FunctionTool(self.gmail_search_people),
         ]
