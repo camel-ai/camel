@@ -522,7 +522,6 @@ exclude = [
     '\.venv/.*',        # exclude .venv directory
     'site-packages/.*', # exclude site-packages
 ]
-disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -661,6 +660,7 @@ module = [
     "sentence_transformers.*",
     "markitdown",
     "httplib2",
+    "serpapi.*",
 ]
 
 ignore_missing_imports = true
