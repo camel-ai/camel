@@ -1400,7 +1400,7 @@ class SearchToolkit(BaseToolkit):
         """
         from serpapi import SerpApiClient
 
-        SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+        SerpApiClient.SERP_API_KEY = os.environ["SERPAPI_KEY"]
         params = {
             "engine": engine,
             "q": query,
@@ -1412,7 +1412,6 @@ class SearchToolkit(BaseToolkit):
             "num": number_of_result_pages,
             "safe": safe,
             "filter": filter,
-            "api_key": SERPAPI_KEY,
         }
 
         if custom_params:
