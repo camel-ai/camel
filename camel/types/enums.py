@@ -257,8 +257,6 @@ class ModelType(UnifiedModelType, Enum):
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
     GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
-    GEMINI_1_5_FLASH = "gemini-1.5-flash"
-    GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -871,8 +869,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -1580,8 +1576,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
