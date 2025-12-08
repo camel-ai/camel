@@ -646,6 +646,116 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def update_calendar_event(
+        self,
+        event_id: str,
+        subject: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        timezone: Optional[str] = None,
+        description: Optional[str] = None,
+        locations: Optional[List[str]] = None,
+        required_attendees: Optional[List[str]] = None,
+        optional_attendees: Optional[List[str]] = None,
+        resource_attendees: Optional[List[str]] = None,
+        is_online_meeting: Optional[bool] = None,
+        is_all_day: Optional[bool] = None,
+        importance: Optional[str] = None,
+        show_as: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Updates an existing calendar event in the user's Outlook calendar.
+
+        Important:
+        Any parameter provided will completely replace the original
+        value. For example, if you want to add a new attendee while keeping
+        existing ones, you must pass all attendees (both original and new).
+
+        Args:
+            event_id (str): The unique identifier of the event to update.
+            subject (Optional[str]): The new subject/title of the event.
+                (default: :obj:`None`)
+            start_time (Optional[str]): New start time in ISO format
+                (YYYY-MM-DDTHH:MM:SS). (default: :obj:`None`)
+            end_time (Optional[str]): New end time in ISO format
+                (YYYY-MM-DDTHH:MM:SS). (default: :obj:`None`)
+            timezone (Optional[str]): Timezone for the event (e.g., 'UTC',
+                'Pacific Standard Time'). (default: :obj:`None`)
+            description (Optional[str]): HTML content for the body of the
+                event. (default: :obj:`None`)
+            locations (Optional[List[str]]): List of display names for
+                locations of the event. (default: :obj:`None`)
+            required_attendees (Optional[List[str]]): Email addresses of
+                attendees marked as required. Supports formats: "email" or
+                "Name <email>". (default: :obj:`None`)
+            optional_attendees (Optional[List[str]]): Email addresses of
+                attendees marked as optional. Supports formats: "email" or
+                "Name <email>". (default: :obj:`None`)
+            resource_attendees (Optional[List[str]]): Email addresses of room
+                or equipment mailboxes to be booked as resources.
+                (default: :obj:`None`)
+            is_online_meeting (Optional[bool]): Whether to enable online
+                meeting (e.g., Teams). (default: :obj:`None`)
+            is_all_day (Optional[bool]): Whether the event is an all-day
+                event. (default: :obj:`None`)
+            importance (Optional[str]): The importance of the event. Possible
+                values: 'low', 'normal', 'high'. (default: :obj:`None`)
+            show_as (Optional[str]): The status to show during the event.
+                Possible values: 'free', 'tentative', 'busy', 'oof',
+                'workingElsewhere', 'unknown'. (default: :obj:`None`)
+
+        Returns:
+            dict[str, Any]: A dictionary containing the status and details
+                of the updated event, or an error message.
+        """
+        try:
+            # Validate all email addresses if provided
+            invalid_emails = _get_invalid_emails(
+                required_attendees, optional_attendees, resource_attendees
+            )
+            if invalid_emails:
+                error_msg = (
+                    f"Invalid email address(es) provided: "
+                    f"{', '.join(invalid_emails)}"
+                )
+                logger.error(error_msg)
+                return {"error": error_msg}
+
+            # Build the event object with only provided fields
+            event = self._build_event(
+                subject=subject,
+                start_time=start_time,
+                end_time=end_time,
+                timezone=timezone,
+                is_all_day=is_all_day,
+                description=description,
+                locations=locations,
+                required_attendees=required_attendees,
+                optional_attendees=optional_attendees,
+                resource_attendees=resource_attendees,
+                is_online_meeting=is_online_meeting,
+                importance=importance,
+                show_as=show_as,
+            )
+
+            # Send request to update event
+            result = await self.client.me.events.by_event_id(event_id).patch(
+                event
+            )
+
+            return {
+                "status": "success",
+                "message": "Calendar event updated successfully.",
+                "event_subject": result.subject,
+                "event_id": result.id,
+                "event_start": result.start.date_time,
+                "event_end": result.end.date_time,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to update calendar event: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     def get_tools(self) -> List[FunctionTool]:
         """Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -660,4 +770,5 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.list_calendars)),
             FunctionTool(run_async(self.update_calendar)),
             FunctionTool(run_async(self.create_calendar_event)),
+            FunctionTool(run_async(self.update_calendar_event)),
         ]

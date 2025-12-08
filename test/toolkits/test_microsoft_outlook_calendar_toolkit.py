@@ -635,3 +635,63 @@ class TestCreateCalendarEvent:
         assert 'error' in result
         assert 'Failed to create calendar event' in result['error']
         assert 'API connection failed' in result['error']
+
+
+@pytest.mark.asyncio
+class TestUpdateCalendarEvent:
+    """Tests for update_calendar_event method."""
+
+    async def test_update_calendar_event_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar event update."""
+        mock_result = MagicMock()
+        mock_result.id = 'event_id'
+        mock_result.subject = 'Updated Meeting'
+        mock_result.start.date_time = '2025-12-10T14:00:00'
+        mock_result.end.date_time = '2025-12-10T15:00:00'
+
+        async_patch_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.events.by_event_id.return_value.patch = (
+            async_patch_mock
+        )
+
+        result = await outlook_calendar_toolkit.update_calendar_event(
+            event_id='event_id',
+            subject='Updated Meeting',
+            start_time='2025-12-10T14:00:00',
+            end_time='2025-12-10T15:00:00',
+            timezone='UTC',
+            locations=['New Room'],
+        )
+
+        assert result['status'] == 'success'
+        assert result['message'] == 'Calendar event updated successfully.'
+        assert result['event_id'] == 'event_id'
+        assert result['event_subject'] == 'Updated Meeting'
+
+        # Verify event_id was used
+        mock_graph_client.me.events.by_event_id.assert_called_with('event_id')
+
+        # Verify the event object passed to patch
+        async_patch_mock.assert_called_once()
+        event_arg = async_patch_mock.call_args[0][0]
+        assert event_arg.subject == 'Updated Meeting'
+
+    async def test_update_calendar_event_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar event update when API raises an exception."""
+        async_patch_mock = AsyncMock(side_effect=Exception('Event not found'))
+        mock_graph_client.me.events.by_event_id.return_value.patch = (
+            async_patch_mock
+        )
+
+        result = await outlook_calendar_toolkit.update_calendar_event(
+            event_id='invalid_event_id',
+            subject='New Subject',
+        )
+
+        assert 'error' in result
+        assert 'Failed to update calendar event' in result['error']
+        assert 'Event not found' in result['error']
