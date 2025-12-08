@@ -49,7 +49,9 @@ class ModelScopeConfig(BaseConfig):
             the ModelScope API.
     """
 
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None
     temperature: Optional[float] = None

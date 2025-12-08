@@ -77,7 +77,7 @@ from the video and transcription sources.
 
     5. Important Considerations:
         - Pay close attention to subtle differences that could distinguish \
-similar-looking species or objects 
+similar-looking species or objects
           (e.g., juveniles vs. adults, closely related species).
         - Provide concise yet complete explanations to ensure clarity.
 

@@ -44,7 +44,7 @@ Text: {text}
 """)  # noqa: E501
 
     PERSONA_TO_PERSONA = TextPrompt("""
-Given the following persona: 
+Given the following persona:
 {persona_name}
 {persona_description}
 

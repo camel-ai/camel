@@ -66,7 +66,9 @@ class BedrockConfig(BaseConfig):
     top_p: Optional[float] = None
     top_k: Optional[int] = None
     stream: Optional[bool] = None
-    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     reasoning_effort: Optional[str] = None
 
 

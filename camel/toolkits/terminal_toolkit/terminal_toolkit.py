@@ -84,6 +84,8 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
+        install_dependencies (List): A list of user specified libraries
+            to install.
     """
 
     def __init__(
@@ -96,6 +98,7 @@ class TerminalToolkit(BaseToolkit):
         safe_mode: bool = True,
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
+        install_dependencies: Optional[List[str]] = None,
     ):
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
@@ -145,6 +148,7 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path: Optional[str] = None
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
+        self.install_dependencies = install_dependencies or []
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -228,6 +232,10 @@ class TerminalToolkit(BaseToolkit):
                 "- container is already isolated"
             )
 
+        # Install dependencies
+        if self.install_dependencies:
+            self._install_dependencies()
+
     def _setup_cloned_environment(self):
         r"""Set up a cloned Python environment."""
         self.cloned_env_path = os.path.join(self.working_dir, ".venv")
@@ -254,6 +262,80 @@ class TerminalToolkit(BaseToolkit):
                 "[ENV CLONE] Failed to create cloned environment, "
                 "using system Python"
             )
+
+    def _install_dependencies(self):
+        r"""Install user specified dependencies in the current environment."""
+        if not self.install_dependencies:
+            return
+
+        logger.info("Installing dependencies...")
+
+        if self.use_docker_backend:
+            pkg_str = " ".join(
+                shlex.quote(p) for p in self.install_dependencies
+            )
+            install_cmd = f'sh -lc "pip install {pkg_str}"'
+
+            try:
+                exec_id = self.docker_api_client.exec_create(
+                    self.container.id, install_cmd
+                )["Id"]
+                log = self.docker_api_client.exec_start(exec_id)
+                logger.info(f"Package installation output:\n{log}")
+
+                # Check exit code to ensure installation succeeded
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                if exec_info['ExitCode'] != 0:
+                    error_msg = (
+                        f"Failed to install dependencies in Docker: "
+                        f"{log.decode('utf-8', errors='ignore')}"
+                    )
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+
+                logger.info(
+                    "Successfully installed all dependencies in Docker."
+                )
+            except Exception as e:
+                if not isinstance(e, RuntimeError):
+                    logger.error(f"Docker dependency installation error: {e}")
+                    raise RuntimeError(
+                        f"Docker dependency installation error: {e}"
+                    ) from e
+                raise
+
+        else:
+            pip_cmd = [
+                self.python_executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                *self.install_dependencies,
+            ]
+
+            try:
+                subprocess.run(
+                    pip_cmd,
+                    check=True,
+                    cwd=self.working_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minutes timeout for installation
+                )
+                logger.info("Successfully installed all dependencies.")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install dependencies: {e.stderr}")
+                raise RuntimeError(
+                    f"Failed to install dependencies: {e.stderr}"
+                ) from e
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    "Dependency installation timed out after 5 minutes"
+                )
+                raise RuntimeError(
+                    "Dependency installation timed out after 5 minutes"
+                )
 
     def _setup_initial_environment(self):
         r"""Set up an initial environment with Python 3.10."""
@@ -567,7 +649,10 @@ class TerminalToolkit(BaseToolkit):
                     output = exec_output.decode('utf-8', errors='ignore')
 
                 log_entry += f"--- Output ---\n{output}\n"
-                return _to_plain(output)
+                if output.strip():
+                    return _to_plain(output)
+                else:
+                    return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
                 error_msg = (
                     f"Error: Command timed out after {self.timeout} seconds."
@@ -742,7 +827,12 @@ class TerminalToolkit(BaseToolkit):
             # Wait for and collect the new output
             output = self._collect_output_until_idle(id)
 
-            return output
+            if output.strip():
+                return output
+            else:
+                return (
+                    f"Input sent to session '{id}' successfully (no output)."
+                )
 
         except Exception as e:
             return f"Error writing to session '{id}': {e}"
@@ -863,7 +953,7 @@ class TerminalToolkit(BaseToolkit):
                  been executed, or help information for general queries.
         """
         logger.info("\n" + "=" * 60)
-        logger.info("🤖 LLM Agent needs your help!")
+        logger.info("LLM Agent needs your help!")
         logger.info(f"PROMPT: {prompt}")
 
         # Case 1: Session doesn't exist - offer to create one
@@ -888,15 +978,14 @@ class TerminalToolkit(BaseToolkit):
         else:
             # Get the latest output to show the user the current state
             last_output = self._collect_output_until_idle(id)
+            last_output_display = (
+                last_output.strip() if last_output.strip() else "(no output)"
+            )
 
             logger.info(f"SESSION: '{id}' (active)")
             logger.info("=" * 60)
             logger.info("--- LAST OUTPUT ---")
-            logger.info(
-                last_output.strip()
-                if last_output.strip()
-                else "(no recent output)"
-            )
+            logger.info(last_output_display)
             logger.info("-------------------")
 
             try:

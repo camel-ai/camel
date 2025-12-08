@@ -48,7 +48,7 @@ camel_agent = ChatAgent(
 user_msg = """give me some student infos, use 2024 minus 1996 as their age
 """
 
-user_msg_2 = """give me some student infos, use 2024 minus 1996 as their age, 
+user_msg_2 = """give me some student infos, use 2024 minus 1996 as their age,
 search internet to get the most famous peoples in 2024 as their name"""
 
 # Get response information

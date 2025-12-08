@@ -4,7 +4,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ## Join Our Community 🌍
 
-### Schedule an Introduction Call 📞 
+### Schedule an Introduction Call 📞
 - English speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 - Chinese speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 
@@ -21,7 +21,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ### Contributing to the Code 👨‍💻👩‍💻
 
-If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. 
+If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support.
 
 - If you are a contributor from the community:
   - Follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests.
@@ -40,9 +40,9 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
   - Update any affected example console scripts in the `examples` directory, Gradio demos in the `apps` directory, and documentation in the `docs` directory.
   - Update unit tests when relevant.
 - If you add a feature:
-  - Include unit tests in the `test` directory. 
+  - Include unit tests in the `test` directory.
   - Add a demo script in the `examples` directory.
- 
+
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
 
 ### Contributing to the Cookbook Writing 📚
@@ -62,9 +62,9 @@ Here’s how you can contribute to writing cookbooks:
 - Interactive Elements: Whenever applicable, add interactive code cells in Colab that users can directly run and modify.
 
 ##### 1.2. Developing cookbooks for in-progress features
-You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook. 
+You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook.
 
-`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"` 
+`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"`
 
 Changing the branch and extras section (e.g. remove `#egg=camel-ai[all]`) will behave as expected.
 
@@ -174,10 +174,10 @@ r"""Class for managing conversations of CAMEL Chat Agents.
 Example:
 ```markdown
 Args:
-    system_message (BaseMessage): The system message for initializing 
+    system_message (BaseMessage): The system message for initializing
         the agent's conversation context.
-    model (BaseModelBackend, optional): The model backend to use for 
-        response generation. Defaults to :obj:`OpenAIModel` with 
+    model (BaseModelBackend, optional): The model backend to use for
+        response generation. Defaults to :obj:`OpenAIModel` with
         `GPT_4O_MINI`. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
 ```
 
@@ -220,12 +220,12 @@ Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensu
 
 Examples:
 
-- Bad: 
+- Bad:
   ```python
   print("Process started")
   print(f"User input: {user_input}")
   ```
-- Good: 
+- Good:
   ```python
   Args:
   logger.info("Process started")

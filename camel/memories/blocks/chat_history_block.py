@@ -93,7 +93,7 @@ class ChatHistoryBlock(MemoryBlock):
             Message Processing Logic:
             1. Preserve first system/developer message (if needed)
             2. Keep latest window_size messages from the rest
-            
+
             Examples:
             - Case 1: First message is SYSTEM, total 5 messages, window_size=2
             Input: [system_msg, user_msg1, user_msg2, user_msg3, user_msg4]

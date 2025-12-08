@@ -48,7 +48,7 @@ def test_parse_graph_elements():
     agent.element = Element()
     input_string = """
     Node(id='node_id', type='node_type')
-    Relationship(subj=Node(id='subj_id', type='subj_type'), 
+    Relationship(subj=Node(id='subj_id', type='subj_type'),
     obj=Node(id='obj_id', type='obj_type'), type='test_type')
     """
     expected_nodes = [

@@ -65,7 +65,7 @@ def test_run_python_code(docker_interpreter: DockerInterpreter):
     code = """
 def add(a, b):
     return a + b
-    
+
 def multiply(a, b):
     return a * b
 
@@ -78,7 +78,7 @@ def main():
     operation = subtract
     result = operation(a, b)
     print(result)
-    
+
 if __name__ == "__main__":
     main()
 """
@@ -90,7 +90,7 @@ def test_run_python_stderr(docker_interpreter: DockerInterpreter):
     code = """
 def divide(a, b):
     return a / b
-    
+
 def main():
     result = divide(10, 0)
     print(result)
@@ -111,7 +111,7 @@ def test_run_r_code(docker_interpreter: DockerInterpreter):
             return(fibonacci(n-1) + fibonacci(n-2))
         }
     }
-    
+
     result <- fibonacci(10)
     print(result)
     """

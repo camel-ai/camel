@@ -49,7 +49,7 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
-    GPT_5_1_Instant = "gpt-5.1"
+    GPT_5_1 = "gpt-5.1"
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -465,6 +465,9 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
     MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
+    MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING = (
+        "PaddlePaddle/ERNIE-4.5-VL-28B-A3B-Thinking"
+    )
 
     # WatsonX models
     WATSONX_GRANITE_3_8B_INSTRUCT = "ibm/granite-3-8b-instruct"
@@ -491,6 +494,8 @@ class ModelType(UnifiedModelType, Enum):
     DEEPSEEK_V3 = "deepseek-v3"
     DEEPSEEK_R1 = "deepseek-r1"
     QWEN3_235B_A22B = "qwen3-235b-a22b"
+    ERNIE_5_0_THINKING = "ernie-5.0-thinking-latest"
+    ERNIE_4_5_TURBO_VL = "ernie-4.5-turbo-vl-latest"
 
     # Crynux models
     CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
@@ -598,6 +603,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GPT_5_1,
         }
 
     @property
@@ -1007,6 +1013,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
+            ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
         }
 
     @property
@@ -1087,6 +1094,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.DEEPSEEK_V3,
             ModelType.DEEPSEEK_R1,
             ModelType.QWEN3_235B_A22B,
+            ModelType.ERNIE_5_0_THINKING,
+            ModelType.ERNIE_4_5_TURBO_VL,
         }
 
     @property
@@ -1385,9 +1394,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
-            ModelType.GPT_5,
-            ModelType.GPT_5_NANO,
-            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -1474,6 +1480,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
             ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
+            ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
+            ModelType.ERNIE_5_0_THINKING,
+            ModelType.ERNIE_4_5_TURBO_VL,
         }:
             return 128_000
         elif self in {
@@ -1550,6 +1559,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
         }:
             return 320_000
+        elif self in {
+            ModelType.GPT_5_1,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5,
+        }:
+            return 400_000
         elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,

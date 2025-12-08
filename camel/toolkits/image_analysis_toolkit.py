@@ -12,9 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# Enables postponed evaluation of annotations (for string-based type hints)
-from __future__ import annotations
-
 from io import BytesIO
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -79,7 +76,7 @@ class ImageAnalysisToolkit(BaseToolkit):
         Returns:
             str: Natural language description of the image.
         """
-        default_content = '''You are an image analysis expert. Provide a 
+        default_content = '''You are an image analysis expert. Provide a
             detailed description including text if present.'''
 
         system_msg = BaseMessage.make_assistant_message(

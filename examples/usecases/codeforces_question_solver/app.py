@@ -30,7 +30,7 @@ load_dotenv()
 
 class ProblemSolver:
     """Main problem solver with CAMEL agents"""
-    
+
     def __init__(self):
         # Initialize model
         self.model = ModelFactory.create(
@@ -38,30 +38,30 @@ class ProblemSolver:
             model_type=ModelType.GPT_4O,
             model_config_dict={"temperature": 0.1, "max_tokens": 4000}
         )
-        
+
         # Initialize toolkits
         self.code_toolkit = CodeExecutionToolkit()
         self.code_tools = self.code_toolkit.get_tools()
         self.math_tools = MathToolkit().get_tools()
-        
+
         # Create main agent
         self.agent = ChatAgent(
             model=self.model,
             tools=[*self.code_tools, *self.math_tools],
             system_message=self._get_system_message()
         )
-        
+
         # Initialize Firecrawl
         self.firecrawl = Firecrawl()
-    
+
     def _get_system_message(self):
         return """You are an expert competitive programming solver.
-        
+
         Your role:
         1. Analyze competitive programming problems
         2. Generate clean, efficient Python solutions
         3. Fix bugs in solutions based on test failures
-        
+
         Requirements:
         - Use only standard library imports
         - Read input using input() and print output using print()
@@ -69,7 +69,7 @@ class ProblemSolver:
         - Handle edge cases properly
         - Provide ONLY executable Python code when generating solutions
         """
-    
+
     def fetch_content(self, url: str) -> str:
         """Fetch content from URL"""
         try:
@@ -79,46 +79,46 @@ class ProblemSolver:
             return str(result)
         except Exception as e:
             raise Exception(f"Failed to fetch content: {str(e)}")
-    
+
     def solve_problem(self, problem_content: str) -> str:
         """Generate solution for the problem"""
         query = f"""
         Solve this competitive programming problem:
-        
+
         {problem_content}
-        
+
         Provide ONLY the complete, executable Python code.
         """
-        
+
         response = self.agent.step(query)
         return self._extract_code(response.msgs[0].content.strip())
-    
+
     def debug_solution(self, code: str, problem_content: str, failed_tests: list) -> str:
         """Debug and fix the solution"""
         query = f"""
         Fix this failing solution:
-        
+
         PROBLEM:
         {problem_content}
-        
+
         CURRENT CODE:
         {code}
-        
+
         FAILED TESTS:
         {json.dumps(failed_tests, indent=2)}
-        
+
         Provide the corrected Python code.
         """
-        
+
         response = self.agent.step(query)
         return self._extract_code(response.msgs[0].content.strip())
-    
+
     def run_test(self, code: str, test_input: str, expected_output: str) -> dict:
         """Run a single test case using CAMEL's code execution"""
         try:
             # Escape the test input to handle newlines and quotes properly
             escaped_input = test_input.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
-            
+
             # Create a test script that handles input/output
             test_code = f'''
 import sys
@@ -138,15 +138,15 @@ error_message = ""
 try:
     # Execute the solution code
 {self._indent_code(code, 4)}
-    
+
     # Get the output
     output = sys.stdout.getvalue().strip()
-    
+
 except Exception as e:
     error_occurred = True
     error_message = str(e)
     output = ""
-    
+
 finally:
     # Restore original stdin/stdout
     sys.stdin = original_stdin
@@ -158,10 +158,10 @@ if error_occurred:
 else:
     print(output)
 '''
-            
+
             # Use CAMEL's code execution toolkit
             execution_result = self.code_toolkit.execute_code(test_code)
-            
+
             # Handle different return types from CAMEL
             if isinstance(execution_result, dict):
                 # If it's a dictionary, use the existing logic
@@ -176,7 +176,7 @@ else:
             else:
                 # If it's a string (more likely), use it directly
                 result_str = str(execution_result).strip()
-                
+
                 # Extract actual output from CAMEL's execution result
                 # Look for the pattern "> Executed Results:" and get everything after it
                 if "> Executed Results:" in result_str:
@@ -194,16 +194,16 @@ else:
                 else:
                     # Fallback: use the entire result
                     actual_output = result_str
-            
+
             expected = expected_output.strip()
-            
+
             return {
                 'passed': actual_output == expected,
                 'actual': actual_output,
                 'expected': expected,
                 'error': None if actual_output == expected else "Output mismatch"
             }
-            
+
         except Exception as e:
             return {
                 'passed': False,
@@ -211,12 +211,12 @@ else:
                 'actual': "",
                 'expected': expected_output.strip()
             }
-    
+
     def _indent_code(self, code: str, spaces: int) -> str:
         """Indent code by specified number of spaces"""
         indent = ' ' * spaces
         return '\n'.join(indent + line if line.strip() else line for line in code.split('\n'))
-    
+
     def _extract_code(self, response: str) -> str:
         """Extract Python code from response"""
         # Try to find code block
@@ -225,20 +225,20 @@ else:
             r'```py\s*(.*?)\s*```',
             r'```\s*(.*?)\s*```'
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, response, re.DOTALL)
             if match:
                 code = match.group(1).strip()
                 if self._is_valid_python(code):
                     return code
-        
+
         # If no blocks found, try the whole response
         if self._is_valid_python(response):
             return response
-        
+
         return response
-    
+
     def _is_valid_python(self, code: str) -> bool:
         """Check if code is valid Python"""
         try:
@@ -249,23 +249,23 @@ else:
 
 class CodeforcesSolver(ProblemSolver):
     """Codeforces-specific solver"""
-    
+
     def build_url(self, problem_id: str) -> str:
         """Build Codeforces URL from problem ID"""
         contest_id = ''.join(filter(str.isdigit, problem_id))
         index = ''.join(filter(str.isalpha, problem_id)).upper()
         return f"https://codeforces.com/contest/{contest_id}/problem/{index}"
-    
+
     def extract_samples(self, content: str) -> list:
         """Extract test samples from problem content"""
         samples = []
-        
+
         # Pattern to match input/output blocks
         patterns = [
             re.compile(r'###\s*Input\s*```(?:\w+)?\s*(.*?)```.*?###\s*Output\s*```(?:\w+)?\s*(.*?)```', re.DOTALL | re.IGNORECASE),
             re.compile(r'(?:Input|input)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```.*?(?:Output|output)\s*(?:Copy)?\s*```(?:\w+)?\s*(.*?)```', re.DOTALL | re.IGNORECASE),
         ]
-        
+
         for pattern in patterns:
             matches = pattern.findall(content)
             for inp, out in matches:
@@ -275,12 +275,12 @@ class CodeforcesSolver(ProblemSolver):
                     samples.append((inp_clean, out_clean))
             if samples:
                 break
-        
+
         return samples[:5]  # Limit to 5 samples
 
 class LeetCodeSolver(ProblemSolver):
     """LeetCode-specific solver"""
-    
+
     def __init__(self):
         super().__init__()
         # Override system message for LeetCode
@@ -289,15 +289,15 @@ class LeetCodeSolver(ProblemSolver):
             tools=[*self.code_tools, *self.math_tools],
             system_message=self._get_leetcode_system_message()
         )
-    
+
     def _get_leetcode_system_message(self):
         return """You are an expert LeetCode problem solver.
-        
+
         Your role:
         1. Analyze LeetCode problems
         2. Generate clean, efficient Python solutions using class-based approach
         3. Focus on algorithmic efficiency and clean code structure
-        
+
         Requirements:
         - Write solutions as class methods (class Solution: def method_name(self, ...))
         - Use appropriate data structures and algorithms
@@ -305,15 +305,15 @@ class LeetCodeSolver(ProblemSolver):
         - Write clean, well-commented code
         - Provide ONLY the complete Solution class when generating solutions
         """
-    
+
     def build_url(self, problem_slug: str) -> str:
         """Build LeetCode URL from problem slug"""
         return f"https://leetcode.com/problems/{problem_slug}/"
-    
+
     def extract_samples(self, content: str) -> list:
         """Extract test samples from LeetCode problem content"""
         samples = []
-        
+
         # More precise patterns for LeetCode examples
         patterns = [
             # Pattern 1: Example X: Input: ... Output: ...
@@ -321,17 +321,17 @@ class LeetCodeSolver(ProblemSolver):
             # Pattern 2: Input: ... Output: ... (without Example prefix)
             re.compile(r'(?:^|\n)Input:\s*([^\n]+)\s*Output:\s*([^\n]+)', re.IGNORECASE | re.MULTILINE),
         ]
-        
+
         for pattern in patterns:
             matches = pattern.findall(content)
             for inp, out in matches:
                 # Clean up the input and output
                 inp_clean = self._clean_sample_text(inp)
                 out_clean = self._clean_sample_text(out)
-                
+
                 if inp_clean and out_clean:
                     samples.append((inp_clean, out_clean))
-        
+
         # Remove duplicates while preserving order
         seen = set()
         unique_samples = []
@@ -339,24 +339,24 @@ class LeetCodeSolver(ProblemSolver):
             if sample not in seen:
                 seen.add(sample)
                 unique_samples.append(sample)
-        
+
         return unique_samples[:5]  # Limit to 5 samples
-    
+
     def _clean_sample_text(self, text: str) -> str:
         """Clean sample text by removing markdown and extra formatting"""
         if not text:
             return ""
-        
+
         # Remove markdown code blocks
         text = re.sub(r'```[^`]*```', '', text)
         text = re.sub(r'`([^`]+)`', r'\1', text)
-        
+
         # Remove extra whitespace and newlines
         text = re.sub(r'\s+', ' ', text.strip())
-        
+
         # Remove common prefixes/suffixes
         text = re.sub(r'^(Input:|Output:)\s*', '', text, flags=re.IGNORECASE)
-        
+
         return text.strip()
 
 def solve_problem(platform: str, problem_id: str) -> bool:
@@ -372,35 +372,35 @@ def solve_problem(platform: str, problem_id: str) -> bool:
         else:
             st.error("Unsupported platform")
             return False
-        
+
         # Store solver in session state
         st.session_state.solver = solver
         st.session_state.platform = platform
-        
+
         # Fetch problem content
         with st.spinner("Fetching problem..."):
             content = solver.fetch_content(url)
             if not content:
                 st.error("Could not fetch problem content")
                 return False
-        
+
         st.session_state.problem_content = content
-        
+
         # Extract samples if available
         if hasattr(solver, 'extract_samples'):
             samples = solver.extract_samples(content)
             st.session_state.samples = samples
             if samples:
                 st.success(f"Found {len(samples)} test cases")
-        
+
         # Generate solution
         with st.spinner("Generating solution..."):
             code = solver.solve_problem(content)
             st.session_state.generated_code = code
-        
+
         st.session_state.problem_solved = True
         return True
-        
+
     except Exception as e:
         st.error(f"Solving failed: {str(e)}")
         return False
@@ -410,22 +410,22 @@ def improve_solution(max_attempts: int = 5) -> bool:
     if 'solver' not in st.session_state:
         st.error("No solver available")
         return False
-    
+
     # Only allow improvement for Codeforces
     if st.session_state.get('platform') != 'Codeforces':
         st.info("Auto-fix is only available for Codeforces problems")
         return False
-    
+
     solver = st.session_state.solver
     samples = st.session_state.get('samples', [])
-    
+
     if not samples:
         st.info("No test cases to validate")
         return True
-    
+
     for attempt in range(max_attempts):
         st.info(f"Improvement attempt {attempt + 1}/{max_attempts}...")
-        
+
         # Test current solution
         failed_tests = []
         for idx, (test_input, expected_output) in enumerate(samples):
@@ -438,11 +438,11 @@ def improve_solution(max_attempts: int = 5) -> bool:
                     'actual': result['actual'],
                     'error': result['error']
                 })
-        
+
         if not failed_tests:
             st.success(f"Success! Solution works after {attempt + 1} attempts!")
             return True
-        
+
         # Debug and improve
         with st.spinner("Debugging..."):
             improved_code = solver.debug_solution(
@@ -451,7 +451,7 @@ def improve_solution(max_attempts: int = 5) -> bool:
                 failed_tests
             )
             st.session_state.generated_code = improved_code
-    
+
     st.error(f"Could not fix solution after {max_attempts} attempts")
     return False
 
@@ -459,16 +459,16 @@ def display_results():
     """Display solution and test results"""
     if not st.session_state.get('problem_solved', False):
         return
-    
+
     platform = st.session_state.get('platform', '')
-    
+
     st.subheader("Generated Solution")
     st.code(st.session_state.generated_code, language='python')
-    
+
     # Show test results
     if st.session_state.get('samples'):
         st.subheader("Test Cases")
-        
+
         if platform == "LeetCode":
             # For LeetCode, only display test cases without running them
             for idx, (test_input, expected_output) in enumerate(st.session_state.samples):
@@ -480,13 +480,13 @@ def display_results():
                     with col2:
                         st.text("Expected Output:")
                         st.code(expected_output)
-        
+
         elif platform == "Codeforces":
             # For Codeforces, run and display test results
             solver = st.session_state.solver
             for idx, (test_input, expected_output) in enumerate(st.session_state.samples):
                 result = solver.run_test(st.session_state.generated_code, test_input, expected_output)
-                
+
                 with st.expander(f"Test Case {idx + 1} {'✅' if result['passed'] else '❌'}"):
                     col1, col2, col3 = st.columns(3)
                     with col1:
@@ -498,36 +498,36 @@ def display_results():
                     with col3:
                         st.text("Actual:")
                         st.code(result['actual'])
-                    
+
                     if not result['passed']:
                         st.error(f"Error: {result['error']}")
 
 def main():
     st.title("🚀 CAMEL Problem Solver")
-    
+
     # Initialize session state
     if 'problem_solved' not in st.session_state:
         st.session_state.problem_solved = False
-    
+
     # Input section
     col1, col2 = st.columns([1, 2])
     with col1:
         platform = st.selectbox("Platform:", ["Codeforces", "LeetCode"])
-    
+
     with col2:
         if platform == "Codeforces":
             problem_id = st.text_input("Problem ID (e.g., 2114B):")
         elif platform == "LeetCode":
             problem_id = st.text_input("Problem slug (e.g., reverse-integer):")
-    
+
     # Solve button
     if st.button("🚀 Solve Problem", type="primary") and problem_id:
         if solve_problem(platform, problem_id):
             st.rerun()
-    
+
     # Display results
     display_results()
-    
+
     # Improvement section (only for Codeforces)
     if st.session_state.get('problem_solved', False) and st.session_state.get('platform') == 'Codeforces':
         st.markdown("---")

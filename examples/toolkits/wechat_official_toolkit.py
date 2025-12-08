@@ -85,99 +85,99 @@ if __name__ == "__main__":
     main()
 
 """
-Text Message Response: 
+Text Message Response:
 
 I've successfully completed both tasks:
 
 1. **Retrieved the followers list**: Found 6 total followers with their OpenIDs
-2. **Sent welcome message to the fifth follower**: The welcome message was 
+2. **Sent welcome message to the fifth follower**: The welcome message was
 successfully sent to the follower with OpenID `oKSAF2******rEJI`
 
-The welcome message "Welcome! Thank you for following our WeChat Official 
-Account. We're excited to have you as part of our community!" has been 
+The welcome message "Welcome! Thank you for following our WeChat Official
+Account. We're excited to have you as part of our community!" has been
 delivered successfully.
 Tool calls:
   1. get_followers_list({'next_openid': ''})
-  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': "Welcome! 
-  Thank you for following our WeChat Official Account. We're excited to have 
+  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': "Welcome!
+  Thank you for following our WeChat Official Account. We're excited to have
   you as part of our community!", 'msgtype': 'text'})
 
 ==============================
 
-Image Upload and Send Response: 
+Image Upload and Send Response:
 
 Perfect! I've successfully completed both tasks:
 
-1. **Uploaded the image**: The image at '/home/lyz/Camel/CAMEL_logo.jpg' has 
+1. **Uploaded the image**: The image at '/home/lyz/Camel/CAMEL_logo.jpg' has
 been uploaded as temporary media with media_id: `A_6Hlu******C6IUr`
 
-2. **Sent the image to the fifth follower**: The image has been successfully 
+2. **Sent the image to the fifth follower**: The image has been successfully
 sent to the fifth follower (OpenID: oKSAF2******rEJI)
 
 Both operations completed successfully!
 Tool calls:
   1. upload_wechat_media({'media_type': 'image', 'file_path': '/home/lyz/Camel/
   CAMEL_logo.jpg', 'permanent': False, 'description': ''})
-  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': 
+  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content':
   'A_6Hlu******C6IUr', 'msgtype': 'image'})
 
 ==============================
 
-(.camel) [lyz@dev10 toolkits]$ python wechat_official_toolkit.py 
-2025-09-01 02:41:48,494 - root - WARNING - Invalid or missing `max_tokens` in 
+(.camel) [lyz@dev10 toolkits]$ python wechat_official_toolkit.py
+2025-09-01 02:41:48,494 - root - WARNING - Invalid or missing `max_tokens` in
 `model_config_dict`. Defaulting to 999_999_999 tokens.
-Text Message Response: 
+Text Message Response:
 
 I've successfully completed your request! Here's what I did:
 
-1. **Retrieved the follower list**: I got the list of all followers, which 
+1. **Retrieved the follower list**: I got the list of all followers, which
 shows there are 6 total followers.
 
-2. **Identified the fifth follower**: From the list, the fifth follower has 
+2. **Identified the fifth follower**: From the list, the fifth follower has
 the OpenID: `oKSAF2******rEJI`
 
-3. **Sent a welcome message**: I successfully sent a welcome message to the 
-fifth follower with the content: "Welcome! Thank you for following our WeChat 
+3. **Sent a welcome message**: I successfully sent a welcome message to the
+fifth follower with the content: "Welcome! Thank you for following our WeChat
 Official Account. We're excited to have you join our community!"
 
-The message was delivered successfully to the fifth follower in your follower 
+The message was delivered successfully to the fifth follower in your follower
 list.
 Tool calls:
   1. get_followers_list({'next_openid': ''})
-  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': "Welcome! 
-  Thank you for following our WeChat Official Account. We're excited to have 
+  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': "Welcome!
+  Thank you for following our WeChat Official Account. We're excited to have
   you join our community!", 'msgtype': 'text'})
 
 ==============================
 
-Image Upload and Send Response: 
+Image Upload and Send Response:
 
 Perfect! I've successfully completed both tasks:
 
-1. **Retrieved followers list**: Found 6 followers total, with the fifth 
+1. **Retrieved followers list**: Found 6 followers total, with the fifth
 follower having OpenID: `oKSAF2******rEJI`
 
-2. **Sent welcome message**: Successfully sent a welcome text message to the 
+2. **Sent welcome message**: Successfully sent a welcome text message to the
 fifth follower.
 
-3. **Uploaded image**: Successfully uploaded the CAMEL logo image as temporary 
+3. **Uploaded image**: Successfully uploaded the CAMEL logo image as temporary
 media with media_id: `A_6Hlu******MW_ubO`
 
 4. **Sent image**: Successfully sent the uploaded image to the fifth follower.
 
-Both the welcome message and the CAMEL logo image have been delivered to the 
+Both the welcome message and the CAMEL logo image have been delivered to the
 fifth follower!
 Tool calls:
   1. upload_wechat_media({'media_type': 'image', 'file_path': '/home/lyz/Camel/
   CAMEL_logo.jpg', 'permanent': False, 'description': None})
-  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content': 
+  2. send_customer_message({'openid': 'oKSAF2******rEJI', 'content':
   'A_6Hlu******MW_ubO', 'msgtype': 'image'})
 
 ==============================
 
-User Info Response: 
+User Info Response:
 
-I've retrieved the detailed information about the fifth follower. Here are the 
+I've retrieved the detailed information about the fifth follower. Here are the
 key details:
 
 **Language Preference:**
@@ -198,25 +198,25 @@ key details:
 - Tags: No tags assigned
 - Custom Remark: None
 
-The follower is actively subscribed and prefers Chinese (mainland China) 
+The follower is actively subscribed and prefers Chinese (mainland China)
 language. They joined the account by scanning a QR code.
 Tool calls:
   1. get_user_info({'openid': 'oKSAF2******rEJI', 'lang': 'en'})
 
 ==============================
 
-Permanent Media Upload Response: 
+Permanent Media Upload Response:
 
 Perfect! I've successfully completed both tasks:
 
 ## 1. Image Upload (Permanent Media)
-The image `/home/lyz/Camel/CAMEL_logo.jpg` has been uploaded as permanent 
+The image `/home/lyz/Camel/CAMEL_logo.jpg` has been uploaded as permanent
 media with the following details:
 - **Media ID**: `Rd1Ljw******mBUw_`
 - **URL**: `https://mmbiz.qpic.cn/.../0?wx_fmt=jpeg`
 
 ## 2. Image Media List
-I retrieved the list of all permanent image media files. Here's what's 
+I retrieved the list of all permanent image media files. Here's what's
 currently in your media library:
 
 **Total Count**: 5 image files
@@ -243,7 +243,7 @@ currently in your media library:
    - Media ID: `Rd1Ljw******QKlyt`
    - Update Time: 1756539999
 
-All files appear to be the same CAMEL logo image uploaded at different times. 
+All files appear to be the same CAMEL logo image uploaded at different times.
 The most recent upload is now available for use in your WeChat communications.
 Tool calls:
   1. upload_wechat_media({'media_type': 'image', 'file_path': '/home/lyz/Camel/

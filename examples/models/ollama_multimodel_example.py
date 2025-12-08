@@ -46,17 +46,17 @@ print(response.content)
 """
 ===============================================================================
 Ollama server started on http://localhost:11434/v1 for llava-phi3 model.
-2025-03-02 14:57:26,048 - root - WARNING - Invalid or missing `max_tokens` 
+2025-03-02 14:57:26,048 - root - WARNING - Invalid or missing `max_tokens`
 in `model_config_dict`. Defaulting to 999_999_999 tokens.
 
 In the center of this image, there's an adorable
 white stuffed animal with glasses and a beanie.
-The stuffed animal is sitting on its hind legs, 
-as if it's engaged in reading or studying 
+The stuffed animal is sitting on its hind legs,
+as if it's engaged in reading or studying
 from an open book that's placed right next to it.
-In front of the book, there's a red apple with a green leaf attached to it, 
+In front of the book, there's a red apple with a green leaf attached to it,
 adding a touch of color and whimsy to the scene.
-The entire setup is on a wooden bench, 
+The entire setup is on a wooden bench,
 which provides a natural and rustic backdrop for this charming tableau.
 The stuffed animal appears to be in deep thought or concentration,
 creating an image that's both endearing and amusing.

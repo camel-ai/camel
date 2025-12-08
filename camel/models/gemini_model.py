@@ -122,19 +122,116 @@ class GeminiModel(OpenAICompatibleModel):
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,
         which is not accepted by Gemini. Also preserves thought signatures
-        required for Gemini 3 Pro function calling and adds fallback signatures
-        when they are missing.
+        required for Gemini 3 Pro function calling.
+
+        This method also merges consecutive assistant messages with single
+        tool calls into a single assistant message with multiple tool calls,
+        as required by Gemini's OpenAI-compatible API for parallel function
+        calling.
         """
         import copy
 
-        processed_messages = []
-        for msg in messages:
-            # Use deep copy to preserve all nested structures including
-            # thought signatures in extra_content
+        processed_messages: List[OpenAIMessage] = []
+        i = 0
+        n = len(messages)
+
+        while i < n:
+            msg = messages[i]
+
+            # Check if this is an assistant message with a single tool_call
+            # that might need to be merged with subsequent ones
+            if (
+                msg.get('role') == 'assistant'
+                and 'tool_calls' in msg
+                and isinstance(msg['tool_calls'], list)
+                and len(msg['tool_calls']) == 1
+            ):
+                # Look ahead to check if there are more assistant messages
+                # with single tool calls (interleaved with their tool results)
+                j = i + 1
+                has_more_tool_calls = False
+
+                # Collect tool_call_ids we've seen so far
+                first_tool_call_id = msg['tool_calls'][0].get('id')
+                seen_tool_call_ids = (
+                    {first_tool_call_id} if first_tool_call_id else set()
+                )
+
+                # Scan ahead to find pattern: tool_result, assistant,
+                # tool_result, ...
+                while j < n:
+                    next_msg = messages[j]
+                    next_role = next_msg.get('role')
+
+                    if next_role == 'tool':
+                        # Tool result - check if it belongs to our batch
+                        if next_msg.get('tool_call_id') in seen_tool_call_ids:
+                            j += 1
+                            continue
+                        else:
+                            # Tool result for unknown call, stop scanning
+                            break
+                    elif (
+                        next_role == 'assistant'
+                        and 'tool_calls' in next_msg
+                        and isinstance(next_msg['tool_calls'], list)
+                        and len(next_msg['tool_calls']) == 1
+                    ):
+                        # Another single tool call - mark for merging
+                        has_more_tool_calls = True
+                        tc_id = next_msg['tool_calls'][0].get('id')
+                        if tc_id:
+                            seen_tool_call_ids.add(tc_id)
+                        j += 1
+                        continue
+                    else:
+                        # Something else, stop scanning
+                        break
+
+                if has_more_tool_calls:
+                    # Need to merge: collect all tool calls and results
+                    merged_tool_calls = []
+                    tool_results = []
+                    is_first = True
+
+                    for k in range(i, j):
+                        m = messages[k]
+                        if m.get('role') == 'assistant' and 'tool_calls' in m:
+                            tc = m['tool_calls'][0]
+                            if is_first:
+                                # Keep extra_content only on first tool call
+                                merged_tool_calls.append(copy.deepcopy(tc))
+                                is_first = False
+                            else:
+                                # Remove extra_content from subsequent tool
+                                # calls
+                                tc_copy = {
+                                    k: v
+                                    for k, v in tc.items()
+                                    if k != 'extra_content'
+                                }
+                                merged_tool_calls.append(tc_copy)
+                        elif m.get('role') == 'tool':
+                            tool_results.append(copy.deepcopy(m))
+
+                    # Build merged assistant message
+                    merged_msg = copy.deepcopy(msg)
+                    merged_msg['tool_calls'] = merged_tool_calls
+                    if 'content' in merged_msg and merged_msg['content'] == '':
+                        merged_msg['content'] = 'null'
+
+                    processed_messages.append(merged_msg)
+                    processed_messages.extend(tool_results)
+                    i = j
+                    continue
+
+            # Regular message processing (no merging needed)
             msg_copy = copy.deepcopy(msg)
             if 'content' in msg_copy and msg_copy['content'] == '':
                 msg_copy['content'] = 'null'
             processed_messages.append(msg_copy)
+            i += 1
+
         return processed_messages
 
     def _preserve_thought_signatures(

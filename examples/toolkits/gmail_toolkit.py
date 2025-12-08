@@ -68,27 +68,27 @@ print(response.info['tool_calls'])
 Example: Sending an email
 ==================================================
 Agent Response:
-Done — your message has been sent to test@example.com. Message ID: 
+Done — your message has been sent to test@example.com. Message ID:
 1998015e3157fdee.
 
 Tool calls:
 [ToolCallingRecord(
-    tool_name='send_email', 
+    tool_name='gmail_send_email',
     args={
-        'to': 'test@example.com', 
-        'subject': 'Hello from Gmail Toolkit', 
-        'body': 'This is a test email sent using the CAMEL Gmail toolkit.', 
-        'cc': None, 
-        'bcc': None, 
-        'attachments': None, 
+        'to': 'test@example.com',
+        'subject': 'Hello from Gmail Toolkit',
+        'body': 'This is a test email sent using the CAMEL Gmail toolkit.',
+        'cc': None,
+        'bcc': None,
+        'attachments': None,
         'is_html': False
-    }, 
+    },
     result={
-        'success': True, 
-        'message_id': '1998015e3157fdee', 
+        'success': True,
+        'message_id': '1998015e3157fdee',
         'thread_id': '1998015e3157fdee',
         'message': 'Email sent successfully'
-    }, 
+    },
     tool_call_id='call_4VzMM1JkKjGN8J5rfT4wH2sF',
     images=None
 )]

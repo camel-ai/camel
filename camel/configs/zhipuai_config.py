@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -64,7 +64,9 @@ class ZhipuAIConfig(BaseConfig):
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}
