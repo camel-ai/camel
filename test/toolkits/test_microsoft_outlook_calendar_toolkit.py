@@ -392,3 +392,246 @@ class TestUpdateCalendar:
 
         assert 'error' in result
         assert 'Failed to update calendar' in result['error']
+
+
+class TestEventHelperMethods:
+    """Tests for private helper methods used in event creation."""
+
+    def test_create_attendees(self, outlook_calendar_toolkit):
+        """Test creating attendees with various formats and types."""
+        from msgraph.generated.models.attendee_type import AttendeeType
+
+        # Test simple email format
+        result = outlook_calendar_toolkit._create_attendees(
+            ["test@gmail.com"], "required"
+        )
+        assert result[0].email_address.address == "test@gmail.com"
+        assert result[0].type == AttendeeType.Required
+
+        # Test 'Name <email>' format
+        result = outlook_calendar_toolkit._create_attendees(
+            ["John Doe <john@gmail.com>"], "optional"
+        )
+        assert result[0].email_address.address == "john@gmail.com"
+        assert result[0].email_address.name == "John Doe"
+        assert result[0].type == AttendeeType.Optional
+
+        # Test resource type
+        result = outlook_calendar_toolkit._create_attendees(
+            ["room@test.com"], "resource"
+        )
+        assert result[0].type == AttendeeType.Resource
+
+        # Test invalid type defaults to Required
+        result = outlook_calendar_toolkit._create_attendees(
+            ["test@gmail.com"], "invalid_type"
+        )
+        assert result[0].type == AttendeeType.Required
+
+        # Test empty list
+        result = outlook_calendar_toolkit._create_attendees([], "required")
+        assert len(result) == 0
+
+    def test_create_locations(self, outlook_calendar_toolkit):
+        """Test creating locations."""
+        result = outlook_calendar_toolkit._create_locations(
+            ["Room A", "Building 1"]
+        )
+        assert len(result) == 2
+        assert result[0].display_name == "Room A"
+        assert result[1].display_name == "Building 1"
+
+        # Test empty list
+        assert len(outlook_calendar_toolkit._create_locations([])) == 0
+
+    def test_create_importance(self, outlook_calendar_toolkit):
+        """Test creating importance with all values and case insensitivity."""
+        from msgraph.generated.models.importance import Importance
+
+        toolkit = outlook_calendar_toolkit
+        assert toolkit._create_importance("low") == Importance.Low
+        assert toolkit._create_importance("normal") == Importance.Normal
+        assert toolkit._create_importance("high") == Importance.High
+        assert toolkit._create_importance("HIGH") == Importance.High  # case
+        assert toolkit._create_importance("invalid") == Importance.Normal
+
+    def test_create_show_as_status(self, outlook_calendar_toolkit):
+        """Test creating show_as status with all values."""
+        from msgraph.generated.models.free_busy_status import FreeBusyStatus
+
+        toolkit = outlook_calendar_toolkit
+        assert toolkit._create_show_as_status("free") == FreeBusyStatus.Free
+        assert toolkit._create_show_as_status("busy") == FreeBusyStatus.Busy
+        assert toolkit._create_show_as_status("oof") == FreeBusyStatus.Oof
+        assert toolkit._create_show_as_status("invalid") == FreeBusyStatus.Busy
+
+        # Test tentative
+        result = toolkit._create_show_as_status("tentative")
+        assert result == FreeBusyStatus.Tentative
+
+        # Test workingelsewhere
+        result = toolkit._create_show_as_status("workingelsewhere")
+        assert result == FreeBusyStatus.WorkingElsewhere
+
+        # Test unknown
+        result = toolkit._create_show_as_status("unknown")
+        assert result == FreeBusyStatus.Unknown
+
+        # Test case insensitivity
+        result = toolkit._create_show_as_status("FREE")
+        assert result == FreeBusyStatus.Free
+
+    def test_build_event(self, outlook_calendar_toolkit):
+        """Test building an event with all options."""
+        from msgraph.generated.models.attendee_type import AttendeeType
+        from msgraph.generated.models.free_busy_status import FreeBusyStatus
+        from msgraph.generated.models.importance import Importance
+
+        event = outlook_calendar_toolkit._build_event(
+            subject="Full Meeting",
+            start_time="2025-12-10T10:00:00",
+            end_time="2025-12-10T11:00:00",
+            timezone="Pacific Standard Time",
+            is_all_day=False,
+            description="Meeting details",
+            locations=["Room A", "Room B"],
+            required_attendees=["req@test.com"],
+            optional_attendees=["opt@test.com"],
+            resource_attendees=["room@test.com"],
+            is_online_meeting=True,
+            importance="high",
+            show_as="busy",
+        )
+
+        # Verify basic fields
+        assert event.subject == "Full Meeting"
+        assert event.start.date_time == "2025-12-10T10:00:00"
+        assert event.start.time_zone == "Pacific Standard Time"
+        assert event.end.date_time == "2025-12-10T11:00:00"
+
+        # Verify body
+        assert event.body.content == "Meeting details"
+
+        # Verify locations
+        assert len(event.locations) == 2
+        assert event.locations[0].display_name == "Room A"
+        assert event.locations[1].display_name == "Room B"
+
+        # Verify attendees
+        assert len(event.attendees) == 3
+        attendee_types = [a.type for a in event.attendees]
+        assert event.attendees[0].email_address.address == "req@test.com"
+        assert AttendeeType.Required in attendee_types
+        assert event.attendees[1].email_address.address == "opt@test.com"
+        assert AttendeeType.Optional in attendee_types
+        assert event.attendees[2].email_address.address == "room@test.com"
+        assert AttendeeType.Resource in attendee_types
+
+        # Verify other options
+        assert event.is_online_meeting is True
+        assert event.importance == Importance.High
+        assert event.show_as == FreeBusyStatus.Busy
+
+
+@pytest.mark.asyncio
+class TestCreateCalendarEvent:
+    """Tests for create_calendar_event method."""
+
+    async def test_create_calendar_event_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar event creation with all parameters."""
+        # Setup mock response
+        mock_result = MagicMock()
+        mock_result.id = 'event_id'
+        mock_result.subject = 'Team Meeting'
+        mock_result.start.date_time = '2025-12-10T10:00:00'
+        mock_result.end.date_time = '2025-12-10T11:00:00'
+
+        async_post_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.events.post = async_post_mock
+
+        # Call the method with all parameters
+        result = await outlook_calendar_toolkit.create_calendar_event(
+            subject='Team Meeting',
+            start_time='2025-12-10T10:00:00',
+            end_time='2025-12-10T11:00:00',
+            timezone='Pacific Standard Time',
+            description='<p>Discussion topics</p>',
+            locations=['Conference Room A'],
+            required_attendees=['john@test.com'],
+            optional_attendees=['jane@test.com'],
+            is_online_meeting=True,
+            importance='high',
+            show_as='busy',
+        )
+
+        # Verify the result
+        assert result['status'] == 'success'
+        assert result['message'] == 'Calendar event created successfully.'
+        assert result['event_id'] == 'event_id'
+        assert result['event_subject'] == 'Team Meeting'
+
+        # Verify the event object passed to post
+        async_post_mock.assert_called_once()
+        event_arg = async_post_mock.call_args[0][0]
+
+        # Verify event properties
+        assert event_arg.subject == 'Team Meeting'
+        assert event_arg.start.date_time == '2025-12-10T10:00:00'
+        assert event_arg.start.time_zone == 'Pacific Standard Time'
+        assert event_arg.end.date_time == '2025-12-10T11:00:00'
+        assert event_arg.body.content == '<p>Discussion topics</p>'
+        assert len(event_arg.locations) == 1
+        assert event_arg.locations[0].display_name == 'Conference Room A'
+        assert len(event_arg.attendees) == 2
+        assert event_arg.is_online_meeting is True
+
+    async def test_create_calendar_event_in_specific_calendar(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test creating event in a specific calendar."""
+        mock_result = MagicMock()
+        mock_result.id = 'event_id'
+        mock_result.subject = 'Calendar Event'
+        mock_result.start.date_time = '2025-12-10T14:00:00'
+        mock_result.end.date_time = '2025-12-10T15:00:00'
+
+        async_post_mock = AsyncMock(return_value=mock_result)
+        cal_events = mock_graph_client.me.calendars.by_calendar_id.return_value
+        cal_events.events.post = async_post_mock
+
+        result = await outlook_calendar_toolkit.create_calendar_event(
+            subject='Calendar Event',
+            start_time='2025-12-10T14:00:00',
+            end_time='2025-12-10T15:00:00',
+            calendar_id='specific_calendar_id',
+        )
+
+        assert result['status'] == 'success'
+        assert result['event_id'] == 'event_id'
+
+        # Verify calendar_id was used
+        mock_graph_client.me.calendars.by_calendar_id.assert_called_with(
+            'specific_calendar_id'
+        )
+        async_post_mock.assert_called_once()
+
+    async def test_create_calendar_event_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar event creation when API raises an exception."""
+        async_post_mock = AsyncMock(
+            side_effect=Exception('API connection failed')
+        )
+        mock_graph_client.me.events.post = async_post_mock
+
+        result = await outlook_calendar_toolkit.create_calendar_event(
+            subject='Some event',
+            start_time='2025-12-10T10:00:00',
+            end_time='2025-12-10T11:00:00',
+        )
+
+        assert 'error' in result
+        assert 'Failed to create calendar event' in result['error']
+        assert 'API connection failed' in result['error']
