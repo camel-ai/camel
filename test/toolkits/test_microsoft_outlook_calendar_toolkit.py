@@ -738,3 +738,225 @@ class TestDeleteCalendarEvent:
         assert 'error' in result
         assert 'Failed to delete calendar event' in result['error']
         assert 'Event not found' in result['error']
+
+
+class TestExtractEventHelpers:
+    """Tests for event extraction helper methods."""
+
+    def test_extract_attendees(self, outlook_calendar_toolkit):
+        """Test extracting attendees from event."""
+        from msgraph.generated.models.attendee import Attendee
+        from msgraph.generated.models.attendee_type import AttendeeType
+        from msgraph.generated.models.email_address import EmailAddress
+        from msgraph.generated.models.response_status import ResponseStatus
+        from msgraph.generated.models.response_type import ResponseType
+
+        # Create attendee using actual model classes
+        attendee = Attendee(
+            email_address=EmailAddress(
+                address="user@test.com",
+                name="Test User",
+            ),
+            type=AttendeeType.Required,
+            status=ResponseStatus(response=ResponseType.Accepted),
+        )
+
+        result = outlook_calendar_toolkit._extract_attendees([attendee])
+
+        assert len(result) == 1
+        assert result[0]["email"] == "user@test.com"
+        assert result[0]["name"] == "Test User"
+        assert result[0]["type"] == "required"
+        assert result[0]["response"] == "accepted"
+
+    def test_extract_attendees_empty(self, outlook_calendar_toolkit):
+        """Test extracting attendees with empty list."""
+        assert outlook_calendar_toolkit._extract_attendees(None) == []
+        assert outlook_calendar_toolkit._extract_attendees([]) == []
+
+    def test_extract_locations(self, outlook_calendar_toolkit):
+        """Test extracting locations from event."""
+        from msgraph.generated.models.location import Location
+        from msgraph.generated.models.location_type import LocationType
+        from msgraph.generated.models.outlook_geo_coordinates import (
+            OutlookGeoCoordinates,
+        )
+        from msgraph.generated.models.physical_address import PhysicalAddress
+
+        # Create location using actual model classes
+        location = Location(
+            display_name="Conference Room A",
+            location_type=LocationType.ConferenceRoom,
+            address=PhysicalAddress(
+                street="123 Main St",
+                city="Seattle",
+                state="WA",
+                country_or_region="USA",
+                postal_code="98101",
+            ),
+            coordinates=OutlookGeoCoordinates(
+                latitude=47.6062,
+                longitude=-122.3321,
+            ),
+        )
+
+        result = outlook_calendar_toolkit._extract_locations([location])
+
+        assert len(result) == 1
+        assert result[0]["display_name"] == "Conference Room A"
+        assert result[0]["location_type"] == "conferenceRoom"
+        assert result[0]["address"]["street"] == "123 Main St"
+        assert result[0]["address"]["city"] == "Seattle"
+        assert result[0]["coordinates"]["latitude"] == 47.6062
+        assert result[0]["coordinates"]["longitude"] == -122.3321
+
+    def test_extract_locations_minimal(self, outlook_calendar_toolkit):
+        """Test extracting locations with minimal data."""
+        from msgraph.generated.models.location import Location
+
+        location = Location(display_name="Room B")
+
+        result = outlook_calendar_toolkit._extract_locations([location])
+
+        assert len(result) == 1
+        assert result[0]["display_name"] == "Room B"
+        assert result[0]["location_type"] is None
+        assert result[0]["address"] is None
+        assert result[0]["coordinates"] is None
+
+    def test_extract_locations_empty(self, outlook_calendar_toolkit):
+        """Test extracting locations with empty list."""
+        assert outlook_calendar_toolkit._extract_locations(None) == []
+        assert outlook_calendar_toolkit._extract_locations([]) == []
+
+    def test_extract_organizer(self, outlook_calendar_toolkit):
+        """Test extracting organizer from event."""
+        from msgraph.generated.models.email_address import EmailAddress
+        from msgraph.generated.models.recipient import Recipient
+
+        organizer = Recipient(
+            email_address=EmailAddress(
+                address="organizer@test.com",
+                name="Organizer Name",
+            )
+        )
+
+        result = outlook_calendar_toolkit._extract_organizer(organizer)
+
+        assert result["email"] == "organizer@test.com"
+        assert result["name"] == "Organizer Name"
+
+    def test_extract_organizer_none(self, outlook_calendar_toolkit):
+        """Test extracting organizer when None."""
+        from msgraph.generated.models.recipient import Recipient
+
+        result = outlook_calendar_toolkit._extract_organizer(None)
+        assert result["email"] is None
+        assert result["name"] is None
+
+        organizer = Recipient(email_address=None)
+        result = outlook_calendar_toolkit._extract_organizer(organizer)
+        assert result["email"] is None
+        assert result["name"] is None
+
+    def test_extract_event_details(self, outlook_calendar_toolkit):
+        """Test extracting full event details."""
+        from msgraph.generated.models.free_busy_status import FreeBusyStatus
+        from msgraph.generated.models.importance import Importance
+
+        # Create mock event
+        mock_event = MagicMock()
+        mock_event.id = "event_123"
+        mock_event.subject = "Team Meeting"
+        mock_event.start.date_time = "2025-12-10T10:00:00"
+        mock_event.start.time_zone = "UTC"
+        mock_event.end.date_time = "2025-12-10T11:00:00"
+        mock_event.is_all_day = False
+        mock_event.body_preview = "Meeting agenda..."
+        mock_event.locations = []
+        mock_event.attendees = []
+        mock_event.organizer = None
+        mock_event.is_online_meeting = True
+        mock_event.online_meeting_url = "https://teams.microsoft.com/meet"
+        mock_event.importance = Importance.High
+        mock_event.show_as = FreeBusyStatus.Busy
+        mock_event.is_cancelled = False
+
+        result = outlook_calendar_toolkit._extract_event_details(mock_event)
+
+        assert result["id"] == "event_123"
+        assert result["subject"] == "Team Meeting"
+        assert result["start"] == "2025-12-10T10:00:00"
+        assert result["end"] == "2025-12-10T11:00:00"
+        assert result["timezone"] == "UTC"
+        assert result["is_all_day"] is False
+        assert result["body_preview"] == "Meeting agenda..."
+        assert result["is_online_meeting"] is True
+        assert (
+            result["online_meeting_url"] == "https://teams.microsoft.com/meet"
+        )
+        assert result["importance"] == "high"
+        assert result["show_as"] == "busy"
+        assert result["is_cancelled"] is False
+
+
+@pytest.mark.asyncio
+class TestGetCalendarEvent:
+    """Tests for get_calendar_event method."""
+
+    async def test_get_calendar_event_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar event retrieval."""
+        from msgraph.generated.models.free_busy_status import FreeBusyStatus
+        from msgraph.generated.models.importance import Importance
+
+        mock_event = MagicMock()
+        mock_event.id = "event_id"
+        mock_event.subject = "Test Event"
+        mock_event.start.date_time = "2025-12-10T10:00:00"
+        mock_event.start.time_zone = "UTC"
+        mock_event.end.date_time = "2025-12-10T11:00:00"
+        mock_event.is_all_day = False
+        mock_event.body_preview = "Event description"
+        mock_event.locations = []
+        mock_event.attendees = []
+        mock_event.organizer = None
+        mock_event.is_online_meeting = False
+        mock_event.online_meeting_url = None
+        mock_event.importance = Importance.Normal
+        mock_event.show_as = FreeBusyStatus.Busy
+        mock_event.is_cancelled = False
+
+        async_get_mock = AsyncMock(return_value=mock_event)
+        mock_graph_client.me.events.by_event_id.return_value.get = (
+            async_get_mock
+        )
+
+        result = await outlook_calendar_toolkit.get_calendar_event(
+            event_id="event_id"
+        )
+
+        assert result["status"] == "success"
+        assert result["event_details"]["id"] == "event_id"
+        assert result["event_details"]["subject"] == "Test Event"
+        assert result["event_details"]["start"] == "2025-12-10T10:00:00"
+
+        mock_graph_client.me.events.by_event_id.assert_called_with("event_id")
+
+    async def test_get_calendar_event_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test calendar event retrieval when event not found."""
+        async_get_mock = AsyncMock(side_effect=Exception("Event not found"))
+        mock_graph_client.me.events.by_event_id.return_value.get = (
+            async_get_mock
+        )
+
+        result = await outlook_calendar_toolkit.get_calendar_event(
+            event_id="invalid_id"
+        )
+
+        assert "error" in result
+        assert "Failed to get calendar event" in result["error"]
+        assert "Event not found" in result["error"]

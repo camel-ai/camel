@@ -756,6 +756,147 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    def _extract_attendees(self, attendees_list) -> List[dict]:
+        """Extracts attendee details from a list of Attendee objects.
+
+        Args:
+            attendees_list: List of Attendee objects from the event.
+
+        Returns:
+            List[dict]: A list of dictionaries containing attendee details.
+        """
+        attendees = []
+        if not attendees_list:
+            return attendees
+
+        for attendee in attendees_list:
+            attendee_info = {
+                "email": attendee.email_address.address,
+                "name": attendee.email_address.name,
+                "type": attendee.type.value if attendee.type else None,
+            }
+            if attendee.status:
+                attendee_info["response"] = (
+                    attendee.status.response.value
+                    if attendee.status.response
+                    else None
+                )
+            attendees.append(attendee_info)
+        return attendees
+
+    def _extract_locations(self, locations_list) -> List[dict]:
+        """Extracts location details from a list of Location objects.
+
+        Args:
+            locations_list: List of Location objects from the event.
+
+        Returns:
+            List[dict]: A list of dictionaries containing location details.
+        """
+        locations = []
+        if not locations_list:
+            return locations
+
+        for loc in locations_list:
+            location_info = {
+                "display_name": loc.display_name,
+                "location_type": (
+                    loc.location_type.value if loc.location_type else None
+                ),
+                "address": None,
+                "coordinates": None,
+            }
+            # Extract address if available
+            if loc.address:
+                location_info["address"] = {
+                    "street": loc.address.street,
+                    "city": loc.address.city,
+                    "state": loc.address.state,
+                    "country_or_region": loc.address.country_or_region,
+                    "postal_code": loc.address.postal_code,
+                }
+            # Extract coordinates if available
+            if loc.coordinates:
+                location_info["coordinates"] = {
+                    "latitude": loc.coordinates.latitude,
+                    "longitude": loc.coordinates.longitude,
+                }
+            locations.append(location_info)
+        return locations
+
+    def _extract_organizer(self, organizer) -> dict:
+        """Extracts organizer details from an Organizer object.
+
+        Args:
+            organizer: The Organizer object from the event.
+
+        Returns:
+            dict: A dictionary containing organizer email and name.
+        """
+        if not organizer or not organizer.email_address:
+            return {"email": None, "name": None}
+
+        return {
+            "email": organizer.email_address.address,
+            "name": organizer.email_address.name,
+        }
+
+    def _extract_event_details(self, event) -> dict:
+        """Extracts relevant details from an Event object.
+
+        Args:
+            event (Event): The Event object to extract details from.
+
+        Returns:
+            dict: A dictionary containing the extracted event details.
+        """
+        organizer = self._extract_organizer(event.organizer)
+
+        return {
+            "id": event.id,
+            "subject": event.subject,
+            "start": event.start.date_time if event.start else None,
+            "end": event.end.date_time if event.end else None,
+            "timezone": event.start.time_zone if event.start else None,
+            "is_all_day": event.is_all_day,
+            "body_preview": event.body_preview,
+            "locations": self._extract_locations(event.locations),
+            "attendees": self._extract_attendees(event.attendees),
+            "organizer_email": organizer["email"],
+            "organizer_name": organizer["name"],
+            "is_online_meeting": event.is_online_meeting,
+            "online_meeting_url": event.online_meeting_url,
+            "importance": event.importance.value if event.importance else None,
+            "show_as": event.show_as.value if event.show_as else None,
+            "is_cancelled": event.is_cancelled,
+        }
+
+    async def get_calendar_event(
+        self,
+        event_id: str,
+    ) -> dict[str, Any]:
+        """Retrieves a calendar event by its ID.
+
+        Args:
+            event_id (str): The unique identifier of the event to retrieve.
+
+        Returns:
+            dict[str, Any]: A dictionary containing the status and event
+                details or an error message.
+        """
+        try:
+            result = await self.client.me.events.by_event_id(event_id).get()
+
+            return {
+                "status": "success",
+                "event_details": self._extract_event_details(result),
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to get calendar event: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     async def delete_calendar_event(
         self,
         event_id: str,
@@ -797,5 +938,6 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.update_calendar)),
             FunctionTool(run_async(self.create_calendar_event)),
             FunctionTool(run_async(self.update_calendar_event)),
+            FunctionTool(run_async(self.get_calendar_event)),
             FunctionTool(run_async(self.delete_calendar_event)),
         ]
