@@ -100,6 +100,17 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
     ):
+        # auto-detect if running inside a CAMEL runtime container
+        # when inside a runtime, use local execution (already sandboxed)
+        self._in_runtime = os.environ.get("CAMEL_RUNTIME", "").lower() == "true"
+        if self._in_runtime and use_docker_backend:
+            logger.info(
+                "Detected CAMEL_RUNTIME environment - disabling Docker "
+                "backend since we're already inside a sandboxed container"
+            )
+            use_docker_backend = False
+            docker_container_name = None
+
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
         self.shell_sessions: Dict[str, Dict[str, Any]] = {}
@@ -219,8 +230,13 @@ class TerminalToolkit(BaseToolkit):
             except APIError as e:
                 raise RuntimeError(f"Failed to connect to Docker daemon: {e}")
 
-        # Set up environments (only for local backend)
-        if not self.use_docker_backend:
+        # Set up environments (only for local backend, skip in runtime mode)
+        if self._in_runtime:
+            logger.info(
+                "[ENV] Skipping environment setup - running inside "
+                "CAMEL runtime container"
+            )
+        elif not self.use_docker_backend:
             if self.clone_current_env:
                 self._setup_cloned_environment()
             else:

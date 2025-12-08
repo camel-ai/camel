@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import sys
-from typing import Dict
+from typing import Any, Dict, List
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -27,6 +27,9 @@ from camel.toolkits import BaseToolkit
 
 logger = logging.getLogger(__name__)
 
+# set environment variable to indicate we're running inside a CAMEL runtime
+os.environ["CAMEL_RUNTIME"] = "true"
+
 sys.path.append(os.getcwd())
 
 modules_functions = sys.argv[1:]
@@ -34,6 +37,22 @@ modules_functions = sys.argv[1:]
 logger.info(f"Modules and functions: {modules_functions}")
 
 app = FastAPI()
+
+# global cache for toolkit instances to maintain state across calls
+_toolkit_instances: Dict[str, Any] = {}
+
+# track registered endpoints for health check
+_registered_endpoints: List[str] = []
+
+
+@app.get("/health")
+async def health_check():
+    r"""Health check endpoint that reports loaded toolkits and endpoints."""
+    return {
+        "status": "ok",
+        "toolkits": list(_toolkit_instances.keys()),
+        "endpoints": _registered_endpoints,
+    }
 
 
 @app.exception_handler(Exception)
@@ -49,6 +68,9 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 for module_function in modules_functions:
     try:
+        # store original module_function as cache key before parsing
+        cache_key = module_function
+
         init_params = dict()
         if "{" in module_function:
             module_function, params = module_function.split("{")
@@ -62,32 +84,43 @@ for module_function in modules_functions:
         module = importlib.import_module(module_name)
         function = getattr(module, function_name)
         if isinstance(function, type) and issubclass(function, BaseToolkit):
-            function = function(**init_params).get_tools()
+            # use cached instance if available to maintain state across calls
+            if cache_key not in _toolkit_instances:
+                _toolkit_instances[cache_key] = function(**init_params)
+            function = _toolkit_instances[cache_key].get_tools()
 
         if not isinstance(function, list):
             function = [function]
 
         for func in function:
+            endpoint_name = func.get_function_name()
+            _registered_endpoints.append(endpoint_name)
 
-            @app.post(f"/{func.get_function_name()}")
-            async def dynamic_function(data: Dict, func=func):
-                redirect_stdout = data.get('redirect_stdout', False)
-                if redirect_stdout:
-                    sys.stdout = io.StringIO()
-                response_data = func.func(*data['args'], **data['kwargs'])
-                if redirect_stdout:
-                    sys.stdout.seek(0)
-                    output = sys.stdout.read()
-                    sys.stdout = sys.__stdout__
+            def make_endpoint(tool):
+                r"""Create endpoint with tool captured in closure."""
+
+                async def endpoint(data: Dict):
+                    redirect_stdout = data.get('redirect_stdout', False)
+                    if redirect_stdout:
+                        sys.stdout = io.StringIO()
+                    response_data = tool.func(*data['args'], **data['kwargs'])
+                    if redirect_stdout:
+                        sys.stdout.seek(0)
+                        output = sys.stdout.read()
+                        sys.stdout = sys.__stdout__
+                        return {
+                            "output": json.dumps(
+                                response_data, ensure_ascii=False
+                            ),
+                            "stdout": output,
+                        }
                     return {
-                        "output": json.dumps(
-                            response_data, ensure_ascii=False
-                        ),
-                        "stdout": output,
+                        "output": json.dumps(response_data, ensure_ascii=False)
                     }
-                return {
-                    "output": json.dumps(response_data, ensure_ascii=False)
-                }
+
+                return endpoint
+
+            app.post(f"/{endpoint_name}")(make_endpoint(func))
 
     except (ImportError, AttributeError) as e:
         logger.error(f"Error importing {module_function}: {e}")

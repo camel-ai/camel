@@ -677,7 +677,6 @@ class BaseBrowser:
         targeted text. It is equivalent to pressing Ctrl + F and searching for
         the text.
         """
-        # ruff: noqa: E501
         assert self.page is not None
         script = f"""
         (function() {{
@@ -737,7 +736,6 @@ class BaseBrowser:
         if self.playwright:
             self.playwright.stop()  # Stop playwright instance
 
-    # ruff: noqa: E501
     def show_interactive_elements(self):
         r"""Show simple interactive elements on the current page."""
         assert self.page is not None
@@ -829,6 +827,9 @@ class BrowserToolkit(BaseToolkit):
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
+                When running inside a CAMEL runtime container, this is
+                automatically set to True since containers typically don't
+                have a display.
             cache_dir (Union[str, None]): The directory to store cache files.
             channel (Literal["chrome", "msedge", "chromium"]): The browser
                 channel to use. Must be one of "chrome", "msedge", or
@@ -852,6 +853,17 @@ class BrowserToolkit(BaseToolkit):
                 is used without saving data. (default: :obj:`None`)
         """
         super().__init__()  # Call to super().__init__() added
+
+        # auto-detect if running inside a CAMEL runtime container
+        # force headless mode since containers typically don't have a display
+        in_runtime = os.environ.get("CAMEL_RUNTIME", "").lower() == "true"
+        if in_runtime and not headless:
+            logger.info(
+                "Detected CAMEL_RUNTIME environment - enabling headless mode "
+                "since containers typically don't have a display"
+            )
+            headless = True
+
         self.browser = BaseBrowser(
             headless=headless,
             cache_dir=cache_dir,
