@@ -18,7 +18,7 @@ replace the UnstructuredIO URL Reader in the pipeline.
 - **return_format** (ReturnFormat, optional): The level of detail of the returned content, which is optimized for LLMs. For now screenshots are not supported. Defaults to ReturnFormat.DEFAULT.
 - **json_response** (bool, optional): Whether to return the response in JSON format. Defaults to False.
 - **timeout** (int, optional): The maximum time in seconds to wait for the page to be rendered. Defaults to 30. **kwargs (Any): Additional keyword arguments, including proxies, cookies, etc. It should align with the HTTP Header field and value pairs listed in the reference.
-- **References**: 
+- **References**:
 - **https**: //jina.ai/reader
 
 <a id="camel.loaders.jina_url_reader.JinaURLReader.__init__"></a>
