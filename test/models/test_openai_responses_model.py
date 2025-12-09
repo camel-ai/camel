@@ -162,12 +162,15 @@ def test_responses_to_camel_response_keeps_logprobs():
 
     mock_response.output = [mock_item]
     mock_response.output_text = None
-    mock_response.usage = None
+    mock_response.usage = {"input_tokens": 10, "output_tokens": 5}
 
     camel_response = responses_to_camel_response(mock_response)
 
     assert camel_response.logprobs is not None
     assert camel_response.logprobs[0][0]["token"] == "Hi"
+    assert camel_response.usage.input_tokens == 10
+    assert camel_response.usage.output_tokens == 5
+    assert camel_response.usage.total_tokens == 15
 
 
 def test_openai_messages_to_camel_with_audio():

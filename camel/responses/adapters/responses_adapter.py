@@ -186,10 +186,23 @@ def responses_to_camel_response(
         usage_raw = None
 
     usage_dict = usage_raw or {}
+    input_tokens = usage_dict.get("input_tokens")
+    if input_tokens is None:
+        input_tokens = usage_dict.get("prompt_tokens")
+
+    output_tokens = usage_dict.get("output_tokens")
+    if output_tokens is None:
+        output_tokens = usage_dict.get("completion_tokens")
+
+    total_tokens = usage_dict.get("total_tokens")
+    if total_tokens is None and input_tokens is not None:
+        if output_tokens is not None:
+            total_tokens = input_tokens + output_tokens
+
     usage = CamelUsage(
-        input_tokens=usage_dict.get("prompt_tokens"),
-        output_tokens=usage_dict.get("completion_tokens"),
-        total_tokens=usage_dict.get("total_tokens"),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
         raw=usage_raw or None,
     )
     logprobs: Optional[List[Any]] = logprobs_list if logprobs_list else None
