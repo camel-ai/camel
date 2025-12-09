@@ -2054,7 +2054,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         }).join(' '));
                         originalLog.apply(console, args);
                     };
-                    
+
                     let result;
                     try {
                         // First try to evaluate as an expression
@@ -2073,7 +2073,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                             throw error;
                         }
                     }
-                    
+
                     console.log = originalLog;
                     return { result, logs: _logs };
                 })()

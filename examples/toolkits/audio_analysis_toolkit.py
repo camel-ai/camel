@@ -20,14 +20,14 @@ from camel.types import ModelPlatformType, ModelType
 audio_models = OpenAIAudioModels()
 
 # Set example input
-input = """CAMEL-AI.org is an open-source community dedicated to the study of 
-autonomous and communicative agents. We believe that studying these agents on 
-a large scale offers valuable insights into their behaviors, capabilities, and 
-potential risks. To facilitate research in this field, we provide, implement, 
-and support various types of agents, tasks, prompts, models, datasets, and 
+input = """CAMEL-AI.org is an open-source community dedicated to the study of
+autonomous and communicative agents. We believe that studying these agents on
+a large scale offers valuable insights into their behaviors, capabilities, and
+potential risks. To facilitate research in this field, we provide, implement,
+and support various types of agents, tasks, prompts, models, datasets, and
 simulated environments.
 
-Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI 
+Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI
 Society."""
 
 # Set example local path to store the file
@@ -71,27 +71,27 @@ print("\n")
 
 """
 ==========================================================================
-2025-03-09 22:54:55,822 - camel.camel.toolkits.audio_analysis_toolkit - 
+2025-03-09 22:54:55,822 - camel.camel.toolkits.audio_analysis_toolkit -
 WARNING - No audio transcription model provided. Using OpenAIAudioModels.
 
-The audio content discusses Camel AI, an open-source community dedicated to 
-the study of autonomous and communicative agents. It emphasizes the belief 
-that large-scale research on these agents can yield valuable insights into 
-their behaviors, capabilities, and potential risks. The community provides 
-resources to support research, including various types of agents, tasks, 
-prompts, models, datasets, and simulated environments. Additionally, it 
-invites listeners to join the community through platforms like Slack, Discord, 
+The audio content discusses Camel AI, an open-source community dedicated to
+the study of autonomous and communicative agents. It emphasizes the belief
+that large-scale research on these agents can yield valuable insights into
+their behaviors, capabilities, and potential risks. The community provides
+resources to support research, including various types of agents, tasks,
+prompts, models, datasets, and simulated environments. Additionally, it
+invites listeners to join the community through platforms like Slack, Discord,
 or WeChat to contribute to the development of AI society.
 
 
 Here is the transcription of the audio:
 
-"CamelAI.org is an open-source community dedicated to the study of autonomous 
-and communicative agents. We believe that studying these agents on a large 
-scale offers valuable insights into their behaviors, capabilities, and 
-potential risks. To facilitate research in this field, we provide, implement, 
-and support various types of agents, tasks, prompts, models, datasets, and 
-simulated environments. Join us via Slack, Discord, or WeChat in pushing the 
+"CamelAI.org is an open-source community dedicated to the study of autonomous
+and communicative agents. We believe that studying these agents on a large
+scale offers valuable insights into their behaviors, capabilities, and
+potential risks. To facilitate research in this field, we provide, implement,
+and support various types of agents, tasks, prompts, models, datasets, and
+simulated environments. Join us via Slack, Discord, or WeChat in pushing the
 boundaries of building AI society."
 ==========================================================================
 """

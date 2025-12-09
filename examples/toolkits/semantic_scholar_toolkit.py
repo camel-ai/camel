@@ -86,18 +86,18 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_paper_data_title', 
+[FunctionCallingRecord(func_name='fetch_paper_data_title',
 args={'paperTitle': 'Construction of the Literature Graph in
 Semantic Scholar', 'fields': 'title,abstract,authors,year,
 citationCount,paperId'}, result={'total': 1, 'offset': 0,
 'data': [{'paperId': '649def34f8be52c8b66281af98ae884c09aef38b',
 'title': 'Construction of the Literature Graph in Semantic
  Scholar', 'abstract': 'We describe a deployed scalable system
-for organizing published scientific literature into a 
-heterogeneous graph to facilitate algorithmic manipulation and 
+for organizing published scientific literature into a
+heterogeneous graph to facilitate algorithmic manipulation and
 discovery. The resulting literature graph consists of more than
  280M nodes, representing papers, authors, entities and various
- interactions between them (e.g., authorships, citations, 
+ interactions between them (e.g., authorships, citations,
  entity mentions). We reduce literature graph construction into
  familiar NLP tasks (e.g., entity extraction and linking),
  point out research challenges due to differences from standard
@@ -107,7 +107,7 @@ discovery. The resulting literature graph consists of more than
 '''
 
 # Search a paper through its title
-usr_msg = """search the paper with paper id of 
+usr_msg = """search the paper with paper id of
     '649def34f8be52c8b66281af98ae884c09aef38b' for me"""
 camel_agent.reset()
 response = camel_agent.step(usr_msg)
@@ -116,15 +116,15 @@ print(str(response.info['tool_calls'])[:1000])
 '''
 ================================================================
 [FunctionCallingRecord(func_name='fetch_paper_data_id', args=
-{'paperID': '649def34f8be52c8b66281af98ae884c09aef38b', 
+{'paperID': '649def34f8be52c8b66281af98ae884c09aef38b',
 'fields': 'title,abstract,authors,year,citationCount,
-publicationTypes,publicationDate,openAccessPdf'}, 
+publicationTypes,publicationDate,openAccessPdf'},
 result={'paperId': '649def34f8be52c8b66281af98ae884c09aef38b',
 'title': 'Construction of the Literature Graph in Semantic
  Scholar', 'abstract': 'We describe a deployed scalable system
  for organizing published scientific literature into a
  heterogeneous graph to facilitate algorithmic manipulation
- and discovery. The resulting literature graph consists of 
+ and discovery. The resulting literature graph consists of
  more than 280M nodes, representing papers, authors, entities
  and various interactions between them (e.g., authorships,
  citations, entity mentions). We reduce literature graph
@@ -145,20 +145,20 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_bulk_paper_data', 
+[FunctionCallingRecord(func_name='fetch_bulk_paper_data',
 args={'query': 'generative ai', 'year': '2024-', 'fields':
 'title,url,publicationTypes,publicationDate,openAccessPdf'},
 result={'total': 9849, 'token': 'PCOA3RZZB2ADADAEYCX2BLJJRDEGL
 PUCFA3I5XJAKEAB3YXPGDOTY2GU3WHI4ZMALUMAPUDPHP724CEUVEFKTYRZY5K
-LUU53Y5MWWEINIKYZZRC3YT3H4AF7CTSQ', 'data': [{'paperId': 
+LUU53Y5MWWEINIKYZZRC3YT3H4AF7CTSQ', 'data': [{'paperId':
 '0008cd09c0449451b9e6e6de35c29009f0883cd9', 'url': 'https://www
 .semanticscholar.org/paper/0008cd09c0449451b9e6e6de35c29009
 f0883cd9', 'title': 'A Chitchat on Using ChatGPT for Cheating',
  'openAccessPdf': {'url': 'https://doi.org/10.34074/proc.240106'
- , 'status': 'BRONZE'}, 'publicationTypes': ['Conference'], 
+ , 'status': 'BRONZE'}, 'publicationTypes': ['Conference'],
  'publicationDate': '2024-07-24'}, {'paperId': '0013aecf813400
  174158e4f012918c5408f90962', 'url': 'https://www.semanticsc
- holar.org/paper/0013aecf813400174158e4f012918c5408f90962', 
+ holar.org/paper/0013aecf813400174158e4f012918c5408f90962',
  'title': 'Can novice teachers detect AI-generated texts in EFL
  writing?', 'openAccessPdf': None, 'publicationTypes':
  ['JournalArticle'], 'publicationDate'
@@ -174,21 +174,21 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_bulk_paper_data', 
+[FunctionCallingRecord(func_name='fetch_bulk_paper_data',
 args={'query': 'ai and bio', 'year': '2024-', 'fields': 'title,
 url,publicationTypes,publicationDate,openAccessPdf'}, result=
 {'total': 207, 'token': None, 'data': [{'paperId': '00c8477a9c
 c28b85e4f6da13d2a889c94a955291', 'url': 'https://www.semantics
-cholar.org/paper/00c8477a9cc28b85e4f6da13d2a889c94a955291', 
+cholar.org/paper/00c8477a9cc28b85e4f6da13d2a889c94a955291',
 'title': 'Explaining Enterprise Knowledge Graphs with Large
- Language Models and Ontological Reasoning', 'openAccessPdf': 
+ Language Models and Ontological Reasoning', 'openAccessPdf':
  None, 'publicationTypes': ['JournalArticle'], 'publicationDate
  ': None}, {'paperId': '01726fbfc8ee716c82b9c4cd70696906d3a4
  46d0', 'url': 'https://www.semanticscholar.org/paper/01726fbfc
- 8ee716c82b9c4cd70696906d3a446d0', 'title': 'Study Research 
+ 8ee716c82b9c4cd70696906d3a446d0', 'title': 'Study Research
  Protocol for Phenome India-CSIR Health Cohort Knowledgebase
- (PI-CHeCK): A Prospective multi-modal follow-up study on a 
- nationwide employee cohort.', 'openAccessPdf': {'url': 
+ (PI-CHeCK): A Prospective multi-modal follow-up study on a
+ nationwide employee cohort.', 'openAccessPdf': {'url':
  'https://www.medrxiv.org/content/medrxiv/early/2024/10/19/2024
  .10.17.24315252.full.pdf', 'status'
 ================================================================
@@ -209,7 +209,7 @@ print(str(response.info['tool_calls'])[:1000])
 [FunctionCallingRecord(func_name='fetch_recommended_papers',
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e
 5b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negati
-ve_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'], 
+ve_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
 'fields': 'title,url,citationCount,authors,publicationTypes,
 publicationDate,openAccessPdf', 'limit': 20, 'save_to_file': F
 alse}, result={'recommendedPapers': [{'paperId': '9cb202a72171
@@ -235,7 +235,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_recommended_papers', 
+[FunctionCallingRecord(func_name='fetch_recommended_papers',
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e5
 b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negativ
 e_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
@@ -243,14 +243,14 @@ e_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
  publicationDate,openAccessPdf', 'limit': 20, 'save_to_file': T
  rue}, result={'recommendedPapers': [{'paperId': '9cb202a7217
  1dc954f8180b42e08da7ab31e16a1', 'url': 'https://www.semantics
- cholar.org/paper/9cb202a72171dc954f8180b42e08da7ab31e16a1', 
+ cholar.org/paper/9cb202a72171dc954f8180b42e08da7ab31e16a1',
  'title': 'Embrace, Don't Avoid: Reimagining Higher Education
  with Generative Artificial Intelligence', 'citationCount':
  0, 'openAccessPdf': {'url': 'https://heca-analitika.com/jeml
  /article/download/233/157', 'status': 'HYBRID'}, 'publication
  Types': ['JournalArticle'], 'publicationDate': '2024-11-28',
  'authors': [{'authorId': '1659371967', 'name': 'T. R. Novia
- ndy'}, {'authorId': '1657989613', 'name': 'A. Maulana'}, 
+ ndy'}, {'authorId': '1657989613', 'name': 'A. Maulana'},
  {'authorId': '146805414', 'name'
 ================================================================
 '''
@@ -267,7 +267,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_recommended_papers', 
+[FunctionCallingRecord(func_name='fetch_recommended_papers',
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e5
 b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negat
 ive_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
@@ -276,7 +276,7 @@ ive_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
  ': True}, result={'recommendedPapers': [{'paperId': '9cb20
  2a72171dc954f8180b42e08da7ab31e16a1', 'url': 'https://www.se
  manticscholar.org/paper/9cb202a72171dc954f8180b42e08da7ab31e
- 16a1', 'title': 'Embrace, Don't Avoid: Reimagining Higher 
+ 16a1', 'title': 'Embrace, Don't Avoid: Reimagining Higher
  Education with Generative Artificial Intelligence', 'citat
  ionCount': 0, 'openAccessPdf': {'url': 'https://heca-anali
  tika.com/jeml/article/download/233/157', 'status': 'HYBR

@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
@@ -24,9 +24,6 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
-
-if TYPE_CHECKING:
-    from surrealdb import Surreal  # type: ignore[import-not-found]
 
 logger = get_logger(__name__)
 
@@ -123,11 +120,12 @@ class SurrealStorage(BaseVectorStorage):
             bool: True if the table exists, False otherwise.
         """
         res = self._surreal_client.query("INFO FOR DB;")
-        tables = res.get('tables', {})
-        logger.debug(f"_table_exists: {res}")
+        res_dict = cast(Dict[str, Any], res)
+        tables = res_dict.get('tables', {})
+        logger.debug(f"_table_exists: {res!r}")
         return self.table in tables
 
-    def _get_table_info(self) -> dict[str, int | None]:
+    def _get_table_info(self) -> Dict[str, Optional[int]]:
         r"""Retrieve dimension and record count from the table metadata.
 
         Returns:
@@ -136,8 +134,9 @@ class SurrealStorage(BaseVectorStorage):
         if not self._table_exists():
             return {"dim": self.vector_dim, "count": 0}
         res = self._surreal_client.query(f"INFO FOR TABLE {self.table};")
-        logger.debug(f"_get_table_info: {res}")
-        indexes = res.get("indexes", {})
+        res_dict = cast(Dict[str, Any], res)
+        logger.debug(f"_get_table_info: {res!r}")
+        indexes = res_dict.get("indexes", {})
 
         dim = self.vector_dim
         idx_def = indexes.get("hnsw_idx")
@@ -148,7 +147,8 @@ class SurrealStorage(BaseVectorStorage):
         cnt = self._surreal_client.query(
             f"SELECT COUNT() FROM ONLY {self.table} GROUP ALL LIMIT 1;"
         )
-        count = cnt.get("count", 0)
+        cnt_dict = cast(Dict[str, Any], cnt)
+        count = cnt_dict.get("count", 0)
         return {"dim": dim, "count": count}
 
     def _create_table(self):
@@ -251,24 +251,31 @@ class SurrealStorage(BaseVectorStorage):
             f"query surql: {surql_query} with $vector = {query.query_vector}"
         )
 
-        response = self._surreal_client.query(
-            surql_query, {"vector": query.query_vector}
-        )
-        logger.debug(f"query response: {response}")
+        query_params: Dict[str, Any] = {"vector": query.query_vector}
+        response = self._surreal_client.query(surql_query, query_params)
+        logger.debug(f"query response: {response!r}")
 
-        return [
-            VectorDBQueryResult(
-                record=VectorRecord(
-                    id=row["id"].id,
-                    vector=row["embedding"],
-                    payload=row["payload"],
-                ),
-                similarity=1.0 - row["dist"]
-                if self.distance == VectorDistance.COSINE
-                else -row["score"],
+        results: List[VectorDBQueryResult] = []
+        response_list = cast(List[Dict[str, Any]], response)
+        for row in response_list:
+            record_id = row["id"]
+            # SurrealDB RecordID has an 'id' attribute for the actual ID
+            actual_id = record_id.id if hasattr(record_id, 'id') else record_id
+            dist = float(row["dist"])
+            similarity = (
+                1.0 - dist if self.distance == VectorDistance.COSINE else -dist
             )
-            for row in response
-        ]
+            results.append(
+                VectorDBQueryResult(
+                    record=VectorRecord(
+                        id=actual_id,
+                        vector=row["embedding"],
+                        payload=row["payload"],
+                    ),
+                    similarity=similarity,
+                )
+            )
+        return results
 
     def add(self, records: List[VectorRecord], **kwargs) -> None:
         r"""Insert validated vector records into the SurrealDB table.
@@ -360,6 +367,6 @@ class SurrealStorage(BaseVectorStorage):
         raise NotImplementedError("SurrealDB does not support loading")
 
     @property
-    def client(self) -> "Surreal":
+    def client(self) -> Any:
         r"""Provides access to the underlying SurrealDB client."""
         return self._surreal_client

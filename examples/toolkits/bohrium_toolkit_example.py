@@ -62,9 +62,9 @@ Your job has been submitted successfully with the following details:
 - **Machine Type**: c2_m4_cpu (2 CPU, 4 GB Memory)
 - **Region**: cn-zhangjiakou
 
-The job is currently pending or initializing. I will keep you updated on 
+The job is currently pending or initializing. I will keep you updated on
 its progress. If you need further assistance, feel free to ask!
-If you want to monitor the job's status or logs, let me know and I can 
+If you want to monitor the job's status or logs, let me know and I can
 assist you with that as well.
 ==========================================================================
 """

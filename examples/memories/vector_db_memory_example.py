@@ -87,7 +87,7 @@ print(
 )
 '''
 ===============================================================================
-Agent 1 response: You mentioned elephants. Did you know that elephants are 
+Agent 1 response: You mentioned elephants. Did you know that elephants are
 excellent swimmers and can use their trunks as snorkels while swimming?
 ===============================================================================
 '''
@@ -97,8 +97,8 @@ print(
 )
 '''
 ===============================================================================
-Agent 2 response: I'm sorry, but I do not have the ability to remember past 
-interactions or conversations. Can you please remind me what you told me about 
+Agent 2 response: I'm sorry, but I do not have the ability to remember past
+interactions or conversations. Can you please remind me what you told me about
 stars and moons?
 ===============================================================================
 '''
@@ -107,16 +107,16 @@ stars and moons?
 print("\nAgent 1's memory records:")
 for ctx_record in vectordb_memory_agent1.retrieve():
     print(
-        f"""Score: {ctx_record.score:.2f} | 
+        f"""Score: {ctx_record.score:.2f} |
         Content: {ctx_record.memory_record.message.content}"""
     )
 '''
 ===============================================================================
 Agent 1's memory records:
-Score: 1.00 | 
+Score: 1.00 |
         Content: What did I tell you about whales or elephants?
-Score: 0.59 | 
-        Content: You mentioned elephants. Did you know that elephants are 
+Score: 0.59 |
+        Content: You mentioned elephants. Did you know that elephants are
         excellent swimmers and can use their trunks as snorkels while swimming?
 ===============================================================================
 '''
@@ -134,8 +134,8 @@ Agent 2's memory records:
 Score: 1.00 |
         Content: What have I told you about stars and moons?
 Score: 0.68 |
-        Content: I'm sorry, but I do not have the ability to remember past 
-        interactions or conversations. Can you please remind me what you told 
+        Content: I'm sorry, but I do not have the ability to remember past
+        interactions or conversations. Can you please remind me what you told
         me about stars and moons?
 ===============================================================================
 '''

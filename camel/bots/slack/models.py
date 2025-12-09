@@ -126,11 +126,11 @@ class SlackEventBody(BaseModel):
     """The timestamp (in seconds) representing when the event was triggered."""
 
     authorizations: Optional[list[SlackAuthProfile]] = None
-    """An optional list of authorizations that describe which installation can 
+    """An optional list of authorizations that describe which installation can
     see the event."""
 
     is_ext_shared_channel: bool
-    """Indicates if the event is part of a shared channel between different 
+    """Indicates if the event is part of a shared channel between different
     organizations."""
 
     event_context: str

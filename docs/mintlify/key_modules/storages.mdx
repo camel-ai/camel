@@ -76,8 +76,8 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
   <Accordion title="Graph Storages" icon="chart-waterfall">
     **BaseGraphStorage**
     - Abstract base for graph database integrations
-    - **Supports:**  
-      - Schema queries and refresh  
+    - **Supports:**
+      - Schema queries and refresh
       - Adding/deleting/querying triplets
 
     **NebulaGraph**
@@ -99,7 +99,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="In-Memory Key-Value Storage" icon="key">
-  <b>Use for:</b> Fast, temporary storage. Data is lost when your program exits.  
+  <b>Use for:</b> Fast, temporary storage. Data is lost when your program exits.
   <b>Perfect for:</b> Prototyping, testing, in-memory caching.
 
   <Tabs>
@@ -125,7 +125,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="JSON File Storage" icon="files">
-  <b>Use for:</b> Persistent, human-readable storage on disk.  
+  <b>Use for:</b> Persistent, human-readable storage on disk.
   <b>Perfect for:</b> Logs, local settings, configs, or sharing small data sets.
 
   <Tabs>
@@ -152,7 +152,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Milvus Vector Storage" icon="database">
-  <b>Use for:</b> Scalable, high-performance vector search (RAG, embeddings).  
+  <b>Use for:</b> Scalable, high-performance vector search (RAG, embeddings).
   <b>Perfect for:</b> Semantic search and production AI retrieval.
 
   <Tabs>
@@ -187,7 +187,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="TiDB Vector Storage" icon="vector-square">
-  <b>Use for:</b> Hybrid cloud-native storage, vectors + SQL in one.  
+  <b>Use for:</b> Hybrid cloud-native storage, vectors + SQL in one.
   <b>Perfect for:</b> Combining AI retrieval with your business database.
 
   <Tabs>
@@ -223,7 +223,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 
 
 <Card title="Qdrant Vector Storage" icon="square-q">
-  <b>Use for:</b> Fast, scalable open-source vector search.  
+  <b>Use for:</b> Fast, scalable open-source vector search.
   <b>Perfect for:</b> RAG, document search, and high-scale retrieval tasks.
 
   <Tabs>
@@ -260,7 +260,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="ChromaDB Vector Storage" icon="database">
-  <b>Use for:</b> Fastest way to build LLM apps with memory and embeddings.  
+  <b>Use for:</b> Fastest way to build LLM apps with memory and embeddings.
   <b>Perfect for:</b> From prototyping in notebooks to production clusters with the same simple API.
 
   <Tabs>
@@ -353,7 +353,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="OceanBase Vector Storage" icon="earth-oceania">
-  <b>Use for:</b> Massive vector storage with advanced analytics.  
+  <b>Use for:</b> Massive vector storage with advanced analytics.
   <b>Perfect for:</b> Batch operations, cloud or on-prem setups, and high-throughput search.
 
   <Tabs>
@@ -449,7 +449,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Weaviate Vector Storage" icon="file-vector">
-  <b>Use for:</b> Vector search with hybrid (vector + keyword) capabilities.  
+  <b>Use for:</b> Vector search with hybrid (vector + keyword) capabilities.
   <b>Perfect for:</b> Document retrieval and multimodal AI apps.
 
   <Tabs>
@@ -491,7 +491,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="NebulaGraph Storage" icon="hard-drive">
-  <b>Use for:</b> Open-source, distributed graph storage and querying.  
+  <b>Use for:</b> Open-source, distributed graph storage and querying.
   <b>Perfect for:</b> Knowledge graphs, relationships, and fast distributed queries.
 
  <CodeGroup>
@@ -510,7 +510,7 @@ Here are practical usage patterns for each storage type—pick the ones you need
 ---
 
 <Card title="Neo4j Graph Storage" icon="square-this-way-up">
-  <b>Use for:</b> Industry-standard graph database for large-scale relationships.  
+  <b>Use for:</b> Industry-standard graph database for large-scale relationships.
   <b>Perfect for:</b> Enterprise graph workloads, Cypher queries, analytics.
 <CodeGroup>
       ```python

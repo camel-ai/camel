@@ -6,12 +6,12 @@ icon: screwdriver-wrench
 For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 <Card title="What is a Tool?" icon="toolbox">
-  A <b>Tool</b> in CAMEL is a callable function with a name, description, input parameters, and an output type.  
+  A <b>Tool</b> in CAMEL is a callable function with a name, description, input parameters, and an output type.
   Tools act as the interface between agents and the outside world—think of them like <b>OpenAI Functions</b> you can easily convert, extend, or use directly.
 </Card>
 
 <Card title="What is a Toolkit?" icon="screwdriver-wrench">
-  A <b>Toolkit</b> is a curated collection of related tools designed to work together for a specific purpose.  
+  A <b>Toolkit</b> is a curated collection of related tools designed to work together for a specific purpose.
   CAMEL provides a range of built-in toolkits—covering everything from web search and data extraction to code execution, GitHub integration, and much more.
 </Card>
 

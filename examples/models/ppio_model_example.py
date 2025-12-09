@@ -35,7 +35,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model_R1)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
@@ -44,21 +44,21 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hello CAMEL AI! 👋 A warm welcome to the open-source community pushing the 
-boundaries of autonomous and communicative agents! Your work in exploring 
-multi-agent systems, human-AI collaboration, and self-improving AI 
-architectures is incredibly exciting. By fostering transparency and 
-collaboration, you're empowering researchers and developers to tackle 
-challenges like agent coordination, ethical alignment, and real-world 
+Hello CAMEL AI! 👋 A warm welcome to the open-source community pushing the
+boundaries of autonomous and communicative agents! Your work in exploring
+multi-agent systems, human-AI collaboration, and self-improving AI
+architectures is incredibly exciting. By fostering transparency and
+collaboration, you're empowering researchers and developers to tackle
+challenges like agent coordination, ethical alignment, and real-world
 deployment—critical steps toward responsible AI advancement.
 
-If anyone's curious, CAMEL AI's projects often dive into simulations where AI 
-agents role-play scenarios (like a negotiation between a "seller" and "buyer" 
-bot), testing how they communicate, adapt, and solve problems autonomously. 
- This hands-on approach helps uncover insights into emergent behaviors and 
+If anyone's curious, CAMEL AI's projects often dive into simulations where AI
+agents role-play scenarios (like a negotiation between a "seller" and "buyer"
+bot), testing how they communicate, adapt, and solve problems autonomously.
+ This hands-on approach helps uncover insights into emergent behaviors and
  scalable solutions.
 
-Keep innovating! 🌟 The future of AI is brighter with communities like yours 
+Keep innovating! 🌟 The future of AI is brighter with communities like yours
 driving open, creative research.
 ===============================================================================
 '''
@@ -85,7 +85,7 @@ print(response.msgs[0].content)
 # ruff: noqa: E501
 '''
 ===============================================================================
-First, we need to understand what the notation $ 17_b $ and $ 97_b $ means. The subscript $ b $ indicates that the number is in base $ b $. 
+First, we need to understand what the notation $ 17_b $ and $ 97_b $ means. The subscript $ b $ indicates that the number is in base $ b $.
 
 1. **Convert $ 17_b $ to base 10:**
    \[

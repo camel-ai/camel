@@ -526,7 +526,11 @@ Clean up tracking data for a task to prevent memory leaks.
 ### _decompose_task
 
 ```python
-def _decompose_task(self, task: Task):
+def _decompose_task(
+    self,
+    task: Task,
+    stream_callback: Optional[Callable[['ChatAgentResponse'], None]] = None
+):
 ```
 
 Decompose the task into subtasks. This method will also set the
@@ -535,6 +539,7 @@ relationship between the task and its subtasks.
 **Parameters:**
 
 - **task** (Task): The task to decompose.
+- **stream_callback** (Callable[[ChatAgentResponse], None], optional): A callback function that receives each chunk (ChatAgentResponse) during streaming decomposition.
 
 **Returns:**
 

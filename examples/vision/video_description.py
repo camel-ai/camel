@@ -49,18 +49,18 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 """
 ===============================================================================
-Title: "Survival in the Snow: A Bison's Battle Against Wolves" 
+Title: "Survival in the Snow: A Bison's Battle Against Wolves"
 Description:
-Witness the raw power of nature in this gripping video showcasing a dramatic 
-encounter between a lone bison and a pack of wolves in a snowy wilderness. As 
-the harsh winter blankets the landscape, the struggle for survival 
+Witness the raw power of nature in this gripping video showcasing a dramatic
+encounter between a lone bison and a pack of wolves in a snowy wilderness. As
+the harsh winter blankets the landscape, the struggle for survival
 intensifies. Watch as the bison, isolated from its herd, faces the relentless
-pursuit of hungry wolves. The tension escalates as the wolves coordinate 
-their attack, attempting to overcome the bison with their numbers and 
-strategic movements. Experience the breathtaking and brutal moments of this 
-wildlife interaction, where every second is a fight for survival. This video 
-captures the fierce beauty and the stark realities of life in the wild. Join 
-us in observing these incredible animals and the instinctual battles that 
+pursuit of hungry wolves. The tension escalates as the wolves coordinate
+their attack, attempting to overcome the bison with their numbers and
+strategic movements. Experience the breathtaking and brutal moments of this
+wildlife interaction, where every second is a fight for survival. This video
+captures the fierce beauty and the stark realities of life in the wild. Join
+us in observing these incredible animals and the instinctual battles that
 unfold in the heart of winter's grasp.
 ===============================================================================
 """

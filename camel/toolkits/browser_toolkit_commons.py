@@ -134,7 +134,7 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
 
 TASK_PLANNING_PROMPT_TEMPLATE = """
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`?
 
 Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
 Please first restate the task in detail, and then provide a detailed plan to solve the task.
@@ -156,7 +156,7 @@ Now please carefully examine the current task planning schema, and our history a
 
 Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string.
 """  # noqa: E501
 
 AVAILABLE_ACTIONS_PROMPT = """

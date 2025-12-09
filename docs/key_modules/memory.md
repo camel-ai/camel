@@ -126,7 +126,7 @@ icon: memory
 <AccordionGroup>
 
   <Accordion title="MemoryRecord" icon="file-signature">
-    **What it is:**  
+    **What it is:**
     The basic data unit in CAMEL’s memory system—everything stored/retrieved flows through this structure.
 
     **Attributes:**
@@ -142,7 +142,7 @@ icon: memory
   </Accordion>
 
   <Accordion title="ContextRecord" icon="folder-grid">
-    **What it is:**  
+    **What it is:**
     Result of memory retrieval from `AgentMemory`, scored for context relevance.
 
     **Attributes:**
@@ -151,7 +151,7 @@ icon: memory
   </Accordion>
 
   <Accordion title="MemoryBlock (Abstract Base Class)" icon="block">
-    **What it is:**  
+    **What it is:**
     The core “building block” for agent memory, following the Composite design pattern (supports tree structures).
 
     **Key methods:**
@@ -161,7 +161,7 @@ icon: memory
   </Accordion>
 
   <Accordion title="BaseContextCreator (Abstract Base Class)" icon="shapes">
-    **What it is:**  
+    **What it is:**
     Defines strategies for generating agent context when data exceeds model limits.
 
     **Key methods/properties:**
@@ -171,7 +171,7 @@ icon: memory
   </Accordion>
 
   <Accordion title="AgentMemory (Abstract Base Class)" icon="brain-circuit">
-    **What it is:**  
+    **What it is:**
     Specialized `MemoryBlock` for direct agent use.
 
     **Key methods:**
@@ -188,7 +188,7 @@ icon: memory
 <AccordionGroup>
 
   <Accordion title="ChatHistoryBlock" icon="comment-dots">
-    **What it does:**  
+    **What it does:**
     Stores and retrieves recent chat history (like a conversation timeline).
 
     **Initialization:**
@@ -200,12 +200,12 @@ icon: memory
     - `write_records()`: Add new records
     - `clear()`: Remove all chat history
 
-    **Use Case:**  
+    **Use Case:**
     Best for maintaining the most recent conversation flow/context.
   </Accordion>
 
   <Accordion title="VectorDBBlock" icon="file-vector">
-    **What it does:**  
+    **What it does:**
     Uses vector embeddings for storing and retrieving information based on semantic similarity.
 
     **Initialization:**
@@ -217,7 +217,7 @@ icon: memory
     - `write_records()`: Add new records (converted to vectors)
     - `clear()`: Remove all vector records
 
-    **Use Case:**  
+    **Use Case:**
     Ideal for large histories or when semantic search is needed.
   </Accordion>
 
@@ -234,8 +234,8 @@ icon: memory
 <Card title="Agent Memory Implementations & Advanced Usage" icon="user-cog">
 
 <Card title="ChatHistoryMemory" icon="comment-dots">
-**What is it?**  
-An **AgentMemory** implementation that wraps `ChatHistoryBlock`.  
+**What is it?**
+An **AgentMemory** implementation that wraps `ChatHistoryBlock`.
 **Best for:** Sequential, recent chat context (simple conversation memory).
 
 **Initialization:**
@@ -251,8 +251,8 @@ An **AgentMemory** implementation that wraps `ChatHistoryBlock`.
 </Card>
 
 <Card title="VectorDBMemory" icon="vector-square">
-**What is it?**  
-An **AgentMemory** implementation that wraps `VectorDBBlock`.  
+**What is it?**
+An **AgentMemory** implementation that wraps `VectorDBBlock`.
 **Best for:** Semantic search—find relevant messages by meaning, not just recency.
 
 **Initialization:**
@@ -267,8 +267,8 @@ An **AgentMemory** implementation that wraps `VectorDBBlock`.
 </Card>
 
 <Card title="LongtermAgentMemory" icon="layer-group">
-**What is it?**  
-Combines **ChatHistoryMemory** and **VectorDBMemory** for hybrid memory.  
+**What is it?**
+Combines **ChatHistoryMemory** and **VectorDBMemory** for hybrid memory.
 **Best for:** Production bots that need both recency & semantic search.
 
 **Initialization:**
@@ -348,7 +348,7 @@ You can subclass `BaseContextCreator` for advanced control.
         @property
         def token_counter(self):
             # Implement your token counting logic
-            return 
+            return
 
         @property
         def token_limit(self):
