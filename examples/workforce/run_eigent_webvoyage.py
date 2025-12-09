@@ -17,6 +17,10 @@ import datetime
 import json
 import os
 import platform
+from pathlib import Path
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Import agent factories from eigent.py
 from eigent import (
@@ -46,6 +50,7 @@ logger = get_logger(__name__)
 WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
     "working_dir/"
 )
+WORKING_DIRECTORY_PATH = Path(WORKING_DIRECTORY)
 
 
 def load_tasks_from_jsonl(
@@ -502,7 +507,9 @@ if __name__ == "__main__":
                 all_results.append(task_result)
 
                 # Save individual task result
-                individual_result_file = f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
+                individual_result_file = (
+                    WORKING_DIRECTORY_PATH / 
+                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json")
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(task_result, f, indent=2, ensure_ascii=False)
 
@@ -531,12 +538,16 @@ if __name__ == "__main__":
                 all_results.append(error_result)
 
                 # Save individual error result
-                individual_result_file = f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
+                individual_result_file = (
+                    WORKING_DIRECTORY_PATH /
+                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json")
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(error_result, f, indent=2, ensure_ascii=False)
 
                 # Save accumulated results
-                results_file = f"all_results_{args.start}_{args.end if args.end else 'end'}.json"
+                results_file = (
+                    WORKING_DIRECTORY_PATH /
+                    f"all_results_{args.start}_{args.end if args.end else 'end'}.json")
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(all_results, f, indent=2, ensure_ascii=False)
 
@@ -552,5 +563,3 @@ if __name__ == "__main__":
     print(
         f"Results saved to: all_results_{args.start}_{args.end if args.end else 'end'}.json"
     )
-
-# dotenv run python examples\workforce\run_eigent_webvoyage.py --start 428 --end 469
