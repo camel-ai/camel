@@ -295,14 +295,14 @@ class DockerRuntime(BaseRuntime):
                 )
                 if resp.status_code != 200:
                     logger.error(
-                        f"""ailed to execute function: 
-                        {func.get_function_name()}, 
-                        status code: {resp.status_code}, 
+                        f"""ailed to execute function:
+                        {func.get_function_name()},
+                        status code: {resp.status_code},
                         response: {resp.text}"""
                     )
                     return {
                         "error": f"""Failed to execute function:
-                        {func.get_function_name()}, 
+                        {func.get_function_name()},
                         response: {resp.text}"""
                     }
                 data = resp.json()

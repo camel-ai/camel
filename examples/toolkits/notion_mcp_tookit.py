@@ -36,8 +36,8 @@ async def main():
     )
 
     response = await chat_agent.astep(
-        """create a new page in my notion named 'Camel Introduction' 
-and add some content describing Camel as a lightweight multi-agent framework 
+        """create a new page in my notion named 'Camel Introduction'
+and add some content describing Camel as a lightweight multi-agent framework
 that supports role-driven collaboration and modular workflows."""
     )
 
@@ -58,14 +58,14 @@ if __name__ == "__main__":
 [681981] [Local→Remote] notifications/initialized
 [681981] [Local→Remote] tools/list
 [681981] [Remote→Local] 1
-/home/lyz/Camel/camel/camel/memories/blocks/chat_history_block.py:73: 
+/home/lyz/Camel/camel/camel/memories/blocks/chat_history_block.py:73:
 UserWarning: The `ChatHistoryMemory` is empty.
   warnings.warn("The `ChatHistoryMemory` is empty.")
 [681981] [Local→Remote] tools/call
 [681981] [Remote→Local] 2
-I have created the page "Camel Introduction" for you. You can view it here: 
+I have created the page "Camel Introduction" for you. You can view it here:
 https://www.notion.so/2626be7b2793819aaf2cfe686a554bdd
-[681981] 
+[681981]
 Shutting down...
 ============================================================================
 """

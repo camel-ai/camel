@@ -84,11 +84,11 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize 
+Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize
 the output.
 Synthesize output: False
-It seems that I'm unable to access the movie data at the moment due to a 
-subscription issue with the API. However, if you provide me with the title of 
+It seems that I'm unable to access the movie data at the moment due to a
+subscription issue with the API. However, if you provide me with the title of
 the movie or any other details, I can help you find information about it!
 ===============================================================================
 """
@@ -96,8 +96,8 @@ the movie or any other details, I can help you find information about it!
 """
 ===============================================================================
 Synthesize output: True
-{'rating': '8.8', 'description': 'A thief who steals corporate secrets through 
-the use of dream-sharing technology is given the inverse task of planting an 
+{'rating': '8.8', 'description': 'A thief who steals corporate secrets through
+the use of dream-sharing technology is given the inverse task of planting an
 idea into the mind of a CEO.', 'movie_title': 'Inception'}
 ===============================================================================
 """

@@ -27,7 +27,7 @@ gpt_5_model = ModelFactory.create(
 camel_agent = ChatAgent(model=gpt_5_model)
 
 # Set user message
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
@@ -35,8 +35,8 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello, CAMEL AI! Great to connect with an open-source community advancing 
-autonomous and communicative agents. Wishing you continued success—excited to 
-see what you build next! 
+Hello, CAMEL AI! Great to connect with an open-source community advancing
+autonomous and communicative agents. Wishing you continued success—excited to
+see what you build next!
 ===============================================================================
 '''

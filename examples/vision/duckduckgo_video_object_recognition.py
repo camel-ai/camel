@@ -68,7 +68,7 @@ def main():
         image_list = downloader.get_video_screenshots(video_url, 3)
         if image_list and len(image_list) > 0:
             print(
-                f'''Successfully downloaded video and captured screenshots 
+                f'''Successfully downloaded video and captured screenshots
                 from: {video_url}'''
             )
             detect_image_obj(image_list)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-Successfully downloaded video and captured screenshots 
+Successfully downloaded video and captured screenshots
                 from: https://www.youtube.com/embed/RRMVF0PPqZI?autoplay=1
 ==================== SYS MSG ====================
 You have been assigned an object recognition task.

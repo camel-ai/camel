@@ -78,10 +78,10 @@ print(response.msgs[0].content)
 """
 ==========================================================================
 Agent Message:
-🔔 Reminder: You have an upcoming meeting scheduled. Please check your 
+🔔 Reminder: You have an upcoming meeting scheduled. Please check your
 calendar for details!
 
-I've sent you a notification about your upcoming meeting. Please check your 
+I've sent you a notification about your upcoming meeting. Please check your
 calendar for details!
 ==========================================================================
 """

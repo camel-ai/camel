@@ -47,7 +47,7 @@ The related tasks result and status:
 
 {other_results}
 
-so, the final answer of the root task is: 
+so, the final answer of the root task is:
 """
 )
 

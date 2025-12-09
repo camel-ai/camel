@@ -53,11 +53,11 @@ print('\nAPI description for ToolSearcher:\n', api_description)
 '''
 ===============================================================================
 API description for ToolSearcher:
- {"name": "ToolSearcher", "description": "Searches for relevant tools in 
- library based on the keywords.", "input_parameters": {"keywords": {"type": 
- "str", "description": "The keyword to search for."}}, 
- "output_parameters": 
- {"best_matchs": {"type": "Union[List[dict], dict]", 
+ {"name": "ToolSearcher", "description": "Searches for relevant tools in
+ library based on the keywords.", "input_parameters": {"keywords": {"type":
+ "str", "description": "The keyword to search for."}},
+ "output_parameters":
+ {"best_matchs": {"type": "Union[List[dict], dict]",
  "description": "The best match tool(s)."}}}
 ===============================================================================
 '''

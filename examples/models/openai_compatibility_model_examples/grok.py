@@ -38,11 +38,11 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy, 
-the answer to the meaning of life, the universe, and everything is **42**. 
-However, the trick lies in figuring out the actual question to which 42 is the 
-answer. Isn't that just like life, full of mysteries and unanswered questions? 
-Keep pondering, for the journey of discovery is as important as the answer 
+Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy,
+the answer to the meaning of life, the universe, and everything is **42**.
+However, the trick lies in figuring out the actual question to which 42 is the
+answer. Isn't that just like life, full of mysteries and unanswered questions?
+Keep pondering, for the journey of discovery is as important as the answer
 itself!
 ===============================================================================
 """

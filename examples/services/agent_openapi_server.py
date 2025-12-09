@@ -202,7 +202,7 @@ def example_init_and_step():
     print("History:", r.json())
     """
     History: [{'role': 'system',
-     'content': 'You are a helpful assistant 
+     'content': 'You are a helpful assistant
      with access to a wiki search tool.'}]
     """
 

@@ -56,21 +56,21 @@ async def run_example_http():
         print(res1.content[0].text[:1000])
         """
 ===============================================================================
-{"title": "Attention Is All You Need But You Don't Need All Of It For 
-Inference of Large Language Models", "published_date": "2024-07-22", 
-"authors": ["Georgy Tyukin", "Gbetondji J-S Dovonon", "Jean Kaddour", 
-"Pasquale Minervini"], "entry_id": "http://arxiv.org/abs/2407.15516v1", 
-"summary": "The inference demand for LLMs has skyrocketed in recent months, 
-and serving\nmodels with low latencies remains challenging due to the 
-quadratic input length\ncomplexity of the attention layers. In this work, we 
-investigate the effect of\ndropping MLP and attention layers at inference time 
-on the performance of\nLlama-v2 models. We find that dropping dreeper 
-attention layers only marginally\ndecreases performance but leads to the best 
-speedups alongside dropping entire\nlayers. For example, removing 33\\% of 
-attention layers in a 13B Llama2 model\nresults in a 1.8\\% drop in average 
-performance over the OpenLLM benchmark. We\nalso observe that skipping layers 
+{"title": "Attention Is All You Need But You Don't Need All Of It For
+Inference of Large Language Models", "published_date": "2024-07-22",
+"authors": ["Georgy Tyukin", "Gbetondji J-S Dovonon", "Jean Kaddour",
+"Pasquale Minervini"], "entry_id": "http://arxiv.org/abs/2407.15516v1",
+"summary": "The inference demand for LLMs has skyrocketed in recent months,
+and serving\nmodels with low latencies remains challenging due to the
+quadratic input length\ncomplexity of the attention layers. In this work, we
+investigate the effect of\ndropping MLP and attention layers at inference time
+on the performance of\nLlama-v2 models. We find that dropping dreeper
+attention layers only marginally\ndecreases performance but leads to the best
+speedups alongside dropping entire\nlayers. For example, removing 33\\% of
+attention layers in a 13B Llama2 model\nresults in a 1.8\\% drop in average
+performance over the OpenLLM benchmark. We\nalso observe that skipping layers
 except the latter layers reduces perform
-===============================================================================    
+===============================================================================
         """
 
 

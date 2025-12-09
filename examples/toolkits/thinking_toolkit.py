@@ -46,7 +46,7 @@ print("=" * 80)
 
 usr_msg = """
 Help me solve this math problem:
-If a train travels at 60 mph and needs to cover 300 miles, 
+If a train travels at 60 mph and needs to cover 300 miles,
 with 3 stops of 15 minutes each, how long will the journey take?
 """
 
@@ -58,9 +58,9 @@ print(response.info['tool_calls'])
 """
 Example: Problem Solving with Thinking Toolkit
 ===============================================================================
-The train's total journey time for traveling 300 miles at 60 mph, with 
-3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of 
-travel time and 0.75 hours (or 45 minutes) of stop time. The conversion 
+The train's total journey time for traveling 300 miles at 60 mph, with
+3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of
+travel time and 0.75 hours (or 45 minutes) of stop time. The conversion
 of stop time from minutes to hours was explicitly noted for clarity.
 
 Tool Calls:

@@ -50,14 +50,14 @@ print(response0.msgs[0].content)
 ===============================================================================
 Certainly! Below is an example of a student's information:
 
-**Student Name:** Emily Johnson  
-**Date of Birth:** March 12, 2005  
-**Grade:** 10th Grade  
-**School:** Lincoln High School  
-**Address:** 456 Oak Street, Springfield, IL 62704  
-**Phone Number:** (555) 123-4567  
-**Email:** emily.johnson@student.lincolnhs.edu  
-**Emergency Contact:** John Johnson (Father) - (555) 987-6543  
+**Student Name:** Emily Johnson
+**Date of Birth:** March 12, 2005
+**Grade:** 10th Grade
+**School:** Lincoln High School
+**Address:** 456 Oak Street, Springfield, IL 62704
+**Phone Number:** (555) 123-4567
+**Email:** emily.johnson@student.lincolnhs.edu
+**Emergency Contact:** John Johnson (Father) - (555) 987-6543
 
 Is there anything specific you need or any changes you'd like to make?
 ===============================================================================
@@ -110,7 +110,7 @@ print(response2.msgs[0].content)
 print(response2.msgs[0].parsed)
 """
 ===============================================================================
-studentList=[Student(name='Emily Johnson', age='18', email='emily.johnson@student.lincolnhs.edu')] 
+studentList=[Student(name='Emily Johnson', age='18', email='emily.johnson@student.lincolnhs.edu')]
 ===============================================================================
 """  # noqa: E501
 

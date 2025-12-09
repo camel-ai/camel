@@ -117,7 +117,7 @@ def test_jupyter_execute_code(jupyter_code_execution_toolkit):
     code = """
 def add(a, b):
     return a + b
-    
+
 result = add(10, 20)
 print(result)
 """
@@ -129,7 +129,7 @@ def test_jupyter_execute_code_error(jupyter_code_execution_toolkit):
     code = """
 def divide(a, b):
     return a / b
-    
+
 result = divide(10, 0)
 print(result)
 """
@@ -141,7 +141,7 @@ def test_docker_execute_code(docker_code_execution_toolkit):
     code = """
 def multiply(a, b):
     return a * b
-    
+
 result = multiply(6, 7)
 print(result)
 """
@@ -165,7 +165,7 @@ def factorial(n):
     if n <= 1:
         return 1
     return n * factorial(n - 1)
-    
+
 result = factorial(5)
 print(result)
 """
