@@ -1354,7 +1354,7 @@ class SearchToolkit(BaseToolkit):
         gl: str = "us",
         search_lang: str = "en",
         device: str = "desktop",
-        number_of_result_pages: int = 10,
+        number_of_result_pages: int = 1,
         safe: str = "off",
         filter: int = 0,
         custom_params: Optional[Dict[str, Any]] = None,
@@ -1380,7 +1380,7 @@ class SearchToolkit(BaseToolkit):
             device (str): Device type: 'desktop', 'tablet', or 'mobile'.
                 (default: :obj:`"desktop"`)
             number_of_result_pages (int): Number of organic results to return.
-                Adjust based on task needs. (default: :obj:`10`)
+                Adjust based on task needs. (default: :obj:`1`)
             safe (str): Safe search level: 'off', 'medium', 'high', 'active'.
                 (default: :obj:`"off"`)
             filter (int): Filter results: 0 (no filter), 1 (filter similar results).
@@ -1400,7 +1400,7 @@ class SearchToolkit(BaseToolkit):
         """
         from serpapi import SerpApiClient
 
-        SerpApiClient.SERP_API_KEY = os.environ["SERPAPI_KEY"]
+        SerpApiClient.SERP_API_KEY = os.getenv("SERPAPI_KEY")
         params = {
             "engine": engine,
             "q": query,
