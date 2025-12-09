@@ -58,6 +58,7 @@ class ToolkitConfig:
     log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
+    enable_reasoning: bool = False
 
 
 class ConfigLoader:
@@ -123,6 +124,8 @@ class ConfigLoader:
                 toolkit_kwargs["session_id"] = value
             elif key == "enabledTools":
                 toolkit_kwargs["enabled_tools"] = value
+            elif key == "enableReasoning":
+                toolkit_kwargs["enable_reasoning"] = value
             elif key == "fullVisualMode":
                 browser_kwargs["full_visual_mode"] = value
 
