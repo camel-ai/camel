@@ -57,7 +57,7 @@ Your response MUST be a valid JSON object containing an 'assignments' field with
 
 Each assignment dictionary should have:
 - "task_id": the ID of the task
-- "assignee_id": the ID of the chosen worker node  
+- "assignee_id": the ID of the chosen worker node
 - "dependencies": list of task IDs that this task depends on (empty list if no dependencies)
 
 Example valid response:
@@ -417,7 +417,7 @@ FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
 QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
 {
   "quality_score": 0-100,
-  "reasoning": "explanation (1-2 sentences)", 
+  "reasoning": "explanation (1-2 sentences)",
   "issues": ["issue1", "issue2"],
   "recovery_strategy": "retry|reassign|replan|decompose or null",
   "modified_task_content": "new content if replan, else null"

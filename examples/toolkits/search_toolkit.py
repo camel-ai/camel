@@ -290,7 +290,7 @@ print(exa_response)
 
 # Example with ChatAgent using Exa search
 exa_agent = ChatAgent(
-    system_message="""You are a helpful assistant that can use Exa search 
+    system_message="""You are a helpful assistant that can use Exa search
         engine to find the latest research papers.""",
     tools=[FunctionTool(SearchToolkit().search_exa)],
 )
@@ -304,51 +304,51 @@ print(response.msgs[0].content)
 ===============================================================================
 Here are some of the latest developments in quantum error correction:
 
-1. **Suppressing Quantum Errors by Scaling a Surface Code Logical Qubit**  
-- **Published Date**: February 22, 2023  
-- **Authors**: Google Quantum AI  
-- **Summary**: This work reports on a 72-qubit superconducting device 
+1. **Suppressing Quantum Errors by Scaling a Surface Code Logical Qubit**
+- **Published Date**: February 22, 2023
+- **Authors**: Google Quantum AI
+- **Summary**: This work reports on a 72-qubit superconducting device
 implementing  49-qubit distance-5 surface code, improving the performance over
 a dist-3 code. The research demonstrates how scaling error-correcting codes
-can lead to significant reductions in logical error rates.  
+can lead to significant reductions in logical error rates.
 - **Link**: [Read paper](https://www.nature.com/articles/s41586-022-05434-1)
 
 ![Image](https://media.springernature.com/m685/springer-static/image/art%3A10.
 1038%2Fs41586-022-05434-1/MediaObjects/41586_2022_5434_Fig1_HTML.png)
 
-2. **Increasing Error Tolerance in Quantum Computers with Dynamic Bias**  
-- **Published Date**: March 28, 2023  
+2. **Increasing Error Tolerance in Quantum Computers with Dynamic Bias**
+- **Published Date**: March 28, 2023
 - **Authors**: H'ector Bomb'in, C. Dawson, Naomi H. Nickerson, M. Pant
 - **Summary**: This study introduces a method for dynamically arranging error
-biases to enhance error tolerance in fusion-based quantum computing. By 
+biases to enhance error tolerance in fusion-based quantum computing. By
 adaptively choosing bias during operations, it triples the loss tolerance.
 - **Link**: [Read the paper](https://arxiv.org/pdf/2303.16122.pdf)
 
-3. **Fault Tolerant Non-Clifford State Preparation for Arbitrary Rotations**  
-- **Published Date**: March 30, 2023  
-- **Authors**: Hyeongrak Choi, Frederic T. Chong, Dirk Englund, Yong Ding  
-- **Summary**: This paper proposes a post-selection-based algorithm for 
+3. **Fault Tolerant Non-Clifford State Preparation for Arbitrary Rotations**
+- **Published Date**: March 30, 2023
+- **Authors**: Hyeongrak Choi, Frederic T. Chong, Dirk Englund, Yong Ding
+- **Summary**: This paper proposes a post-selection-based algorithm for
 efficiently preparing resource states for gate teleportation, achieving fault
 tolerance with reduced resource overheads for non-Clifford rotations.
 - **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17380v1.pdf)
 
-4. **Measurement-free Fault-tolerant Logical Zero-state Encoding**  
-- **Published Date**: June 2, 2023  
-- **Authors**: Hayato Goto, Yinghao Ho, Taro Kanao  
-- **Summary**: This work presents an efficient encoding method for the 
-nine-qubit surface code that requires no measurement and can operate on a 
+4. **Measurement-free Fault-tolerant Logical Zero-state Encoding**
+- **Published Date**: June 2, 2023
+- **Authors**: Hayato Goto, Yinghao Ho, Taro Kanao
+- **Summary**: This work presents an efficient encoding method for the
+nine-qubit surface code that requires no measurement and can operate on a
 one-dimensional qubit array, demonstrating its fault tolerance.
 - **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17211v2.pdf)
 
-5. **High-threshold and Low-overhead Fault-tolerant Quantum Memory**  
-- **Published Date**: March 27, 2024  
-- **Author**: Theodore J. Yoder  
+5. **High-threshold and Low-overhead Fault-tolerant Quantum Memory**
+- **Published Date**: March 27, 2024
+- **Author**: Theodore J. Yoder
 - **Summary**: This research discusses high-rate LDPC codes for quantum error
 correction, presenting codes that require fewer physical qubits compared to
 traditional surface codes while achieving similar error thresholds.
 - **Link**: [Read paper](https://www.nature.com/articles/s41586-024-07107-7)
 
-These studies reflect ongoing advances in quantum error correction, focusing 
+These studies reflect ongoing advances in quantum error correction, focusing
 on improving efficiency, fault tolerance, and minimizing resource overheads.
 ===============================================================================
 """
@@ -362,17 +362,17 @@ print(search_alibaba_tongxiao_response)
 ===============================================================================
 {'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
 {'result_id': 1, 'title': 'Investor Relations', 'snippet':
- 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%） 
+ 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%）
  2025-04-15T20:01 EDT Prices shown in USD The data service is provided
-   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba 
+   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba
    Group(9988)-H...', 'url': 'https://www.alibabagroup.com/
-   en-US/investor-relations', 'hostname': 'www.alibabagroup.com', 
+   en-US/investor-relations', 'hostname': 'www.alibabagroup.com',
    'summary': 'February 20, 2025\nAlibaba Group Will Announce December
-   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group 
-   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock 
+   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group
+   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock
    Information\nAlibaba Group (BABA) - NYSE\n$\n112.280\n-$1.690（-1.483%
    2025-04-15T20:01 EDTAlibaba Group (9988) - HKEX\nHK$\n104.400\n-HK$5.500
-   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD', 
+   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD',
    'score': 0.33736322991609163, 'publish_time': 1744646400000},
 {'result_id': 2, 'title': 'technode'.....}
 ]}
@@ -417,3 +417,38 @@ print(metaso_response)
  Similarity: 0.9584", 'position': 10, 'date': '2025年05月23日'}], 'total': 38}
 ===============================================================================
 """  # noqa: E501
+
+
+serpapi_agent = ChatAgent(
+    system_message="""You are a helpful assistant that helps users with
+    their queries""",
+    tools=[FunctionTool(SearchToolkit().search_serpapi)],
+)
+
+usr_msg = "What are the latest developments in quantum error correction?"
+response = serpapi_agent.step(input_message=usr_msg, response_format=None)
+print(response)
+
+"""
+===============================================================================
+msgs=[BaseMessage(role_name='System', role_type=<RoleType.SYSTEM: 'system'>,
+meta_dict={}, content='Recent reports indicate a rapid acceleration in quantum
+error correction research, with rising investments focused on achieving
+fault-tolerant performance. This suggests that error correction has become a
+defining challenge in the quantum industry.', video_bytes=None, image_list=None
+image_detail='auto', video_detail='auto', parsed=None, reasoning_content=None)]
+terminated=False info={'id': 'f7w3acbaFIyA0-kP9MuZoAk', 'usage':
+{'prompt_tokens': 1290, 'completion_tokens': 65, 'total_tokens': 1513},
+'termination_reasons': ['stop'], 'num_tokens': 191, 'tool_calls':
+[ToolCallingRecord(tool_name='search_serpapi', args={'query': 'latest
+developments in quantum error correction', 'engine': 'google'}, result=
+{'results': [{'title': "Quantum Report Says Error Correction Now The
+Industry's ...", 'link': 'https://thequantuminsider.com/2025/11/19/quantum-
+report-says-error-correction-now-the-industrys-defining-challenge/',
+'snippet': 'The findings show rapid acceleration in error-correction research,
+rising investments linked to fault-tolerant performance and heightened ...',
+'keywords': ['rapid acceleration in error-correction research'], 'source':
+'The Quantum Insider'}]}, tool_call_id='function-call-18262120514510234122',
+images=None)], 'external_tool_call_requests': None}
+===============================================================================
+"""

@@ -87,20 +87,20 @@ runtime.stop()
 """
 ===============================================================================
 user prompt:
-Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of 
+Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of
 babysitting. How much did she earn?
 
-msgs=[BaseMessage(role_name='Assistant', role_type=<RoleType.ASSISTANT: 
-'assistant'>, meta_dict={}, content='Weng earned $10.20 for her 51 minutes of 
-babysitting.', video_bytes=None, image_list=None, image_detail='auto', 
-video_detail='low', parsed=None)] terminated=False info={'id': 
-'chatcmpl-BTDAKaCAYvs6KFsxe9NmmxMHQiaxx', 'usage': {'completion_tokens': 18, 
-'prompt_tokens': 122, 'total_tokens': 140, 'completion_tokens_details': 
-{'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 
-'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 
-'cached_tokens': 0}}, 'termination_reasons': ['stop'], 'num_tokens': 99, 
-'tool_calls': [ToolCallingRecord(tool_name='sample_function', args={'x': 12, 
-'y': 51}, result=63, tool_call_id='call_clugUYSbh37yVAwpggG8Dwe0')], 
+msgs=[BaseMessage(role_name='Assistant', role_type=<RoleType.ASSISTANT:
+'assistant'>, meta_dict={}, content='Weng earned $10.20 for her 51 minutes of
+babysitting.', video_bytes=None, image_list=None, image_detail='auto',
+video_detail='low', parsed=None)] terminated=False info={'id':
+'chatcmpl-BTDAKaCAYvs6KFsxe9NmmxMHQiaxx', 'usage': {'completion_tokens': 18,
+'prompt_tokens': 122, 'total_tokens': 140, 'completion_tokens_details':
+{'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0,
+'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0,
+'cached_tokens': 0}}, 'termination_reasons': ['stop'], 'num_tokens': 99,
+'tool_calls': [ToolCallingRecord(tool_name='sample_function', args={'x': 12,
+'y': 51}, result=63, tool_call_id='call_clugUYSbh37yVAwpggG8Dwe0')],
 'external_tool_call_requests': None}
 ===============================================================================
 """

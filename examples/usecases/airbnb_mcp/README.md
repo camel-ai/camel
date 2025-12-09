@@ -51,13 +51,13 @@ A Streamlit app that leverages the [CAMEL-AI OWL framework](https://github.com/c
 
 ## ⚙️ Configuration
 
-1. **Environment variables**  
+1. **Environment variables**
    Create a `.env` file in the project root with:
    ```ini
    OPENAI_API_KEY=your_openai_key_here
    ```
 
-2. **MCP Server config**  
+2. **MCP Server config**
    Ensure `mcp_servers_config.json` (next to `app.py`) contains:
    ```json
    {

@@ -165,7 +165,7 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
         """\
         Please format the following content:
-        
+
         {content}
         """
     )

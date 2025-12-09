@@ -27,7 +27,7 @@ gpt_4_5_preview_model = ModelFactory.create(
 camel_agent = ChatAgent(model=gpt_4_5_preview_model)
 
 # Set user message
-user_msg = """Please write inspirational poems 
+user_msg = """Please write inspirational poems
 that make people feel hopeful and enthusiastic about life"""
 
 # Get response information
@@ -38,19 +38,19 @@ print(response.msgs[0].content)
 
 ### Poem 1: Embrace the Dawn
 
-Awaken now, the dawn is near,  
-A fresh new day, release your fear.  
-Yesterday's shadows fade away,  
+Awaken now, the dawn is near,
+A fresh new day, release your fear.
+Yesterday's shadows fade away,
 Hope blooms bright, embrace today.
 
-Rise with courage, dreams in sight,  
-Your heart ablaze, your spirit bright.  
-Each step forward, strength you find,  
+Rise with courage, dreams in sight,
+Your heart ablaze, your spirit bright.
+Each step forward, strength you find,
 A brighter future, yours to bind.
 
-Believe in you, your path is clear,  
-Trust your journey, hold it dear.  
-Life's beauty shines, a guiding star,  
+Believe in you, your path is clear,
+Trust your journey, hold it dear.
+Life's beauty shines, a guiding star,
 You're stronger now than ever you are.
 
 ---

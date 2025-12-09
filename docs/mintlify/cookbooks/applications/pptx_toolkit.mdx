@@ -4,33 +4,33 @@ title: "🐫 📊 CAMEL-AI PPTXToolkit Cookbook"
 
 This notebook shows you how to **automatically generate** and **assemble** professional PowerPoint decks using CAMEL-AI’s PPTXToolkit. You’ll learn how to:
 
-- Prompt an LLM to produce **fully structured JSON** for every slide  
-- Turn that JSON into a polished `.pptx` with **titles**, **bullets**, **step diagrams**, **tables**, and **images**  
-- Leverage **Markdown** styling (`**bold**`, `*italic*`) and **Pexels** image search via `img_keywords`  
-- Plug in your **own .pptx templates** (modern, boardroom, minimalist, etc.)  
-- Enjoy **auto-layout** selection for text, diagrams, and tables  
+- Prompt an LLM to produce **fully structured JSON** for every slide
+- Turn that JSON into a polished `.pptx` with **titles**, **bullets**, **step diagrams**, **tables**, and **images**
+- Leverage **Markdown** styling (`**bold**`, `*italic*`) and **Pexels** image search via `img_keywords`
+- Plug in your **own .pptx templates** (modern, boardroom, minimalist, etc.)
+- Enjoy **auto-layout** selection for text, diagrams, and tables
 
 <hr />
 
 ## 🚥 Pipeline Overview
 
-1. **Single Agent: Content → JSON**  
-   - You send one prompt to the LLM  
+1. **Single Agent: Content → JSON**
+   - You send one prompt to the LLM
    - It returns a JSON list with:
-     - A **title slide** (`title`, `subtitle`)  
-     - At least one **step-by-step** slide (all bullets start with `>>`)  
-     - At least one **table** slide (`table`: `{headers, rows}`)  
-     - Two or more slides with meaningful `img_keywords`  
-     - All **bullet slides** using Markdown formatting  
+     - A **title slide** (`title`, `subtitle`)
+     - At least one **step-by-step** slide (all bullets start with `>>`)
+     - At least one **table** slide (`table`: `{headers, rows}`)
+     - Two or more slides with meaningful `img_keywords`
+     - All **bullet slides** using Markdown formatting
 
-2. **PPTXToolkit: JSON → `.pptx`**  
-   - Pass that JSON into `PPTXToolkit.create_presentation(...)`  
-   - Renders slides with your chosen template, images via `img_keywords`, chevrons/pentagons, and tables  
-   - Outputs a ready-to-share PowerPoint file  
+2. **PPTXToolkit: JSON → `.pptx`**
+   - Pass that JSON into `PPTXToolkit.create_presentation(...)`
+   - Renders slides with your chosen template, images via `img_keywords`, chevrons/pentagons, and tables
+   - Outputs a ready-to-share PowerPoint file
 
 ---
 
-Ready to build your next deck? Let’s get started! 🎉  
+Ready to build your next deck? Let’s get started! 🎉
 
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1W_dsoq1jrO8A_TzwUxzAr4wFSWeXLmn7?usp=sharing)
 

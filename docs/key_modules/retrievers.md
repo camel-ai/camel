@@ -109,8 +109,8 @@ Use AutoRetriever for fast experiments and RAG workflows; for advanced control, 
 </Card>
 
 <Card title="KeywordRetriever (Classic Search)" icon="hashtag">
-For simple, blazing-fast search by keyword—use KeywordRetriever.  
-Great for small data, transparency, or keyword-driven tasks.  
+For simple, blazing-fast search by keyword—use KeywordRetriever.
+Great for small data, transparency, or keyword-driven tasks.
 *(API and code example coming soon—see RAG Cookbook for details.)*
 </Card>
 
@@ -130,4 +130,3 @@ Great for small data, transparency, or keyword-driven tasks.
     Full configuration and options for all retriever classes.
   </Card>
 </CardGroup>
-
