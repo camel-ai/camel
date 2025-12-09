@@ -12,17 +12,19 @@ Azure OpenAI API in a unified BaseModelBackend interface.
 
 **Parameters:**
 
-- **model_type** (Union[ModelType, str]): Model for which a backend is created, one of GPT_* series.
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, Should be the deployment name you chose when you deployed an azure model.
 - **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used. (default: :obj:`None`)
 - **api_key** (Optional[str], optional): The API key for authenticating with the OpenAI service. (default: :obj:`None`)
 - **url** (Optional[str], optional): The url to the OpenAI service. (default: :obj:`None`)
 - **api_version** (Optional[str], optional): The api version for the model. (default: :obj:`None`)
-- **azure_deployment_name** (Optional[str], optional): The deployment name you chose when you deployed an azure model. (default: :obj:`None`)
 - **azure_ad_token** (Optional[str], optional): Your Azure Active Directory token, https://www.microsoft.com/en-us/security/business/ identity-access/microsoft-entra-id. (default: :obj:`None`)
 - **azure_ad_token_provider** (Optional[AzureADTokenProvider], optional): A function that returns an Azure Active Directory token, will be invoked on every request. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
-- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. Useful for RL frameworks like AReaL or rLLM that provide Azure OpenAI-compatible clients. The client should implement the AzureOpenAI client interface with `.chat.completions.create()` and `.beta.chat.completions.parse()` methods. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous AzureOpenAI client instance. If provided, this client will be used instead of creating a new one. The client should implement the AsyncAzureOpenAI client interface. (default: :obj:`None`)
+- **azure_deployment_name** (Optional[str], optional): **Deprecated**. Use `model_type` parameter instead. This parameter is kept for backward compatibility and will be removed in a future version. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
 - **References**:
 - **https**: //learn.microsoft.com/en-us/azure/ai-services/openai/
 
@@ -40,10 +42,12 @@ def __init__(
     timeout: Optional[float] = None,
     token_counter: Optional[BaseTokenCounter] = None,
     api_version: Optional[str] = None,
-    azure_deployment_name: Optional[str] = None,
     azure_ad_token_provider: Optional['AzureADTokenProvider'] = None,
     azure_ad_token: Optional[str] = None,
     max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
+    azure_deployment_name: Optional[str] = None,
     **kwargs: Any
 ):
 ```
