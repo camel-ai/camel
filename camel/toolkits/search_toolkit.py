@@ -1346,6 +1346,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Metaso search failed: {e}"}
 
+    @dependencies_required("google-search-results")
     @api_keys_required([(None, 'SERPAPI_KEY')])
     def search_serpapi(
         self,
@@ -1417,7 +1418,7 @@ class SearchToolkit(BaseToolkit):
             "api_key": SERPAPI_KEY,
         }
 
-        if custom_params:
+        if custom_params is not None:
             params.update(custom_params)
         try:
             search = GoogleSearch(params)
@@ -1442,10 +1443,6 @@ class SearchToolkit(BaseToolkit):
 
             return {"results": formatted_results}
 
-        except ImportError:
-            return {
-                "error": "serpapi library not installed. Install with: pip install google-search-results"
-            }
         except Exception as e:
             return {"error": f"SerpApi search failed: {e!s}"}
 
