@@ -149,4 +149,4 @@ help_result = terminal_toolkit.ask_user_for_help(id='session_1')
 # in the console. After the user types '/exit', the script will resume.
 print(help_result)
 ```
-</Card> 
+</Card>

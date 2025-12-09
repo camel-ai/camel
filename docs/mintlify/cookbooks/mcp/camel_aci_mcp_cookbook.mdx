@@ -11,7 +11,7 @@ You can also check this cookbook in [Google Colab](https://drive.google.com/file
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
@@ -149,8 +149,8 @@ First things first, head to [ACI.dev](https://aci.dev) and sign up if you don't 
 Both methods use the same environment variables. Create a `.env` file in your project folder with these variables:
 
 ```bash
-GEMINI_API_KEY="your_gemini_api_key_here" 
-ACI_API_KEY="your_aci_api_key_here" 
+GEMINI_API_KEY="your_gemini_api_key_here"
+ACI_API_KEY="your_aci_api_key_here"
 LINKED_ACCOUNT_OWNER_ID="your_linked_account_owner_id_here"
 ```
 
@@ -242,7 +242,7 @@ async def main():
         await mcp_toolkit.connect()
         tools = mcp_toolkit.get_tools() # connects and loads the tools in server
         rprint(f"Connected successfully. Found [cyan]{len(tools)}[/cyan] tools available")
-        
+
 
         # Set up Gemini model
         model = ModelFactory.create(
@@ -268,7 +268,7 @@ async def main():
         user_query = input("\nEnter your query: ")
         user_message = BaseMessage.make_user_message(role_name="User", content=user_query)
         rprint("\n[yellow]Processing...[/yellow]")
-        response = await agent.astep(user_message) # ask agent the question ( async ) 
+        response = await agent.astep(user_message) # ask agent the question ( async )
 
         # Show response
         if response and hasattr(response, "msgs") and response.msgs:
@@ -279,7 +279,7 @@ async def main():
             rprint(f"Response content: {response}")
         else:
             rprint("[red]No response received[/red]")
-        
+
         # Disconnect from MCP
         await mcp_toolkit.disconnect()
         rprint("\n[green]Done[/green]")
@@ -340,18 +340,18 @@ load_dotenv()
 
 def main():
     rprint("[green]CAMEL AI with ACI Toolkit[/green]")
-    
+
     # get the linked account from env or use default
     linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
     if not linked_account_owner_id:
         raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
     rprint(f"Using account: [cyan]{linked_account_owner_id}[/cyan]")
-    
+
     # setup aci toolkit
     aci_toolkit = ACIToolkit(linked_account_owner_id=linked_account_owner_id)
     tools = aci_toolkit.get_tools()
     rprint(f"Loaded [cyan]{len(tools)}[/cyan] tools")
-    
+
     # setup gemini model
     model = ModelFactory.create(
             model_platform=ModelPlatformType.GEMINI, # you can use other models here too
@@ -359,28 +359,28 @@ def main():
             api_key=os.getenv("GEMINI_API_KEY"),
             model_config_dict={"temperature": 0.7, "max_tokens": 40000},
     )
-    
+
     # create agent with tools
     agent = ChatAgent(model=model, tools=tools)
     rprint("[green]Agent ready[/green]")
-    
+
     # get user query
     query = input("\nEnter your query: ")
     rprint("\n[yellow]Processing...[/yellow]")
-    
+
     response = agent.step(query)
-    
+
     # show raw response
     rprint(f"\n[dim]{response.msg}[/dim]")
     rprint(f"\n[dim]Raw response type: {type(response)}[/dim]")
     rprint(f"[dim]Response: {response}[/dim]")
-    
+
     # try to get the actual content
     if hasattr(response, 'msgs') and response.msgs:
         rprint(f"\nFound [cyan]{len(response.msgs)}[/cyan] messages:")
         for i, msg in enumerate(response.msgs):
             rprint(f"Message {i + 1}: {msg.content}")
-    
+
     rprint("\n[green]Done[/green]")
 
 if __name__ == "__main__":
@@ -493,9 +493,8 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>  
+</div>
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
 ---
-

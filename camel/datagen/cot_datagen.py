@@ -39,7 +39,7 @@ class AgentResponse(BaseModel):
 
     score: Annotated[float, confloat(ge=0, le=1)] = Field(
         ...,
-        description="""Similarity score between 0 and 1 
+        description="""Similarity score between 0 and 1
         comparing current answer to correct answer""",
     )
 

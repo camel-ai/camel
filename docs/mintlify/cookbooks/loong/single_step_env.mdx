@@ -8,7 +8,7 @@ It's called *single step* environment, because the agent only does one step. It 
 
 First, we have to load a dataset from which we will sample questions. The dataset can be either a `StaticDataset`, which is finite and the length is known at runtime, or it can be a `BaseGenerator`, which is an infinite supply of question - answer pairs, synthetically generated in some way (depending on the implementation).
 
-For the sake of simplicity, we will start by loading the MATH dataset, remove unnecessary columns and rename the remaining ones, such that we can easily turn it into a `StaticDataset`, which `SingleStepEnv` can deal with. 
+For the sake of simplicity, we will start by loading the MATH dataset, remove unnecessary columns and rename the remaining ones, such that we can easily turn it into a `StaticDataset`, which `SingleStepEnv` can deal with.
 
 First, install the CAMEL package with all its dependencies:
 
@@ -89,7 +89,7 @@ verifier = PythonVerifier(extractor=extractor)
 await verifier.setup(uv=True)
 ```
 
-Let's now initialize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward 
+Let's now initialize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward
 
 We can then call `env.reset()` to draw from the initial state distribution and return an observation, which can then be fed into the agent.
 

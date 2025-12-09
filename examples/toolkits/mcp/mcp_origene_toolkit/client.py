@@ -52,7 +52,7 @@ async def main():
 '''
 ===============================================================================
 I can assist you with a variety of tasks related to chemical compounds
-and substances using the PubChem database. 
+and substances using the PubChem database.
 Here are some of the things I can do:
 
 1. **Search for Compounds and Substances**:
@@ -67,10 +67,10 @@ Here are some of the things I can do:
 3. **Synonyms and Identifiers**:
    - Find synonyms for compounds and substances.
    - Get CAS Registry Numbers, CIDs, and SIDs.
-   
+
 4. **3D Structure and Conformers**:
    - Access 3D structures and conformer identifiers.
-   
+
 5. **Bioassay Activities**:
    - Summarize bioassay activities for compounds and substances.
 

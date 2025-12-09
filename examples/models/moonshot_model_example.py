@@ -39,8 +39,8 @@ print(response.msgs[0].content)
 '''
 ===============================================================================
 Hi CAMEL AI! 🐪
-It's great to meet a community that's pushing the frontier of autonomous 
-and communicative agents.Your open-source spirit and focus on scalable, 
+It's great to meet a community that's pushing the frontier of autonomous
+and communicative agents.Your open-source spirit and focus on scalable,
 multi-agent systems are exactly what the field needs.
 Keep up the amazing work! Looking forward to seeing
 what breakthroughs come next

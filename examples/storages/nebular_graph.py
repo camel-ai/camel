@@ -53,8 +53,8 @@ print(nebula_graph.get_structured_schema)
 
 """
 ==============================================================================
-{'node_props': {'CAMEL_AI': [], 'Agent_Framework': []}, 'rel_props': 
-{'contribute_to': []}, 'relationships': ['contribute_to'], 'metadata': 
+{'node_props': {'CAMEL_AI': [], 'Agent_Framework': []}, 'rel_props':
+{'contribute_to': []}, 'relationships': ['contribute_to'], 'metadata':
 {'index': []}}
 ==============================================================================
 """
@@ -96,9 +96,9 @@ print(nebula_graph.get_structured_schema)
 
 """
 ==============================================================================
-{'node_props': {'Agent_Framework': [], 'CAMEL_AI': [], 'Graph_Database': [], 
-'Nebula': [], 'agent_framework': []}, 'rel_props': {'Supporting': [], 
-'contribute_to': []}, 'relationships': ['Supporting', 'contribute_to'], 
+{'node_props': {'Agent_Framework': [], 'CAMEL_AI': [], 'Graph_Database': [],
+'Nebula': [], 'agent_framework': []}, 'rel_props': {'Supporting': [],
+'contribute_to': []}, 'relationships': ['Supporting', 'contribute_to'],
 'metadata': {'index': []}}
 ==============================================================================
 """

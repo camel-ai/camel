@@ -649,7 +649,10 @@ class TerminalToolkit(BaseToolkit):
                     output = exec_output.decode('utf-8', errors='ignore')
 
                 log_entry += f"--- Output ---\n{output}\n"
-                return _to_plain(output)
+                if output.strip():
+                    return _to_plain(output)
+                else:
+                    return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
                 error_msg = (
                     f"Error: Command timed out after {self.timeout} seconds."
@@ -824,7 +827,12 @@ class TerminalToolkit(BaseToolkit):
             # Wait for and collect the new output
             output = self._collect_output_until_idle(id)
 
-            return output
+            if output.strip():
+                return output
+            else:
+                return (
+                    f"Input sent to session '{id}' successfully (no output)."
+                )
 
         except Exception as e:
             return f"Error writing to session '{id}': {e}"
@@ -945,7 +953,7 @@ class TerminalToolkit(BaseToolkit):
                  been executed, or help information for general queries.
         """
         logger.info("\n" + "=" * 60)
-        logger.info("🤖 LLM Agent needs your help!")
+        logger.info("LLM Agent needs your help!")
         logger.info(f"PROMPT: {prompt}")
 
         # Case 1: Session doesn't exist - offer to create one
@@ -970,15 +978,14 @@ class TerminalToolkit(BaseToolkit):
         else:
             # Get the latest output to show the user the current state
             last_output = self._collect_output_until_idle(id)
+            last_output_display = (
+                last_output.strip() if last_output.strip() else "(no output)"
+            )
 
             logger.info(f"SESSION: '{id}' (active)")
             logger.info("=" * 60)
             logger.info("--- LAST OUTPUT ---")
-            logger.info(
-                last_output.strip()
-                if last_output.strip()
-                else "(no recent output)"
-            )
+            logger.info(last_output_display)
             logger.info("-------------------")
 
             try:

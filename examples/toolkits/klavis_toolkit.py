@@ -69,11 +69,11 @@ Expected output would show:
    - **Description:** Convert markdown text to different file
      formats (pdf, docx, doc, html), based on Pandoc.
    - **Tools:**
-     - Convert markdown text to different file formats (pdf, docx, 
+     - Convert markdown text to different file formats (pdf, docx,
      doc, html, html5)
 
 2. **Discord**
-   - **Description:** Discord is a VoIP and instant messaging 
+   - **Description:** Discord is a VoIP and instant messaging
    social platform.
    - **Tools:**
      - Get information about a Discord server (guild)
@@ -84,10 +84,10 @@ Expected output would show:
      - Read recent messages from a Discord channel
 
 3. **YouTube**
-   - **Description:** Extract and convert YouTube video information to 
+   - **Description:** Extract and convert YouTube video information to
    markdown format.
    - **Tools:**
-     - Retrieve the transcript/subtitles for a YouTube video and convert 
+     - Retrieve the transcript/subtitles for a YouTube video and convert
      it to markdown
 
 .....
@@ -95,7 +95,7 @@ Expected output would show:
 ========================================================================
 
 Server Instance Creation Result:
-A new Klavis AI MCP server instance has been successfully created for the 
+A new Klavis AI MCP server instance has been successfully created for the
 server named **GitHub**. Here are the details:
 
 - **Server URL:** [https://github-mcp-server.klavis.ai/sse?instance_id=
@@ -116,6 +116,6 @@ Here are the details about the server instance we just created:
 - **External User ID:** user123
 - **Is Authenticated:** No
 
-The instance is currently not authenticated. If you need to set an 
+The instance is currently not authenticated. If you need to set an
 authentication token or perform any other actions, please let me know!
 """

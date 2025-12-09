@@ -48,18 +48,18 @@ print(dataset_result)
 ===============================================================================
 [{'url': 'https://www.camel-ai.org/', 'crawl': {'loadedUrl': 'https://www.camel
 -ai.org/', 'loadedTime': '2024-10-27T04:51:16.651Z', 'referrerUrl': 'https://ww
-w.camel-ai.org/', 'depth': 0, 'httpStatusCode': 200}, 'metadata': 
-{'canonicalUrl': 'https://www.camel-ai.org/', 'title': 'CAMEL-AI', 
-'description': 'CAMEL-AI.org is the 1st LLM multi-agent framework and an 
-open-source community dedicated to finding the scaling law of agents.', 
+w.camel-ai.org/', 'depth': 0, 'httpStatusCode': 200}, 'metadata':
+{'canonicalUrl': 'https://www.camel-ai.org/', 'title': 'CAMEL-AI',
+'description': 'CAMEL-AI.org is the 1st LLM multi-agent framework and an
+open-source community dedicated to finding the scaling law of agents.',
 'author': None, 'keywords': None, 'languageCode': 'en', 'openGraph':
-[{'property': 'og:title', 'content': 'CAMEL-AI'}, {'property': 
-'og:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent 
-framework and an open-source community dedicated to finding the scaling law of 
-agents.'}, {'property': 'twitter:title', 'content': 'CAMEL-AI'}, {'property': 
-'twitter:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent 
-framework and an open-source community dedicated to finding the scaling law of 
-agents.'}, {'property': 'og:type', 'content': 'website'}], 'jsonLd': None, 
+[{'property': 'og:title', 'content': 'CAMEL-AI'}, {'property':
+'og:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent
+framework and an open-source community dedicated to finding the scaling law of
+agents.'}, {'property': 'twitter:title', 'content': 'CAMEL-AI'}, {'property':
+'twitter:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent
+framework and an open-source community dedicated to finding the scaling law of
+agents.'}, {'property': 'og:type', 'content': 'website'}], 'jsonLd': None,
 'headers': {'date': 'Sun, 27 Oct 2024 04:50:18 GMT', 'content-type': 'text/
 html', 'cf-ray': '8d901082dae7efbe-PDX', 'cf-cache-status': 'HIT', 'age': '10
  81', 'content-encoding': 'gzip', 'last-modified': 'Sat, 26 Oct 2024 11:51:32 G
