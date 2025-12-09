@@ -900,6 +900,7 @@ def test_search_metaso_invalid_json(mock_https_connection, search_toolkit):
     mock_https_connection.assert_called_once_with("metaso.cn")
     mock_conn.request.assert_called_once()
 
+
 @patch('requests.post')
 def test_search_serper_success(mock_post, search_toolkit):
     """Test successful Serper search."""
@@ -913,16 +914,16 @@ def test_search_serper_success(mock_post, search_toolkit):
             "gl": "us",
             "hl": "en",
             "num": 10,
-            "type": "search"
+            "type": "search",
         },
         "organic": [
             {
                 "title": "Apple",
                 "link": "https://www.apple.com/",
                 "snippet": "Discover the innovative world of Apple...",
-                "position": 1
+                "position": 1,
             }
-        ]
+        ],
     }
     mock_post.return_value = mock_response
 
@@ -930,7 +931,7 @@ def test_search_serper_success(mock_post, search_toolkit):
         result = search_toolkit.search_serper(query="apple inc")
 
     assert result == mock_response.json.return_value
-    
+
     # Verify request
     mock_post.assert_called_once()
     args, kwargs = mock_post.call_args
@@ -944,7 +945,7 @@ def test_search_serper_success(mock_post, search_toolkit):
     assert json.loads(kwargs['data']) == {
         "q": "apple inc",
         "location": "United States",
-        "page": 1
+        "page": 1,
     }
 
 
@@ -956,5 +957,5 @@ def test_search_serper_error(mock_post, search_toolkit):
     with patch.dict(os.environ, {'SERPER_API_KEY': 'test_key'}):
         with pytest.raises(RuntimeError) as excinfo:
             search_toolkit.search_serper(query="test")
-    
+
     assert "Error making request to Serper" in str(excinfo.value)

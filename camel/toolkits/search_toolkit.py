@@ -15,7 +15,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
-
+import requests
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -54,7 +54,7 @@ class SearchToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         self.exclude_domains = exclude_domains
-    
+
     @api_keys_required(
         [
             (None, "SERPER_API_KEY"),
@@ -79,8 +79,6 @@ class SearchToolkit(BaseToolkit):
                 'peopleAlsoAsk', etc.
         """
         import json
-
-        import requests
 
         SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
@@ -427,8 +425,6 @@ class SearchToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary representing a search result.
         """
 
-        import requests
-
         BRAVE_API_KEY = os.getenv("BRAVE_API_KEY")
 
         url = "https://api.search.brave.com/res/v1/web/search"
@@ -569,8 +565,6 @@ class SearchToolkit(BaseToolkit):
                 }
         """
         from urllib.parse import quote
-
-        import requests
 
         # Validate input parameters
         if not isinstance(start_page, int) or start_page < 1:
@@ -821,8 +815,6 @@ class SearchToolkit(BaseToolkit):
         """
         import json
 
-        import requests
-
         BOCHA_API_KEY = os.getenv("BOCHA_API_KEY")
 
         url = "https://api.bochaai.com/v1/web-search"
@@ -873,8 +865,6 @@ class SearchToolkit(BaseToolkit):
                 message.
         """
         from bs4 import BeautifulSoup
-
-        import requests
 
         try:
             url = "https://www.baidu.com/s"
@@ -959,8 +949,6 @@ class SearchToolkit(BaseToolkit):
         """
         from typing import Any, Dict, List, cast
         from urllib.parse import urlencode
-
-        import requests
 
         from bs4 import BeautifulSoup, Tag
 
@@ -1228,7 +1216,6 @@ class SearchToolkit(BaseToolkit):
                 message. Each result contains title, snippet, url and other
                 metadata.
         """
-        import requests
 
         TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
 
@@ -1412,7 +1399,7 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.search_serper), 
+            FunctionTool(self.search_serper),
             FunctionTool(self.search_wiki),
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),

@@ -421,7 +421,6 @@ print(metaso_response)
 """  # noqa: E501
 
 
-
 # Example using Serper search
 if os.getenv("SERPER_API_KEY"):
     serper_response = SearchToolkit().search_serper(
