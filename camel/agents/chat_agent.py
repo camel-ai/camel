@@ -936,16 +936,18 @@ class ChatAgent(BaseAgent):
             line: The original line content.
 
         Returns:
-            The cleaned line content, or empty string if line should be removed.
+            The cleaned line content, or empty string if line should be
+            removed.
         """
         # Remove all leading whitespace (indentation)
         original = line.strip()
         if not original:
             return ''
 
-        # Check if line is just a line prefix (element type) with optional colon
-        # Examples: "- generic:", "- img", "generic:", "img", "button:"
-        # Matches "- word" or "word:" or "- word:" or just "word"
+        # Check if line is just a line prefix (element type) with
+        # optional colon. Examples: "- generic:", "- img", "generic:",
+        # "img", "button:". Matches "- word" or "word:" or "- word:" or
+        # just "word"
         if re.match(r'^(?:-\s+)?\w+\s*:?\s*$', original):
             return ''  # Remove lines with only element types
 
@@ -1016,20 +1018,30 @@ class ChatAgent(BaseAgent):
                     for key, value in obj.items():
                         if key == 'snapshot' and isinstance(value, str):
                             # Found a snapshot field, clean it
-                            # Decode escape sequences (e.g., \n -> actual newline)
+                            # Decode escape sequences (e.g., \n -> newline)
                             try:
-                                decoded_value = value.encode().decode('unicode_escape')
-                            except:
+                                decoded_value = value.encode().decode(
+                                    'unicode_escape'
+                                )
+                            except Exception:
                                 decoded_value = value
 
                             # Check if cleaning is needed
                             needs_cleaning = (
-                                '- ' in decoded_value or
-                                '[ref=' in decoded_value or
-                                any(elem + ':' in decoded_value for elem in [
-                                    'generic', 'img', 'banner', 'list',
-                                    'listitem', 'search', 'navigation'
-                                ])
+                                '- ' in decoded_value
+                                or '[ref=' in decoded_value
+                                or any(
+                                    elem + ':' in decoded_value
+                                    for elem in [
+                                        'generic',
+                                        'img',
+                                        'banner',
+                                        'list',
+                                        'listitem',
+                                        'search',
+                                        'navigation',
+                                    ]
+                                )
                             )
 
                             if needs_cleaning:
@@ -1072,7 +1084,8 @@ class ChatAgent(BaseAgent):
             content: The original snapshot text.
 
         Returns:
-            The cleaned content with deduplicated lines, no indentation, and no empty lines.
+            The cleaned content with deduplicated lines, no indentation,
+            and no empty lines.
         """
         lines = content.split('\n')
         cleaned_lines = []
@@ -1091,10 +1104,10 @@ class ChatAgent(BaseAgent):
                 continue
 
             # Check if this is a snapshot line using regex
-            # Matches lines with: [ref=...], "- element", "element:", "- element:", etc.
-            is_snapshot_line = (
-                '[ref=' in stripped_line or
-                re.match(r'^(?:-\s+)?\w+(?:[\s:]|$)', stripped_line)
+            # Matches lines with: [ref=...], "- element", "element:",
+            # "- element:", etc.
+            is_snapshot_line = '[ref=' in stripped_line or re.match(
+                r'^(?:-\s+)?\w+(?:[\s:]|$)', stripped_line
             )
 
             if is_snapshot_line:
@@ -3242,7 +3255,11 @@ class ChatAgent(BaseAgent):
         )
 
         # Register tool output for snapshot cleaning if enabled
-        if self._enable_snapshot_clean and not mask_output and func_records:
+        if (
+            self._tool_output_cache_enabled
+            and not mask_output
+            and func_records
+        ):
             serialized_result = self._serialize_tool_result(result)
             self._register_tool_output_for_cache(
                 func_name,

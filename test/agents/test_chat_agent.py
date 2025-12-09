@@ -1197,9 +1197,13 @@ async def test_tool_calling_async(step_call_count=3):
     model_backend_rsp_tool_async = deepcopy(model_backend_rsp_base)
 
     # Mock tool calling
-    def mock_run_tool_calling_async(*args, **kwargs):
+    call_count = 0
+
+    async def mock_arun_tool_calling_async(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
         # Reset tool_calls at the beginning of each new round of step() call
-        if model.run.call_count % 2 == 1:
+        if call_count % 2 == 1:
             model_backend_rsp_tool_async.choices[0].message.tool_calls = [
                 ChatCompletionMessageFunctionToolCall(
                     id='call_mock_123456',
@@ -1222,7 +1226,7 @@ async def test_tool_calling_async(step_call_count=3):
 
         return model_backend_rsp_tool_async
 
-    model.run = MagicMock(side_effect=mock_run_tool_calling_async)
+    model.arun = AsyncMock(side_effect=mock_arun_tool_calling_async)
 
     agent = ChatAgent(
         system_message=system_message,
