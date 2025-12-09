@@ -235,7 +235,7 @@ async def run_eigent_workforce(
 
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+        model_platform=ModelPlatformType.AZURE,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
@@ -243,7 +243,7 @@ async def run_eigent_workforce(
     )
 
     model_backend_reason = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+        model_platform=ModelPlatformType.AZURE,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
@@ -270,7 +270,6 @@ MUST use this as the current date.
 access and can resolve a wide range of issues.
             """
         ),
-        enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
             # *NoteTakingToolkit(
@@ -290,7 +289,6 @@ to ensure precision and avoid ambiguity.
 The current date is {datetime.date.today()}. For any date-related tasks, you
 MUST use this as the current date.
         """,
-        enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
             # *NoteTakingToolkit(
