@@ -331,8 +331,9 @@ def search_agent_factory(
     tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
 
     web_toolkit_custom = HybridBrowserToolkit(
-        headless=False,
+        headless=True,
         enabled_tools=custom_tools,
+        enable_reasoning=True,
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,

@@ -28,9 +28,12 @@ from typing import (
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
+from camel.toolkits._utils import add_reason_field
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required
+
+from camel.toolkits._utils import add_reason_field
 
 from .config_loader import ConfigLoader
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
@@ -99,6 +102,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         stealth: bool = False,
         cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
+        enable_reasoning: bool = False,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -128,6 +132,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
             Defaults to None.
+            enable_reasoning (bool): Whether to enable reasoning when agent
+                is using the browser toolkit. Defaults to False. agent will
+                provide explanations for its actions when this is enabled.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
             log_dir (Optional[str]): Custom directory path for log files.
@@ -187,6 +194,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
+            enable_reasoning=enable_reasoning,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
             cdp_keep_current_page=cdp_keep_current_page,
@@ -206,17 +214,22 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "is True, the browser will keep the current page and not "
                 "navigate to any URL."
             )
+        # toolkit settings
+        self._cache_dir = toolkit_config.cache_dir
+        self._browser_log_to_file = toolkit_config.browser_log_to_file
+        self._enabled_tools = toolkit_config.enabled_tools
+        self._enable_reasoning = toolkit_config.enable_reasoning
 
+        # browser settings
         self._headless = browser_config.headless
         self._user_data_dir = browser_config.user_data_dir
         self._stealth = browser_config.stealth
-        self._cache_dir = toolkit_config.cache_dir
-        self._browser_log_to_file = toolkit_config.browser_log_to_file
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
 
+        # timeout settings
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
         self._navigation_timeout = browser_config.navigation_timeout
@@ -227,23 +240,31 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_config.dom_content_loaded_timeout
         )
 
-        if enabled_tools is None:
-            self.enabled_tools = self.DEFAULT_TOOLS.copy()
+        if self._enabled_tools is None:
+            self._enabled_tools = self.DEFAULT_TOOLS.copy()
         else:
             invalid_tools = [
-                tool for tool in enabled_tools if tool not in self.ALL_TOOLS
+                tool
+                for tool in self._enabled_tools
+                if tool not in self.ALL_TOOLS
             ]
             if invalid_tools:
                 raise ValueError(
                     f"Invalid tools specified: {invalid_tools}. "
                     f"Available tools: {self.ALL_TOOLS}"
                 )
-            self.enabled_tools = enabled_tools.copy()
 
-        logger.info(f"Enabled tools: {self.enabled_tools}")
+        logger.info(f"Enabled tools: {self._enabled_tools}")
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
+
+        # Dynamically wrap tool methods if reasoning is enabled
+        if self._enable_reasoning:
+            for tool_name in self._enabled_tools:
+                method = getattr(self, tool_name, None)
+                if method and callable(method):
+                    setattr(self, tool_name, add_reason_field(method))
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
@@ -1895,7 +1916,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stealth=self._stealth,
             cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
             f"{new_session_id}/",
-            enabled_tools=self.enabled_tools.copy(),
+            enabled_tools=(self._enabled_tools.copy()
+                if self._enabled_tools
+                else None),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
             default_start_url=self._default_start_url,
@@ -1940,16 +1963,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_sheet_read": self.browser_sheet_read,
         }
 
-        enabled_tools = []
+        tools = []
+        if self._enabled_tools is not None:
+            for tool_name in self._enabled_tools:
+                if tool_name in tool_map:
+                    tool = FunctionTool(
+                        cast(Callable[..., Any], tool_map[tool_name])
+                    )
+                    tools.append(tool)
+                else:
+                    logger.warning(f"Unknown tool name: {tool_name}")
 
-        for tool_name in self.enabled_tools:
-            if tool_name in tool_map:
-                tool = FunctionTool(
-                    cast(Callable[..., Any], tool_map[tool_name])
-                )
-                enabled_tools.append(tool)
-            else:
-                logger.warning(f"Unknown tool name: {tool_name}")
-
-        logger.info(f"Returning {len(enabled_tools)} enabled tools")
-        return enabled_tools
+        logger.info(f"Returning {len(tools)} enabled tools")
+        return tools
