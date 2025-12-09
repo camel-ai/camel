@@ -30,6 +30,8 @@ from ._utils import _get_invalid_emails
 
 if TYPE_CHECKING:
     from msgraph.generated.models import attendee
+    from msgraph.generated.models.location import Location
+
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -336,16 +338,15 @@ class OutlookCalendarToolkit(BaseToolkit):
         from msgraph.generated.models.calendar import Calendar
 
         try:
+            calendar = Calendar()
             # Build calendar update object with only provided fields
             update_fields = {}
             if name is not None:
                 update_fields['name'] = name
+                calendar.name = name
             if color is not None:
-                update_fields['color'] = self._map_color_to_CalendarColor(
-                    color
-                )
-
-            calendar = Calendar(**update_fields)
+                calendar.color = self._map_color_to_CalendarColor(color)
+                update_fields['color'] = color
 
             # Send request to update calendar
             await self.client.me.calendars.by_calendar_id(calendar_id).patch(
@@ -403,11 +404,11 @@ class OutlookCalendarToolkit(BaseToolkit):
     def _create_locations(
         self,
         locations: List[str],
-    ):
+    ) -> List["Location"]:
         """Builds a list of Location objects from names of locations."""
         from msgraph.generated.models.location import Location
 
-        all_locations = [Location(display_name=loc) for loc in locations]
+        all_locations: List[Location] = [Location(display_name=loc) for loc in locations]
         return all_locations
 
     def _create_importance(
@@ -508,8 +509,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             )
 
         if locations:
-            locations = self._create_locations(locations)
-            event.locations = locations
+            event.locations = self._create_locations(locations)
 
         # Build and set attendees
         event_attendees = []
@@ -771,7 +771,7 @@ class OutlookCalendarToolkit(BaseToolkit):
         Returns:
             List[dict]: A list of dictionaries containing attendee details.
         """
-        attendees = []
+        attendees: List[dict] = []
         if not attendees_list:
             return attendees
 
@@ -799,7 +799,7 @@ class OutlookCalendarToolkit(BaseToolkit):
         Returns:
             List[dict]: A list of dictionaries containing location details.
         """
-        locations = []
+        locations: List[dict] = []
         if not locations_list:
             return locations
 

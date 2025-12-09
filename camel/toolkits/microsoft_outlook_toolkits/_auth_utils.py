@@ -215,9 +215,6 @@ class MicrosoftAuthenticator:
         self.scopes = scopes
         self.refresh_token_file_path = refresh_token_file_path
         self.redirect_uri = self._get_dynamic_redirect_uri()
-        self.client_id: Optional[str] = None
-        self.client_secret: Optional[str] = None
-        self.tenant_id: Optional[str] = None
 
     def _get_dynamic_redirect_uri(self) -> str:
         """Finds an available port and returns a dynamic redirect URI.
@@ -336,6 +333,12 @@ class MicrosoftAuthenticator:
         if not refresh_token:
             raise ValueError("No valid refresh token found in file")
 
+        if not self.client_id or not self.client_secret:
+            raise ValueError("Client ID and secret must be set")
+        
+        if not self.refresh_token_file_path:
+            raise ValueError("Refresh token file path must be set")
+
         # Create credential with automatic refresh capability
         credentials = CustomAzureCredential(
             client_id=self.client_id,
@@ -368,6 +371,9 @@ class MicrosoftAuthenticator:
         from azure.identity import TokenCachePersistenceOptions
         from azure.identity.aio import AuthorizationCodeCredential
 
+        if not self.client_id or not self.client_secret:
+            raise ValueError("Client ID and secret must be set")
+
         # offline_access scope is needed so the azure credential can refresh
         # internally after access token expires as azure handles it internally
         # Do not add offline_access to self.scopes as MSAL does not allow it
@@ -382,11 +388,14 @@ class MicrosoftAuthenticator:
 
         # Convert redirect URI string to tuple for HTTPServer
         parsed_uri = urlparse(self.redirect_uri)
-        server_address = (parsed_uri.hostname, parsed_uri.port)
+
+        hostname = parsed_uri.hostname if parsed_uri.hostname else 'localhost'
+        port = parsed_uri.port if parsed_uri.port else 8080
+        server_address = (hostname, port)
         server = HTTPServer(server_address, RedirectHandler)
 
-        # Initialize code attribute to None
-        server.code = None
+        # Initialize code attribute to None (using setattr for type safety)
+        setattr(server, 'code', None)
 
         # Open authorization URL
         logger.info(f"Opening browser for authentication: {auth_url}")
@@ -398,10 +407,12 @@ class MicrosoftAuthenticator:
         # Close the server after getting the code
         server.server_close()
 
-        if not server.code:
+        auth_code = getattr(server, 'code', None)
+        if not auth_code:
             raise ValueError("Failed to get authorization code")
 
-        authorization_code = server.code
+        authorization_code = auth_code
+
         # Set up token cache to store tokens
         cache_opts = TokenCachePersistenceOptions()
 
@@ -453,10 +464,10 @@ class MicrosoftAuthenticator:
                 and self.refresh_token_file_path.exists()
             ):
                 try:
-                    credentials: CustomAzureCredential = (
+                    custom_credentials: CustomAzureCredential = (
                         self._authenticate_using_refresh_token()
                     )
-                    return credentials
+                    return custom_credentials
                 except Exception as e:
                     logger.warning(
                         f"Authentication using refresh token failed: {e!s}. "
@@ -464,10 +475,10 @@ class MicrosoftAuthenticator:
                     )
 
             # Fall back to browser authentication
-            credentials: AuthorizationCodeCredential = (
+            browser_credentials: AuthorizationCodeCredential = (
                 self._authenticate_using_browser()
             )
-            return credentials
+            return browser_credentials
 
         except Exception as e:
             error_msg = f"Failed to authenticate: {e!s}"
