@@ -173,6 +173,31 @@ def test_responses_to_camel_response_keeps_logprobs():
     assert camel_response.usage.total_tokens == 15
 
 
+def test_responses_to_camel_response_keeps_output_image():
+    mock_response = MagicMock()
+    mock_response.id = "resp_125"
+    mock_response.model = "gpt-4o-mini"
+    mock_response.created = 1234567892
+
+    mock_image_chunk = {
+        "type": "output_image",
+        "image_url": "https://example.com/img.png",
+    }
+    mock_item = MagicMock()
+    mock_item.content = [mock_image_chunk]
+
+    mock_response.output = [mock_item]
+    mock_response.output_text = None
+    mock_response.usage = None
+
+    camel_response = responses_to_camel_response(mock_response)
+
+    assert (
+        "[image]: https://example.com/img.png"
+        in camel_response.output_messages[0].content
+    )
+
+
 def test_openai_messages_to_camel_with_audio():
     from camel.core.messages import openai_messages_to_camel
 

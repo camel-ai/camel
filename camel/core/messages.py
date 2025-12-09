@@ -43,6 +43,7 @@ class CamelContentPart(BaseModel):
         "input_image",
         "input_file",
         "input_audio",
+        "function_call_output",
     ]
     payload: Dict[str, Any] = Field(default_factory=dict)
 
@@ -249,6 +250,7 @@ def _part_to_responses_fragment(part: CamelContentPart) -> Dict[str, Any]:
       - input_image  -> passthrough as {type: input_image, image_url}
       - input_file   -> {type: input_file, file_id|file_url}
       - input_audio  -> {type: input_audio, input_audio: {data, format}}
+      - function_call_output -> {type: function_call_output, call_id, output}
     """
     t = part.type
     p = part.payload or {}
@@ -277,6 +279,13 @@ def _part_to_responses_fragment(part: CamelContentPart) -> Dict[str, Any]:
             "format": p.get("format", "wav"),
         }
         return {"type": "input_audio", "input_audio": audio}
+
+    if t == "function_call_output":
+        return {
+            "type": "function_call_output",
+            "call_id": p.get("call_id"),
+            "output": p.get("output"),
+        }
 
     # Default safe fallback: treat as text
     return {"type": "input_text", "text": str(p.get("text", ""))}
@@ -308,6 +317,35 @@ def camel_messages_to_responses_request(
                     txt = frag.get("text") or ""
                     if txt:
                         instructions_parts.append(str(txt))
+            continue
+
+        if msg.role == "tool":
+            # Convert tool outputs into function_call_output content
+            call_id = msg.tool_call_id
+            output_texts: List[str] = []
+            for part in msg.content:
+                if part.type == "function_call_output":
+                    output_val = part.payload.get("output")
+                    if output_val is not None:
+                        output_texts.append(str(output_val))
+                elif part.type in {"text", "input_text"}:
+                    txt = part.payload.get("text")
+                    if txt:
+                        output_texts.append(str(txt))
+
+            content_frags = [
+                {
+                    "type": "function_call_output",
+                    "call_id": call_id,
+                    "output": "\n".join(output_texts) if output_texts else "",
+                }
+            ]
+            input_messages.append(
+                {
+                    "role": "assistant",  # function outputs sit in assistant slot
+                    "content": content_frags,
+                }
+            )
             continue
 
         # Map other roles to Responses-supported roles (user/assistant)

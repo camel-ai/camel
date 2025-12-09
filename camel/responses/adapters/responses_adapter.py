@@ -86,6 +86,18 @@ def responses_to_camel_response(
                                 audio_transcript = transcript
                     elif chunk_type == "function_call":
                         pass
+                    elif chunk_type == "output_image":
+                        image_url = chunk.get("image_url") or chunk.get("url")
+                        if image_url:
+                            parts.append(f"[image]: {image_url}")
+                    elif chunk_type == "output_file":
+                        file_url = (
+                            chunk.get("file_url")
+                            or chunk.get("url")
+                            or chunk.get("file_id")
+                        )
+                        if file_url:
+                            parts.append(f"[file]: {file_url}")
 
     # Check for tool calls in the output list directly
     tool_call_requests: List[CamelToolCall] = []

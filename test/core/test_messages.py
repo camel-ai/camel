@@ -98,3 +98,22 @@ def test_camel_messages_to_responses_request_preserves_assistant_role() -> (
     assert "input" in body
     assert body["input"][0]["role"] == "user"
     assert body["input"][1]["role"] == "assistant"
+
+
+def test_tool_message_converted_to_function_call_output() -> None:
+    from camel.core.messages import camel_messages_to_responses_request
+
+    msg_tool = CamelMessage(
+        role="tool",
+        tool_call_id="call_123",
+        content=[
+            CamelContentPart(type="text", payload={"text": "result value"}),
+        ],
+    )
+
+    body = camel_messages_to_responses_request([msg_tool])
+    assert body["input"][0]["role"] == "assistant"
+    frag = body["input"][0]["content"][0]
+    assert frag["type"] == "function_call_output"
+    assert frag["call_id"] == "call_123"
+    assert frag["output"] == "result value"
