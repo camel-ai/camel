@@ -31,8 +31,8 @@ tools = task_planning_toolkit.get_tools()
 
 # Set up the ChatAgent with thinking capabilities
 sys_prompt = TextPrompt(
-    """You are a helpful assistant that can decompose a task or 
-    re-plan a task when it's already decomposed into sub-tasks and its 
+    """You are a helpful assistant that can decompose a task or
+    re-plan a task when it's already decomposed into sub-tasks and its
     sub-tasks are not relevant or aligned with the goal of the main task.
     Please use the tools to decompose or re-plan the task."""
 )
@@ -83,27 +83,27 @@ Final result of decomposed task:
 9. **ID:** 1.8 - Edit and proofread the paper
 10. **ID:** 1.9 - Prepare for submission
 
-These subtasks are aligned with the goal of writing a research paper on AI 
-ethics. If you need any further adjustments or additional tasks, feel free to 
+These subtasks are aligned with the goal of writing a research paper on AI
+ethics. If you need any further adjustments or additional tasks, feel free to
 ask!
 
 Tool calls:
-[ToolCallingRecord(tool_name='decompose_task', args={'original_task_content': 
-'Write a research paper on AI ethics', 'sub_task_contents': ['Research the 
-history of AI ethics', 'Identify key ethical issues in AI', 'Review existing 
-literature on AI ethics', 'Conduct interviews with experts in the field', 
-'Draft the paper outline', 'Write the introduction', 'Write the body 
-sections', 'Write the conclusion', 'Edit and proofread the paper', 'Prepare 
-for submission'], 'original_task_id': '1'}, result=[Task(id='1.0', 
-content='Research the history of AI ethics', state='OPEN'), Task(id='1.1', 
-content='Identify key ethical issues in AI', state='OPEN'), Task(id='1.2', 
+[ToolCallingRecord(tool_name='decompose_task', args={'original_task_content':
+'Write a research paper on AI ethics', 'sub_task_contents': ['Research the
+history of AI ethics', 'Identify key ethical issues in AI', 'Review existing
+literature on AI ethics', 'Conduct interviews with experts in the field',
+'Draft the paper outline', 'Write the introduction', 'Write the body
+sections', 'Write the conclusion', 'Edit and proofread the paper', 'Prepare
+for submission'], 'original_task_id': '1'}, result=[Task(id='1.0',
+content='Research the history of AI ethics', state='OPEN'), Task(id='1.1',
+content='Identify key ethical issues in AI', state='OPEN'), Task(id='1.2',
 content='Review existing literature on AI ethics', state='OPEN'), Task(id='1.
 3', content='Conduct interviews with experts in the field', state='OPEN'), Task
-(id='1.4', content='Draft the paper outline', state='OPEN'), Task(id='1.5', 
-content='Write the introduction', state='OPEN'), Task(id='1.6', content='Write 
-the body sections', state='OPEN'), Task(id='1.7', content='Write the 
-conclusion', state='OPEN'), Task(id='1.8', content='Edit and proofread the 
-paper', state='OPEN'), Task(id='1.9', content='Prepare for submission', 
+(id='1.4', content='Draft the paper outline', state='OPEN'), Task(id='1.5',
+content='Write the introduction', state='OPEN'), Task(id='1.6', content='Write
+the body sections', state='OPEN'), Task(id='1.7', content='Write the
+conclusion', state='OPEN'), Task(id='1.8', content='Edit and proofread the
+paper', state='OPEN'), Task(id='1.9', content='Prepare for submission',
 state='OPEN')], tool_call_id='call_WYeAEByDSR6PtlDiC5EmiTjZ')]
 ===============================================================================
 
@@ -132,7 +132,7 @@ print(response.info['tool_calls'])
 Examples: Problem Solving with TaskPlanning Toolkit
 ===============================================================================
 Final result of re_plan task:
- The main task is to write a research paper on AI ethics, and the irrelevant 
+ The main task is to write a research paper on AI ethics, and the irrelevant
  subtasks have been replaced with the following relevant subtasks:
 
 1. **Research the history of AI ethics** (ID: 1.0)
@@ -145,25 +145,25 @@ Final result of re_plan task:
 8. **Write the conclusion** (ID: 1.7)
 9. **Edit and proofread the paper** (ID: 1.8)
 
-These subtasks are now aligned with the goal of completing the research paper 
+These subtasks are now aligned with the goal of completing the research paper
 on AI ethics.
 
 Tool calls:
-[ToolCallingRecord(tool_name='replan_tasks', args={'original_task_content': 
-'Write a research paper on AI ethics', 'sub_task_contents': ['Research the 
-history of AI ethics', 'Identify key ethical issues in AI', 'Review existing 
-literature on AI ethics', 'Conduct interviews with experts in the field', 
-'Draft the paper outline', 'Write the introduction', 'Write the body 
-sections', 'Write the conclusion', 'Edit and proofread the paper'], 
-'original_task_id': '1'}, result=[Task(id='1.0', content='Research the history 
-of AI ethics', state='OPEN'), Task(id='1.1', content='Identify key ethical 
-issues in AI', state='OPEN'), Task(id='1.2', content='Review existing 
-literature on AI ethics', state='OPEN'), Task(id='1.3', content='Conduct 
-interviews with experts in the field', state='OPEN'), Task(id='1.4', 
-content='Draft the paper outline', state='OPEN'), Task(id='1.5', 
-content='Write the introduction', state='OPEN'), Task(id='1.6', content='Write 
-the body sections', state='OPEN'), Task(id='1.7', content='Write the 
-conclusion', state='OPEN'), Task(id='1.8', content='Edit and proofread the 
+[ToolCallingRecord(tool_name='replan_tasks', args={'original_task_content':
+'Write a research paper on AI ethics', 'sub_task_contents': ['Research the
+history of AI ethics', 'Identify key ethical issues in AI', 'Review existing
+literature on AI ethics', 'Conduct interviews with experts in the field',
+'Draft the paper outline', 'Write the introduction', 'Write the body
+sections', 'Write the conclusion', 'Edit and proofread the paper'],
+'original_task_id': '1'}, result=[Task(id='1.0', content='Research the history
+of AI ethics', state='OPEN'), Task(id='1.1', content='Identify key ethical
+issues in AI', state='OPEN'), Task(id='1.2', content='Review existing
+literature on AI ethics', state='OPEN'), Task(id='1.3', content='Conduct
+interviews with experts in the field', state='OPEN'), Task(id='1.4',
+content='Draft the paper outline', state='OPEN'), Task(id='1.5',
+content='Write the introduction', state='OPEN'), Task(id='1.6', content='Write
+the body sections', state='OPEN'), Task(id='1.7', content='Write the
+conclusion', state='OPEN'), Task(id='1.8', content='Edit and proofread the
 paper', state='OPEN')], tool_call_id='call_37UsfFNonx7rbmGWeJePbmbo')]
 ===============================================================================
 """

@@ -824,19 +824,19 @@ from camel.toolkits import GmailToolkit
 
 def setup_gmail_authentication():
     """Complete Gmail authentication setup."""
-    
+
     # Check if credentials file exists
     if not os.path.exists('credentials.json'):
         raise FileNotFoundError(
             "credentials.json not found. Please download it from Google Cloud Console."
         )
-    
+
     try:
         # Initialize Gmail toolkit (triggers authentication)
         gmail = GmailToolkit()
         print("✓ Gmail authentication successful!")
         return gmail
-        
+
     except Exception as e:
         print(f"✗ Gmail authentication failed: {e}")
         print("Please check your credentials.json file and try again.")
@@ -845,7 +845,7 @@ def setup_gmail_authentication():
 # Usage
 if __name__ == "__main__":
     gmail = setup_gmail_authentication()
-    
+
     # Test authentication by getting user profile
     profile = gmail.get_user_profile()
     if profile['success']:

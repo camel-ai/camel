@@ -100,7 +100,7 @@ You can use <code>sse</code> or <code>streamable-http</code> for ACI.dev, pick w
   </Step>
 
   <Step title="Step 3: Add More Tools & Debug">
-    Once connected, you can extend your setup with other servers from ACI.dev, Composio, or `npx`.  
+    Once connected, you can extend your setup with other servers from ACI.dev, Composio, or `npx`.
 
     <Note type="info">
     - Use `stdio` for local testing, `sse` or `streamable-http` for cloud tools.
@@ -122,7 +122,7 @@ This diagram illustrates how CAMEL agents use MCPToolkit to seamlessly connect w
 <Card title="Advanced: Register with MCP Hubs & Registries">
 
 <Card title="Connect your agent to an MCP registry" icon="link">
-Want your MCP agent discoverable by thousands of clients?  
+Want your MCP agent discoverable by thousands of clients?
 Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
 ```python Register with ACI Registry lines icon="python"
 from camel.agents import MCPAgent
@@ -148,11 +148,11 @@ Your agent is now connected to the <a href="https://aci.dev/" target="_blank">AC
 
 <Card title = "Discover MCP Servers Easily with PulseMCP">
 
-Finding MCP servers is now a breeze with PulseMCP integration.  
+Finding MCP servers is now a breeze with PulseMCP integration.
 You don’t have to guess which MCP servers are available, just search, browse, and connect.
 
 <Card title="Discover MCP Servers Instantly" icon="wave-pulse">
-PulseMCP acts as a living directory of the entire MCP ecosystem.  
+PulseMCP acts as a living directory of the entire MCP ecosystem.
 CAMEL toolkits can plug directly into PulseMCP, letting you browse and connect to thousands of servers, all kept up to date in real time.
 
 You can visit [PulseMCP.com](https://pulsemcp.com) to browse all available MCP servers—everything from file systems and search to specialized APIs.
@@ -172,7 +172,7 @@ PulseMCP does the heavy lifting of finding, categorizing, and keeping MCP server
 </Card>
 
 <Card title="Minimal agent without function-calling" icon="function">
-Don’t need advanced tool-calling?  
+Don’t need advanced tool-calling?
 See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_agent/mcp_agent_without_function_calling.py" target="_blank">this example</a> for a super-lightweight setup.
 </Card>
 </Card>

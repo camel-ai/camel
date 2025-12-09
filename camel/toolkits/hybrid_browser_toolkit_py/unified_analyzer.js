@@ -12,7 +12,7 @@
     let elementRefMap = window.__camelElementRefMap || new WeakMap();
     let refElementMap = window.__camelRefElementMap || new Map();
     let elementSignatureMap = window.__camelElementSignatureMap || new Map();
-    
+
     // LRU tracking for ref access times
     let refAccessTimes = window.__camelRefAccessTimes || new Map();
     let lastNavigationUrl = window.__camelLastNavigationUrl || window.location.href;
@@ -20,28 +20,28 @@
     // Initialize navigation event listeners for automatic cleanup
     if (!window.__camelNavigationListenersInitialized) {
         window.__camelNavigationListenersInitialized = true;
-        
+
         // Listen for page navigation events
         window.addEventListener('beforeunload', clearAllRefs);
         window.addEventListener('pagehide', clearAllRefs);
-        
+
         // Listen for pushState/replaceState navigation (SPA navigation)
         const originalPushState = history.pushState;
         const originalReplaceState = history.replaceState;
-        
+
         history.pushState = function(...args) {
             clearAllRefs();
             return originalPushState.apply(this, args);
         };
-        
+
         history.replaceState = function(...args) {
             clearAllRefs();
             return originalReplaceState.apply(this, args);
         };
-        
+
         // Listen for popstate (back/forward navigation)
         window.addEventListener('popstate', clearAllRefs);
-        
+
         // Check for URL changes periodically (fallback for other navigation types)
         setInterval(() => {
             if (window.location.href !== lastNavigationUrl) {
@@ -66,23 +66,23 @@
             document.querySelectorAll('[aria-ref]').forEach(element => {
                 element.removeAttribute('aria-ref');
             });
-            
+
             // Clear all maps and reset counters
             elementRefMap.clear();
             refElementMap.clear();
             elementSignatureMap.clear();
             refAccessTimes.clear();
-            
+
             // Reset global state
             window.__camelElementRefMap = elementRefMap;
             window.__camelRefElementMap = refElementMap;
             window.__camelElementSignatureMap = elementSignatureMap;
             window.__camelRefAccessTimes = refAccessTimes;
-            
+
             // Clear cached analysis results
             delete window.__camelLastAnalysisResult;
             delete window.__camelLastAnalysisTime;
-            
+
             console.log('CAMEL: Cleared all refs due to navigation');
         } catch (error) {
             console.warn('CAMEL: Error clearing refs:', error);
@@ -110,14 +110,14 @@
                     // Element might be detached from DOM
                 }
                 elementRefMap.delete(element);
-                
+
                 // Remove from signature map
                 const signature = generateElementSignature(element);
                 if (signature && elementSignatureMap.get(signature) === ref) {
                     elementSignatureMap.delete(signature);
                 }
             }
-            
+
             refElementMap.delete(ref);
             refAccessTimes.delete(ref);
             evictedCount++;
@@ -250,11 +250,11 @@
                 // Remove refs for elements that are hidden or have no meaningful content
                 try {
                     const style = window.getComputedStyle(element);
-                    const hasNoVisibleContent = !element.textContent?.trim() && 
-                                               !element.value?.trim() && 
-                                               !element.src && 
+                    const hasNoVisibleContent = !element.textContent?.trim() &&
+                                               !element.value?.trim() &&
+                                               !element.src &&
                                                !element.href;
-                    
+
                     if ((style.display === 'none' || style.visibility === 'hidden') && hasNoVisibleContent) {
                         shouldRemove = true;
                     }
@@ -280,7 +280,7 @@
                     // Element might be detached from DOM
                 }
                 elementRefMap.delete(element);
-                
+
                 // Remove from signature map
                 const signature = generateElementSignature(element);
                 if (signature && elementSignatureMap.get(signature) === ref) {
@@ -406,7 +406,7 @@
         if (tagName === 'header') return 'banner';
         if (tagName === 'footer') return 'contentinfo';
         if (tagName === 'fieldset') return 'group';
-        
+
         // Enhanced role mappings for table elements
         if (tagName === 'table') return 'table';
         if (tagName === 'tr') return 'row';
@@ -489,9 +489,9 @@
 
         // Add a heuristic to ignore code-like text that might be in the DOM
         if ((text.match(/[;:{}]/g)?.length || 0) > 2) return '';
-        
 
-        
+
+
         return text;
         }
 
@@ -587,7 +587,7 @@
             if (level > 0) node.level = level;
 
 
-            
+
             return node;
         }
 
@@ -735,9 +735,9 @@
         if (isRedundantWrapper) {
             return node.children;
         }
-        
 
-        
+
+
         return [node];
     }
 
@@ -831,7 +831,7 @@
     // Check if element is within the current viewport
     function isInViewport(element) {
         if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
-        
+
         try {
             const rect = element.getBoundingClientRect();
             return (

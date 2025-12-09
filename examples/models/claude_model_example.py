@@ -49,7 +49,7 @@ model_opus_4_5 = ModelFactory.create(
 )
 
 user_msg = """
-Create an interactive HTML webpage that allows users to play with a 
+Create an interactive HTML webpage that allows users to play with a
 Rubik's Cube, and saved it to local file.
 """
 
@@ -60,7 +60,7 @@ response_pro = camel_agent_pro.step(user_msg)
 print(response_pro.msgs[0].content)
 '''
 ===============================================================================
-The interactive Rubik's Cube HTML file has been created successfully! Here's 
+The interactive Rubik's Cube HTML file has been created successfully! Here's
 what I built:
 
 ## 📁 File: `rubiks_cube.html` (23KB)
@@ -74,7 +74,7 @@ what I built:
 
 🔄 **Face Rotations**
 - **F/B** - Front/Back face
-- **U/D** - Up/Down face  
+- **U/D** - Up/Down face
 - **L/R** - Left/Right face
 - **'** versions for counter-clockwise rotations
 

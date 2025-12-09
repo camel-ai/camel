@@ -49,7 +49,7 @@ def main(image_paths: list[str]) -> list[str]:
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content='''Please generate an image based on the provided images and 
+        content='''Please generate an image based on the provided images and
         text, make the backgroup of this image is in the morning''',
         image_list=image_list,
     )
@@ -77,8 +77,8 @@ Here is the generated image of a serene desert scene in the morning:
 
 ![Morning Desert Scene](img/3d8310e8-9f14-48be-94db-c66dd0461cd0.png)
 
-The scene features a camel standing on a sand dune, palm trees, and an oasis 
-in the background. The sun is rising, casting a soft golden light over the 
+The scene features a camel standing on a sand dune, palm trees, and an oasis
+in the background. The sun is rising, casting a soft golden light over the
 landscape with clear skies and a few scattered clouds.
 ===============================================================================
 """

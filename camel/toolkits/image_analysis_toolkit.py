@@ -76,7 +76,7 @@ class ImageAnalysisToolkit(BaseToolkit):
         Returns:
             str: Natural language description of the image.
         """
-        default_content = '''You are an image analysis expert. Provide a 
+        default_content = '''You are an image analysis expert. Provide a
             detailed description including text if present.'''
 
         system_msg = BaseMessage.make_assistant_message(

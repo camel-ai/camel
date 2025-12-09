@@ -126,12 +126,12 @@ console.log(product);
 [ 17, 39 ]
 
 Response:
-The JavaScript code calculates the dot product of two matrices. 
+The JavaScript code calculates the dot product of two matrices.
 The `dotProduct` function takes two matrices as input and returns a new matrix
 representing their dot product. The code first checks for invalid inputs
 (empty or null matrices, or incompatible dimensions). Then, it iterates through
-the rows of the first matrix and the columns of the second matrix, computing 
-the sum of the products of the corresponding elements. The example uses 
+the rows of the first matrix and the columns of the second matrix, computing
+the sum of the products of the corresponding elements. The example uses
 matrices `[[1, 2], [3, 4]]` and `[[5], [6]]` and the output is `[17, 39]`.
 '''
 
@@ -156,24 +156,24 @@ print(f'uv example {docker_interpreter.execute_command("uv --version")}')
 # Clean up the container
 docker_interpreter.cleanup()
 
-"""System update example Hit:1 https://deb.nodesource.com/node_22.x nodistro 
+"""System update example Hit:1 https://deb.nodesource.com/node_22.x nodistro
 InRelease
 Get:2 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
 Hit:3 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:4 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
 Get:5 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
-Get:6 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 
+Get:6 http://security.ubuntu.com/ubuntu jammy-security/universe amd64
 Packages [1245 kB]
 Get:7 http://archive.ubuntu.com/ubuntu jammy-backports InRelease [127 kB]
-Get:8 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 
+Get:8 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64
 Packages [3295 kB]
-Get:9 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 
+Get:9 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64
 Packages [4468 kB]
-Get:10 http://security.ubuntu.com/ubuntu jammy-security/main amd64 
+Get:10 http://security.ubuntu.com/ubuntu jammy-security/main amd64
 Packages [2979 kB]
-Get:11 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 
+Get:11 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64
 Packages [4630 kB]
-Get:12 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 
+Get:12 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64
 Packages [1553 kB]
 Fetched 18.6 MB in 3s (5312 kB/s)
 Reading package lists...
@@ -184,7 +184,7 @@ Reading state information...
 Calculating upgrade...
 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
 
-pip example pip 25.1.1 from /usr/local/lib/python3.10/dist-packages/pip 
+pip example pip 25.1.1 from /usr/local/lib/python3.10/dist-packages/pip
 (python 3.10)
 
 npm example 10.9.2

@@ -29,7 +29,7 @@ Markdown Content:
 | [![Image 1](https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Hollow_Knight_first_cover_art.webp/220px-Hollow_Knight_first_cover_art.webp.png)](https://en.wikipedia.org/wiki/File:Hollow_Knight_first_cover_art.webp) |
 | [Developer(s)](https://en.wikipedia.org/wiki/Video_game_developer "Video game developer") | Team Cherry |
 | [Publisher(s)](https://en.wikipedia.org/wiki/Video_game_publisher "Video game publisher") | Team Cherry |
-| [Designer(s)](https://en.wikipedia.org/wiki/Video_game_designer "Video game designer") | 
+| [Designer(s)](https://en.wikipedia.org/wiki/Video_game_designer "Video game designer") |
 *   Ari Gibson
 *   William Pellen
 

@@ -88,9 +88,9 @@ if st.sidebar.button("Search Listings"):
 
     # Build prompt
     prompt = f"""
-        Find me the best Airbnb in {city} with a check-in date 
-        of {checkin:%Y-%m-%d} and a check-out date of 
-        {checkout:%Y-%m-%d} for {adults} adults. 
+        Find me the best Airbnb in {city} with a check-in date
+        of {checkin:%Y-%m-%d} and a check-out date of
+        {checkout:%Y-%m-%d} for {adults} adults.
         Return the top 5 listings with their names, prices, and locations.
     """
 

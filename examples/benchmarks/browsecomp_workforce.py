@@ -40,8 +40,8 @@ if __name__ == '__main__':
     # Create specialized agents for the workforce
     web_researcher_sys_msg = BaseMessage.make_assistant_message(
         role_name="Web Researcher",
-        content="""You are an expert at researching information on the web. 
-You can search for and analyze web content to extract accurate information. 
+        content="""You are an expert at researching information on the web.
+You can search for and analyze web content to extract accurate information.
 You excel at understanding complex queries and finding precise answers.""",
     )
 
