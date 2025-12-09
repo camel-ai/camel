@@ -150,7 +150,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             calendar_id (str): The unique identifier of the calendar to be
-                deleted.
+                deleted. It can be obtained either through create_calendar
+                or list_calendars methods.
 
         Returns:
             dict[str, str]: A dictionary containing the status and details
@@ -205,7 +206,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             calendar_id (str): The unique identifier of the calendar to be
-                retrieved.
+                retrieved. It can be obtained either through create_calendar
+                or list_calendars methods.
 
         Returns:
             A dictionary containing the result of the operation.
@@ -317,6 +319,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             calendar_id (str): The unique identifier of the calendar to update.
+                It can be obtained either through create_calendar
+                or list_calendars methods.
             name (Optional[str]): The new name for the calendar.
                 (default: :obj:`None`)
             color (Optional[str]): Specifies the color theme to distinguish
@@ -672,6 +676,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             event_id (str): The unique identifier of the event to update.
+                It can be obtained either through create_calendar_event
+                or list_calendar_events methods.
             subject (Optional[str]): The new subject/title of the event.
                 (default: :obj:`None`)
             start_time (Optional[str]): New start time in ISO format
@@ -879,6 +885,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             event_id (str): The unique identifier of the event to retrieve.
+                It can be obtained either through create_calendar_event
+                or list_calendar_events methods.
 
         Returns:
             dict[str, Any]: A dictionary containing the status and event
@@ -988,6 +996,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         Args:
             event_id (str): The unique identifier of the event to delete.
+                It can be obtained either through create_calendar_event
+                or list_calendar_events methods.
 
         Returns:
             dict[str, str]: A dictionary containing the status and details
