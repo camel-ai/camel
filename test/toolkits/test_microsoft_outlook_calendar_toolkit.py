@@ -960,3 +960,75 @@ class TestGetCalendarEvent:
         assert "error" in result
         assert "Failed to get calendar event" in result["error"]
         assert "Event not found" in result["error"]
+
+
+def mock_single_event_response():
+    """Helper function to create a mock event response."""
+    from msgraph.generated.models.free_busy_status import FreeBusyStatus
+    from msgraph.generated.models.importance import Importance
+
+    mock_event = MagicMock()
+    mock_event.id = "event_id"
+    mock_event.subject = "Test Event"
+    mock_event.start.date_time = "2025-12-10T10:00:00"
+    mock_event.start.time_zone = "UTC"
+    mock_event.end.date_time = "2025-12-10T11:00:00"
+    mock_event.is_all_day = False
+    mock_event.body_preview = "Event description"
+    mock_event.locations = []
+    mock_event.attendees = []
+    mock_event.organizer = None
+    mock_event.is_online_meeting = False
+    mock_event.online_meeting_url = None
+    mock_event.importance = Importance.Normal
+    mock_event.show_as = FreeBusyStatus.Busy
+    mock_event.is_cancelled = False
+
+    return mock_event
+
+
+@pytest.mark.asyncio
+class TestListCalendarEvents:
+    """Tests for list_calendar_events method."""
+
+    async def test_list_calendar_events_success(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test successful calendar events listing."""
+        mock_event = mock_single_event_response()
+
+        mock_result = MagicMock()
+        mock_result.value = [mock_event]
+
+        async_get_mock = AsyncMock(return_value=mock_result)
+        mock_graph_client.me.events.get = async_get_mock
+
+        result = await outlook_calendar_toolkit.list_calendar_events()
+
+        assert result['status'] == 'success'
+        assert result['total_count'] == 1
+        assert result['skip'] == 0
+        assert result['top'] == 10
+        assert len(result['events']) == 1
+
+        details = result['events'][0]
+        assert details['id'] == 'event_id'
+        assert details['subject'] == 'Test Event'
+        assert details['start'] == '2025-12-10T10:00:00'
+        assert details['end'] == '2025-12-10T11:00:00'
+        assert details['timezone'] == 'UTC'
+
+    async def test_list_calendar_events_failure(
+        self, outlook_calendar_toolkit, mock_graph_client
+    ):
+        """Test listing calendar events when API raises an exception."""
+        async_get_mock = AsyncMock(
+            side_effect=Exception('API connection failed')
+        )
+        mock_graph_client.me.events.get = async_get_mock
+
+        result = await outlook_calendar_toolkit.list_calendar_events()
+
+        assert 'error' in result
+        assert 'Failed to list calendar events' in result['error']
+        assert 'API connection failed' in result['error']

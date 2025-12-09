@@ -897,6 +897,89 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
+    async def list_calendar_events(
+        self,
+        filter_query: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
+        top: int = 10,
+        skip: int = 0,
+    ) -> dict[str, Any]:
+        """Retrieves a list of calendar events with optional filtering,
+        sorting, and pagination.
+
+        Warning: When using $filter and $orderby in the same query,
+        properties that appear in $orderby must also appear in $filter.
+        Failing to do this may result in an error.
+
+        Args:
+            filter_query (Optional[str]): OData filter for events.
+                Examples:
+                - Subject: "subject eq 'Team Meeting'"
+                - Contains: "contains(subject, 'meeting')"
+                - Start time: "start/dateTime ge '2025-01-01T00:00:00+05:30'"
+                - End time: "end/dateTime le '2025-12-31T23:59:59+05:30'"
+                - Combine: "subject eq 'Team Meeting' and isCancelled eq false"
+            order_by (Optional[List[str]]): OData orderBy for sorting.
+                Examples:
+                - Start time ascending: ["start/dateTime asc"]
+                - Start time descending: ["start/dateTime desc"]
+                - Subject ascending: ["subject asc"]
+                - Multi-field: ["start/dateTime desc", "subject asc"]
+            top (int): Maximum number of events to return.
+                (default: :obj:`10`)
+            skip (int): Number of events to skip for pagination.
+                (default: :obj:`0`)
+
+        Returns:
+            A dictionary containing the result of the operation.
+        """
+        try:
+            from msgraph.generated.users.item.events.events_request_builder import (  # noqa: E501
+                EventsRequestBuilder,
+            )
+
+            # Build query parameters
+            query_params = (
+                EventsRequestBuilder.EventsRequestBuilderGetQueryParameters(
+                    top=top,
+                    skip=skip,
+                )
+            )
+
+            if order_by:
+                query_params.orderby = order_by
+
+            if filter_query:
+                query_params.filter = filter_query
+
+            request_config = EventsRequestBuilder.EventsRequestBuilderGetRequestConfiguration(  # noqa: E501
+                query_parameters=query_params
+            )
+
+            # Send request to list events
+            result = await self.client.me.events.get(
+                request_configuration=request_config
+            )
+
+            all_events = []
+            if result and result.value:
+                for event in result.value:
+                    details = self._extract_event_details(event)
+                    all_events.append(details)
+
+            return {
+                "status": "success",
+                "events": all_events,
+                "total_count": len(all_events),
+                "skip": skip,
+                "top": top,
+            }
+
+        except Exception as e:
+            error_msg = f"Failed to list calendar events: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
+
     async def delete_calendar_event(
         self,
         event_id: str,
@@ -939,5 +1022,6 @@ class OutlookCalendarToolkit(BaseToolkit):
             FunctionTool(run_async(self.create_calendar_event)),
             FunctionTool(run_async(self.update_calendar_event)),
             FunctionTool(run_async(self.get_calendar_event)),
+            FunctionTool(run_async(self.list_calendar_events)),
             FunctionTool(run_async(self.delete_calendar_event)),
         ]
