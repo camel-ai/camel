@@ -20,16 +20,9 @@ import platform
 from pathlib import Path
 
 from dotenv import load_dotenv
-load_dotenv()
 
 # Import agent factories from eigent.py
-from eigent import (
-    # developer_agent_factory,
-    # document_agent_factory,
-    # multi_modal_agent_factory,
-    search_agent_factory,
-    send_message_to_user,
-)
+from eigent import search_agent_factory, send_message_to_user
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -39,11 +32,11 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AgentCommunicationToolkit,
-    HumanToolkit,
-    # NoteTakingToolkit,
     ToolkitMessageIntegration,
 )
 from camel.types import ModelPlatformType, ModelType
+
+load_dotenv()
 
 logger = get_logger(__name__)
 
@@ -54,7 +47,7 @@ WORKING_DIRECTORY_PATH = Path(WORKING_DIRECTORY)
 
 
 def load_tasks_from_jsonl(
-    jsonl_path: str, start_index: int = 0, end_index: int = None
+    jsonl_path: str, start_index: int = 0, end_index: int | None = None
 ):
     """
     Load tasks from a JSONL file.
@@ -62,7 +55,8 @@ def load_tasks_from_jsonl(
     Args:
         jsonl_path (str): Path to the JSONL file.
         start_index (int): Starting index (inclusive).
-        end_index (int): Ending index (inclusive). If None, load all tasks from start_index.
+        end_index (int | None): Ending index (inclusive). If None, load
+            all tasks from start_index.
 
     Returns:
         list: A list of task dictionaries.
@@ -94,10 +88,11 @@ async def verify_result_with_agent(
     """
     verifier_agent = ChatAgent(
         system_message=(
-            "You are a task verification expert. Your job is to analyze whether "
-            "a task was completed successfully based on the task description and "
-            "the execution result. You should output your verification in JSON format "
-            "with two fields: 'success' (true/false) and 'reasoning' (explanation)."
+            "You are a task verification expert. Your job is to analyze "
+            "whether a task was completed successfully based on the task "
+            "description and the execution result. You should output your "
+            "verification in JSON format with two fields: 'success' "
+            "(true/false) and 'reasoning' (explanation)."
         ),
         model=model_backend,
     )
@@ -172,7 +167,8 @@ async def verify_result_with_agent(
             "Please verify if the task was completed successfully. Consider:",
             "1. Did the workforce complete the task objectives?",
             "2. Are there any errors or failures in the execution?",
-            "3. Does the final result/answer align with the task requirements?",
+            "3. Does the final result/answer align with the task "
+            "requirements?",
             "4. Did the agent provide a comprehensive and accurate response?",
             "",
             "Output your verification in JSON format:",
@@ -215,7 +211,9 @@ async def verify_result_with_agent(
     return verification_result
 
 
-async def run_eigent_workforce(human_task: Task, task_index: int = None):
+async def run_eigent_workforce(
+    human_task: Task, task_index: int | None = None
+):
     """
     Run the eigent workforce with a custom task.
 
@@ -233,9 +231,7 @@ async def run_eigent_workforce(human_task: Task, task_index: int = None):
     msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
 
     # Initialize message integration for use in coordinator and task agents
-    message_integration = ToolkitMessageIntegration(
-        message_handler=send_message_to_user
-    )
+    ToolkitMessageIntegration(message_handler=send_message_to_user)
 
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
@@ -368,17 +364,17 @@ MUST use this as the current date.
         "perform searches, and extract information to support other agents.",
         worker=search_agent,
         # ).add_single_agent_worker(
-        #     "Developer Agent: A master-level coding assistant with a powerful "
-        #     "terminal. It can write and execute code, manage files, automate "
-        #     "desktop tasks, and deploy web applications to solve complex "
-        #     "technical challenges.",
+        #     "Developer Agent: A master-level coding assistant with a "
+        #     "powerful terminal. It can write and execute code, manage "
+        #     "files, automate desktop tasks, and deploy web applications "
+        #     "to solve complex technical challenges.",
         #     worker=developer_agent,
         # ).add_single_agent_worker(
-        #     "Document Agent: A document processing assistant skilled in creating "
-        #     "and modifying a wide range of file formats. It can generate "
-        #     "text-based files (Markdown, JSON, YAML, HTML), office documents "
-        #     "(Word, PDF), presentations (PowerPoint), and data files "
-        #     "(Excel, CSV).",
+        #     "Document Agent: A document processing assistant skilled in "
+        #     "creating and modifying a wide range of file formats. It can "
+        #     "generate text-based files (Markdown, JSON, YAML, HTML), "
+        #     "office documents (Word, PDF), presentations (PowerPoint), "
+        #     "and data files (Excel, CSV).",
         #     worker=document_agent,
     )
 
@@ -446,9 +442,8 @@ if __name__ == "__main__":
 
     # Load tasks from JSONL file
     tasks = load_tasks_from_jsonl(args.jsonl, args.start, args.end)
-    print(
-        f"Loaded {len(tasks)} tasks (index {args.start} to {args.end if args.end else 'end'})"
-    )
+    end_str = args.end if args.end else 'end'
+    print(f"Loaded {len(tasks)} tasks (index {args.start} to {end_str})")
 
     # Create model backend for verification
     verifier_model = ModelFactory.create(
@@ -466,12 +461,11 @@ if __name__ == "__main__":
         for idx, task_data in enumerate(tasks):
             actual_idx = args.start + idx
             print(f"\n{'='*80}")
-            print(
-                f"Processing Task {actual_idx}: {task_data.get('id', 'unknown')}"
-            )
+            task_id = task_data.get('id', 'unknown')
+            print(f"Processing Task {actual_idx}: {task_id}")
             print(f"{'='*80}")
 
-            # Combine ques and web fields
+            # Combine question and web fields
             task_content = f"{task_data['ques']} in \"{task_data['web']}\""
 
             # Create a custom task
@@ -507,14 +501,14 @@ if __name__ == "__main__":
                 all_results.append(task_result)
 
                 # Save individual task result
-                individual_result_file = (
-                    WORKING_DIRECTORY_PATH / 
-                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json")
+                result_id = task_data.get('id', str(actual_idx))
+                filename = f"task_result_{actual_idx}_{result_id}.json"
+                individual_result_file = WORKING_DIRECTORY_PATH / filename
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(task_result, f, indent=2, ensure_ascii=False)
 
                 # Save accumulated results (all tasks so far)
-                results_file = f"all_results_{args.start}_{args.end if args.end else 'end'}.json"
+                results_file = f"all_results_{args.start}_{end_str}.json"
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(all_results, f, indent=2, ensure_ascii=False)
 
@@ -538,16 +532,17 @@ if __name__ == "__main__":
                 all_results.append(error_result)
 
                 # Save individual error result
-                individual_result_file = (
-                    WORKING_DIRECTORY_PATH /
-                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json")
+                result_id = task_data.get('id', str(actual_idx))
+                filename = f"task_result_{actual_idx}_{result_id}.json"
+                individual_result_file = WORKING_DIRECTORY_PATH / filename
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(error_result, f, indent=2, ensure_ascii=False)
 
                 # Save accumulated results
                 results_file = (
-                    WORKING_DIRECTORY_PATH /
-                    f"all_results_{args.start}_{args.end if args.end else 'end'}.json")
+                    WORKING_DIRECTORY_PATH
+                    / f"all_results_{args.start}_{args.end if args.end else 'end'}.json"  # noqa: E501
+                )
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(all_results, f, indent=2, ensure_ascii=False)
 
@@ -560,6 +555,4 @@ if __name__ == "__main__":
     print("=== All Tasks Complete ===")
     print(f"{'='*80}")
     print(f"Processed {len(tasks)} tasks")
-    print(
-        f"Results saved to: all_results_{args.start}_{args.end if args.end else 'end'}.json"
-    )
+    print(f"Results saved to: all_results_{args.start}_{end_str}.json")
