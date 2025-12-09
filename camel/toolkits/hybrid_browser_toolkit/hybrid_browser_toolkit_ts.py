@@ -28,12 +28,12 @@ from typing import (
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
-from camel.toolkits._utils import add_reason_field
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required
 
 from .config_loader import ConfigLoader
+from .decorators import add_reason_field
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -369,22 +369,27 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_close(self) -> str:
+    async def browser_close(self) -> Dict[str, Any]:
         r"""Closes the browser session, releasing all resources.
 
         This should be called at the end of a task for cleanup.
 
         Returns:
-            str: A confirmation message.
+            Dict[str, Any]: A dictionary with:
+                - "message" (str): A confirmation message.
+                - "success" (bool): Whether the operation succeeded.
         """
         try:
             if self._ws_wrapper:
                 await self._ws_wrapper.stop()
                 self._ws_wrapper = None
-            return "Browser session closed."
+            return {"message": "Browser session closed.", "success": True}
         except Exception as e:
             logger.error(f"Failed to close browser: {e}")
-            return f"Error closing browser: {e}"
+            return {
+                "message": f"Error closing browser: {e}",
+                "success": False,
+            }
 
     async def disconnect_websocket(self) -> str:
         r"""Disconnects the WebSocket connection without closing the browser.
@@ -547,7 +552,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_get_page_snapshot(self) -> str:
+    async def browser_get_page_snapshot(self) -> Dict[str, Any]:
         r"""Gets a textual snapshot of the page's interactive elements.
 
         The snapshot lists elements like buttons, links, and inputs,
@@ -561,17 +566,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         will be included in the snapshot.
 
         Returns:
-            str: A formatted string representing the interactive elements and
-                their `ref` IDs. For example:
-                '- link "Sign In" [ref=1]'
-                '- textbox "Username" [ref=2]'
+            Dict[str, Any]: A dictionary with:
+                - "snapshot" (str): A formatted string representing the
+                  interactive elements and their `ref` IDs. For example:
+                  '- link "Sign In" [ref=1]'
+                  '- textbox "Username" [ref=2]'
+                - "success" (bool): Whether the operation succeeded.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            return await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            snapshot = await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            return {"snapshot": snapshot, "success": True}
         except Exception as e:
             logger.error(f"Failed to get page snapshot: {e}")
-            return f"Error capturing snapshot: {e}"
+            return {
+                "snapshot": f"Error capturing snapshot: {e}",
+                "success": False,
+            }
 
     @dependencies_required('PIL')
     async def browser_get_som_screenshot(
@@ -1894,7 +1905,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
         try:
-            snapshot = await self.browser_get_page_snapshot()
+            snapshot_result = await self.browser_get_page_snapshot()
+            snapshot = (
+                snapshot_result["snapshot"]
+                if snapshot_result["success"]
+                else ""
+            )
             tab_info = await self.browser_get_tab_info()
             return {"result": result_msg, "snapshot": snapshot, **tab_info}
         except Exception as e:
@@ -1932,9 +1948,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stealth=self._stealth,
             cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
             f"{new_session_id}/",
-            enabled_tools=(self._enabled_tools.copy()
-                if self._enabled_tools
-                else None),
+            enabled_tools=(
+                self._enabled_tools.copy() if self._enabled_tools else None
+            ),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
             default_start_url=self._default_start_url,
@@ -1980,15 +1996,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         }
 
         tools = []
-        if self._enabled_tools is not None:
-            for tool_name in self._enabled_tools:
-                if tool_name in tool_map:
-                    tool = FunctionTool(
-                        cast(Callable[..., Any], tool_map[tool_name])
-                    )
-                    tools.append(tool)
-                else:
-                    logger.warning(f"Unknown tool name: {tool_name}")
+        enabled_tools = (
+            self._enabled_tools if self._enabled_tools else self.DEFAULT_TOOLS
+        )
+        for tool_name in enabled_tools:
+            if tool_name in tool_map:
+                tool = FunctionTool(
+                    cast(Callable[..., Any], tool_map[tool_name])
+                )
+                tools.append(tool)
+            else:
+                logger.warning(f"Unknown tool name: {tool_name}")
 
         logger.info(f"Returning {len(tools)} enabled tools")
         return tools

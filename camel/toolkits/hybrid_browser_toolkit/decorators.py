@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# =========
+
 import functools
 import inspect
+from typing import Dict
 
 from camel.logger import get_logger
 
@@ -23,22 +24,31 @@ logger = get_logger(__name__)
 def add_reason_field(func):
     """
     Decorator to enable reasoning for tool functions.
-    1.It modifies the function's signature to add a 'reason' parameter.
-    2.The 'reason' argument is a string describing why the tool is being called
-      and it is added to the function docstring.
-    3.It wraps the original function to ensure
-      its return value includes a 'reason' key.
+    1. It modifies the function's signature to add a 'reason' parameter.
+    2. The 'reason' argument is a string describing why the tool is
+       being called and it is added to the function docstring.
+    3. It wraps the original function to ensure its return value
+       includes a 'reason' key.
 
     Note: This decorator can only be applied to
           functions with a return type of Dict.
 
     """
     sig = inspect.signature(func)
-    # Check return annotation
-    if sig.return_annotation is inspect.Signature.empty or (
-        getattr(sig.return_annotation, '__origin__', None) is not dict
-        and sig.return_annotation is not dict
-    ):
+
+    def is_dict_type(annotation):
+        if annotation is dict:
+            return True
+        if annotation is inspect.Signature.empty:
+            return False
+        origin = getattr(annotation, '__origin__', None)
+        if origin is dict:
+            return True
+        if annotation is Dict or origin is Dict:
+            return True
+        return False
+
+    if not is_dict_type(sig.return_annotation):
         logger.info(
             f"add_reason_field: Function '{func.__name__}' "
             "does not have return type Dict. "
@@ -46,9 +56,7 @@ def add_reason_field(func):
         )
         return func
 
-    # Patch signature
     params = list(sig.parameters.values())
-    # Only add reason if not already present
     if "reason" not in sig.parameters:
         params.append(
             inspect.Parameter(
@@ -60,21 +68,38 @@ def add_reason_field(func):
         )
     new_sig = sig.replace(parameters=params)
 
-    # Patch docstring
     doc = func.__doc__ or ""
     lines = doc.splitlines()
 
-    # Add reason to Args section
     if "Args:" in doc:
+        args_idx = None
+        indent = None
         for i, line in enumerate(lines):
             if "Args:" in line:
+                args_idx = i
                 indent = line[: line.index("Args:")]
-                reason_doc = (
-                    f"{indent}    reason (str): The reason why this "
-                    + "tool is called."
-                )
-                lines.insert(i + 1, reason_doc)
                 break
+
+        if args_idx is not None:
+            insert_idx = args_idx + 1
+            last_arg_idx = args_idx + 1
+            for j in range(args_idx + 1, len(lines)):
+                line = lines[j]
+                if not line.startswith(indent + " "):
+                    insert_idx = j
+                    break
+                if line.strip() != "":
+                    last_arg_idx = j
+                insert_idx = j + 1
+
+            if last_arg_idx > args_idx:
+                insert_idx = last_arg_idx + 1
+
+            reason_doc = (
+                f"{indent}    reason (str): The reason why this "
+                + "tool is called."
+            )
+            lines.insert(insert_idx, reason_doc)
     else:
         lines.extend(
             [
@@ -84,7 +109,6 @@ def add_reason_field(func):
             ]
         )
 
-    # Add reason to Returns section
     returns_idx = None
     for i, line in enumerate(lines):
         if "Returns:" in line:
@@ -93,7 +117,6 @@ def add_reason_field(func):
             break
 
     if returns_idx is not None:
-        # Find where Returns section ends by checking indentation
         end_idx = len(lines)
         for j in range(returns_idx + 1, len(lines)):
             line = lines[j]
@@ -103,7 +126,6 @@ def add_reason_field(func):
                 end_idx = j
                 break
 
-        # Remove existing reason lines
         filtered = []
         for i, line in enumerate(lines):
             if '"reason"' not in line and "'reason'" not in line:
@@ -113,7 +135,6 @@ def add_reason_field(func):
 
         lines = filtered
 
-        # Recalculate end_idx after filtering
         end_idx = len(lines)
         for j in range(returns_idx + 1, len(lines)):
             line = lines[j]
@@ -126,7 +147,6 @@ def add_reason_field(func):
         while end_idx > returns_idx + 1 and lines[end_idx - 1].strip() == "":
             end_idx -= 1
 
-        # Append reason line at end of Returns section
         reason_line = f'{indent}        - "reason" (str): tool call reason.'
         lines.insert(end_idx, reason_line)
     elif "Returns:" not in doc:
@@ -144,7 +164,6 @@ def add_reason_field(func):
     @functools.wraps(func)
     async def wrapper(*args, reason: str = "", **kwargs):
         result = await func(*args, **kwargs)
-        # No need to check type here, as enforced by decorator
         result["reason"] = reason
         return result
 
