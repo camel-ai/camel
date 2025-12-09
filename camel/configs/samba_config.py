@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -156,7 +156,9 @@ class SambaCloudAPIConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 SAMBA_CLOUD_API_PARAMS = {

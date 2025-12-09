@@ -80,7 +80,9 @@ class AihubMixConfig(BaseConfig):
     presence_penalty: Optional[float] = 0.0
     stream: Optional[bool] = False
     web_search_options: Optional[Dict] = None
-    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     parallel_tool_calls: Optional[bool] = None
     extra_headers: Optional[Dict[str, str]] = None
 
