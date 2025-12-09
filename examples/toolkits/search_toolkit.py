@@ -450,21 +450,42 @@ rising investments linked to fault-tolerant performance and heightened ...',
 'keywords': ['rapid acceleration in error-correction research'], 'source':
 'The Quantum Insider'},
 {'title': 'Quantum computing squares up to the error-correction ...',
-'link': 'https://www.techmonitor.ai/quantum/quantum-error-correction-breakthroughs/',
-'snippet': 'Boston-based QuEra and collaborators at Harvard and Yale have developed a new framework for quantum error correction called Algorithmic Fault ...',
-'keywords': ['have developed a new framework for quantum error correction'], 'source': 'Tech Monitor'},
+'link': 'https://www.techmonitor.ai/quantum/'
+'quantum-error-correction-breakthroughs/',
+'snippet': 'Boston-based QuEra and collaborators at Harvard and Yale have '
+'developed a new framework for quantum error correction called Algorithmic '
+'Fault ...',
+'keywords': ['have developed a new framework for quantum error correction'],
+'source': 'Tech Monitor'},
 {'title': 'Microsoft advances quantum error correction with a family ...',
-'link': 'https://azure.microsoft.com/en-us/blog/quantum/2025/06/19/microsoft-advances-quantum-error-correction-with-a-family-of-novel-four-dimensional-codes/',
-'snippet': "Learn how we're advancing quantum computing by developing 4D error-correction codes that are applicable to many types of qubits.",
-'keywords': ['4D error-correction codes'], 'source': 'Microsoft Azure'}, {'title': 'Advances in quantum error correction showcased at Q2B25',
-'link': 'https://physicsworld.com/a/advances-in-quantum-error-correction-showcased-at-q2b25/', 'snippet': 'All major quantum technologies were highlighted: computing, AI, sensing, communications and security. Among the quantum computing topics was ...',
-'keywords': [], 'source': 'Physics World'}, {'title': 'Quantum computing breakthrough could slash pesky errors ...',
-'link': 'https://www.livescience.com/technology/computing/this-moves-the-timeline-forward-significantly-quantum-computing-breakthrough-could-slash-pesky-errors-by-up-to-100-times',
-'snippet': 'Researchers used a new technique called algorithmic fault tolerance (AFT) to cut the time and computational cost of quantum error correction ...',
-'keywords': ['algorithmic fault tolerance'], 'source': 'Live Science'}, {'title': 'Quantum error correction codes enable efficient scaling to ...',
-'link': 'https://phys.org/news/2025-09-quantum-error-codes-enable-efficient.html',
-'snippet': 'These novel error correction codes can handle quantum codes with hundreds of thousands of qubits, potentially enabling large-scale fault- ...',
-'keywords': ['error correction', 'quantum'], 'source': 'Phys.org'}]}, tool_call_id='function-call-18262120514510234122',
+'link': 'https://azure.microsoft.com/en-us/blog/quantum/2025/06/19/'
+'microsoft-advances-quantum-error-correction-with-a-family-of-novel-'
+'four-dimensional-codes/',
+'snippet': "Learn how we're advancing quantum computing by developing 4D "
+"error-correction codes that are applicable to many types of qubits.",
+'keywords': ['4D error-correction codes'], 'source': 'Microsoft Azure'},
+{'title': 'Advances in quantum error correction showcased at Q2B25',
+'link': 'https://physicsworld.com/a/'
+'advances-in-quantum-error-correction-showcased-at-q2b25/',
+'snippet': 'All major quantum technologies were highlighted: computing, AI, '
+'sensing, communications and security. Among the quantum computing topics '
+'was ...',
+'keywords': [], 'source': 'Physics World'},
+{'title': 'Quantum computing breakthrough could slash pesky errors ...',
+'link': 'https://www.livescience.com/technology/computing/'
+'this-moves-the-timeline-forward-significantly-quantum-computing-'
+'breakthrough-could-slash-pesky-errors-by-up-to-100-times',
+'snippet': 'Researchers used a new technique called algorithmic fault '
+'tolerance (AFT) to cut the time and computational cost of quantum error '
+'correction ...',
+'keywords': ['algorithmic fault tolerance'], 'source': 'Live Science'},
+{'title': 'Quantum error correction codes enable efficient scaling to ...',
+'link': 'https://phys.org/news/'
+'2025-09-quantum-error-codes-enable-efficient.html',
+'snippet': 'These novel error correction codes can handle quantum codes with '
+'hundreds of thousands of qubits, potentially enabling large-scale fault- ...',
+'keywords': ['error correction', 'quantum'], 'source': 'Phys.org'}]},
+tool_call_id='function-call-18262120514510234122',
 images=None)], 'external_tool_call_requests': None}
 ===============================================================================
 """
