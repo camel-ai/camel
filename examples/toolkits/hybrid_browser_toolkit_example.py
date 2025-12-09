@@ -33,12 +33,11 @@ logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
-USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
+USER_DATA_DIR = "User_Data"
 
 model_backend = ModelFactory.create(
-    model_platform=ModelPlatformType.MOONSHOT,
-    model_type=ModelType.MOONSHOT_KIMI_K2,
-    url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
@@ -68,6 +67,7 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
+    # "browser_get_som_screenshot", # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -86,9 +86,9 @@ web_toolkit_custom = HybridBrowserToolkit(
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 # Use the custom toolkit for the actual task
 agent = ChatAgent(
-    enable_tool_output_cache=True,
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
+    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
@@ -105,7 +105,6 @@ If you see a cookie page, click accept all.
 
 
 async def main() -> None:
-    # await web_toolkit_custom.browser_open()
     try:
         response = await agent.astep(TASK_PROMPT)
         print("Task:", TASK_PROMPT)

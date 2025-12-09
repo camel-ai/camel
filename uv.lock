@@ -881,7 +881,6 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
-    { name = "python-dotenv" },
     { name = "tiktoken" },
     { name = "websockets" },
 ]
@@ -1550,7 +1549,6 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
-    { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "python-dotenv", marker = "extra == 'eigent'", specifier = ">=1.0.0,<2" },
     { name = "python-dotenv", marker = "extra == 'owl'", specifier = ">=1.0.0,<2" },
     { name = "python-pptx", marker = "extra == 'all'", specifier = ">=1.0.2" },

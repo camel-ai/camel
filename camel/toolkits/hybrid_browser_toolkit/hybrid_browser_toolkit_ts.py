@@ -27,13 +27,10 @@ from typing import (
 )
 
 from camel.logger import get_logger
-from camel.toolkits._utils import add_reason_field
+from camel.messages import BaseMessage
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required
-from camel.utils.tool_result import ToolResult
-
-from camel.toolkits._utils import add_reason_field
 
 from .config_loader import ConfigLoader
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
@@ -102,7 +99,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         stealth: bool = False,
         cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
-        enable_reasoning: bool = False,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -132,9 +128,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
             Defaults to None.
-            enable_reasoning (bool): Whether to enable reasoning when agent
-                is using the browser toolkit. Defaults to False. agent will
-                provide explanations for its actions when this is enabled.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
             log_dir (Optional[str]): Custom directory path for log files.
@@ -194,7 +187,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
-            enable_reasoning=enable_reasoning,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
             cdp_keep_current_page=cdp_keep_current_page,
@@ -214,22 +206,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "is True, the browser will keep the current page and not "
                 "navigate to any URL."
             )
-        # toolkit settings
-        self._cache_dir = toolkit_config.cache_dir
-        self._browser_log_to_file = toolkit_config.browser_log_to_file
-        self._enabled_tools = toolkit_config.enabled_tools
-        self._enable_reasoning = toolkit_config.enable_reasoning
 
-        # browser settings
         self._headless = browser_config.headless
         self._user_data_dir = browser_config.user_data_dir
         self._stealth = browser_config.stealth
+        self._cache_dir = toolkit_config.cache_dir
+        self._browser_log_to_file = toolkit_config.browser_log_to_file
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
 
-        # timeout settings
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
         self._navigation_timeout = browser_config.navigation_timeout
@@ -240,31 +227,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_config.dom_content_loaded_timeout
         )
 
-        if self._enabled_tools is None:
-            self._enabled_tools = self.DEFAULT_TOOLS.copy()
+        if enabled_tools is None:
+            self.enabled_tools = self.DEFAULT_TOOLS.copy()
         else:
             invalid_tools = [
-                tool
-                for tool in self._enabled_tools
-                if tool not in self.ALL_TOOLS
+                tool for tool in enabled_tools if tool not in self.ALL_TOOLS
             ]
             if invalid_tools:
                 raise ValueError(
                     f"Invalid tools specified: {invalid_tools}. "
                     f"Available tools: {self.ALL_TOOLS}"
                 )
+            self.enabled_tools = enabled_tools.copy()
 
-        logger.info(f"Enabled tools: {self._enabled_tools}")
+        logger.info(f"Enabled tools: {self.enabled_tools}")
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
-
-        # Dynamically wrap tool methods if reasoning is enabled
-        if self._enable_reasoning:
-            for tool_name in self._enabled_tools:
-                method = getattr(self, tool_name, None)
-                if method and callable(method):
-                    setattr(self, tool_name, add_reason_field(method))
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
@@ -579,7 +558,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
-    ) -> "str | ToolResult":
+        instruction: Optional[str] = None,
+    ) -> str:
         r"""Captures a screenshot with interactive elements highlighted.
 
         "SoM" stands for "Set of Marks". This tool takes a screenshot and
@@ -589,16 +569,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         textual snapshot is not enough.
 
         Args:
-            read_image (bool, optional): If `True`, the screenshot image will
-                be included in the agent's context for direct visual analysis.
-                If `False`, only the file path will be returned.
+            read_image (bool, optional): If `True`, the agent will analyze
+                the screenshot. Requires agent to be registered.
                 (default: :obj:`True`)
+            instruction (Optional[str], optional): A specific question or
+                command for the agent regarding the screenshot, used only if
+                `read_image` is `True`. For example: "Find the login button."
 
         Returns:
-            str | ToolResult: If `read_image` is `True`, returns a ToolResult
-                containing the text message and the screenshot image (which
-                will be automatically added to agent's context). If `False`,
-                returns a string with the file path only.
+            str: A confirmation message indicating the screenshot was
+                captured, the file path where it was saved, and optionally the
+                agent's analysis if `read_image` is `True`.
         """
         import base64
         import datetime
@@ -650,19 +631,38 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         result_text += f" (saved to: {file_path})"
                         break
 
-            # Return ToolResult with image if read_image is True
-            if read_image and result.images:
-                logger.info(
-                    f"Returning ToolResult with {len(result.images)} image(s) "
-                    "for agent context"
-                )
-                return ToolResult(
-                    text=result_text,
-                    images=result.images,  # Base64 images from WebSocket
-                )
-            else:
-                # Return plain text if read_image is False
-                return result_text
+            if read_image and file_path:
+                if self.agent is None:
+                    logger.error(
+                        "Cannot analyze screenshot: No agent registered. "
+                        "Please pass this toolkit to ChatAgent via "
+                        "toolkits_to_register_agent parameter."
+                    )
+                    result_text += (
+                        " Error: No agent registered for image analysis. "
+                        "Please pass this toolkit to ChatAgent via "
+                        "toolkits_to_register_agent parameter."
+                    )
+                else:
+                    try:
+                        from PIL import Image
+
+                        img = Image.open(file_path)
+                        inst = instruction if instruction is not None else ""
+                        message = BaseMessage.make_user_message(
+                            role_name="User",
+                            content=inst,
+                            image_list=[img],
+                        )
+
+                        response = await self.agent.astep(message)
+                        agent_response = response.msgs[0].content
+                        result_text += f". Agent analysis: {agent_response}"
+                    except Exception as e:
+                        logger.error(f"Error analyzing screenshot: {e}")
+                        result_text += f". Error analyzing screenshot: {e}"
+
+            return result_text
         except Exception as e:
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
@@ -725,33 +725,50 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_type(
         self,
         *,
-        ref: str,
-        text: str,
+        ref: Optional[str] = None,
+        text: Optional[str] = None,
+        inputs: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
-        r"""Types text into an input element on the page.
+        r"""Types text into one or more input elements on the page.
+
+        This method supports two modes:
+        1. Single input mode (backward compatible): Provide 'ref' and 'text'
+        2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
+           with 'ref' and 'text' keys
 
         Args:
-            ref (str): The `ref` ID of the input element, from a snapshot.
-            text (str): The text to type into the element.
+            ref (Optional[str]): The `ref` ID of the input element, from a
+                snapshot. Required when using single input mode.
+            text (Optional[str]): The text to type into the element. Required
+                when using single input mode.
+            inputs (Optional[List[Dict[str, str]]]): List of dictionaries,
+                each containing 'ref' and 'text' keys for typing into multiple
+                elements. Example: [{'ref': '1', 'text': 'username'},
+                {'ref': '2', 'text': 'password'}]
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation message describing the action.
+                - "result" (str): Confirmation of the action.
                 - "snapshot" (str): A textual snapshot of the page after
-                  typing, showing the updated state of interactive elements.
+                  typing.
                 - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab (zero-based).
-
-        Example:
-            >>> browser_type(
-            ...     ref="3",
-            ...     text="hello@example.com"
-            ... )
-            Typed text into element 3
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+                - "details" (Dict[str, Any]): When using multiple inputs,
+                  contains success/error status for each ref.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.type(ref, text)
+
+            if ref is not None and text is not None:
+                result = await ws_wrapper.type(ref, text)
+            elif inputs is not None:
+                result = await ws_wrapper.type_multiple(inputs)
+            else:
+                raise ValueError(
+                    "Either provide 'ref' and 'text' for single input, "
+                    "or 'inputs' for multiple inputs"
+                )
 
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
@@ -1896,9 +1913,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stealth=self._stealth,
             cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
             f"{new_session_id}/",
-            enabled_tools=(self._enabled_tools.copy()
-                if self._enabled_tools
-                else None),
+            enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
             default_start_url=self._default_start_url,
@@ -1943,16 +1958,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_sheet_read": self.browser_sheet_read,
         }
 
-        tools = []
-        if self._enabled_tools is not None:
-            for tool_name in self._enabled_tools:
-                if tool_name in tool_map:
-                    tool = FunctionTool(
-                        cast(Callable[..., Any], tool_map[tool_name])
-                    )
-                    tools.append(tool)
-                else:
-                    logger.warning(f"Unknown tool name: {tool_name}")
+        enabled_tools = []
 
-        logger.info(f"Returning {len(tools)} enabled tools")
-        return tools
+        for tool_name in self.enabled_tools:
+            if tool_name in tool_map:
+                tool = FunctionTool(
+                    cast(Callable[..., Any], tool_map[tool_name])
+                )
+                enabled_tools.append(tool)
+            else:
+                logger.warning(f"Unknown tool name: {tool_name}")
+
+        logger.info(f"Returning {len(enabled_tools)} enabled tools")
+        return enabled_tools

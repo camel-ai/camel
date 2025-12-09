@@ -1318,31 +1318,14 @@ export class HybridBrowserSession {
           const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
 
           if (!typeResult.success) {
-            // Check if this is multiple inputs mode
-            if (typeResult.details) {
-              const hasAnySuccess = Object.values(typeResult.details).some((r: any) => r.success);
-              if (!hasAnySuccess) {
-                // All inputs failed, throw error
-                throw new Error(`Type failed: ${typeResult.error}`);
-              }
-              // Some inputs succeeded, continue with partial success
-            } else {
-              // Single input mode failed, throw error
-              throw new Error(`Type failed: ${typeResult.error}`);
-            }
+            throw new Error(`Type failed: ${typeResult.error}`);
           }
 
           // Set custom message and details if multiple inputs were used
           if (typeResult.details) {
             const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
             const totalCount = Object.keys(typeResult.details).length;
-            if (typeResult.error) {
-              // Partial success - include error in message
-              customMessage = `Typed text into ${successCount}/${totalCount} elements. ${typeResult.error}`;
-            } else {
-              // Full success
-              customMessage = `Typed text into ${successCount}/${totalCount} elements`;
-            }
+            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
             actionDetails = typeResult.details;
           }
 

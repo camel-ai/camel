@@ -32,7 +32,6 @@ dependencies = [
     "openai>=1.86.0",
     "websockets>=13.0,<15.1",
     "astor>=0.8.1",
-    "python-dotenv>=1.2.1",
     "pillow>=10.0.0",
 ]
 

@@ -39,9 +39,6 @@ class HybridBrowserToolkit(BaseToolkit):
         cache_dir (str): Directory for caching. Defaults to "tmp/".
         enabled_tools (Optional[List[str]]): List of enabled tools.
             Defaults to None.
-        enable_reasoning (bool): Whether to enable reasoning when agent
-            is using the browser toolkit. Defaults to False. agent will
-            provide explanations for its actions when this is enabled.
         browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
         log_dir (Optional[str]): Custom directory path for log files.
@@ -96,7 +93,6 @@ class HybridBrowserToolkit(BaseToolkit):
         stealth: bool = False,
         cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
-        enable_reasoning: bool = False,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -131,9 +127,6 @@ class HybridBrowserToolkit(BaseToolkit):
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
                 Defaults to None.
-            enable_reasoning (bool): Whether to enable reasoning when agent
-                is using the browser toolkit. Defaults to False. agent will
-                provide explanations for its actions when this is enabled.
             browser_log_to_file (bool): Whether to log browser actions to
                 file. Defaults to False.
             log_dir (Optional[str]): Custom directory path for log files.
@@ -189,7 +182,6 @@ class HybridBrowserToolkit(BaseToolkit):
                 stealth=stealth,
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
-                enable_reasoning=enable_reasoning,
                 browser_log_to_file=browser_log_to_file,
                 log_dir=log_dir,
                 session_id=session_id,
