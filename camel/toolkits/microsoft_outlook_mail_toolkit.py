@@ -27,7 +27,6 @@ from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, api_keys_required
-from camel.utils.commons import run_async
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -701,7 +700,7 @@ class OutlookMailToolkit(BaseToolkit):
 
         return mail_message
 
-    async def send_email(
+    async def outlook_send_email(
         self,
         to_email: List[str],
         subject: str,
@@ -795,19 +794,19 @@ class OutlookMailToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(run_async(self.send_email)),
-            FunctionTool(run_async(self.create_draft_email)),
-            FunctionTool(run_async(self.send_draft_email)),
-            FunctionTool(run_async(self.delete_email)),
-            FunctionTool(run_async(self.move_message_to_folder)),
-            FunctionTool(run_async(self.get_attachments)),
-            FunctionTool(run_async(self.get_message)),
-            FunctionTool(run_async(self.list_messages)),
-            FunctionTool(run_async(self.reply_to_email)),
-            FunctionTool(run_async(self.update_draft_message)),
+            FunctionTool(self.outlook_send_email),
+            FunctionTool(self.outlook_create_draft_email),
+            FunctionTool(self.outlook_send_draft_email),
+            FunctionTool(self.outlook_delete_email),
+            FunctionTool(self.outlook_move_message_to_folder),
+            FunctionTool(self.outlook_get_attachments),
+            FunctionTool(self.outlook_get_message),
+            FunctionTool(self.outlook_list_messages),
+            FunctionTool(self.outlook_reply_to_email),
+            FunctionTool(self.outlook_update_draft_message),
         ]
 
-    async def create_draft_email(
+    async def outlook_create_draft_email(
         self,
         to_email: List[str],
         subject: str,
@@ -881,7 +880,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def send_draft_email(self, draft_id: str) -> Dict[str, Any]:
+    async def outlook_send_draft_email(self, draft_id: str) -> Dict[str, Any]:
         """Sends a draft email via Microsoft Outlook.
 
         Args:
@@ -909,7 +908,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def delete_email(self, message_id: str) -> Dict[str, Any]:
+    async def outlook_delete_email(self, message_id: str) -> Dict[str, Any]:
         """Deletes an email from Microsoft Outlook.
 
         Args:
@@ -935,7 +934,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def move_message_to_folder(
+    async def outlook_move_message_to_folder(
         self, message_id: str, destination_folder_id: str
     ) -> Dict[str, Any]:
         """Moves an email to a specified folder in Microsoft Outlook.
@@ -980,7 +979,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def get_attachments(
+    async def outlook_get_attachments(
         self,
         message_id: str,
         metadata_only: bool = True,
@@ -1338,7 +1337,7 @@ class OutlookMailToolkit(BaseToolkit):
             if not include_attachments:
                 return details
 
-            attachments_info = await self.get_attachments(
+            attachments_info = await self.outlook_get_attachments(
                 message_id=details['message_id'],
                 metadata_only=attachment_metadata_only,
                 include_inline_attachments=include_inline_attachments,
@@ -1352,7 +1351,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def get_message(
+    async def outlook_get_message(
         self,
         message_id: str,
         return_html_content: bool = False,
@@ -1452,7 +1451,7 @@ class OutlookMailToolkit(BaseToolkit):
             )
             return None
 
-    async def list_messages(
+    async def outlook_list_messages(
         self,
         folder_ids: Optional[List[str]] = None,
         filter_query: Optional[str] = None,
@@ -1612,7 +1611,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def reply_to_email(
+    async def outlook_reply_to_email(
         self,
         message_id: str,
         content: str,
@@ -1670,7 +1669,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def update_draft_message(
+    async def outlook_update_draft_message(
         self,
         message_id: str,
         subject: Optional[str] = None,

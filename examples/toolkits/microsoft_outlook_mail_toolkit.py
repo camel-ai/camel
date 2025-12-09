@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
+import asyncio
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -48,22 +48,25 @@ outlook_agent = ChatAgent(
     tools=all_tools,
 )
 
-# Example: Send an email
-print("\nExample: Sending an email")
-print("=" * 50)
 
-user_message = (
-    "Send an email to test@example.com with subject "
-    "'Hello from Outlook Toolkit' and body 'This is a test email "
-    "sent using the CAMEL Outlook toolkit.'"
-)
+async def main():
+    print("\nExample: Sending an email")
+    print("=" * 50)
 
-response = outlook_agent.step(user_message)
-print("Agent Response:")
-print(response.msgs[0].content)
-print("\nTool calls:")
-print(response.info['tool_calls'])
+    user_message = (
+        "Send an email to test@example.com with subject "
+        "'Hello from Outlook Toolkit' and body 'This is a test email "
+        "sent using the CAMEL Outlook toolkit.'"
+    )
 
+    response = await outlook_agent.astep(user_message)
+    print("Agent Response:")
+    print(response.msgs[0].content)
+    print("\nTool calls:")
+    print(response.info['tool_calls'])
+
+
+asyncio.run(main())
 """
 Example: Sending an email
 ==================================================
@@ -72,7 +75,7 @@ Done  your message has been sent to test@example.com.
 
 Tool calls:
 [ToolCallingRecord(
-    tool_name='send_email',
+    tool_name='outlook_send_email',
     args={
         'to_email': ['test@example.com'],
         'subject': 'Hello from Outlook Toolkit',
