@@ -102,12 +102,8 @@ def openai_messages_to_camel(
                     )
                 elif item_t == "input_image":
                     image_url = item.get("image_url", "")
-                    # input_image in Responses API uses "image_url" field
-                    # which is a string URL
-                    # But wait, the user snippet shows: "image_url": "..."
-                    # Chat API "image_url" is a dict {"url": "...", ...}
-                    # Responses API "input_image" has "image_url" string.
-
+                    if isinstance(image_url, dict):
+                        image_url = image_url.get("url", "")
                     payload = {"url": image_url}
                     parts.append(
                         CamelContentPart(type="input_image", payload=payload)
@@ -181,8 +177,26 @@ def camel_messages_to_openai(
                 hybrid.append(
                     {"type": "text", "text": part.payload.get("text", "")}
                 )
+            elif part.type == "input_text":
+                # Responses-style input_text -> Chat text for compatibility
+                hybrid.append(
+                    {
+                        "type": "text",
+                        "text": part.payload.get("text", ""),
+                    }
+                )
             elif part.type == "image_url":
                 url = part.payload.get("url")
+                detail = part.payload.get("detail") or "auto"
+                hybrid.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": url, "detail": detail},
+                    }
+                )
+            elif part.type == "input_image":
+                # Responses-style input_image -> Chat image_url schema
+                url = part.payload.get("url") or part.payload.get("image_url")
                 detail = part.payload.get("detail") or "auto"
                 hybrid.append(
                     {
@@ -296,8 +310,8 @@ def camel_messages_to_responses_request(
                         instructions_parts.append(str(txt))
             continue
 
-        # Map other roles to a user message for broad compat in Responses
-        role = "user"
+        # Map other roles to Responses-supported roles (user/assistant)
+        role = "assistant" if msg.role == "assistant" else "user"
         content_frags = [_part_to_responses_fragment(p) for p in msg.content]
         input_messages.append(
             {
