@@ -408,7 +408,9 @@ class OutlookCalendarToolkit(BaseToolkit):
         """Builds a list of Location objects from names of locations."""
         from msgraph.generated.models.location import Location
 
-        all_locations: List[Location] = [Location(display_name=loc) for loc in locations]
+        all_locations: List[Location] = [
+            Location(display_name=loc) for loc in locations
+        ]
         return all_locations
 
     def _create_importance(
