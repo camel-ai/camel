@@ -579,8 +579,24 @@ export class HybridBrowserSession {
       const shouldCheckDiff = isCombobox || isTextbox;
 
       let snapshotBefore: string | null = null;
+      let comboboxAriaLabel: string | null = null;
       if (shouldCheckDiff) {
         snapshotBefore = await (page as any)._snapshotForAI();
+        // Capture aria-label for combobox to find it again after click (ref may change)
+        if (isCombobox) {
+          comboboxAriaLabel = await element.getAttribute('aria-label');
+          if (!comboboxAriaLabel) {
+            // Try to get accessible name from aria-labelledby or inner text
+            comboboxAriaLabel = await element.evaluate(el => {
+              const labelledBy = el.getAttribute('aria-labelledby');
+              if (labelledBy) {
+                const labelEl = document.getElementById(labelledBy);
+                if (labelEl) return labelEl.textContent?.trim() || null;
+              }
+              return el.textContent?.trim() || null;
+            });
+          }
+        }
       }
 
       //  Check element properties
@@ -658,7 +674,19 @@ export class HybridBrowserSession {
         if (shouldCheckDiff && snapshotBefore) {
           await page.waitForTimeout(300);
           const snapshotAfter = await (page as any)._snapshotForAI();
-          const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+          let diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+
+          // For combobox, find the new ref based on aria-label and prepend to diffSnapshot
+          if (isCombobox && comboboxAriaLabel) {
+            const newComboboxRef = this.findComboboxRefByAriaLabel(snapshotAfter, comboboxAriaLabel);
+            if (newComboboxRef) {
+              // Find the full line for this combobox in the snapshot
+              const comboboxLine = this.findSnapshotLineByRef(snapshotAfter, newComboboxRef);
+              if (comboboxLine) {
+                diffSnapshot = comboboxLine + (diffSnapshot ? '\n' + diffSnapshot : '');
+              }
+            }
+          }
 
           if (diffSnapshot && diffSnapshot.trim() !== '') {
             return { success: true, method: 'playwright-aria-ref', diffSnapshot };
@@ -707,6 +735,57 @@ export class HybridBrowserSession {
     } else {
       return '';
     }
+  }
+
+  /**
+   * Find a combobox ref in the snapshot by its aria-label or expanded state
+   */
+  private findComboboxRefByAriaLabel(snapshot: string, ariaLabel: string): string | null {
+    const lines = snapshot.split('\n');
+    // Escape special regex characters in ariaLabel
+    const escapedLabel = ariaLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // First, try to find by aria-label
+    for (const line of lines) {
+      const isCombobox = /\bcombobox\b/i.test(line);
+      const hasLabel = new RegExp(`["']${escapedLabel}["']`, 'i').test(line) ||
+                       line.includes(ariaLabel);
+
+      if (isCombobox && hasLabel) {
+        const refMatch = line.match(/\[ref=([^\]]+)\]/);
+        if (refMatch) {
+          return refMatch[1];
+        }
+      }
+    }
+
+    // Fallback: find the expanded combobox (since we just clicked it)
+    for (const line of lines) {
+      const isCombobox = /\bcombobox\b/i.test(line);
+      const isExpanded = /\[expanded\]/i.test(line);
+
+      if (isCombobox && isExpanded) {
+        const refMatch = line.match(/\[ref=([^\]]+)\]/);
+        if (refMatch) {
+          return refMatch[1];
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Find the full snapshot line for a given ref
+   */
+  private findSnapshotLineByRef(snapshot: string, ref: string): string | null {
+    const lines = snapshot.split('\n');
+    for (const line of lines) {
+      if (line.includes(`[ref=${ref}]`)) {
+        return line.trim();
+      }
+    }
+    return null;
   }
 
   /**

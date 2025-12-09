@@ -1,5 +1,13 @@
 <a id="camel.agents.chat_agent"></a>
 
+<a id="camel.agents.chat_agent._cleanup_temp_files"></a>
+
+## _cleanup_temp_files
+
+```python
+def _cleanup_temp_files():
+```
+
 <a id="camel.agents.chat_agent.StreamContentAccumulator"></a>
 
 ## StreamContentAccumulator
@@ -39,6 +47,16 @@ def add_streaming_content(self, new_content: str):
 
 Add new streaming content.
 
+<a id="camel.agents.chat_agent.StreamContentAccumulator.add_reasoning_content"></a>
+
+### add_reasoning_content
+
+```python
+def add_reasoning_content(self, new_reasoning: str):
+```
+
+Add new reasoning content.
+
 <a id="camel.agents.chat_agent.StreamContentAccumulator.add_tool_status"></a>
 
 ### add_tool_status
@@ -58,6 +76,16 @@ def get_full_content(self):
 ```
 
 Get the complete accumulated content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.get_full_reasoning_content"></a>
+
+### get_full_reasoning_content
+
+```python
+def get_full_reasoning_content(self):
+```
+
+Get the complete accumulated reasoning content.
 
 <a id="camel.agents.chat_agent.StreamContentAccumulator.get_content_with_new_status"></a>
 
@@ -229,9 +257,9 @@ Class for managing conversations of CAMEL Chat Agents.
 - **system_message** (Union[BaseMessage, str], optional): The system message for the chat agent. (default: :obj:`None`) model (Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]], optional): The model backend(s) to use. Can be a single instance, a specification (string, enum, tuple), or a list of instances or specifications to be managed by `ModelManager`. If a list of specifications (not `BaseModelBackend` instances) is provided, they will be instantiated using `ModelFactory`. (default: :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
 - **memory** (AgentMemory, optional): The agent memory for managing chat messages. If `None`, a :obj:`ChatHistoryMemory` will be used. (default: :obj:`None`)
 - **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
-- **token_limit** (int, optional): The maximum number of tokens in a context. The context will be automatically pruned to fulfill the limitation. If `None`, it will be set according to the backend model. (default: :obj:`None`)
+- **summarize_threshold** (int, optional): The percentage of the context window that triggers summarization. If `None`, will trigger summarization when the context window is full. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agent. (default: :obj:`None`)
-- **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
+- **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]], optional): List of toolkit instances that inherit from :obj:`RegisteredAgentToolkit`. The agent will register itself with these toolkits, allowing them to access the agent instance. Note: This does NOT add the toolkit's tools to the agent. To use tools from these toolkits, pass them explicitly via the `tools` parameter. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
 - **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
 - **scheduling_strategy** (str): name of function that defines how to select the next model in ModelManager. (default: :str:`round_robin`)
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
@@ -239,7 +267,14 @@ Class for managing conversations of CAMEL Chat Agents.
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
 - **tool_execution_timeout** (Optional[float], optional): Timeout for individual tool execution. If None, wait indefinitely.
 - **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
-- **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
+- **pause_event** (Optional[Union[threading.Event, asyncio.Event]]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. Use threading.Event for sync operations or asyncio.Event for async operations. (default: :obj:`None`)
+- **prune_tool_calls_from_memory** (bool): Whether to clean tool call messages from memory after response generation to save token usage. When enabled, removes FUNCTION/TOOL role messages and ASSISTANT messages with tool_calls after each step. (default: :obj:`False`)
+- **enable_snapshot_clean** (bool, optional): Whether to clean snapshot markers and references from historical tool outputs in memory. This removes verbose DOM markers (like [ref=...]) from older tool results while keeping the latest output intact for immediate use. (default: :obj:`False`)
+- **retry_attempts** (int, optional): Maximum number of retry attempts for rate limit errors. (default: :obj:`3`)
+- **retry_delay** (float, optional): Initial delay in seconds between retries. Uses exponential backoff. (default: :obj:`1.0`)
+- **step_timeout** (Optional[float], optional): Timeout in seconds for the entire step operation. If None, no timeout is applied. (default: :obj:`None`)
+- **stream_accumulate** (bool, optional): When True, partial streaming updates return accumulated content (current behavior). When False, partial updates return only the incremental delta. (default: :obj:`True`)
+- **summary_window_ratio** (float, optional): Maximum fraction of the total context window that can be occupied by summary information. Used to limit how much of the model's context is reserved for summarization results. (default: :obj:`0.6`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -252,18 +287,27 @@ def __init__(
     model: Optional[Union[BaseModelBackend, ModelManager, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]]] = None,
     memory: Optional[AgentMemory] = None,
     message_window_size: Optional[int] = None,
+    summarize_threshold: Optional[int] = 50,
     token_limit: Optional[int] = None,
     output_language: Optional[str] = None,
     tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+    toolkits_to_register_agent: Optional[List[RegisteredAgentToolkit]] = None,
     external_tools: Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]] = None,
     response_terminators: Optional[List[ResponseTerminator]] = None,
     scheduling_strategy: str = 'round_robin',
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
-    tool_execution_timeout: Optional[float] = None,
+    tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     mask_tool_output: bool = False,
-    pause_event: Optional[asyncio.Event] = None
+    pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
+    prune_tool_calls_from_memory: bool = False,
+    enable_snapshot_clean: bool = False,
+    retry_attempts: int = 3,
+    retry_delay: float = 1.0,
+    step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+    stream_accumulate: bool = True,
+    summary_window_ratio: float = 0.6
 ):
 ```
 
@@ -364,6 +408,50 @@ Set the output language for the agent.
 
 Note that this will clear the message history.
 
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self):
+```
+
+Returns the agent memory.
+
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self, value: AgentMemory):
+```
+
+Set the agent memory.
+
+When setting a new memory, the system message is automatically
+re-added to ensure it's not lost.
+
+**Parameters:**
+
+- **value** (AgentMemory): The new agent memory to use.
+
+<a id="camel.agents.chat_agent.ChatAgent.set_context_utility"></a>
+
+### set_context_utility
+
+```python
+def set_context_utility(self, context_utility: Optional[ContextUtility]):
+```
+
+Set the context utility for the agent.
+
+This allows external components (like SingleAgentWorker) to provide
+a shared context utility instance for workflow management.
+
+**Parameters:**
+
+- **context_utility** (ContextUtility, optional): The context utility to use. If None, the agent will create its own when needed.
+
 <a id="camel.agents.chat_agent.ChatAgent._get_full_tool_schemas"></a>
 
 ### _get_full_tool_schemas
@@ -374,6 +462,122 @@ def _get_full_tool_schemas(self):
 
 Returns a list of tool schemas of all tools, including internal
 and external tools.
+
+<a id="camel.agents.chat_agent.ChatAgent._is_token_limit_error"></a>
+
+### _is_token_limit_error
+
+```python
+def _is_token_limit_error(error: Exception):
+```
+
+Return True when the exception message indicates a token limit.
+
+<a id="camel.agents.chat_agent.ChatAgent._is_tool_related_record"></a>
+
+### _is_tool_related_record
+
+```python
+def _is_tool_related_record(record: MemoryRecord):
+```
+
+Determine whether the given memory record
+belongs to a tool call.
+
+<a id="camel.agents.chat_agent.ChatAgent._find_indices_to_remove_for_last_tool_pair"></a>
+
+### _find_indices_to_remove_for_last_tool_pair
+
+```python
+def _find_indices_to_remove_for_last_tool_pair(self, recent_records: List[ContextRecord]):
+```
+
+**Returns:**
+
+  List[int]: Indices to remove (may be non-contiguous).
+
+<a id="camel.agents.chat_agent.ChatAgent._serialize_tool_args"></a>
+
+### _serialize_tool_args
+
+```python
+def _serialize_tool_args(args: Dict[str, Any]):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._build_tool_signature"></a>
+
+### _build_tool_signature
+
+```python
+def _build_tool_signature(cls, func_name: str, args: Dict[str, Any]):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._describe_tool_call"></a>
+
+### _describe_tool_call
+
+```python
+def _describe_tool_call(self, record: Optional[ToolCallingRecord]):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._update_last_tool_call_state"></a>
+
+### _update_last_tool_call_state
+
+```python
+def _update_last_tool_call_state(self, record: Optional[ToolCallingRecord]):
+```
+
+Track the most recent tool call and its identifying signature.
+
+<a id="camel.agents.chat_agent.ChatAgent._format_tool_limit_notice"></a>
+
+### _format_tool_limit_notice
+
+```python
+def _format_tool_limit_notice(self):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._append_user_messages_section"></a>
+
+### _append_user_messages_section
+
+```python
+def _append_user_messages_section(summary_content: str, user_messages: List[str]):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._reset_summary_state"></a>
+
+### _reset_summary_state
+
+```python
+def _reset_summary_state(self):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._calculate_next_summary_threshold"></a>
+
+### _calculate_next_summary_threshold
+
+```python
+def _calculate_next_summary_threshold(self):
+```
+
+**Returns:**
+
+  int: The token count threshold for next summarization.
+
+<a id="camel.agents.chat_agent.ChatAgent._update_memory_with_summary"></a>
+
+### _update_memory_with_summary
+
+```python
+def _update_memory_with_summary(self, summary: str, include_summaries: bool = False):
+```
+
+Update memory with summary result.
+
+This method handles memory clearing and restoration of summaries based
+on whether it's a progressive or full compression.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_external_tool_names"></a>
 
@@ -404,6 +608,124 @@ def add_tools(self, tools: List[Union[FunctionTool, Callable]]):
 ```
 
 Add a list of tools to the agent.
+
+<a id="camel.agents.chat_agent.ChatAgent._serialize_tool_result"></a>
+
+### _serialize_tool_result
+
+```python
+def _serialize_tool_result(self, result: Any):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._clean_snapshot_line"></a>
+
+### _clean_snapshot_line
+
+```python
+def _clean_snapshot_line(self, line: str):
+```
+
+Clean a single snapshot line by removing prefixes and references.
+
+This method handles snapshot lines in the format:
+- [prefix] "quoted text" [attributes] [ref=...]: description
+
+It preserves:
+- Quoted text content (including brackets inside quotes)
+- Description text after the colon
+
+It removes:
+- Line prefixes (e.g., "- button", "- tooltip", "generic:")
+- Attribute markers (e.g., [disabled], [ref=e47])
+- Lines with only element types
+- All indentation
+
+**Parameters:**
+
+- **line**: The original line content.
+
+**Returns:**
+
+  The cleaned line content, or empty string if line should be
+removed.
+
+<a id="camel.agents.chat_agent.ChatAgent._clean_snapshot_content"></a>
+
+### _clean_snapshot_content
+
+```python
+def _clean_snapshot_content(self, content: str):
+```
+
+Clean snapshot content by removing prefixes, references, and
+deduplicating lines.
+
+This method identifies snapshot lines (containing element keywords or
+references) and cleans them while preserving non-snapshot content.
+It also handles JSON-formatted tool outputs with snapshot fields.
+
+**Parameters:**
+
+- **content**: The original snapshot content.
+
+**Returns:**
+
+  The cleaned content with deduplicated lines.
+
+<a id="camel.agents.chat_agent.ChatAgent._clean_text_snapshot"></a>
+
+### _clean_text_snapshot
+
+```python
+def _clean_text_snapshot(self, content: str):
+```
+
+Clean plain text snapshot content.
+
+This method:
+- Removes all indentation
+- Deletes empty lines
+- Deduplicates all lines
+- Cleans snapshot-specific markers
+
+**Parameters:**
+
+- **content**: The original snapshot text.
+
+**Returns:**
+
+  The cleaned content with deduplicated lines, no indentation,
+and no empty lines.
+
+<a id="camel.agents.chat_agent.ChatAgent._register_tool_output_for_cache"></a>
+
+### _register_tool_output_for_cache
+
+```python
+def _register_tool_output_for_cache(
+    self,
+    func_name: str,
+    tool_call_id: str,
+    result_text: str,
+    records: List[MemoryRecord]
+):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._process_tool_output_cache"></a>
+
+### _process_tool_output_cache
+
+```python
+def _process_tool_output_cache(self):
+```
+
+<a id="camel.agents.chat_agent.ChatAgent._clean_snapshot_in_memory"></a>
+
+### _clean_snapshot_in_memory
+
+```python
+def _clean_snapshot_in_memory(self, entry: _ToolOutputHistoryEntry):
+```
 
 <a id="camel.agents.chat_agent.ChatAgent.add_external_tool"></a>
 
@@ -468,27 +790,24 @@ def update_memory(
     self,
     message: BaseMessage,
     role: OpenAIBackendRole,
-    timestamp: Optional[float] = None
+    timestamp: Optional[float] = None,
+    return_records: bool = False
 ):
 ```
 
 Updates the agent memory with a new message.
 
-If the single *message* exceeds the model's context window, it will
-be **automatically split into multiple smaller chunks** before being
-written into memory. This prevents later failures in
-`ScoreBasedContextCreator` where an over-sized message cannot fit
-into the available token budget at all.
-
-This slicing logic handles both regular text messages (in the
-`content` field) and long tool call results (in the `result` field of
-a `FunctionCallingMessage`).
-
 **Parameters:**
 
 - **message** (BaseMessage): The new message to add to the stored messages.
 - **role** (OpenAIBackendRole): The backend role type.
-- **timestamp** (Optional[float], optional): Custom timestamp for the memory record. If `None`, the current time will be used. (default: :obj:`None`) (default: obj:`None`)
+- **timestamp** (Optional[float], optional): Custom timestamp for the memory record. If `None`, the current time will be used. (default: :obj:`None`)
+- **return_records** (bool, optional): When `__INLINE_CODE_0____INLINE_CODE_1__False`)
+
+**Returns:**
+
+  Optional[List[MemoryRecord]]: The records that were written when
+`__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4__`.
 
 <a id="camel.agents.chat_agent.ChatAgent.load_memory"></a>
 
@@ -537,6 +856,72 @@ into a JSON file using JsonStorage.
 
 - **path** (str): Target file path to store JSON data.
 
+<a id="camel.agents.chat_agent.ChatAgent.summarize"></a>
+
+### summarize
+
+```python
+def summarize(
+    self,
+    filename: Optional[str] = None,
+    summary_prompt: Optional[str] = None,
+    response_format: Optional[Type[BaseModel]] = None,
+    working_directory: Optional[Union[str, Path]] = None,
+    include_summaries: bool = False,
+    add_user_messages: bool = True
+):
+```
+
+Summarize the agent's current conversation context and persist it
+to a markdown file.
+
+.. deprecated:: 0.2.80
+Use :meth:`asummarize` for async/await support and better
+performance in parallel summarization workflows.
+
+**Parameters:**
+
+- **filename** (Optional[str]): The base filename (without extension) to use for the markdown file. Defaults to a timestamped name when not provided.
+- **summary_prompt** (Optional[str]): Custom prompt for the summarizer. When omitted, a default prompt highlighting key decisions, action items, and open questions is used.
+- **response_format** (Optional[Type[BaseModel]]): A Pydantic model defining the expected structure of the response. If provided, the summary will be generated as structured output and included in the result.
+- **include_summaries** (bool): Whether to include previously generated summaries in the content to be summarized. If False (default), only non-summary messages will be summarized. If True, all messages including previous summaries will be summarized (full compression). (default: :obj:`False`)
+- **working_directory** (Optional[str|Path]): Optional directory to save the markdown summary file. If provided, overrides the default directory used by ContextUtility.
+- **add_user_messages** (bool): Whether add user messages to summary. (default: :obj:`True`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the summary text, file
+path, status message, and optionally structured_summary if
+response_format was provided.
+
+See Also:
+:meth:`asummarize`: Async version for non-blocking LLM calls.
+
+<a id="camel.agents.chat_agent.ChatAgent._build_conversation_text_from_messages"></a>
+
+### _build_conversation_text_from_messages
+
+```python
+def _build_conversation_text_from_messages(self, messages: List[Any], include_summaries: bool = False):
+```
+
+Build conversation text from messages for summarization.
+
+This is a shared helper method that converts messages to a formatted
+conversation text string, handling tool calls, tool results, and
+regular messages.
+
+**Parameters:**
+
+- **messages** (List[Any]): List of messages to convert.
+- **include_summaries** (bool): Whether to include messages starting with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+
+**Returns:**
+
+  tuple[str, List[str]]: A tuple containing:
+- Formatted conversation text
+- List of user messages extracted from the conversation
+
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 
 ### clear_memory
@@ -571,6 +956,56 @@ def init_messages(self):
 
 Initializes the stored messages list with the current system
 message.
+
+<a id="camel.agents.chat_agent.ChatAgent.update_system_message"></a>
+
+### update_system_message
+
+```python
+def update_system_message(
+    self,
+    system_message: Union[BaseMessage, str],
+    reset_memory: bool = True
+):
+```
+
+Update the system message.
+It will reset conversation with new system message.
+
+**Parameters:**
+
+- **system_message** (Union[BaseMessage, str]): The new system message. Can be either a BaseMessage object or a string. If a string is provided, it will be converted into a BaseMessage object.
+- **reset_memory** (bool): Whether to reinitialize conversation messages after updating the system message. Defaults to True.
+
+<a id="camel.agents.chat_agent.ChatAgent.append_to_system_message"></a>
+
+### append_to_system_message
+
+```python
+def append_to_system_message(self, content: str, reset_memory: bool = True):
+```
+
+Append additional context to existing system message.
+
+**Parameters:**
+
+- **content** (str): The additional system message.
+- **reset_memory** (bool): Whether to reinitialize conversation messages after appending additional context. Defaults to True.
+
+<a id="camel.agents.chat_agent.ChatAgent.reset_to_original_system_message"></a>
+
+### reset_to_original_system_message
+
+```python
+def reset_to_original_system_message(self):
+```
+
+Reset system message to original, removing any appended context.
+
+This method reverts the agent's system message back to its original
+state, removing any workflow context or other modifications that may
+have been appended. Useful for resetting agent state in multi-turn
+scenarios.
 
 <a id="camel.agents.chat_agent.ChatAgent.record_message"></a>
 
@@ -656,6 +1091,18 @@ Handle response format when tools are not strict mode compatible.
   Tuple: (modified_message, modified_response_format,
 used_prompt_formatting)
 
+<a id="camel.agents.chat_agent.ChatAgent._is_called_from_registered_toolkit"></a>
+
+### _is_called_from_registered_toolkit
+
+```python
+def _is_called_from_registered_toolkit(self):
+```
+
+**Returns:**
+
+  bool: True if called from a RegisteredAgentToolkit, False otherwise
+
 <a id="camel.agents.chat_agent.ChatAgent._apply_prompt_based_parsing"></a>
 
 ### _apply_prompt_based_parsing
@@ -721,6 +1168,20 @@ a StreamingChatAgentResponse that behaves like
 ChatAgentResponse but can also be iterated for
 streaming updates.
 
+<a id="camel.agents.chat_agent.ChatAgent._step_impl"></a>
+
+### _step_impl
+
+```python
+def _step_impl(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Implementation of non-streaming step logic.
+
 <a id="camel.agents.chat_agent.ChatAgent.chat_history"></a>
 
 ### chat_history
@@ -775,18 +1236,6 @@ def _convert_to_chatagent_response(
 
 Parse the final model response into the chat agent response.
 
-<a id="camel.agents.chat_agent.ChatAgent._process_pending_images"></a>
-
-### _process_pending_images
-
-```python
-def _process_pending_images(self):
-```
-
-**Returns:**
-
-  List: List of successfully converted PIL Images.
-
 <a id="camel.agents.chat_agent.ChatAgent._record_final_output"></a>
 
 ### _record_final_output
@@ -797,37 +1246,6 @@ def _record_final_output(self, output_messages: List[BaseMessage]):
 
 Log final messages or warnings about multiple responses.
 
-<a id="camel.agents.chat_agent.ChatAgent._is_vision_error"></a>
-
-### _is_vision_error
-
-```python
-def _is_vision_error(self, exc: Exception):
-```
-
-Check if the exception is likely related to vision/image is not
-supported by the model.
-
-<a id="camel.agents.chat_agent.ChatAgent._has_images"></a>
-
-### _has_images
-
-```python
-def _has_images(self, messages: List[OpenAIMessage]):
-```
-
-Check if any message contains images.
-
-<a id="camel.agents.chat_agent.ChatAgent._strip_images_from_messages"></a>
-
-### _strip_images_from_messages
-
-```python
-def _strip_images_from_messages(self, messages: List[OpenAIMessage]):
-```
-
-Remove images from messages, keeping only text content.
-
 <a id="camel.agents.chat_agent.ChatAgent._get_model_response"></a>
 
 ### _get_model_response
@@ -837,8 +1255,10 @@ def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
     num_tokens: int,
+    current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
-    tool_schemas: Optional[List[Dict[str, Any]]] = None
+    tool_schemas: Optional[List[Dict[str, Any]]] = None,
+    prev_num_openai_messages: int = 0
 ):
 ```
 
@@ -849,7 +1269,7 @@ Internal function for agent step model response.
 ### _sanitize_messages_for_logging
 
 ```python
-def _sanitize_messages_for_logging(self, messages):
+def _sanitize_messages_for_logging(self, messages, prev_num_openai_messages: int):
 ```
 
 Sanitize OpenAI messages for logging by replacing base64 image
@@ -858,6 +1278,7 @@ data with a simple message and a link to view the image.
 **Parameters:**
 
 - **messages** (List[OpenAIMessage]): The OpenAI messages to sanitize.
+- **prev_num_openai_messages** (int): The number of openai messages logged in the previous iteration.
 
 **Returns:**
 
@@ -991,7 +1412,8 @@ def _record_tool_calling(
     args: Dict[str, Any],
     result: Any,
     tool_call_id: str,
-    mask_output: bool = False
+    mask_output: bool = False,
+    extra_content: Optional[Dict[str, Any]] = None
 ):
 ```
 
@@ -1005,6 +1427,7 @@ tool calling record.
 - **result** (Any): The result returned by the tool execution.
 - **tool_call_id** (str): A unique identifier for the tool call.
 - **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **extra_content** (Optional[Dict[str, Any]], optional): Additional content associated with the tool call. (default: :obj:`None`)
 
 **Returns:**
 
@@ -1108,15 +1531,12 @@ any tool call is complete.
 def _execute_tools_sync_with_status_accumulator(
     self,
     accumulated_tool_calls: Dict[str, Any],
-    content_accumulator: StreamContentAccumulator,
-    step_token_usage: Dict[str, int],
     tool_call_records: List[ToolCallingRecord]
 ):
 ```
 
-Execute multiple tools synchronously with
-proper content accumulation, using threads+queue for
-non-blocking status streaming.
+Execute multiple tools synchronously with proper content
+accumulation, using ThreadPoolExecutor for better timeout handling.
 
 <a id="camel.agents.chat_agent.ChatAgent._execute_tool_from_stream_data"></a>
 
@@ -1155,23 +1575,6 @@ Record the assistant message that contains tool calls.
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
 
-<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
-
-### _create_tool_status_response_with_accumulator
-
-```python
-def _create_tool_status_response_with_accumulator(
-    self,
-    accumulator: StreamContentAccumulator,
-    status_message: str,
-    status_type: str,
-    step_token_usage: Dict[str, int],
-    tool_calls: Optional[List[ToolCallingRecord]] = None
-):
-```
-
-Create a tool status response using content accumulator.
-
 <a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
 
 ### _create_streaming_response_with_accumulator
@@ -1183,7 +1586,8 @@ def _create_streaming_response_with_accumulator(
     new_content: str,
     step_token_usage: Dict[str, int],
     response_id: str = '',
-    tool_call_records: Optional[List[ToolCallingRecord]] = None
+    tool_call_records: Optional[List[ToolCallingRecord]] = None,
+    reasoning_delta: Optional[str] = None
 ):
 ```
 
@@ -1251,8 +1655,11 @@ configuration.
 def _clone_tools(self):
 ```
 
-Clone tools for new agent instance,
-handling stateful toolkits properly.
+**Returns:**
+
+  Tuple containing:
+- List of cloned tools/functions
+- List of RegisteredAgentToolkit instances need registration
 
 <a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
 
