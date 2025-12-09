@@ -326,6 +326,7 @@ def search_agent_factory(
         "browser_switch_tab",
         "browser_visit_page",
         "browser_get_page_snapshot",
+        "browser_get_som_screenshot",
     ]
     user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR", "")
     tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
@@ -385,10 +386,24 @@ operate with precision, efficiency, and a commitment to data quality.
         as completely as possible.
     2.  **Cite your source**: Include the exact URL where you found the
         information.
-    Your notes should be a detailed and complete record of the information
-    you have discovered. High-quality, detailed notes are essential for the
-    team's success.
+        Your notes should be a detailed and complete record of the information
+        you have discovered. High-quality, detailed notes are essential for the
+        team's success.
 
+    3.  You must perform explicit reasoning for every action you take.
+        Before executing any action, think through why this action is appropriate
+        and describe your rationale clearly and coherently, use need to pass the reasoning
+        to the tool call to explain why you use it if there is a reason parameter in tool.
+        If an action fails or produces an unexpected outcome,
+        you must conduct additional reasoning to analyze why the failure occurred
+        and determine how to adjust your approach to successfully complete the task.
+    4.  You may call browser_get_page_snapshot to obtain a textual snapshot of the current page.
+        When an action fails due to an element not being found,
+        you should use this tool to obtain the latest page snapshot and reassess the situation.
+    5.  You may call browser_get_som_screenshot to obtain a screenshot of the current page.
+        When textual snapshots are insufficient to locate a button or 
+        understand the state of an element,
+        use this tool to perform a visual inspection of the page.
 - When you complete your task, your final response must be a comprehensive
     summary of your findings, presented in a clear, detailed, and
     easy-to-read format. Avoid using markdown tables for presenting data;
@@ -403,7 +418,6 @@ Your capabilities include:
     powerful CLI tools like `grep` for searching within files, `curl` and
     `wget` for downloading content, and `jq` for parsing JSON data from APIs.
 - Use the note-taking tools to record your findings.
-
 </capabilities>
 
 <web_search_workflow>
