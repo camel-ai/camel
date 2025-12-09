@@ -32,7 +32,7 @@ def run_memory_toolkit_example():
 
     # Create a ChatAgent
     agent = ChatAgent(
-        system_message="""You are an assistant that can manage 
+        system_message="""You are an assistant that can manage
         conversation memory using tools.""",
         model=model,
     )

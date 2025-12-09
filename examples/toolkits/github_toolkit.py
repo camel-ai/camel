@@ -31,7 +31,7 @@ workflows/documentation.yml', '.github/workflows/pre_commit.yml', '.github/
 workflows/publish_release.yml', '.github/workflows/pytest_apps.yml', '.github/
 workflows/pytest_package.yml', '.gitignore', '.pre-commit-config.yaml', '.
 style.yapf', 'CONTRIBUTING.md', 'LICENSE', 'Makefile', 'README.md', 'apps/
-agents/README.md', 'apps/agents/agents.py', 'apps/agents/test/test_agents.py', 
+agents/README.md', 'apps/agents/agents.py', 'apps/agents/test/test_agents.py',
 'apps/agents/test/test_text_utils.py', 'apps/agents/text_utils.py', 'apps/
 common/auto_zip.py', 'apps/common/test/test_archive_1.zip', 'apps/common/test/
 test_auto_zip.py', 'apps/data_explorer/.gitignore', 'apps/data_explorer/README.
@@ -40,7 +40,7 @@ py', 'apps/data_explorer/loader.py', 'apps/data_explorer/test/
 test_data_explorer.py', 'apps/data_explorer/test/test_loader.py', 'apps/
 dilemma/database_connection.py', 'apps/dilemma/dilemma.py', 'apps/dilemma/
 requirements.txt', 'camel/__init__.py', 'camel/agents/__init__.py', 'camel/
-agents/base.py', 'camel/agents/chat_agent.py', 'camel/agents/critic_agent.py', 
+agents/base.py', 'camel/agents/chat_agent.py', 'camel/agents/critic_agent.py',
 'camel/agents/deductive_reasoner_agent.py',...
 ===============================================================================
 """

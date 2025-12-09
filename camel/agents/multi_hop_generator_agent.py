@@ -56,7 +56,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
 
         system_text: str = textwrap.dedent(
             """\
-            You are an expert at generating 
+            You are an expert at generating
             multi-hop question-answer pairs.
             For each context, you should:
             1. Identify multiple related facts or pieces of information

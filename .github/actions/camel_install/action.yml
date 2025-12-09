@@ -21,7 +21,7 @@ runs:
       name: Restore caches for the virtual environment based on uv.lock
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('uv.lock') }}
+        key: venv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
     - name: Validate cached virtual environment
       id: validate-venv
       if: steps.cache-restore.outputs.cache-hit == 'true'
@@ -49,4 +49,4 @@ runs:
       if: steps.cache-restore.outputs.cache-hit != 'true' || steps.validate-venv.outputs.cache-valid == 'false'
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('uv.lock') }}
+        key: venv-${{ hashFiles('uv.lock', 'pyproject.toml') }}

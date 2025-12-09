@@ -59,8 +59,8 @@ if __name__ == "__main__":
             ShareGPTMessage(
                 from_="tool",
                 value='''<tool_response>
-{"name": "get_stock_fundamentals", "content": 
-{"symbol": "TSLA", "company_name": "Tesla, Inc.", 
+{"name": "get_stock_fundamentals", "content":
+{"symbol": "TSLA", "company_name": "Tesla, Inc.",
 "sector": "Consumer Cyclical", "pe_ratio": 49.604652}}
 </tool_response>''',
             ),

@@ -225,7 +225,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
         mock_handler = Mock(return_value="Custom message sent")
         mock_handler.__name__ = 'custom_notify'
         mock_handler.__doc__ = """Send custom notification.
-        
+
         Args:
             level: Notification level
             action: Action being performed

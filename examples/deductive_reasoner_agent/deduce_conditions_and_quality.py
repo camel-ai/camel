@@ -30,7 +30,7 @@ def main(model=None) -> None:
     print(
         Fore.GREEN
         + "Conditions and quality from the starting state:\n"
-        + f"{json.dumps(conditions_and_quality, 
+        + f"{json.dumps(conditions_and_quality,
             indent=4, ensure_ascii=False)}",
         Fore.RESET,
     )

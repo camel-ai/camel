@@ -42,7 +42,7 @@ model_3_pro_pre = ModelFactory.create(
 )
 
 user_msg = """
-Create an interactive HTML webpage that allows users to play with a 
+Create an interactive HTML webpage that allows users to play with a
 Rubik's Cube, and saved it to local file.
 """
 
@@ -83,9 +83,9 @@ print(response_pro.msgs[0].content)
 ===============================================================================
 Hello and a big hi to the entire CAMEL AI community!
 
-It's fantastic to acknowledge your dedication to 
-the important and fascinating study of autonomous and communicative agents. 
-Open-source collaboration is the engine of innovation, 
+It's fantastic to acknowledge your dedication to
+the important and fascinating study of autonomous and communicative agents.
+Open-source collaboration is the engine of innovation,
 and your work is pushing the boundaries of what's possible in AI.
 
 Keep up the brilliant research and community building

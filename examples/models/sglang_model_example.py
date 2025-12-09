@@ -21,7 +21,7 @@ from camel.types import ModelPlatformType
 
 r"""Before using sglang to run LLM model offline,
 you need to install flashinfer.
-Consider your machine's configuration and 
+Consider your machine's configuration and
 install flashinfer in a appropriate version.
 For more details, please refer to:
 https://sgl-project.github.io/start/install.html
@@ -29,7 +29,7 @@ https://docs.flashinfer.ai/installation.html
 
 Please load HF_token in your environment variable.
 export HF_TOKEN=""
-When using the OpenAI interface to run SGLang model server, 
+When using the OpenAI interface to run SGLang model server,
 the base model may fail to recognize  huggingface default
 chat template, switching to the Instruct model resolves the issue.
 """
@@ -92,7 +92,7 @@ Currently supported parsers include:
 llama3: Llama 3.1 / 3.2 (e.g. meta-llama/Llama-3.1-8B-Instruct,
         meta-llama/Llama-3.2-1B-Instruct).
 mistral: Mistral (e.g. mistralai/Mistral-7B-Instruct-v0.3,
-         mistralai/Mistral-Nemo-Instruct-2407, 
+         mistralai/Mistral-Nemo-Instruct-2407,
          mistralai/ Mistral-Nemo-Instruct-2407, mistralai/Mistral-7B-v0.3).
 qwen25: Qwen 2.5 (e.g. Qwen/Qwen2.5-1.5B-Instruct, Qwen/Qwen2.5-7B-Instruct).
 """

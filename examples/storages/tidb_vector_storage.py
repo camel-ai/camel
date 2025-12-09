@@ -23,10 +23,10 @@ Before the DATABASE_URL, you can setup the a TiDB database cluster first:
 
 (Option 1): TiDB Serverless
 
-1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create 
+1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create
     a serverless cluster
 2. Click the **Connect** button
-3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then 
+3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then
     you can get the DATABASE_URL like:
 
 DATABASE_URL="mysql+pymysql://<USERNAME>:<PASSWORD>@<HOST>:4000/test&ssl_verify_cert=true&ssl_verify_identity=true"

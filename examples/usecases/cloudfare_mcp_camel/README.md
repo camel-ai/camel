@@ -52,7 +52,7 @@ This project provides a Streamlit-based web interface to interact with public Cl
     ```
     If `mcp-remote` is used by your `mcp_config.json` (as in the default configuration for this project), ensure it can be executed. You might need to install it globally or ensure `npx` can run it:
     ```bash
-    npm install -g mcp-remote 
+    npm install -g mcp-remote
     ```
 
 4.  **Set up your API Key:**
@@ -109,4 +109,4 @@ The application will open in your default web browser, usually at `http://localh
 
 ## Contributing
 
-Feel free to open issues or submit pull requests if you have suggestions for improvements or bug fixes. 
+Feel free to open issues or submit pull requests if you have suggestions for improvements or bug fixes.

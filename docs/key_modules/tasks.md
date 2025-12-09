@@ -6,7 +6,7 @@ icon: list-check
 For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/multi_agent_society/task_generation.ipynb)
 
 <Card title="What is a Task in CAMEL?" icon="clipboard-list">
-A <b>task</b> in CAMEL is a structured assignment that can be given to one or more agents. Tasks are higher-level than prompts and managed by modules like the Planner and Workforce. 
+A <b>task</b> in CAMEL is a structured assignment that can be given to one or more agents. Tasks are higher-level than prompts and managed by modules like the Planner and Workforce.
 <b>Key ideas:</b><br/>
 - Tasks can be <b>collaborative</b>, requiring multiple agents.<br/>
 - Tasks can be <b>decomposed</b> into subtasks or evolved over time.<br/>

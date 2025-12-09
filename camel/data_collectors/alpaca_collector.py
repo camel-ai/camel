@@ -26,7 +26,7 @@ DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
     and convert them into a structured JSON format.
     For example:
-    Instruction: You are a helpful assistant. 
+    Instruction: You are a helpful assistant.
     User: When is the release date of the video game Portal?
     Assistant: The release date of the video game Portal is October 9.
     Your output should be:

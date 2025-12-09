@@ -278,7 +278,7 @@ if __name__ == "__main__":
 ============================================================
 
 1️⃣ Example 1: Get departments and send welcome message
-Text Message Response: I retrieved the department list and sent the welcome 
+Text Message Response: I retrieved the department list and sent the welcome
 message.
 
 Departments found:
@@ -301,7 +301,7 @@ Tool calls:
 
 
 2️⃣ Example 2: Get user info and send markdown message
-User Info and Markdown Response: I fetched the user details and sent a 
+User Info and Markdown Response: I fetched the user details and sent a
 formatted markdown message.
 
 User details:
@@ -324,18 +324,18 @@ Tool calls:
        title: "User Profile — 测试用户"
        markdown_content: |
          ### 用户资料
-         
-         - **姓名**: 测试用户  
-         - **用户ID**: test_userid  
-         - **部门**: 技术部, 产品部  
-         - **职位**: 高级工程师  
-         - **手机**: 138****1234  
+
+         - **姓名**: 测试用户
+         - **用户ID**: test_userid
+         - **部门**: 技术部, 产品部
+         - **职位**: 高级工程师
+         - **手机**: 138****1234
          - **邮箱**: test@company.com
 
 
 
 3️⃣ Example 3: Search users and send webhook notification
-User Search and Webhook Response: Search completed and webhook notification 
+User Search and Webhook Response: Search completed and webhook notification
 sent. Results:
 - 测试用户 (test_userid) — 部门: 技术部
 - 测试用户2 (test_user2) — 部门: 产品部
@@ -350,11 +350,11 @@ Tool calls:
      Args:
        content: |
          # User search results for 'test'
-         
+
          - 测试用户 (test_userid) — 部门: 技术部
          - 测试用户2 (test_user2) — 部门: 产品部
          - 测试用户3 (test_user3) — 部门: 运营部
-         
+
          Total: 3 users found.
        msgtype: "markdown"
        title: "User Search Results"
@@ -364,7 +364,7 @@ Tool calls:
 
 
 4️⃣ Example 4: Send multiple message types
-Multiple Message Types Response: Done — text message to test_userid sent and 
+Multiple Message Types Response: Done — text message to test_userid sent and
 webhook status message posted.
 Tool calls:
   1. send_text_message
@@ -376,14 +376,14 @@ Tool calls:
      Args:
        content: |
          ### System Status
-         
+
          - **Overall**: ✅ Operational
          - **Uptime**: 72 hours
          - **Services**:
            - API: ✅ Healthy
            - Messaging: ✅ Healthy
            - Database: ✅ Healthy
-         
+
          _Last checked: just now_
        msgtype: "markdown"
        title: "System Status"

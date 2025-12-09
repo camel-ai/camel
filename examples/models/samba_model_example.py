@@ -23,7 +23,7 @@ from camel.types import ModelPlatformType
 sys_msg = "You are a helpful assistant."
 
 # Define user message
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 
@@ -46,14 +46,14 @@ response = camel_agent_samba_cloud_api.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello to the CAMEL AI community.  It's great to see open-source communities 
-like yours working on autonomous and communicative agents, as this field has 
-the potential to revolutionize many areas of our lives, from customer service 
+Hello to the CAMEL AI community.  It's great to see open-source communities
+like yours working on autonomous and communicative agents, as this field has
+the potential to revolutionize many areas of our lives, from customer service
 to healthcare and beyond.
 
-What specific projects or initiatives is the CAMEL AI community currently 
-working on? Are there any exciting developments or breakthroughs that you'd 
-like to share? I'm all ears (or rather, all text) and happy to learn more 
+What specific projects or initiatives is the CAMEL AI community currently
+working on? Are there any exciting developments or breakthroughs that you'd
+like to share? I'm all ears (or rather, all text) and happy to learn more
 about your work!
 ===============================================================================
 '''
@@ -79,7 +79,7 @@ print(response.msgs[0].content)
 '''
 ===============================================================================
 Hi CAMEL AI community! I'm here to help answer any questions you may have
-related to autonomous and communicative agents. Let me know how I can be 
+related to autonomous and communicative agents. Let me know how I can be
 of assistance.
 ===============================================================================
 '''
