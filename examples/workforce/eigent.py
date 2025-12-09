@@ -330,11 +330,10 @@ def search_agent_factory(
         "browser_get_page_snapshot",
         "browser_get_som_screenshot",
     ]
-    user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR", "")
     tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
 
     web_toolkit_custom = HybridBrowserToolkit(
-        headless=True,
+        headless=False,
         enabled_tools=custom_tools,
         enable_reasoning=True,
         browser_log_to_file=True,
@@ -343,7 +342,6 @@ def search_agent_factory(
         viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="about:blank",
-        user_data_dir=user_data_dir,
         log_dir=tool_log_dir,
     )
 
@@ -447,7 +445,6 @@ data.
             content=system_message,
         ),
         model=model,
-        enable_tool_output_cache=True,
         tools=tools,
         # prune_tool_calls_from_memory=True,
     )
@@ -638,7 +635,6 @@ supported formats including advanced spreadsheet functionality.
             role_name="Document Agent",
             content=system_message,
         ),
-        enable_tool_output_cache=True,
         model=model,
         tools=tools,
     )
