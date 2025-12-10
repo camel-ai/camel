@@ -72,7 +72,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_visit_page",
         "browser_back",
         "browser_forward",
-        "browser_get_page_snapshot",
+        "browser_get_page_dom",
         "browser_get_som_screenshot",
         "browser_click",
         "browser_type",
@@ -552,10 +552,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_get_page_snapshot(self) -> Dict[str, Any]:
-        r"""Gets a textual snapshot of the page's interactive elements.
+    async def browser_get_page_dom(self) -> Dict[str, Any]:
+        r"""Gets a textual snapshot of the page's interactive elements from dom.
 
-        The snapshot lists elements like buttons, links, and inputs,
+        The dom snapshot lists elements like buttons, links, and inputs,
         each with
         a unique `ref` ID. This ID is used by other tools (e.g., `click`,
         `type`) to interact with a specific element. This tool provides no
@@ -1905,7 +1905,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
         try:
-            snapshot_result = await self.browser_get_page_snapshot()
+            snapshot_result = await self.browser_get_page_dom()
             snapshot = (
                 snapshot_result["snapshot"]
                 if snapshot_result["success"]
@@ -1975,7 +1975,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_visit_page": self.browser_visit_page,
             "browser_back": self.browser_back,
             "browser_forward": self.browser_forward,
-            "browser_get_page_snapshot": self.browser_get_page_snapshot,
+            "browser_get_page_dom": self.browser_get_page_dom,
             "browser_get_som_screenshot": self.browser_get_som_screenshot,
             "browser_click": self.browser_click,
             "browser_type": self.browser_type,

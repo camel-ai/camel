@@ -327,7 +327,7 @@ def search_agent_factory(
         "browser_enter",
         "browser_switch_tab",
         "browser_visit_page",
-        "browser_get_page_snapshot",
+        "browser_get_page_dom",
         "browser_get_som_screenshot",
     ]
     tool_log_dir = os.getenv("CAMEL_BROWSER_TOOL_LOG_DIR", "")
@@ -402,16 +402,17 @@ browser_back, browser_forward
 
 browser_switch_tab
 
-When you cannot locate an element or state is unclear:
+Try to use browser_get_page_dom and browser_get_som_screenshot
+When the task fail or you cannot locate an element or state is unclear
+to have a better understanding of the page:
 
-You may call browser_get_page_snapshot to obtain a textual snapshot of
+You may call browser_get_page_dom to obtain a textual snapshot of
 the current page. When an action fails due to an element not being
 found, you should use this tool to obtain the latest page snapshot and
 reassess the situation.
+
 You may call browser_get_som_screenshot to obtain a screenshot of the
-current page. When textual snapshots are insufficient to locate a button
-or understand the state of an element, use this tool to perform a visual
-inspection of the page.
+current page. Use this tool to perform a visual inspection of the page.
 
 When encountering cookie consent dialogs, click "Accept All".
 
