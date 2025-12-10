@@ -24,8 +24,8 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GROQ_LLAMA_3_8B,
-        ModelType.GROQ_LLAMA_3_70B,
+        ModelType.GROQ_LLAMA_3_1_8B,
+        ModelType.GROQ_LLAMA_3_3_70B,
     ],
 )
 def test_groq_llama3_model(model_type: ModelType):
