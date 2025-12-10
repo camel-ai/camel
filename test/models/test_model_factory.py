@@ -99,7 +99,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         # Test GEMINI model
         (
             ModelPlatformType.GEMINI,
-            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_2_0_FLASH,
             GeminiConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
