@@ -342,7 +342,7 @@ def camel_messages_to_responses_request(
             ]
             input_messages.append(
                 {
-                    "role": "assistant",  # function outputs sit in assistant slot
+                    "role": "assistant",  # function outputs go here
                     "content": content_frags,
                 }
             )
