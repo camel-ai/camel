@@ -149,7 +149,9 @@ class FilesystemBackend(BaseBackend):
         """
         file_path = self._resolve(path)
         if not file_path.exists() or not file_path.is_file():
-            raise FileNotFoundError(f"Cannot read non-regular file: {file_path}")
+            raise FileNotFoundError(
+                f"Cannot read non-regular file: {file_path}"
+            )
 
         with file_path.open("r", encoding=self.default_encoding) as file_obj:
             if offset:
