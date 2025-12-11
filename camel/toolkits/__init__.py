@@ -179,5 +179,5 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
-     "ZoomInfoToolkit",
+    "ZoomInfoToolkit",
 ]
