@@ -309,7 +309,7 @@ class QdrantStorage(BaseVectorStorage):
         op_info = self._client.set_payload(
             collection_name=self.collection_name,
             payload=payload,
-            points=PointIdsList(points=points),
+            points=PointIdsList(points=points),  # type: ignore[arg-type]
             **kwargs,
         )
         if op_info.status != UpdateStatus.COMPLETED:
@@ -376,7 +376,7 @@ class QdrantStorage(BaseVectorStorage):
             op_info = self._client.delete(
                 collection_name=self.collection_name,
                 points_selector=PointIdsList(
-                    points=cast(List[Union[int, str, UUID]], ids)
+                    points=cast(List[Union[int, str, UUID]], ids)  # type: ignore[arg-type]
                 ),
                 **kwargs,
             )
