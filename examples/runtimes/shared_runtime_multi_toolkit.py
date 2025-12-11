@@ -15,9 +15,9 @@
 Example: Shared Runtime with Multiple Toolkits
 
 This example demonstrates how to run multiple toolkits (TerminalToolkit,
-CodeExecutionToolkit, BrowserToolkit) in a single shared Docker container.
-All toolkits share the same filesystem, enabling workflows where one toolkit
-can operate on files created by another.
+CodeExecutionToolkit, SearchToolkit, BrowserToolkit) in a single shared
+Docker container. All toolkits share the same filesystem, enabling workflows
+where one toolkit can operate on files created by another.
 
 Prerequisites:
     Build the multi-toolkit Docker image first:
@@ -28,15 +28,21 @@ Prerequisites:
 
 Usage:
     python examples/runtimes/shared_runtime_multi_toolkit.py
-    python examples/runtimes/shared_runtime_multi_toolkit.py --with-browser
 """
 
-import argparse
+import os
+import tempfile
+from pathlib import Path
 
 import requests
 
 from camel.runtimes import DockerRuntime
-from camel.toolkits import CodeExecutionToolkit, TerminalToolkit
+from camel.toolkits import (
+    BrowserToolkit,
+    CodeExecutionToolkit,
+    SearchToolkit,
+    TerminalToolkit,
+)
 
 
 def test_terminal_and_code(runtime):
@@ -111,11 +117,31 @@ print('File created successfully')
     return True
 
 
+def test_with_search(runtime):
+    """Test SearchToolkit in the shared runtime."""
+    tools = runtime.get_tools()
+
+    # find search tool (using search_wiki as it requires no API key)
+    search_wiki = next(
+        (t for t in tools if t.get_function_name() == "search_wiki"), None
+    )
+
+    if not search_wiki:
+        print("ERROR: Could not find search_wiki tool")
+        return False
+
+    print("\n--- Test Search: Wikipedia search ---")
+    result = search_wiki.func(entity="Python programming language")
+    print(f"Search result (truncated): {str(result)[:500]}...")
+
+    return True
+
+
 def test_with_browser(runtime):
     """Test BrowserToolkit in the shared runtime."""
     tools = runtime.get_tools()
 
-    # find browser tool
+    # find browse_url tool
     browse_url = next(
         (t for t in tools if t.get_function_name() == "browse_url"), None
     )
@@ -124,31 +150,54 @@ def test_with_browser(runtime):
         print("ERROR: Could not find browse_url tool")
         return False
 
-    print("\n--- Test Browser: Fetch a webpage ---")
-    result = browse_url.func(url="https://example.com")
-    print(f"Browser result (truncated): {str(result)[:500]}...")
+    print("\n--- Test Browser: Browse camel-ai.org ---")
+    result = browse_url.func(
+        task_prompt="What is the main heading on this page?",
+        start_url="https://www.camel-ai.org/",
+    )
+    print(f"Browse result (truncated): {str(result)[:500]}...")
 
     return True
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Test shared runtime with multiple toolkits"
-    )
-    parser.add_argument(
-        "--with-browser",
-        action="store_true",
-        help="Include BrowserToolkit in the test",
-    )
-    args = parser.parse_args()
-
     # create toolkits (they will auto-detect CAMEL_RUNTIME inside container)
     terminal_toolkit = TerminalToolkit()
     code_toolkit = CodeExecutionToolkit(verbose=True)
+    search_toolkit = SearchToolkit()
+    browser_toolkit = BrowserToolkit(headless=True)
+
+    # create a local workspace directory that will be mounted to the container
+    workspace_dir = Path(tempfile.mkdtemp(prefix="camel_workspace_"))
+    print(f"Local workspace directory: {workspace_dir}")
 
     # build runtime configuration
-    print("Creating shared runtime with TerminalToolkit and CodeExecution...")
-    runtime = DockerRuntime("camel-multi-toolkit:latest", port=8000)
+    print(
+        "Creating shared runtime with TerminalToolkit, "
+        "CodeExecutionToolkit, SearchToolkit, and BrowserToolkit..."
+    )
+
+    # pass API keys to container for BrowserToolkit's web agent
+    env_vars = {
+        "CAMEL_RUNTIME": "true",
+    }
+    # pass through common API key environment variables if set
+    for key in [
+        "OPENAI_API_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_BASE_URL",
+        "AZURE_API_VERSION",
+        "AZURE_DEPLOYMENT_NAME",
+        "DEFAULT_MODEL_PLATFORM_TYPE",
+        "DEFAULT_MODEL_TYPE",
+    ]:
+        if os.environ.get(key):
+            env_vars[key] = os.environ[key]
+
+    runtime = DockerRuntime(
+        "camel-multi-toolkit:latest", port=8000, environment=env_vars
+    )
+    runtime = runtime.mount(str(workspace_dir), "/workspace")
     runtime = runtime.add(
         terminal_toolkit.get_tools(),
         "camel.toolkits.TerminalToolkit",
@@ -156,20 +205,17 @@ def main():
     runtime = runtime.add(
         code_toolkit.get_tools(),
         "camel.toolkits.CodeExecutionToolkit",
-        {"verbose": True},
+        arguments={"verbose": True},
     )
-
-    if args.with_browser:
-        from camel.toolkits import BrowserToolkit
-
-        print("Adding BrowserToolkit...")
-        browser_toolkit = BrowserToolkit()
-        runtime = runtime.add(
-            browser_toolkit.get_tools(),
-            "camel.toolkits.BrowserToolkit",
-            {"headless": True},
-        )
-
+    runtime = runtime.add(
+        search_toolkit.get_tools(),
+        "camel.toolkits.SearchToolkit",
+    )
+    runtime = runtime.add(
+        browser_toolkit.get_tools(),
+        "camel.toolkits.BrowserToolkit",
+        arguments={"headless": True},
+    )
     runtime = runtime.build()
 
     with runtime:
@@ -184,13 +230,18 @@ def main():
         # run terminal and code tests
         success = test_terminal_and_code(runtime)
 
-        # run browser tests if requested
-        if args.with_browser and success:
+        # run search tests
+        if success:
+            success = test_with_search(runtime)
+
+        # run browser tests
+        if success:
             success = test_with_browser(runtime)
 
         if success:
             print("\n--- All tests completed successfully! ---")
             print("All toolkits successfully shared the same runtime.")
+            print(f"\nFiles created during tests at: {workspace_dir}")
         else:
             print("\n--- Some tests failed ---")
 
@@ -198,14 +249,21 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+# ruff: noqa: E501
 """
-Creating shared runtime with TerminalToolkit and CodeExecution...
+===============================================================================
+Example Output:
+===============================================================================
+Local workspace directory: /tmp/camel_workspace_xyz123
+Creating shared runtime with TerminalToolkit, CodeExecutionToolkit,
+SearchToolkit, and BrowserToolkit...
 Waiting for runtime to be ready...
 Runtime is ready!
 
 Health check: {'status': 'ok', 'toolkits': [...], 'endpoints': [...]}
 
-Available tools: ['shell_exec', 'shell_view', 'shell_write_to_process', ...]
+Available tools: ['shell_exec', 'shell_view', ..., 'browse_url']
 
 --- Test 1: Create file using TerminalToolkit ---
 Terminal result: Command executed successfully (no output).
@@ -236,6 +294,14 @@ File created successfully
 --- Test 5: Read Python-created file with TerminalToolkit ---
 File contents: Created by CodeExecutionToolkit!
 
+--- Test Search: Wikipedia search ---
+Search result (truncated): Python is a high-level programming language...
+
+--- Test Browser: Browse camel-ai.org ---
+Browse result (truncated): The main heading is "Building Multi-Agent
+Systems for Task"...
+
 --- All tests completed successfully! ---
 All toolkits successfully shared the same runtime.
+===============================================================================
 """

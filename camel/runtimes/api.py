@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
+import concurrent.futures
 import importlib
 import io
 import json
@@ -24,6 +26,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from camel.toolkits import BaseToolkit
+
+# thread pool for running sync tools that can't run inside async event loop
+# (e.g., Playwright sync API)
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +105,8 @@ for module_function in modules_functions:
             def make_endpoint(tool):
                 r"""Create endpoint with tool captured in closure."""
 
-                async def endpoint(data: Dict):
+                def run_tool(data: Dict):
+                    r"""Run tool in thread pool to avoid async event loop."""
                     redirect_stdout = data.get('redirect_stdout', False)
                     if redirect_stdout:
                         sys.stdout = io.StringIO()
@@ -118,6 +125,13 @@ for module_function in modules_functions:
                         "output": json.dumps(response_data, ensure_ascii=False)
                     }
 
+                async def endpoint(data: Dict):
+                    # run in thread pool to support sync tools like Playwright
+                    loop = asyncio.get_event_loop()
+                    return await loop.run_in_executor(
+                        _executor, run_tool, data
+                    )
+
                 return endpoint
 
             app.post(f"/{endpoint_name}")(make_endpoint(func))
@@ -127,4 +141,5 @@ for module_function in modules_functions:
 
 
 if __name__ == "__main__":
-    uvicorn.run("__main__:app", host="0.0.0.0", port=8000, reload=True)
+    # reload=False to avoid conflicts with async toolkits (e.g., Playwright)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

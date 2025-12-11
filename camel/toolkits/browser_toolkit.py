@@ -147,15 +147,12 @@ class BaseBrowser:
         Returns:
             None
         """
-        from playwright.sync_api import (
-            sync_playwright,
-        )
-
         self.history: List[Any] = []
         self.headless = headless
         self.channel = channel
         self._ensure_browser_installed()
-        self.playwright: Playwright = sync_playwright().start()
+        # lazy initialization - playwright is started in init() method
+        self.playwright: Optional[Playwright] = None
         self.page_history: List[
             str
         ] = []  # stores the history of visited pages
@@ -192,7 +189,11 @@ class BaseBrowser:
 
     def init(self) -> None:
         r"""Initialize the browser."""
-        assert self.playwright is not None
+        # lazy start playwright when init() is called, not in __init__
+        if self.playwright is None:
+            from playwright.sync_api import sync_playwright
+
+            self.playwright = sync_playwright().start()
 
         browser_launch_args = [
             "--disable-blink-features=AutomationControlled",  # Basic stealth
@@ -902,8 +903,8 @@ class BrowserToolkit(BaseToolkit):
 
         if web_agent_model_backend is None:
             web_agent_model_instance = ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4_1,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
                 model_config_dict={"temperature": 0, "top_p": 1},
             )
         else:
@@ -911,8 +912,8 @@ class BrowserToolkit(BaseToolkit):
 
         if planning_agent_model_backend is None:
             planning_model = ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.O3_MINI,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
             )
         else:
             planning_model = planning_agent_model_backend
