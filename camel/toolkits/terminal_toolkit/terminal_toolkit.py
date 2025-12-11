@@ -102,7 +102,8 @@ class TerminalToolkit(BaseToolkit):
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
-        self._in_runtime = os.environ.get("CAMEL_RUNTIME", "").lower() == "true"
+        runtime_env = os.environ.get("CAMEL_RUNTIME", "").lower()
+        self._in_runtime = runtime_env == "true"
         if self._in_runtime and use_docker_backend:
             logger.info(
                 "Detected CAMEL_RUNTIME environment - disabling Docker "
