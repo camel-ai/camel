@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
+from collections import deque
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -36,7 +38,35 @@ class CallbackHandlerType(Enum):
 
 class TriggerManager:
     """Central manager for all triggers - integrates with Workforce or
-    ChatAgent"""
+    ChatAgent
+
+    Args:
+        handler_type (Optional[CallbackHandlerType]): Type of callback
+            handler to use for processing trigger events. Can be
+            WORKFORCE, CHATAGENT, or NONE. (default: :obj:`NONE`)
+        workforce (Optional[Workforce]): Workforce instance for processing
+            trigger events when handler_type is WORKFORCE. If None and
+            handler_type is WORKFORCE, a default Workforce will be
+            created. (default: :obj:`None`)
+        chat_agent (Optional[ChatAgent]): ChatAgent instance for
+            processing trigger events when handler_type is CHATAGENT. If
+            None and handler_type is CHATAGENT, a default ChatAgent will
+            be created. (default: :obj:`None`)
+        database_adapter (Optional[DatabaseAdapter]): Database adapter for
+            persisting trigger execution records and event logs.
+            (default: :obj:`None`)
+        default_task (Optional[Task]): Default task template to use when
+            processing trigger events with Workforce. If provided, the
+            task content will be updated with event information.
+            (default: :obj:`None`)
+        default_prompt (Optional[str]): Default prompt template to use
+            when processing trigger events with ChatAgent. The prompt will
+            be combined with event payload information.
+            (default: :obj:`None`)
+        allow_duplicate_events (bool): Whether to allow processing of
+            duplicate events. If False, events with the same correlation
+            ID or payload hash will be skipped. (default: :obj:`False`)
+    """
 
     def __init__(
         self,
@@ -46,6 +76,7 @@ class TriggerManager:
         database_adapter: Optional[DatabaseAdapter] = None,
         default_task: Optional[Task] = None,
         default_prompt: Optional[str] = None,
+        allow_duplicate_events: bool = False,
     ):
         self.handler_type = handler_type
         self.workforce = workforce
@@ -55,6 +86,8 @@ class TriggerManager:
         self.default_prompt = default_prompt
         self.triggers: Dict[str, BaseTrigger] = {}
         self.execution_log: List[Dict[str, Any]] = []
+        self.allow_duplicate_events = allow_duplicate_events
+        self.processed_events: deque = deque(maxlen=1000)
 
         # Validate handler configuration
         self._validate_handler_configuration()
@@ -147,6 +180,30 @@ class TriggerManager:
                 "handler type is NONE - no processing performed"
             )
             return
+
+        # Deduplication logic (skip if allow_duplicate_events is enabled)
+        if not self.allow_duplicate_events:
+            event_id = event.correlation_id
+            if not event_id and isinstance(event.payload, dict):
+                # Try to find unique ID in payload (e.g. Slack)
+                event_id = event.payload.get("event_id") or event.payload.get(
+                    "id"
+                )
+
+            if not event_id:
+                # Create a deterministic hash of the payload
+                try:
+                    payload_str = json.dumps(event.payload, sort_keys=True)
+                    event_id = f"{event.trigger_id}:{payload_str}"
+                except (TypeError, ValueError):
+                    # Fallback for non-serializable payloads
+                    event_id = f"{event.trigger_id}:{event.payload!s}"
+
+            if event_id in self.processed_events:
+                logger.info(f"Duplicate event {event_id} ignored")
+                return
+
+            self.processed_events.append(event_id)
 
         try:
             result = None
