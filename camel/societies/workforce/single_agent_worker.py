@@ -24,6 +24,7 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.logger import get_logger
+from camel.societies.workforce.events import TaskStreamingChunkEvent
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -393,9 +394,32 @@ class SingleAgentWorker(Worker):
                 # Handle streaming response
                 if isinstance(response, AsyncStreamingChatAgentResponse):
                     content = ""
+                    chunk_index = 0
                     async for chunk in response:
-                        if chunk.msg:
-                            content = chunk.msg.content
+                        if chunk.msg and chunk.msg.content:
+                            chunk_event = TaskStreamingChunkEvent(
+                                task_id=task.id,
+                                worker_id=self.node_id,
+                                chunk=chunk.msg.content,
+                                chunk_index=chunk_index,
+                            )
+                            if (
+                                hasattr(self, 'callback')
+                                and self.callback is not None
+                            ):
+                                try:
+                                    await (
+                                        self.callback.log_task_streaming_chunk(
+                                            chunk_event
+                                        )
+                                    )
+                                except Exception as e:
+                                    logger.warning(
+                                        f"Failed to log streaming chunk: {e}"
+                                    )
+
+                            content += chunk.msg.content
+                            chunk_index += 1
                     response_content = content
                 else:
                     # Regular ChatAgentResponse
@@ -422,10 +446,34 @@ class SingleAgentWorker(Worker):
                 # Handle streaming response for native output
                 if isinstance(response, AsyncStreamingChatAgentResponse):
                     task_result = None
+                    chunk_index = 0
                     async for chunk in response:
-                        if chunk.msg and chunk.msg.parsed:
-                            task_result = chunk.msg.parsed
-                            response_content = chunk.msg.content
+                        if chunk.msg:
+                            if chunk.msg.content:
+                                chunk_event = TaskStreamingChunkEvent(
+                                    task_id=task.id,
+                                    worker_id=self.node_id,
+                                    chunk=chunk.msg.content,
+                                    chunk_index=chunk_index,
+                                )
+                                if (
+                                    hasattr(self, 'callback')
+                                    and self.callback is not None
+                                ):
+                                    try:
+                                        await self.callback.log_task_streaming_chunk(  # noqa: E501
+                                            chunk_event
+                                        )
+                                    except Exception as e:
+                                        logger.warning(
+                                            f"Failed to log chunk: {e}"
+                                        )
+                                chunk_index += 1
+
+                            if chunk.msg.parsed:
+                                task_result = chunk.msg.parsed
+                                response_content = chunk.msg.content
+
                     # If no parsed result found in streaming, create fallback
                     if task_result is None:
                         task_result = TaskResult(
