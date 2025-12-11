@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
 from .base import BaseBackend
 from .types import (
@@ -224,11 +224,8 @@ class CompositeBackend(BaseBackend):
             return self._select(path).grep_raw(pattern, path)
 
         matches: List[GrepMatch] = []
-        seen = set()
-
-        seen = set()
-        seen_backends = set()
-        matches = []
+        seen: Set[Tuple[str, int, str]] = set()
+        seen_backends: Set[str] = set()
 
         for route in self.routes:
             backend = route.backend
