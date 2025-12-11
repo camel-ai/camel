@@ -204,46 +204,41 @@ class CompositeBackend(BaseBackend):
         pattern: str,
         path: Optional[str] = None,
     ) -> List[GrepMatch]:
-        r"""Search for a pattern across file contents.
+        """Search text across routed backends.
 
-        If a logical path is provided, the search is delegated to the
-        backend responsible for that path. If no path is provided, the
-        search is performed across all configured backends and results
-        are deduplicated.
-
-        Args:
-            pattern (str): Search pattern used to locate matches.
-            path (str, optional): Logical base path that restricts the
-                search scope. If :obj:`None`, all backends are searched.
-                (default: :obj:`None`)
-
-        Returns:
-            List[GrepMatch]: Deduplicated list of matches across backends.
+        If ``path`` is provided, grep only within the backend selected for
+        that path. If ``path`` is None, grep across all unique backends and
+        de-duplicate results.
         """
+        # If a specific path is given, just delegate to the selected backend.
         if path is not None:
-            return self._select(path).grep_raw(pattern, path)
+            backend = self._select_backend(path)
+            if backend is None:
+                return []
+            return backend.grep_raw(pattern, path)
 
-        matches: List[GrepMatch] = []
-        seen: Set[Tuple[str, int, str]] = set()
-        seen_backends: Set[str] = set()
+        # Otherwise, search across all unique backends (routes + default).
+        backends: List[BaseBackend] = []
+        seen_backends: Set[BaseBackend] = set()
 
         for route in self.routes:
-            backend = route.backend
-            if backend in seen_backends:
-                continue
-            seen_backends.add(backend)
+            if route.backend not in seen_backends:
+                seen_backends.add(route.backend)
+                backends.append(route.backend)
 
+        if self.default is not None and self.default not in seen_backends:
+            seen_backends.add(self.default)
+            backends.append(self.default)
+
+        matches: List[GrepMatch] = []
+        seen_keys: Set[Tuple[str, int, str]] = set()
+
+        for backend in backends:
             for match in backend.grep_raw(pattern, None):
                 key = (match.path, match.line_no, match.line)
-                if key not in seen:
-                    seen.add(key)
+                if key not in seen_keys:
+                    seen_keys.add(key)
                     matches.append(match)
-
-        for match in self.default.grep_raw(pattern, None):
-            key = (match.path, match.line_no, match.line)
-            if key not in seen:
-                seen.add(key)
-                matches.append(match)
 
         return matches
 
