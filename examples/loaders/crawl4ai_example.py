@@ -34,41 +34,41 @@ print(crawl_results[0]["markdown"])
 
 ## Books
 
-A [fictional bookstore](http://books.toscrape.com) that desperately wants to 
-be scraped. It's a safe place for beginners learning web scraping and for 
-developers validating their scraping technologies as well. 
+A [fictional bookstore](http://books.toscrape.com) that desperately wants to
+be scraped. It's a safe place for beginners learning web scraping and for
+developers validating their scraping technologies as well.
 Available at: [books.toscrape.com](http://books.toscrape.com)
 
 [![](./img/books.png)](http://books.toscrape.com)
 
-Details  
----  
-Amount of items | 1000  
-Pagination | ✔  
-Items per page | max 20  
-Requires JavaScript | ✘  
-  
+Details
+---
+Amount of items | 1000
+Pagination | ✔
+Items per page | max 20
+Requires JavaScript | ✘
+
 ## Quotes
 
 [A website](http://quotes.toscrape.com/) that lists quotes from famous people.
-It has many endpoints showing the quotes in many different ways, each of them 
+It has many endpoints showing the quotes in many different ways, each of them
 including new scraping challenges for you, as described below.
 
 [![](./img/quotes.png)](http://quotes.toscrape.com)
 
-Endpoints  
----  
-[Default](http://quotes.toscrape.com/)| Microdata and pagination  
-[Scroll](http://quotes.toscrape.com/scroll) | infinite scrolling pagination  
-[JavaScript](http://quotes.toscrape.com/js) | JavaScript generated content  
-[Delayed](http://quotes.toscrape.com/js-delayed) | Same as JavaScript but with 
-    a delay (?delay=10000)  
-[Tableful](http://quotes.toscrape.com/tableful) | a table based messed-up 
+Endpoints
+---
+[Default](http://quotes.toscrape.com/)| Microdata and pagination
+[Scroll](http://quotes.toscrape.com/scroll) | infinite scrolling pagination
+[JavaScript](http://quotes.toscrape.com/js) | JavaScript generated content
+[Delayed](http://quotes.toscrape.com/js-delayed) | Same as JavaScript but with
+    a delay (?delay=10000)
+[Tableful](http://quotes.toscrape.com/tableful) | a table based messed-up
     layout
-[Login](http://quotes.toscrape.com/login) | login with CSRF token 
-    (any user/passwd works)  
-[ViewState](http://quotes.toscrape.com/search.aspx) | an AJAX based filter 
-    form with ViewStates  
+[Login](http://quotes.toscrape.com/login) | login with CSRF token
+    (any user/passwd works)
+[ViewState](http://quotes.toscrape.com/search.aspx) | an AJAX based filter
+    form with ViewStates
 [Random](http://quotes.toscrape.com/random) | a single random quote
 ===============================================================================
 '''
@@ -79,11 +79,11 @@ scrape_result = asyncio.run(crawler.scrape(URL))
 print(scrape_result)
 '''
 ===============================================================================
-{url: 'https://toscrape.com/', 
-'raw_result': CrawlResult(url='https://toscrape.com/', markdown=..., 
+{url: 'https://toscrape.com/',
+'raw_result': CrawlResult(url='https://toscrape.com/', markdown=...,
     cleaned_html=..., links=...),
-'markdown': "![](img/zyte.png)\n\n# Web Scraping Sandbox\n\n## Books...", 
-'cleaned_html': '\n<div>\n<div>\n<div>\n<img class="logo" height="108" 
+'markdown': "![](img/zyte.png)\n\n# Web Scraping Sandbox\n\n## Books...",
+'cleaned_html': '\n<div>\n<div>\n<div>\n<img class="logo" height="108"
     src="img/zyte.png" width="200"/>\n
     <h1>Web Scraping Sandbox</h1>\n...'}
 ===============================================================================

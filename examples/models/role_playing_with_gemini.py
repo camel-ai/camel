@@ -101,4 +101,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GEMINI_1_5_FLASH)
+    main(model_type=ModelType.GEMINI_2_0_FLASH)

@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-I've created a Hello World page for you! The page has been deployed and is now 
+I've created a Hello World page for you! The page has been deployed and is now
 live at:
 
 **https://mcp.edgeone.site/share/M-MXzJzHJ3mGc013OQNIM**

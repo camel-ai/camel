@@ -504,10 +504,10 @@ def _wait_for_server(base_url: str, timeout: Optional[float] = 30) -> None:
                 print(
                     """\n
                     NOTE: Typically, the server runs in a separate terminal.
-                    In this notebook, we run the server and notebook code 
+                    In this notebook, we run the server and notebook code
                     together, so their outputs are combined.
-                    To improve clarity, the server logs are displayed in the 
-                    original black color, while the notebook outputs are 
+                    To improve clarity, the server logs are displayed in the
+                    original black color, while the notebook outputs are
                     highlighted in blue.
                     """
                 )

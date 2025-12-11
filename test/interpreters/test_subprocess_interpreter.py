@@ -99,7 +99,7 @@ def test_run_r_code(subprocess_interpreter):
     add <- function(a, b) {
         return(a + b)
     }
-    
+
     result <- add(10, 20)
     print(result)
     """

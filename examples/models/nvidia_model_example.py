@@ -77,7 +77,7 @@ long_window = 50  # Long moving average window (in minutes)
 def strategy(data):
     short_ma = data['Close'].rolling(window=short_window).mean()
     long_ma = data['Close'].rolling(window=long_window).mean()
-    
+
     if short_ma > long_ma:
         return 'BUY'
     elif short_ma < long_ma:
@@ -93,10 +93,10 @@ def trade(exchange, symbol, amount, strategy):
         data,
         columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
     )
-    
+
     # Apply the trading strategy
     signal = strategy(df)
-    
+
     # Execute the trade
     if signal == 'BUY':
         exchange.place_order(
@@ -127,7 +127,7 @@ while True:
    returns a trading signal (BUY, SELL, or HOLD).
 4. The `trade` function gets the latest candlestick data, applies the trading
    strategy, and executes the trade using the `place_order` method.
-5. The code runs in an infinite loop, checking for trading signals every 
+5. The code runs in an infinite loop, checking for trading signals every
    minute.
 
 **Note:** This is a basic example and you should consider implementing
@@ -156,7 +156,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 # Get response information

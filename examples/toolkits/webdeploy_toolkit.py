@@ -41,7 +41,7 @@ camel_agent = ChatAgent(
 )
 
 # Example 1: deploy a simple web server,which can play snake game.
-query = """use toolkit writing html to deploy a 
+query = """use toolkit writing html to deploy a
 simple web server,which can play snake game.deploy it in port 8005"""
 
 camel_agent.reset()
@@ -52,8 +52,8 @@ print("\n")
 
 """
 ==========================================================================
-I have deployed a simple web server that hosts a Snake game. You can play 
-the game by opening the following URL in your web browser: 
+I have deployed a simple web server that hosts a Snake game. You can play
+the game by opening the following URL in your web browser:
 http://localhost:8000
 
 Use the arrow keys to control the snake. Enjoy the game!

@@ -58,7 +58,7 @@ def process_video(url, question):
     ocr_content = "\n".join(ocr_texts)
     # Prepare context and query agent
     knowledge = f"Transcript:\n{transcript}\n\nOn-screen Text:\n{ocr_content}"
-    user_msg = BaseMessage.make_user_message(role_name="User", 
+    user_msg = BaseMessage.make_user_message(role_name="User",
                 content=f"{knowledge}\n\nQuestion: {question}")
     response = agent.step(user_msg)
     return response.msgs[0].content
