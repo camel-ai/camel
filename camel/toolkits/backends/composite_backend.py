@@ -120,6 +120,13 @@ class CompositeBackend(BaseBackend):
 
         return self.default
 
+    def _select_backend(self, path: str) -> BaseBackend:
+        r"""Internal helper to select a backend for a given path.
+
+        This wraps `_select` for clarity and type checking.
+        """
+        return self._select(path)
+
     def read(self, path: str, offset: int = 0, limit: int = 2000) -> str:
         r"""Read text content from a logical path.
 
@@ -213,8 +220,6 @@ class CompositeBackend(BaseBackend):
         # If a specific path is given, just delegate to the selected backend.
         if path is not None:
             backend = self._select_backend(path)
-            if backend is None:
-                return []
             return backend.grep_raw(pattern, path)
 
         # Otherwise, search across all unique backends (routes + default).
