@@ -1,4 +1,4 @@
-FROM python:3.14-bookworm@sha256:14ab73bd56794689c00cce8162da1eb71925b188299f35f81717ec23816a5dea
+FROM python:3.14-bookworm@sha256:b58ea3b4b4206bef0f640c44b51aa6160056b48526bf2cca5e62525bf542cefe
 
 RUN pip install uv
 RUN groupadd -r appuser && useradd -r -g appuser appuser
