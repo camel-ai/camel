@@ -26,8 +26,9 @@ def test_shared_runtime_filesystem():
         .add(
             CodeExecutionToolkit().get_tools(),
             "camel.toolkits.CodeExecutionToolkit",
-            {"verbose": True},
+            arguments={"verbose": True},
         )
+        .build()
     )
 
     with runtime as r:
