@@ -159,10 +159,16 @@ class TriggerManager:
                 if self.default_task:
                     task = self.default_task
                     # Update task content with event information
-                    if "task_content" in event.payload:
-                        task.content = event.payload["task_content"]
-                    elif "message" in event.payload:
-                        task.content = f"Process: {event.payload['message']}"
+                    if event.payload is not None:
+                        task.content = (
+                            f"Process trigger event from {event.trigger_id}\n"
+                            f"Payload: {event.payload}"
+                        )
+                    else:
+                        logger.error(
+                            "Event payload is None; cannot update default "
+                            "task content."
+                        )
                 else:
                     task = self._event_to_task(event)
 
@@ -174,26 +180,17 @@ class TriggerManager:
                 self.handler_type == CallbackHandlerType.CHATAGENT
                 and self.chat_agent
             ):
-                # Use provided prompt or convert event to prompt
+                # Combine default prompt with event payload
                 if self.default_prompt:
-                    prompt = self.default_prompt
-                    # Enhance prompt with event information
-                    if "message" in event.payload:
-                        prompt = (
-                            f"{prompt}\n\nEvent message: "
-                            f"{event.payload['message']}"
-                        )
-                elif "task_content" in event.payload:
-                    prompt = event.payload["task_content"]
-                elif "message" in event.payload:
                     prompt = (
-                        f"Process this trigger event: "
-                        f"{event.payload['message']}"
+                        f"{self.default_prompt}\n\n"
+                        f"Trigger ID: {event.trigger_id}\n"
+                        f"Event Payload: {event.payload}"
                     )
                 else:
                     prompt = (
-                        f"Process trigger event from {event.trigger_id} "
-                        f"with payload: {event.payload}"
+                        f"Process trigger event from {event.trigger_id}\n"
+                        f"Payload: {event.payload}"
                     )
 
                 # Process with ChatAgent
