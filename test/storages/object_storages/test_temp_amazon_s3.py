@@ -1,6 +1,17 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # tests/storages/test_amazon_s3_storage_integration.py
-from __future__ import annotations
-
 r"""Integration-style tests for AmazonS3Storage with a mocked S3 backend.
 
 These tests use moto to mock AWS S3 in memory, allowing validation of the
@@ -9,14 +20,23 @@ network access. The goal is to ensure that core S3 operations (put, get,
 upload, download, and existence checks) behave as expected.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
-from moto import mock_aws
-import boto3
 
-from camel.storages.object_storages import AmazonS3Storage
+try:
+    import boto3
+    from moto import mock_aws
+except ImportError:
+    pytest.skip(
+        "moto/boto3 not installed; skipping S3 tests",
+        allow_module_level=True,
+    )
+
 from camel.loaders import create_file_from_raw_bytes
+from camel.storages.object_storages import AmazonS3Storage
 
 
 @mock_aws

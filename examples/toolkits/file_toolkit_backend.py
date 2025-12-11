@@ -1,11 +1,24 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Examples of using the pluggable backend system with FileToolkit and backends.
 
 This script demonstrates:
 
 1. Using FileToolkit with an in-memory StateBackend.
-2. Using the raw backend APIs (FilesystemBackend, CompositeBackend, PolicyWrapper)
-   to control where data is stored and which paths are allowed.
+2. Using the raw backend APIs (FilesystemBackend, CompositeBackend,
+   PolicyWrapper) to control where data is stored and which paths are allowed.
 """
 
 from __future__ import annotations
@@ -14,10 +27,10 @@ import os
 from pathlib import Path
 
 from camel.toolkits.backends import (
-    StateBackend,
-    FilesystemBackend,
     CompositeBackend,
+    FilesystemBackend,
     PolicyWrapper,
+    StateBackend,
 )
 from camel.toolkits.file_toolkit import FileToolkit
 
@@ -53,7 +66,9 @@ def example_1_filetoolkit_with_state_backend(base_dir: Path) -> None:
 
 def example_2_composite_and_policy_backends(base_dir: Path) -> None:
     """Show CompositeBackend routing and PolicyWrapper blocking paths."""
-    print("=== Example 2: CompositeBackend + PolicyWrapper (backend layer) ===")
+    print(
+        "=== Example 2: CompositeBackend + PolicyWrapper (backend layer) ==="
+    )
 
     # Two filesystem sandboxes
     persist_root = base_dir / "persist_root"
@@ -85,15 +100,23 @@ def example_2_composite_and_policy_backends(base_dir: Path) -> None:
     # 1) Write under /persist/ → goes to fs_persist
     print("--- Writing to /persist/report.txt (persist_root) ---")
     secured.write("/persist/report.txt", "report content")
-    print("Files under persist_root:", [p.relative_to(persist_root) for p in persist_root.rglob("*")])
+    print(
+        "Files under persist_root:",
+        [p.relative_to(persist_root) for p in persist_root.rglob("*")],
+    )
 
     # 2) Write under /temp/ → goes to fs_temp (default backend)
     print("\n--- Writing to /temp/log.txt (temp_root) ---")
     secured.write("/temp/log.txt", "log content")
-    print("Files under temp_root:", [p.relative_to(temp_root) for p in temp_root.rglob("*")])
+    print(
+        "Files under temp_root:",
+        [p.relative_to(temp_root) for p in temp_root.rglob("*")],
+    )
 
     # 3) Attempt to write under /secret/ → blocked by PolicyWrapper
-    print("\n--- Attempting to write to /secret/plan.txt (should be blocked) ---")
+    print(
+        "\n--- Attempting to write to /secret/plan.txt (should be blocked) ---"
+    )
     try:
         secured.write("/secret/plan.txt", "top secret")
     except PermissionError as e:

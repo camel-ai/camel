@@ -18,10 +18,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
-from camel.toolkits.base import BaseToolkit
+from camel.toolkits.backends import (
+    BackendAwareToolkit,
+    BaseBackend,
+)
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, dependencies_required
-from camel.toolkits.backends import BaseBackend, FilesystemBackend, BackendAwareToolkit
 
 logger = get_logger(__name__)
 
@@ -75,6 +77,7 @@ class FileToolkit(BackendAwareToolkit):
             f"FileToolkit initialized with output directory"
             f": {self.working_directory}, encoding: {self.default_encoding}"
         )
+
     def _resolve_filepath(self, file_path: str) -> Path:
         r"""Convert the given string path to a Path object.
 
@@ -96,11 +99,12 @@ class FileToolkit(BackendAwareToolkit):
         sanitized_filename = self._sanitize_filename(path_obj.name)
         path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
-    
+
     def _to_backend_path(self, file_path: Union[str, Path]) -> str:
         r"""Convert a user/relative path to a logical backend path.
-                      Convention: path is always relative to self.working_directory
-        and uses POSIX-style separators.
+
+        Convention: paths are always relative to self.working_directory
+        and use POSIX-style separators.
         """
         p = self._resolve_filepath(str(file_path))
         rel = p.relative_to(self.working_directory)
@@ -503,7 +507,6 @@ class FileToolkit(BackendAwareToolkit):
         Returns:
             str: The font name to use for Chinese text.
         """
-        import os
         import platform
 
         from reportlab.lib.fonts import addMapping
@@ -1149,10 +1152,10 @@ class FileToolkit(BackendAwareToolkit):
     # Edit File Functions
     # ----------------------------------------------
     def edit_file(
-    self, file_path: str, old_content: str, new_content: str
-) -> str:
+        self, file_path: str, old_content: str, new_content: str
+    ) -> str:
         """
-        Edit a file by replacing occurrences of text using the configured backend.
+        Edit a file by replacing text using the configured backend.
 
         This method resolves the given file path relative to the toolkit's
         working directory, converts it to a logical backend path, and delegates
@@ -1165,7 +1168,7 @@ class FileToolkit(BackendAwareToolkit):
             new_content (str): Replacement text.
 
         Returns:
-            str: A human-readable message indicating whether the edit succeeded,
+            str: Message indicating whether the edit succeeded,
                 failed, or performed no replacements.
         """
         try:
@@ -1192,7 +1195,6 @@ class FileToolkit(BackendAwareToolkit):
 
         except Exception as e:
             return f"Error editing file: {e}"
-
 
     def search_files(
         self,
