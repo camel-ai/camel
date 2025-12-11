@@ -1445,6 +1445,9 @@ def test_memory_setter_preserves_system_message():
 
 
 @pytest.mark.model_backend
+def test_tool_calling_token_usage_tracking():
+    r"""Test that token usage is tracked for each tool call."""
+    system_message = BaseMessage(
 @pytest.mark.asyncio
 async def test_chat_agent_async_stream_with_async_generator():
     r"""Test async streaming when model backend returns an async generator."""
@@ -1585,6 +1588,14 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
         meta_dict=None,
         content="You are a helpful assistant.",
     )
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=MathToolkit().get_tools(),
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -1728,6 +1739,31 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
+        content="Calculate 5 + 3",
+    )
+
+    # Step the agent
+    response = agent.step(user_msg)
+
+    # Check that we have tool calls in the response
+    if response.info.get('tool_calls'):
+        tool_calls = response.info['tool_calls']
+
+        # Each tool call should have token_usage information
+        for tool_call in tool_calls:
+            assert isinstance(tool_call, ToolCallingRecord)
+            assert tool_call.token_usage is not None
+            assert isinstance(tool_call.token_usage, dict)
+
+            # Check that the standard token usage keys exist
+            assert 'prompt_tokens' in tool_call.token_usage
+            assert 'completion_tokens' in tool_call.token_usage
+            assert 'total_tokens' in tool_call.token_usage
+
+            # Verify token counts are positive integers
+            assert tool_call.token_usage['prompt_tokens'] > 0
+            assert tool_call.token_usage['completion_tokens'] >= 0
+            assert tool_call.token_usage['total_tokens'] > 0
         content="Add 1 and 2",
     )
 
