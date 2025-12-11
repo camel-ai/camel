@@ -22,7 +22,7 @@ logged in with AWS CLI).
 - **access_key_id** (Optional[str], optional): The AWS access key ID. Defaults to None.
 - **secret_access_key** (Optional[str], optional): The AWS secret access key. Defaults to None.
 - **anonymous** (bool, optional): Whether to use anonymous access. Defaults to False.
-- **References**: 
+- **References**:
 - **https**: //aws.amazon.com/pm/serv-s3/
 - **https**: //aws.amazon.com/cli/
 

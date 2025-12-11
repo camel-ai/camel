@@ -27,8 +27,8 @@ from pathlib import Path
 import pytest
 
 try:
-    import boto3
-    from moto import mock_aws
+    import boto3  # type: ignore[import-not-found]
+    from moto import mock_aws  # type: ignore[import-not-found]
 except ImportError:
     pytest.skip(
         "moto/boto3 not installed; skipping S3 tests",
