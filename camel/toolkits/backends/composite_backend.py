@@ -105,9 +105,19 @@ class CompositeBackend(BaseBackend):
             BaseBackend: Backend selected based on the configured routing
             prefixes, or the default backend if no prefix matches.
         """
+        best_route = None
+        best_length = -1
+
         for route in self.routes:
             if path.startswith(route.prefix):
-                return route.backend
+                prefix_len = len(route.prefix)
+                if prefix_len > best_length:
+                    best_route = route
+                    best_length = prefix_len
+
+        if best_route is not None:
+            return best_route.backend
+
         return self.default
 
     def read(self, path: str, offset: int = 0, limit: int = 2000) -> str:
@@ -216,8 +226,17 @@ class CompositeBackend(BaseBackend):
         matches: List[GrepMatch] = []
         seen = set()
 
+        seen = set()
+        seen_backends = set()
+        matches = []
+
         for route in self.routes:
-            for match in route.backend.grep_raw(pattern, None):
+            backend = route.backend
+            if backend in seen_backends:
+                continue
+            seen_backends.add(backend)
+
+            for match in backend.grep_raw(pattern, None):
                 key = (match.path, match.line_no, match.line)
                 if key not in seen:
                     seen.add(key)

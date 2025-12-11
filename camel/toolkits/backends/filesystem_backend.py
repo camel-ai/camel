@@ -91,7 +91,9 @@ class FilesystemBackend(BaseBackend):
             # Treat absolute-like logical paths as relative to root
             full = (self.root_dir / path_obj.relative_to("/")).resolve()
 
-        if not str(full).startswith(str(self.root_dir)):
+        try:
+            full.relative_to(self.root_dir)
+        except ValueError:
             raise PermissionError(f"Path {path} escapes sandbox")
         return full
 
@@ -147,7 +149,7 @@ class FilesystemBackend(BaseBackend):
         """
         file_path = self._resolve(path)
         if not file_path.exists() or not file_path.is_file():
-            return ""
+            raise FileNotFoundError(f"Cannot read non-regular file: {file_path}")
 
         with file_path.open("r", encoding=self.default_encoding) as file_obj:
             if offset:
