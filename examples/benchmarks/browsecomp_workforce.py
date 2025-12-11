@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
+
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.browsecomp import BrowseCompBenchmark
 from camel.messages.base import BaseMessage
@@ -19,7 +21,8 @@ from camel.models.model_factory import ModelFactory
 from camel.societies.workforce.workforce import Workforce
 from camel.types.enums import ModelPlatformType, ModelType
 
-if __name__ == '__main__':
+
+async def main():
     # Configure the model
     model_config = {
         "model_platform": ModelPlatformType.DEFAULT,
@@ -66,13 +69,13 @@ You excel at understanding complex queries and finding precise answers.""",
         new_worker_agent=new_worker_agent,
     )
 
-    # Add workers to the workforce
-    workforce.add_single_agent_worker(
-        description="Web content researcher", worker=web_researcher_agent
+    await workforce.add_single_agent_worker_async(
+        description="Web content researcher",
+        worker=web_researcher_agent,
     )
 
     # Add a role-playing worker for complex queries
-    workforce.add_role_playing_worker(
+    await workforce.add_role_playing_worker_async(
         description="Collaborative research team",
         assistant_role_name="Research Assistant",
         user_role_name="Research Lead",
@@ -99,3 +102,7 @@ You excel at understanding complex queries and finding precise answers.""",
     benchmark.validate(grader=grader_agent)
 
     print("Benchmark completed. Results saved to report_workforce.html")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

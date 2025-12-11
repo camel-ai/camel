@@ -1069,24 +1069,27 @@ MUST use this as the current date.
         task_timeout_seconds=900.0,
     )
 
-    workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "Search Agent: An expert web researcher that can browse websites, "
         "perform searches, and extract information to support other agents.",
         worker=search_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker_async(
         "Developer Agent: A master-level coding assistant with a powerful "
         "terminal. It can write and execute code, manage files, automate "
         "desktop tasks, and deploy web applications to solve complex "
         "technical challenges.",
         worker=developer_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker_async(
         "Document Agent: A document processing assistant skilled in creating "
         "and modifying a wide range of file formats. It can generate "
         "text-based files (Markdown, JSON, YAML, HTML), office documents "
         "(Word, PDF), presentations (PowerPoint), and data files "
         "(Excel, CSV).",
         worker=document_agent,
-    ).add_single_agent_worker(
+    )
+    await workforce.add_single_agent_worker_async(
         "Multi-Modal Agent: A specialist in media processing. It can "
         "analyze images and audio, transcribe speech, download videos, and "
         "generate new images from text prompts.",
@@ -1109,16 +1112,16 @@ them.
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree_async())
 
     print("\n--- Workforce KPIs ---")
-    kpis = workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis_async()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "eigent_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs_async(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 

@@ -79,7 +79,7 @@ async def interactive_skip_demo():
         model_type=ModelType.DEFAULT,
     )
     worker = ChatAgent(model=model)
-    workforce.add_single_agent_worker("Interactive Worker", worker)
+    await workforce.add_single_agent_worker_async("Interactive Worker", worker)
 
     # Add multiple tasks
     logger.info("Adding tasks...")
