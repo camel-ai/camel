@@ -18,7 +18,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
-from camel.toolkits.base import BaseToolkit
+from camel.toolkits.backends import (
+    BackendAwareToolkit,
+    BaseBackend,
+)
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, dependencies_required
 
@@ -26,7 +29,7 @@ logger = get_logger(__name__)
 
 
 @MCPServer()
-class FileToolkit(BaseToolkit):
+class FileToolkit(BackendAwareToolkit):
     r"""A comprehensive toolkit for file operations including reading,
     writing, and editing files.
 
@@ -45,8 +48,9 @@ class FileToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         default_encoding: str = "utf-8",
         backup_enabled: bool = True,
+        backend: Optional[BaseBackend] = None,
     ) -> None:
-        r"""Initialize the FileWriteToolkit.
+        r"""Initialize the FileToolkit.
 
         Args:
             working_directory (str, optional): The default directory for
@@ -61,21 +65,17 @@ class FileToolkit(BaseToolkit):
             backup_enabled (bool): Whether to create backups of existing files
                 before overwriting. (default: :obj:`True`)
         """
-        super().__init__(timeout=timeout)
-        if working_directory:
-            self.working_directory = Path(working_directory).resolve()
-        else:
-            camel_workdir = os.environ.get("CAMEL_WORKDIR")
-            if camel_workdir:
-                self.working_directory = Path(camel_workdir).resolve()
-            else:
-                self.working_directory = Path("./camel_working_dir").resolve()
-        self.working_directory.mkdir(parents=True, exist_ok=True)
-        self.default_encoding = default_encoding
-        self.backup_enabled = backup_enabled
+        super().__init__(
+            backend=backend,
+            working_directory=working_directory,
+            default_encoding=default_encoding,
+            backup_enabled=backup_enabled,
+            timeout=timeout,
+        )
+
         logger.info(
-            f"FileWriteToolkit initialized with output directory"
-            f": {self.working_directory}, encoding: {default_encoding}"
+            f"FileToolkit initialized with output directory"
+            f": {self.working_directory}, encoding: {self.default_encoding}"
         )
 
     def _resolve_filepath(self, file_path: str) -> Path:
@@ -99,6 +99,16 @@ class FileToolkit(BaseToolkit):
         sanitized_filename = self._sanitize_filename(path_obj.name)
         path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
+
+    def _to_backend_path(self, file_path: Union[str, Path]) -> str:
+        r"""Convert a user/relative path to a logical backend path.
+
+        Convention: paths are always relative to self.working_directory
+        and use POSIX-style separators.
+        """
+        p = self._resolve_filepath(str(file_path))
+        rel = p.relative_to(self.working_directory)
+        return rel.as_posix()
 
     def _sanitize_filename(self, filename: str) -> str:
         r"""Sanitize a filename by replacing any character that is not
@@ -497,7 +507,6 @@ class FileToolkit(BaseToolkit):
         Returns:
             str: The font name to use for Chinese text.
         """
-        import os
         import platform
 
         from reportlab.lib.fonts import addMapping
@@ -1145,58 +1154,44 @@ class FileToolkit(BaseToolkit):
     def edit_file(
         self, file_path: str, old_content: str, new_content: str
     ) -> str:
-        r"""Edit a file by replacing specified content.
+        """
+        Edit a file by replacing text using the configured backend.
 
-        This method performs simple text replacement in files. It reads
-        the file, replaces all occurrences of old_content with new_content,
-        and writes the result back.
+        This method resolves the given file path relative to the toolkit's
+        working directory, converts it to a logical backend path, and delegates
+        the edit operation to the underlying storage backend.
 
         Args:
-            file_path (str): The path to the file to edit. Can be
-                relative or absolute. If relative, it will be resolved
-                relative to the working directory.
-            old_content (str): The exact text to find and replace.
-            new_content (str): The text to replace old_content with.
+            file_path (str): Path to the file to edit. Can be relative to the
+                working directory or absolute.
+            old_content (str): Text to search for in the file.
+            new_content (str): Replacement text.
 
         Returns:
-            str: A success message if the edit was successful, or an
-                error message if the content wasn't found or an error occurred.
+            str: Message indicating whether the edit succeeded,
+                failed, or performed no replacements.
         """
         try:
-            working_path = self._resolve_filepath(file_path)
+            # Resolve to absolute path, then convert to backend logical path
+            resolved = self._resolve_filepath(file_path)
+            logical_path = str(resolved.relative_to(self.working_directory))
 
-            if not working_path.exists():
-                return f"Error: File {working_path} does not exist"
+            result = self.backend.edit(
+                logical_path,
+                old_content,
+                new_content,
+            )
 
-            # Create backup before editing if enabled
-            self._create_backup(working_path)
+            if not result.success:
+                return f"Error editing {logical_path}: {result.error}"
 
-            # Read the file content
-            try:
-                file_text = working_path.read_text(
-                    encoding=self.default_encoding
-                )
-            except Exception as e:
-                return f"Error reading file: {e}"
-
-            # Check if the old_content exists in the file
-            if old_content not in file_text:
+            if result.replaced == 0:
                 return (
                     f"No replacement performed: '{old_content}' not found in "
-                    f"{working_path}."
+                    f"{logical_path}."
                 )
 
-            # Replace the content
-            new_file_text = file_text.replace(old_content, new_content)
-
-            # Write back to file
-            try:
-                working_path.write_text(
-                    new_file_text, encoding=self.default_encoding
-                )
-                return f"Successfully edited {working_path}"
-            except Exception as e:
-                return f"Error writing file: {e}"
+            return f"Successfully edited {logical_path}"
 
         except Exception as e:
             return f"Error editing file: {e}"
