@@ -335,7 +335,7 @@ class MicrosoftAuthenticator:
 
         if not self.client_id or not self.client_secret:
             raise ValueError("Client ID and secret must be set")
-        
+
         if not self.refresh_token_file_path:
             raise ValueError("Refresh token file path must be set")
 
@@ -393,9 +393,6 @@ class MicrosoftAuthenticator:
         port = parsed_uri.port if parsed_uri.port else 8080
         server_address = (hostname, port)
         server = HTTPServer(server_address, RedirectHandler)
-
-        # Initialize code attribute to None (using setattr for type safety)
-        setattr(server, 'code', None)
 
         # Open authorization URL
         logger.info(f"Opening browser for authentication: {auth_url}")
