@@ -98,7 +98,7 @@ class TestCreateCalendar:
         mock_graph_client.me.calendars.post = async_post_mock
 
         # Call the method
-        result = await outlook_calendar_toolkit.create_calendar(
+        result = await outlook_calendar_toolkit.outlook_create_calendar(
             name='Test Calendar', color='lightBlue'
         )
 
@@ -129,7 +129,7 @@ class TestCreateCalendar:
         mock_graph_client.me.calendars.post = async_post_mock
 
         # Call the method with default color
-        result = await outlook_calendar_toolkit.create_calendar(
+        result = await outlook_calendar_toolkit.outlook_create_calendar(
             name='My Calendar'
         )
 
@@ -154,7 +154,7 @@ class TestCreateCalendar:
         mock_graph_client.me.calendars.post = async_post_mock
 
         # Call the method
-        result = await outlook_calendar_toolkit.create_calendar(
+        result = await outlook_calendar_toolkit.outlook_create_calendar(
             name='Error Calendar'
         )
 
@@ -179,7 +179,7 @@ class TestDeleteCalendar:
         )
 
         # Call the method
-        result = await outlook_calendar_toolkit.delete_calendar(
+        result = await outlook_calendar_toolkit.outlook_delete_calendar(
             calendar_id='Calendar ID'
         )
 
@@ -201,7 +201,7 @@ class TestDeleteCalendar:
         )
 
         # Call the method
-        result = await outlook_calendar_toolkit.delete_calendar(
+        result = await outlook_calendar_toolkit.outlook_delete_calendar(
             calendar_id='Invalid ID'
         )
 
@@ -247,7 +247,9 @@ class TestGetCalendar:
             async_get_mock
         )
 
-        result = await outlook_calendar_toolkit.get_calendar(calendar_id='id')
+        result = await outlook_calendar_toolkit.outlook_get_calendar(
+            calendar_id='id'
+        )
 
         assert result['status'] == 'success'
         details = result['calendar_details']
@@ -274,7 +276,7 @@ class TestGetCalendar:
         )
 
         # Call the method
-        result = await outlook_calendar_toolkit.get_calendar(
+        result = await outlook_calendar_toolkit.outlook_get_calendar(
             calendar_id='incorrect_id'
         )
 
@@ -300,7 +302,7 @@ class TestListCalendars:
         async_get_mock = AsyncMock(return_value=mock_result)
         mock_graph_client.me.calendars.get = async_get_mock
 
-        result = await outlook_calendar_toolkit.list_calendars()
+        result = await outlook_calendar_toolkit.outlook_list_calendars()
 
         assert result['status'] == 'success'
         assert result['total_count'] == 1
@@ -324,7 +326,7 @@ class TestListCalendars:
         )
         mock_graph_client.me.calendars.get = async_get_mock
 
-        result = await outlook_calendar_toolkit.list_calendars()
+        result = await outlook_calendar_toolkit.outlook_list_calendars()
 
         assert 'error' in result
         assert 'Failed to list calendars' in result['error']
@@ -344,7 +346,7 @@ class TestUpdateCalendar:
             async_patch_mock
         )
 
-        result = await outlook_calendar_toolkit.update_calendar(
+        result = await outlook_calendar_toolkit.outlook_update_calendar(
             calendar_id='calendar_id', name='Updated Calendar Name'
         )
 
@@ -365,7 +367,7 @@ class TestUpdateCalendar:
             async_patch_mock
         )
 
-        result = await outlook_calendar_toolkit.update_calendar(
+        result = await outlook_calendar_toolkit.outlook_update_calendar(
             calendar_id='calendar_id', color='lightBlue'
         )
 
@@ -386,7 +388,7 @@ class TestUpdateCalendar:
             async_patch_mock
         )
 
-        result = await outlook_calendar_toolkit.update_calendar(
+        result = await outlook_calendar_toolkit.outlook_update_calendar(
             calendar_id='invalid_id', name='New Name'
         )
 
@@ -552,7 +554,7 @@ class TestCreateCalendarEvent:
         mock_graph_client.me.events.post = async_post_mock
 
         # Call the method with all parameters
-        result = await outlook_calendar_toolkit.create_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_create_calendar_event(
             subject='Team Meeting',
             start_time='2025-12-10T10:00:00',
             end_time='2025-12-10T11:00:00',
@@ -601,7 +603,7 @@ class TestCreateCalendarEvent:
         cal_events = mock_graph_client.me.calendars.by_calendar_id.return_value
         cal_events.events.post = async_post_mock
 
-        result = await outlook_calendar_toolkit.create_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_create_calendar_event(
             subject='Calendar Event',
             start_time='2025-12-10T14:00:00',
             end_time='2025-12-10T15:00:00',
@@ -626,7 +628,7 @@ class TestCreateCalendarEvent:
         )
         mock_graph_client.me.events.post = async_post_mock
 
-        result = await outlook_calendar_toolkit.create_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_create_calendar_event(
             subject='Some event',
             start_time='2025-12-10T10:00:00',
             end_time='2025-12-10T11:00:00',
@@ -656,7 +658,7 @@ class TestUpdateCalendarEvent:
             async_patch_mock
         )
 
-        result = await outlook_calendar_toolkit.update_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_update_calendar_event(
             event_id='event_id',
             subject='Updated Meeting',
             start_time='2025-12-10T14:00:00',
@@ -687,7 +689,7 @@ class TestUpdateCalendarEvent:
             async_patch_mock
         )
 
-        result = await outlook_calendar_toolkit.update_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_update_calendar_event(
             event_id='invalid_event_id',
             subject='New Subject',
         )
@@ -710,7 +712,7 @@ class TestDeleteCalendarEvent:
             async_delete_mock
         )
 
-        result = await outlook_calendar_toolkit.delete_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_delete_calendar_event(
             event_id='event_id'
         )
 
@@ -731,7 +733,7 @@ class TestDeleteCalendarEvent:
             async_delete_mock
         )
 
-        result = await outlook_calendar_toolkit.delete_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_delete_calendar_event(
             event_id='invalid_event_id'
         )
 
@@ -933,7 +935,7 @@ class TestGetCalendarEvent:
             async_get_mock
         )
 
-        result = await outlook_calendar_toolkit.get_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_get_calendar_event(
             event_id="event_id"
         )
 
@@ -953,7 +955,7 @@ class TestGetCalendarEvent:
             async_get_mock
         )
 
-        result = await outlook_calendar_toolkit.get_calendar_event(
+        result = await outlook_calendar_toolkit.outlook_get_calendar_event(
             event_id="invalid_id"
         )
 
@@ -1003,7 +1005,7 @@ class TestListCalendarEvents:
         async_get_mock = AsyncMock(return_value=mock_result)
         mock_graph_client.me.events.get = async_get_mock
 
-        result = await outlook_calendar_toolkit.list_calendar_events()
+        result = await outlook_calendar_toolkit.outlook_list_calendar_events()
 
         assert result['status'] == 'success'
         assert result['total_count'] == 1
@@ -1027,7 +1029,7 @@ class TestListCalendarEvents:
         )
         mock_graph_client.me.events.get = async_get_mock
 
-        result = await outlook_calendar_toolkit.list_calendar_events()
+        result = await outlook_calendar_toolkit.outlook_list_calendar_events()
 
         assert 'error' in result
         assert 'Failed to list calendar events' in result['error']

@@ -102,7 +102,7 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         return color_map.get(color, CalendarColor.Auto)
 
-    async def create_calendar(
+    async def outlook_create_calendar(
         self,
         name: str,
         color: str = "auto",
@@ -144,7 +144,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def delete_calendar(
+    async def outlook_delete_calendar(
         self,
         calendar_id: str,
     ) -> dict[str, str]:
@@ -200,7 +200,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             "owner_name": calendar.owner.name,
         }
 
-    async def get_calendar(
+    async def outlook_get_calendar(
         self,
         calendar_id: str,
     ) -> dict[str, Any]:
@@ -229,7 +229,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def list_calendars(
+    async def outlook_list_calendars(
         self,
         filter_query: Optional[str] = None,
         order_by: Optional[List[str]] = None,
@@ -311,7 +311,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def update_calendar(
+    async def outlook_update_calendar(
         self,
         calendar_id: str,
         name: Optional[str] = None,
@@ -544,7 +544,7 @@ class OutlookCalendarToolkit(BaseToolkit):
 
         return event
 
-    async def create_calendar_event(
+    async def outlook_create_calendar_event(
         self,
         subject: str,
         start_time: str,
@@ -652,7 +652,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def update_calendar_event(
+    async def outlook_update_calendar_event(
         self,
         event_id: str,
         subject: Optional[str] = None,
@@ -879,7 +879,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             "is_cancelled": event.is_cancelled,
         }
 
-    async def get_calendar_event(
+    async def outlook_get_calendar_event(
         self,
         event_id: str,
     ) -> dict[str, Any]:
@@ -907,7 +907,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def list_calendar_events(
+    async def outlook_list_calendar_events(
         self,
         filter_query: Optional[str] = None,
         order_by: Optional[List[str]] = None,
@@ -990,7 +990,7 @@ class OutlookCalendarToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def delete_calendar_event(
+    async def outlook_delete_calendar_event(
         self,
         event_id: str,
     ) -> dict[str, str]:
@@ -1026,14 +1026,14 @@ class OutlookCalendarToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(run_async(self.create_calendar)),
-            FunctionTool(run_async(self.delete_calendar)),
-            FunctionTool(run_async(self.get_calendar)),
-            FunctionTool(run_async(self.list_calendars)),
-            FunctionTool(run_async(self.update_calendar)),
-            FunctionTool(run_async(self.create_calendar_event)),
-            FunctionTool(run_async(self.update_calendar_event)),
-            FunctionTool(run_async(self.get_calendar_event)),
-            FunctionTool(run_async(self.list_calendar_events)),
-            FunctionTool(run_async(self.delete_calendar_event)),
+            FunctionTool(run_async(self.outlook_create_calendar)),
+            FunctionTool(run_async(self.outlook_delete_calendar)),
+            FunctionTool(run_async(self.outlook_get_calendar)),
+            FunctionTool(run_async(self.outlook_list_calendars)),
+            FunctionTool(run_async(self.outlook_update_calendar)),
+            FunctionTool(run_async(self.outlook_create_calendar_event)),
+            FunctionTool(run_async(self.outlook_update_calendar_event)),
+            FunctionTool(run_async(self.outlook_get_calendar_event)),
+            FunctionTool(run_async(self.outlook_list_calendar_events)),
+            FunctionTool(run_async(self.outlook_delete_calendar_event)),
         ]
