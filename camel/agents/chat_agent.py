@@ -1781,8 +1781,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
@@ -2215,8 +2225,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
