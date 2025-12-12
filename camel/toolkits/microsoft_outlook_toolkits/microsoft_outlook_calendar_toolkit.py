@@ -21,7 +21,6 @@ from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
-from camel.utils.commons import run_async
 
 from ._auth_utils import (
     MicrosoftAuthenticator,
@@ -1026,14 +1025,14 @@ class OutlookCalendarToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(run_async(self.outlook_create_calendar)),
-            FunctionTool(run_async(self.outlook_delete_calendar)),
-            FunctionTool(run_async(self.outlook_get_calendar)),
-            FunctionTool(run_async(self.outlook_list_calendars)),
-            FunctionTool(run_async(self.outlook_update_calendar)),
-            FunctionTool(run_async(self.outlook_create_calendar_event)),
-            FunctionTool(run_async(self.outlook_update_calendar_event)),
-            FunctionTool(run_async(self.outlook_get_calendar_event)),
-            FunctionTool(run_async(self.outlook_list_calendar_events)),
-            FunctionTool(run_async(self.outlook_delete_calendar_event)),
+            FunctionTool(self.outlook_create_calendar),
+            FunctionTool(self.outlook_delete_calendar),
+            FunctionTool(self.outlook_get_calendar),
+            FunctionTool(self.outlook_list_calendars),
+            FunctionTool(self.outlook_update_calendar),
+            FunctionTool(self.outlook_create_calendar_event),
+            FunctionTool(self.outlook_update_calendar_event),
+            FunctionTool(self.outlook_get_calendar_event),
+            FunctionTool(self.outlook_list_calendar_events),
+            FunctionTool(self.outlook_delete_calendar_event),
         ]
