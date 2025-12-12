@@ -50,6 +50,7 @@ class ModelType(UnifiedModelType, Enum):
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
+    GPT_5_2 = ("gpt-5.2",)
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -597,6 +598,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O4_MINI,
             ModelType.O3,
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
         }
 
     @property
@@ -1542,6 +1544,7 @@ class ModelType(UnifiedModelType, Enum):
             return 320_000
         elif self in {
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
             ModelType.GPT_5,

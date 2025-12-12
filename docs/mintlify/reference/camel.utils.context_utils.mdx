@@ -194,7 +194,8 @@ def structured_output_to_markdown(
     structured_data: BaseModel,
     metadata: Optional[Dict[str, Any]] = None,
     title: Optional[str] = None,
-    field_mappings: Optional[Dict[str, str]] = None
+    field_mappings: Optional[Dict[str, str]] = None,
+    exclude_fields: Optional[List[str]] = None
 ):
 ```
 
@@ -206,6 +207,7 @@ Convert any Pydantic BaseModel instance to markdown format.
 - **metadata**: Optional metadata to include in the markdown
 - **title**: Optional custom title, defaults to model class name (default: model class name)
 - **field_mappings**: Optional mapping of field names to custom section titles
+- **exclude_fields**: Optional list of field names to exclude from the markdown output
 
 **Returns:**
 
