@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from camel.logger import get_logger
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
@@ -49,6 +50,11 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._task_hierarchy: Dict[str, Dict[str, Any]] = {}
         self._worker_information: Dict[str, Dict[str, Any]] = {}
         self._initial_worker_logs: List[Dict[str, Any]] = []
+
+    def log_message(self, event: LogEvent) -> None:
+        r"""Logs a message to the console with color."""
+        colored_message = self._get_color_message(event)
+        print(colored_message)
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.
