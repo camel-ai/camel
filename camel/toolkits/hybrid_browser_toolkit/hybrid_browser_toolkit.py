@@ -78,7 +78,7 @@ class HybridBrowserToolkit(BaseToolkit):
         full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will return 'full visual mode'
             as snapshot instead of actual page content. The
-            browser_get_page_snapshot method will still return the actual
+            browser_get_page_dom method will still return the actual
             snapshot. Defaults to False.
         **kwargs: Additional keyword arguments passed to the
             implementation.
@@ -170,7 +170,7 @@ class HybridBrowserToolkit(BaseToolkit):
             full_visual_mode (bool): When True, browser actions like click,
                 browser_open, visit_page, etc. will return 'full visual mode'
                 as snapshot instead of actual page content. The
-                browser_get_page_snapshot method will still return the actual
+                browser_get_page_dom method will still return the actual
                 snapshot. Defaults to False.
             **kwargs: Additional keyword arguments passed to the
                 implementation.

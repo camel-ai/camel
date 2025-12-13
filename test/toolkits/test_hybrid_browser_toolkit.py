@@ -339,7 +339,7 @@ class TestHybridBrowserToolkit:
     async def test_get_page_snapshot(self, browser_toolkit_fixture):
         """Test getting page snapshot."""
         toolkit = browser_toolkit_fixture
-        result = await toolkit.browser_get_page_snapshot()
+        result = await toolkit.browser_get_page_dom()
         assert isinstance(result, dict)
         assert "snapshot" in result
         assert "success" in result

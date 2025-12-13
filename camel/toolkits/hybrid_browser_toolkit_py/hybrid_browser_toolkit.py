@@ -65,7 +65,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_visit_page",
         "browser_back",
         "browser_forward",
-        "browser_get_page_snapshot",
+        "browser_get_page_dom",
         "browser_get_som_screenshot",
         "browser_get_page_links",
         "browser_click",
@@ -133,7 +133,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             enable.
                 If None, uses DEFAULT_TOOLS. Available tools: browser_open,
                 browser_close, browser_visit_page, browser_back,
-                browser_forward, browser_get_page_snapshot,
+                browser_forward, browser_get_page_dom,
                 browser_get_som_screenshot, browser_get_page_links,
                 browser_click, browser_type, browser_select,
                 browser_scroll, browser_enter, browser_wait_user,

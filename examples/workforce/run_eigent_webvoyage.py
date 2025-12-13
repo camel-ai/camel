@@ -243,7 +243,7 @@ async def run_eigent_workforce(
 
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
+        model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
@@ -251,7 +251,7 @@ async def run_eigent_workforce(
     )
 
     model_backend_reason = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
+        model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
@@ -361,7 +361,7 @@ MUST use this as the current date.
         coordinator_agent=coordinator_agent,
         task_agent=task_agent,
         new_worker_agent=new_worker_agent,
-        use_structured_output_handler=False,
+        use_structured_output_handler=True,
         task_timeout_seconds=900.0,
     )
 
