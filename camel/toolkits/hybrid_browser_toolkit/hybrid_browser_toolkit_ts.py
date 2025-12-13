@@ -553,7 +553,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     async def browser_get_page_dom(self) -> Dict[str, Any]:
-        r"""Gets a textual snapshot of the page's interactive elements from dom.
+        r"""
+        Gets a textual snapshot of the page's interactive elements from dom.
 
         The dom snapshot lists elements like buttons, links, and inputs,
         each with
