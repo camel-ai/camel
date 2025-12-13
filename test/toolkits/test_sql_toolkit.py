@@ -43,6 +43,14 @@ def sql_toolkit_readonly():
 
 
 @pytest.fixture
+def sql_toolkit_sqlite():
+    r"""Create a SQLToolkit instance with SQLite in-memory database."""
+    toolkit = SQLToolkit(database_path=":memory:", database_type="sqlite", read_only=False)
+    yield toolkit
+    # Cleanup is handled by __del__
+
+
+@pytest.fixture
 def sql_toolkit_file():
     r"""Create a SQLToolkit instance with file-based database."""
     # Create a temporary file path
@@ -851,4 +859,106 @@ def test_quote_identifier_method(sql_toolkit_memory):
     # Test identifier with null bytes (should raise error)
     with pytest.raises(ValueError):
         sql_toolkit_memory._quote_identifier("table\x00name")
+
+
+def test_sqlite_basic_operations(sql_toolkit_sqlite):
+    r"""Test basic SQLite operations."""
+    # Create table
+    sql_toolkit_sqlite.execute_query(
+        "CREATE TABLE users (id INTEGER, name TEXT, age INTEGER)"
+    )
+    
+    # Insert data
+    sql_toolkit_sqlite.execute_query(
+        "INSERT INTO users VALUES (1, 'Alice', 25)"
+    )
+    
+    # Query data
+    result = sql_toolkit_sqlite.execute_query("SELECT * FROM users")
+    assert len(result) == 1
+    assert result[0]["id"] == 1
+    assert result[0]["name"] == "Alice"
+    assert result[0]["age"] == 25
+
+
+def test_sqlite_list_tables(sql_toolkit_sqlite):
+    r"""Test listing tables in SQLite."""
+    sql_toolkit_sqlite.execute_query("CREATE TABLE table1 (id INTEGER)")
+    sql_toolkit_sqlite.execute_query("CREATE TABLE table2 (id INTEGER)")
+    
+    tables = sql_toolkit_sqlite.list_tables()
+    assert "table1" in tables
+    assert "table2" in tables
+
+
+def test_sqlite_schema_discovery(sql_toolkit_sqlite):
+    r"""Test schema discovery in SQLite."""
+    sql_toolkit_sqlite.execute_query(
+        "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)"
+    )
+    
+    schema_info = sql_toolkit_sqlite.get_table_info("users")
+    assert "columns" in schema_info
+    assert "primary_keys" in schema_info
+    assert "id" in schema_info["primary_keys"]
+    assert len(schema_info["columns"]) == 3
+
+
+def test_sqlite_foreign_keys(sql_toolkit_sqlite):
+    r"""Test foreign key discovery in SQLite."""
+    sql_toolkit_sqlite.execute_query(
+        "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT)"
+    )
+    sql_toolkit_sqlite.execute_query(
+        """
+        CREATE TABLE employees (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            department_id INTEGER,
+            FOREIGN KEY (department_id) REFERENCES departments(id)
+        )
+        """
+    )
+    
+    schema_info = sql_toolkit_sqlite.get_table_info("employees")
+    assert "foreign_keys" in schema_info
+    assert len(schema_info["foreign_keys"]) == 1
+    fk = schema_info["foreign_keys"][0]
+    assert fk["column"] == "department_id"
+    assert fk["references_table"] == "departments"
+    assert fk["references_column"] == "id"
+
+
+def test_sqlite_readonly_mode():
+    r"""Test SQLite read-only mode."""
+    import tempfile
+    import os
+    
+    # Create a temporary database file
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
+        db_path = tmp_file.name
+    
+    try:
+        # Create database and add data
+        toolkit = SQLToolkit(database_path=db_path, database_type="sqlite", read_only=False)
+        toolkit.execute_query("CREATE TABLE products (id INTEGER, name TEXT)")
+        toolkit.execute_query("INSERT INTO products VALUES (1, 'Widget')")
+        toolkit._connection.close()
+        
+        # Open in read-only mode
+        readonly_toolkit = SQLToolkit(database_path=db_path, database_type="sqlite", read_only=True)
+        
+        # Should be able to read
+        result = readonly_toolkit.execute_query("SELECT * FROM products")
+        assert len(result) == 1
+        
+        # Should not be able to write
+        with pytest.raises(ValueError, match="Write operations are not allowed"):
+            readonly_toolkit.execute_query("INSERT INTO products VALUES (2, 'Gadget')")
+        
+        readonly_toolkit._connection.close()
+    finally:
+        # Cleanup
+        if os.path.exists(db_path):
+            os.unlink(db_path)
 

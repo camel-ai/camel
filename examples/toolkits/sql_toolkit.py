@@ -250,10 +250,63 @@ Persistent inventory data:
 ===============================================================================
 '''
 
-# Example 9: Schema Discovery - Using built-in toolkit methods
+# Example 9: Using SQLite Database
 print("\n" + "=" * 80)
-print("Example 9: Schema Discovery (Using Toolkit Methods)")
+print("Example 9: Using SQLite Database")
 print("=" * 80)
+
+# SQLite is built into Python and works similarly to DuckDB
+# Just specify database_type="sqlite" to use SQLite instead of DuckDB
+sqlite_toolkit = SQLToolkit(database_path=":memory:", database_type="sqlite", read_only=False)
+
+# Create a table
+sqlite_toolkit.execute_query(
+    "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, price REAL)"
+)
+
+# Insert data
+sqlite_toolkit.execute_query(
+    "INSERT INTO products (name, price) VALUES ('Laptop', 999.99)"
+)
+sqlite_toolkit.execute_query(
+    "INSERT INTO products (name, price) VALUES ('Mouse', 29.99)"
+)
+
+# Query data
+result = sqlite_toolkit.execute_query("SELECT * FROM products")
+print("\nSQLite products:")
+print(result)
+
+# List tables
+tables = sqlite_toolkit.list_tables()
+print(f"\nSQLite tables: {tables}")
+
+# Get table info
+table_info = sqlite_toolkit.get_table_info("products")
+print(f"\nSQLite table info:")
+print(f"  Columns: {len(table_info['columns'])}")
+print(f"  Primary keys: {table_info['primary_keys']}")
+print(f"  Row count: {table_info['row_count']}")
+
+'''
+===============================================================================
+SQLite products:
+[{'id': 1, 'name': 'Laptop', 'price': 999.99}, {'id': 2, 'name': 'Mouse', 'price': 29.99}]
+
+SQLite tables: ['products']
+
+SQLite table info:
+  Columns: 3
+  Primary keys: ['id']
+  Row count: 2
+===============================================================================
+'''
+
+# Example 10: Schema Discovery - Using built-in toolkit methods
+print("\n" + "=" * 80)
+print("Example 10: Schema Discovery (Using Toolkit Methods)")
+print("=" * 80)
+# Note: This example uses DuckDB (default), but SQLite works the same way
 
 # Create a new database with multiple tables including primary and foreign keys
 schema_toolkit = SQLToolkit(database_path=":memory:", read_only=False)
@@ -371,9 +424,9 @@ print("\n" + "=" * 80)
 print("SQL Toolkit examples completed successfully!")
 print("=" * 80)
 
-# Example 10: Using SQL Toolkit with ChatAgent - Schema Discovery First
+# Example 11: Using SQL Toolkit with ChatAgent - Schema Discovery First
 print("\n" + "=" * 80)
-print("Example 10: Using SQL Toolkit with ChatAgent (with Schema Discovery)")
+print("Example 11: Using SQL Toolkit with ChatAgent (with Schema Discovery)")
 print("=" * 80)
 
 from camel.agents import ChatAgent
@@ -539,9 +592,9 @@ There are now 2 employees in the Sales department.
 ===============================================================================
 '''
 
-# Example 11: Agent with Read-Only SQL Toolkit
+# Example 12: Agent with Read-Only SQL Toolkit
 print("\n" + "=" * 80)
-print("Example 11: Agent with Read-Only SQL Toolkit")
+print("Example 12: Agent with Read-Only SQL Toolkit")
 print("=" * 80)
 
 # Create a read-only toolkit (after setting up data)

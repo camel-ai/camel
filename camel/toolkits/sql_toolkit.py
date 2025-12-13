@@ -28,16 +28,16 @@ class SQLToolkit(BaseToolkit):
     r"""A toolkit for executing SQL queries against various SQL databases.
 
     This toolkit provides functionality to execute SQL queries with support
-    for read-only and read-write modes. It currently supports DuckDB, with
-    extensibility for MySQL, SQLite, and other SQL databases.
+    for read-only and read-write modes. It currently supports DuckDB and SQLite,
+    with extensibility for MySQL and other SQL databases.
 
     Args:
         database_path (Optional[str]): Path to the database file. If None,
-            uses an in-memory database. For DuckDB, use ":memory:" for
-            in-memory or a file path for persistent storage.
+            uses an in-memory database. For DuckDB and SQLite, use ":memory:"
+            for in-memory or a file path for persistent storage.
             (default: :obj:`None`)
         database_type (str, optional): Type of database to use. Currently
-            supports "duckdb". (default: :obj:`"duckdb"`)
+            supports "duckdb" and "sqlite". (default: :obj:`"duckdb"`)
         read_only (bool, optional): If True, only SELECT queries are allowed.
             Write operations (INSERT, UPDATE, DELETE, etc.) will be rejected.
             (default: :obj:`False`)
@@ -66,7 +66,7 @@ class SQLToolkit(BaseToolkit):
     ]
 
     # Supported database types
-    _SUPPORTED_DATABASES: ClassVar[List[str]] = ["duckdb"]
+    _SUPPORTED_DATABASES: ClassVar[List[str]] = ["duckdb", "sqlite"]
 
     def __init__(
         self,
@@ -128,6 +128,29 @@ class SQLToolkit(BaseToolkit):
                 conn = duckdb.connect(":memory:")
             else:
                 conn = duckdb.connect(self.database_path)
+            return conn
+        elif self.database_type == "sqlite":
+            try:
+                import sqlite3
+            except ImportError:
+                raise ImportError(
+                    "sqlite3 module is required for SQLite support. "
+                    "It should be included with Python, but if missing, "
+                    "ensure you're using a standard Python installation."
+                )
+
+            if self.database_path is None or self.database_path == ":memory:":
+                conn = sqlite3.connect(":memory:", check_same_thread=False)
+            else:
+                # SQLite read-only mode using URI
+                if self.read_only:
+                    uri = f"file:{self.database_path}?mode=ro"
+                    conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
+                else:
+                    conn = sqlite3.connect(self.database_path, check_same_thread=False)
+            
+            # Enable row factory to return dict-like rows
+            conn.row_factory = sqlite3.Row
             return conn
         else:
             raise ValueError(f"Unsupported database type: {self.database_type}")
@@ -271,9 +294,19 @@ class SQLToolkit(BaseToolkit):
             # EXPLAIN queries, SHOW queries, etc.
             if cursor.description is not None and not is_write:
                 # Query returned results and it's not a write operation, fetch them
-                columns = [desc[0] for desc in cursor.description]
                 rows = cursor.fetchall()
-                results = [dict(zip(columns, row)) for row in rows]
+                
+                # Convert rows to dictionaries
+                # SQLite with row_factory returns Row objects that can be converted to dict
+                # DuckDB returns tuples that need column names
+                if self.database_type == "sqlite" and rows and hasattr(rows[0], "keys"):
+                    # SQLite Row objects can be converted directly to dict
+                    results = [dict(row) for row in rows]
+                else:
+                    # DuckDB or other databases: use column names from description
+                    columns = [desc[0] for desc in cursor.description]
+                    results = [dict(zip(columns, row)) for row in rows]
+                
                 logger.debug(f"Query returned {len(results)} rows")
                 return results
             else:
@@ -309,6 +342,13 @@ class SQLToolkit(BaseToolkit):
             if self.database_type == "duckdb":
                 # DuckDB uses SHOW TABLES
                 result = self.execute_query("SHOW TABLES")
+                # Result format: [{'name': 'table1'}, {'name': 'table2'}]
+                return [row["name"] for row in result]
+            elif self.database_type == "sqlite":
+                # SQLite uses sqlite_master system table
+                result = self.execute_query(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                )
                 # Result format: [{'name': 'table1'}, {'name': 'table2'}]
                 return [row["name"] for row in result]
             else:
@@ -382,6 +422,50 @@ class SQLToolkit(BaseToolkit):
                             "references_column": fk["references_column"],
                         }
                         for fk in fk_results
+                    ]
+                except Exception as e:
+                    # If foreign key query fails, log but don't fail
+                    logger.debug(
+                        f"Could not retrieve foreign keys for {table_name}: {e!s}"
+                    )
+
+                return {
+                    "columns": columns,
+                    "primary_keys": primary_keys,
+                    "foreign_keys": foreign_keys,
+                }
+            elif self.database_type == "sqlite":
+                # SQLite uses PRAGMA table_info for column information
+                quoted_table_name = self._quote_identifier(table_name)
+                pragma_result = self.execute_query(f"PRAGMA table_info({quoted_table_name})")
+                
+                # Convert PRAGMA format to match DuckDB format
+                columns = []
+                primary_keys = []
+                for row in pragma_result:
+                    col_info = {
+                        "column_name": row["name"],
+                        "column_type": row["type"],
+                        "null": "YES" if row["notnull"] == 0 else "NO",
+                        "key": "PRI" if row["pk"] == 1 else None,
+                        "default": row["dflt_value"],
+                        "extra": None,
+                    }
+                    columns.append(col_info)
+                    if row["pk"] == 1:
+                        primary_keys.append(row["name"])
+
+                # Get foreign keys using PRAGMA foreign_key_list (much simpler!)
+                foreign_keys = []
+                try:
+                    fk_result = self.execute_query(f"PRAGMA foreign_key_list({quoted_table_name})")
+                    foreign_keys = [
+                        {
+                            "column": fk["from"],
+                            "references_table": fk["table"],
+                            "references_column": fk["to"],
+                        }
+                        for fk in fk_result
                     ]
                 except Exception as e:
                     # If foreign key query fails, log but don't fail
