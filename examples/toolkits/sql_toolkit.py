@@ -1,4 +1,4 @@
-# ========= Copyright 2024-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2024-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+import tempfile
+
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
 from camel.toolkits.sql_toolkit import SQLToolkit
+from camel.types import ModelPlatformType, ModelType
 
 # Example 1: Initialize SQL Toolkit with in-memory database
 sql_toolkit = SQLToolkit(database_path=":memory:", read_only=False)
@@ -63,14 +70,11 @@ Users older than 26:
 # Example 3: JOIN query
 # Create orders table
 sql_toolkit.execute_query(
-    "CREATE TABLE orders (id INTEGER, user_id INTEGER, product TEXT, amount REAL)"
+    "CREATE TABLE orders "
+    "(id INTEGER, user_id INTEGER, product TEXT, amount REAL)"
 )
-sql_toolkit.execute_query(
-    "INSERT INTO orders VALUES (1, 1, 'Laptop', 999.99)"
-)
-sql_toolkit.execute_query(
-    "INSERT INTO orders VALUES (2, 1, 'Mouse', 29.99)"
-)
+sql_toolkit.execute_query("INSERT INTO orders VALUES (1, 1, 'Laptop', 999.99)")
+sql_toolkit.execute_query("INSERT INTO orders VALUES (2, 1, 'Mouse', 29.99)")
 sql_toolkit.execute_query(
     "INSERT INTO orders VALUES (3, 2, 'Keyboard', 79.99)"
 )
@@ -121,9 +125,7 @@ Total spending per user:
 '''
 
 # Example 5: UPDATE and DELETE operations
-sql_toolkit.execute_query(
-    "UPDATE users SET age = 26 WHERE name = 'Alice'"
-)
+sql_toolkit.execute_query("UPDATE users SET age = 26 WHERE name = 'Alice'")
 result = sql_toolkit.execute_query(
     "SELECT name, age FROM users WHERE name = 'Alice'"
 )
@@ -179,7 +181,9 @@ except ValueError as e:
 Products (read-only mode):
 [{'id': 1, 'name': 'Widget', 'price': 19.99}]
 
-Read-only mode correctly blocked INSERT: Write operations are not allowed in read-only mode. The query contains write operations (INSERT, UPDATE, DELETE, DROP, CREATE, ALTER, TRUNCATE, etc.). Only SELECT queries are permitted.
+Read-only mode correctly blocked INSERT: Write operations are not allowed in
+read-only mode. The query contains write operations (INSERT, UPDATE, DELETE,
+DROP, CREATE, ALTER, TRUNCATE, etc.). Only SELECT queries are permitted.
 ===============================================================================
 '''
 
@@ -199,9 +203,6 @@ Query execution plan:
 '''
 
 # Example 8: File-based database (persistent storage)
-import tempfile
-import os
-
 # Create a temporary file for the database
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
     db_path = tmp_file.name
@@ -219,12 +220,8 @@ file_toolkit = SQLToolkit(database_path=db_path, read_only=False)
 file_toolkit.execute_query(
     "CREATE TABLE inventory (id INTEGER, item TEXT, quantity INTEGER)"
 )
-file_toolkit.execute_query(
-    "INSERT INTO inventory VALUES (1, 'Apples', 100)"
-)
-file_toolkit.execute_query(
-    "INSERT INTO inventory VALUES (2, 'Bananas', 150)"
-)
+file_toolkit.execute_query("INSERT INTO inventory VALUES (1, 'Apples', 100)")
+file_toolkit.execute_query("INSERT INTO inventory VALUES (2, 'Bananas', 150)")
 
 # Close connection
 file_toolkit._connection.close()
@@ -257,7 +254,9 @@ print("=" * 80)
 
 # SQLite is built into Python and works similarly to DuckDB
 # Just specify database_type="sqlite" to use SQLite instead of DuckDB
-sqlite_toolkit = SQLToolkit(database_path=":memory:", database_type="sqlite", read_only=False)
+sqlite_toolkit = SQLToolkit(
+    database_path=":memory:", database_type="sqlite", read_only=False
+)
 
 # Create a table
 sqlite_toolkit.execute_query(
@@ -283,7 +282,7 @@ print(f"\nSQLite tables: {tables}")
 
 # Get table info
 table_info = sqlite_toolkit.get_table_info("products")
-print(f"\nSQLite table info:")
+print("\nSQLite table info:")
 print(f"  Columns: {len(table_info['columns'])}")
 print(f"  Primary keys: {table_info['primary_keys']}")
 print(f"  Row count: {table_info['row_count']}")
@@ -291,7 +290,8 @@ print(f"  Row count: {table_info['row_count']}")
 '''
 ===============================================================================
 SQLite products:
-[{'id': 1, 'name': 'Laptop', 'price': 999.99}, {'id': 2, 'name': 'Mouse', 'price': 29.99}]
+[{'id': 1, 'name': 'Laptop', 'price': 999.99},
+ {'id': 2, 'name': 'Mouse', 'price': 29.99}]
 
 SQLite tables: ['products']
 
@@ -367,9 +367,9 @@ print(f"Row Count: {schema_info['row_count']}")
 '''
 ===============================================================================
 Schema of 'employees' table (with primary and foreign keys):
-Columns: [{'column_name': 'id', 'column_type': 'INTEGER', 'null': 'NO', 'key': 'PRI', ...}, ...]
+Columns: [{'column_name': 'id', 'column_type': 'INTEGER', ...}, ...]
 Primary Keys: ['id']
-Foreign Keys: [{'column': 'department_id', 'references_table': 'departments', 'references_column': 'id'}]
+Foreign Keys: [{'column': 'department_id', 'references_table': ...}]
 ===============================================================================
 '''
 
@@ -386,7 +386,7 @@ print(f"Row Count: {table_info['row_count']}")
 Complete info for 'employees' table:
 Table: employees
 Primary Keys: ['id']
-Foreign Keys: [{'column': 'department_id', 'references_table': 'departments', 'references_column': 'id'}]
+Foreign Keys: [{'column': 'department_id', 'references_table': ...}]
 Row Count: 1
 ===============================================================================
 '''
@@ -410,12 +410,12 @@ departments:
 
 employees:
   Primary Keys: ['id']
-  Foreign Keys: [{'column': 'department_id', 'references_table': 'departments', 'references_column': 'id'}]
+  Foreign Keys: [{'column': 'department_id', 'references_table': ...}]
   Row Count: 1
 
 projects:
   Primary Keys: ['id']
-  Foreign Keys: [{'column': 'employee_id', 'references_table': 'employees', 'references_column': 'id'}]
+  Foreign Keys: [{'column': 'employee_id', 'references_table': ...}]
   Row Count: 0
 ===============================================================================
 '''
@@ -428,11 +428,6 @@ print("=" * 80)
 print("\n" + "=" * 80)
 print("Example 11: Using SQL Toolkit with ChatAgent (with Schema Discovery)")
 print("=" * 80)
-
-from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 
 # Create a model using OpenAI
 model = ModelFactory.create(
@@ -448,7 +443,8 @@ agent_sql_toolkit = SQLToolkit(database_path=":memory:", read_only=False)
 
 # Set up initial data
 agent_sql_toolkit.execute_query(
-    "CREATE TABLE employees (id INTEGER, name TEXT, department TEXT, salary REAL)"
+    "CREATE TABLE employees "
+    "(id INTEGER, name TEXT, department TEXT, salary REAL)"
 )
 agent_sql_toolkit.execute_query(
     "INSERT INTO employees VALUES (1, 'Alice', 'Engineering', 95000.0)"
@@ -472,15 +468,15 @@ agent = ChatAgent(
         "IMPORTANT: Before answering questions about the data, you should "
         "first discover the database schema using these tools:\n"
         "1. Use 'list_tables' to list all tables in the database\n"
-        "2. Use 'get_table_info' with a table name to get comprehensive info "
-        "including schema (columns, primary keys, foreign keys) and row counts\n"
+        "2. Use 'get_table_info' with a table name to get comprehensive "
+        "info including schema (columns, primary keys, foreign keys) and "
+        "row counts\n"
         "   - Call with a table name for specific table info\n"
-        "   - Call without arguments to get info for all tables\n"
         "   - Call without arguments to get info for all tables\n\n"
-        "The schema information includes primary keys and foreign key relationships, "
-        "which will help you write correct JOIN queries.\n\n"
-        "After understanding the schema, you can write appropriate SQL queries "
-        "using 'execute_query' to answer user questions."
+        "The schema information includes primary keys and foreign key "
+        "relationships, which will help you write correct JOIN queries.\n\n"
+        "After understanding the schema, you can write appropriate SQL "
+        "queries using 'execute_query' to answer user questions."
     ),
     model=model,
     tools=[*agent_sql_toolkit.get_tools()],
@@ -488,7 +484,9 @@ agent = ChatAgent(
 
 # Example: Agent discovers schema first, then answers question
 print("\nUser: What tables are in the database and what's their structure?")
-response_schema = agent.step("What tables are in the database and what's their structure?")
+response_schema = agent.step(
+    "What tables are in the database and what's their structure?"
+)
 print(f"Agent: {response_schema.msgs[0].content}")
 
 # Now the agent knows the schema, it can answer questions
@@ -499,13 +497,14 @@ print(f"Agent: {response1.msgs[0].content}")
 '''
 ===============================================================================
 User: What tables are in the database and what's their structure?
-Agent: I'll first discover the database schema using the built-in schema discovery tools.
+Agent: I'll first discover the database schema using the built-in
+schema discovery tools.
 
 [Agent calls: list_tables()]
 [Agent calls: get_table_info("employees")]
 
 The database contains the following table:
-- employees: 
+- employees:
   * Columns: id (INTEGER), name (TEXT), department (TEXT), salary (REAL)
   * Primary Keys: []
   * Foreign Keys: []
@@ -515,8 +514,8 @@ Now I understand the schema and can answer questions about the data.
 User: What is the average salary by department?
 Agent: I'll query the database to find the average salary by department.
 
-[Agent executes SQL query: SELECT department, AVG(salary) as avg_salary 
-FROM employees GROUP BY department]
+[Agent executes SQL query:
+ SELECT department, AVG(salary) as avg_salary FROM employees GROUP BY dept]
 
 Here are the average salaries by department:
 
@@ -538,9 +537,10 @@ print(f"Agent: {response2.msgs[0].content}")
 '''
 ===============================================================================
 User: Show me all employees in the Engineering department.
-Agent: I'll query the database to find all employees in the Engineering department.
+Agent: I'll query the database to find all Engineering employees.
 
-[Agent executes SQL query: SELECT * FROM employees WHERE department = 'Engineering']
+[Agent executes SQL query:
+ SELECT * FROM employees WHERE department = 'Engineering']
 
 Here are all employees in the Engineering department:
 
@@ -554,9 +554,13 @@ There are 2 employees in the Engineering department.
 '''
 
 # Example query: Add a new employee
-print("\nUser: Add a new employee named Eve to the Sales department with a salary of 85000.")
+print(
+    "\nUser: Add a new employee named Eve to the Sales department "
+    "with a salary of 85000."
+)
 response3 = agent.step(
-    "Add a new employee named Eve to the Sales department with a salary of 85000."
+    "Add a new employee named Eve to the Sales department "
+    "with a salary of 85000."
 )
 print(f"Agent: {response3.msgs[0].content}")
 
@@ -567,13 +571,13 @@ print(f"Agent: {response4.msgs[0].content}")
 
 '''
 ===============================================================================
-User: Add a new employee named Eve to the Sales department with a salary of 85000.
+User: Add a new employee named Eve to the Sales department with salary 85000.
 Agent: I'll add the new employee to the database.
 
-[Agent executes SQL query: INSERT INTO employees (name, department, salary) 
+[Agent executes SQL query: INSERT INTO employees (name, department, salary)
 VALUES ('Eve', 'Sales', 85000.0)]
 
-The new employee Eve has been successfully added to the Sales department 
+The new employee Eve has been successfully added to the Sales department
 with a salary of $85,000.
 
 User: Show me all employees in Sales now.
@@ -614,15 +618,17 @@ readonly_agent = ChatAgent(
     system_message=(
         "You are a helpful database assistant in read-only mode. You can "
         "only query data, not modify it.\n\n"
-        "IMPORTANT: Before answering questions, you should discover the database "
-        "schema using these tools:\n"
+        "IMPORTANT: Before answering questions, you should discover the "
+        "database schema using these tools:\n"
         "1. Use 'list_tables' to list all tables\n"
-        "2. Use 'get_table_info' to get comprehensive table information including "
-        "schema (columns, primary keys, foreign keys) and row counts\n"
+        "2. Use 'get_table_info' to get comprehensive table information "
+        "including schema (columns, primary keys, foreign keys) and row "
+        "counts\n"
         "   - Call with a table name for specific table info\n"
         "   - Call without arguments to get info for all tables\n\n"
-        "After understanding the schema, use 'execute_query' to run SELECT queries only. "
-        "Write operations (INSERT, UPDATE, DELETE, etc.) are not allowed in read-only mode."
+        "After understanding the schema, use 'execute_query' to run SELECT "
+        "queries only. Write operations (INSERT, UPDATE, DELETE, etc.) are "
+        "not allowed in read-only mode."
     ),
     model=model,
     tools=[*readonly_agent_toolkit.get_tools()],
@@ -655,8 +661,8 @@ Here are all products in stock:
 | 2  | Gadget | $29.99 | 50    |
 
 User: Try to add a new product called 'Thingamajig' for $39.99.
-Agent: I'm in read-only mode, so I cannot modify the database. I can only 
-query existing data. If you need to add a product, please use a database 
+Agent: I'm in read-only mode, so I cannot modify the database. I can only
+query existing data. If you need to add a product, please use a database
 connection with write permissions.
 
 [Agent attempts to execute INSERT query but it's blocked by read-only mode]
@@ -666,4 +672,3 @@ connection with write permissions.
 print("\n" + "=" * 80)
 print("All SQL Toolkit examples completed successfully!")
 print("=" * 80)
-
