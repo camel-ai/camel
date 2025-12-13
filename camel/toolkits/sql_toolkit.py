@@ -1,0 +1,501 @@
+# ========= Copyright 2024-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2024-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import re
+from typing import Any, ClassVar, Dict, List, Optional, Union
+
+from camel.logger import get_logger
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
+
+logger = get_logger(__name__)
+
+
+@MCPServer()
+class SQLToolkit(BaseToolkit):
+    r"""A toolkit for executing SQL queries against various SQL databases.
+
+    This toolkit provides functionality to execute SQL queries with support
+    for read-only and read-write modes. It currently supports DuckDB, with
+    extensibility for MySQL, SQLite, and other SQL databases.
+
+    Args:
+        database_path (Optional[str]): Path to the database file. If None,
+            uses an in-memory database. For DuckDB, use ":memory:" for
+            in-memory or a file path for persistent storage.
+            (default: :obj:`None`)
+        database_type (str, optional): Type of database to use. Currently
+            supports "duckdb". (default: :obj:`"duckdb"`)
+        read_only (bool, optional): If True, only SELECT queries are allowed.
+            Write operations (INSERT, UPDATE, DELETE, etc.) will be rejected.
+            (default: :obj:`False`)
+        timeout (Optional[float], optional): The timeout for database
+            operations in seconds. Defaults to 180 seconds if not specified.
+            (default: :obj:`180.0`)
+
+    Raises:
+        ValueError: If database_type is not supported.
+        ImportError: If required database driver is not installed.
+    """
+
+    # SQL keywords that indicate write operations
+    _WRITE_KEYWORDS: ClassVar[List[str]] = [
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "DROP",
+        "CREATE",
+        "ALTER",
+        "TRUNCATE",
+        "REPLACE",
+        "MERGE",
+        "GRANT",
+        "REVOKE",
+    ]
+
+    # Supported database types
+    _SUPPORTED_DATABASES: ClassVar[List[str]] = ["duckdb"]
+
+    def __init__(
+        self,
+        database_path: Optional[str] = None,
+        database_type: str = "duckdb",
+        read_only: bool = False,
+        timeout: Optional[float] = 180.0,
+    ) -> None:
+        super().__init__(timeout=timeout)
+        self._validate_database_type(database_type)
+
+        self.database_path = database_path
+        self.database_type = database_type.lower()
+        self.read_only = read_only
+
+        # Initialize database connection
+        self._connection = self._create_connection()
+
+        logger.info(
+            f"Initialized SQL toolkit with database_type: {database_type}, "
+            f"database_path: {database_path or ':memory:'}, "
+            f"read_only: {read_only}, timeout: {self.timeout}s"
+        )
+
+    def _validate_database_type(self, database_type: str) -> None:
+        r"""Validate if the database type is supported.
+
+        Args:
+            database_type (str): The database type to validate.
+
+        Raises:
+            ValueError: If the database type is not supported.
+        """
+        if database_type.lower() not in self._SUPPORTED_DATABASES:
+            raise ValueError(
+                f"Unsupported database_type: {database_type}. "
+                f"Supported types: {self._SUPPORTED_DATABASES}"
+            )
+
+    def _create_connection(self) -> Any:
+        r"""Create a database connection based on the database type.
+
+        Returns:
+            Any: A database connection object.
+
+        Raises:
+            ImportError: If the required database driver is not installed.
+        """
+        if self.database_type == "duckdb":
+            try:
+                import duckdb
+            except ImportError:
+                raise ImportError(
+                    "duckdb package is required for DuckDB support. "
+                    "Install it with: pip install duckdb"
+                )
+
+            if self.database_path is None or self.database_path == ":memory:":
+                conn = duckdb.connect(":memory:")
+            else:
+                conn = duckdb.connect(self.database_path)
+            return conn
+        else:
+            raise ValueError(f"Unsupported database type: {self.database_type}")
+
+    def _is_write_query(self, query: str) -> bool:
+        r"""Check if a SQL query is a write operation.
+
+        This method analyzes the query string to determine if it contains
+        any write operations. It handles comments and case-insensitive matching.
+
+        Args:
+            query (str): The SQL query to check.
+
+        Returns:
+            bool: True if the query is a write operation, False otherwise.
+        """
+        # Remove SQL comments (-- and /* */ style)
+        # Remove single-line comments
+        query_no_comments = re.sub(r"--.*$", "", query, flags=re.MULTILINE)
+        # Remove multi-line comments
+        query_no_comments = re.sub(
+            r"/\*.*?\*/", "", query_no_comments, flags=re.DOTALL
+        )
+
+        # Normalize whitespace and convert to uppercase for keyword matching
+        query_normalized = " ".join(query_no_comments.split()).upper()
+
+        # Check for write keywords at the start of the query (after whitespace)
+        for keyword in self._WRITE_KEYWORDS:
+            # Match keyword at start of query or after whitespace/semicolon
+            pattern = r"(^|\s|;)" + re.escape(keyword) + r"(\s|$)"
+            if re.search(pattern, query_normalized):
+                return True
+
+        return False
+
+    def _quote_identifier(self, identifier: str) -> str:
+        r"""Safely quote a SQL identifier (table name, column name, etc.).
+
+        This method validates and quotes SQL identifiers to prevent SQL injection.
+        For DuckDB, identifiers are quoted with double quotes. Any double quotes
+        within the identifier are escaped by doubling them.
+
+        Args:
+            identifier (str): The identifier to quote (e.g., table name, column name).
+
+        Returns:
+            str: The safely quoted identifier.
+
+        Raises:
+            ValueError: If the identifier is empty or contains invalid characters.
+        """
+        if not identifier or not identifier.strip():
+            raise ValueError("Identifier cannot be empty")
+
+        identifier = identifier.strip()
+
+        # Validate identifier doesn't contain null bytes or other dangerous characters
+        if "\x00" in identifier:
+            raise ValueError("Identifier cannot contain null bytes")
+
+        # Escape double quotes by doubling them, then wrap in double quotes
+        escaped = identifier.replace('"', '""')
+        return f'"{escaped}"'
+
+    def _validate_query_mode(self, query: str) -> None:
+        r"""Validate if a query is allowed in the current mode.
+
+        In read-only mode, only SELECT queries are allowed. Write operations
+        will raise a ValueError.
+
+        Args:
+            query (str): The SQL query to validate.
+
+        Raises:
+            ValueError: If read-only mode is enabled and a write operation
+                is detected.
+        """
+        if self.read_only and self._is_write_query(query):
+            raise ValueError(
+                "Write operations are not allowed in read-only mode. "
+                "The query contains write operations (INSERT, UPDATE, DELETE, "
+                "DROP, CREATE, ALTER, TRUNCATE, etc.). Only SELECT queries "
+                "are permitted."
+            )
+
+    def execute_query(
+        self,
+        query: str,
+        params: Optional[Union[List[Union[str, int, float, bool, None]], Dict[str, Union[str, int, float, bool, None]]]] = None,
+    ) -> List[Dict[str, Any]]:
+        r"""Execute a SQL query and return results as a list of dictionaries.
+
+        This method executes a SQL query against the configured database and
+        returns the results as a list of dictionaries, where each dictionary
+        represents a row with column names as keys.
+
+        Args:
+            query (str): The SQL query to execute.
+            params (Optional[Union[List[Union[str, int, float, bool, None]], Dict[str, Union[str, int, float, bool, None]]]], optional):
+                Parameters for parameterized queries. Can be a list for positional
+                parameters (with ? placeholders) or a dict for named parameters.
+                Values can be strings, numbers, booleans, or None.
+                Note: tuples are also accepted at runtime but should be passed as
+                lists for type compatibility. (default: :obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries representing query
+                results. Each dictionary has column names as keys and row
+                values as values. Returns an empty list if the query returns
+                no results or for non-SELECT queries.
+
+        Raises:
+            ValueError: If read-only mode is enabled and a write operation
+                is detected, or if the query is invalid.
+        """
+        if not query or not query.strip():
+            raise ValueError("Query cannot be empty")
+
+        # Validate query mode
+        self._validate_query_mode(query)
+
+        try:
+            logger.debug(f"Executing query: {query[:100]}...")
+
+            cursor = self._connection.cursor()
+
+            # Execute query with or without parameters
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+
+            # Check if this is a write operation first
+            # DuckDB returns results for INSERT/UPDATE/DELETE (with count),
+            # but we want to return empty list for write operations
+            is_write = self._is_write_query(query)
+
+            # Check if the query returned results by checking cursor.description
+            # This handles SELECT queries, CTEs (WITH ... SELECT ...),
+            # EXPLAIN queries, SHOW queries, etc.
+            if cursor.description is not None and not is_write:
+                # Query returned results and it's not a write operation, fetch them
+                columns = [desc[0] for desc in cursor.description]
+                rows = cursor.fetchall()
+                results = [dict(zip(columns, row)) for row in rows]
+                logger.debug(f"Query returned {len(results)} rows")
+                return results
+            else:
+                # Query did not return results or is a write operation
+                # (INSERT, UPDATE, DELETE, etc.)
+                # Commit the transaction
+                self._connection.commit()
+                logger.debug("Non-SELECT query executed successfully")
+                return []
+
+        except Exception as e:
+            logger.error(f"Query execution failed: {e!s}")
+            # Rollback on error
+            try:
+                self._connection.rollback()
+            except Exception:
+                pass
+            raise ValueError(f"Query execution failed: {e!s}") from e
+
+    def list_tables(self) -> List[str]:
+        r"""List all tables in the database.
+
+        This method queries the database to discover all available tables.
+        It uses database-specific queries to retrieve table names.
+
+        Returns:
+            List[str]: A list of table names in the database.
+
+        Raises:
+            ValueError: If the query execution fails.
+        """
+        try:
+            if self.database_type == "duckdb":
+                # DuckDB uses SHOW TABLES
+                result = self.execute_query("SHOW TABLES")
+                # Result format: [{'name': 'table1'}, {'name': 'table2'}]
+                return [row["name"] for row in result]
+            else:
+                # For other databases, could use information_schema or similar
+                raise ValueError(
+                    f"list_tables not yet implemented for {self.database_type}"
+                )
+        except Exception as e:
+            logger.error(f"Failed to list tables: {e!s}")
+            raise ValueError(f"Failed to list tables: {e!s}") from e
+
+    def _get_table_schema(self, table_name: str) -> Dict[str, Any]:
+        r"""Internal helper method to get table schema information.
+
+        Args:
+            table_name (str): The name of the table to describe.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing 'columns', 'primary_keys',
+                and 'foreign_keys'.
+
+        Raises:
+            ValueError: If the table doesn't exist or query execution fails.
+        """
+        if not table_name or not table_name.strip():
+            raise ValueError("Table name cannot be empty")
+
+        try:
+            if self.database_type == "duckdb":
+                # Get column information using DESCRIBE
+                # Safely quote the table name to prevent SQL injection
+                quoted_table_name = self._quote_identifier(table_name)
+                columns = self.execute_query(f"DESCRIBE {quoted_table_name}")
+
+                # Extract primary keys
+                primary_keys = [
+                    col["column_name"]
+                    for col in columns
+                    if col.get("key") == "PRI"
+                ]
+
+                # Get foreign keys from information_schema
+                # This query retrieves FK relationships by joining system tables:
+                # - table_constraints: finds FOREIGN KEY constraints
+                # - referential_constraints: links FK to referenced constraint
+                # - key_column_usage: gets column names (used twice for source/target)
+                foreign_keys = []
+                try:
+                    fk_query = """
+                    SELECT 
+                        kcu.column_name,
+                        kcu2.table_name AS references_table,
+                        kcu2.column_name AS references_column
+                    FROM information_schema.table_constraints AS tc
+                    JOIN information_schema.referential_constraints AS rc
+                        ON tc.constraint_name = rc.constraint_name
+                    JOIN information_schema.key_column_usage AS kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.table_constraints AS tc2
+                        ON rc.unique_constraint_name = tc2.constraint_name
+                    JOIN information_schema.key_column_usage AS kcu2
+                        ON tc2.constraint_name = kcu2.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                        AND tc.table_name = ?
+                    """
+                    fk_results = self.execute_query(fk_query, params=[table_name])
+                    foreign_keys = [
+                        {
+                            "column": fk["column_name"],
+                            "references_table": fk["references_table"],
+                            "references_column": fk["references_column"],
+                        }
+                        for fk in fk_results
+                    ]
+                except Exception as e:
+                    # If foreign key query fails, log but don't fail
+                    logger.debug(
+                        f"Could not retrieve foreign keys for {table_name}: {e!s}"
+                    )
+
+                return {
+                    "columns": columns,
+                    "primary_keys": primary_keys,
+                    "foreign_keys": foreign_keys,
+                }
+            else:
+                # For other databases, could use information_schema or similar
+                raise ValueError(
+                    f"get_table_info not yet implemented for {self.database_type}"
+                )
+        except Exception as e:
+            logger.error(f"Failed to get table schema for {table_name}: {e!s}")
+            raise ValueError(
+                f"Failed to get table schema for {table_name}: {e!s}"
+            ) from e
+
+    def get_table_info(
+        self, table_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        r"""Get comprehensive information about table(s) in the database.
+
+        This method provides a summary of table information including schema,
+        primary keys, foreign keys, and row counts. If table_name is provided,
+        returns info for that specific table. Otherwise, returns info for all
+        tables.
+
+        Args:
+            table_name (Optional[str], optional): Name of a specific table to
+                get info for. If None, returns info for all tables.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing table information. If
+                table_name is provided, returns info for that table with keys:
+                'table_name', 'columns', 'primary_keys', 'foreign_keys',
+                'row_count'. Otherwise, returns a dictionary mapping table
+                names to their info dictionaries.
+
+        Raises:
+            ValueError: If the table doesn't exist or query execution fails.
+        """
+        # Validate table_name if provided
+        if table_name is not None and (not table_name or not table_name.strip()):
+            raise ValueError("Table name cannot be empty")
+        
+        try:
+            if table_name:
+                # Get info for specific table
+                schema_info = self._get_table_schema(table_name)
+                # Get row count - safely quote table name to prevent SQL injection
+                quoted_table_name = self._quote_identifier(table_name)
+                count_result = self.execute_query(
+                    f"SELECT COUNT(*) as row_count FROM {quoted_table_name}"
+                )
+                row_count = count_result[0]["row_count"] if count_result else 0
+
+                return {
+                    "table_name": table_name,
+                    "columns": schema_info["columns"],
+                    "primary_keys": schema_info["primary_keys"],
+                    "foreign_keys": schema_info["foreign_keys"],
+                    "row_count": row_count,
+                }
+            else:
+                # Get info for all tables
+                tables = self.list_tables()
+                result = {}
+                for table in tables:
+                    schema_info = self._get_table_schema(table)
+                    # Safely quote table name to prevent SQL injection
+                    quoted_table = self._quote_identifier(table)
+                    count_result = self.execute_query(
+                        f"SELECT COUNT(*) as row_count FROM {quoted_table}"
+                    )
+                    row_count = (
+                        count_result[0]["row_count"] if count_result else 0
+                    )
+                    result[table] = {
+                        "table_name": table,
+                        "columns": schema_info["columns"],
+                        "primary_keys": schema_info["primary_keys"],
+                        "foreign_keys": schema_info["foreign_keys"],
+                        "row_count": row_count,
+                    }
+                return result
+        except Exception as e:
+            logger.error(f"Failed to get table info: {e!s}")
+            raise ValueError(f"Failed to get table info: {e!s}") from e
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Get the list of available tools in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing the
+                available functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.execute_query),
+            FunctionTool(self.list_tables),
+            FunctionTool(self.get_table_info),
+        ]
+
+    def __del__(self) -> None:
+        r"""Clean up database connection on deletion."""
+        if hasattr(self, "_connection") and self._connection:
+            try:
+                self._connection.close()
+            except Exception:
+                pass
+
