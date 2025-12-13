@@ -304,8 +304,10 @@ class TestHybridBrowserToolkit:
         """Test closing browser."""
         toolkit = browser_toolkit_fixture
         result = await toolkit.browser_close()
-        assert isinstance(result, str)
-        assert "closed" in result.lower()
+        assert isinstance(result, dict)
+        assert "message" in result
+        assert "success" in result
+        assert "closed" in result["message"].lower()
 
     @pytest.mark.asyncio
     async def test_visit_page_valid_url(self, browser_toolkit_fixture):
@@ -338,10 +340,13 @@ class TestHybridBrowserToolkit:
         """Test getting page snapshot."""
         toolkit = browser_toolkit_fixture
         result = await toolkit.browser_get_page_snapshot()
-        assert isinstance(result, str)
+        assert isinstance(result, dict)
+        assert "snapshot" in result
+        assert "success" in result
+        snapshot = result["snapshot"]
         assert (
-            "page snapshot" in result.lower()
-            or "test content" in result.lower()
+            "page snapshot" in snapshot.lower()
+            or "test content" in snapshot.lower()
         )
 
     @pytest.mark.asyncio
