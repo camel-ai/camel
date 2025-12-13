@@ -72,6 +72,7 @@ from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .sql_toolkit import SQLToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
@@ -154,6 +155,7 @@ __all__ = [
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
     'SearxNGToolkit',
+    'SQLToolkit',
     'JinaRerankerToolkit',
     'OrigeneToolkit',
     'PulseMCPSearchToolkit',
