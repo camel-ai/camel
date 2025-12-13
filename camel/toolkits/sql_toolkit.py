@@ -127,7 +127,9 @@ class SQLToolkit(BaseToolkit):
             if self.database_path is None or self.database_path == ":memory:":
                 conn = duckdb.connect(":memory:")
             else:
-                conn = duckdb.connect(self.database_path)
+                # Pass read_only parameter for file-based connections
+                # This provides database-level protection in addition to application-level checks
+                conn = duckdb.connect(self.database_path, read_only=self.read_only)
             return conn
         elif self.database_type == "sqlite":
             try:
