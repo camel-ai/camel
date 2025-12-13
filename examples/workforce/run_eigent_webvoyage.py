@@ -514,7 +514,7 @@ if __name__ == "__main__":
                     json.dump(task_result, f, indent=2, ensure_ascii=False)
 
                 # Save accumulated results (all tasks so far)
-                results_file = f"all_results_{args.start}_{end_str}.json"
+                results_file = WORKING_DIRECTORY_PATH / f"all_results_{args.start}_{end_str}.json"
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(all_results, f, indent=2, ensure_ascii=False)
 
