@@ -31,8 +31,10 @@ from camel.messages import BaseMessage
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+from .decorators import add_reason_field
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -71,7 +73,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_visit_page",
         "browser_back",
         "browser_forward",
-        "browser_get_page_snapshot",
+        "browser_get_page_dom",
         "browser_get_som_screenshot",
         "browser_click",
         "browser_type",
@@ -99,6 +101,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         stealth: bool = False,
         cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
+        enable_reasoning: bool = False,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
@@ -128,6 +131,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
             Defaults to None.
+            enable_reasoning (bool): Whether to enable reasoning when agent
+                is using the browser toolkit. Defaults to False. agent will
+                provide explanations for its actions when this is enabled.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
             log_dir (Optional[str]): Custom directory path for log files.
@@ -187,6 +193,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
+            enable_reasoning=enable_reasoning,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
             cdp_keep_current_page=cdp_keep_current_page,
@@ -206,17 +213,22 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "is True, the browser will keep the current page and not "
                 "navigate to any URL."
             )
+        # toolkit settings
+        self._cache_dir = toolkit_config.cache_dir
+        self._browser_log_to_file = toolkit_config.browser_log_to_file
+        self._enabled_tools = toolkit_config.enabled_tools
+        self._enable_reasoning = toolkit_config.enable_reasoning
 
+        # browser settings
         self._headless = browser_config.headless
         self._user_data_dir = browser_config.user_data_dir
         self._stealth = browser_config.stealth
-        self._cache_dir = toolkit_config.cache_dir
-        self._browser_log_to_file = toolkit_config.browser_log_to_file
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
 
+        # timeout settings
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
         self._navigation_timeout = browser_config.navigation_timeout
@@ -227,23 +239,31 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_config.dom_content_loaded_timeout
         )
 
-        if enabled_tools is None:
-            self.enabled_tools = self.DEFAULT_TOOLS.copy()
+        if self._enabled_tools is None:
+            self._enabled_tools = self.DEFAULT_TOOLS.copy()
         else:
             invalid_tools = [
-                tool for tool in enabled_tools if tool not in self.ALL_TOOLS
+                tool
+                for tool in self._enabled_tools
+                if tool not in self.ALL_TOOLS
             ]
             if invalid_tools:
                 raise ValueError(
                     f"Invalid tools specified: {invalid_tools}. "
                     f"Available tools: {self.ALL_TOOLS}"
                 )
-            self.enabled_tools = enabled_tools.copy()
 
-        logger.info(f"Enabled tools: {self.enabled_tools}")
+        logger.info(f"Enabled tools: {self._enabled_tools}")
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
+
+        # Dynamically wrap tool methods if reasoning is enabled
+        if self._enable_reasoning:
+            for tool_name in self._enabled_tools:
+                method = getattr(self, tool_name, None)
+                if method and callable(method):
+                    setattr(self, tool_name, add_reason_field(method))
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
@@ -350,22 +370,27 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_close(self) -> str:
+    async def browser_close(self) -> Dict[str, Any]:
         r"""Closes the browser session, releasing all resources.
 
         This should be called at the end of a task for cleanup.
 
         Returns:
-            str: A confirmation message.
+            Dict[str, Any]: A dictionary with:
+                - "message" (str): A confirmation message.
+                - "success" (bool): Whether the operation succeeded.
         """
         try:
             if self._ws_wrapper:
                 await self._ws_wrapper.stop()
                 self._ws_wrapper = None
-            return "Browser session closed."
+            return {"message": "Browser session closed.", "success": True}
         except Exception as e:
             logger.error(f"Failed to close browser: {e}")
-            return f"Error closing browser: {e}"
+            return {
+                "message": f"Error closing browser: {e}",
+                "success": False,
+            }
 
     async def disconnect_websocket(self) -> str:
         r"""Disconnects the WebSocket connection without closing the browser.
@@ -528,10 +553,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_get_page_snapshot(self) -> str:
-        r"""Gets a textual snapshot of the page's interactive elements.
+    async def browser_get_page_dom(self) -> Dict[str, Any]:
+        r"""
+        Gets a textual snapshot of the page's interactive elements from dom.
 
-        The snapshot lists elements like buttons, links, and inputs,
+        The dom snapshot lists elements like buttons, links, and inputs,
         each with
         a unique `ref` ID. This ID is used by other tools (e.g., `click`,
         `type`) to interact with a specific element. This tool provides no
@@ -542,24 +568,30 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         will be included in the snapshot.
 
         Returns:
-            str: A formatted string representing the interactive elements and
-                their `ref` IDs. For example:
-                '- link "Sign In" [ref=1]'
-                '- textbox "Username" [ref=2]'
+            Dict[str, Any]: A dictionary with:
+                - "snapshot" (str): A formatted string representing the
+                  interactive elements and their `ref` IDs. For example:
+                  '- link "Sign In" [ref=1]'
+                  '- textbox "Username" [ref=2]'
+                - "success" (bool): Whether the operation succeeded.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            return await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            snapshot = await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            return {"snapshot": snapshot, "success": True}
         except Exception as e:
             logger.error(f"Failed to get page snapshot: {e}")
-            return f"Error capturing snapshot: {e}"
+            return {
+                "snapshot": f"Error capturing snapshot: {e}",
+                "success": False,
+            }
 
     @dependencies_required('PIL')
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
         instruction: Optional[str] = None,
-    ) -> str:
+    )-> "str | ToolResult":
         r"""Captures a screenshot with interactive elements highlighted.
 
         "SoM" stands for "Set of Marks". This tool takes a screenshot and
@@ -569,17 +601,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         textual snapshot is not enough.
 
         Args:
-            read_image (bool, optional): If `True`, the agent will analyze
-                the screenshot. Requires agent to be registered.
-                (default: :obj:`True`)
+            read_image (bool, optional): If `True`, the screenshot image will
+                be included in the agent's context for direct visual analysis.
+                If `False`, only the file path will be returned.
             instruction (Optional[str], optional): A specific question or
                 command for the agent regarding the screenshot, used only if
                 `read_image` is `True`. For example: "Find the login button."
 
         Returns:
-            str: A confirmation message indicating the screenshot was
-                captured, the file path where it was saved, and optionally the
-                agent's analysis if `read_image` is `True`.
+            str | ToolResult: If `read_image` is `True`, returns a ToolResult
+                containing the text message and the screenshot image (which
+                will be automatically added to agent's context). If `False`,
+                returns a string with the file path only.
         """
         import base64
         import datetime
@@ -630,39 +663,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
                         result_text += f" (saved to: {file_path})"
                         break
-
-            if read_image and file_path:
-                if self.agent is None:
-                    logger.error(
-                        "Cannot analyze screenshot: No agent registered. "
-                        "Please pass this toolkit to ChatAgent via "
-                        "toolkits_to_register_agent parameter."
-                    )
-                    result_text += (
-                        " Error: No agent registered for image analysis. "
-                        "Please pass this toolkit to ChatAgent via "
-                        "toolkits_to_register_agent parameter."
-                    )
-                else:
-                    try:
-                        from PIL import Image
-
-                        img = Image.open(file_path)
-                        inst = instruction if instruction is not None else ""
-                        message = BaseMessage.make_user_message(
-                            role_name="User",
-                            content=inst,
-                            image_list=[img],
-                        )
-
-                        response = await self.agent.astep(message)
-                        agent_response = response.msgs[0].content
-                        result_text += f". Agent analysis: {agent_response}"
-                    except Exception as e:
-                        logger.error(f"Error analyzing screenshot: {e}")
-                        result_text += f". Error analyzing screenshot: {e}"
-
-            return result_text
+            # Return ToolResult with image if read_image is True
+            if read_image and result.images:
+                logger.info(
+                    f"Returning ToolResult with {len(result.images)} image(s) "
+                    "for agent context"
+                )
+                return ToolResult(
+                    text=result_text,
+                    images=result.images,  # Base64 images from WebSocket
+                )
+            else:
+                # Return plain text if read_image is False
+                return result_text
         except Exception as e:
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
@@ -1875,7 +1888,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
         try:
-            snapshot = await self.browser_get_page_snapshot()
+            snapshot_result = await self.browser_get_page_dom()
+            snapshot = (
+                snapshot_result["snapshot"]
+                if snapshot_result["success"]
+                else ""
+            )
             tab_info = await self.browser_get_tab_info()
             return {"result": result_msg, "snapshot": snapshot, **tab_info}
         except Exception as e:
@@ -1913,7 +1931,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             stealth=self._stealth,
             cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
             f"{new_session_id}/",
-            enabled_tools=self.enabled_tools.copy(),
+            enabled_tools=(
+                self._enabled_tools.copy() if self._enabled_tools else None
+            ),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
             default_start_url=self._default_start_url,
@@ -1938,7 +1958,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_visit_page": self.browser_visit_page,
             "browser_back": self.browser_back,
             "browser_forward": self.browser_forward,
-            "browser_get_page_snapshot": self.browser_get_page_snapshot,
+            "browser_get_page_dom": self.browser_get_page_dom,
             "browser_get_som_screenshot": self.browser_get_som_screenshot,
             "browser_click": self.browser_click,
             "browser_type": self.browser_type,
@@ -1958,16 +1978,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_sheet_read": self.browser_sheet_read,
         }
 
-        enabled_tools = []
-
-        for tool_name in self.enabled_tools:
+        tools = []
+        enabled_tools = (
+            self._enabled_tools if self._enabled_tools else self.DEFAULT_TOOLS
+        )
+        for tool_name in enabled_tools:
             if tool_name in tool_map:
                 tool = FunctionTool(
                     cast(Callable[..., Any], tool_map[tool_name])
                 )
-                enabled_tools.append(tool)
+                tools.append(tool)
             else:
                 logger.warning(f"Unknown tool name: {tool_name}")
 
-        logger.info(f"Returning {len(enabled_tools)} enabled tools")
-        return enabled_tools
+        logger.info(f"Returning {len(tools)} enabled tools")
+        return tools

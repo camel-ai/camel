@@ -573,6 +573,7 @@ class WebSocketBrowserWrapper:
         # Write to log file
         try:
             with open(self.log_file_path, 'a', encoding='utf-8') as f:
+                print(f"Logging action {action_name} to {self.log_file_path}")
                 f.write(
                     json.dumps(log_entry, ensure_ascii=False, indent=2) + '\n'
                 )

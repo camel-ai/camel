@@ -117,8 +117,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._max_retries = max_retries
         # Initialize logging configuration
         self._log_enabled = (
-            os.environ.get("CAMEL_MODEL_LOG_ENABLED", "False").lower()
-            == "true"
+            os.environ.get("CAMEL_MODEL_LOG_ENABLED", "True").lower() == "true"
         )
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
 
