@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
@@ -1344,6 +1344,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Metaso search failed: {e}"}
 
+    @dependencies_required("google-search-results")
     @api_keys_required([(None, 'SERPAPI_KEY')])
     def search_serpapi(
         self,
@@ -1414,7 +1415,7 @@ class SearchToolkit(BaseToolkit):
             "filter": filter,
         }
 
-        if custom_params:
+        if custom_params is not None:
             params.update(custom_params)
         try:
             search = SerpApiClient(params)
@@ -1439,10 +1440,6 @@ class SearchToolkit(BaseToolkit):
 
             return {"results": formatted_results}
 
-        except ImportError:
-            return {
-                "error": "serpapi library not installed. Install with: pip install google-search-results"
-            }
         except Exception as e:
             return {"error": f"SerpApi search failed: {e!s}"}
 

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import glob
 import os
@@ -92,6 +92,14 @@ class WorkflowMemoryManager:
         self._context_utility = context_utility
         self._role_identifier = role_identifier
         self.config = config if config is not None else WorkflowConfig()
+
+        # mapping of loaded workflow filenames to their full file paths
+        # populated when workflows are loaded, used to resolve update targets
+        self._loaded_workflow_paths: Dict[str, str] = {}
+
+        # cached loaded workflow contents for reuse in prompt preparation
+        # list of dicts with 'filename' and 'content' keys
+        self._loaded_workflow_contents: List[Dict[str, str]] = []
 
     def _get_context_utility(self) -> ContextUtility:
         r"""Get context utility with lazy initialization.
@@ -554,8 +562,9 @@ class WorkflowMemoryManager:
         r"""Save the worker's current workflow memories using agent
         summarization.
 
-        This method generates a workflow summary from the worker agent's
-        conversation history and saves it to a markdown file.
+        This method uses a two-pass approach: first generates the workflow
+        summary to determine operation_mode (update vs create), then saves
+        to the appropriate file path based on that decision.
 
         Args:
             conversation_accumulator (Optional[ChatAgent]): Optional
@@ -570,26 +579,88 @@ class WorkflowMemoryManager:
                 - worker_description (str): Worker description used
         """
         try:
-            # setup context utility and agent
+            # pass 1: generate workflow summary (without saving to disk)
+            summary_result = self.generate_workflow_summary(
+                conversation_accumulator=conversation_accumulator
+            )
+
+            if summary_result["status"] != "success":
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": f"Failed to generate summary: "
+                    f"{summary_result['status']}",
+                }
+
+            workflow_summary = summary_result["structured_summary"]
+            if not workflow_summary:
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": "No structured summary generated",
+                }
+
+            # pass 2: save using save_workflow_content which handles
+            # operation_mode branching
+            context_util = self._get_context_utility()
+            result = self.save_workflow_content(
+                workflow_summary=workflow_summary,
+                context_utility=context_util,
+                conversation_accumulator=conversation_accumulator,
+            )
+
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow memories: {e!s}",
+            }
+
+    def generate_workflow_summary(
+        self,
+        conversation_accumulator: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""Generate a workflow summary without saving to disk.
+
+        This method generates a workflow summary by calling a dedicated
+        summarizer agent. It does NOT save to disk - only generates the
+        summary content and structured output. Use this when you need to
+        inspect the summary (e.g., extract operation_mode) before determining
+        where to save it.
+
+        Args:
+            conversation_accumulator (Optional[ChatAgent]): Optional
+                accumulator agent with collected conversations. If provided,
+                uses this instead of the main worker agent.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with:
+                - structured_summary: WorkflowSummary instance or None
+                - summary_content: Raw text content
+                - status: "success" or error message
+        """
+
+        result: Dict[str, Any] = {
+            "structured_summary": None,
+            "summary_content": "",
+            "status": "",
+        }
+
+        try:
+            # setup context utility
             context_util = self._get_context_utility()
             self.worker.set_context_utility(context_util)
 
-            # prepare workflow summarization components
+            # prepare workflow summarization prompt
             structured_prompt = self._prepare_workflow_prompt()
-
-            # check if we should use role_name or let summarize extract
-            # task_title
-            clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = not is_generic_role_name(clean_name)
-
-            # if role_name is explicit, use it for filename
-            # if role_name is generic, pass none to let summarize use
-            # task_title
-            filename = (
-                self._generate_workflow_filename()
-                if use_role_name_for_filename
-                else None
-            )
 
             # select agent for summarization
             agent_to_summarize = self.worker
@@ -606,27 +677,201 @@ class WorkflowMemoryManager:
                         f"summary"
                     )
 
-            # generate and save workflow summary
-            result = agent_to_summarize.summarize(
-                filename=filename,
-                summary_prompt=structured_prompt,
-                response_format=WorkflowSummary,
+            # get conversation from agent's memory
+            source_agent = (
+                conversation_accumulator
+                if conversation_accumulator
+                else self.worker
+            )
+            messages, _ = source_agent.memory.get_context()
+
+            if not messages:
+                result["status"] = "No conversation context available"
+                return result
+
+            # build conversation text
+            conversation_text, _ = (
+                agent_to_summarize._build_conversation_text_from_messages(
+                    messages, include_summaries=False
+                )
             )
 
-            # add worker metadata
-            result["worker_description"] = self.description
+            if not conversation_text:
+                result["status"] = "Conversation context is empty"
+                return result
+
+            # create or reuse summarizer agent
+            if agent_to_summarize._context_summary_agent is None:
+                agent_to_summarize._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
+                    ),
+                    model=agent_to_summarize.model_backend,
+                    agent_id=f"{agent_to_summarize.agent_id}_context_summarizer",
+                )
+            else:
+                agent_to_summarize._context_summary_agent.reset()
+
+            # prepare prompt
+            prompt_text = (
+                f"{structured_prompt.rstrip()}\n\n"
+                f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                f"{conversation_text}"
+            )
+
+            # call summarizer agent with structured output
+            response = agent_to_summarize._context_summary_agent.step(
+                prompt_text, response_format=WorkflowSummary
+            )
+
+            if not response.msgs:
+                result["status"] = "Failed to generate summary"
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            structured_output = None
+            if response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            result.update(
+                {
+                    "structured_summary": structured_output,
+                    "summary_content": summary_content,
+                    "status": "success",
+                }
+            )
             return result
 
-        except Exception as e:
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": f"Failed to save workflow memories: {e!s}",
-            }
+        except Exception as exc:
+            error_message = f"Failed to generate summary: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
 
-    async def save_workflow_content_async(
+    async def generate_workflow_summary_async(
+        self,
+        conversation_accumulator: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""Asynchronously generate a workflow summary without saving to disk.
+
+        This is the async version of generate_workflow_summary() that uses
+        astep() for non-blocking LLM calls. It does NOT save to disk - only
+        generates the summary content and structured output.
+
+        Args:
+            conversation_accumulator (Optional[ChatAgent]): Optional
+                accumulator agent with collected conversations. If provided,
+                uses this instead of the main worker agent.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with:
+                - structured_summary: WorkflowSummary instance or None
+                - summary_content: Raw text content
+                - status: "success" or error message
+        """
+        result: Dict[str, Any] = {
+            "structured_summary": None,
+            "summary_content": "",
+            "status": "",
+        }
+
+        try:
+            # setup context utility
+            context_util = self._get_context_utility()
+            self.worker.set_context_utility(context_util)
+
+            # prepare workflow summarization prompt
+            structured_prompt = self._prepare_workflow_prompt()
+
+            # select agent for summarization
+            agent_to_summarize = self.worker
+            if conversation_accumulator is not None:
+                accumulator_messages, _ = (
+                    conversation_accumulator.memory.get_context()
+                )
+                if accumulator_messages:
+                    conversation_accumulator.set_context_utility(context_util)
+                    agent_to_summarize = conversation_accumulator
+                    logger.info(
+                        f"Using conversation accumulator with "
+                        f"{len(accumulator_messages)} messages for workflow "
+                        f"summary"
+                    )
+
+            # get conversation from agent's memory
+            source_agent = (
+                conversation_accumulator
+                if conversation_accumulator
+                else self.worker
+            )
+            messages, _ = source_agent.memory.get_context()
+
+            if not messages:
+                result["status"] = "No conversation context available"
+                return result
+
+            # build conversation text
+            conversation_text, _ = (
+                agent_to_summarize._build_conversation_text_from_messages(
+                    messages, include_summaries=False
+                )
+            )
+
+            if not conversation_text:
+                result["status"] = "Conversation context is empty"
+                return result
+
+            # create or reuse summarizer agent
+            if agent_to_summarize._context_summary_agent is None:
+                agent_to_summarize._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
+                    ),
+                    model=agent_to_summarize.model_backend,
+                    agent_id=f"{agent_to_summarize.agent_id}_context_summarizer",
+                )
+            else:
+                agent_to_summarize._context_summary_agent.reset()
+
+            # prepare prompt
+            prompt_text = (
+                f"{structured_prompt.rstrip()}\n\n"
+                f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                f"{conversation_text}"
+            )
+
+            # call summarizer agent with structured output (async)
+            response = await agent_to_summarize._context_summary_agent.astep(
+                prompt_text, response_format=WorkflowSummary
+            )
+
+            if not response.msgs:
+                result["status"] = "Failed to generate summary"
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            structured_output = None
+            if response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            result.update(
+                {
+                    "structured_summary": structured_output,
+                    "summary_content": summary_content,
+                    "status": "success",
+                }
+            )
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to generate summary: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
+
+    def save_workflow_content(
         self,
         workflow_summary: 'WorkflowSummary',
         context_utility: Optional[ContextUtility] = None,
@@ -697,19 +942,75 @@ class WorkflowMemoryManager:
             # set context utility on worker
             self.worker.set_context_utility(context_utility)
 
-            # determine filename from task_title
-            task_title = workflow_summary.task_title
-            clean_title = ContextUtility.sanitize_workflow_filename(task_title)
-            base_filename = (
-                f"{clean_title}{self.config.workflow_filename_suffix}"
-                if clean_title
-                else "workflow"
+            # determine file path based on operation mode
+            operation_mode = getattr(
+                workflow_summary, 'operation_mode', 'create'
+            )
+            target_filename = getattr(
+                workflow_summary, 'target_workflow_filename', None
             )
 
+            # validate operation_mode - default to create for unexpected values
+            if operation_mode not in ("create", "update"):
+                logger.warning(
+                    f"Unexpected operation_mode '{operation_mode}', "
+                    "defaulting to 'create'."
+                )
+                operation_mode = "create"
+
+            if operation_mode == "update":
+                # if only one workflow loaded and no target specified,
+                # assume agent meant that one
+                has_single_workflow = len(self._loaded_workflow_paths) == 1
+                if not target_filename and has_single_workflow:
+                    target_filename = next(
+                        iter(self._loaded_workflow_paths.keys())
+                    )
+                    logger.info(
+                        f"Auto-selecting single loaded workflow: "
+                        f"{target_filename}"
+                    )
+
+                # validate target filename exists in loaded workflows
+                if (
+                    target_filename
+                    and target_filename in self._loaded_workflow_paths
+                ):
+                    # use the stored path for the target workflow
+                    file_path = Path(
+                        self._loaded_workflow_paths[target_filename]
+                    )
+                    base_filename = target_filename
+                    logger.info(f"Updating existing workflow: {file_path}")
+                else:
+                    # invalid or missing target, fall back to create mode
+                    available = list(self._loaded_workflow_paths.keys())
+                    logger.warning(
+                        f"Invalid target_workflow_filename "
+                        f"'{target_filename}', available: {available}. "
+                        "Falling back to create mode."
+                    )
+                    operation_mode = "create"
+
+            if operation_mode == "create":
+                # use task_title from summary for filename
+                task_title = workflow_summary.task_title
+                clean_title = ContextUtility.sanitize_workflow_filename(
+                    task_title
+                )
+                base_filename = (
+                    f"{clean_title}{self.config.workflow_filename_suffix}"
+                    if clean_title
+                    else "workflow"
+                )
+
+                file_path = (
+                    context_utility.get_working_directory()
+                    / f"{base_filename}.md"
+                )
+                logger.info(f"Creating new workflow: {file_path}")
+
             # check if workflow file already exists to handle versioning
-            file_path = (
-                context_utility.get_working_directory() / f"{base_filename}.md"
-            )
             existing_metadata = self._extract_existing_workflow_metadata(
                 file_path
             )
@@ -741,8 +1042,12 @@ class WorkflowMemoryManager:
             )
 
             # convert WorkflowSummary to markdown
+            # exclude operation_mode and target_workflow_filename as they're
+            # only used for save logic, not persisted in the workflow file
             summary_content = context_utility.structured_output_to_markdown(
-                structured_data=workflow_summary, metadata=metadata
+                structured_data=workflow_summary,
+                metadata=metadata,
+                exclude_fields=['operation_mode', 'target_workflow_filename'],
             )
 
             # save to disk
@@ -757,10 +1062,9 @@ class WorkflowMemoryManager:
                 f"conversation from a previous session: {summary_content}"
             )
 
+            status = "success" if save_status == "success" else save_status
             return {
-                "status": "success"
-                if save_status == "success"
-                else save_status,
+                "status": status,
                 "summary": formatted_summary,
                 "file_path": str(file_path),
                 "worker_description": self.description,
@@ -771,15 +1075,49 @@ class WorkflowMemoryManager:
                 f"Failed to save workflow content: {e!s}"
             )
 
+    async def save_workflow_content_async(
+        self,
+        workflow_summary: 'WorkflowSummary',
+        context_utility: Optional[ContextUtility] = None,
+        conversation_accumulator: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""Async wrapper for save_workflow_content.
+
+        Delegates to sync version since file I/O operations are synchronous.
+        This method exists for API consistency with save_workflow_async().
+
+        Args:
+            workflow_summary (WorkflowSummary): Pre-generated workflow summary
+                object containing task_title, agent_title, etc.
+            context_utility (Optional[ContextUtility]): Context utility with
+                correct working directory. If None, uses default.
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. Used to get
+                accurate message_count metadata. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Formatted workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+        return self.save_workflow_content(
+            workflow_summary=workflow_summary,
+            context_utility=context_utility,
+            conversation_accumulator=conversation_accumulator,
+        )
+
     async def save_workflow_async(
         self, conversation_accumulator: Optional[ChatAgent] = None
     ) -> Dict[str, Any]:
         r"""Asynchronously save the worker's current workflow memories using
         agent summarization.
 
-        This is the async version of save_workflow() that uses asummarize() for
-        non-blocking LLM calls, enabling parallel summarization of multiple
-        workers.
+        This is the async version of save_workflow() that uses a two-pass
+        approach: first generate the workflow summary (async LLM call), then
+        save to disk using the appropriate file path based on operation_mode
+        (update vs create).
 
         Args:
             conversation_accumulator (Optional[ChatAgent]): Optional
@@ -794,53 +1132,39 @@ class WorkflowMemoryManager:
                 - worker_description (str): Worker description used
         """
         try:
-            # setup context utility and agent
+            # pass 1: generate workflow summary (without saving to disk)
+            summary_result = await self.generate_workflow_summary_async(
+                conversation_accumulator=conversation_accumulator
+            )
+
+            if summary_result["status"] != "success":
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": f"Failed to generate summary: "
+                    f"{summary_result['status']}",
+                }
+
+            workflow_summary = summary_result["structured_summary"]
+            if not workflow_summary:
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": "No structured summary generated",
+                }
+
+            # pass 2: save using save_workflow_content which handles
+            # operation_mode branching (sync - file I/O doesn't need async)
             context_util = self._get_context_utility()
-            self.worker.set_context_utility(context_util)
-
-            # prepare workflow summarization components
-            structured_prompt = self._prepare_workflow_prompt()
-
-            # select agent for summarization
-            agent_to_summarize = self.worker
-            if conversation_accumulator is not None:
-                accumulator_messages, _ = (
-                    conversation_accumulator.memory.get_context()
-                )
-                if accumulator_messages:
-                    conversation_accumulator.set_context_utility(context_util)
-                    agent_to_summarize = conversation_accumulator
-                    logger.info(
-                        f"Using conversation accumulator with "
-                        f"{len(accumulator_messages)} messages for workflow "
-                        f"summary"
-                    )
-
-            # check if we should use role_name or let asummarize extract
-            # task_title
-            clean_name = self._get_sanitized_role_name()
-            use_role_name_for_filename = not is_generic_role_name(clean_name)
-
-            # generate and save workflow summary
-            # if role_name is explicit, use it for filename
-            # if role_name is generic, pass none to let asummarize use
-            # task_title
-            filename = (
-                self._generate_workflow_filename()
-                if use_role_name_for_filename
-                else None
+            return self.save_workflow_content(
+                workflow_summary=workflow_summary,
+                context_utility=context_util,
+                conversation_accumulator=conversation_accumulator,
             )
-
-            # **KEY CHANGE**: Using asummarize() instead of summarize()
-            result = await agent_to_summarize.asummarize(
-                filename=filename,
-                summary_prompt=structured_prompt,
-                response_format=WorkflowSummary,
-            )
-
-            # add worker metadata
-            result["worker_description"] = self.description
-            return result
 
         except Exception as e:
             return {
@@ -1144,6 +1468,9 @@ class WorkflowMemoryManager:
     ) -> List[Dict[str, str]]:
         r"""Collect and load workflow file contents.
 
+        Also populates the _loaded_workflow_paths mapping for use during
+        workflow save operations (to support update mode).
+
         Args:
             workflow_files (List[str]): List of workflow file paths to load.
 
@@ -1173,6 +1500,8 @@ class WorkflowMemoryManager:
                     workflows_to_load.append(
                         {'filename': filename, 'content': content}
                     )
+                    # store filename -> full path mapping for update mode
+                    self._loaded_workflow_paths[filename] = file_path
                     logger.info(f"Loaded workflow content: {filename}")
                 else:
                     logger.warning(
@@ -1186,6 +1515,36 @@ class WorkflowMemoryManager:
                 continue
 
         return workflows_to_load
+
+    def _format_workflow_list(
+        self, workflows_to_load: List[Dict[str, str]]
+    ) -> str:
+        r"""Format a list of workflows into a readable string.
+
+        This is a helper method that formats workflow content without
+        adding outer headers/footers. Used by _format_workflows_for_context
+        and _prepare_workflow_prompt.
+
+        Args:
+            workflows_to_load (List[Dict[str, str]]): List of workflow
+                dicts with 'filename' and 'content' keys.
+
+        Returns:
+            str: Formatted workflow list string.
+        """
+        if not workflows_to_load:
+            return ""
+
+        formatted_content = ""
+        for i, workflow_data in enumerate(workflows_to_load, 1):
+            formatted_content += (
+                f"\n\n{'=' * 60}\n"
+                f"Workflow {i}: {workflow_data['filename']}\n"
+                f"{'=' * 60}\n\n"
+                f"{workflow_data['content']}"
+            )
+
+        return formatted_content
 
     def _format_workflows_for_context(
         self, workflows_to_load: List[Dict[str, str]]
@@ -1219,18 +1578,9 @@ class WorkflowMemoryManager:
                 "decisions for your current task."
             )
 
-        # combine all workflows into single content block
-        combined_content = f"\n\n--- Previous Workflows ---\n{prefix_prompt}\n"
-
-        for i, workflow_data in enumerate(workflows_to_load, 1):
-            combined_content += (
-                f"\n\n{'=' * 60}\n"
-                f"Workflow {i}: {workflow_data['filename']}\n"
-                f"{'=' * 60}\n\n"
-                f"{workflow_data['content']}"
-            )
-
-        # add clear ending marker
+        # combine header, formatted workflows, and footer
+        combined_content = f"\n\n--- Previous Workflows ---\n{prefix_prompt}"
+        combined_content += self._format_workflow_list(workflows_to_load)
         combined_content += "\n\n--- End of Previous Workflows ---\n"
 
         return combined_content
@@ -1274,6 +1624,7 @@ class WorkflowMemoryManager:
         r"""Load workflow files and return count of successful loads.
 
         Loads all workflows together with a single header to avoid repetition.
+        Clears and repopulates the _loaded_workflow_paths mapping.
 
         Args:
             workflow_files (List[str]): List of workflow file paths to load.
@@ -1285,13 +1636,20 @@ class WorkflowMemoryManager:
         if not workflow_files:
             return 0
 
-        # collect workflow contents from files
+        # clear previous mapping and cached contents before loading
+        self._loaded_workflow_paths.clear()
+        self._loaded_workflow_contents.clear()
+
+        # collect workflow contents from files (also populates the mapping)
         workflows_to_load = self._collect_workflow_contents(
             workflow_files[:max_workflows]
         )
 
         if not workflows_to_load:
             return 0
+
+        # cache loaded contents for reuse in prompt preparation
+        self._loaded_workflow_contents = workflows_to_load
 
         # format workflows into context string
         try:
@@ -1341,10 +1699,48 @@ class WorkflowMemoryManager:
     def _prepare_workflow_prompt(self) -> str:
         r"""Prepare the structured prompt for workflow summarization.
 
+        Includes operation mode instructions if workflows were loaded,
+        guiding the agent to decide whether to update an existing
+        workflow or create a new one.
+
         Returns:
             str: Structured prompt for workflow summary.
         """
         workflow_prompt = WorkflowSummary.get_instruction_prompt()
+
+        # add operation mode instructions based on loaded workflows
+        if self._loaded_workflow_paths:
+            loaded_filenames = list(self._loaded_workflow_paths.keys())
+
+            workflow_prompt += (
+                "\n\nOPERATION MODE SELECTION:\n"
+                "You have previously loaded workflow(s). Review them below "
+                "and decide whether to update one or create a new workflow."
+                "\n\nDecision rules:\n"
+                "- If this task is a continuation, improvement, or refinement "
+                "of a loaded workflow → set operation_mode='update' and "
+                "target_workflow_filename to that workflow's exact filename\n"
+                "- If this is a distinctly different task with different "
+                "goals/tools → set operation_mode='create'\n\n"
+                "When choosing 'update', select the single most relevant "
+                "workflow filename. The updated workflow should incorporate "
+                "learnings from this session.\n\n"
+                f"Available workflow filenames: {loaded_filenames}"
+            )
+
+            # include formatted workflow content for reference
+            if self._loaded_workflow_contents:
+                workflow_prompt += "\n\n--- Loaded Workflows Reference ---"
+                workflow_prompt += self._format_workflow_list(
+                    self._loaded_workflow_contents
+                )
+                workflow_prompt += "\n\n--- End of Loaded Workflows ---"
+        else:
+            workflow_prompt += (
+                "\n\nOPERATION MODE:\n"
+                "No workflows were loaded. Set operation_mode='create'."
+            )
+
         return StructuredOutputHandler.generate_structured_prompt(
             base_prompt=workflow_prompt, schema=WorkflowSummary
         )

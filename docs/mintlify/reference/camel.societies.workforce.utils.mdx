@@ -151,6 +151,36 @@ def __str__(self):
 def __repr__(self):
 ```
 
+<a id="camel.societies.workforce.utils.FailureHandlingConfig"></a>
+
+## FailureHandlingConfig
+
+```python
+class FailureHandlingConfig(BaseModel):
+```
+
+Configuration for failure handling behavior in Workforce.
+
+This configuration allows users to customize how the Workforce handles
+task failures. This config allows users to disable reassignment or other
+recovery strategies as needed.
+
+**Parameters:**
+
+- **max_retries** (int): Maximum number of retry attempts before giving up on a task. (default: :obj:`3`)
+- **enabled_strategies** (Optional[List[RecoveryStrategy]]): List of recovery strategies that are allowed to be used. Can be specified as RecoveryStrategy enums or strings (e.g., ["retry", "replan"]). If None, all strategies are enabled (with LLM analysis). If an empty list, no recovery strategies are applied and failed tasks are marked as failed immediately. If only ["retry"] is specified, simple retry is used without LLM analysis. (default: :obj:`None` - all strategies enabled)
+- **halt_on_max_retries** (bool): Whether to halt the entire workforce when a task exceeds max retries. If False, the task is marked as failed and the workflow continues (similar to PIPELINE mode behavior). (default: :obj:`True` for AUTO_DECOMPOSE mode behavior)
+
+<a id="camel.societies.workforce.utils.FailureHandlingConfig.validate_enabled_strategies"></a>
+
+### validate_enabled_strategies
+
+```python
+def validate_enabled_strategies(cls, v):
+```
+
+Convert string list to RecoveryStrategy enum list.
+
 <a id="camel.societies.workforce.utils.FailureContext"></a>
 
 ## FailureContext

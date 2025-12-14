@@ -81,6 +81,7 @@ capabilities
 - **a**: class:`ValueError` is raised. If none of the provided callbacks implement :class:`WorkforceMetrics`, a built-in :class:`WorkforceLogger` (implements both callback and metrics) is added automatically. If at least one provided callback
 - **implements**: class:`WorkforceMetrics`, no default logger is added. (default: :obj:`None`)
 - **mode** (WorkforceMode, optional): The execution mode for task processing. AUTO_DECOMPOSE mode uses intelligent recovery strategies (decompose, replan, etc.) when tasks fail. PIPELINE mode uses simple retry logic and allows failed tasks to continue the workflow, passing error information to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+- **failure_handling_config** (Optional[Union[FailureHandlingConfig, Dict]]): Configuration for customizing failure handling behavior. Can be a FailureHandlingConfig instance or a dict with the same fields. Allows fine-grained control over which recovery strategies are enabled, maximum retry attempts, and whether to halt on max retries. The `enabled_strategies` field accepts both enum values and string lists like `["retry", "replan"]`. If None, uses default configuration with all strategies enabled. (default: :obj:`None`)
 
 **Note:**
 
@@ -108,7 +109,8 @@ def __init__(
     use_structured_output_handler: bool = True,
     task_timeout_seconds: Optional[float] = None,
     mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
-    callbacks: Optional[List[WorkforceCallback]] = None
+    callbacks: Optional[List[WorkforceCallback]] = None,
+    failure_handling_config: Optional[Union[FailureHandlingConfig, Dict[str, Any]]] = None
 ):
 ```
 
@@ -546,6 +548,18 @@ relationship between the task and its subtasks.
   Union[List[Task], Generator[List[Task], None, None]]:
 The subtasks or generator of subtasks. Returns empty list for
 PIPELINE mode.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_available_strategies_text"></a>
+
+### _get_available_strategies_text
+
+```python
+def _get_available_strategies_text(self):
+```
+
+**Returns:**
+
+  str: Formatted text describing available strategies for the prompt.
 
 <a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
 
