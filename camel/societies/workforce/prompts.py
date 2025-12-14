@@ -389,12 +389,11 @@ STRATEGY_DESCRIPTIONS = {
     "reassign": """**reassign** - Assign to a different worker
    - **Best for**:
      * Current worker lacks required skills/expertise
-     * Worker-specific quality issues
+     * Worker-specific issues or errors
      * Task requires different specialization
    - **Not suitable for**:
      * Task description is unclear (use replan instead)
-     * Task is too complex (use decompose instead)
-   - **Note**: Only available for quality issues, not failures""",
+     * Task is too complex (use decompose instead)""",
     "replan": """**replan** - Modify task content with clearer instructions
    - **Best for**:
      * Unclear or ambiguous requirements
@@ -419,8 +418,7 @@ STRATEGY_DESCRIPTIONS = {
      * Need specialized skills not currently available
    - **Consider**:
      * Whether decomposition could work instead
-     * Cost of creating new worker vs alternatives
-   - **Note**: Only available for task failures, not quality issues""",
+     * Cost of creating new worker vs alternatives""",
 }
 
 TASK_AGENT_SYSTEM_MESSAGE = """You are an intelligent task management assistant responsible for planning, analyzing, and quality control.

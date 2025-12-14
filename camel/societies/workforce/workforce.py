@@ -1409,45 +1409,23 @@ class Workforce(BaseNode):
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
 
-    def _get_available_strategies_text(self, for_failure: bool) -> str:
+    def _get_available_strategies_text(self) -> str:
         r"""Generate the available strategies text for the analysis prompt.
 
         This method generates a dynamic list of enabled recovery strategies
-        based on the failure_handling_config. It only includes strategies
-        that are both enabled in the config and applicable to the context
-        (failure vs quality evaluation).
-
-        Args:
-            for_failure (bool): True for failure analysis, False for quality
-                evaluation. Some strategies are only available in one context.
+        based on the failure_handling_config.
 
         Returns:
             str: Formatted text describing available strategies for the prompt.
         """
-        # Define which strategies are available in each context
-        if for_failure:
-            # For failures: retry, replan, decompose, create_worker
-            # (reassign is only for quality issues)
-            context_strategies = [
-                "retry",
-                "replan",
-                "decompose",
-                "create_worker",
-            ]
-        else:
-            # For quality: retry, reassign, replan, decompose
-            # (create_worker is only for failures)
-            context_strategies = ["retry", "reassign", "replan", "decompose"]
+        all_strategies = list(RecoveryStrategy)
 
         # Filter by enabled strategies in config
         config_strategies = self.failure_handling_config.enabled_strategies
         enabled_strategies = []
-        for strategy in context_strategies:
+        for strategy in all_strategies:
             # None means all enabled, otherwise check if in list
-            if (
-                config_strategies is None
-                or RecoveryStrategy(strategy) in config_strategies
-            ):
+            if config_strategies is None or strategy in config_strategies:
                 enabled_strategies.append(strategy)
 
         if not enabled_strategies:
@@ -1461,7 +1439,7 @@ class Workforce(BaseNode):
         strategies_text_parts = ["**Available Strategies (ENABLED):**\n"]
         for i, strategy in enumerate(enabled_strategies, 1):
             description = STRATEGY_DESCRIPTIONS.get(
-                strategy, f"**{strategy}**"
+                strategy.value, f"**{strategy.value}**"
             )
             strategies_text_parts.append(f"{i}. {description}\n")
 
@@ -1566,7 +1544,7 @@ class Workforce(BaseNode):
             ]
 
         # Generate available strategies text based on config
-        available_strategies = self._get_available_strategies_text(for_failure)
+        available_strategies = self._get_available_strategies_text()
 
         # Format the unified analysis prompt
         analysis_prompt = str(
@@ -4474,18 +4452,11 @@ class Workforce(BaseNode):
 
         # Check if no recovery strategies are enabled (empty list)
         if self.failure_handling_config.enabled_strategies == []:
-            # No recovery - mark task as failed immediately
             logger.info(
                 f"Task {task.id} failed. enabled_strategies=[], no recovery "
                 f"will be attempted. Marking as failed."
             )
             await self._mark_task_permanently_failed(task)
-            # Check halt behavior - only halt if max retries reached
-            if (
-                self.failure_handling_config.halt_on_max_retries
-                and task.failure_count >= max_retries
-            ):
-                return True  # Halt workforce
             await self._post_ready_tasks()
             return False
 
@@ -4496,7 +4467,7 @@ class Workforce(BaseNode):
 
             logger.info(
                 f"Task {task.id} failed. Only {single_strategy.value} "
-                f"enabled,using it directly without LLM analysis "
+                f"enabled, using it directly without LLM analysis "
                 f"(attempt {task.failure_count}/{max_retries})"
             )
 
@@ -4542,9 +4513,15 @@ class Workforce(BaseNode):
             task, for_failure=True, error_message=detailed_error
         )
 
-        # Fallback to RETRY if no strategy recommended
+        # Fallback to first enabled strategy if no strategy recommended
         if recovery_decision.recovery_strategy is None:
-            recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
+            config_strategies = self.failure_handling_config.enabled_strategies
+            # config_strategies is None means all enabled, use RETRY as default
+            # otherwise use the first enabled strategy from user's config
+            if config_strategies is None:
+                recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
+            else:
+                recovery_decision.recovery_strategy = config_strategies[0]
 
         strategy_str = recovery_decision.recovery_strategy.value
         logger.info(
@@ -5214,11 +5191,19 @@ class Workforce(BaseNode):
                                 f"Issues: {', '.join(quality_eval.issues)}"
                             )
 
-                            # Fallback to RETRY if no strategy recommended
+                            # Fallback to first enabled strategy if none
+                            # recommended
                             if quality_eval.recovery_strategy is None:
-                                quality_eval.recovery_strategy = (
-                                    RecoveryStrategy.RETRY
-                                )
+                                config = self.failure_handling_config
+                                config_strategies = config.enabled_strategies
+                                if config_strategies is None:
+                                    quality_eval.recovery_strategy = (
+                                        RecoveryStrategy.RETRY
+                                    )
+                                else:
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
 
                             # Clean up tracking before attempting recovery
                             if returned_task.id in self._assignees:
@@ -5421,6 +5406,7 @@ class Workforce(BaseNode):
             use_structured_output_handler=self.use_structured_output_handler,
             task_timeout_seconds=self.task_timeout_seconds,
             mode=self.mode,
+            failure_handling_config=self.failure_handling_config,
         )
 
         for child in self._children:
