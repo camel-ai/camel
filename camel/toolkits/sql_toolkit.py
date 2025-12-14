@@ -50,8 +50,9 @@ class SQLToolkit(BaseToolkit):
             uses an in-memory database. For DuckDB and SQLite, use ":memory:"
             for in-memory or a file path for persistent storage.
             (default: :obj:`None`)
-        database_type (str, optional): Type of database to use. Currently
-            supports "duckdb" and "sqlite". (default: :obj:`"duckdb"`)
+        database_type (Literal["duckdb", "sqlite"]): Type of database to use.
+            Currently supports "duckdb" and "sqlite".
+            (default: :obj:`"duckdb"`)
         read_only (bool, optional): If True, only SELECT queries are allowed.
             Write operations (INSERT, UPDATE, DELETE, etc.) will be rejected.
             (default: :obj:`False`)
@@ -707,5 +708,5 @@ class SQLToolkit(BaseToolkit):
         if hasattr(self, "_connection") and self._connection:
             try:
                 self._connection.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error closing connection in __del__: {e}")
