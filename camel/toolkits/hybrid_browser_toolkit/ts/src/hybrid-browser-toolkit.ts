@@ -194,6 +194,9 @@ export class HybridBrowserToolkit {
     console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
 
     try {
+      // Ensure browser is initialized before taking screenshot
+      await this.session.ensureBrowser();
+
       // Get page and snapshot data
       const page = await this.session.getCurrentPage();
       const snapshotResult = await this.session.getSnapshotForAI(true); // Include coordinates

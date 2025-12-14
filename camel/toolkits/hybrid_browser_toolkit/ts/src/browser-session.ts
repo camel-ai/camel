@@ -2,6 +2,13 @@ import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from '
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
+// Interface for snapshot history record
+interface SnapshotHistoryRecord {
+  snapshot: string;
+  timestamp: number;
+  tabId: string;
+}
+
 export class HybridBrowserSession {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
@@ -14,6 +21,8 @@ export class HybridBrowserSession {
   private scrollPosition: { x: number; y: number } = {x: 0, y: 0};
   private hasNavigatedBefore = false; //  Track if we've navigated before
   private logLimit: number;
+  private snapshotHistory: SnapshotHistoryRecord[] = [];  // Snapshot history for ref recovery
+  private maxSnapshotHistory: number = 10;  // Keep last 10 snapshots
 
   constructor(config: BrowserToolkitConfig = {}) {
     // Use ConfigLoader's fromPythonConfig to handle conversion properly
@@ -513,6 +522,9 @@ export class HybridBrowserSession {
 
       const totalTime = Date.now() - startTime;
 
+      // Save snapshot to history for ref recovery
+      this.saveSnapshotToHistory(finalSnapshot, this.currentTabId || 'unknown');
+
       return {
         snapshot: finalSnapshot,
         elements: finalElements,
@@ -562,14 +574,28 @@ export class HybridBrowserSession {
       await (page as any)._snapshotForAI();
 
       //  Use Playwright's aria-ref selector engine
-      const selector = `aria-ref=${ref}`;
+      let currentRef = ref;
+      let selector = `aria-ref=${currentRef}`;
 
       // Check if element exists
-      const element = await page.locator(selector).first();
-      const exists = await element.count() > 0;
+      let element = await page.locator(selector).first();
+      let exists = await element.count() > 0;
 
       if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+        // Try to recover ref from snapshot history
+        const recoveredRef = await this.tryRecoverRef(ref, page);
+        if (recoveredRef) {
+          currentRef = recoveredRef;
+          selector = `aria-ref=${currentRef}`;
+          element = await page.locator(selector).first();
+          exists = await element.count() > 0;
+
+          if (!exists) {
+            return { success: false, error: `Element with ref ${ref} not found (recovered ref ${recoveredRef} also not found)` };
+          }
+        } else {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
       }
 
       const role = await element.getAttribute('role');
@@ -789,6 +815,115 @@ export class HybridBrowserSession {
   }
 
   /**
+   * Save snapshot to history for ref recovery
+   */
+  private saveSnapshotToHistory(snapshot: string, tabId: string): void {
+    this.snapshotHistory.push({
+      snapshot,
+      timestamp: Date.now(),
+      tabId
+    });
+
+    // Keep only the last N snapshots
+    if (this.snapshotHistory.length > this.maxSnapshotHistory) {
+      this.snapshotHistory.shift();
+    }
+  }
+
+  /**
+   * Extract text label from snapshot line for a given ref
+   * Example: - button "Google 应用" [ref=e15] [cursor=pointer] → "Google 应用"
+   * Returns null if no text label found
+   */
+  private extractTextLabelFromSnapshot(snapshot: string, ref: string): string | null {
+    const line = this.findSnapshotLineByRef(snapshot, ref);
+    if (!line) {
+      return null;
+    }
+
+    // Match text label in quotes before [ref=...]
+    // Pattern: <element-type> "text label" [ref=...]
+    const textLabelMatch = line.match(/\b\w+\s+"([^"]+)"\s+\[ref=/);
+    if (textLabelMatch && textLabelMatch[1]) {
+      return textLabelMatch[1];
+    }
+
+    return null;
+  }
+
+  /**
+   * Find ref by text label in current snapshot
+   * Returns the new ref if found, null otherwise
+   */
+  private findRefByTextLabel(snapshot: string, textLabel: string, elementType?: string): string | null {
+    const lines = snapshot.split('\n');
+
+    // Escape special regex characters in text label
+    const escapedLabel = textLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    for (const line of lines) {
+      // Match: <element-type> "textLabel" [ref=xxx]
+      const pattern = elementType
+        ? new RegExp(`\\b${elementType}\\s+"${escapedLabel}"\\s+\\[ref=([^\\]]+)\\]`)
+        : new RegExp(`\\b\\w+\\s+"${escapedLabel}"\\s+\\[ref=([^\\]]+)\\]`);
+
+      const match = line.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Try to recover a ref that was not found by searching in snapshot history
+   * Returns the new ref if recovery successful, null otherwise
+   */
+  private async tryRecoverRef(oldRef: string, page: Page): Promise<string | null> {
+    console.log(`[RefRecovery] Attempting to recover ref ${oldRef}...`);
+
+    // Get current snapshot
+    const currentSnapshot = await (page as any)._snapshotForAI();
+
+    // Search through snapshot history from newest to oldest
+    for (let i = this.snapshotHistory.length - 1; i >= 0; i--) {
+      const historyRecord = this.snapshotHistory[i];
+
+      // Extract text label from historical snapshot
+      const textLabel = this.extractTextLabelFromSnapshot(historyRecord.snapshot, oldRef);
+
+      if (!textLabel) {
+        // No text label found, skip this history entry
+        continue;
+      }
+
+      console.log(`[RefRecovery] Found text label "${textLabel}" for ref ${oldRef} in history`);
+
+      // Extract element type from historical snapshot line
+      const historicalLine = this.findSnapshotLineByRef(historyRecord.snapshot, oldRef);
+      let elementType: string | undefined;
+      if (historicalLine) {
+        const typeMatch = historicalLine.match(/^\s*-\s+(\w+)\s+"/);
+        if (typeMatch && typeMatch[1]) {
+          elementType = typeMatch[1];
+        }
+      }
+
+      // Search for the same text label in current snapshot
+      const newRef = this.findRefByTextLabel(currentSnapshot, textLabel, elementType);
+
+      if (newRef) {
+        console.log(`[RefRecovery] Successfully recovered: ${oldRef} → ${newRef} (text label: "${textLabel}")`);
+        return newRef;
+      }
+    }
+
+    console.log(`[RefRecovery] Failed to recover ref ${oldRef}: no matching text label found in current snapshot`);
+    return null;
+  }
+
+  /**
    *  Simplified type implementation using Playwright's aria-ref selector
    *  Supports both single and multiple input operations
    */
@@ -825,12 +960,26 @@ export class HybridBrowserSession {
 
       // Handle single input (backward compatibility)
       if (ref && text !== undefined) {
-        const selector = `aria-ref=${ref}`;
-        const element = await page.locator(selector).first();
+        let currentRef = ref;
+        let selector = `aria-ref=${currentRef}`;
+        let element = await page.locator(selector).first();
 
-        const exists = await element.count() > 0;
+        let exists = await element.count() > 0;
         if (!exists) {
-          return { success: false, error: `Element with ref ${ref} not found` };
+          // Try to recover ref from snapshot history
+          const recoveredRef = await this.tryRecoverRef(ref, page);
+          if (recoveredRef) {
+            currentRef = recoveredRef;
+            selector = `aria-ref=${currentRef}`;
+            element = await page.locator(selector).first();
+            exists = await element.count() > 0;
+
+            if (!exists) {
+              return { success: false, error: `Element with ref ${ref} not found (recovered ref ${recoveredRef} also not found)` };
+            }
+          } else {
+            return { success: false, error: `Element with ref ${ref} not found` };
+          }
         }
 
         // Get element attributes to check if it's readonly or a special input type
@@ -1161,12 +1310,26 @@ export class HybridBrowserSession {
       await (page as any)._snapshotForAI();
 
       // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
+      let currentRef = ref;
+      let selector = `aria-ref=${currentRef}`;
+      let element = await page.locator(selector).first();
 
-      const exists = await element.count() > 0;
+      let exists = await element.count() > 0;
       if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+        // Try to recover ref from snapshot history
+        const recoveredRef = await this.tryRecoverRef(ref, page);
+        if (recoveredRef) {
+          currentRef = recoveredRef;
+          selector = `aria-ref=${currentRef}`;
+          element = await page.locator(selector).first();
+          exists = await element.count() > 0;
+
+          if (!exists) {
+            return { success: false, error: `Element with ref ${ref} not found (recovered ref ${recoveredRef} also not found)` };
+          }
+        } else {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
       }
 
       // Select value using Playwright's built-in selectOption method
@@ -1222,22 +1385,50 @@ export class HybridBrowserSession {
       await (page as any)._snapshotForAI();
 
       // Get elements using Playwright's aria-ref selector
-      const fromSelector = `aria-ref=${fromRef}`;
-      const toSelector = `aria-ref=${toRef}`;
+      let currentFromRef = fromRef;
+      let currentToRef = toRef;
+      let fromSelector = `aria-ref=${currentFromRef}`;
+      let toSelector = `aria-ref=${currentToRef}`;
 
-      const fromElement = await page.locator(fromSelector).first();
-      const toElement = await page.locator(toSelector).first();
+      let fromElement = await page.locator(fromSelector).first();
+      let toElement = await page.locator(toSelector).first();
 
       // Check if elements exist
-      const fromExists = await fromElement.count() > 0;
-      const toExists = await toElement.count() > 0;
+      let fromExists = await fromElement.count() > 0;
+      let toExists = await toElement.count() > 0;
 
+      // Try to recover fromRef if not found
       if (!fromExists) {
-        return { success: false, error: `Source element with ref ${fromRef} not found` };
+        const recoveredFromRef = await this.tryRecoverRef(fromRef, page);
+        if (recoveredFromRef) {
+          currentFromRef = recoveredFromRef;
+          fromSelector = `aria-ref=${currentFromRef}`;
+          fromElement = await page.locator(fromSelector).first();
+          fromExists = await fromElement.count() > 0;
+
+          if (!fromExists) {
+            return { success: false, error: `Source element with ref ${fromRef} not found (recovered ref ${recoveredFromRef} also not found)` };
+          }
+        } else {
+          return { success: false, error: `Source element with ref ${fromRef} not found` };
+        }
       }
 
+      // Try to recover toRef if not found
       if (!toExists) {
-        return { success: false, error: `Target element with ref ${toRef} not found` };
+        const recoveredToRef = await this.tryRecoverRef(toRef, page);
+        if (recoveredToRef) {
+          currentToRef = recoveredToRef;
+          toSelector = `aria-ref=${currentToRef}`;
+          toElement = await page.locator(toSelector).first();
+          toExists = await toElement.count() > 0;
+
+          if (!toExists) {
+            return { success: false, error: `Target element with ref ${toRef} not found (recovered ref ${recoveredToRef} also not found)` };
+          }
+        } else {
+          return { success: false, error: `Target element with ref ${toRef} not found` };
+        }
       }
 
       // Get the center coordinates of both elements
