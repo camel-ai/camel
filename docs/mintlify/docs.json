@@ -553,6 +553,7 @@
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
               "reference/camel.toolkits.slack_toolkit",
+              "reference/camel.toolkits.sql_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
               "reference/camel.toolkits.task_planning_toolkit",
