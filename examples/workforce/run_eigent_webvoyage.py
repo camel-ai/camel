@@ -38,21 +38,16 @@ from camel.types import ModelPlatformType, ModelType
 
 load_dotenv()
 
-# Set up unique log directory for this run
-# Use absolute path based on script location to avoid path confusion
-SCRIPT_DIR = Path(__file__).parent.absolute()
-RUN_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-LOG_DIR = SCRIPT_DIR / "camel_logs" / f"run_{RUN_TIMESTAMP}"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-os.environ["CAMEL_LOG_DIR"] = str(LOG_DIR)
-
 logger = get_logger(__name__)
 
 WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
     "working_dir/"
 )
 WORKING_DIRECTORY_PATH = Path(WORKING_DIRECTORY)
-
+RUN_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_DIR = WORKING_DIRECTORY_PATH / "camel_logs" / f"run_{RUN_TIMESTAMP}"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["CAMEL_LOG_DIR"] = str(LOG_DIR)
 
 def load_tasks_from_jsonl(
     jsonl_path: str, start_index: int = 0, end_index: int | None = None
