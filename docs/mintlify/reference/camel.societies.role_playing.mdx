@@ -32,6 +32,8 @@ Role playing between two agents.
 - **extend_task_specify_meta_dict** (Dict, optional): A dict to extend the task specify meta dict with. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agents. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
+- **assistant_agent** (ChatAgent, optional): A pre-configured ChatAgent to use as the assistant. If provided, this will override the creation of a new assistant agent. (default: :obj:`None`)
+- **user_agent** (ChatAgent, optional): A pre-configured ChatAgent to use as the user. If provided, this will override the creation of a new user agent. (default: :obj:`None`)
 
 <a id="camel.societies.role_playing.RolePlaying.__init__"></a>
 
@@ -130,12 +132,14 @@ message, and a list of system message meta dicts.
 ```python
 def _init_agents(
     self,
-    init_assistant_sys_msg: BaseMessage,
-    init_user_sys_msg: BaseMessage,
+    init_assistant_sys_msg: Optional[BaseMessage],
+    init_user_sys_msg: Optional[BaseMessage],
     assistant_agent_kwargs: Optional[Dict] = None,
     user_agent_kwargs: Optional[Dict] = None,
     output_language: Optional[str] = None,
-    stop_event: Optional[threading.Event] = None
+    stop_event: Optional[threading.Event] = None,
+    assistant_agent: Optional[ChatAgent] = None,
+    user_agent: Optional[ChatAgent] = None
 ):
 ```
 
@@ -143,12 +147,14 @@ Initialize assistant and user agents with their system messages.
 
 **Parameters:**
 
-- **init_assistant_sys_msg** (BaseMessage): Assistant agent's initial system message.
-- **init_user_sys_msg** (BaseMessage): User agent's initial system message.
+- **init_assistant_sys_msg** (Optional[BaseMessage]): Assistant agent's initial system message.
+- **init_user_sys_msg** (Optional[BaseMessage]): User agent's initial system message.
 - **assistant_agent_kwargs** (Dict, optional): Additional arguments to pass to the assistant agent. (default: :obj:`None`)
 - **user_agent_kwargs** (Dict, optional): Additional arguments to pass to the user agent. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agents. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
+- **assistant_agent** (ChatAgent, optional): A pre-configured ChatAgent to use as the assistant. If provided, this will override the creation of a new assistant agent. (default: :obj:`None`)
+- **user_agent** (ChatAgent, optional): A pre-configured ChatAgent to use as the user. If provided, this will override the creation of a new user agent. (default: :obj:`None`)
 
 <a id="camel.societies.role_playing.RolePlaying._init_critic"></a>
 
@@ -175,7 +181,7 @@ is not specified, set it to improve task performance.
 - **sys_msg_generator** (SystemMessageGenerator): A system message generator for agents.
 - **sys_msg_meta_dicts** (list): A list of system message meta dicts.
 - **critic_role_name** (str): The name of the role played by the critic.
-- **critic_criteria** (str, optional): Critic criteria for the critic agent. If not specified, set the criteria to improve task performance. (default: :obj:`None`)
+- **critic_criteria** (str, optional): Critic criteria for the critic agent. If not specified, set it to improve task performance. (default: :obj:`None`)
 - **critic_kwargs** (Dict, optional): Additional arguments to pass to the critic. (default: :obj:`None`)
 
 <a id="camel.societies.role_playing.RolePlaying._reduce_message_options"></a>

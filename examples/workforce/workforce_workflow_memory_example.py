@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
 import asyncio
@@ -49,8 +49,9 @@ def create_math_agent() -> ChatAgent:
             "mathematical concepts. Use the math tools available to you."
         ),
     )
+
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+        model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
@@ -171,6 +172,22 @@ async def demonstrate_second_session():
     # Load previous workflows
     loaded_workflows = workforce.load_workflow_memories()
 
+    # Print system messages to verify workflows were loaded
+    print("\n" + "=" * 80)
+    print("System messages after loading workflows:")
+    print("=" * 80)
+
+    for worker in workforce._children:
+        if hasattr(worker, 'worker') and hasattr(
+            worker.worker, '_system_message'
+        ):
+            print(f"\n{worker.description} system message:")
+            print("-" * 80)
+            system_msg_content = worker.worker._system_message.content
+            # Print first 500 chars to avoid too much output
+            print(system_msg_content)
+            print("-" * 80)
+
     # Process new tasks with loaded workflow context
     new_tasks = [
         Task(
@@ -250,7 +267,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-Workflows saved: 
+Workflows saved:
 workforce_workflows/session_20250925_150330_302341/content_writer_workflow.md
 workforce_workflows/session_20250925_150330_302341/math_expert_workflow.md
 
@@ -289,7 +306,7 @@ one-line JSON object with numeric values to two decimals.
 3. Compute the sum inside parentheses: calculate 1 + r = 1.05.
 4. Compute the exponentiation: calculate 1.05^3 = 1.157625.
 5. Multiply by principal: compute A = 1000 * 1.157625 = 1157.625 (unrounded).
-6. Compute total interest unrounded: Interest = A - P = 
+6. Compute total interest unrounded: Interest = A - P =
    1157.625 - 1000 = 157.625.
 7. Round results to 2 decimals and format as USD: A → $1157.63;
    Interest → $157.63.
@@ -304,9 +321,9 @@ No errors encountered.
 </MARKDOWN CONTENT>
 
 System message of math agent after loading workflow:
-You are a math expert specialized in solving mathematical problems. 
+You are a math expert specialized in solving mathematical problems.
 You can perform calculations, solve equations, and work with various
-mathematical concepts. 
+mathematical concepts.
 Use the math tools available to you.
 
 --- Workflow Memory ---

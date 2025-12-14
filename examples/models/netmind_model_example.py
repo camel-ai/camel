@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.configs import NetmindConfig
 from camel.models import ModelFactory
@@ -35,10 +35,10 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-The word "strawberry" contains **3** instances of the letter 'r'.  
+The word "strawberry" contains **3** instances of the letter 'r'.
 
-Here's the breakdown:  
-**S** - **T** - **R** - **A** - **W** - **B** - **E** - **R** - **R** - **Y**  
+Here's the breakdown:
+**S** - **T** - **R** - **A** - **W** - **B** - **E** - **R** - **R** - **Y**
 Positions 3, 8, and 9.
 ===============================================================================
 

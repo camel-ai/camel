@@ -1,6 +1,6 @@
 # 📑 AI-Powered PPTX Generator (CAMEL-AI)
 
-Generate beautiful, professional PowerPoint presentations (PPTX) on any topic in seconds!  
+Generate beautiful, professional PowerPoint presentations (PPTX) on any topic in seconds!
 Built with [CAMEL-AI](https://github.com/camel-ai/camel), OpenAI, and Streamlit.
 
 ---
@@ -31,10 +31,10 @@ pip install camel-ai[all]==0.2.62 streamlit openai
 
 ## 📝 Usage
 
-1. **Get your OpenAI API key:**  
+1. **Get your OpenAI API key:**
    [Create one here](https://platform.openai.com/account/api-keys).
 
-2. **(Optional) Get your Pexels API key:**  
+2. **(Optional) Get your Pexels API key:**
    [Request it here](https://www.pexels.com/api/) if you want to auto-insert images.
 
 3. **Clone this repo or copy the app file:**
@@ -92,7 +92,7 @@ pip install camel-ai[all]==0.2.62 streamlit openai
 
 ## 🐪 License
 
-Apache 2.0  
+Apache 2.0
 (c) 2023-2024 [CAMEL-AI.org](https://camel-ai.org)
 
 ---

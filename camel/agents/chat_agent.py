@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
 import atexit
 import base64
 import concurrent.futures
+import functools
 import hashlib
 import inspect
 import json
@@ -98,6 +99,7 @@ from camel.types import (
 )
 from camel.types.agents import ToolCallingRecord
 from camel.utils import (
+    Constants,
     get_model_encoding,
     model_from_json_schema,
 )
@@ -163,7 +165,7 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
         """\
         Please format the following content:
-        
+
         {content}
         """
     )
@@ -188,6 +190,8 @@ class StreamContentAccumulator:
         self.base_content = ""  # Content before tool calls
         self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
+        self.reasoning_content = []  # Accumulated reasoning content
+        self.is_reasoning_phase = True  # Track if we're in reasoning phase
 
     def set_base_content(self, content: str):
         r"""Set the base content (usually empty or pre-tool content)."""
@@ -196,6 +200,13 @@ class StreamContentAccumulator:
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
         self.current_content.append(new_content)
+        self.is_reasoning_phase = (
+            False  # Once we get content, we're past reasoning
+        )
+
+    def add_reasoning_content(self, new_reasoning: str):
+        r"""Add new reasoning content."""
+        self.reasoning_content.append(new_reasoning)
 
     def add_tool_status(self, status_message: str):
         r"""Add a tool status message."""
@@ -207,6 +218,10 @@ class StreamContentAccumulator:
         current = "".join(self.current_content)
         return self.base_content + tool_messages + current
 
+    def get_full_reasoning_content(self) -> str:
+        r"""Get the complete accumulated reasoning content."""
+        return "".join(self.reasoning_content)
+
     def get_content_with_new_status(self, status_message: str) -> str:
         r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
@@ -216,6 +231,8 @@ class StreamContentAccumulator:
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
         self.current_content = []
+        self.reasoning_content = []
+        self.is_reasoning_phase = True
 
 
 class StreamingChatAgentResponse:
@@ -482,14 +499,14 @@ class ChatAgent(BaseAgent):
         max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
-        tool_execution_timeout: Optional[float] = None,
+        tool_execution_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
         enable_snapshot_clean: bool = False,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
-        step_timeout: Optional[float] = None,
+        step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         stream_accumulate: bool = True,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -1663,76 +1680,12 @@ class ChatAgent(BaseAgent):
                 result["status"] = status_message
                 return result
 
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
+            # build conversation text using shared helper
+            conversation_text, user_messages = (
+                self._build_conversation_text_from_messages(
+                    messages, include_summaries
+                )
+            )
 
             if not conversation_text:
                 status_message = (
@@ -1749,6 +1702,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -1827,8 +1781,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
@@ -1870,6 +1834,216 @@ class ChatAgent(BaseAgent):
             result["status"] = error_message
             return result
 
+    def _build_conversation_text_from_messages(
+        self,
+        messages: List[Any],
+        include_summaries: bool = False,
+    ) -> tuple[str, List[str]]:
+        r"""Build conversation text from messages for summarization.
+
+        This is a shared helper method that converts messages to a formatted
+        conversation text string, handling tool calls, tool results, and
+        regular messages.
+
+        Args:
+            messages (List[Any]): List of messages to convert.
+            include_summaries (bool): Whether to include messages starting
+                with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+
+        Returns:
+            tuple[str, List[str]]: A tuple containing:
+                - Formatted conversation text
+                - List of user messages extracted from the conversation
+        """
+        # Convert messages to conversation text
+        conversation_lines = []
+        user_messages: List[str] = []
+        for message in messages:
+            role = message.get('role', 'unknown')
+            content = message.get('content', '')
+
+            # Skip summary messages if include_summaries is False
+            if not include_summaries and isinstance(content, str):
+                # Check if this is a summary message by looking for marker
+                if content.startswith('[CONTEXT_SUMMARY]'):
+                    continue
+
+            # Handle tool call messages (assistant calling tools)
+            tool_calls = message.get('tool_calls')
+            if tool_calls and isinstance(tool_calls, (list, tuple)):
+                for tool_call in tool_calls:
+                    # Handle both dict and object formats
+                    if isinstance(tool_call, dict):
+                        func_name = tool_call.get('function', {}).get(
+                            'name', 'unknown_tool'
+                        )
+                        func_args_str = tool_call.get('function', {}).get(
+                            'arguments', '{}'
+                        )
+                    else:
+                        # Handle object format (Pydantic or similar)
+                        func_name = getattr(
+                            getattr(tool_call, 'function', None),
+                            'name',
+                            'unknown_tool',
+                        )
+                        func_args_str = getattr(
+                            getattr(tool_call, 'function', None),
+                            'arguments',
+                            '{}',
+                        )
+
+                    # Parse and format arguments for readability
+                    try:
+                        import json
+
+                        args_dict = json.loads(func_args_str)
+                        args_formatted = ', '.join(
+                            f"{k}={v}" for k, v in args_dict.items()
+                        )
+                    except (json.JSONDecodeError, ValueError, TypeError):
+                        args_formatted = func_args_str
+
+                    conversation_lines.append(
+                        f"[TOOL CALL] {func_name}({args_formatted})"
+                    )
+
+            # Handle tool response messages
+            elif role == 'tool':
+                tool_name = message.get('name', 'unknown_tool')
+                if not content:
+                    content = str(message.get('content', ''))
+                conversation_lines.append(
+                    f"[TOOL RESULT] {tool_name} → {content}"
+                )
+
+            # Handle regular content messages (user/assistant/system)
+            elif content:
+                content = str(content)
+                if role == 'user':
+                    user_messages.append(content)
+                conversation_lines.append(f"{role}: {content}")
+
+        return "\n".join(conversation_lines).strip(), user_messages
+
+    async def generate_workflow_summary_async(
+        self,
+        summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
+        include_summaries: bool = False,
+        conversation_accumulator: Optional['ChatAgent'] = None,
+    ) -> Dict[str, Any]:
+        r"""Generate a workflow summary without saving to disk.
+
+        This method generates a workflow summary by calling a dedicated
+        summarizer agent. It does NOT save to disk - only generates the
+        summary content and structured output. Use this when you need to
+        inspect the summary (e.g., extract agent_title) before determining
+        where to save it.
+
+        Args:
+            summary_prompt (Optional[str]): Custom prompt for the summarizer.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure (e.g., WorkflowSummary).
+            include_summaries (bool): Whether to include previously generated
+                summaries. (default: :obj:`False`)
+            conversation_accumulator (Optional[ChatAgent]): An optional agent
+                that holds accumulated conversation history. If provided,
+                memory will be retrieved from this agent instead of self.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Result dictionary with:
+                - structured_summary: Pydantic model instance
+                - summary_content: Raw text content
+                - status: "success" or error message
+
+        """
+        result: Dict[str, Any] = {
+            "structured_summary": None,
+            "summary_content": "",
+            "status": "",
+        }
+
+        try:
+            # get conversation from accumulator or self
+            source_agent = (
+                conversation_accumulator if conversation_accumulator else self
+            )
+            messages, _ = source_agent.memory.get_context()
+
+            if not messages:
+                result["status"] = "No conversation context available"
+                return result
+
+            # build conversation text using shared helper
+            conversation_text, _ = self._build_conversation_text_from_messages(
+                messages, include_summaries
+            )
+
+            if not conversation_text:
+                result["status"] = "Conversation context is empty"
+                return result
+
+            # create or reuse summarizer agent
+            if self._context_summary_agent is None:
+                self._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
+                    ),
+                    model=self.model_backend,
+                    agent_id=f"{self.agent_id}_context_summarizer",
+                )
+            else:
+                self._context_summary_agent.reset()
+
+            # prepare prompt
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
+                )
+            else:
+                prompt_text = build_default_summary_prompt(conversation_text)
+
+            # call summarizer agent
+            if response_format:
+                response = await self._context_summary_agent.astep(
+                    prompt_text, response_format=response_format
+                )
+            else:
+                response = await self._context_summary_agent.astep(prompt_text)
+
+            # handle streaming response
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                response = await response
+
+            if not response.msgs:
+                result["status"] = "Failed to generate summary"
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            result.update(
+                {
+                    "structured_summary": structured_output,
+                    "summary_content": summary_content,
+                    "status": "success",
+                }
+            )
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to generate summary: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
+
     async def asummarize(
         self,
         filename: Optional[str] = None,
@@ -1907,6 +2081,7 @@ class ChatAgent(BaseAgent):
                 (full compression). (default: :obj:`False`)
             add_user_messages (bool): Whether add user messages to summary.
                 (default: :obj:`True`)
+
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
                 path, status message, and optionally structured_summary if
@@ -1940,76 +2115,12 @@ class ChatAgent(BaseAgent):
                 result["status"] = status_message
                 return result
 
-            # Convert messages to conversation text
-            conversation_lines = []
-            user_messages: List[str] = []
-            for message in messages:
-                role = message.get('role', 'unknown')
-                content = message.get('content', '')
-
-                # Skip summary messages if include_summaries is False
-                if not include_summaries and isinstance(content, str):
-                    # Check if this is a summary message by looking for marker
-                    if content.startswith('[CONTEXT_SUMMARY]'):
-                        continue
-
-                # Handle tool call messages (assistant calling tools)
-                tool_calls = message.get('tool_calls')
-                if tool_calls and isinstance(tool_calls, (list, tuple)):
-                    for tool_call in tool_calls:
-                        # Handle both dict and object formats
-                        if isinstance(tool_call, dict):
-                            func_name = tool_call.get('function', {}).get(
-                                'name', 'unknown_tool'
-                            )
-                            func_args_str = tool_call.get('function', {}).get(
-                                'arguments', '{}'
-                            )
-                        else:
-                            # Handle object format (Pydantic or similar)
-                            func_name = getattr(
-                                getattr(tool_call, 'function', None),
-                                'name',
-                                'unknown_tool',
-                            )
-                            func_args_str = getattr(
-                                getattr(tool_call, 'function', None),
-                                'arguments',
-                                '{}',
-                            )
-
-                        # Parse and format arguments for readability
-                        try:
-                            import json
-
-                            args_dict = json.loads(func_args_str)
-                            args_formatted = ', '.join(
-                                f"{k}={v}" for k, v in args_dict.items()
-                            )
-                        except (json.JSONDecodeError, ValueError, TypeError):
-                            args_formatted = func_args_str
-
-                        conversation_lines.append(
-                            f"[TOOL CALL] {func_name}({args_formatted})"
-                        )
-
-                # Handle tool response messages
-                elif role == 'tool':
-                    tool_name = message.get('name', 'unknown_tool')
-                    if not content:
-                        content = str(message.get('content', ''))
-                    conversation_lines.append(
-                        f"[TOOL RESULT] {tool_name} → {content}"
-                    )
-
-                # Handle regular content messages (user/assistant/system)
-                elif content:
-                    content = str(content)
-                    if role == 'user':
-                        user_messages.append(content)
-                    conversation_lines.append(f"{role}: {content}")
-
-            conversation_text = "\n".join(conversation_lines).strip()
+            # build conversation text using shared helper
+            conversation_text, user_messages = (
+                self._build_conversation_text_from_messages(
+                    messages, include_summaries
+                )
+            )
 
             if not conversation_text:
                 status_message = (
@@ -2026,6 +2137,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2113,8 +2225,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
@@ -3644,12 +3766,17 @@ class ChatAgent(BaseAgent):
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
+            reasoning_content = getattr(
+                choice.message, "reasoning_content", None
+            )
+
             chat_message = BaseMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=meta_dict,
                 content=choice.message.content or "",
                 parsed=getattr(choice.message, "parsed", None),
+                reasoning_content=reasoning_content,
             )
 
             output_messages.append(chat_message)
@@ -3669,8 +3796,13 @@ class ChatAgent(BaseAgent):
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+                extra_content = getattr(tool_call, 'extra_content', None)
+
                 tool_call_request = ToolCallRequest(
-                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+                    tool_name=tool_name,
+                    args=args,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 tool_call_requests.append(tool_call_request)
 
@@ -3763,7 +3895,12 @@ class ChatAgent(BaseAgent):
             logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            mask_output=mask_flag,
+            extra_content=tool_call_request.extra_content,
         )
 
     async def _aexecute_tool(
@@ -3798,14 +3935,24 @@ class ChatAgent(BaseAgent):
 
             else:
                 # Fallback: synchronous call
-                result = tool(**args)
+                # Use functools.partial to properly capture args
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(
+                    None, functools.partial(tool, **args)
+                )
 
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return self._record_tool_calling(
+            func_name,
+            args,
+            result,
+            tool_call_id,
+            extra_content=tool_call_request.extra_content,
+        )
 
     def _record_tool_calling(
         self,
@@ -3814,6 +3961,7 @@ class ChatAgent(BaseAgent):
         result: Any,
         tool_call_id: str,
         mask_output: bool = False,
+        extra_content: Optional[Dict[str, Any]] = None,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -3826,6 +3974,9 @@ class ChatAgent(BaseAgent):
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
+            extra_content (Optional[Dict[str, Any]], optional): Additional
+                content associated with the tool call.
+                (default: :obj:`None`)
 
         Returns:
             ToolCallingRecord: A struct containing information about
@@ -3839,6 +3990,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             args=args,
             tool_call_id=tool_call_id,
+            extra_content=extra_content,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -3849,6 +4001,7 @@ class ChatAgent(BaseAgent):
             result=result,
             tool_call_id=tool_call_id,
             mask_output=mask_output,
+            extra_content=extra_content,
         )
 
         # Use precise timestamps to ensure correct ordering
@@ -3983,7 +4136,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream):
+            if isinstance(response, Stream) or inspect.isgenerator(response):
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4066,6 +4219,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4076,6 +4233,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -4143,10 +4301,33 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
+
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
 
                 # Handle content streaming
                 if delta.content:
@@ -4194,11 +4375,16 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
@@ -4207,8 +4393,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -4216,40 +4402,50 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                # We've seen finish_reason but no usage chunk yet; keep
+                # consuming remaining chunks to capture final metadata.
+                continue
 
         return stream_completed, tool_calls_complete
 
@@ -4280,6 +4476,7 @@ class ChatAgent(BaseAgent):
                     'id': '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
+                    'extra_content': None,
                     'complete': False,
                 }
 
@@ -4303,6 +4500,14 @@ class ChatAgent(BaseAgent):
                     tool_call_entry['function']['arguments'] += (
                         delta_tool_call.function.arguments
                     )
+            # Handle extra_content if present
+            if (
+                hasattr(delta_tool_call, 'extra_content')
+                and delta_tool_call.extra_content
+            ):
+                tool_call_entry['extra_content'] = (
+                    delta_tool_call.extra_content
+                )
 
         # Check if any tool calls are complete
         any_complete = False
@@ -4407,6 +4612,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
@@ -4422,6 +4628,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         args=args,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Then create the tool response message
@@ -4433,6 +4640,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     # Record both messages with precise timestamps to ensure
@@ -4478,6 +4686,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
 
                     self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
@@ -4509,6 +4718,7 @@ class ChatAgent(BaseAgent):
             function_name = tool_call_data['function']['name']
             args = json.loads(tool_call_data['function']['arguments'])
             tool_call_id = tool_call_data['id']
+            extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
                 # Create the tool call message
@@ -4520,6 +4730,7 @@ class ChatAgent(BaseAgent):
                     func_name=function_name,
                     args=args,
                     tool_call_id=tool_call_id,
+                    extra_content=extra_content,
                 )
                 assist_ts = time.time_ns() / 1_000_000_000
                 self.update_memory(
@@ -4555,7 +4766,11 @@ class ChatAgent(BaseAgent):
 
                     else:
                         # Fallback: synchronous call
-                        result = tool(**args)
+                        # Use functools.partial to properly capture args
+                        loop = asyncio.get_running_loop()
+                        result = await loop.run_in_executor(
+                            None, functools.partial(tool, **args)
+                        )
 
                     # Create the tool response message
                     func_msg = FunctionCallingMessage(
@@ -4566,6 +4781,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4599,6 +4815,7 @@ class ChatAgent(BaseAgent):
                         func_name=function_name,
                         result=result,
                         tool_call_id=tool_call_id,
+                        extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
                     self.update_memory(
@@ -4728,7 +4945,12 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, AsyncStream):
+            # Note: Also check for async generators since some model backends
+            # (e.g., GeminiModel) wrap AsyncStream in async generators for
+            # additional processing
+            if isinstance(response, AsyncStream) or inspect.isasyncgen(
+                response
+            ):
                 stream_completed = False
                 tool_calls_complete = False
 
@@ -4823,6 +5045,10 @@ class ChatAgent(BaseAgent):
                         final_content = (
                             final_completion.choices[0].message.content or ""
                         )
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
 
                         final_message = BaseMessage(
                             role_name=self.role_name,
@@ -4833,6 +5059,7 @@ class ChatAgent(BaseAgent):
                                 "BaseModel | dict[str, Any] | None",
                                 parsed_object,
                             ),  # type: ignore[arg-type]
+                            reasoning_content=final_reasoning,
                         )
 
                         self.record_message(final_message)
@@ -4908,6 +5135,11 @@ class ChatAgent(BaseAgent):
                         "arguments": tool_call_data["function"]["arguments"],
                     },
                 }
+                # Include extra_content if present
+                if tool_call_data.get('extra_content'):
+                    tool_call_dict["extra_content"] = tool_call_data[
+                        "extra_content"
+                    ]
                 tool_calls_list.append(tool_call_dict)
 
         # Create an assistant message with tool calls
@@ -4923,7 +5155,10 @@ class ChatAgent(BaseAgent):
 
     async def _aprocess_stream_chunks_with_accumulator(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
         content_accumulator: StreamContentAccumulator,
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
@@ -4938,10 +5173,33 @@ class ChatAgent(BaseAgent):
         stream_completed = False
 
         async for chunk in stream:
+            has_choices = bool(chunk.choices and len(chunk.choices) > 0)
+
             # Process chunk delta
-            if chunk.choices and len(chunk.choices) > 0:
+            if has_choices:
                 choice = chunk.choices[0]
                 delta = choice.delta
+
+                # Handle reasoning content streaming (for DeepSeek reasoner)
+                if (
+                    hasattr(delta, 'reasoning_content')
+                    and delta.reasoning_content
+                ):
+                    content_accumulator.add_reasoning_content(
+                        delta.reasoning_content
+                    )
+                    # Yield partial response with reasoning content
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            "",  # No regular content yet
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                            reasoning_delta=delta.reasoning_content,
+                        )
+                    )
+                    yield partial_response
 
                 # Handle content streaming
                 if delta.content:
@@ -5004,8 +5262,8 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-            elif chunk.usage and not chunk.choices:
-                # Handle final chunk with usage but empty choices
+            if chunk.usage:
+                # Handle final usage chunk, whether or not choices are present.
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
                 self._update_token_usage_tracker(
@@ -5013,40 +5271,48 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Create final response with final usage
-                final_content = content_accumulator.get_full_content()
-                if final_content.strip():
-                    final_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=final_content,
-                    )
-
-                    if response_format:
-                        self._try_format_message(
-                            final_message, response_format
+                should_finalize = stream_completed or not has_choices
+                if should_finalize:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip():
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
-                    # Create final response with final usage (not partial)
-                    final_response = ChatAgentResponse(
-                        msgs=[final_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": ["stop"],
-                            "num_tokens": self._get_token_count(final_content),
-                            "tool_calls": tool_call_records or [],
-                            "external_tool_requests": None,
-                            "streaming": False,
-                            "partial": False,
-                        },
-                    )
-                    yield final_response
-                break
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        # Create final response with final usage (not partial)
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": getattr(chunk, 'id', ''),
+                                "usage": step_token_usage.copy(),
+                                "finish_reasons": ["stop"],
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
+                                "tool_calls": tool_call_records or [],
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                    break
             elif stream_completed:
-                # If we've already seen finish_reason but no usage chunk, exit
-                break
+                continue
 
         # Yield the final status as a tuple
         yield (stream_completed, tool_calls_complete)
@@ -5136,21 +5402,42 @@ class ChatAgent(BaseAgent):
         step_token_usage: Dict[str, int],
         response_id: str = "",
         tool_call_records: Optional[List[ToolCallingRecord]] = None,
+        reasoning_delta: Optional[str] = None,
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
         # Add new content; only build full content when needed
-        accumulator.add_streaming_content(new_content)
+        if new_content:
+            accumulator.add_streaming_content(new_content)
+
         if self.stream_accumulate:
             message_content = accumulator.get_full_content()
         else:
             message_content = new_content
 
+        # Build meta_dict with reasoning information
+        meta_dict: Dict[str, Any] = {}
+
+        # Add reasoning content info
+        full_reasoning = accumulator.get_full_reasoning_content()
+        reasoning_payload: Optional[str] = None
+        if full_reasoning:
+            reasoning_payload = (
+                full_reasoning
+                if self.stream_accumulate
+                else reasoning_delta or ""
+            )
+            if reasoning_payload:
+                meta_dict["is_reasoning"] = accumulator.is_reasoning_phase
+            else:
+                reasoning_payload = None
+
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
-            meta_dict={},
+            meta_dict=meta_dict,
             content=message_content,
+            reasoning_content=reasoning_payload,
         )
 
         return ChatAgentResponse(

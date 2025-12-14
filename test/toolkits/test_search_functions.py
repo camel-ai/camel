@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from unittest import mock
 from unittest.mock import MagicMock, patch
@@ -373,7 +373,7 @@ search_duckduckgo = SearchToolkit().search_duckduckgo
 
 def test_search_duckduckgo_text():
     # Mock the DDGS class and its text method
-    with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
+    with mock.patch("ddgs.DDGS") as MockDDGS:
         # Create a mock instance of DDGS
         mock_ddgs_instance = MockDDGS.return_value
         mock_ddgs_instance.text.return_value = [
@@ -409,13 +409,13 @@ def test_search_duckduckgo_text():
         ]
 
         mock_ddgs_instance.text.assert_called_once_with(
-            keywords="test query", max_results=10
+            "test query", max_results=10
         )
 
 
 def test_search_duckduckgo_images():
     # Mock the DDGS class and its images method
-    with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
+    with mock.patch("ddgs.DDGS") as MockDDGS:
         mock_ddgs_instance = MockDDGS.return_value
         mock_ddgs_instance.images.return_value = [
             {
@@ -454,7 +454,7 @@ def test_search_duckduckgo_images():
         ]
 
         mock_ddgs_instance.images.assert_called_once_with(
-            keywords="test query", max_results=10
+            "test query", max_results=10
         )
 
 

@@ -186,7 +186,7 @@ prompt2 = TextPrompt('Welcome, {name}!')
 
 # Concatenation
 prompt3 = prompt1 + ' ' + prompt2
-print(prompt3)  
+print(prompt3)
 # >>> "Hello, {name}! Welcome, {name}!"
 print(isinstance(prompt3, TextPrompt))  # >>> True
 print(prompt3.key_words)                # >>> {'name'}
@@ -298,5 +298,3 @@ print(prompt5.key_words)                # >>> {'NAME'}
   </Accordion>
 
 </AccordionGroup>
-
-

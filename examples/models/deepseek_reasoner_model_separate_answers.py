@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import re
 
@@ -87,7 +87,7 @@ The output sequence of a transformer model becomes longer through a combination 
 1. **Input**: "Translate to French: Hello"
 2. **Step 1**: Model generates "Bonjour" (position 1).
 3. **Step 2**: Model generates "!" (position 2) based on "Bonjour".
-4. **Step 3**: EOS token is generated, stopping the process.  
+4. **Step 3**: EOS token is generated, stopping the process.
    Final Output: "Bonjour!" (longer than input "Hello").
 
 ### Key Challenges:

@@ -11,8 +11,8 @@ icon: vector-square
 </Card>
 
 <Card title="How Text & Image Embeddings Work" icon="question">
-Text embeddings turn sentences or documents into high-dimensional vectors that capture meaning.  
-Example:  
+Text embeddings turn sentences or documents into high-dimensional vectors that capture meaning.
+Example:
 <ul>
   <li>“A young boy is playing soccer in a park.”</li>
   <li>“A child is kicking a football on a playground.”</li>

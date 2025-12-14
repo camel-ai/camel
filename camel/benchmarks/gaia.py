@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import logging
@@ -165,6 +165,8 @@ class GAIABenchmark(BaseBenchmark):
             force_download (bool, optional): Whether to
                 force download the data.
         """
+        import pandas as pd
+
         if force_download:
             logger.info("Force downloading data.")
             self.download()
@@ -181,15 +183,17 @@ class GAIABenchmark(BaseBenchmark):
         # Load metadata for both validation and test datasets
         for path, label in zip([valid_dir, test_dir], ["valid", "test"]):
             self._data[label] = []
-            with open(path / "metadata.jsonl", "r") as f:
-                lines = f.readlines()
-                for line in lines:
-                    data = json.loads(line)
-                    if data["task_id"] == "0-0-0-0-0":
-                        continue
-                    if data["file_name"]:
-                        data["file_name"] = path / data["file_name"]
-                    self._data[label].append(data)
+            metadata_file = path / "metadata.parquet"
+            df = pd.read_parquet(metadata_file)
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                if data["task_id"] == "0-0-0-0-0":
+                    continue
+                # convert level to int (parquet stores as string)
+                data["Level"] = int(data["Level"])
+                if data["file_name"]:
+                    data["file_name"] = path / data["file_name"]
+                self._data[label].append(data)
         return self
 
     @property
@@ -333,7 +337,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(result_data)
         file_obj.write(
-            json.dumps(result_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(result_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
@@ -354,7 +358,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(error_data)
         file_obj.write(
-            json.dumps(error_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(error_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 

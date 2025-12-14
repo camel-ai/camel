@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import contextlib
@@ -215,6 +215,9 @@ class WebSocketBrowserWrapper:
         self.websocket = None
         self.server_port = None
         self._send_lock = asyncio.Lock()
+        self._request_timeout = self.config.get(
+            'requestTimeout', 60
+        )  # seconds
         self._receive_task = None
         self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
         self._browser_opened = False
@@ -663,7 +666,9 @@ class WebSocketBrowserWrapper:
             # Wait for response (no lock needed, handled by background
             # receiver)
             try:
-                response = await asyncio.wait_for(future, timeout=60.0)
+                response = await asyncio.wait_for(
+                    future, timeout=self._request_timeout
+                )
 
                 if not response.get('success'):
                     raise RuntimeError(
