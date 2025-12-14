@@ -97,6 +97,9 @@ def action_logger(func):
             "kwargs": kwargs,
         }
 
+        # Extract reasoning from kwargs if present
+        reasoning = kwargs.get('reason')
+
         try:
             result = await func(self, *args, **kwargs)
             execution_time = time.time() - start_time
@@ -111,6 +114,7 @@ def action_logger(func):
                 outputs=result,
                 execution_time=execution_time,
                 page_load_time=page_load_time,
+                reasoning=reasoning,
             )
 
             return result
@@ -125,6 +129,7 @@ def action_logger(func):
                 outputs=None,
                 execution_time=execution_time,
                 error=error_msg,
+                reasoning=reasoning,
             )
 
             raise
@@ -150,6 +155,9 @@ def high_level_action(func):
             "kwargs": kwargs,
         }
 
+        # Extract reasoning from kwargs if present
+        reasoning = kwargs.get('reason')
+
         # Set the context variable to indicate we're in a high-level action
         token = _in_high_level_action.set(True)
         try:
@@ -166,6 +174,7 @@ def high_level_action(func):
                     outputs=result,
                     execution_time=execution_time,
                     page_load_time=None,
+                    reasoning=reasoning,
                 )
 
             return result
@@ -183,6 +192,7 @@ def high_level_action(func):
                     outputs=None,
                     execution_time=execution_time,
                     error=error_msg,
+                    reasoning=reasoning,
                 )
 
             raise
@@ -537,6 +547,7 @@ class WebSocketBrowserWrapper:
         execution_time: float,
         page_load_time: Optional[float] = None,
         error: Optional[str] = None,
+        reasoning: Optional[str] = None,
     ) -> None:
         """Log action details with comprehensive
         information including detailed timing breakdown."""
@@ -551,6 +562,10 @@ class WebSocketBrowserWrapper:
             "execution_time_ms": round(execution_time * 1000, 2),
             "inputs": inputs,
         }
+
+        # Add reasoning if provided
+        if reasoning:
+            log_entry["reasoning"] = reasoning
 
         if error:
             log_entry["error"] = error
@@ -777,7 +792,7 @@ class WebSocketBrowserWrapper:
 
     @action_logger
     async def get_som_screenshot(self) -> ToolResult:
-        """Get screenshot."""
+        """Get screenshot with snapshot."""
         logger.info("Requesting screenshot via WebSocket...")
         start_time = time.time()
 
@@ -786,7 +801,14 @@ class WebSocketBrowserWrapper:
         end_time = time.time()
         logger.info(f"Screenshot completed in {end_time - start_time:.2f}s")
 
-        return ToolResult(text=response['text'], images=response['images'])
+        # Create ToolResult and preserve snapshot if available
+        result = ToolResult(text=response['text'], images=response['images'])
+
+        # Attach snapshot as an attribute for logging purposes
+        if 'snapshot' in response:
+            result.snapshot = response['snapshot']
+
+        return result
 
     def _ensure_ref_prefix(self, ref: str) -> str:
         """Ensure ref has proper prefix"""

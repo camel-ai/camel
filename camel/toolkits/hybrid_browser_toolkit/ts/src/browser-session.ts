@@ -924,13 +924,83 @@ export class HybridBrowserSession {
   }
 
   /**
+   * Universal wrapper for element operations with automatic ref recovery
+   * This provides a unified layer for handling ref invalidation across all operations
+   *
+   * @param ref - The original element ref
+   * @param page - The Playwright page object
+   * @param operation - The operation to perform (e.g., click, fill, selectOption)
+   * @param operationName - Name of the operation for logging
+   * @returns The result of the operation
+   */
+  private async executeWithRefRecovery<T>(
+    ref: string,
+    page: Page,
+    operation: (locator: any) => Promise<T>,
+    operationName: string
+  ): Promise<T> {
+    let currentRef = ref;
+    let lastError: Error | null = null;
+
+    // Try up to 2 times: original attempt + 1 retry with recovered ref
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        // Get locator for current ref
+        const selector = `aria-ref=${currentRef}`;
+        const element = await page.locator(selector).first();
+
+        // Execute the operation
+        console.log(`[RefRecovery] Executing ${operationName} with ref=${currentRef} (attempt ${attempt + 1})`);
+        return await operation(element);
+
+      } catch (error: any) {
+        lastError = error;
+        const errorMsg = error.message?.toLowerCase() || '';
+
+        // Check if this error indicates ref invalidation
+        const isRefInvalidation =
+          errorMsg.includes('not found') ||
+          errorMsg.includes('detached') ||
+          errorMsg.includes('not attached') ||
+          errorMsg.includes('no node') ||
+          errorMsg.includes('element is not') ||
+          errorMsg.includes('timeout') && errorMsg.includes('selector');
+
+        if (isRefInvalidation && attempt === 0) {
+          // Try to recover ref on first failure
+          console.log(`[RefRecovery] ${operationName} failed with ref ${currentRef}, attempting recovery...`);
+          console.log(`[RefRecovery] Error: ${error.message}`);
+
+          const recoveredRef = await this.tryRecoverRef(currentRef, page);
+
+          if (recoveredRef && recoveredRef !== currentRef) {
+            console.log(`[RefRecovery] Recovered ref ${currentRef} → ${recoveredRef}, retrying ${operationName}...`);
+            currentRef = recoveredRef;
+            continue; // Retry with new ref
+          } else {
+            console.log(`[RefRecovery] Could not recover ref ${currentRef}, operation will fail`);
+            throw error; // Can't recover, throw original error
+          }
+        } else {
+          // Not a ref invalidation error, or already retried, throw immediately
+          throw error;
+        }
+      }
+    }
+
+    // Should never reach here, but throw last error if we do
+    throw lastError || new Error(`Operation ${operationName} failed after retries`);
+  }
+
+  /**
    *  Simplified type implementation using Playwright's aria-ref selector
    *  Supports both single and multiple input operations
    */
   private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any>; diffSnapshot?: string }> {
     try {
-      // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
+      // Ensure we have the latest snapshot and save to history for ref recovery
+      const initialSnapshot = await (page as any)._snapshotForAI();
+      this.saveSnapshotToHistory(initialSnapshot, this.currentTabId || 'unknown');
 
       // Handle multiple inputs if provided
       if (inputs && inputs.length > 0) {
@@ -1019,8 +1089,10 @@ export class HybridBrowserSession {
           console.log(`Warning: Failed to get element attributes: ${e}`);
         }
 
-        // Get snapshot before action to record existing elements
+        // Get snapshot before action to record existing elements and save to history
         const snapshotBefore = await (page as any)._snapshotForAI();
+        this.saveSnapshotToHistory(snapshotBefore, this.currentTabId || 'unknown');
+
         const existingRefs = new Set<string>();
         const refPattern = /\[ref=([^\]]+)\]/g;
         let match;
@@ -1043,19 +1115,39 @@ export class HybridBrowserSession {
             console.log(`Warning: Failed to click element: ${clickError}`);
           }
         } else {
-          // Try to fill the element, with fallback to click-then-fill strategy
+          // Try fill-first strategy, fallback to click-then-fill if it fails
           let alreadyClicked = false;
-          try {
-            let fillSuccess = false;
+          let fillFirstFailed = false;
 
+          // Strategy 1: Try direct fill first (faster for standard inputs)
+          try {
+            console.log(`Attempting direct fill for ref=${ref} (fill-first strategy)`);
+            await element.fill(text, { timeout: 3000, force: true });
+            console.log(`Direct fill succeeded for ref=${ref}`);
+
+            // If this element might show dropdown, wait and check for new elements
+            if (shouldCheckDiff) {
+              await page.waitForTimeout(300);
+              const snapshotAfter = await (page as any)._snapshotForAI();
+              const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+
+              if (diffSnapshot && diffSnapshot.trim() !== '') {
+                return { success: true, diffSnapshot };
+              }
+            }
+
+            return { success: true };
+          } catch (fillFirstError: any) {
+            fillFirstFailed = true;
+            console.log(`Direct fill failed for ref=${ref}: ${fillFirstError.message}`);
+            console.log(`Falling back to click-then-fill strategy...`);
+          }
+
+          // Strategy 2: Click-then-fill (fallback for elements that need activation)
+          if (fillFirstFailed) {
             try {
-              // Strategy 1: Try to fill directly without clicking (for modern inputs like Google Flights combobox)
-              await element.fill(text, { timeout: 3000, force: true });
-              fillSuccess = true;
-              console.log(`Filled element ref=${ref} directly without clicking`);
-            } catch (directFillError) {
-              // Strategy 2: Click first, then fill (for traditional inputs that need activation)
-              console.log(`Direct fill failed for ref=${ref}, trying click-then-fill strategy`);
+              // Click first, then fill (works for both modern and traditional inputs)
+              console.log(`Using click-then-fill strategy for ref=${ref}`);
               try {
                 await element.click({ force: true });
                 alreadyClicked = true;
@@ -1066,157 +1158,192 @@ export class HybridBrowserSession {
 
               try {
                 await element.fill(text, { timeout: 3000, force: true });
-                fillSuccess = true;
                 console.log(`Filled element ref=${ref} after clicking`);
-              } catch (secondFillError) {
-                // Will be handled by outer catch block below
-                throw secondFillError;
-              }
-            }
 
-            if (fillSuccess) {
-              // If this element might show dropdown, wait and check for new elements
-              if (shouldCheckDiff) {
-                await page.waitForTimeout(300);
-                const snapshotAfter = await (page as any)._snapshotForAI();
-                const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
-
-                if (diffSnapshot && diffSnapshot.trim() !== '') {
-                  return { success: true, diffSnapshot };
-                }
-              }
-
-              return { success: true };
-            }
-          } catch (fillError: any) {
-            // Log the error for debugging
-            console.log(`Fill error for ref ${ref}: ${fillError.message}`);
-
-            // Check for various error messages that indicate the element is not fillable
-            const errorMessage = fillError.message.toLowerCase();
-            if (errorMessage.includes('not an <input>') ||
-              errorMessage.includes('not have a role allowing') ||
-              errorMessage.includes('element is not') ||
-              errorMessage.includes('cannot type') ||
-              errorMessage.includes('readonly') ||
-              errorMessage.includes('not editable') ||
-              errorMessage.includes('timeout') ||
-              errorMessage.includes('timeouterror')) {
-
-            // Click the element again to trigger dynamic content (like date pickers), but only if we haven't clicked yet
-            if (!alreadyClicked) {
-              try {
-                await element.click({ force: true });
-                console.log(`Clicked element ref=${ref} to trigger dynamic content`);
-                // Wait for potential dynamic content to appear
-                await page.waitForTimeout(500);
-              } catch (clickError) {
-                console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
-              }
-            } else {
-              // We already clicked during the click-then-fill strategy
-              await page.waitForTimeout(500);
-            }
-
-            // Step 1: Try to find input elements within the clicked element
-            const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
-            const inputElement = await element.locator(inputSelector).first();
-
-            const inputExists = await inputElement.count() > 0;
-            if (inputExists) {
-              console.log(`Found input element within ref ${ref}, attempting to fill`);
-              try {
-                await inputElement.fill(text, { force: true });
-
-                // If element might show dropdown, check for new elements
+                // If this element might show dropdown, wait and check for new elements
                 if (shouldCheckDiff) {
                   await page.waitForTimeout(300);
-                  const snapshotFinal = await (page as any)._snapshotForAI();
-                  const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                  const snapshotAfter = await (page as any)._snapshotForAI();
+                  const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
 
                   if (diffSnapshot && diffSnapshot.trim() !== '') {
                     return { success: true, diffSnapshot };
                   }
-                }
-
-                return { success: true };
-              } catch (innerError) {
-                console.log(`Failed to fill child element: ${innerError}`);
               }
-            }
 
-            // Step 2: Look for new elements that appeared after the action
-            console.log(`Looking for new elements that appeared after action...`);
+              return { success: true };
+            } catch (fillError: any) {
+              // Check if this might be a ref invalidation issue (element detached after click)
+              const errorMsg = fillError.message?.toLowerCase() || '';
+              const isRefInvalidation =
+                errorMsg.includes('detached') ||
+                errorMsg.includes('not attached') ||
+                errorMsg.includes('no node') ||
+                errorMsg.includes('timeout');
 
-            // Get snapshot after action to find new elements
-            const snapshotAfter = await (page as any)._snapshotForAI();
-            const newRefs = new Set<string>();
-            const afterRefPattern = /\[ref=([^\]]+)\]/g;
-            let afterMatch;
-            while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
-              const refId = afterMatch[1];
-              if (!existingRefs.has(refId)) {
-                newRefs.add(refId);
-              }
-            }
+              if (isRefInvalidation) {
+                console.log(`[RefRecovery] Fill failed after click, attempting ref recovery...`);
+                console.log(`[RefRecovery] Error: ${fillError.message}`);
 
-            console.log(`Found ${newRefs.size} new elements after action`);
+                // Try to recover ref (element might have been recreated by click)
+                const recoveredRef = await this.tryRecoverRef(currentRef, page);
 
-            // If we have a placeholder, try to find new input elements with that placeholder
-            if (originalPlaceholder && newRefs.size > 0) {
-              console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+                if (recoveredRef && recoveredRef !== currentRef) {
+                  console.log(`[RefRecovery] Recovered ref ${currentRef} → ${recoveredRef}, retrying fill...`);
 
-              // Try each new ref to see if it's an input with our placeholder
-              for (const newRef of newRefs) {
-                try {
-                  const newElement = await page.locator(`aria-ref=${newRef}`).first();
-                  const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
+                  // Retry fill with recovered ref
+                  currentRef = recoveredRef;
+                  selector = `aria-ref=${currentRef}`;
+                  element = await page.locator(selector).first();
 
-                  if (tagName === 'input' || tagName === 'textarea') {
-                    const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
-                    if (placeholder === originalPlaceholder) {
-                      console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+                  try {
+                    await element.fill(text, { timeout: 3000, force: true });
+                    console.log(`[RefRecovery] Fill succeeded with recovered ref ${recoveredRef}`);
 
-                      // Check if it's visible and fillable
-                      const elementInfo = await newElement.evaluate((el: any) => {
-                        return {
-                          tagName: el.tagName,
-                          id: el.id,
-                          className: el.className,
-                          placeholder: el.placeholder,
-                          isVisible: el.offsetParent !== null,
-                          isReadonly: el.readOnly || el.getAttribute('readonly') !== null
-                        };
-                      });
-                      console.log(`New element details:`, JSON.stringify(elementInfo));
+                    // Check for dropdown if needed
+                    if (shouldCheckDiff) {
+                      await page.waitForTimeout(300);
+                      const snapshotAfter = await (page as any)._snapshotForAI();
+                      const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
 
-                      // Try to fill it with force to avoid scrolling
-                      await newElement.fill(text, { force: true });
-
-                      // If element might show dropdown, check for new elements
-                      if (shouldCheckDiff) {
-                        await page.waitForTimeout(300);
-                        const snapshotFinal = await (page as any)._snapshotForAI();
-                        const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
-
-                        if (diffSnapshot && diffSnapshot.trim() !== '') {
-                          return { success: true, diffSnapshot };
-                        }
+                      if (diffSnapshot && diffSnapshot.trim() !== '') {
+                        return { success: true, diffSnapshot };
                       }
+                    }
 
-                      return { success: true };
+                    return { success: true };
+                  } catch (retryError) {
+                    console.log(`[RefRecovery] Fill retry also failed: ${retryError}`);
+                    throw retryError;
+                  }
+                } else {
+                  console.log(`[RefRecovery] Could not recover ref ${currentRef}`);
+                  throw fillError;
+                }
+              } else {
+                // Not a ref invalidation error, throw immediately
+                throw fillError;
+              }
+            }
+            } catch (fillError: any) {
+              // Log the error for debugging
+              console.log(`Fill error for ref ${ref}: ${fillError.message}`);
+
+              // Check for various error messages that indicate the element is not fillable
+              const errorMessage = fillError.message.toLowerCase();
+              if (errorMessage.includes('not an <input>') ||
+                errorMessage.includes('not have a role allowing') ||
+                errorMessage.includes('element is not') ||
+                errorMessage.includes('cannot type') ||
+                errorMessage.includes('readonly') ||
+                errorMessage.includes('not editable') ||
+                errorMessage.includes('timeout') ||
+                errorMessage.includes('timeouterror')) {
+
+              // We already clicked, so just wait for potential dynamic content
+              console.log(`Element ref=${ref} is not fillable, waiting for dynamic content`);
+              await page.waitForTimeout(500);
+
+              // Step 1: Try to find input elements within the clicked element
+              const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
+              const inputElement = await element.locator(inputSelector).first();
+
+              const inputExists = await inputElement.count() > 0;
+              if (inputExists) {
+                console.log(`Found input element within ref ${ref}, attempting to fill`);
+                try {
+                  await inputElement.fill(text, { force: true });
+
+                  // If element might show dropdown, check for new elements
+                  if (shouldCheckDiff) {
+                    await page.waitForTimeout(300);
+                    const snapshotFinal = await (page as any)._snapshotForAI();
+                    const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+
+                    if (diffSnapshot && diffSnapshot.trim() !== '') {
+                      return { success: true, diffSnapshot };
                     }
                   }
-                } catch (e) {
-                  // Ignore errors for non-input elements
+
+                  return { success: true };
+                } catch (innerError) {
+                  console.log(`Failed to fill child element: ${innerError}`);
                 }
               }
-            }
 
-            console.log(`No suitable input element found for ref ${ref}`);
+              // Step 2: Look for new elements that appeared after the action
+              console.log(`Looking for new elements that appeared after action...`);
+
+              // Get snapshot after action to find new elements
+              const snapshotAfter = await (page as any)._snapshotForAI();
+              const newRefs = new Set<string>();
+              const afterRefPattern = /\[ref=([^\]]+)\]/g;
+              let afterMatch;
+              while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
+                const refId = afterMatch[1];
+                if (!existingRefs.has(refId)) {
+                  newRefs.add(refId);
+                }
+              }
+
+              console.log(`Found ${newRefs.size} new elements after action`);
+
+              // If we have a placeholder, try to find new input elements with that placeholder
+              if (originalPlaceholder && newRefs.size > 0) {
+                console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+
+                // Try each new ref to see if it's an input with our placeholder
+                for (const newRef of newRefs) {
+                  try {
+                    const newElement = await page.locator(`aria-ref=${newRef}`).first();
+                    const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
+
+                    if (tagName === 'input' || tagName === 'textarea') {
+                      const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
+                      if (placeholder === originalPlaceholder) {
+                        console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+
+                        // Check if it's visible and fillable
+                        const elementInfo = await newElement.evaluate((el: any) => {
+                          return {
+                            tagName: el.tagName,
+                            id: el.id,
+                            className: el.className,
+                            placeholder: el.placeholder,
+                            isVisible: el.offsetParent !== null,
+                            isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                          };
+                        });
+                        console.log(`New element details:`, JSON.stringify(elementInfo));
+
+                        // Try to fill it with force to avoid scrolling
+                        await newElement.fill(text, { force: true });
+
+                        // If element might show dropdown, check for new elements
+                        if (shouldCheckDiff) {
+                          await page.waitForTimeout(300);
+                          const snapshotFinal = await (page as any)._snapshotForAI();
+                          const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+
+                          if (diffSnapshot && diffSnapshot.trim() !== '') {
+                            return { success: true, diffSnapshot };
+                          }
+                        }
+
+                        return { success: true };
+                      }
+                    }
+                  } catch (e) {
+                    // Ignore errors for non-input elements
+                  }
+                }
+              }
+
+              console.log(`No suitable input element found for ref ${ref}`);
+              }
+              // Re-throw the original error if we couldn't find an input element
+              throw fillError;
             }
-            // Re-throw the original error if we couldn't find an input element
-            throw fillError;
           }
         }
 

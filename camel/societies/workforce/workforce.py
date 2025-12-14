@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import datetime
 import json
 import os
 import time
@@ -1301,11 +1302,15 @@ class Workforce(BaseNode):
                 f"Counter: {self._in_flight_tasks}"
             )
 
-    def _cleanup_task_tracking(self, task_id: str) -> None:
+    def _cleanup_task_tracking(
+        self, task_id: str, keep_assignee: bool = False
+    ) -> None:
         r"""Clean up tracking data for a task to prevent memory leaks.
 
         Args:
             task_id (str): The ID of the task to clean up.
+            keep_assignee (bool): If True, preserve the assignee mapping for
+                retry context preservation. (default: :obj:`False`)
         """
         if task_id in self._task_start_times:
             del self._task_start_times[task_id]
@@ -1313,8 +1318,32 @@ class Workforce(BaseNode):
         if task_id in self._task_dependencies:
             del self._task_dependencies[task_id]
 
-        if task_id in self._assignees:
+        # Only delete assignee if not keeping it for retry
+        if not keep_assignee and task_id in self._assignees:
             del self._assignees[task_id]
+
+    async def _cleanup_task_agent(self, task: Task) -> None:
+        r"""Clean up the agent associated with a task.
+
+        This method tells the worker to release the agent for a task that
+        has permanently completed or failed (reached max retries). The agent
+        will be returned to the pool or garbage collected.
+
+        Args:
+            task (Task): The task whose agent should be cleaned up.
+        """
+        if (
+            task.assigned_worker_id
+            and task.assigned_worker_id in self._workers
+        ):
+            worker = self._workers[task.assigned_worker_id]
+            # Check if worker has the cleanup method (SingleAgentWorker)
+            if hasattr(worker, '_cleanup_task_agent'):
+                await worker._cleanup_task_agent(task.id)
+                logger.debug(
+                    f"Cleaned up agent for permanently "
+                    f"completed/failed task {task.id}"
+                )
 
     def _decompose_task(
         self,
@@ -4314,6 +4343,9 @@ class Workforce(BaseNode):
             # Pipeline mode continues to allow downstream recovery.
             # Auto-decompose mode halts to avoid cascading errors.
 
+            # Clean up agent for this permanently failed task
+            await self._cleanup_task_agent(task)
+
             if self.mode == WorkforceMode.PIPELINE:
                 # PIPELINE: Mark as failed but continue workflow
                 # Intent: Failed tasks pass error info to downstream tasks
@@ -4393,10 +4425,46 @@ class Workforce(BaseNode):
             f"{recovery_decision.reasoning}"
         )
 
+        # Save failure analysis to task.additional_info for retry guidance
+        if task.additional_info is None:
+            task.additional_info = {}
+
+        # Build detailed failure analysis text
+        issues_text = "\n".join(
+            f"- {issue}" for issue in recovery_decision.issues
+        )
+        failure_analysis_text = f"""**Analysis Reasoning:**
+{recovery_decision.reasoning}
+
+**Issues Identified:**
+{issues_text if issues_text else "No specific issues identified"}
+
+**Recommended Strategy:** {strategy_str}"""
+
+        task.additional_info['failure_analysis'] = failure_analysis_text
+
+        # Track previous attempts for debugging
+        if 'previous_attempts' not in task.additional_info:
+            task.additional_info['previous_attempts'] = []
+
+        task.additional_info['previous_attempts'].append(
+            {
+                'attempt_number': task.failure_count,
+                'error': detailed_error,
+                'timestamp': str(datetime.datetime.now()),
+                'recovery_strategy': strategy_str,
+            }
+        )
+
+        logger.debug(
+            f"Saved failure analysis for task {task.id}: {strategy_str}"
+        )
+
         # Clean up tracking before attempting recovery
+        # IMPORTANT: keep_assignee=True to preserve worker assignment for retry
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
-        self._cleanup_task_tracking(task.id)
+        self._cleanup_task_tracking(task.id, keep_assignee=True)
 
         # Apply recovery strategy
         try:
@@ -4443,6 +4511,11 @@ class Workforce(BaseNode):
         worker_id = task.assigned_worker_id or "unknown"
         processing_time_seconds = None
         token_usage = None
+
+        # Clean up agent for successfully completed task
+        # (agent was already cleaned up in SingleAgentWorker._process_task,
+        # but we call this for safety/consistency)
+        await self._cleanup_task_agent(task)
 
         # Get processing time from task start time or additional info
         if task.id in self._task_start_times:

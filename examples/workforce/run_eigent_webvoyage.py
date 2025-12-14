@@ -46,6 +46,11 @@ LOG_DIR = SCRIPT_DIR / "camel_logs" / f"run_{RUN_TIMESTAMP}"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 os.environ["CAMEL_LOG_DIR"] = str(LOG_DIR)
 
+# Set up browser tool log directory within the same run folder
+BROWSER_LOG_DIR = LOG_DIR / "browser_logs"
+BROWSER_LOG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["CAMEL_BROWSER_TOOL_LOG_DIR"] = str(BROWSER_LOG_DIR)
+
 logger = get_logger(__name__)
 
 WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
@@ -441,7 +446,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--jsonl',
         type=str,
-        default=r'C:\Users\moizh\workspace\camel\data\eignen_browser\WebVoyager_data.jsonl',
+        default=r'/Users/puzhen/Downloads/WebVoyager_data (3).jsonl',
         help='Path to JSONL file',
     )
     args = parser.parse_args()
@@ -453,7 +458,7 @@ if __name__ == "__main__":
 
     # Create model backend for verification
     verifier_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+        model_platform=ModelPlatformType.AZURE,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,

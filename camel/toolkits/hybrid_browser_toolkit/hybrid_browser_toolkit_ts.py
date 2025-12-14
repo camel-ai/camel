@@ -587,9 +587,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         import base64
         import datetime
         import os
+        import time
         import urllib.parse
 
         from camel.utils import sanitize_filename
+
+        start_time = time.time()
 
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -597,6 +600,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             result_text = result.text
             file_path = None
+
+            # Extract snapshot from result if available
+            snapshot = getattr(result, 'snapshot', '')
 
             if result.images:
                 cache_dir = os.path.abspath(self._cache_dir)
@@ -634,6 +640,20 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         result_text += f" (saved to: {file_path})"
                         break
 
+            # Log the action with snapshot
+            execution_time = time.time() - start_time
+            await ws_wrapper._log_action(
+                action_name='browser_get_som_screenshot',
+                inputs={'args': [], 'kwargs': {'read_image': read_image}},
+                outputs={
+                    'result': result_text,
+                    'images_count': len(result.images) if result.images else 0,
+                    'snapshot': snapshot,
+                },
+                execution_time=execution_time,
+                reasoning=None,  # No reasoning for this method call
+            )
+
             # Return ToolResult with image if read_image is True
             if read_image and result.images:
                 logger.info(
@@ -648,6 +668,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Return plain text if read_image is False
                 return result_text
         except Exception as e:
+            execution_time = time.time() - start_time
+            # Log the error
+            if hasattr(self, '_get_ws_wrapper'):
+                ws_wrapper = await self._get_ws_wrapper()
+                await ws_wrapper._log_action(
+                    action_name='browser_get_som_screenshot',
+                    inputs={'args': [], 'kwargs': {'read_image': read_image}},
+                    outputs=None,
+                    execution_time=execution_time,
+                    error=f"{type(e).__name__}: {e!s}",
+                    reasoning=None,
+                )
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
 

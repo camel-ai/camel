@@ -318,8 +318,6 @@ def search_agent_factory(
 
     custom_tools = [
         "browser_open",
-        "browser_select",
-        "browser_close",
         "browser_back",
         "browser_forward",
         "browser_click",
@@ -408,6 +406,7 @@ You may call browser_get_page_snapshot to obtain a textual snapshot of
 the current page. When an action fails due to an element not being
 found, you should use this tool to obtain the latest page snapshot and
 reassess the situation.
+
 You may call browser_get_som_screenshot to obtain a screenshot of the
 current page. When textual snapshots are insufficient to locate a button
 or understand the state of an element, use this tool to perform a visual
