@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import pytest
 
@@ -65,7 +65,7 @@ def test_run_python_code(docker_interpreter: DockerInterpreter):
     code = """
 def add(a, b):
     return a + b
-    
+
 def multiply(a, b):
     return a * b
 
@@ -78,7 +78,7 @@ def main():
     operation = subtract
     result = operation(a, b)
     print(result)
-    
+
 if __name__ == "__main__":
     main()
 """
@@ -90,7 +90,7 @@ def test_run_python_stderr(docker_interpreter: DockerInterpreter):
     code = """
 def divide(a, b):
     return a / b
-    
+
 def main():
     result = divide(10, 0)
     print(result)
@@ -111,7 +111,7 @@ def test_run_r_code(docker_interpreter: DockerInterpreter):
             return(fibonacci(n-1) + fibonacci(n-2))
         }
     }
-    
+
     result <- fibonacci(10)
     print(result)
     """

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
 from camel.agents import ChatAgent
@@ -42,7 +42,7 @@ model_3_pro_pre = ModelFactory.create(
 )
 
 user_msg = """
-Create an interactive HTML webpage that allows users to play with a 
+Create an interactive HTML webpage that allows users to play with a
 Rubik's Cube, and saved it to local file.
 """
 
@@ -83,9 +83,9 @@ print(response_pro.msgs[0].content)
 ===============================================================================
 Hello and a big hi to the entire CAMEL AI community!
 
-It's fantastic to acknowledge your dedication to 
-the important and fascinating study of autonomous and communicative agents. 
-Open-source collaboration is the engine of innovation, 
+It's fantastic to acknowledge your dedication to
+the important and fascinating study of autonomous and communicative agents.
+Open-source collaboration is the engine of innovation,
 and your work is pushing the boundaries of what's possible in AI.
 
 Keep up the brilliant research and community building

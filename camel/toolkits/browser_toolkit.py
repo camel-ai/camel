@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
@@ -680,15 +680,15 @@ class BaseBrowser:
         # ruff: noqa: E501
         assert self.page is not None
         script = f"""
-        (function() {{ 
+        (function() {{
             let text = "{search_text}";
             let found = window.find(text);
             if (!found) {{
                 let elements = document.querySelectorAll("*:not(script):not(
-                style)"); 
+                style)");
                 for (let el of elements) {{
                     if (el.innerText && el.innerText.includes(text)) {{
-                        el.scrollIntoView({{behavior: "smooth", block: 
+                        el.scrollIntoView({{behavior: "smooth", block:
                         "center"}});
                         el.style.backgroundColor = "yellow";
                         el.style.border = '2px solid red';
@@ -744,8 +744,8 @@ class BaseBrowser:
         self.page.evaluate(self.page_script)
         self.page.evaluate("""
         () => {
-            document.querySelectorAll('a, button, input, select, textarea, 
-            [tabindex]:not([tabindex="-1"]), 
+            document.querySelectorAll('a, button, input, select, textarea,
+            [tabindex]:not([tabindex="-1"]),
             [contenteditable="true"]').forEach(el => {
                 el.style.border = '2px solid red';
             });
@@ -1227,8 +1227,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         simulation_result: str
         if not task_completed:
             simulation_result = f"""
-                The task is not completed within the round limit. Please 
-                check the last round {self.history_window} information to 
+                The task is not completed within the round limit. Please
+                check the last round {self.history_window} information to
                 see if there is any useful information:
                 <history>{self.history[-self.history_window :]}</history>
             """

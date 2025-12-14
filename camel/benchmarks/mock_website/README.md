@@ -86,11 +86,9 @@ The dispatcher will automatically download project-specific `templates` and `sta
 
 ## TODO: Automated Question Generation Module
 
-A planned future module for this project is the development of an automated question generation system. This system would analyze the current state of the web application environment (e.g., visible elements, available products, cart status) and generate relevant questions or tasks for a web agent to solve. 
+A planned future module for this project is the development of an automated question generation system. This system would analyze the current state of the web application environment (e.g., visible elements, available products, cart status) and generate relevant questions or tasks for a web agent to solve.
 
 This could involve:
 *   Identifying interactable elements and their states.
 *   Understanding the current context (e.g., on product page, in cart).
 *   Formulating natural language questions or goal descriptions based on this context (e.g., "Find a product under $50 in the Electronics category and add it to the cart," or "What is the current subtotal of the cart after adding two units of item X?").
-
-

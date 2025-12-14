@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
@@ -22,6 +22,7 @@ from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.cerebras_model import CerebrasModel
 from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
@@ -91,6 +92,7 @@ class ModelFactory:
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.CEREBRAS: CerebrasModel,
         ModelPlatformType.COMETAPI: CometAPIModel,
         ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,

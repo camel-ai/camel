@@ -106,8 +106,8 @@ export interface EnterAction {
 export interface MouseAction {
   type: 'mouse_control';
   control: 'click' | 'right_click' | 'dblclick';
-  x: number; 
-  y: number; 
+  x: number;
+  y: number;
 }
 
 export interface MouseDragAction {
@@ -127,4 +127,3 @@ export interface VisualMarkResult {
   text: string;
   images: string[];
 }
-

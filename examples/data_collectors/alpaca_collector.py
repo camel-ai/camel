@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collectors import AlpacaDataCollector
@@ -52,5 +52,5 @@ print(collector.convert())
 {'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
 2025-01-19 19:26:09,140 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
 {'instruction': 'You are a helpful assistant When is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
-{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by 
+{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by
 """

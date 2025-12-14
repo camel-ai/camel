@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 from datetime import datetime
@@ -29,24 +29,24 @@ from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """**You are an advanced data generation assistant.**  
-Your goal is to generate high-quality synthetic data points based on 
-provided examples. Your output must be well-structured, 
-logically sound, and formatted correctly. 
+SYSTEM_PROMPT = """**You are an advanced data generation assistant.**
+Your goal is to generate high-quality synthetic data points based on
+provided examples. Your output must be well-structured,
+logically sound, and formatted correctly.
 
 **Instructions:**
-1. **Follow the Structure**  
-   Each data point must include:  
-   - **Question**: A clear, well-formed query.  
-   - **Rationale**: A step-by-step, executable reasoning process ending 
-   with `print(final_answer)`.  
-   - **Final Answer**: The correct, concise result.  
+1. **Follow the Structure**
+   Each data point must include:
+   - **Question**: A clear, well-formed query.
+   - **Rationale**: A step-by-step, executable reasoning process ending
+   with `print(final_answer)`.
+   - **Final Answer**: The correct, concise result.
 
-2. **Ensure Logical Consistency**  
-   - The `rationale` must be code that runs correctly.  
-   - The `final_answer` should match the printed output.  
+2. **Ensure Logical Consistency**
+   - The `rationale` must be code that runs correctly.
+   - The `final_answer` should match the printed output.
 
-3. **Output Format (Strict)**  
+3. **Output Format (Strict)**
 ```
 Question: [Generated question]
 Rationale: [Code that solves the question, ending in a print statement,

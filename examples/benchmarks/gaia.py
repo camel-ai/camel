@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,18 +10,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+"""
+GAIA Benchmark Example
 
+Prerequisites:
+1. Docker Desktop installed and running
+2. Build the Docker image (one-time setup):
+   cd examples/runtimes/ubuntu_docker_runtime
+   ./manage_camel_docker.sh build
+
+3. Set environment variables in .env:
+   - OPENAI_API_KEY (or other API keys)
+
+4. Clean up stale containers if needed:
+   docker stop $(docker ps -q) && docker rm $(docker ps -aq)
+"""
+
+from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
 from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
+from camel.configs import ChatGPTConfig
+from camel.embeddings import AzureEmbedding
 from camel.models import ModelFactory
-from camel.runtimes import RemoteHttpRuntime
+from camel.runtimes import DockerRuntime
 from camel.toolkits import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType, StorageType
 
+load_dotenv()
+
 retriever = DefaultGAIARetriever(
-    vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
+    vector_storage_local_path="local_data2/",
+    storage_type=StorageType.QDRANT,
+    embedding_model=AzureEmbedding(),
 )
 
 benchmark = GAIABenchmark(
@@ -36,9 +58,12 @@ print(f"Number of test examples: {len(benchmark.test)}")
 
 
 toolkit = CodeExecutionToolkit(verbose=True)
-runtime = RemoteHttpRuntime("localhost").add(
+runtime = DockerRuntime(
+    "my-camel", port=0
+).add(  # port=0 uses random available port
     toolkit.get_tools(),
     "camel.toolkits.CodeExecutionToolkit",
+    dict(verbose=True),
 )
 
 task_prompt = """
@@ -57,23 +82,27 @@ task_prompt = """
         a string.
         """.strip()
 
-tools = runtime.get_tools()
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
+# use context manager to auto-cleanup container on exit
+with runtime as r:
+    r.wait()
+    print("Docker runtime is ready.")
 
-agent = ChatAgent(
-    task_prompt,
-    model,
-    tools=tools,
-)
+    tools = r.get_tools()
+    agent = ChatAgent(
+        task_prompt,
+        model,
+        tools=tools,
+    )
 
-result = benchmark.run(agent, "valid", level="all", subset=3)
-print("correct:", result["correct"])
-print("total:", result["total"])
+    result = benchmark.run(agent, "valid", level="all", subset=10)
+    print("correct:", result["correct"])
+    print("total:", result["total"])
 
 # ruff: noqa: E501
 """

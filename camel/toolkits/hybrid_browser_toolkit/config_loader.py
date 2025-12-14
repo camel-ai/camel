@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -150,14 +150,14 @@ class ConfigLoader:
             "networkIdleTimeout": self.browser_config.network_idle_timeout,
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
-            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
-            "log_dir": self.toolkit_config.log_dir,
-            "session_id": self.toolkit_config.session_id,
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
+            "browser_log_to_file": self.toolkit_config.browser_log_to_file,
+            "log_dir": self.toolkit_config.log_dir,
+            "session_id": self.toolkit_config.session_id,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:

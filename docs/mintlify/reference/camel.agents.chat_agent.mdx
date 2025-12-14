@@ -47,6 +47,16 @@ def add_streaming_content(self, new_content: str):
 
 Add new streaming content.
 
+<a id="camel.agents.chat_agent.StreamContentAccumulator.add_reasoning_content"></a>
+
+### add_reasoning_content
+
+```python
+def add_reasoning_content(self, new_reasoning: str):
+```
+
+Add new reasoning content.
+
 <a id="camel.agents.chat_agent.StreamContentAccumulator.add_tool_status"></a>
 
 ### add_tool_status
@@ -66,6 +76,16 @@ def get_full_content(self):
 ```
 
 Get the complete accumulated content.
+
+<a id="camel.agents.chat_agent.StreamContentAccumulator.get_full_reasoning_content"></a>
+
+### get_full_reasoning_content
+
+```python
+def get_full_reasoning_content(self):
+```
+
+Get the complete accumulated reasoning content.
 
 <a id="camel.agents.chat_agent.StreamContentAccumulator.get_content_with_new_status"></a>
 
@@ -877,6 +897,31 @@ response_format was provided.
 See Also:
 :meth:`asummarize`: Async version for non-blocking LLM calls.
 
+<a id="camel.agents.chat_agent.ChatAgent._build_conversation_text_from_messages"></a>
+
+### _build_conversation_text_from_messages
+
+```python
+def _build_conversation_text_from_messages(self, messages: List[Any], include_summaries: bool = False):
+```
+
+Build conversation text from messages for summarization.
+
+This is a shared helper method that converts messages to a formatted
+conversation text string, handling tool calls, tool results, and
+regular messages.
+
+**Parameters:**
+
+- **messages** (List[Any]): List of messages to convert.
+- **include_summaries** (bool): Whether to include messages starting with [CONTEXT_SUMMARY]. (default: :obj:`False`)
+
+**Returns:**
+
+  tuple[str, List[str]]: A tuple containing:
+- Formatted conversation text
+- List of user messages extracted from the conversation
+
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 
 ### clear_memory
@@ -1348,7 +1393,8 @@ def _record_tool_calling(
     args: Dict[str, Any],
     result: Any,
     tool_call_id: str,
-    mask_output: bool = False
+    mask_output: bool = False,
+    extra_content: Optional[Dict[str, Any]] = None
 ):
 ```
 
@@ -1362,6 +1408,7 @@ tool calling record.
 - **result** (Any): The result returned by the tool execution.
 - **tool_call_id** (str): A unique identifier for the tool call.
 - **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **extra_content** (Optional[Dict[str, Any]], optional): Additional content associated with the tool call. (default: :obj:`None`)
 
 **Returns:**
 
@@ -1520,7 +1567,8 @@ def _create_streaming_response_with_accumulator(
     new_content: str,
     step_token_usage: Dict[str, int],
     response_id: str = '',
-    tool_call_records: Optional[List[ToolCallingRecord]] = None
+    tool_call_records: Optional[List[ToolCallingRecord]] = None,
+    reasoning_delta: Optional[str] = None
 ):
 ```
 
