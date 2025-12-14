@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -3135,24 +3135,16 @@ class Workforce(BaseNode):
             result)."""
             if isinstance(child, SingleAgentWorker):
                 try:
-                    from camel.utils.context_utils import (
-                        ContextUtility,
-                        WorkflowSummary,
-                    )
+                    from camel.utils.context_utils import ContextUtility
 
                     # TWO-PASS APPROACH FOR ROLE-BASED SAVING:
-                    # Pass 1: Generate summary to get agent_title
+                    # Use WorkflowMemoryManager which has access to
+                    # _loaded_workflow_paths for operation_mode support
                     workflow_manager = child._get_workflow_manager()
-                    summary_prompt = (
-                        workflow_manager._prepare_workflow_prompt()
-                    )
 
-                    # generate summary without saving
-                    # use conversation accumulator if available
+                    # Pass 1: Generate summary using manager (has loaded paths)
                     gen_result = (
-                        await child.worker.generate_workflow_summary_async(
-                            summary_prompt=summary_prompt,
-                            response_format=WorkflowSummary,
+                        await workflow_manager.generate_workflow_summary_async(
                             conversation_accumulator=(
                                 child._conversation_accumulator
                             ),
@@ -3185,6 +3177,8 @@ class Workforce(BaseNode):
                     )
 
                     # save with correct context and accumulator
+                    # save_workflow_content_async handles operation_mode
+                    # branching
                     result = (
                         await workflow_manager.save_workflow_content_async(
                             workflow_summary=workflow_summary,
