@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 
@@ -58,8 +58,11 @@ async def main():
     # The task explicitly requires 5 unique papers
     task = Task(
         content=(
-            "Find 5 unique research papers on NLP systems. "
-            "For each paper, provide: title, authors, year, and a brief "
+            """
+            Find 5 unique research papers on NLP systems.
+            For each paper, provide: title, authors, year,
+            and a brief description.
+            """
         ),
         id="research_task_1",
     )

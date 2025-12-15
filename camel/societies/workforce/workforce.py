@@ -1725,7 +1725,7 @@ class Workforce(BaseNode):
                     schema=ValidationResult,
                     fallback_values=self.structured_handler.create_fallback_response(
                         ValidationResult, "fail to parse structured response"
-                    ),
+                    ).model_dump(),
                 )
 
                 if isinstance(result, ValidationResult):
@@ -1753,7 +1753,7 @@ class Workforce(BaseNode):
             )
             return ValidationResult.model_validate(
                 self.structured_handler.create_fallback_response(
-                    ValidationResult, e
+                    ValidationResult, str(e)
                 )
             )
 
@@ -1960,7 +1960,7 @@ class Workforce(BaseNode):
                         f"{len(subtasks_to_retry)} duplicates to retry "
                     )
 
-                refinement_iteration = task.additional_info.get(
+                refinement_iteration = (task.additional_info or {}).get(
                     'refinement_iteration', 0
                 )
 
@@ -2000,6 +2000,8 @@ class Workforce(BaseNode):
                 subtasks = subtasks_to_retry
 
                 if subtasks:
+                    if not task.additional_info:
+                        task.additional_info = {}
                     task.additional_info['refinement_iteration'] = (
                         refinement_iteration + 1
                     )
