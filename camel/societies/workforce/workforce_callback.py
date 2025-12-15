@@ -23,6 +23,7 @@ from .events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskStreamingChunkEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
@@ -71,4 +72,8 @@ class WorkforceCallback(ABC):
 
     @abstractmethod
     def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+        pass
+
+    @abstractmethod
+    def log_task_streaming_chunk(self, event: TaskStreamingChunkEvent) -> None:
         pass

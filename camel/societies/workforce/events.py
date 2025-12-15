@@ -32,6 +32,7 @@ class WorkforceEventBase(BaseModel):
         "worker_deleted",
         "queue_status",
         "all_tasks_completed",
+        "task_streaming_chunk",
     ]
     metadata: Optional[Dict[str, Any]] = None
     timestamp: datetime = Field(
@@ -96,6 +97,14 @@ class TaskFailedEvent(WorkforceEventBase):
     worker_id: Optional[str] = None
 
 
+class TaskStreamingChunkEvent(WorkforceEventBase):
+    event_type: Literal["task_streaming_chunk"] = "task_streaming_chunk"
+    task_id: str
+    worker_id: str
+    chunk: str
+    chunk_index: int
+
+
 class AllTasksCompletedEvent(WorkforceEventBase):
     event_type: Literal["all_tasks_completed"] = "all_tasks_completed"
 
@@ -109,6 +118,7 @@ class QueueStatusEvent(WorkforceEventBase):
 
 
 WorkforceEvent = Union[
+    TaskStreamingChunkEvent,
     TaskDecomposedEvent,
     TaskCreatedEvent,
     TaskAssignedEvent,
