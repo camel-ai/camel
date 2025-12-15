@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import Union, cast
@@ -50,6 +50,7 @@ class ModelType(UnifiedModelType, Enum):
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
+    GPT_5_2 = ("gpt-5.2",)
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -85,11 +86,6 @@ class ModelType(UnifiedModelType, Enum):
     # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
-    GROQ_LLAMA_3_3_70B_PREVIEW = "llama-3.3-70b-specdec"
-    GROQ_LLAMA_3_8B = "llama3-8b-8192"
-    GROQ_LLAMA_3_70B = "llama3-70b-8192"
-    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
-    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     # Cerebras platform models
     CEREBRAS_GPT_OSS_120B = "gpt-oss-120b"
@@ -257,8 +253,6 @@ class ModelType(UnifiedModelType, Enum):
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
     GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
-    GEMINI_1_5_FLASH = "gemini-1.5-flash"
-    GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -604,6 +598,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O4_MINI,
             ModelType.O3,
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
         }
 
     @property
@@ -704,11 +699,6 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_3_70B,
-            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_MIXTRAL_8_7B,
-            ModelType.GROQ_GEMMA_2_9B_IT,
         }
 
     @property
@@ -871,8 +861,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -1195,10 +1183,6 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.CEREBRAS_LLAMA_3_1_8B,
             ModelType.GPT_4,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
-            ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
@@ -1281,7 +1265,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
-            ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.YI_LARGE,
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
@@ -1561,6 +1544,7 @@ class ModelType(UnifiedModelType, Enum):
             return 320_000
         elif self in {
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
             ModelType.GPT_5,
@@ -1580,8 +1564,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
