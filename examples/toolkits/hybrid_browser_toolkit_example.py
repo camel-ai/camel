@@ -100,8 +100,11 @@ agent = ChatAgent(
 TASK_PROMPT = r"""
 Visit the website "https://www.google.com/travel/flights/" using a browser and search for a round-trip journey from Edinburgh to Manchester on January 28th, 2026, departing and returning on the same day. Find and extract the lowest price available for this itinerary. Return the lowest price option as a plain text summary including outbound and return departure times, total price, and airline details.      
 填写日期的时候先点击日期框，然后再分别输入去程和返程日期，用正确格式如：2026-01-28
-enter可以作为确认
-                                     
+enter可以作为确认，也可以用来执行搜索
+
+如果遇到element not found, 可以用browser_get_page_snapshot获得最新snapshot
+如果想看截屏，可以用browser_get_som_screenshot, 如果看到截屏中你的任务没有完成或者有问题，你需要对应的修改
+确保起点终点，还有时间正确
 """
 
 
