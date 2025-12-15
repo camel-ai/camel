@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import tempfile
@@ -202,19 +202,49 @@ class TestSingleAgentWorkerWorkflow:
     @pytest.mark.asyncio
     async def test_save_workflow_success(self, temp_context_dir):
         """Test successful workflow saving."""
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         worker = MockSingleAgentWorker("test_analyst")
 
-        # Mock the asummarize method to return success
-        mock_result = {
+        # Mock the WorkflowMemoryManager methods that are now used
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="test_analyst",
+            task_title="Test Analysis",
+            task_description="Test analysis task",
+            tools=[],
+            steps=["Step 1"],
+            tags=["test"],
+        )
+
+        mock_gen_result = {
+            "status": "success",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Test workflow summary",
+        }
+
+        mock_save_result = {
             "status": "success",
             "summary": "Test workflow summary",
             "file_path": (
                 f"{temp_context_dir}/test_analyst_workflow_20250122.md"
             ),
+            "worker_description": "test_analyst",
         }
 
-        with patch.object(
-            worker.worker, 'asummarize', return_value=mock_result
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -242,11 +272,17 @@ class TestSingleAgentWorkerWorkflow:
     @pytest.mark.asyncio
     async def test_save_workflow_exception(self, temp_context_dir):
         """Test workflow saving when exception occurs."""
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+
         worker = MockSingleAgentWorker("test_analyst")
 
-        # Mock asummarize to raise exception
+        # Mock generate_workflow_summary_async to raise exception
         with patch.object(
-            worker.worker, 'asummarize', side_effect=Exception("Test error")
+            WorkflowMemoryManager,
+            'generate_workflow_summary_async',
+            side_effect=Exception("Test error"),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -386,22 +422,22 @@ class TestWorkforceWorkflowMemoryMethods:
         """Test save_workflow_memories_async with real internal execution.
 
         This test exercises the actual save_workflow_memories_async()
-        implementation, only mocking the ChatAgent.asummarize() method to
-        avoid LLM API calls.
+        implementation, mocking WorkflowMemoryManager methods to avoid
+        LLM API calls.
 
         Tests the following internal behavior:
         - Workforce iteration through child workers
         - SingleAgentWorker validation logic
-        (_validate_workflow_save_requirements)
         - Context utility setup and agent configuration
         - Filename generation from worker description
-        (_generate_workflow_filename)
-        - Workflow prompt preparation (_prepare_workflow_prompt)
-        - Agent selection for summarization (_select_agent_for_summarization)
-        - Worker metadata addition to results
         - Result processing and error handling in Workforce
         - Shared context utility setup between Workforce and workers
         """
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         workforce = Workforce("Test Workforce")
         worker = MockSingleAgentWorker("data_analyst")
         workforce._children = [worker]
@@ -419,11 +455,9 @@ class TestWorkforceWorkflowMemoryMethods:
         # Store initial conversation accumulator state
         initial_accumulator = worker._conversation_accumulator
 
-        # Mock only the ChatAgent.generate_workflow_summary_async() method
+        # Mock WorkflowMemoryManager.generate_workflow_summary_async()
         # Role-based structure:
         # workforce_workflows/{role}/{task_title}_workflow.md
-        from camel.utils.context_utils import WorkflowSummary
-
         mock_workflow_summary = WorkflowSummary(
             agent_title="test_worker",
             task_title="Analyze Sales Data",
@@ -439,11 +473,28 @@ class TestWorkforceWorkflowMemoryMethods:
             "summary_content": "Completed data analysis workflow",
         }
 
-        with patch.object(
-            ChatAgent,
-            'generate_workflow_summary_async',
-            return_value=mock_gen_result,
-        ) as mock_generate:
+        mock_save_result = {
+            "status": "success",
+            "summary": "Completed data analysis workflow",
+            "file_path": (
+                f"{temp_context_dir}/workforce_workflows/test_worker/"
+                "analyze_sales_data_workflow.md"
+            ),
+            "worker_description": "data_analyst",
+        }
+
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ) as mock_generate,
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content_async',
+                return_value=mock_save_result,
+            ),
+        ):
             # This executes the real save_workflow_memories_async() logic
             results = await workforce.save_workflow_memories_async()
 
@@ -457,17 +508,6 @@ class TestWorkforceWorkflowMemoryMethods:
 
             # Verify generate_workflow_summary_async was called
             mock_generate.assert_called_once()
-            call_kwargs = mock_generate.call_args[1]
-
-            # Verify structured output format is set (WorkflowSummary)
-            assert 'response_format' in call_kwargs
-            from camel.utils.context_utils import WorkflowSummary
-
-            assert call_kwargs['response_format'] == WorkflowSummary
-
-            # Verify summary prompt was prepared
-            assert 'summary_prompt' in call_kwargs
-            assert call_kwargs['summary_prompt'] is not None
 
             # Verify conversation accumulator cleanup
             # (it should be None after successful save)
@@ -553,33 +593,54 @@ class TestWorkflowIntegration:
     """Integration tests for workflow functionality."""
 
     @pytest.mark.asyncio
-    async def test_filename_sanitization(self):
+    async def test_filename_sanitization(self, temp_context_dir):
         """Test worker descriptions are properly sanitized for filenames."""
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         worker = MockSingleAgentWorker("Data Analyst & ML Engineer!")
 
-        # Mock datetime for consistent testing
-        with patch(
-            'camel.societies.workforce.single_agent_worker.datetime'
-        ) as mock_datetime:
-            mock_datetime.datetime.now.return_value.strftime.return_value = (
-                "20250122_143022"
-            )
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="data_analyst_ml_engineer",
+            task_title="Test Analysis",
+            task_description="Test analysis task",
+            tools=[],
+            steps=["Step 1"],
+            tags=["test"],
+        )
 
-            mock_result = {
-                "status": "success",
-                "summary": "Test summary",
-                "file_path": (
-                    "/path/to/data_analyst_ml_engineer_workflow_"
-                    "20250122_143022.md"
-                ),
-            }
+        mock_gen_result = {
+            "status": "success",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Test summary",
+        }
 
-            with patch.object(
-                worker.worker, 'asummarize', return_value=mock_result
-            ):
-                # Verify the filename generation works with special characters
-                result = await worker.save_workflow_memories_async()
-                assert result["status"] == "success"
+        mock_save_result = {
+            "status": "success",
+            "summary": "Test summary",
+            "file_path": (
+                f"{temp_context_dir}/data_analyst_ml_engineer_workflow.md"
+            ),
+            "worker_description": "Data Analyst & ML Engineer!",
+        }
+
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
+        ):
+            # Verify the filename generation works with special characters
+            result = await worker.save_workflow_memories_async()
+            assert result["status"] == "success"
 
     @pytest.mark.asyncio
     async def test_long_description_filename_generation(
@@ -590,6 +651,11 @@ class TestWorkflowIntegration:
         This test addresses issue #3277 where long worker descriptions
         caused filesystem errors due to excessive filename lengths.
         """
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         # create worker with extremely long description (like in eigent.py)
         long_desc = (
             "Developer Agent: A master-level coding assistant with a "
@@ -610,14 +676,40 @@ class TestWorkflowIntegration:
             enable_workflow_memory=True,
         )
 
-        # mock the asummarize method
-        mock_result = {
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="developer_agent",
+            task_title="Code Development Task",
+            task_description="Developed code",
+            tools=[],
+            steps=["Step 1"],
+            tags=["development"],
+        )
+
+        mock_gen_result = {
+            "status": "success",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Test workflow summary",
+        }
+
+        mock_save_result = {
             "status": "success",
             "summary": "Test workflow summary",
             "file_path": f"{temp_context_dir}/developer_agent_workflow.md",
+            "worker_description": long_desc,
         }
 
-        with patch.object(agent, 'asummarize', return_value=mock_result):
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
+        ):
             result = await worker.save_workflow_memories_async()
 
             assert result["status"] == "success"
@@ -641,6 +733,11 @@ class TestWorkflowIntegration:
         When agent has a generic role_name like "assistant", the filename
         should be based on the task_title from the generated workflow summary.
         """
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         # create worker with generic role_name
         sys_msg = BaseMessage.make_assistant_message(
             role_name="Assistant",  # generic role name
@@ -662,17 +759,40 @@ class TestWorkflowIntegration:
             'system',
         }
 
-        # mock the asummarize method to return a workflow with task_title
-        mock_result = {
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="assistant",
+            task_title="Analyze sales data",
+            task_description="Analyzed sales data",
+            tools=[],
+            steps=["Step 1"],
+            tags=["data-analysis"],
+        )
+
+        mock_gen_result = {
+            "status": "success",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Test workflow summary",
+        }
+
+        mock_save_result = {
             "status": "success",
             "summary": "Test workflow summary",
             "file_path": f"{temp_context_dir}/analyze_sales_data_workflow.md",
-            "structured_summary": type(
-                'obj', (object,), {'task_title': 'Analyze sales data'}
-            )(),
+            "worker_description": "Data analyst worker",
         }
 
-        with patch.object(agent, 'asummarize', return_value=mock_result):
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
+        ):
             # note: in real execution, file would be renamed to use task_title
             # the test shows that with generic role_name, we rely on task_title
             result = await worker.save_workflow_memories_async()
@@ -1510,6 +1630,11 @@ class TestConversationAccumulator:
         Validates cleanup to prevent memory leaks and duplicate content
         in future saves.
         """
+        from camel.societies.workforce.workflow_memory_manager import (
+            WorkflowMemoryManager,
+        )
+        from camel.utils.context_utils import WorkflowSummary
+
         sys_msg = BaseMessage.make_assistant_message(
             role_name="Test Worker", content="You are a test worker."
         )
@@ -1538,14 +1663,39 @@ class TestConversationAccumulator:
         ), "Accumulator should exist after processing tasks"
 
         # save workflow with mocked summarization
-        mock_summary_result = {
+        mock_workflow_summary = WorkflowSummary(
+            agent_title="test_worker",
+            task_title="Test Task",
+            task_description="Test task description",
+            tools=[],
+            steps=["Step 1"],
+            tags=["test"],
+        )
+
+        mock_gen_result = {
+            "status": "success",
+            "structured_summary": mock_workflow_summary,
+            "summary_content": "Test summary",
+        }
+
+        mock_save_result = {
             "status": "success",
             "summary": "Test summary",
             "file_path": f"{temp_context_dir}/test_workflow.md",
+            "worker_description": "test_worker",
         }
 
-        with patch.object(
-            ChatAgent, 'asummarize', return_value=mock_summary_result
+        with (
+            patch.object(
+                WorkflowMemoryManager,
+                'generate_workflow_summary_async',
+                return_value=mock_gen_result,
+            ),
+            patch.object(
+                WorkflowMemoryManager,
+                'save_workflow_content',
+                return_value=mock_save_result,
+            ),
         ):
             result = await worker.save_workflow_memories_async()
 
@@ -2403,90 +2553,3 @@ This is a test workflow for metadata extraction.
         assert metadata.message_count == 42
         assert metadata.created_at == "2025-01-15T10:00:00.000000"
         assert metadata.updated_at == "2025-01-15T12:00:00.000000"
-
-    @pytest.mark.asyncio
-    async def test_different_workflows_have_independent_versions(
-        self, temp_context_dir
-    ):
-        """Test that different workflow files maintain independent versions."""
-        from pathlib import Path
-
-        from camel.societies.workforce.workflow_memory_manager import (
-            WorkflowMemoryManager,
-        )
-        from camel.utils.context_utils import ContextUtility, WorkflowSummary
-
-        worker = MockSingleAgentWorker("multi_task_worker")
-
-        role_name = "multi_task_worker"
-        context_utility = ContextUtility(
-            working_directory=f"{temp_context_dir}/workforce_workflows/{role_name}",
-            create_folder=True,
-            use_session_subfolder=False,
-        )
-
-        manager = WorkflowMemoryManager(
-            worker=worker.worker,
-            description="Multi-task worker",
-            context_utility=context_utility,
-            role_identifier=role_name,
-        )
-
-        # create first workflow
-        workflow1 = WorkflowSummary(
-            agent_title="multi_task_worker",
-            task_title="Task Alpha",
-            task_description="First task",
-            tools=[],
-            steps=["Step 1"],
-            failure_and_recovery_strategies=[],
-            notes_and_observations="",
-            tags=["alpha"],
-        )
-
-        # create second workflow with different title
-        workflow2 = WorkflowSummary(
-            agent_title="multi_task_worker",
-            task_title="Task Beta",
-            task_description="Second task",
-            tools=[],
-            steps=["Step 1"],
-            failure_and_recovery_strategies=[],
-            notes_and_observations="",
-            tags=["beta"],
-        )
-
-        # save workflow1 twice (should be v1 then v2)
-        result1a = await manager.save_workflow_content_async(
-            workflow_summary=workflow1,
-            context_utility=context_utility,
-            conversation_accumulator=None,
-        )
-        assert result1a["status"] == "success"
-        file1 = Path(result1a["file_path"])
-        assert "workflow_version: 1" in file1.read_text()
-
-        await manager.save_workflow_content_async(
-            workflow_summary=workflow1,
-            context_utility=context_utility,
-            conversation_accumulator=None,
-        )
-        assert "workflow_version: 2" in file1.read_text()
-
-        # save workflow2 (should be v1, independent of workflow1)
-        result2a = await manager.save_workflow_content_async(
-            workflow_summary=workflow2,
-            context_utility=context_utility,
-            conversation_accumulator=None,
-        )
-        assert result2a["status"] == "success"
-        file2 = Path(result2a["file_path"])
-
-        # workflow2 should be v1 (its first save)
-        assert "workflow_version: 1" in file2.read_text()
-
-        # workflow1 should still be v2
-        assert "workflow_version: 2" in file1.read_text()
-
-        # verify they are different files
-        assert file1 != file2

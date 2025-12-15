@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
@@ -1344,6 +1344,105 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Metaso search failed: {e}"}
 
+    @dependencies_required("google-search-results")
+    @api_keys_required([(None, 'SERPAPI_KEY')])
+    def search_serpapi(
+        self,
+        query: str,
+        engine: str = "google",
+        location: str = "Austin,Texas",
+        google_domain: str = "google.com",
+        gl: str = "us",
+        search_lang: str = "en",
+        device: str = "desktop",
+        number_of_result_pages: int = 1,
+        safe: str = "off",
+        filter: int = 0,
+        custom_params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        r"""Use SerpApi search engine to search information for the given query.
+
+        SerpApi provides real-time search engine results from multiple search engines
+        including Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and more.
+
+        Args:
+            query (str): The search query string.
+            engine (str): Search engine to use. Supported engines include:
+                'google', 'bing', 'yahoo', 'duckduckgo', 'baidu', 'yandex',
+                'youtube', 'ebay', 'amazon', etc. (default: :obj:`"google"`)
+            location (str): Location for localized search results. Can be a city,
+                state, country, or coordinates. (default: :obj:`"Austin,Texas"`)
+            google_domain (str): Google domain to use (e.g., 'google.com', 'google.co.uk').
+                Only applicable for Google engine. (default: :obj:`"google.com"`)
+            gl (str): Country code for localized results (e.g., 'us', 'uk', 'ca').
+                Only applicable for Google engine. (default: :obj:`"us"`)
+            search_lang (str): Language code for results (e.g., 'en', 'es', 'fr').
+                Only applicable for Google engine. (default: :obj:`"en"`)
+            device (str): Device type: 'desktop', 'tablet', or 'mobile'.
+                (default: :obj:`"desktop"`)
+            number_of_result_pages (int): Number of organic results to return.
+                Adjust based on task needs. (default: :obj:`1`)
+            safe (str): Safe search level: 'off', 'medium', 'high', 'active'.
+                (default: :obj:`"off"`)
+            filter (int): Filter results: 0 (no filter), 1 (filter similar results).
+                (default: :obj:`0`)
+            custom_params (Optional[Dict[str, Any]]): Additional custom parameters
+                to pass to SerpApi. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing search results:
+                - 'results': List of organic search results, each containing:
+                    - 'title': The title of the search result
+                    - 'link': The URL of the search result
+                    - 'snippet': The description snippet
+                    - 'keywords': Highlighted keywords in the snippet
+                    - 'source': The source of the result
+                    - 'error: Error if any
+        """
+        from serpapi import SerpApiClient
+
+        SerpApiClient.SERP_API_KEY = os.getenv("SERPAPI_KEY")
+        params = {
+            "engine": engine,
+            "q": query,
+            "location": location,
+            "google_domain": google_domain,
+            "gl": gl,
+            "hl": search_lang,
+            "device": device,
+            "num": number_of_result_pages,
+            "safe": safe,
+            "filter": filter,
+        }
+
+        if custom_params is not None:
+            params.update(custom_params)
+        try:
+            search = SerpApiClient(params)
+            results = search.get_dict()
+
+            if (
+                "organic_results" not in results
+                or not results["organic_results"]
+            ):
+                return {"error": "No organic results found"}
+
+            formatted_results = []
+            for result in results['organic_results']:
+                formatted_result = {
+                    "title": result.get("title", ""),
+                    "link": result.get("link", ""),
+                    "snippet": result.get("snippet", ""),
+                    "keywords": result.get("snippet_highlighted_words", []),
+                    "source": result.get("source", ""),
+                }
+                formatted_results.append(formatted_result)
+
+            return {"results": formatted_results}
+
+        except Exception as e:
+            return {"error": f"SerpApi search failed: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1365,6 +1464,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_exa),
             FunctionTool(self.search_alibaba_tongxiao),
             FunctionTool(self.search_metaso),
+            FunctionTool(self.search_serpapi),
         ]
 
     # Deprecated method alias for backward compatibility
