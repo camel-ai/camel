@@ -940,6 +940,7 @@ all = [
     { name = "ipykernel" },
     { name = "jupyter-client" },
     { name = "langfuse" },
+    { name = "lark-oapi" },
     { name = "linkup-sdk" },
     { name = "litellm" },
     { name = "markitdown", marker = "python_full_version >= '3.13'" },
@@ -1025,6 +1026,7 @@ all = [
 ]
 communication-tools = [
     { name = "discord-py" },
+    { name = "lark-oapi" },
     { name = "notion-client" },
     { name = "praw" },
     { name = "pygithub" },
@@ -1438,6 +1440,8 @@ requires-dist = [
     { name = "jupyter-client", marker = "extra == 'dev-tools'", specifier = ">=8.6.2,<9" },
     { name = "langfuse", marker = "extra == 'all'", specifier = ">=2.60.5" },
     { name = "langfuse", marker = "extra == 'dev-tools'", specifier = ">=2.60.5" },
+    { name = "lark-oapi", marker = "extra == 'all'", specifier = ">=1.4.0,<2" },
+    { name = "lark-oapi", marker = "extra == 'communication-tools'", specifier = ">=1.4.0,<2" },
     { name = "linkup-sdk", marker = "extra == 'all'", specifier = ">=0.2.1,<0.3" },
     { name = "linkup-sdk", marker = "extra == 'web-tools'", specifier = ">=0.2.1,<0.3" },
     { name = "litellm", marker = "extra == 'all'", specifier = ">=1.38.1,<2" },
@@ -4845,6 +4849,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0f/82/030029b3490a90d25dff46e0e29230eb07c55a32ea6876a2397d7d0184b0/langfuse-3.10.1.tar.gz", hash = "sha256:11152b77f1869c55b42c3be8fba779cd9102bef171a597ea4baeca8a8000d11f", size = 222084, upload-time = "2025-11-19T17:50:00.755Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/83/254c8d38bd46e9c49cc2814da0ece5cb361315e6728578112ffae9bffbe8/langfuse-3.10.1-py3-none-any.whl", hash = "sha256:78582905874e17f923a3fa6eba9d1a15e1547139bbd5c11d498ce90670e1fdae", size = 391696, upload-time = "2025-11-19T17:49:59.069Z" },
+]
+
+[[package]]
+name = "lark-oapi"
+version = "1.4.24"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pycryptodome" },
+    { name = "requests" },
+    { name = "requests-toolbelt" },
+    { name = "websockets" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/01/25acd41e3f0e67e77397176b333f705927e462cc60545d39ace813858c49/lark_oapi-1.4.24-py3-none-any.whl", hash = "sha256:a253289e9018b65e90a854ff1bc395ba150d6ad49b8218643997074b9d85d087", size = 6614478, upload-time = "2025-11-12T08:31:34.938Z" },
 ]
 
 [[package]]
@@ -8632,7 +8651,7 @@ name = "requests-toolbelt"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "requests", marker = "python_full_version < '3.13'" },
+    { name = "requests" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
