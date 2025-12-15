@@ -189,11 +189,14 @@ export class HybridBrowserToolkit {
     return await this.session.getSnapshotForAI();
   }
 
-  async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
+  async getSomScreenshot(): Promise<VisualMarkResult & { timing: any; snapshot?: string }> {
     const startTime = Date.now();
     console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
 
     try {
+      // Ensure browser is initialized before taking screenshot
+      await this.session.ensureBrowser();
+
       // Get page and snapshot data
       const page = await this.session.getCurrentPage();
       const snapshotResult = await this.session.getSnapshotForAI(true); // Include coordinates
@@ -217,6 +220,9 @@ export class HybridBrowserToolkit {
       // Add snapshot timing info to result
       result.timing.snapshot_time_ms = snapshotResult.timing.snapshot_time_ms;
       result.timing.coordinate_enrichment_time_ms = snapshotResult.timing.coordinate_enrichment_time_ms;
+
+      // Include the snapshot in the result for logging purposes
+      (result as any).snapshot = snapshotResult.snapshot;
 
       return result;
     } catch (error) {

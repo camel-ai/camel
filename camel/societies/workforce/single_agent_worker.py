@@ -270,10 +270,21 @@ class SingleAgentWorker(Worker):
                 auto_scale=auto_scale_pool,
             )
 
+        # Task-to-agent mapping for retry context preservation
+        # Key: task.id, Value: ChatAgent instance
+        self._task_agents: Dict[str, ChatAgent] = {}
+
     def reset(self) -> Any:
         r"""Resets the worker to its initial state."""
         super().reset()
         self.worker.reset()
+
+        # Clear task-agent mapping and return agents to pool
+        if self._task_agents:
+            for task_id in list(self._task_agents.keys()):
+                # Clean up each task agent synchronously
+                # (actual cleanup will happen in event loop if needed)
+                self._task_agents.pop(task_id, None)
 
         # Reset agent pool if it exists
         if self.agent_pool:
@@ -298,7 +309,104 @@ class SingleAgentWorker(Worker):
         r"""Return a worker agent to the pool if pooling is enabled."""
         if self.use_agent_pool and self.agent_pool:
             await self.agent_pool.return_agent(agent)
-        # If not using pool, agent will be garbage collected
+
+    async def _get_worker_agent_for_task(
+        self, task: Task, is_retry: bool = False
+    ) -> ChatAgent:
+        r"""Get or reuse worker agent for a task.
+
+        For retry attempts, this method reuses the same agent instance to
+        preserve conversation context and tool state (e.g., browser sessions).
+        For first attempts, it creates a new agent from the pool.
+
+        Args:
+            task (Task): The task being processed.
+            is_retry (bool): Whether this is a retry attempt.
+                (default: :obj:`False`)
+
+        Returns:
+            ChatAgent: Reused agent for retry, or new agent for first attempt.
+        """
+        if is_retry and task.id in self._task_agents:
+            # Retry: reuse the existing agent to preserve context
+            logger.info(
+                f"Reusing existing agent for retry of task {task.id} "
+                f"(attempt #{task.failure_count + 1})"
+            )
+            return self._task_agents[task.id]
+        else:
+            # First attempt: get a fresh agent from pool or clone
+            agent = await self._get_worker_agent()
+            # Store the agent for potential retry
+            self._task_agents[task.id] = agent
+            if is_retry:
+                logger.warning(
+                    f"Task {task.id} marked as retry but no existing agent "
+                    f"found. Using fresh agent."
+                )
+            return agent
+
+    async def _cleanup_task_agent(self, task_id: str) -> None:
+        r"""Clean up agent after task is permanently done or failed.
+
+        This method removes the agent from the task-agent mapping and
+        returns it to the pool for reuse, or lets it be garbage collected.
+
+        Args:
+            task_id (str): The ID of the task whose agent should be cleaned up.
+        """
+        if task_id in self._task_agents:
+            agent = self._task_agents.pop(task_id)
+            # Return agent to pool if pooling is enabled
+            if self.use_agent_pool and self.agent_pool:
+                await self.agent_pool.return_agent(agent)
+            logger.debug(f"Cleaned up agent for task {task_id}")
+
+    def _build_retry_guidance(
+        self, task: Task, failure_analysis: Optional[str] = None
+    ) -> str:
+        r"""Build retry guidance message based on failure analysis.
+
+        This creates a contextual message that helps the agent understand
+        what went wrong in the previous attempt and how to proceed.
+
+        Args:
+            task (Task): The task that failed.
+            failure_analysis (Optional[str]): Analysis from the
+                planner/evaluator. (default: :obj:`None`)
+
+        Returns:
+            str: Guidance message for retry.
+        """
+        if failure_analysis is None:
+            failure_analysis = "Task failed, please retry with adjustments."
+
+        guidance = f"""
+## Previous Attempt Failed
+
+Your previous attempt to complete this task failed. Here's the analysis:
+
+{failure_analysis}
+
+## Important Context:
+- This is attempt #{task.failure_count + 1} for this task
+- Your previous tool calls and their results are still in the conversation \
+history above
+- If you opened a browser or other stateful tools, they are STILL ACTIVE
+- DO NOT re-initialize tools that are already running (e.g., don't call \
+browser_open again if browser is already open)
+- Review the error and adjust your approach accordingly
+
+## Recommended Actions:
+1. Check what state you left the tools in (e.g., which page the browser is on)
+2. If elements are not found, get a fresh snapshot to obtain new element \
+references
+3. Continue from where you left off - don't restart from scratch
+4. Be more careful about timing, element stability, and page state
+
+Please retry the task now with this guidance in mind.
+"""
+        return guidance
 
     def _get_context_utility(self) -> ContextUtility:
         r"""Get context utility with lazy initialization."""
@@ -344,6 +452,10 @@ class SingleAgentWorker(Worker):
         Uses an agent pool for efficiency when enabled, or falls back to
         cloning when pool is disabled.
 
+        For retry attempts (task.failure_count > 0), this method reuses
+        the same agent instance and sends retry guidance instead of the
+        full task prompt, preserving conversation context and tool state.
+
         Args:
             task (Task): The task to process, which includes necessary details
                 like content and type.
@@ -353,22 +465,42 @@ class SingleAgentWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
-        # Get agent efficiently (from pool or by cloning)
-        worker_agent = await self._get_worker_agent()
+        # Check if this is a retry attempt
+        is_retry = task.failure_count > 0
+
+        # Get agent for this task (reuse for retry, fresh for first attempt)
+        worker_agent = await self._get_worker_agent_for_task(task, is_retry)
         response_content = ""
 
         try:
-            dependency_tasks_info = self._get_dep_tasks_info(dependencies)
-            prompt = str(
-                PROCESS_TASK_PROMPT.format(
-                    content=task.content,
-                    parent_task_content=task.parent.content
-                    if task.parent
-                    else "",
-                    dependency_tasks_info=dependency_tasks_info,
-                    additional_info=task.additional_info,
+            if is_retry:
+                # Retry mode: send retry guidance instead of full task
+                failure_analysis = None
+                if (
+                    task.additional_info
+                    and 'failure_analysis' in task.additional_info
+                ):
+                    failure_analysis = task.additional_info['failure_analysis']
+
+                prompt = self._build_retry_guidance(task, failure_analysis)
+
+                logger.info(
+                    f"Retrying task {task.id} with preserved context "
+                    f"(attempt {task.failure_count + 1})"
                 )
-            )
+            else:
+                # First attempt: build full task prompt as usual
+                dependency_tasks_info = self._get_dep_tasks_info(dependencies)
+                prompt = str(
+                    PROCESS_TASK_PROMPT.format(
+                        content=task.content,
+                        parent_task_content=task.parent.content
+                        if task.parent
+                        else "",
+                        dependency_tasks_info=dependency_tasks_info,
+                        additional_info=task.additional_info,
+                    )
+                )
 
             if self.use_structured_output_handler and self.structured_handler:
                 # Use structured output handler for prompt-based extraction
@@ -490,8 +622,10 @@ class SingleAgentWorker(Worker):
             task.result = f"{type(e).__name__}: {e!s}"
             return TaskState.FAILED
         finally:
-            # Return agent to pool or let it be garbage collected
-            await self._return_worker_agent(worker_agent)
+            # Note: Do NOT return agent to pool here for retry support
+            # Agent will be returned when task is permanently done/failed
+            # See cleanup logic at the end of this method
+            pass
 
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
@@ -553,16 +687,22 @@ class SingleAgentWorker(Worker):
 
         task.result = task_result.content  # type: ignore[union-attr]
 
-        if task_result.failed:  # type: ignore[union-attr]
-            return TaskState.FAILED
+        # Determine task state
+        task_failed = task_result.failed or is_task_result_insufficient(task)  # type: ignore[union-attr]
 
-        if is_task_result_insufficient(task):
-            logger.warning(
-                f"Task {task.id}: Content validation failed - "
-                f"task marked as failed"
-            )
+        if task_failed:
+            if is_task_result_insufficient(task):
+                logger.warning(
+                    f"Task {task.id}: Content validation failed - "
+                    f"task marked as failed"
+                )
+            # Task failed - keep agent for potential retry
+            # Do not clean up agent here
             return TaskState.FAILED
-        return TaskState.DONE
+        else:
+            # Task succeeded - clean up agent
+            await self._cleanup_task_agent(task.id)
+            return TaskState.DONE
 
     async def _listen_to_channel(self):
         r"""Override to start cleanup task when pool is enabled."""

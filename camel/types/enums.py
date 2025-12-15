@@ -43,7 +43,7 @@ class ModelType(UnifiedModelType, Enum):
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
     O3_MINI = "o3-mini"
-    GPT_4_1 = "gpt-4.1-2025-04-14"
+    GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
     O4_MINI = "o4-mini"

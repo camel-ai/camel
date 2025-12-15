@@ -1,0 +1,569 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import asyncio
+import datetime
+import json
+import os
+import platform
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Import agent factories from eigent.py
+from eigent import search_agent_factory, send_message_to_user
+
+from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
+from camel.messages.base import BaseMessage
+from camel.models import BaseModelBackend, ModelFactory
+from camel.societies.workforce import Workforce
+from camel.tasks.task import Task
+from camel.toolkits import (
+    AgentCommunicationToolkit,
+    ToolkitMessageIntegration,
+)
+from camel.types import ModelPlatformType, ModelType
+
+load_dotenv()
+
+# Set up unique log directory for this run
+# Use absolute path based on script location to avoid path confusion
+SCRIPT_DIR = Path(__file__).parent.absolute()
+RUN_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_DIR = SCRIPT_DIR / "camel_logs" / f"run_{RUN_TIMESTAMP}"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["CAMEL_LOG_DIR"] = str(LOG_DIR)
+
+# Set up browser tool log directory within the same run folder
+BROWSER_LOG_DIR = LOG_DIR / "browser_logs"
+BROWSER_LOG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["CAMEL_BROWSER_TOOL_LOG_DIR"] = str(BROWSER_LOG_DIR)
+
+logger = get_logger(__name__)
+
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
+    "working_dir/"
+)
+WORKING_DIRECTORY_PATH = Path(WORKING_DIRECTORY)
+
+
+def load_tasks_from_jsonl(
+    jsonl_path: str, start_index: int = 0, end_index: int | None = None
+):
+    """
+    Load tasks from a JSONL file.
+
+    Args:
+        jsonl_path (str): Path to the JSONL file.
+        start_index (int): Starting index (inclusive).
+        end_index (int | None): Ending index (inclusive). If None, load
+            all tasks from start_index.
+
+    Returns:
+        list: A list of task dictionaries.
+    """
+    tasks = []
+    with open(jsonl_path, 'r', encoding='utf-8') as f:
+        for i, line in enumerate(f):
+            if i < start_index:
+                continue
+            if end_index is not None and i > end_index:
+                break
+            tasks.append(json.loads(line.strip()))
+    return tasks
+
+
+async def verify_result_with_agent(
+    task_content: str, result: dict, model_backend: BaseModelBackend
+):
+    """
+    Verify the workforce result using a chat agent.
+
+    Args:
+        task_content (str): The original task content.
+        result (dict): The result from the workforce.
+        model_backend (BaseModelBackend): The model backend to use.
+
+    Returns:
+        dict: A dictionary with 'success' (bool) and 'reasoning' (str).
+    """
+    verifier_agent = ChatAgent(
+        system_message=(
+            "You are a task verification expert. Your job is to analyze "
+            "whether a task was completed successfully based on the task "
+            "description and the execution result. You should output your "
+            "verification in JSON format with two fields: 'success' "
+            "(true/false) and 'reasoning' (explanation)."
+        ),
+        model=model_backend,
+    )
+
+    # Read the detailed log file for verification
+    detailed_logs = None
+    final_response = None
+    log_file_path = result.get('log_file')
+    if log_file_path and os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                detailed_logs = json.load(f)
+
+            # Extract the final response from logs
+            # Look for the last worker response or task completion
+            if isinstance(detailed_logs, dict):
+                # Try to find the final agent response
+                if 'logs' in detailed_logs:
+                    logs_list = detailed_logs['logs']
+                    # Find the last message from a worker
+                    for log_entry in reversed(logs_list):
+                        if (
+                            isinstance(log_entry, dict)
+                            and 'content' in log_entry
+                        ):
+                            final_response = log_entry.get('content')
+                            break
+                elif 'final_result' in detailed_logs:
+                    final_response = detailed_logs['final_result']
+
+        except Exception as e:
+            logger.warning(f"Failed to read log file {log_file_path}: {e}")
+
+    # Build verification prompt with all available information
+    verification_prompt_parts = [
+        "Task Description:",
+        task_content,
+        "",
+        "Execution Summary (KPIs):",
+        json.dumps(result['kpis'], indent=2),
+        "",
+    ]
+
+    # Add final response if extracted
+    if final_response:
+        verification_prompt_parts.extend(
+            [
+                "Final Agent Response:",
+                str(final_response),
+                "",
+            ]
+        )
+
+    # Add condensed log information if available
+    if detailed_logs:
+        # Limit the size of logs to avoid token overflow
+        logs_str = json.dumps(detailed_logs, indent=2, ensure_ascii=False)
+        max_log_length = 10000  # Limit to ~10k characters
+        if len(logs_str) > max_log_length:
+            logs_str = logs_str[:max_log_length] + "\n... (truncated)"
+
+        verification_prompt_parts.extend(
+            [
+                "Detailed Execution Logs (summary):",
+                logs_str,
+                "",
+            ]
+        )
+
+    verification_prompt_parts.extend(
+        [
+            "Please verify if the task was completed successfully. Consider:",
+            "1. Did the workforce complete the task objectives?",
+            "2. Are there any errors or failures in the execution?",
+            "3. Does the final result/answer align with the task "
+            "requirements?",
+            "4. Did the agent provide a comprehensive and accurate response?",
+            "",
+            "Output your verification in JSON format:",
+            "{",
+            '    "success": true/false,',
+            '    "reasoning": "your detailed explanation here"',
+            "}",
+        ]
+    )
+
+    verification_prompt = "\n".join(verification_prompt_parts)
+
+    response = verifier_agent.step(
+        BaseMessage.make_user_message(
+            role_name="Verifier", content=verification_prompt
+        )
+    )
+
+    try:
+        # Try to parse JSON from the response
+        content = response.msg.content
+        # Find JSON in the content
+        start_idx = content.find('{')
+        end_idx = content.rfind('}') + 1
+        if start_idx != -1 and end_idx > start_idx:
+            json_str = content[start_idx:end_idx]
+            verification_result = json.loads(json_str)
+        else:
+            # Fallback if no JSON found
+            verification_result = {
+                "success": False,
+                "reasoning": "Failed to parse verification response",
+            }
+    except Exception as e:
+        verification_result = {
+            "success": False,
+            "reasoning": f"Error parsing verification: {e!s}",
+        }
+
+    return verification_result
+
+
+async def run_eigent_workforce(
+    human_task: Task, task_index: int | None = None
+):
+    """
+    Run the eigent workforce with a custom task.
+
+    Args:
+        human_task (Task): The task to be processed by the workforce.
+        task_index (int): Optional task index for unique log file naming.
+
+    Returns:
+        dict: A dictionary containing workforce KPIs and log information.
+    """
+    # Ensure working directory exists
+    os.makedirs(WORKING_DIRECTORY, exist_ok=True)
+
+    # Initialize the AgentCommunicationToolkit
+    msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
+
+    # Initialize message integration for use in coordinator and task agents
+    ToolkitMessageIntegration(message_handler=send_message_to_user)
+
+    # Create a single model backend for all agents
+    model_backend = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={
+            "stream": False,
+        },
+    )
+
+    model_backend_reason = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={
+            "stream": False,
+        },
+    )
+
+    task_id = 'workforce_task'
+
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        system_message=(
+            f""""
+You are a helpful coordinator.
+- You are now working in system {platform.system()} with architecture
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All local
+file operations must occur here, but you can access files from any place in
+the file system. For all file system operations, you MUST use absolute paths
+to ensure precision and avoid ambiguity.
+The current date is {datetime.date.today()}. For any date-related tasks, you
+MUST use this as the current date.
+
+- If a task assigned to another agent fails, you should re-assign it to the
+`Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal
+access and can resolve a wide range of issues.
+            """
+        ),
+        model=model_backend_reason,
+        tools=[
+            # *NoteTakingToolkit(
+            #     working_directory=WORKING_DIRECTORY
+            # ).get_tools(),
+        ],
+    )
+    task_agent = ChatAgent(
+        f"""
+
+You are a helpful task planner.
+- You are now working in system {platform.system()} with architecture
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All local
+file operations must occur here, but you can access files from any place in
+the file system. For all file system operations, you MUST use absolute paths
+to ensure precision and avoid ambiguity.
+The current date is {datetime.date.today()}. For any date-related tasks, you
+MUST use this as the current date.
+        """,
+        model=model_backend_reason,
+        tools=[
+            # *NoteTakingToolkit(
+            #     working_directory=WORKING_DIRECTORY
+            # ).get_tools(),
+        ],
+    )
+    new_worker_agent = ChatAgent(
+        f"You are a helpful worker. When you complete your task, your "
+        "final response "
+        f"must be a comprehensive summary of your work, presented in a clear, "
+        f"detailed, and easy-to-read format. Avoid using markdown tables for "
+        f"presenting data; use plain text formatting instead. You are now "
+        f"working in "
+        f"`{WORKING_DIRECTORY}` All local file operations must occur here, "
+        f"but you can access files from any place in the file system. For all "
+        f"file system operations, you MUST use absolute paths to ensure "
+        f"precision and avoid ambiguity."
+        "directory. You can also communicate with other agents "
+        "using messaging tools - use `list_available_agents` to see "
+        "available team members and `send_message` to coordinate work "
+        "and ask for help when needed. "
+        "### Note-Taking: You have access to comprehensive note-taking tools "
+        "for documenting work progress and collaborating with team members. "
+        "Use create_note, append_note, read_note, and list_note to track "
+        "your work, share findings, and access information from other agents. "
+        "Create notes for work progress, discoveries, and collaboration "
+        "points.",
+        model=model_backend,
+        tools=[
+            # HumanToolkit().ask_human_via_console,
+            # *message_integration.register_toolkits(
+            #     NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+            # ).get_tools(),
+        ],
+    )
+
+    # Create agents using factory functions
+    # search_agent_factory now returns (agent, browser_toolkit)
+    search_agent, browser_toolkit = search_agent_factory(
+        model_backend, task_id
+    )
+
+    # document_agent = document_agent_factory(
+    #     model_backend_reason,
+    #     task_id,
+    # )
+    # multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+
+    # Register all agents with the communication toolkit
+    msg_toolkit.register_agent("Worker", new_worker_agent)
+    msg_toolkit.register_agent("Search_Agent", search_agent)
+    # msg_toolkit.register_agent("Developer_Agent", developer_agent)
+    # msg_toolkit.register_agent("Document_Agent", document_agent)
+    # msg_toolkit.register_agent("Multi_Modal_Agent", multi_modal_agent)
+
+    # Create workforce instance before adding workers
+    workforce = Workforce(
+        'A workforce',
+        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+        share_memory=False,
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
+        new_worker_agent=new_worker_agent,
+        use_structured_output_handler=False,
+        task_timeout_seconds=900.0,
+    )
+
+    workforce.add_single_agent_worker(
+        "Search Agent: An expert web researcher that can browse websites, "
+        "perform searches, and extract information to support other agents.",
+        worker=search_agent,
+        # ).add_single_agent_worker(
+        #     "Developer Agent: A master-level coding assistant with a "
+        #     "powerful terminal. It can write and execute code, manage "
+        #     "files, automate desktop tasks, and deploy web applications "
+        #     "to solve complex technical challenges.",
+        #     worker=developer_agent,
+        # ).add_single_agent_worker(
+        #     "Document Agent: A document processing assistant skilled in "
+        #     "creating and modifying a wide range of file formats. It can "
+        #     "generate text-based files (Markdown, JSON, YAML, HTML), "
+        #     "office documents (Word, PDF), presentations (PowerPoint), "
+        #     "and data files (Excel, CSV).",
+        #     worker=document_agent,
+    )
+
+    try:
+        # Use the async version directly to avoid hanging with async tools
+        await workforce.process_task_async(human_task)
+
+        # Test WorkforceLogger features
+        print("\n--- Workforce Log Tree ---")
+        print(workforce.get_workforce_log_tree())
+
+        print("\n--- Workforce KPIs ---")
+        kpis = workforce.get_workforce_kpis()
+        for key, value in kpis.items():
+            print(f"{key}: {value}")
+
+        # Use task_index for unique log file naming if provided
+        if task_index is not None:
+            log_file_path = (
+                f"eigent_logs_task_{task_index}_{human_task.id}.json"
+            )
+        else:
+            log_file_path = f"eigent_logs_{human_task.id}.json"
+
+        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+        workforce.dump_workforce_logs(log_file_path)
+        print(f"Logs dumped. Please check the file: {log_file_path}")
+
+        return {
+            "kpis": kpis,
+            "log_tree": workforce.get_workforce_log_tree(),
+            "log_file": log_file_path,
+        }
+    finally:
+        # IMPORTANT: Close browser after each task to prevent resource leaks
+        if browser_toolkit is not None:
+            try:
+                print(f"\n--- Closing Browser for Task {human_task.id} ---")
+                await browser_toolkit.browser_close()
+                print("Browser closed successfully.")
+            except Exception as e:
+                print(f"Error closing browser: {e}")
+
+
+# Example usage
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Run eigent workforce on WebVoyager tasks'
+    )
+    parser.add_argument(
+        '--start', type=int, default=0, help='Start index (inclusive)'
+    )
+    parser.add_argument(
+        '--end', type=int, default=None, help='End index (inclusive)'
+    )
+    parser.add_argument(
+        '--jsonl',
+        type=str,
+        default=r'/Users/puzhen/Downloads/WebVoyager_data (3).jsonl',
+        help='Path to JSONL file',
+    )
+    args = parser.parse_args()
+
+    # Load tasks from JSONL file
+    tasks = load_tasks_from_jsonl(args.jsonl, args.start, args.end)
+    end_str = args.end if args.end else 'end'
+    print(f"Loaded {len(tasks)} tasks (index {args.start} to {end_str})")
+
+    # Create model backend for verification
+    verifier_model = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={
+            "stream": False,
+        },
+    )
+
+    # Store all results
+    all_results = []
+
+    async def process_all_tasks():
+        for idx, task_data in enumerate(tasks):
+            actual_idx = args.start + idx
+            print(f"\n{'='*80}")
+            task_id = task_data.get('id', 'unknown')
+            print(f"Processing Task {actual_idx}: {task_id}")
+            print(f"{'='*80}")
+
+            # Combine question and web fields
+            task_content = f"{task_data['ques']} in \"{task_data['web']}\""
+
+            # Create a custom task
+            human_task = Task(
+                content=task_content,
+                id=task_data.get('id', str(actual_idx)),
+            )
+
+            try:
+                # Run the workforce with task index for unique log files
+                result = await run_eigent_workforce(
+                    human_task, task_index=actual_idx
+                )
+
+                print("\n--- Verifying Result with Agent ---")
+                # Verify the result
+                verification = await verify_result_with_agent(
+                    task_content, result, verifier_model
+                )
+
+                print("\nVerification Result:")
+                print(f"  Success: {verification['success']}")
+                print(f"  Reasoning: {verification['reasoning']}")
+
+                # Store complete result
+                task_result = {
+                    "task_index": actual_idx,
+                    "task_id": task_data.get('id', str(actual_idx)),
+                    "task_content": task_content,
+                    "workforce_result": result,
+                    "verification": verification,
+                }
+                all_results.append(task_result)
+
+                # Save individual task result
+                result_id = task_data.get('id', str(actual_idx))
+                filename = f"task_result_{actual_idx}_{result_id}.json"
+                individual_result_file = WORKING_DIRECTORY_PATH / filename
+                with open(individual_result_file, 'w', encoding='utf-8') as f:
+                    json.dump(task_result, f, indent=2, ensure_ascii=False)
+
+                # Save accumulated results (all tasks so far)
+                results_file = f"all_results_{args.start}_{end_str}.json"
+                with open(results_file, 'w', encoding='utf-8') as f:
+                    json.dump(all_results, f, indent=2, ensure_ascii=False)
+
+                print(f"\n=== Task {actual_idx} Complete ===")
+                print(f"Workforce log: {result['log_file']}")
+                print(f"Task result:   {individual_result_file}")
+                print(f"All results:   {results_file}")
+
+            except Exception as e:
+                print(f"\n!!! Error processing task {actual_idx}: {e!s}")
+                error_result = {
+                    "task_index": actual_idx,
+                    "task_id": task_data.get('id', str(actual_idx)),
+                    "task_content": task_content,
+                    "error": str(e),
+                    "verification": {
+                        "success": False,
+                        "reasoning": f"Exception occurred: {e!s}",
+                    },
+                }
+                all_results.append(error_result)
+
+                # Save individual error result
+                result_id = task_data.get('id', str(actual_idx))
+                filename = f"task_result_{actual_idx}_{result_id}.json"
+                individual_result_file = WORKING_DIRECTORY_PATH / filename
+                with open(individual_result_file, 'w', encoding='utf-8') as f:
+                    json.dump(error_result, f, indent=2, ensure_ascii=False)
+
+                # Save accumulated results
+                results_file = (
+                    WORKING_DIRECTORY_PATH
+                    / f"all_results_{args.start}_{args.end if args.end else 'end'}.json"  # noqa: E501
+                )
+                with open(results_file, 'w', encoding='utf-8') as f:
+                    json.dump(all_results, f, indent=2, ensure_ascii=False)
+
+                print(f"Error result saved to: {individual_result_file}")
+
+    # Run all tasks
+    asyncio.run(process_all_tasks())
+
+    print(f"\n{'='*80}")
+    print("=== All Tasks Complete ===")
+    print(f"{'='*80}")
+    print(f"Processed {len(tasks)} tasks")
+    print(f"Results saved to: all_results_{args.start}_{end_str}.json")

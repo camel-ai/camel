@@ -35,9 +35,13 @@ logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
 )
 USER_DATA_DIR = "User_Data"
 
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env.test file
+
 model_backend = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_platform=ModelPlatformType.AZURE,
+    model_type=ModelType.GPT_4_1,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
@@ -67,7 +71,8 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
-    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_get_page_snapshot",
+    "browser_get_som_screenshot",  # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -80,7 +85,9 @@ web_toolkit_custom = HybridBrowserToolkit(
     enabled_tools=custom_tools,
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
+    enable_reasoning=True,
     viewport_limit=True,
+    default_start_url="https://www.google.com/travel/flights/",
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
@@ -88,19 +95,16 @@ print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
-    toolkits_to_register_agent=[web_toolkit_custom],
-    max_iteration=10,
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant
-websites to get the news and write it in markdown.
+Visit the website "https://www.google.com/travel/flights/" using a browser and search for a round-trip journey from Edinburgh to Manchester on January 28th, 2026, departing and returning on the same day. Find and extract the lowest price available for this itinerary. Return the lowest price option as a plain text summary including outbound and return departure times, total price, and airline details.      
+填写日期的时候先点击日期框，然后再分别输入去程和返程日期，用正确格式如：2026-01-28
+enter可以作为确认，也可以用来执行搜索
 
-I mean you need to browse multiple websites. After visiting each website,
-return to the Google search results page and click on other websites.
-
-Use enter to confirm search or input.
-If you see a cookie page, click accept all.
+如果遇到element not found, 可以用browser_get_page_snapshot获得最新snapshot
+如果想看截屏，可以用browser_get_som_screenshot, 如果看到截屏中你的任务没有完成或者有问题，你需要对应的修改
+确保起点终点，还有时间正确
 """
 
 
