@@ -769,7 +769,7 @@
   },
   "seo": {
     "metatags": {
-      "charset": "UTF-8",
+      "charset": "utf-8",
       "viewport": "width=device-width, initial-scale=1.0",
       "description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
       "keywords": "CAMEL, AI agents, multi-agent systems, LLM agents, agent communication, agentic workflows, AI toolkits, agent memory, RAG, agent society, MCP, Model Context Protocol, open source AI, workforce",
