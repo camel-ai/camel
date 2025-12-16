@@ -42,6 +42,7 @@ class WorkforceCallback(ABC):
         "yellow": Fore.YELLOW,
         "red": Fore.RED,
         "green": Fore.GREEN,
+        "blue": Fore.BLUE,
         "cyan": Fore.CYAN,
         "magenta": Fore.MAGENTA,
         "gray": Fore.LIGHTBLACK_EX,
