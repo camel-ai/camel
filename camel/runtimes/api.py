@@ -108,13 +108,21 @@ for module_function in modules_functions:
                 def run_tool(data: Dict):
                     r"""Run tool in thread pool to avoid async event loop."""
                     redirect_stdout = data.get('redirect_stdout', False)
+                    captured_output = None
                     if redirect_stdout:
-                        sys.stdout = io.StringIO()
-                    response_data = tool.func(*data['args'], **data['kwargs'])
-                    if redirect_stdout:
-                        sys.stdout.seek(0)
-                        output = sys.stdout.read()
-                        sys.stdout = sys.__stdout__
+                        captured_output = io.StringIO()
+                        old_stdout = sys.stdout
+                        sys.stdout = captured_output
+                    try:
+                        response_data = tool.func(
+                            *data['args'], **data['kwargs']
+                        )
+                    finally:
+                        if redirect_stdout:
+                            sys.stdout = old_stdout
+                    if redirect_stdout and captured_output is not None:
+                        captured_output.seek(0)
+                        output = captured_output.read()
                         return {
                             "output": json.dumps(
                                 response_data, ensure_ascii=False
@@ -127,7 +135,7 @@ for module_function in modules_functions:
 
                 async def endpoint(data: Dict):
                     # run in thread pool to support sync tools like Playwright
-                    loop = asyncio.get_event_loop()
+                    loop = asyncio.get_running_loop()
                     return await loop.run_in_executor(
                         _executor, run_tool, data
                     )
