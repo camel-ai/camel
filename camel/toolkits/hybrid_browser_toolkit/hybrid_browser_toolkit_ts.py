@@ -27,10 +27,10 @@ from typing import (
 )
 
 from camel.logger import get_logger
-from camel.messages import BaseMessage
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
@@ -558,8 +558,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
-        instruction: Optional[str] = None,
-    ) -> str:
+    ) -> "str | ToolResult":
         r"""Captures a screenshot with interactive elements highlighted.
 
         "SoM" stands for "Set of Marks". This tool takes a screenshot and
@@ -569,17 +568,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         textual snapshot is not enough.
 
         Args:
-            read_image (bool, optional): If `True`, the agent will analyze
-                the screenshot. Requires agent to be registered.
+            read_image (bool, optional): If `True`, the screenshot image will
+                be included in the agent's context for direct visual analysis.
+                If `False`, only the file path will be returned.
                 (default: :obj:`True`)
-            instruction (Optional[str], optional): A specific question or
-                command for the agent regarding the screenshot, used only if
-                `read_image` is `True`. For example: "Find the login button."
 
         Returns:
-            str: A confirmation message indicating the screenshot was
-                captured, the file path where it was saved, and optionally the
-                agent's analysis if `read_image` is `True`.
+            str | ToolResult: If `read_image` is `True`, returns a ToolResult
+                containing the text message and the screenshot image (which
+                will be automatically added to agent's context). If `False`,
+                returns a string with the file path only.
         """
         import base64
         import datetime
@@ -631,38 +629,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         result_text += f" (saved to: {file_path})"
                         break
 
-            if read_image and file_path:
-                if self.agent is None:
-                    logger.error(
-                        "Cannot analyze screenshot: No agent registered. "
-                        "Please pass this toolkit to ChatAgent via "
-                        "toolkits_to_register_agent parameter."
-                    )
-                    result_text += (
-                        " Error: No agent registered for image analysis. "
-                        "Please pass this toolkit to ChatAgent via "
-                        "toolkits_to_register_agent parameter."
-                    )
-                else:
-                    try:
-                        from PIL import Image
-
-                        img = Image.open(file_path)
-                        inst = instruction if instruction is not None else ""
-                        message = BaseMessage.make_user_message(
-                            role_name="User",
-                            content=inst,
-                            image_list=[img],
-                        )
-
-                        response = await self.agent.astep(message)
-                        agent_response = response.msgs[0].content
-                        result_text += f". Agent analysis: {agent_response}"
-                    except Exception as e:
-                        logger.error(f"Error analyzing screenshot: {e}")
-                        result_text += f". Error analyzing screenshot: {e}"
-
-            return result_text
+            # Return ToolResult with image if read_image is True
+            if read_image and result.images:
+                logger.info(
+                    f"Returning ToolResult with {len(result.images)} image(s) "
+                    "for agent context"
+                )
+                return ToolResult(
+                    text=result_text,
+                    images=result.images,  # Base64 images from WebSocket
+                )
+            else:
+                # Return plain text if read_image is False
+                return result_text
         except Exception as e:
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
