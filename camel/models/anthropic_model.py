@@ -159,6 +159,7 @@ class AnthropicModel(BaseModelBackend):
 
         # Initialize Anthropic clients
         from anthropic import Anthropic, AsyncAnthropic
+
         if client is not None:
             self._client = client
         else:
@@ -183,12 +184,12 @@ class AnthropicModel(BaseModelBackend):
 
         if cache_control and cache_control not in ["5m", "1h"]:
             raise ValueError("cache_control must be either '5m' or '1h'")
-        
+
         self._cache_control_config = None
         if cache_control:
             self._cache_control_config = {
                 "type": "ephemeral",
-                "ttl": cache_control
+                "ttl": cache_control,
             }
 
     @property
@@ -258,23 +259,30 @@ class AnthropicModel(BaseModelBackend):
                 # Convert assistant message
                 assistant_content: Union[str, List[Dict[str, Any]]] = ""
 
-                if "tool_calls" in msg and msg["tool_calls"]:
+                if msg.get("tool_calls"):
                     # Handle tool calls - Anthropic uses content blocks
                     content_blocks = []
                     if content:
-                        content_blocks.append({"type": "text", "text": str(content)})
-                    
+                        content_blocks.append(
+                            {"type": "text", "text": str(content)}
+                        )
+
                     for tool_call in msg["tool_calls"]:
                         tool_use_block = {
                             "type": "tool_use",
                             "id": tool_call.get("id", ""),
-                            "name": tool_call.get("function", {}).get("name", ""),
+                            "name": tool_call.get("function", {}).get(
+                                "name", ""
+                            ),
                             "input": {},
                         }
                         # Parse arguments if it's a string
-                        arguments = tool_call.get("function", {}).get("arguments", "{}")
+                        arguments = tool_call.get("function", {}).get(
+                            "arguments", "{}"
+                        )
                         if isinstance(arguments, str):
                             import json
+
                             try:
                                 tool_use_block["input"] = json.loads(arguments)
                             except json.JSONDecodeError:
@@ -282,7 +290,7 @@ class AnthropicModel(BaseModelBackend):
                         else:
                             tool_use_block["input"] = arguments
                         content_blocks.append(tool_use_block)
-                    
+
                     anthropic_messages.append(
                         MessageParam(role="assistant", content=content_blocks)
                     )
@@ -295,12 +303,16 @@ class AnthropicModel(BaseModelBackend):
                         assistant_content = str(content) if content else ""
 
                     anthropic_messages.append(
-                        MessageParam(role="assistant", content=assistant_content)
+                        MessageParam(
+                            role="assistant", content=assistant_content
+                        )
                     )
             elif role == "tool":
                 # Convert tool response message
                 tool_call_id = msg.get("tool_call_id", "")
-                tool_content = content if isinstance(content, str) else str(content)
+                tool_content = (
+                    content if isinstance(content, str) else str(content)
+                )
                 anthropic_messages.append(
                     MessageParam(
                         role="user",
@@ -345,29 +357,45 @@ class AnthropicModel(BaseModelBackend):
                                 text_parts.append(block.text)
                         elif block.type == "tool_use":
                             import json
-                            tool_input = block.input if hasattr(block, "input") else {}
-                            tool_calls_list.append({
-                                "id": block.id if hasattr(block, "id") else "",
-                                "type": "function",
-                                "function": {
-                                    "name": block.name if hasattr(block, "name") else "",
-                                    "arguments": json.dumps(tool_input) if isinstance(tool_input, dict) else str(tool_input),
-                                },
-                            })
+
+                            tool_input = (
+                                block.input if hasattr(block, "input") else {}
+                            )
+                            tool_calls_list.append(
+                                {
+                                    "id": block.id
+                                    if hasattr(block, "id")
+                                    else "",
+                                    "type": "function",
+                                    "function": {
+                                        "name": block.name
+                                        if hasattr(block, "name")
+                                        else "",
+                                        "arguments": json.dumps(tool_input)
+                                        if isinstance(tool_input, dict)
+                                        else str(tool_input),
+                                    },
+                                }
+                            )
                     elif isinstance(block, dict):
                         if block.get("type") == "text":
                             text_parts.append(block.get("text", ""))
                         elif block.get("type") == "tool_use":
                             import json
+
                             tool_input = block.get("input", {})
-                            tool_calls_list.append({
-                                "id": block.get("id", ""),
-                                "type": "function",
-                                "function": {
-                                    "name": block.get("name", ""),
-                                    "arguments": json.dumps(tool_input) if isinstance(tool_input, dict) else str(tool_input),
-                                },
-                            })
+                            tool_calls_list.append(
+                                {
+                                    "id": block.get("id", ""),
+                                    "type": "function",
+                                    "function": {
+                                        "name": block.get("name", ""),
+                                        "arguments": json.dumps(tool_input)
+                                        if isinstance(tool_input, dict)
+                                        else str(tool_input),
+                                    },
+                                }
+                            )
                 content = "".join(text_parts)
                 if tool_calls_list:
                     tool_calls = tool_calls_list
@@ -404,7 +432,9 @@ class AnthropicModel(BaseModelBackend):
         if hasattr(response, "usage"):
             usage = {
                 "prompt_tokens": getattr(response.usage, "input_tokens", 0),
-                "completion_tokens": getattr(response.usage, "output_tokens", 0),
+                "completion_tokens": getattr(
+                    response.usage, "output_tokens", 0
+                ),
                 "total_tokens": (
                     getattr(response.usage, "input_tokens", 0)
                     + getattr(response.usage, "output_tokens", 0)
@@ -472,7 +502,9 @@ class AnthropicModel(BaseModelBackend):
                     delta_obj = chunk.delta
                     if hasattr(delta_obj, "text"):
                         delta_content = delta_obj.text
-                    elif hasattr(delta_obj, "type") and delta_obj.type == "text":
+                    elif (
+                        hasattr(delta_obj, "type") and delta_obj.type == "text"
+                    ):
                         if hasattr(delta_obj, "text"):
                             delta_content = delta_obj.text
             elif chunk_type == "content_block_stop":
@@ -486,7 +518,9 @@ class AnthropicModel(BaseModelBackend):
                 )
             elif chunk_type == "message_delta":
                 # Message delta (usage info, etc.)
-                if hasattr(chunk, "delta") and hasattr(chunk.delta, "stop_reason"):
+                if hasattr(chunk, "delta") and hasattr(
+                    chunk.delta, "stop_reason"
+                ):
                     stop_reason = chunk.delta.stop_reason
                     if stop_reason == "end_turn":
                         finish_reason = "stop"
@@ -500,7 +534,9 @@ class AnthropicModel(BaseModelBackend):
                 # Message finished
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
-                    choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                    choices=[
+                        {"index": 0, "delta": {}, "finish_reason": "stop"}
+                    ],
                     created=int(time.time()),
                     model=model,
                     object="chat.completion.chunk",
@@ -514,7 +550,9 @@ class AnthropicModel(BaseModelBackend):
 
         return ChatCompletionChunk.construct(
             id=chunk_id,
-            choices=[{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+            choices=[
+                {"index": 0, "delta": delta, "finish_reason": finish_reason}
+            ],
             created=int(time.time()),
             model=model,
             object="chat.completion.chunk",
@@ -618,7 +656,9 @@ class AnthropicModel(BaseModelBackend):
 
         if is_streaming:
             # Return streaming response
-            stream = self._client.messages.create(**request_params, stream=True)
+            stream = self._client.messages.create(
+                **request_params, stream=True
+            )
             return self._wrap_anthropic_stream(stream, str(self.model_type))
         else:
             # Return non-streaming response
@@ -701,10 +741,14 @@ class AnthropicModel(BaseModelBackend):
             stream = await self._async_client.messages.create(
                 **request_params, stream=True
             )
-            return self._wrap_anthropic_async_stream(stream, str(self.model_type))
+            return self._wrap_anthropic_async_stream(
+                stream, str(self.model_type)
+            )
         else:
             # Return non-streaming response
-            response = await self._async_client.messages.create(**request_params)
+            response = await self._async_client.messages.create(
+                **request_params
+            )
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
@@ -725,7 +769,9 @@ class AnthropicModel(BaseModelBackend):
 
         def _generate_chunks():
             for chunk in stream:
-                yield self._convert_anthropic_stream_to_openai_chunk(chunk, model)
+                yield self._convert_anthropic_stream_to_openai_chunk(
+                    chunk, model
+                )
 
         return OpenAIStream(_generate_chunks())
 
@@ -745,7 +791,9 @@ class AnthropicModel(BaseModelBackend):
 
         async def _generate_chunks():
             async for chunk in stream:
-                yield self._convert_anthropic_stream_to_openai_chunk(chunk, model)
+                yield self._convert_anthropic_stream_to_openai_chunk(
+                    chunk, model
+                )
 
         return OpenAIAsyncStream(_generate_chunks())
 

@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import warnings
 import uuid
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
@@ -192,7 +192,6 @@ class OpenAIModel(BaseModelBackend):
                     **kwargs,
                 )
         self._prompt_cache_key = prompt_cache_key or str(uuid.uuid4())
-
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
         r"""Sanitize the model configuration for O1 models."""
