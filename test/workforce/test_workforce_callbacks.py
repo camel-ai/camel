@@ -20,6 +20,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -43,6 +44,9 @@ class _NonMetricsCallback(WorkforceCallback):
 
     def __init__(self) -> None:
         self.events: list[WorkforceEvent] = []
+
+    def log_message(self, event: LogEvent) -> None:
+        pass
 
     # Task events
     def log_task_created(self, event: TaskCreatedEvent) -> None:
@@ -84,6 +88,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
+
+    def log_message(self, event: LogEvent) -> None:
+        pass
 
     # WorkforceMetrics interface
     def reset_task_data(self) -> None:
