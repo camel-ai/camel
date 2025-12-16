@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from enum import Enum
 from functools import wraps
 from typing import Callable, List, Optional
@@ -222,6 +222,110 @@ class RecoveryStrategy(str, Enum):
 
     def __repr__(self):
         return f"RecoveryStrategy.{self.name}"
+
+
+class FailureHandlingConfig(BaseModel):
+    r"""Configuration for failure handling behavior in Workforce.
+
+    This configuration allows users to customize how the Workforce handles
+    task failures. This config allows users to disable reassignment or other
+    recovery strategies as needed.
+
+    Args:
+        max_retries (int): Maximum number of retry attempts before giving up
+            on a task. (default: :obj:`3`)
+        enabled_strategies (Optional[List[RecoveryStrategy]]): List of recovery
+            strategies that are allowed to be used. Can be specified as
+            RecoveryStrategy enums or strings (e.g., ["retry", "replan"]).
+            If None, all strategies are enabled (with LLM analysis).
+            If an empty list, no recovery strategies are applied and failed
+            tasks are marked as failed immediately. If only ["retry"] is
+            specified, simple retry is used without LLM analysis.
+            (default: :obj:`None` - all strategies enabled)
+        halt_on_max_retries (bool): Whether to halt the entire workforce
+            when a task exceeds max retries. If False, the task is marked
+            as failed and the workflow continues (similar to PIPELINE mode
+            behavior). (default: :obj:`True` for AUTO_DECOMPOSE mode behavior)
+
+    Example:
+        >>> # Using string list (simple)
+        >>> config = FailureHandlingConfig(
+        ...     enabled_strategies=["retry", "replan", "decompose"],
+        ... )
+        >>>
+        >>> # Using enum list
+        >>> config = FailureHandlingConfig(
+        ...     enabled_strategies=[
+        ...         RecoveryStrategy.RETRY,
+        ...         RecoveryStrategy.REPLAN,
+        ...     ]
+        ... )
+        >>>
+        >>> # Simple retry only
+        >>> config = FailureHandlingConfig(
+        ...     enabled_strategies=["retry"],
+        ...     max_retries=2,
+        ... )
+        >>>
+        >>> # No recovery - failed tasks are immediately marked as failed
+        >>> config = FailureHandlingConfig(
+        ...     enabled_strategies=[],
+        ... )
+        >>>
+        >>> # Allow failures without halting
+        >>> config = FailureHandlingConfig(
+        ...     halt_on_max_retries=False,
+        ... )
+    """
+
+    max_retries: int = Field(
+        default=3,
+        ge=1,
+        description="Maximum retry attempts before giving up on a task",
+    )
+
+    enabled_strategies: Optional[List[RecoveryStrategy]] = Field(
+        default=None,
+        description="List of enabled recovery strategies. None means all "
+        "enabled. Empty list means no recovery (immediate failure). "
+        "Can be strings like ['retry', 'replan'] or RecoveryStrategy enums.",
+    )
+
+    halt_on_max_retries: bool = Field(
+        default=True,
+        description="Whether to halt workforce when max retries exceeded",
+    )
+
+    @field_validator("enabled_strategies", mode="before")
+    @classmethod
+    def validate_enabled_strategies(
+        cls, v
+    ) -> Optional[List[RecoveryStrategy]]:
+        r"""Convert string list to RecoveryStrategy enum list."""
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("enabled_strategies must be a list or None")
+
+        result = []
+        for item in v:
+            if isinstance(item, RecoveryStrategy):
+                result.append(item)
+            elif isinstance(item, str):
+                try:
+                    result.append(RecoveryStrategy(item.lower()))
+                except ValueError:
+                    valid = [s.value for s in RecoveryStrategy]
+                    raise ValueError(
+                        f"Invalid strategy '{item}'. "
+                        f"Valid options: {valid}"
+                    )
+            else:
+                raise ValueError(
+                    f"Strategy must be string or RecoveryStrategy, "
+                    f"got {type(item).__name__}"
+                )
+        return result
 
 
 class FailureContext(BaseModel):
