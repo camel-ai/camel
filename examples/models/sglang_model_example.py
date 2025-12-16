@@ -94,7 +94,11 @@ llama3: Llama 3.1 / 3.2 (e.g. meta-llama/Llama-3.1-8B-Instruct,
 mistral: Mistral (e.g. mistralai/Mistral-7B-Instruct-v0.3,
          mistralai/Mistral-Nemo-Instruct-2407,
          mistralai/ Mistral-Nemo-Instruct-2407, mistralai/Mistral-7B-v0.3).
-qwen25: Qwen 2.5 (e.g. Qwen/Qwen2.5-1.5B-Instruct, Qwen/Qwen2.5-7B-Instruct).
+qwen25: Qwen 2.5 (e.g. Qwen/Qwen2.5-1.5B-Instruct, Qwen/Qwen2.5-7B-Instruct)
+        and QwQ (i.e. Qwen/QwQ-32B). Especially, for QwQ, we can enable the
+        reasoning parser together with tool call parser, 
+        details about reasoning parser can be found in
+        https://docs.sglang.ai/backend/separate_reasoning.html
 """
 sglang_model_with_tool = ModelFactory.create(
     model_platform=ModelPlatformType.SGLANG,
