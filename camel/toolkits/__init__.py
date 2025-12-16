@@ -83,6 +83,7 @@ from .resend_toolkit import ResendToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
+from .browser_code_toolkit import BrowserCodeToolkit
 from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
 from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
 from .craw4ai_toolkit import Crawl4AIToolkit
@@ -168,6 +169,7 @@ __all__ = [
     'OpenAIImageToolkit',  # Backward compatibility
     'TaskPlanningToolkit',
     'HybridBrowserToolkit',
+    'BrowserCodeToolkit',
     'EdgeOnePagesMCPToolkit',
     'GoogleDriveMCPToolkit',
     'Crawl4AIToolkit',

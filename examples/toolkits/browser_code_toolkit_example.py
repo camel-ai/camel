@@ -37,8 +37,8 @@ logging.basicConfig(
 logging.getLogger('camel.agents').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.toolkits').setLevel(logging.INFO)
+
 from dotenv import load_dotenv
-import os
 
 load_dotenv()  # Load environment variables from .env.test file
 

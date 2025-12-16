@@ -21,7 +21,6 @@ It loads tasks from a JSONL file and processes them sequentially with verificati
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -138,8 +137,9 @@ output_dir.mkdir(exist_ok=True)
 JSONL_PATH = '/Users/puzhen/Downloads/WebVoyager_data (3).jsonl'
 
 
-def load_tasks_from_jsonl(start_index: int = 0, end_index: int = None,
-                           filter_keyword: str = None):
+def load_tasks_from_jsonl(
+    start_index: int = 0, end_index: int = None, filter_keyword: str = None
+):
     """
     Load tasks from JSONL file
 
@@ -169,11 +169,13 @@ def load_tasks_from_jsonl(start_index: int = 0, end_index: int = None,
                 if filter_keyword not in data.get('web', '').lower():
                     continue
 
-            tasks.append({
-                'index': idx,
-                'web': data.get('web', ''),
-                'question': data.get('ques', '')
-            })
+            tasks.append(
+                {
+                    'index': idx,
+                    'web': data.get('web', ''),
+                    'question': data.get('ques', ''),
+                }
+            )
 
     return tasks
 
@@ -194,8 +196,8 @@ Analyze the question and the response, then provide:
 3. What was expected vs what was provided
 4. Any missing information or errors
 
-Return your analysis in a structured format."""
-        )
+Return your analysis in a structured format.""",
+        ),
     )
 
     verification_prompt = f"""
@@ -211,23 +213,31 @@ Please verify if this response adequately completes the task. Provide:
 """
 
     try:
-        verification_result = await verification_agent.astep(verification_prompt)
-        verification_text = verification_result.msgs[0].content if verification_result.msgs else "No verification response"
+        verification_result = await verification_agent.astep(
+            verification_prompt
+        )
+        verification_text = (
+            verification_result.msgs[0].content
+            if verification_result.msgs
+            else "No verification response"
+        )
 
         return {
             "verified": True,
             "verification_text": verification_text,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         return {
             "verified": False,
             "error": str(e),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
 
-async def process_single_task(task_idx: int, total_tasks: int, task: dict) -> dict:
+async def process_single_task(
+    task_idx: int, total_tasks: int, task: dict
+) -> dict:
     """Process a single task using BrowserCodeToolkit"""
     print(f"\n{'='*80}")
     print(f"Processing Task {task_idx + 1}/{total_tasks}")
@@ -277,31 +287,34 @@ Use the execute_browser_code tool to control the browser and complete this task.
         "response": None,
         "verification": None,
         "error": None,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     try:
         # Execute task
-        print(f"Executing task...")
+        print("Executing task...")
         response = await agent.astep(task_prompt)
-        response_text = response.msgs[0].content if response.msgs else "<no response>"
+        response_text = (
+            response.msgs[0].content if response.msgs else "<no response>"
+        )
         result["response"] = response_text
 
-        print(f"\nResponse from agent:")
+        print("\nResponse from agent:")
         print(response_text)
 
         # Verify response
-        print(f"\nVerifying response...")
+        print("\nVerifying response...")
         verification = await verify_response(task['question'], response_text)
         result["verification"] = verification
 
-        print(f"\nVerification result:")
+        print("\nVerification result:")
         print(verification.get("verification_text", "No verification text"))
 
     except Exception as e:
-        error_msg = f"Error processing task: {str(e)}"
+        error_msg = f"Error processing task: {e!s}"
         print(error_msg)
         import traceback
+
         traceback.print_exc()
         result["error"] = error_msg
 
@@ -332,10 +345,12 @@ async def main():
 
     # Configuration - Modify these parameters to customize batch processing
     START_INDEX = 428  # Starting task index
-    END_INDEX = None   # Ending task index (None = process all remaining)
-    FILTER_KEYWORD = 'google.com/travel/flights'  # Filter by website (None = no filter)
+    END_INDEX = None  # Ending task index (None = process all remaining)
+    FILTER_KEYWORD = (
+        'google.com/travel/flights'  # Filter by website (None = no filter)
+    )
 
-    print(f"\nConfiguration:")
+    print("\nConfiguration:")
     print(f"  JSONL file: {JSONL_PATH}")
     print(f"  Start index: {START_INDEX}")
     print(f"  End index: {END_INDEX if END_INDEX else 'End of file'}")
@@ -343,16 +358,18 @@ async def main():
     print(f"  Output directory: {output_dir.absolute()}")
 
     # Load tasks
-    print(f"\nLoading tasks from JSONL file...")
+    print("\nLoading tasks from JSONL file...")
     all_tasks = load_tasks_from_jsonl(
         start_index=START_INDEX,
         end_index=END_INDEX,
-        filter_keyword=FILTER_KEYWORD
+        filter_keyword=FILTER_KEYWORD,
     )
 
     print(f"Loaded {len(all_tasks)} tasks")
     if all_tasks:
-        print(f"Task range: indices {all_tasks[0]['index']} to {all_tasks[-1]['index']}")
+        print(
+            f"Task range: indices {all_tasks[0]['index']} to {all_tasks[-1]['index']}"
+        )
 
     if not all_tasks:
         print("No tasks to process. Exiting.")
@@ -367,17 +384,22 @@ async def main():
         # Save cumulative results
         summary_file = output_dir / "all_results_summary.json"
         with open(summary_file, 'w', encoding='utf-8') as f:
-            json.dump({
-                "configuration": {
-                    "start_index": START_INDEX,
-                    "end_index": END_INDEX,
-                    "filter_keyword": FILTER_KEYWORD,
-                    "jsonl_path": JSONL_PATH
+            json.dump(
+                {
+                    "configuration": {
+                        "start_index": START_INDEX,
+                        "end_index": END_INDEX,
+                        "filter_keyword": FILTER_KEYWORD,
+                        "jsonl_path": JSONL_PATH,
+                    },
+                    "total_tasks": len(all_tasks),
+                    "processed_tasks": idx + 1,
+                    "results": all_results,
                 },
-                "total_tasks": len(all_tasks),
-                "processed_tasks": idx + 1,
-                "results": all_results
-            }, f, indent=2, ensure_ascii=False)
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
 
         print(f"\n[Progress: {idx + 1}/{len(all_tasks)} tasks completed]")
 
@@ -394,23 +416,32 @@ async def main():
     print(f"Summary file: {summary_file.absolute()}")
 
     # Generate statistics
-    successful = sum(1 for r in all_results if r.get('response') and not r.get('error'))
+    successful = sum(
+        1 for r in all_results if r.get('response') and not r.get('error')
+    )
     failed = sum(1 for r in all_results if r.get('error'))
 
-    print(f"\nStatistics:")
+    print("\nStatistics:")
     print(f"  Successful: {successful}")
     print(f"  Failed: {failed}")
     print(f"  Success rate: {successful / len(all_results) * 100:.1f}%")
 
     stats_file = output_dir / "statistics.json"
     with open(stats_file, 'w', encoding='utf-8') as f:
-        json.dump({
-            "total_tasks": len(all_results),
-            "successful": successful,
-            "failed": failed,
-            "success_rate": successful / len(all_results) if all_results else 0,
-            "timestamp": datetime.now().isoformat()
-        }, f, indent=2, ensure_ascii=False)
+        json.dump(
+            {
+                "total_tasks": len(all_results),
+                "successful": successful,
+                "failed": failed,
+                "success_rate": successful / len(all_results)
+                if all_results
+                else 0,
+                "timestamp": datetime.now().isoformat(),
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     print(f"Statistics saved to: {stats_file.absolute()}")
 
