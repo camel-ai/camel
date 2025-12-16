@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -113,6 +113,26 @@ class WorkflowSummary(BaseModel):
         "'report-generation'.",
         default_factory=list,
     )
+    operation_mode: Literal["create", "update"] = Field(
+        description=(
+            "Whether to create a new workflow file or update an existing one. "
+            "Use 'update' ONLY if you loaded a workflow that this task is a "
+            "continuation, improvement, or refinement of AND the task_title "
+            "should remain the same as the loaded workflow. Use 'create' if "
+            "this is a new/different task, if the task_title would be "
+            "different, or if no workflows were loaded."
+        ),
+        default="create",
+    )
+    target_workflow_filename: Optional[str] = Field(
+        description=(
+            "When operation_mode is 'update', specify the exact filename "
+            "(without .md extension) of the loaded workflow to update. "
+            "Must match one of the loaded workflow filenames exactly. "
+            "Leave empty or null when operation_mode is 'create'."
+        ),
+        default=None,
+    )
 
     @classmethod
     def get_instruction_prompt(cls) -> str:
@@ -141,7 +161,14 @@ class WorkflowSummary(BaseModel):
             'with hyphens (e.g., "data-analysis", "web-scraping") that '
             'describe the workflow domain, type, and key capabilities to '
             'help future agents discover this workflow when working on '
-            'similar tasks.'
+            'similar tasks. '
+            'For operation_mode, decide whether to update an existing '
+            'workflow or create a new one. Use "update" ONLY if you loaded '
+            'a workflow that this task is a continuation or refinement of '
+            'AND the task_title should remain the same. If the task is '
+            'different enough to warrant a different task_title, use "create" '
+            'instead. When using "update", keep the same task_title as the '
+            'loaded workflow and specify target_workflow_filename.'
         )
 
 
@@ -365,6 +392,7 @@ class ContextUtility:
         metadata: Optional[Dict[str, Any]] = None,
         title: Optional[str] = None,
         field_mappings: Optional[Dict[str, str]] = None,
+        exclude_fields: Optional[List[str]] = None,
     ) -> str:
         r"""Convert any Pydantic BaseModel instance to markdown format.
 
@@ -374,6 +402,8 @@ class ContextUtility:
             title: Optional custom title, defaults to model class name
             field_mappings: Optional mapping of field names to custom
                 section titles
+            exclude_fields: Optional list of field names to exclude from
+                the markdown output
 
         Returns:
             str: Markdown formatted content
@@ -396,8 +426,12 @@ class ContextUtility:
 
         # Get model fields and values
         model_dict = structured_data.model_dump()
+        exclude_set = set(exclude_fields) if exclude_fields else set()
 
         for field_name, field_value in model_dict.items():
+            # Skip excluded fields
+            if field_name in exclude_set:
+                continue
             # Use custom mapping or convert field name to title case
             if field_mappings and field_name in field_mappings:
                 section_title = field_mappings[field_name]
