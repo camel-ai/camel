@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
+import uuid
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
@@ -101,6 +102,9 @@ class OpenAIModel(BaseModelBackend):
             client instance. If provided, this client will be used instead of
             creating a new one. The client should implement the AsyncOpenAI
             client interface. (default: :obj:`None`)
+        prompt_cache_key (str, optional): A key used by the OpenAI Prompt
+            Caching system to identify and reuse cached prompt segments.
+            (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
@@ -123,6 +127,7 @@ class OpenAIModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
+        prompt_cache_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -186,6 +191,8 @@ class OpenAIModel(BaseModelBackend):
                     api_key=self._api_key,
                     **kwargs,
                 )
+        self._prompt_cache_key = prompt_cache_key or str(uuid.uuid4())
+
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
         r"""Sanitize the model configuration for O1 models."""
@@ -427,6 +434,9 @@ class OpenAIModel(BaseModelBackend):
         if tools:
             request_config["tools"] = tools
 
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
+
         request_config = self._sanitize_config(request_config)
 
         return self._client.chat.completions.create(
@@ -446,6 +456,9 @@ class OpenAIModel(BaseModelBackend):
 
         if tools:
             request_config["tools"] = tools
+
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
 
         request_config = self._sanitize_config(request_config)
 
@@ -472,6 +485,9 @@ class OpenAIModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
+
         request_config = self._sanitize_config(request_config)
 
         return self._client.beta.chat.completions.parse(
@@ -496,6 +512,9 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
+
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
 
         request_config = self._sanitize_config(request_config)
 
@@ -524,6 +543,9 @@ class OpenAIModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
+
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
 
         request_config = self._sanitize_config(request_config)
 
@@ -554,6 +576,9 @@ class OpenAIModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
+
+        if self._prompt_cache_key:
+            request_config["prompt_cache_key"] = self._prompt_cache_key
 
         request_config = self._sanitize_config(request_config)
 
