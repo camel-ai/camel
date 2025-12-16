@@ -1,0 +1,224 @@
+<a id="camel.toolkits.sql_toolkit"></a>
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit"></a>
+
+## SQLToolkit
+
+```python
+class SQLToolkit(BaseToolkit):
+```
+
+A toolkit for executing SQL queries against various SQL databases.
+
+This toolkit provides functionality to execute SQL queries with support
+for read-only and read-write modes. It currently supports DuckDB and
+SQLite, with extensibility for MySQL and other SQL databases.
+
+**Parameters:**
+
+- **database_path** (Optional[str]): Path to the database file. If None, uses an in-memory database. For DuckDB and SQLite, use ":memory:" for in-memory or a file path for persistent storage. (default: :obj:`None`)
+- **database_type** (`Literal["duckdb", "sqlite"]`): Type of database to use. Currently supports "duckdb" and "sqlite". (default: :obj:`"duckdb"`)
+- **read_only** (bool, optional): If True, only SELECT queries are allowed. Write operations (INSERT, UPDATE, DELETE, etc.) will be rejected. (default: :obj:`False`)
+- **timeout** (Optional[float], optional): The timeout for database operations in seconds. Defaults to 180 seconds if not specified. (default: :obj:`180.0`)
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    database_path: Optional[str] = None,
+    database_type: Literal['duckdb', 'sqlite'] = 'duckdb',
+    read_only: bool = False,
+    timeout: Optional[float] = 180.0
+):
+```
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit._validate_database_type"></a>
+
+### _validate_database_type
+
+```python
+def _validate_database_type(self, database_type: str):
+```
+
+Validate if the database type is supported.
+
+**Parameters:**
+
+- **database_type** (str): The database type to validate.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit._create_connection"></a>
+
+### _create_connection
+
+```python
+def _create_connection(self):
+```
+
+**Returns:**
+
+  Union[duckdb.DuckDBPyConnection, sqlite3.Connection]: A database
+connection object.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit._is_write_query"></a>
+
+### _is_write_query
+
+```python
+def _is_write_query(self, query: str):
+```
+
+Check if a SQL query is a write operation.
+
+This method analyzes the query string to determine if it contains
+any write operations. It handles comments and case-insensitive
+matching.
+
+**Parameters:**
+
+- **query** (str): The SQL query to check.
+
+**Returns:**
+
+  bool: True if the query is a write operation, False otherwise.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit._quote_identifier"></a>
+
+### _quote_identifier
+
+```python
+def _quote_identifier(self, identifier: str):
+```
+
+Safely quote a SQL identifier (table name, column name, etc.).
+
+This method validates and quotes SQL identifiers to prevent SQL
+injection. For DuckDB, identifiers are quoted with double quotes. Any
+double quotes within the identifier are escaped by doubling them.
+
+**Parameters:**
+
+- **identifier** (str): The identifier to quote (e.g., table name, column name).
+
+**Returns:**
+
+  str: The safely quoted identifier.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.execute_query"></a>
+
+### execute_query
+
+```python
+def execute_query(
+    self,
+    query: str,
+    params: Optional[Union[List[Union[str, int, float, bool, None]], Dict[str, Union[str, int, float, bool, None]]]] = None
+):
+```
+
+Execute a SQL query and return results.
+
+This method executes a SQL query against the configured database and
+returns the results. For SELECT queries, returns a list of dictionaries
+where each dictionary represents a row. For write operations (INSERT,
+UPDATE, DELETE, etc.), returns a status dictionary with execution info.
+
+**Parameters:**
+
+- **query** (str): The SQL query to execute. params (Optional[Union[List[Union[str, int, float, bool, None]], Dict[str, Union[str, int, float, bool, None]]]], optional): Parameters for parameterized queries. Can be a list for positional parameters (with ? placeholders) or a dict for named parameters. Values can be strings, numbers, booleans, or None. Note: tuples are also accepted at runtime but should be passed as lists for type compatibility. (default: :obj:`None`)
+
+**Returns:**
+
+  Union[List[Dict[str, Any]], Dict[str, Any], str]:
+- For SELECT queries: List of dictionaries with column names as
+keys and row values as values.
+- For write operations (INSERT, UPDATE, DELETE, CREATE, etc.):
+A dictionary with 'status', 'message', and optionally
+'rows_affected' keys.
+- For errors: An error message string starting with "Error:".
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.list_tables"></a>
+
+### list_tables
+
+```python
+def list_tables(self):
+```
+
+**Returns:**
+
+  Union[List[str], str]: A list of table names in the database,
+or an error message string if the operation fails.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit._get_table_schema"></a>
+
+### _get_table_schema
+
+```python
+def _get_table_schema(self, table_name: str):
+```
+
+Internal helper method to get table schema information.
+
+**Parameters:**
+
+- **table_name** (str): The name of the table to describe.
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary containing 'columns',
+'primary_keys', and 'foreign_keys', or an error message string
+if the operation fails.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.get_table_info"></a>
+
+### get_table_info
+
+```python
+def get_table_info(self, table_name: Optional[str] = None):
+```
+
+Get comprehensive information about table(s) in the database.
+
+This method provides a summary of table information including schema,
+primary keys, foreign keys, and row counts. If table_name is provided,
+returns info for that specific table. Otherwise, returns info for all
+tables.
+
+**Parameters:**
+
+- **table_name** (Optional[str], optional): Name of a specific table to get info for. If None, returns info for all tables. (default: :obj:`None`)
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary containing table
+information, or an error message string if the operation fails.
+If table_name is provided, returns info for that table with
+keys: 'table_name', 'columns', 'primary_keys', 'foreign_keys',
+'row_count'. Otherwise, returns a dictionary mapping table
+names to their info dictionaries.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing the
+available functions in the toolkit.
+
+<a id="camel.toolkits.sql_toolkit.SQLToolkit.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Clean up database connection on deletion.
