@@ -32,6 +32,31 @@ Be specific and clear.
 """
 )
 
+TASK_DECOMPOSE_GROUPED_PROMPT = TextPrompt(
+    """As a Task Decomposer with the role of {role_name}, your objective is to divide the given task into subtasks grouped into task groups.
+You have been provided with the following objective:
+
+{content}
+
+Please format the subtasks grouped into task groups <task_group> tags, each task group contains one <summary> element and one or more subtasks <task> tags, as demonstrated below:
+<tasks>
+<task_group>
+<summary>Summary of the task group</summary>
+<task>Subtask 1</task>
+<task>Subtask 2</task>
+</task_group>
+<task_group>
+<summary>Summary of the task group</summary>
+<task>Subtask 3</task>
+</task_group>
+</tasks>
+
+Each subtask should be concise, concrete, and achievable for a {role_name}.
+Ensure that the task plan is created without asking any questions.
+Be specific and clear.
+"""
+)
+
 
 TASK_COMPOSE_PROMPT = TextPrompt(
     """As a Task composer with the role of {role_name}, your objective is to gather result from all sub tasks to get the final answer.

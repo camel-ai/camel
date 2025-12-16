@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
-from .task import Task, TaskManager
+from .task import Task, TaskGroup, TaskManager
 from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
 
 __all__ = [
@@ -19,4 +19,5 @@ __all__ = [
     "TASK_EVOLVE_PROMPT",
     "Task",
     "TaskManager",
+    "TaskGroup",
 ]

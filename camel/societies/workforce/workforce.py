@@ -52,6 +52,7 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
+    ASSIGN_TASK_GROUPED_PROMPT,
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_RESPONSE_FORMAT,
@@ -59,6 +60,7 @@ from camel.societies.workforce.prompts import (
     STRATEGY_DESCRIPTIONS,
     TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
+    TASK_DECOMPOSE_GROUPED_PROMPT,
     TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
@@ -76,12 +78,14 @@ from camel.societies.workforce.utils import (
     TaskAnalysisResult,
     TaskAssignment,
     TaskAssignResult,
+    TaskGroupAssignResult,
     WorkerConf,
     check_if_running,
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import (
     Task,
+    TaskGroup,
     TaskState,
     is_task_result_insufficient,
     validate_task_content,
@@ -136,6 +140,9 @@ class WorkforceMode(Enum):
     r"""Workforce execution mode for different task processing strategies."""
 
     AUTO_DECOMPOSE = "auto_decompose"  # Automatic task decomposition mode
+    AUTO_DECOMPOSE_GROUPED = (
+        "auto_decompose_grouped"  # Auto-decompose with task groups
+    )
     PIPELINE = "pipeline"  # Predefined pipeline mode
 
 
@@ -239,11 +246,15 @@ class Workforce(BaseNode):
             implements :class:`WorkforceMetrics`, no default logger is added.
             (default: :obj:`None`)
         mode (WorkforceMode, optional): The execution mode for task
-            processing. AUTO_DECOMPOSE mode uses intelligent recovery
-            strategies (decompose, replan, etc.) when tasks fail.
-            PIPELINE mode uses simple retry logic and allows failed
-            tasks to continue the workflow, passing error information
-            to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+            processing.
+            - `AUTO_DECOMPOSE`: automatic task decomposition with per-task
+              assignment (original behavior).
+            - `AUTO_DECOMPOSE_GROUPED`: automatic decomposition with task
+              groups / worker groups (coarse routing, reduced coordinator
+              load).
+            - `PIPELINE`: predefined pipeline mode, simple retry, failed
+              tasks may still feed into dependents.
+            (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
         failure_handling_config (Optional[Union[FailureHandlingConfig, Dict]]):
             Configuration for customizing failure handling behavior. Can be
             a FailureHandlingConfig instance or a dict with the same fields.
@@ -1374,17 +1385,35 @@ class Workforce(BaseNode):
         if self.mode == WorkforceMode.PIPELINE:
             return []
 
-        decompose_prompt = str(
-            TASK_DECOMPOSE_PROMPT.format(
-                content=task.content,
-                child_nodes_info=self._get_child_nodes_info(),
-                additional_info=task.additional_info,
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            decompose_prompt = str(
+                TASK_DECOMPOSE_GROUPED_PROMPT.format(
+                    content=task.content,
+                    child_nodes_info=self._get_child_nodes_info(),
+                    additional_info=task.additional_info,
+                )
             )
-        )
+        elif self.mode == WorkforceMode.AUTO_DECOMPOSE:
+            decompose_prompt = str(
+                TASK_DECOMPOSE_PROMPT.format(
+                    content=task.content,
+                    child_nodes_info=self._get_child_nodes_info(),
+                    additional_info=task.additional_info,
+                )
+            )
         self.task_agent.reset()
-        result = task.decompose(
-            self.task_agent, decompose_prompt, stream_callback=stream_callback
-        )
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            result = task.decompose_grouped(
+                self.task_agent,
+                decompose_prompt,
+                stream_callback=stream_callback,
+            )
+        else:
+            result = task.decompose(
+                self.task_agent,
+                decompose_prompt,
+                stream_callback=stream_callback,
+            )
 
         # Handle both streaming and non-streaming results
         if isinstance(result, Generator):
@@ -3594,6 +3623,229 @@ class Workforce(BaseNode):
                 )
                 return TaskAssignResult(assignments=[])
 
+    def _expand_group_to_task_dependencies(
+        self,
+        tasks: List[Task],
+        task_group_assign_result: TaskGroupAssignResult,
+    ) -> TaskAssignResult:
+        """
+        Expand task-group-level dependencies (ALL / ANY) into task-level dependencies.
+
+        Args:
+            tasks: List[Task]: List of tasks to expand dependencies for.
+            task_group_assign_result: TaskGroupAssignResult
+
+        Returns:
+            TaskAssignResult: Task assignment result with task-level dependencies.
+        """
+
+        task_groups: List["TaskGroup"] = []
+        for task in tasks:
+            if task.group and task.group not in task_groups:
+                task_groups.append(task.group)
+
+        group_id_to_tasks: Dict[str, List["Task"]] = {
+            g.id: g.get_tasks() for g in task_groups
+        }
+
+        task_assignments: List[TaskAssignment] = []
+
+        for assignment in task_group_assign_result.assignments:
+            group_id = assignment.task_group_id
+            dependencies = assignment.dependencies
+
+            if group_id not in group_id_to_tasks:
+                raise ValueError(f"Unknown task_group_id: {group_id}")
+
+            current_tasks = group_id_to_tasks[group_id]
+
+            # when there is no dependencies
+            if len(dependencies) == 0:
+                for task in current_tasks:
+                    task_assignments.append(
+                        TaskAssignment(
+                            task_id=task.id,
+                            assignee_id=assignment.assignee_id,
+                            dependencies=[],
+                        )
+                    )
+                continue
+
+            # if there is only one dependent task group, and the mode is ANY
+            # then parallelize the tasks in the current group
+            if len(dependencies) == 1 and dependencies[0][1] == "ANY":
+                # check if the number of tasks in each group is the same
+                dependent_tasks = group_id_to_tasks[dependencies[0][0]]
+                if len(current_tasks) == len(dependent_tasks):
+                    # parallelize the tasks in the current group
+                    for task, dependent_task in zip(
+                        current_tasks, dependent_tasks
+                    ):
+                        task_assignments.append(
+                            TaskAssignment(
+                                task_id=task.id,
+                                assignee_id=assignment.assignee_id,
+                                dependencies=[dependent_task.id],
+                            )
+                        )
+                    continue
+
+            # if there is more than one dependent task group, and the mode is ALL
+            # then ignore any dependencies that are ANY
+            all_dependencies = []
+            for dep_group_id, _ in dependencies:
+                if dep_group_id not in group_id_to_tasks:
+                    raise ValueError(
+                        f"Unknown dependency task_group_id: {dep_group_id}"
+                    )
+
+                upstream_tasks = group_id_to_tasks[dep_group_id]
+                if not upstream_tasks:
+                    raise ValueError(f"Task group {dep_group_id} has no tasks")
+
+                upstream_task_ids = [t.id for t in upstream_tasks]
+
+                all_dependencies.extend(upstream_task_ids)
+
+            for task in current_tasks:
+                task_assignments.append(
+                    TaskAssignment(
+                        task_id=task.id,
+                        assignee_id=assignment.assignee_id,
+                        dependencies=all_dependencies,
+                    )
+                )
+
+        return TaskAssignResult(assignments=task_assignments)
+
+    def _call_coordinator_for_assignment_grouped(
+        self, tasks: List[Task], invalid_ids: Optional[List[str]] = None
+    ) -> TaskAssignResult:
+        r"""Call coordinator agent to assign task groups with optional validation
+        feedback in the case of invalid worker IDs.
+
+        Args:
+            tasks (List[Task]): Tasks to assign.
+            invalid_ids (List[str], optional): Invalid worker IDs from previous
+                attempt (if any).
+
+        Returns:
+            TaskAssignResult: Assignment result from coordinator.
+        """
+        # format task groups information for the prompt
+        task_groups_info = ""
+        seen_task_groups = set()
+        for task in tasks:
+            if not task.group:
+                continue
+            if task.group.id in seen_task_groups:
+                continue
+            seen_task_groups.add(task.group.id)
+            task_groups_info += f"Task group ID: {task.group.id}\n"
+            task_groups_info += f"Summary: {task.group.content}\n"
+            # TODO: add additional info if available
+            task_groups_info += "---\n"
+
+        prompt = str(
+            ASSIGN_TASK_GROUPED_PROMPT.format(
+                tasks_info=task_groups_info,
+                child_nodes_info=self._get_child_nodes_info(),
+            )
+        )
+
+        # add feedback if this is a retry
+        if invalid_ids:
+            valid_worker_ids = list(self._get_valid_worker_ids())
+            feedback = (
+                f"VALIDATION ERROR: The following worker IDs are invalid: "
+                f"{invalid_ids}. "
+                f"VALID WORKER IDS: {valid_worker_ids}. "
+                f"Please reassign ONLY the above tasks using these valid IDs."
+            )
+            prompt = prompt + f"\n\n{feedback}"
+
+        # Check if we should use structured handler
+        if self.use_structured_output_handler:
+            # Use structured handler for prompt-based extraction
+            enhanced_prompt = (
+                self.structured_handler.generate_structured_prompt(
+                    base_prompt=prompt,
+                    schema=TaskGroupAssignResult,
+                    examples=[
+                        {
+                            "assignments": [
+                                {
+                                    "task_group_id": "0.1",
+                                    "assignee_id": "node_research_1",
+                                    "dependencies": [],
+                                },
+                                {
+                                    "task_group_id": "0.2",
+                                    "assignee_id": "node_analysis_1",
+                                    "dependencies": [["0.1", "ALL"]],
+                                },
+                                {
+                                    "task_group_id": "0.3",
+                                    "assignee_id": "node_compile_1",
+                                    "dependencies": [["0.2", "ANY"]],
+                                },
+                            ]
+                        }
+                    ],
+                )
+            )
+
+            # Get response without structured format
+            response = self.coordinator_agent.step(enhanced_prompt)
+
+            if response.msg is None or response.msg.content is None:
+                logger.error(
+                    "Coordinator agent returned empty response for "
+                    "task assignment"
+                )
+                return TaskAssignResult(assignments=[])
+
+            # Parse with structured handler
+            result = self.structured_handler.parse_structured_response(
+                response.msg.content,
+                schema=TaskGroupAssignResult,
+                fallback_values={"assignments": []},
+            )
+            # Ensure we return a TaskAssignResult instance
+            if isinstance(result, TaskGroupAssignResult):
+                return self._expand_group_to_task_dependencies(tasks, result)
+            elif isinstance(result, dict):
+                return self._expand_group_to_task_dependencies(
+                    tasks, TaskGroupAssignResult(**result)
+                )
+            else:
+                return TaskAssignResult(assignments=[])
+        else:
+            # Use existing native structured output code
+            response = self.coordinator_agent.step(
+                prompt, response_format=TaskGroupAssignResult
+            )
+
+            if response.msg is None or response.msg.content is None:
+                logger.error(
+                    "Coordinator agent returned empty response for "
+                    "task assignment"
+                )
+                return TaskAssignResult(assignments=[])
+
+            try:
+                result_dict = json.loads(response.msg.content, parse_int=str)
+                return self._expand_group_to_task_dependencies(
+                    tasks, TaskGroupAssignResult(**result_dict)
+                )
+            except json.JSONDecodeError as e:
+                logger.error(
+                    f"JSON parsing error in task assignment: Invalid response "
+                    f"format - {e}. Response content: "
+                    f"{response.msg.content}"
+                )
+                return TaskAssignResult(assignments=[])
+
     def _validate_assignments(
         self, assignments: List[TaskAssignment], valid_ids: Set[str]
     ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
@@ -3684,9 +3936,14 @@ class Workforce(BaseNode):
             )
 
         # retry assignment with feedback
-        retry_result = self._call_coordinator_for_assignment(
-            invalid_tasks, invalid_ids
-        )
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            retry_result = self._call_coordinator_for_assignment_grouped(
+                invalid_tasks, invalid_ids
+            )
+        else:
+            retry_result = self._call_coordinator_for_assignment(
+                invalid_tasks, invalid_ids
+            )
         final_assignments = []
 
         if retry_result.assignments:
@@ -3806,7 +4063,12 @@ class Workforce(BaseNode):
             f"for {len(tasks)} tasks."
         )
 
-        assignment_result = self._call_coordinator_for_assignment(tasks)
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            assignment_result = self._call_coordinator_for_assignment_grouped(
+                tasks
+            )
+        else:
+            assignment_result = self._call_coordinator_for_assignment(tasks)
 
         # validate assignments
         valid_assignments, invalid_assignments = self._validate_assignments(

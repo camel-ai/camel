@@ -43,6 +43,7 @@ from camel.prompts import TextPrompt
 # Note: validate_task_content moved here to avoid circular imports
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
+    TASK_DECOMPOSE_GROUPED_PROMPT,
     TASK_DECOMPOSE_PROMPT,
     TASK_EVOLVE_PROMPT,
 )
@@ -202,6 +203,139 @@ def parse_response(
     return tasks
 
 
+def parse_response_grouped(
+    response: str, task_id: Optional[str] = None
+) -> List["Task"]:
+    r"""Parse Tasks from a response.
+
+    Args:
+        response (str): The model response.
+        task_id (str, optional): a parent task id,
+            the default value is "0"
+
+    Returns:
+        List[Task]: A list of tasks which is :obj:`Task` instance.
+    """
+    if task_id is None:
+        task_id = "0"
+
+    # Extract <tasks>...</tasks> in case response contains extra text around it.
+    m = re.search(
+        r"<tasks\b[^>]*>.*?</tasks>", response, re.DOTALL | re.IGNORECASE
+    )
+    if not m:
+        raise ValueError(
+            "Invalid response: missing <tasks>...</tasks> root element."
+        )
+
+    xml_text = m.group(0)
+
+    import xml.etree.ElementTree as ET
+
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as e:
+        raise ValueError(f"Invalid XML in response: {e}") from e
+
+    if root.tag != "tasks":
+        raise ValueError(
+            f"Invalid response: root element must be <tasks>, got <{root.tag}>."
+        )
+
+    task_groups_xml = root.findall("./task_group")
+    if not task_groups_xml:
+        raise ValueError(
+            "Invalid response: <tasks> must contain at least one <task_group>."
+        )
+
+    tasks: List["Task"] = []
+
+    for g_idx, tg_elem in enumerate(task_groups_xml, start=1):
+        # Enforce children of <task_group>: exactly one <summary> then one-or-more <task>
+        children = list(tg_elem)
+
+        if not children:
+            raise ValueError(
+                f"Invalid response: <task_group> #{g_idx} is empty."
+            )
+
+        # First child must be <summary>
+        if children[0].tag != "summary":
+            raise ValueError(
+                f"Invalid response: <task_group> #{g_idx} must start with <summary>."
+            )
+
+        summary_elems = tg_elem.findall("./summary")
+        if len(summary_elems) != 1:
+            raise ValueError(
+                f"Invalid response: <task_group> #{g_idx} must contain exactly one <summary>, got {len(summary_elems)}."
+            )
+
+        summary_elem = summary_elems[0]
+        if list(summary_elem):
+            raise ValueError(
+                f"Invalid response: <summary> in group {g_idx} contains nested XML elements."
+            )
+        summary_text = (summary_elem.text or "").strip()
+        if not summary_text:
+            raise ValueError(
+                f"Invalid response: <summary> in group {g_idx} is empty."
+            )
+
+        # All children must be either <summary> or <task>
+        for child in children:
+            if child.tag not in ("summary", "task"):
+                raise ValueError(
+                    f"Invalid response: <task_group> #{g_idx} contains <{child.tag}>; "
+                    "only <summary> and <task> children are allowed."
+                )
+
+        # <summary> must appear before any <task>
+        seen_task = False
+        for child in children:
+            if child.tag == "task":
+                seen_task = True
+            elif child.tag == "summary" and seen_task:
+                raise ValueError(
+                    f"Invalid response: <summary> in group {g_idx} must appear before all <task> elements."
+                )
+
+        task_elems = tg_elem.findall("./task")
+        if not task_elems:
+            raise ValueError(
+                f"Invalid response: <task_group> #{g_idx} contains no <task> elements."
+            )
+
+        group = TaskGroup(id=f"{task_id}.{g_idx}", content=summary_text)
+
+        for t_idx, task_elem in enumerate(task_elems, start=1):
+            # Enforce that <task> contains only plain text (no nested XML)
+            if list(task_elem):
+                raise ValueError(
+                    f"Invalid response: <task> in group {g_idx} task {t_idx} contains nested XML elements."
+                )
+
+            content = (task_elem.text or "").strip()
+            task_full_id = f"{task_id}.{g_idx}.{t_idx}"
+
+            if validate_task_content(content, task_full_id):
+                task = Task(content=content, id=task_full_id)
+                group.add_task(task)  # also sets task.set_group(group)
+                tasks.append(task)
+            else:
+                logger.warning(
+                    f"Skipping invalid subtask {task_full_id} during decomposition: "
+                    f"Content '{content}' failed validation"
+                )
+
+        if not group.get_tasks():
+            raise ValueError(
+                f"Invalid response: <task_group> #{g_idx} has no valid <task> after validation."
+            )
+
+    return tasks
+
+
 class TaskState(str, Enum):
     OPEN = "OPEN"
     RUNNING = "RUNNING"
@@ -284,6 +418,8 @@ class Task(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    group: Optional["TaskGroup"] = None
+
     def __repr__(self) -> str:
         r"""Return a string representation of the task."""
         content_preview = self.content
@@ -347,6 +483,21 @@ class Task(BaseModel):
                     subtask.set_state(state)
         elif state == TaskState.RUNNING and self.parent:
             self.parent.set_state(state)
+
+    def set_group(self, group: Optional["TaskGroup"]):
+        r"""Set the group of the task.
+
+        Args:
+            group (TaskGroup): The group to be set.
+        """
+        if group is None:
+            self.group = None
+            return
+
+        self.group = group
+        # if the task is not in the group, add it to the group
+        if self not in group.get_tasks():
+            group.add_task(self)
 
     def add_subtask(self, task: "Task"):
         r"""Add a subtask to the current task.
@@ -439,6 +590,69 @@ class Task(BaseModel):
 
         role_name = agent.role_name
         content = prompt or TASK_DECOMPOSE_PROMPT.format(
+            role_name=role_name,
+            content=self.content,
+        )
+        msg = BaseMessage.make_user_message(
+            role_name=role_name, content=content
+        )
+        response = agent.step(msg)
+
+        # Auto-detect streaming based on response type
+        from camel.agents.chat_agent import StreamingChatAgentResponse
+
+        is_streaming = isinstance(
+            response, StreamingChatAgentResponse
+        ) or isinstance(response, GeneratorType)
+        if (
+            not is_streaming
+            and hasattr(response, "__iter__")
+            and not hasattr(response, "msg")
+        ):
+            is_streaming = True
+
+        if is_streaming:
+            return self._decompose_streaming(
+                response, task_parser, stream_callback=stream_callback
+            )
+        return self._decompose_non_streaming(response, task_parser)
+
+    def decompose_grouped(
+        self,
+        agent: "ChatAgent",
+        prompt: Optional[str] = None,
+        task_parser: Callable[
+            [str, str], List["Task"]
+        ] = parse_response_grouped,
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], None]
+        ] = None,
+    ) -> Union[List["Task"], Generator[List["Task"], None, None]]:
+        r"""Decompose a task to a list of sub-tasks grouped into task groups.
+        Automatically detects streaming or non-streaming based on
+        agent configuration.
+
+        Args:
+            agent (ChatAgent): An agent that used to decompose the task.
+            prompt (str, optional): A prompt to decompose the task. If not
+                provided, the default prompt will be used.
+            task_parser (Callable[[str, str], List[Task]], optional): A
+                function to extract Task from response. If not provided,
+                the default parse_response_grouped will be used.
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming. This allows tracking the decomposition
+                progress in real-time.
+
+        Returns:
+            Union[List[Task], Generator[List[Task], None, None]]: If agent is
+                configured for streaming, returns a generator that yields lists
+                of new tasks as they are parsed. Otherwise returns a list of
+                all tasks.
+        """
+
+        role_name = agent.role_name
+        content = prompt or TASK_DECOMPOSE_GROUPED_PROMPT.format(
             role_name=role_name,
             content=self.content,
         )
@@ -767,3 +981,53 @@ class TaskManager:
         if tasks:
             return tasks[0]
         return None
+
+
+class TaskGroup(BaseModel):
+    r"""TaskGroup is a group of tasks that are related to each other.
+
+    Attributes:
+        id (str): The id of the task group.
+        name (str): The name of the task group.
+        tasks (List[Task]): The tasks in the task group.
+    """
+
+    content: Optional[str] = None
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+
+    tasks: List[Task] = []
+
+    def set_id(self, id: str):
+        r"""Set the id of the task group.
+
+        Args:
+            id (str): The id of the task group.
+        """
+        self.id = id
+
+    def add_task(self, task: Task):
+        r"""Add a task to the task group.
+
+        Args:
+            task (Task): The task to be added.
+        """
+        if task in self.tasks:
+            return
+        self.tasks.append(task)
+        task.set_group(self)
+
+    def remove_task(self, task: Task):
+        r"""Remove a task from the task group.
+
+        Args:
+            task (Task): The task to be removed.
+        """
+        if task not in self.tasks:
+            return
+        self.tasks.remove(task)
+        task.set_group(None)
+
+    def get_tasks(self) -> List[Task]:
+        r"""Get the tasks in the task group."""
+        return self.tasks

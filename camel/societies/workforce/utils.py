@@ -166,6 +166,22 @@ class QualityEvaluation(BaseModel):
     )
 
 
+class TaskGroupAssignment(BaseModel):
+    r"""An individual task group assignment within within a batch."""
+
+    task_group_id: str = Field(
+        description="The ID of the task group to be assigned."
+    )
+    assignee_id: str = Field(
+        description="The ID of the worker/workforce to assign the task to."
+    )
+    dependencies: List[List[str]] = Field(
+        default_factory=list,
+        description="List of dependency descriptors. Each descriptor is a 2-element array of the form: "
+        "['<task_group_id>', '<mode>'], where '<mode>' is one of 'ALL' or 'ANY'.",
+    )
+
+
 class TaskAssignment(BaseModel):
     r"""An individual task assignment within a batch."""
 
@@ -204,6 +220,15 @@ class TaskAssignResult(BaseModel):
     assignments."""
 
     assignments: List[TaskAssignment] = Field(
+        description="List of task assignments."
+    )
+
+
+class TaskGroupAssignResult(BaseModel):
+    r"""The result of task assignment for both single and batch
+    assignments."""
+
+    assignments: List[TaskGroupAssignment] = Field(
         description="List of task assignments."
     )
 
