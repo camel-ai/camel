@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import os
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
@@ -408,6 +409,38 @@ class ACIToolkit(BaseToolkit):
         )
         return result
 
+    async def aexecute_function(
+        self,
+        function_name: str,
+        function_arguments: Dict,
+        linked_account_owner_id: str,
+        allowed_apps_only: bool = False,
+    ) -> Dict:
+        r"""Execute a function call asynchronously.
+
+        Args:
+            function_name (str): Name of the function to execute.
+            function_arguments (Dict): Arguments to pass to the function.
+            linked_account_owner_id (str): To specify the end-user (account
+                owner) on behalf of whom you want to execute functions
+                You need to first link corresponding account with the same
+                owner id in the ACI dashboard (https://platform.aci.dev).
+            allowed_apps_only (bool): If true, only returns functions/apps
+                that are allowed to be used by the agent/accessor, identified
+                by the api key. (default: :obj:`False`)
+
+        Returns:
+            Dict: Result of the function execution
+        """
+        result = await asyncio.to_thread(
+            self.client.handle_function_call,
+            function_name,
+            function_arguments,
+            linked_account_owner_id,
+            allowed_apps_only,
+        )
+        return result
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Get a list of tools (functions) available in the configured apps.
 
@@ -434,6 +467,8 @@ class ACIToolkit(BaseToolkit):
             FunctionTool(self.delete_linked_account),
             FunctionTool(self.function_definition),
             FunctionTool(self.search_function),
+            FunctionTool(self.execute_function),
+            FunctionTool(self.aexecute_function),
         ]
 
         for function in _all_function:
@@ -447,6 +482,16 @@ class ACIToolkit(BaseToolkit):
                     function_arguments=kwargs,
                     linked_account_owner_id=self.linked_account_owner_id,
                 )
+
+            async def async_dummy_func(*, schema=schema, **kwargs):
+                return await self.aexecute_function(
+                    function_name=schema['function']['name'],
+                    function_arguments=kwargs,
+                    linked_account_owner_id=self.linked_account_owner_id,
+                )
+
+            # Add async_call method to the sync function for compatibility
+            dummy_func.async_call = async_dummy_func  # type: ignore[attr-defined]
 
             tool = FunctionTool(
                 func=dummy_func,

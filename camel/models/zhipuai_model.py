@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,18 +10,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from camel.configs import ZHIPUAI_API_PARAMS, ZhipuAIConfig
+from pydantic import BaseModel
+
+from camel.configs import ZhipuAIConfig
+from camel.logger import get_logger
+from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import (
+    ChatCompletion,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
+
+logger = get_logger(__name__)
 
 
 class ZhipuAIModel(OpenAICompatibleModel):
@@ -86,17 +96,51 @@ class ZhipuAIModel(OpenAICompatibleModel):
             **kwargs,
         )
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
 
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to ZhipuAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in ZHIPUAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into ZhipuAI model backend."
-                )
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise

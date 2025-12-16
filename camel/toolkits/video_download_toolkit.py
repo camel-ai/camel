@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
@@ -62,7 +62,7 @@ class VideoDownloaderToolkit(BaseToolkit):
     chunks.
 
     Args:
-        download_directory (Optional[str], optional): The directory where the
+        working_directory (Optional[str], optional): The directory where the
             video will be downloaded to. If not provided, video will be stored
             in a temporary directory and will be cleaned up after use.
             (default: :obj:`None`)
@@ -73,30 +73,30 @@ class VideoDownloaderToolkit(BaseToolkit):
     @dependencies_required("yt_dlp", "ffmpeg")
     def __init__(
         self,
-        download_directory: Optional[str] = None,
+        working_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
-        self._cleanup = download_directory is None
+        self._cleanup = working_directory is None
         self._cookies_path = cookies_path
 
-        self._download_directory = Path(
-            download_directory or tempfile.mkdtemp()
+        self._working_directory = Path(
+            working_directory or tempfile.mkdtemp()
         ).resolve()
 
         try:
-            self._download_directory.mkdir(parents=True, exist_ok=True)
+            self._working_directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
             raise ValueError(
-                f"{self._download_directory} is not a valid directory."
+                f"{self._working_directory} is not a valid directory."
             )
         except OSError as e:
             raise ValueError(
-                f"Error creating directory {self._download_directory}: {e}"
+                f"Error creating directory {self._working_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded to {self._working_directory}")
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -111,7 +111,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
 
-                    shutil.rmtree(self._download_directory, ignore_errors=True)
+                    shutil.rmtree(self._working_directory, ignore_errors=True)
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down
                 pass
@@ -130,7 +130,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         import yt_dlp
 
-        video_template = self._download_directory / "%(title)s.%(ext)s"
+        video_template = self._working_directory / "%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),

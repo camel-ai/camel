@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import warnings
 from typing import List
 
 from camel.toolkits.base import BaseToolkit
@@ -27,7 +28,7 @@ class MathToolkit(BaseToolkit):
     addition, subtraction, multiplication, division, and rounding.
     """
 
-    def add(self, a: float, b: float) -> float:
+    def math_add(self, a: float, b: float) -> float:
         r"""Adds two numbers.
 
         Args:
@@ -39,7 +40,7 @@ class MathToolkit(BaseToolkit):
         """
         return a + b
 
-    def sub(self, a: float, b: float) -> float:
+    def math_subtract(self, a: float, b: float) -> float:
         r"""Do subtraction between two numbers.
 
         Args:
@@ -51,7 +52,9 @@ class MathToolkit(BaseToolkit):
         """
         return a - b
 
-    def multiply(self, a: float, b: float, decimal_places: int = 2) -> float:
+    def math_multiply(
+        self, a: float, b: float, decimal_places: int = 2
+    ) -> float:
         r"""Multiplies two numbers.
 
         Args:
@@ -65,7 +68,9 @@ class MathToolkit(BaseToolkit):
         """
         return round(a * b, decimal_places)
 
-    def divide(self, a: float, b: float, decimal_places: int = 2) -> float:
+    def math_divide(
+        self, a: float, b: float, decimal_places: int = 2
+    ) -> float:
         r"""Divides two numbers.
 
         Args:
@@ -79,7 +84,7 @@ class MathToolkit(BaseToolkit):
         """
         return round(a / b, decimal_places)
 
-    def round(self, a: float, decimal_places: int = 0) -> float:
+    def math_round(self, a: float, decimal_places: int = 0) -> float:
         r"""Rounds a number to a specified number of decimal places.
 
         Args:
@@ -101,9 +106,58 @@ class MathToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.add),
-            FunctionTool(self.sub),
-            FunctionTool(self.multiply),
-            FunctionTool(self.divide),
-            FunctionTool(self.round),
+            FunctionTool(self.math_add),
+            FunctionTool(self.math_subtract),
+            FunctionTool(self.math_multiply),
+            FunctionTool(self.math_divide),
+            FunctionTool(self.math_round),
         ]
+
+    # Deprecated method aliases for backward compatibility
+    def add(self, *args, **kwargs):
+        r"""Deprecated: Use math_add instead."""
+        warnings.warn(
+            "add is deprecated. Use math_add instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.math_add(*args, **kwargs)
+
+    def sub(self, *args, **kwargs):
+        r"""Deprecated: Use math_subtract instead."""
+        warnings.warn(
+            "sub is deprecated. Use math_subtract instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.math_subtract(*args, **kwargs)
+
+    def multiply(self, *args, **kwargs):
+        r"""Deprecated: Use math_multiply instead."""
+        warnings.warn(
+            "multiply is deprecated. Use math_multiply instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.math_multiply(*args, **kwargs)
+
+    def divide(self, *args, **kwargs):
+        r"""Deprecated: Use math_divide instead."""
+        warnings.warn(
+            "divide is deprecated. Use math_divide instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.math_divide(*args, **kwargs)
+
+    def round(self, *args, **kwargs):
+        r"""Deprecated: Use math_round instead. Note: This was shadowing
+        Python's built-in round().
+        """
+        warnings.warn(
+            "round is deprecated. Use math_round instead. This was "
+            "shadowing Python's built-in round().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.math_round(*args, **kwargs)

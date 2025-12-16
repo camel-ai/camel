@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -27,7 +27,6 @@ def main():
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
@@ -71,5 +70,5 @@ if __name__ == "__main__":
 Output:
 The video game "Portal" was released in 2007 as part of a bundle called The Orange Box for Windows, Xbox 360, and PlayStation 3.
 
-ChatCompletionMessageToolCall(id='call_U5Xju7vYtAQAEW4D1M8R1kgs', function=Function(arguments='{"a": 2007, "b": 1776}', name='sub'), type='function')
+ChatCompletionMessageFunctionToolCall(id='call_U5Xju7vYtAQAEW4D1M8R1kgs', function=Function(arguments='{"a": 2007, "b": 1776}', name='sub'), type='function')
 """

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,14 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import logging
-import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import FileWriteToolkit, HybridBrowserToolkit
+from camel.toolkits import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logging.basicConfig(
@@ -59,15 +58,20 @@ model_backend = ModelFactory.create(
 
 # Example 3: Use custom tools selection
 custom_tools = [
-    "open_browser",
-    "close_browser",
-    "visit_page",
-    "click",
-    "type",
-    "back",
-    "forward",
-    "switch_tab",
-    "enter",
+    "browser_open",
+    "browser_close",
+    "browser_visit_page",
+    "browser_back",
+    "browser_forward",
+    "browser_click",
+    "browser_type",
+    "browser_switch_tab",
+    "browser_enter",
+    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    # "browser_press_key",
+    # "browser_console_view",
+    # "browser_console_exec",
+    # "browser_mouse_drag",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
@@ -76,64 +80,43 @@ web_toolkit_custom = HybridBrowserToolkit(
     enabled_tools=custom_tools,
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
+    viewport_limit=True,
+    # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
-output_dir = "./file_write_outputs"
-os.makedirs(output_dir, exist_ok=True)
-
-# Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(working_directory=output_dir)
-
-# Get the tools from the toolkit
-tools_list = file_toolkit.get_tools()
-
 # Use the custom toolkit for the actual task
 agent = ChatAgent(
     model=model_backend,
-    tools=[*web_toolkit_custom.get_tools(), *file_toolkit.get_tools()],
+    tools=[*web_toolkit_custom.get_tools()],
+    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant 
+Use Google Search to search for news in Munich today, and click on relevant
 websites to get the news and write it in markdown.
 
-I mean you need to browse multiple websites. After visiting each website, 
-write the news in markdown, then return to the Google search results page 
-and click on other websites.
-
-If you encounter "snapshot": "snapshot not changed" when clicking, it might 
-be because you've clicked on plain text that doesn't lead to another page. 
-Don't be discouraged—keep trying to click on different links (but do not 
-click the same reference more than once). 
+I mean you need to browse multiple websites. After visiting each website,
+return to the Google search results page and click on other websites.
 
 Use enter to confirm search or input.
+If you see a cookie page, click accept all.
 """
 
 
 async def main() -> None:
-    response = await agent.astep(TASK_PROMPT)
-    print("Task:", TASK_PROMPT)
-    print(f"Using user data directory: {USER_DATA_DIR}")
-    print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
-    print("\nResponse from agent:")
-    print(response.msgs[0].content if response.msgs else "<no response>")
-
-    # Ensure proper cleanup
     try:
-        await web_toolkit_custom.close_browser()
-        # Close all browser sessions to ensure complete cleanup
-        from camel.toolkits.hybrid_browser_toolkit.browser_session import (
-            HybridBrowserSession,
-        )
-
-        await HybridBrowserSession.close_all_sessions()
-        # Give Playwright time to fully shut down subprocesses
-        await asyncio.sleep(0.5)
-    except Exception as err:
-        logging.warning(
-            "Failed to close " "browser session explicitly: %s", err
-        )
+        response = await agent.astep(TASK_PROMPT)
+        print("Task:", TASK_PROMPT)
+        print(f"Using user data directory: {USER_DATA_DIR}")
+        print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
+        print("\nResponse from agent:")
+        print(response.msgs[0].content if response.msgs else "<no response>")
+    finally:
+        # Ensure browser is closed properly
+        print("\nClosing browser...")
+        await web_toolkit_custom.browser_close()
+        print("Browser closed successfully.")
 
 
 if __name__ == "__main__":

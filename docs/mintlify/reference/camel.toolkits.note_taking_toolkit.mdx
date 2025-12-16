@@ -92,25 +92,33 @@ Register a new note in the registry with thread-safe operations.
 ### create_note
 
 ```python
-def create_note(self, note_name: str, content: str = ''):
+def create_note(
+    self,
+    note_name: str,
+    content: str,
+    overwrite: bool = False
+):
 ```
 
 Creates a new note with a unique name.
 
 This function will create a new file for your note.
-You must provide a `note_name` that does not already exist. If you want
-to add content to an existing note, use the `append_note` function
-instead.
+By default, you must provide a `note_name` that does not already exist.
+If you want to add content to an existing note, use the `append_note`
+function instead. If you want to overwrite an existing note, set
+`overwrite=True`.
 
 **Parameters:**
 
-- **note_name** (str): The name for your new note (without the .md extension). This name must be unique.
-- **content** (str, optional): The initial content to write in the note. If not provided, an empty note will be created. Defaults to "".
+- **note_name** (str): The name for your new note (without the .md extension). This name must be unique unless overwrite is True.
+- **content** (str): The initial content to write in the note.
+- **overwrite** (bool): Whether to overwrite an existing note. Defaults to False.
 
 **Returns:**
 
   str: A message confirming the creation of the note or an error if
-the note name is not valid or already exists.
+the note name is not valid or already exists
+(when overwrite=False).
 
 <a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.list_note"></a>
 

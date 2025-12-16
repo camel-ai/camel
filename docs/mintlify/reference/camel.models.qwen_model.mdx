@@ -37,36 +37,3 @@ def __init__(
     **kwargs: Any
 ):
 ```
-
-<a id="camel.models.qwen_model.QwenModel._post_handle_response"></a>
-
-### _post_handle_response
-
-```python
-def _post_handle_response(
-    self,
-    response: Union[ChatCompletion, Stream[ChatCompletionChunk]]
-):
-```
-
-Handle reasoning content with `<think>` tags at the beginning.
-
-<a id="camel.models.qwen_model.QwenModel._request_chat_completion"></a>
-
-### _request_chat_completion
-
-```python
-def _request_chat_completion(
-    self,
-    messages: List[OpenAIMessage],
-    tools: Optional[List[Dict[str, Any]]] = None
-):
-```
-
-<a id="camel.models.qwen_model.QwenModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```

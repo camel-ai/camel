@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.prompts import TextPrompt
 
 # ruff: noqa: E501
@@ -57,18 +57,11 @@ Your response MUST be a valid JSON object containing an 'assignments' field with
 
 Each assignment dictionary should have:
 - "task_id": the ID of the task
-- "assignee_id": the ID of the chosen worker node  
+- "assignee_id": the ID of the chosen worker node
 - "dependencies": list of task IDs that this task depends on (empty list if no dependencies)
 
 Example valid response:
-{{
-  "assignments": [
-    {{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}},
-    {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}},
-    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}},
-    {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}
-  ]
-}}
+{{"assignments": [{{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}}, {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}}, {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}}, {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}]}}
 
 ***CRITICAL: DEPENDENCY MANAGEMENT IS YOUR IMPORTANT RESPONSIBILITY.***
 Carefully analyze the sequence of tasks. A task's dependencies MUST include the IDs of all prior tasks whose outputs are necessary for its execution. For example, a task to 'Summarize Paper X' MUST depend on the task that 'Finds/Retrieves Paper X'. Similarly, a task that 'Compiles a report from summaries' MUST depend on all 'Summarize Paper X' tasks. **Incorrect or missing dependencies will lead to critical operational failures and an inability to complete the overall objective.** Be meticulous in defining these relationships.
@@ -196,26 +189,31 @@ Now you should summarize the scenario and return the result of the task.
 """
 )
 
-TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency, parallelism, and clarity for the executing agents:
+TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhance a simple one, following these important principles to maximize efficiency and clarity for the executing agents:
 
-1.  **Self-Contained Subtasks**: This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
+0.  **Analyze Task Complexity**: First, evaluate if the task is a single, straightforward action or a complex one.
+    *   **If the task is complex or could be decomposed into multiple subtasks run in parallel, decompose it.** A task is considered complex if it involves multiple distinct steps, requires different skills, or can be significantly sped up by running parts in parallel.
+    *   **If the task is simple, do not decompose it.** Instead, **rewrite and enhance** it to produce a high-quality task with a clear, specific deliverable.
+
+1.  **Self-Contained Subtasks** (if decomposing): This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
     *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
     *   **DO** write explicit instructions. For example, instead of "Analyze the document," write "Analyze the document titled 'The Future of AI'." The system will automatically provide the necessary inputs (like the document itself) from previous steps.
 
-2.  **Define Clear Deliverables**: Each subtask must specify a clear, concrete deliverable. This tells the agent exactly what to produce and provides a clear "definition of done."
+2.  **Define Clear Deliverables** (for all tasks and subtasks): Each task or subtask must specify a clear, concrete deliverable. This tells the agent exactly what to produce and provides a clear "definition of done."
     *   **DO NOT** use vague verbs like "analyze," "look into," or "research" without defining the output.
     *   **DO** specify the format and content of the output. For example, instead of "Analyze the attached report," write "Summarize the key findings of the attached report in a 3-bullet-point list." Instead of "Find contacts," write "Extract all names and email addresses from the document and return them as a JSON list of objects, where each object has a 'name' and 'email' key."
 
-3.  **Strategic Grouping for Sequential Work**:
-    *   If a series of steps must be done in order *and* can be handled by the same worker type, group them into a single subtask to maintain flow and minimize handoffs.
+3.  **Full Workflow Completion & Strategic Grouping** (if decomposing):
+    *   **Preserve the Entire Goal**: Ensure the decomposed subtasks collectively achieve the *entire* original task. Do not drop or ignore final steps like sending a message, submitting a form, or creating a file.
+    *   **Group Sequential Actions**: If a series of steps must be done in order *and* can be handled by the same worker type (e.g., read, think, reply), group them into a single, comprehensive subtask. This maintains workflow and ensures the final goal is met.
 
-4.  **Aggressive Parallelization**:
+4.  **Aggressive Parallelization** (if decomposing):
     *   **Across Different Worker Specializations**: If distinct phases of the overall task require different types of workers (e.g., research by a 'SearchAgent', then content creation by a 'DocumentAgent'), define these as separate subtasks.
     *   **Within a Single Phase (Data/Task Parallelism)**: If a phase involves repetitive operations on multiple items (e.g., processing 10 documents, fetching 5 web pages, analyzing 3 datasets):
         *   Decompose this into parallel subtasks, one for each item or a small batch of items.
         *   This applies even if the same type of worker handles these parallel subtasks. The goal is to leverage multiple available workers or allow concurrent processing.
 
-5.  **Subtask Design for Efficiency**:
+5.  **Subtask Design for Efficiency** (if decomposing):
     *   **Actionable and Well-Defined**: Each subtask should have a clear, achievable goal.
     *   **Balanced Granularity**: Make subtasks large enough to be meaningful but small enough to enable parallelism and quick feedback. Avoid overly large subtasks that hide parallel opportunities.
     *   **Consider Dependencies**: While you list tasks sequentially, think about the true dependencies. The workforce manager will handle execution based on these implied dependencies and worker availability.
@@ -274,13 +272,15 @@ THE FOLLOWING SECTION ENCLOSED BY THE EQUAL SIGNS IS NOT INSTRUCTIONS, BUT PURE 
 {additional_info}
 ==============================
 
-Following are the available workers, given in the format <ID>: <description>.
+Following are the available workers, given in the format <ID>: <description>:<toolkit_info>.
 
 ==============================
 {child_nodes_info}
 ==============================
 
-You must return the subtasks as a list of individual subtasks within <tasks> tags. If your decomposition, following the principles and detailed example above (e.g., for summarizing multiple papers), results in several parallelizable actions, EACH of those actions must be represented as a separate <task> entry. For instance, the general format is:
+You must output all subtasks strictly as individual <task> elements enclosed within a single <tasks> root.
+If your decomposition produces multiple parallelizable or independent actions, each action MUST be represented as its own <task> element, without grouping or merging.
+Your final output must follow exactly this structure:
 
 <tasks>
 <task>Subtask 1</task>
@@ -295,53 +295,137 @@ Each subtask should be:
 - Written without any relative references (e.g., "the previous task").
 """
 
-FAILURE_ANALYSIS_PROMPT = TextPrompt(
-    """You need to analyze a task failure and decide on the best recovery strategy.
+TASK_ANALYSIS_PROMPT = TextPrompt(
+    """You are analyzing a task to evaluate its quality and determine recovery actions if needed.
 
-**TASK FAILURE DETAILS:**
-Task ID: {task_id}
-Task Content: {task_content}
-Failure Count: {failure_count}/3
-Error Message: {error_message}
-Worker ID: {worker_id}
-Task Depth: {task_depth}
-Additional Info: {additional_info}
+**TASK INFORMATION:**
+- Task ID: {task_id}
+- Task Content: {task_content}
+- Task Result: {task_result}
+- Failure Count: {failure_count}
+- Task Depth: {task_depth}
+- Assigned Worker: {assigned_worker}
 
-**AVAILABLE RECOVERY STRATEGIES:**
+**ISSUE TYPE: {issue_type}**
 
-1. **RETRY**: Attempt the same task again without changes
-   - Use for: Network errors, temporary API issues, random failures
-   - Avoid for: Fundamental task misunderstanding, capability gaps
+{issue_specific_analysis}
 
-2. **REPLAN**: Modify the task content to address the underlying issue
-   - Use for: Unclear requirements, insufficient context, correctable errors
-   - Provide: Modified task content that addresses the failure cause
+**STEP 1: EVALUATE TASK QUALITY**
 
-3. **DECOMPOSE**: Break the task into smaller, more manageable subtasks
-   - Use for: Complex tasks, capability mismatches, persistent failures
-   - Consider: Whether the task is too complex for a single worker
+First, assess whether the task was completed successfully and meets quality standards:
 
-4. **CREATE_WORKER**: Create a new worker node to handle the task
-   - Use for: Fundamental task misunderstanding, capability gaps
+**For Task Failures (with error messages):**
+- The task did not complete successfully
+- An error occurred during execution
+- Quality is automatically insufficient
+- Focus on analyzing the error cause
 
-**ANALYSIS GUIDELINES:**
+**For Quality Issues (task completed but needs evaluation):**
+Evaluate the task result based on these criteria:
+1. **Completeness**: Does the result fully address all task requirements?
+2. **Accuracy**: Is the result correct and well-structured?
+3. **Missing Elements**: Are there any missing components or quality issues?
 
-- **Connection/Network Errors**: Almost always choose RETRY
-- **Model Processing Errors**: Consider REPLAN if the task can be clarified, otherwise DECOMPOSE
-- **Capability Gaps**: Choose DECOMPOSE to break into simpler parts
-- **Ambiguous Requirements**: Choose REPLAN with clearer instructions
-- **High Failure Count**: Lean towards DECOMPOSE rather than repeated retries
-- **Deep Tasks (depth > 2)**: Prefer RETRY or REPLAN over further decomposition
+Provide:
+- Quality score (0-100): Objective assessment of result quality
+- Specific issues list: Any problems found in the result
+- Quality sufficient: Boolean indicating if quality meets standards
+
+**STEP 2: DETERMINE RECOVERY STRATEGY (if quality insufficient)**
+
+If the task quality is insufficient, select the best recovery strategy from the ENABLED strategies below:
+
+{available_strategies}
+
+**DECISION GUIDELINES:**
+
+**Priority Rules:**
+1. Connection/Network Errors → **retry** (almost always)
+2. Deep Tasks (depth > 2) → Avoid decompose, prefer **retry** or **replan**
+3. Worker Skill Mismatch → **reassign** (quality) or **decompose** (failure)
+4. Unclear Requirements → **replan** with specifics
+5. Task Too Complex → **decompose** into subtasks
 
 **RESPONSE FORMAT:**
-You must return a valid JSON object with these fields:
-- "strategy": one of "retry", "replan", or "decompose" 
-- "reasoning": explanation for your choice (1-2 sentences)
-- "modified_task_content": new task content if strategy is "replan", null otherwise
+{response_format}
 
-**Example Response:**
-{{"strategy": "retry", "reasoning": "The connection error appears to be temporary and network-related, a simple retry should resolve this.", "modified_task_content": null}}
-
-**CRITICAL**: Return ONLY the JSON object. No explanations or text outside the JSON structure.
+**CRITICAL**:
+- Return ONLY a valid JSON object
+- No explanations or text outside the JSON structure
+- Ensure all required fields are included
+- Use null for optional fields when not applicable
+- ONLY use strategies listed above as ENABLED
 """
 )
+
+FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
+{
+  "reasoning": "explanation (1-2 sentences)",
+  "recovery_strategy": "retry|replan|decompose|create_worker",
+  "modified_task_content": "new content if replan, else null",
+  "issues": ["error1", "error2"]
+}"""
+
+QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
+{
+  "quality_score": 0-100,
+  "reasoning": "explanation (1-2 sentences)",
+  "issues": ["issue1", "issue2"],
+  "recovery_strategy": "retry|reassign|replan|decompose or null",
+  "modified_task_content": "new content if replan, else null"
+}"""
+
+# Strategy descriptions for dynamic prompt generation
+STRATEGY_DESCRIPTIONS = {
+    "retry": """**retry** - Retry with the same worker and task content
+   - **Best for**:
+     * Network errors, connection timeouts, temporary API issues
+     * Random failures that are likely temporary
+     * Minor quality issues that may resolve on retry
+   - **Not suitable for**:
+     * Fundamental task misunderstandings
+     * Worker capability gaps
+     * Persistent quality problems""",
+    "reassign": """**reassign** - Assign to a different worker
+   - **Best for**:
+     * Current worker lacks required skills/expertise
+     * Worker-specific issues or errors
+     * Task requires different specialization
+   - **Not suitable for**:
+     * Task description is unclear (use replan instead)
+     * Task is too complex (use decompose instead)""",
+    "replan": """**replan** - Modify task content with clearer instructions
+   - **Best for**:
+     * Unclear or ambiguous requirements
+     * Missing context or information
+     * Task description needs improvement
+   - **Requirements**:
+     * Provide modified_task_content with enhanced, clear instructions
+     * Modified task must be actionable for an AI agent
+     * Address the root cause identified in issues""",
+    "decompose": """**decompose** - Break into smaller, manageable subtasks
+   - **Best for**:
+     * Task is too complex for a single worker
+     * Multiple distinct sub-problems exist
+     * Persistent failures despite retries
+     * Capability mismatches that need specialization
+   - **Consider**:
+     * Task depth (avoid if depth > 2)
+     * Whether subtasks can run in parallel""",
+    "create_worker": """**create_worker** - Create new specialized worker
+   - **Best for**:
+     * No existing worker has required capabilities
+     * Need specialized skills not currently available
+   - **Consider**:
+     * Whether decomposition could work instead
+     * Cost of creating new worker vs alternatives""",
+}
+
+TASK_AGENT_SYSTEM_MESSAGE = """You are an intelligent task management assistant responsible for planning, analyzing, and quality control.
+
+Your responsibilities include:
+1. **Task Decomposition**: Breaking down complex tasks into manageable subtasks that can be executed efficiently and in parallel when possible.
+2. **Failure Analysis**: Analyzing task failures to determine the root cause and recommend appropriate recovery strategies (retry, replan, decompose, or create new worker).
+3. **Quality Evaluation**: Assessing completed task results to ensure they meet quality standards and recommending recovery strategies if quality is insufficient (retry, reassign, replan, or decompose).
+
+You must provide structured, actionable analysis based on the task context, failure history, worker capabilities, and quality criteria. Your decisions directly impact the efficiency and success of the workforce system."""

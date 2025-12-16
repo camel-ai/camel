@@ -47,7 +47,88 @@ def _process_messages(self, messages):
 ```
 
 Process the messages for Gemini API to ensure no empty content,
-which is not accepted by Gemini.
+which is not accepted by Gemini. Also preserves thought signatures
+required for Gemini 3 Pro function calling.
+
+This method also merges consecutive assistant messages with single
+tool calls into a single assistant message with multiple tool calls,
+as required by Gemini's OpenAI-compatible API for parallel function
+calling.
+
+<a id="camel.models.gemini_model.GeminiModel._preserve_thought_signatures"></a>
+
+### _preserve_thought_signatures
+
+```python
+def _preserve_thought_signatures(
+    self,
+    response: Union[ChatCompletion, Stream[ChatCompletionChunk], AsyncStream[ChatCompletionChunk]]
+):
+```
+
+Preserve thought signatures from Gemini responses for future
+requests.
+
+According to the Gemini documentation, when a response contains tool
+calls with thought signatures, these signatures must be preserved
+exactly as received when the response is added to conversation history
+for subsequent requests.
+
+**Parameters:**
+
+- **response**: The response from Gemini API
+
+**Returns:**
+
+  The response with thought signatures properly preserved.
+For streaming responses, returns generators that preserve
+signatures.
+
+<a id="camel.models.gemini_model.GeminiModel._wrap_stream_with_thought_preservation"></a>
+
+### _wrap_stream_with_thought_preservation
+
+```python
+def _wrap_stream_with_thought_preservation(self, stream: Stream[ChatCompletionChunk]):
+```
+
+Wrap a streaming response to preserve thought signatures in tool
+calls.
+
+This method ensures that when Gemini streaming responses contain tool
+calls with thought signatures, these are properly preserved in the
+extra_content field for future conversation context.
+
+**Parameters:**
+
+- **stream**: The original streaming response from Gemini
+
+**Returns:**
+
+  A wrapped stream that preserves thought signatures
+
+<a id="camel.models.gemini_model.GeminiModel._wrap_async_stream_with_thought_preservation"></a>
+
+### _wrap_async_stream_with_thought_preservation
+
+```python
+def _wrap_async_stream_with_thought_preservation(self, stream: AsyncStream[ChatCompletionChunk]):
+```
+
+Wrap an async streaming response to preserve thought signatures in
+tool calls.
+
+This method ensures that when Gemini async streaming responses contain
+tool calls with thought signatures, these are properly preserved in
+the extra_content field for future conversation context.
+
+**Parameters:**
+
+- **stream**: The original async streaming response from Gemini
+
+**Returns:**
+
+  A wrapped async stream that preserves thought signatures
 
 <a id="camel.models.gemini_model.GeminiModel._run"></a>
 
@@ -86,12 +167,4 @@ def _request_chat_completion(
     messages: List[OpenAIMessage],
     tools: Optional[List[Dict[str, Any]]] = None
 ):
-```
-
-<a id="camel.models.gemini_model.GeminiModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
 ```

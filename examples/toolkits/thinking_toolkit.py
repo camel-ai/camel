@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,20 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Create a Model
-model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=model_config_dict,
 )
 
 # Initialize the ThinkingToolkit
@@ -49,7 +46,7 @@ print("=" * 80)
 
 usr_msg = """
 Help me solve this math problem:
-If a train travels at 60 mph and needs to cover 300 miles, 
+If a train travels at 60 mph and needs to cover 300 miles,
 with 3 stops of 15 minutes each, how long will the journey take?
 """
 
@@ -61,9 +58,9 @@ print(response.info['tool_calls'])
 """
 Example: Problem Solving with Thinking Toolkit
 ===============================================================================
-The train's total journey time for traveling 300 miles at 60 mph, with 
-3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of 
-travel time and 0.75 hours (or 45 minutes) of stop time. The conversion 
+The train's total journey time for traveling 300 miles at 60 mph, with
+3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of
+travel time and 0.75 hours (or 45 minutes) of stop time. The conversion
 of stop time from minutes to hours was explicitly noted for clarity.
 
 Tool Calls:

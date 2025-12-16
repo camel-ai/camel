@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 from enum import Enum
 from threading import Lock
@@ -96,6 +96,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether the model is a Nebius AI Studio served model."""
+        return True
+
+    @property
     def is_openrouter(self) -> bool:
         r"""Returns whether the model is a OpenRouter served model."""
         return True
@@ -141,6 +146,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether the model is a CometAPI served model."""
+        return True
+
+    @property
     def is_yi(self) -> bool:
         r"""Returns whether the model is a Yi model."""
         return True
@@ -183,6 +193,11 @@ class UnifiedModelType(str):
     @property
     def is_crynux(self) -> bool:
         r"""Returns whether the model is a Crynux served model."""
+        return True
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether the model is a Minimax served model."""
         return True
 
     @property

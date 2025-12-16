@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -62,9 +62,9 @@ Your job has been submitted successfully with the following details:
 - **Machine Type**: c2_m4_cpu (2 CPU, 4 GB Memory)
 - **Region**: cn-zhangjiakou
 
-The job is currently pending or initializing. I will keep you updated on 
+The job is currently pending or initializing. I will keep you updated on
 its progress. If you need further assistance, feel free to ask!
-If you want to monitor the job's status or logs, let me know and I can 
+If you want to monitor the job's status or logs, let me know and I can
 assist you with that as well.
 ==========================================================================
 """

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -28,6 +28,11 @@ class E2BInterpreter(BaseInterpreter):
     Args:
         require_confirm (bool, optional): If True, prompt user before running
             code strings for security. (default: :obj:`True`)
+
+    Environment Variables:
+        E2B_API_KEY: The API key for authenticating with the E2B service.
+        E2B_DOMAIN: The base URL for the E2B API. If not provided,
+            will use the default E2B endpoint.
     """
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, Optional[str]]] = {
@@ -55,7 +60,35 @@ class E2BInterpreter(BaseInterpreter):
         from e2b_code_interpreter import Sandbox
 
         self.require_confirm = require_confirm
-        self._sandbox = Sandbox(api_key=os.environ.get("E2B_API_KEY"))
+
+        # Get API key from environment variable
+        api_key = os.environ.get("E2B_API_KEY")
+
+        # Get domain from environment variable
+        domain = os.environ.get("E2B_DOMAIN")
+
+        # Create sandbox with appropriate parameters
+        sandbox_kwargs = {"api_key": api_key}
+
+        # Only add domain if it's provided
+        # (to maintain compatibility with standard E2B)
+        if domain:
+            sandbox_kwargs["domain"] = domain
+            logger.info(f"Using custom E2B endpoint: {domain}")
+
+        try:
+            self._sandbox = Sandbox(**sandbox_kwargs)
+        except TypeError as e:
+            if domain and "domain" in str(e):
+                logger.warning(
+                    f"The e2b_code_interpreter library doesn't support "
+                    f"custom domain. "
+                    f"Using default E2B endpoint. Error: {e}"
+                )
+                # Fallback to default configuration without domain
+                self._sandbox = Sandbox(api_key=api_key)
+            else:
+                raise e
 
     def __del__(self) -> None:
         r"""Destructor for the E2BInterpreter class.

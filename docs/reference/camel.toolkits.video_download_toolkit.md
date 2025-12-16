@@ -32,7 +32,7 @@ chunks.
 
 **Parameters:**
 
-- **download_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
+- **working_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
 - **cookies_path** (Optional[str], optional): The path to the cookies file for the video service in Netscape format. (default: :obj:`None`)
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.__init__"></a>
@@ -42,7 +42,7 @@ chunks.
 ```python
 def __init__(
     self,
-    download_directory: Optional[str] = None,
+    working_directory: Optional[str] = None,
     cookies_path: Optional[str] = None,
     timeout: Optional[float] = None
 ):

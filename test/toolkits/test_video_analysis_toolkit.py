@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -88,10 +88,10 @@ def test_init_default():
         assert toolkit._cleanup is True
         assert toolkit._use_audio_transcription is False
         # Use startswith instead of exact match to handle /private/tmp on macOS
-        assert toolkit._download_directory.as_posix().endswith("/mock_dir")
+        assert toolkit._working_directory.as_posix().endswith("/mock_dir")
 
 
-def test_init_with_download_directory():
+def test_init_with_working_directory():
     r"""Test initialization with custom download directory"""
     with (
         patch("pathlib.Path.mkdir"),
@@ -99,9 +99,9 @@ def test_init_with_download_directory():
         patch("camel.toolkits.video_analysis_toolkit.VideoDownloaderToolkit"),
         patch("os.path.exists", return_value=True),
     ):
-        toolkit = VideoAnalysisToolkit(download_directory="/custom/dir")
+        toolkit = VideoAnalysisToolkit(working_directory="/custom/dir")
         assert toolkit._cleanup is False
-        assert toolkit._download_directory.as_posix() == "/custom/dir"
+        assert toolkit._working_directory.as_posix() == "/custom/dir"
 
 
 def test_init_with_audio_transcription():
@@ -137,7 +137,7 @@ def test_init_with_invalid_directory():
         patch("camel.agents.ChatAgent"),
     ):
         with pytest.raises(ValueError):
-            VideoAnalysisToolkit(download_directory="invalid_dir")
+            VideoAnalysisToolkit(working_directory="invalid_dir")
 
 
 # Test cleanup

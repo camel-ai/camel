@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,11 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import AIML_API_PARAMS, AIMLConfig
+from camel.configs import AIMLConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -82,18 +82,3 @@ class AIMLModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to AIML API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to AIML API.
-        """
-        for param in self.model_config_dict:
-            if param not in AIML_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into AIML model backend."
-                )

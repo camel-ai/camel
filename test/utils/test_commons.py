@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import time
 from unittest import TestCase
@@ -383,3 +383,59 @@ def test_direct_timeout_no_delay():
 
     result = fast_function()
     assert result == "success"
+
+
+def test_timeout_with_exception():
+    @with_timeout(2)
+    def function_that_raises():
+        raise ValueError("Test exception")
+
+    with pytest.raises(ValueError) as exc_info:
+        function_that_raises()
+
+    assert "Test exception" in str(exc_info.value)
+
+
+def test_timeout_with_exception_type_preserved():
+    r"""Test that exception type is preserved when re-raised."""
+
+    class CustomException(Exception):
+        pass
+
+    @with_timeout(2)
+    def function_with_custom_exception():
+        raise CustomException("Custom error message")
+
+    with pytest.raises(CustomException) as exc_info:
+        function_with_custom_exception()
+
+    assert "Custom error message" in str(exc_info.value)
+
+
+def test_timeout_preserves_traceback():
+    r"""Test that the original traceback is preserved when exception is
+    re-raised.
+    """
+
+    @with_timeout(2)
+    def function_with_nested_calls():
+        def inner_function():
+            def deepest_function():
+                raise ValueError("Error from deepest function")
+
+            return deepest_function()
+
+        return inner_function()
+
+    with pytest.raises(ValueError) as exc_info:
+        function_with_nested_calls()
+
+    # Check that the traceback contains the function names from the original
+    # call stack
+    import traceback
+
+    tb_str = ''.join(traceback.format_tb(exc_info.tb))
+    # The traceback should contain references to our nested functions
+    assert "deepest_function" in tb_str
+    assert "inner_function" in tb_str
+    assert "Error from deepest function" in str(exc_info.value)

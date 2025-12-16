@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import re
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union
@@ -19,8 +19,8 @@ from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
 from camel.societies.workforce.utils import (
-    RecoveryDecision,
     RecoveryStrategy,
+    TaskAnalysisResult,
     TaskAssignResult,
     WorkerConf,
 )
@@ -65,9 +65,9 @@ class StructuredOutputHandler:
                 r'description.*?:\s*"([^"]+)"'
             ),
         ],
-        'RecoveryDecision': [
-            r'"strategy"\s*:\s*"([^"]+)".*?"reasoning"\s*:\s*"([^"]+)"',
-            r'strategy.*?:\s*"([^"]+)".*?reasoning.*?:\s*"([^"]+)"',
+        'TaskAnalysisResult': [
+            r'"recovery_strategy"\s*:\s*"([^"]+)".*?"reasoning"\s*:\s*"([^"]+)"',
+            r'recovery_strategy.*?:\s*"([^"]+)".*?reasoning.*?:\s*"([^"]+)"',
         ],
     }
 
@@ -144,9 +144,9 @@ Fields marked with * are required and must be present in your response.
 
         # Add critical reminder
         structured_section += """
-**CRITICAL**: Your response must contain ONLY the JSON object within the code 
+**CRITICAL**: Your response must contain ONLY the JSON object within the code
 block.
-Do not include any explanatory text, comments, or content outside the JSON 
+Do not include any explanatory text, comments, or content outside the JSON
 structure.
 Ensure the JSON is valid and properly formatted.
 """
@@ -239,12 +239,12 @@ Ensure the JSON is valid and properly formatted.
                     except (IndexError, AttributeError):
                         continue
 
-        elif schema_name == 'RecoveryDecision':
+        elif schema_name == 'TaskAnalysisResult':
             for pattern in patterns:
                 match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
                 if match:
                     try:
-                        strategy = match.group(1)
+                        recovery_strategy = match.group(1)
                         reasoning = match.group(2)
                         # Look for modified_task_content
                         content_match = re.search(
@@ -252,12 +252,23 @@ Ensure the JSON is valid and properly formatted.
                             text,
                             re.IGNORECASE,
                         )
+                        # Look for quality_score (for quality evaluation)
+                        score_match = re.search(
+                            r'"quality_score"\s*:\s*(\d+)',
+                            text,
+                            re.IGNORECASE,
+                        )
                         return {
-                            'strategy': strategy,
+                            'recovery_strategy': recovery_strategy,
                             'reasoning': reasoning,
                             'modified_task_content': (
                                 content_match.group(1)
                                 if content_match
+                                else None
+                            ),
+                            'quality_score': (
+                                int(score_match.group(1))
+                                if score_match
                                 else None
                             ),
                         }
@@ -370,21 +381,22 @@ Ensure the JSON is valid and properly formatted.
                         else:
                             assignment['dependencies'] = []
 
-        elif schema_name == 'RecoveryDecision':
-            # Ensure strategy is valid
-            if 'strategy' in fixed_data:
-                strategy = fixed_data['strategy'].lower()
+        elif schema_name == 'TaskAnalysisResult':
+            # Ensure recovery_strategy is valid
+            if 'recovery_strategy' in fixed_data:
+                strategy = fixed_data['recovery_strategy'].lower()
                 valid_strategies = [
                     'retry',
                     'replan',
                     'decompose',
                     'create_worker',
+                    'reassign',
                 ]
                 if strategy not in valid_strategies:
                     # Try to match partial
                     for valid in valid_strategies:
                         if valid.startswith(strategy) or strategy in valid:
-                            fixed_data['strategy'] = valid
+                            fixed_data['recovery_strategy'] = valid
                             break
 
         return fixed_data
@@ -410,10 +422,10 @@ Ensure the JSON is valid and properly formatted.
                 sys_msg="You are a helpful assistant.",
                 description="A general-purpose worker",
             )
-        elif schema_name == 'RecoveryDecision':
-            return RecoveryDecision(
-                strategy=RecoveryStrategy.RETRY,
+        elif schema_name == 'TaskAnalysisResult':
+            return TaskAnalysisResult(
                 reasoning="Unable to parse response, defaulting to retry",
+                recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
             )
         else:
@@ -482,11 +494,11 @@ Ensure the JSON is valid and properly formatted.
                 description=f"Fallback worker for task: {task_content}...",
             )
 
-        elif schema_name == 'RecoveryDecision':
+        elif schema_name == 'TaskAnalysisResult':
             # Default to retry strategy
-            return RecoveryDecision(
-                strategy=RecoveryStrategy.RETRY,
+            return TaskAnalysisResult(
                 reasoning=f"Fallback decision due to: {error_message}",
+                recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
             )
 

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
 from copy import deepcopy
@@ -19,10 +19,10 @@ from typing import List
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from openai.types.chat import ChatCompletionMessageFunctionToolCall
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
+from openai.types.chat.chat_completion_message_function_tool_call import (
     Function,
 )
 from openai.types.completion_usage import CompletionUsage
@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ToolCallingRecord
+from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.DEFAULT,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4_1_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4_1_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.DEFAULT)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -246,12 +246,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config_dict,
     )
     model_backend_external1 = ChatCompletion(
@@ -268,7 +267,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -278,7 +277,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -293,7 +292,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745899,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -315,10 +314,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -327,7 +327,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745902,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -365,7 +365,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -378,12 +378,11 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config_dict,
     )
     model_backend_external1 = ChatCompletion(
@@ -400,7 +399,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -410,7 +409,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -425,7 +424,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745899,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -447,10 +446,11 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -459,7 +459,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745902,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -509,7 +509,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -560,6 +560,21 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
         system_message=system_msg,
         token_limit=1,
     )
+
+    original_get_context = assistant.memory.get_context
+
+    def mock_get_context():
+        messages, _ = original_get_context()
+        # Raise RuntimeError as if context size exceeded limit
+        raise RuntimeError(
+            "Context size exceeded",
+            {
+                "status": "error",
+                "message": "The context has exceeded the maximum token limit.",
+            },
+        )
+
+    assistant.memory.get_context = mock_get_context
     assistant.model_backend.run = MagicMock(
         return_value=model_backend_rsp_base
     )
@@ -583,7 +598,7 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     model_backend_rsp_tool = ChatCompletion(
@@ -656,7 +671,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     model_backend_multi_messages = deepcopy(model_backend_rsp_base)
@@ -717,7 +732,7 @@ def test_chat_agent_stream_output(step_call_count=3):
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=stream_model_config.as_dict(),
     )
     model.run = MagicMock(return_value=model_backend_rsp_base)
@@ -741,6 +756,55 @@ def test_chat_agent_stream_output(step_call_count=3):
             == stream_usage["completion_tokens"]
             + stream_usage["prompt_tokens"]
         ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_accumulated():
+    """Verify accumulated streaming behavior (stream_accumulate=True)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent()
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "acc", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert len(outputs) == 3
+    assert outputs[0] == "Hello"
+    assert outputs[1] == "Hello "
+    assert outputs[2] == "Hello world"
+    assert accumulator.get_full_content() == "Hello world"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_delta():
+    """Verify delta streaming behavior (stream_accumulate=False)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent(stream_accumulate=False)
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "delta", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert outputs == chunks
+    assert accumulator.get_full_content() == "Hello world"
 
 
 @pytest.mark.model_backend
@@ -825,7 +889,7 @@ def test_tool_calling_sync(step_call_count=3):
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -857,7 +921,7 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -865,14 +929,15 @@ def test_tool_calling_sync(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
-                                arguments='{"a": 0, "b": 10}', name='sub'
+                                arguments='{"a": 0, "b": 10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         ),
@@ -881,7 +946,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -902,10 +967,11 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_kIJby7Y6As6gAbWoxDqxD6HG',
                             function=Function(
-                                arguments='{"a":16,"b":10}', name='sub'
+                                arguments='{"a":16,"b":10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -914,7 +980,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -940,7 +1006,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -969,7 +1035,7 @@ def test_tool_calling_sync(step_call_count=3):
             "Tool Execution"
         ), f"Error in calling round {i+1}"
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -989,10 +1055,12 @@ async def test_tool_calling_math_async(step_call_count=3):
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0)
-    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
+    math_funcs = sync_funcs_to_async(
+        [FunctionTool(MathToolkit().math_multiply)]
+    )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
@@ -1026,7 +1094,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -1034,7 +1102,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         )
@@ -1043,7 +1111,7 @@ async def test_tool_calling_math_async(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -1068,7 +1136,7 @@ async def test_tool_calling_math_async(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -1090,7 +1158,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -1124,7 +1192,7 @@ async def test_tool_calling_async(step_call_count=3):
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
     )
     model_backend_rsp_tool_async = deepcopy(model_backend_rsp_base)
 
@@ -1133,7 +1201,7 @@ async def test_tool_calling_async(step_call_count=3):
         # Reset tool_calls at the beginning of each new round of step() call
         if model.run.call_count % 2 == 1:
             model_backend_rsp_tool_async.choices[0].message.tool_calls = [
-                ChatCompletionMessageToolCall(
+                ChatCompletionMessageFunctionToolCall(
                     id='call_mock_123456',
                     function=Function(
                         arguments='{"second":1}', name='async_sleep'
@@ -1233,7 +1301,7 @@ def test_chat_agent_vision(step_call_count=3):
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
@@ -1297,15 +1365,15 @@ def test_chat_agent_creation_methods():
     specifications.
     """
     # Method 1: Initialize with just a string (model name)
-    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
-    assert agent_1.model_type.value == "gpt-4o-mini"
+    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-5-mini")
+    assert agent_1.model_type.value == "gpt-5-mini"
     assert isinstance(agent_1.model_backend.models[0], OpenAIModel)
 
     # Method 2: Initialize with just a ModelType enum
     agent_2 = ChatAgent(
-        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
+        "You are a helpful assistant.", model=ModelType.GPT_5_MINI
     )
-    assert agent_2.model_type.value == "gpt-4o-mini"
+    assert agent_2.model_type.value == "gpt-5-mini"
     assert isinstance(agent_2.model_backend.models[0], OpenAIModel)
 
     # Method 3: Initialize with a tuple of strings (platform, model)
@@ -1335,3 +1403,354 @@ def test_chat_agent_creation_methods():
     # All agents should have the same system message
     for agent in [agent_1, agent_2, agent_3, agent_4, agent_5]:
         assert "You are a helpful assistant." in agent.system_message.content
+
+
+def test_memory_setter_preserves_system_message():
+    r"""Test that setting memory after initialization preserves the system
+    message.
+    """
+    from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
+    from camel.utils import OpenAITokenCounter
+
+    # Create an agent with a specific system message
+    system_content = "Your name is 'John'. When asked, introduce yourself."
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name='Agent',
+        content=system_content,
+    )
+
+    agent = ChatAgent(system_message=sys_msg)
+
+    # Verify initial memory has system message
+    initial_context, _ = agent.memory.get_context()
+    assert len(initial_context) > 0
+    assert initial_context[0]['role'] == 'system'
+    assert initial_context[0]['content'] == system_content
+
+    # Create a new memory instance
+    context_creator = ScoreBasedContextCreator(
+        token_counter=OpenAITokenCounter(ModelType.GPT_5_MINI),
+        token_limit=1024,
+    )
+    new_memory = ChatHistoryMemory(context_creator=context_creator)
+
+    # Set the new memory (this is where the bug occurred)
+    agent.memory = new_memory
+
+    # Verify the system message is preserved in the new memory
+    new_context, _ = agent.memory.get_context()
+    assert len(new_context) > 0
+    assert new_context[0]['role'] == 'system'
+    assert new_context[0]['content'] == system_content
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_with_async_generator():
+    r"""Test async streaming when model backend returns an async generator."""
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    agent = ChatAgent(system_message=system_msg, model=model)
+
+    # Create mock streaming chunks
+    chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="Hello", role="assistant"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content=" world"),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="!"),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 3,
+                "prompt_tokens": 10,
+                "total_tokens": 13,
+            },
+        ),
+    ]
+
+    # Create an async generator that wraps the chunks
+    # This simulates what GeminiModel does with _wrap_async_stream_with_
+    # thought_preservation
+    async def mock_async_generator() -> (
+        AsyncGenerator[ChatCompletionChunk, None]
+    ):
+        for chunk in chunks:
+            yield chunk
+
+    # Mock the model_backend.arun method to return an async generator
+    # (not AsyncStream). This simulates GeminiModel behavior.
+    agent.model_backend.arun = AsyncMock(return_value=mock_async_generator())
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Say hello",
+    )
+
+    # Use astep to test async streaming. astep returns
+    # AsyncStreamingChatAgentResponse which supports async iteration.
+    responses = []
+    streaming_response = await agent.astep(user_msg)
+    async for response in streaming_response:
+        responses.append(response)
+
+    # Verify we got streaming responses
+    assert len(responses) > 0, "Should receive streaming responses"
+
+    # Verify final response contains the accumulated content
+    final_response = responses[-1]
+    assert (
+        final_response.msg is not None
+    ), "Final response should have a message"
+    assert (
+        "Hello" in final_response.msg.content
+    ), "Final content should contain 'Hello'"
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_async_stream_with_async_generator_tool_calls():
+    r"""Test async streaming with tool calls when model returns async
+    generator.
+    """
+    from typing import AsyncGenerator
+
+    from openai.types.chat.chat_completion_chunk import (
+        ChatCompletionChunk,
+        ChoiceDelta,
+        ChoiceDeltaToolCall,
+        ChoiceDeltaToolCallFunction,
+    )
+    from openai.types.chat.chat_completion_chunk import (
+        Choice as ChunkChoice,
+    )
+
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict={"stream": True},
+    )
+
+    # Define a simple test tool
+    def test_add(a: int, b: int) -> int:
+        r"""Add two numbers.
+
+        Args:
+            a (int): First number.
+            b (int): Second number.
+
+        Returns:
+            int: Sum of a and b.
+        """
+        return a + b
+
+    agent = ChatAgent(
+        system_message=system_msg,
+        model=model,
+        tools=[FunctionTool(test_add)],
+    )
+
+    # Create mock streaming chunks with tool calls
+    tool_call_chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id="call_mock_123",
+                                type="function",
+                                function=ChoiceDeltaToolCallFunction(
+                                    name="test_add",
+                                    arguments='{"a":',
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                function=ChoiceDeltaToolCallFunction(
+                                    arguments='1,"b":2}',
+                                ),
+                            )
+                        ],
+                    ),
+                    index=0,
+                    finish_reason=None,
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(),
+                    index=0,
+                    finish_reason="tool_calls",
+                )
+            ],
+            created=1234567890,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 10,
+                "prompt_tokens": 20,
+                "total_tokens": 30,
+            },
+        ),
+    ]
+
+    # Create final response chunks after tool execution
+    final_chunks = [
+        ChatCompletionChunk(
+            id="chatcmpl-mock-id-2",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(
+                        content="The result is 3.", role="assistant"
+                    ),
+                    index=0,
+                    finish_reason="stop",
+                )
+            ],
+            created=1234567891,
+            model="gpt-5-mini",
+            object="chat.completion.chunk",
+            usage={
+                "completion_tokens": 5,
+                "prompt_tokens": 30,
+                "total_tokens": 35,
+            },
+        ),
+    ]
+
+    call_count = 0
+
+    async def mock_async_generator() -> (
+        AsyncGenerator[ChatCompletionChunk, None]
+    ):
+        nonlocal call_count
+        if call_count == 0:
+            call_count += 1
+            for chunk in tool_call_chunks:
+                yield chunk
+        else:
+            for chunk in final_chunks:
+                yield chunk
+
+    # Mock the model_backend.arun method to return an async generator
+    agent.model_backend.arun = AsyncMock(
+        side_effect=lambda *args, **kwargs: mock_async_generator()
+    )
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Add 1 and 2",
+    )
+
+    # Use astep to test async streaming with tool calls
+    responses = []
+    streaming_response = await agent.astep(user_msg)
+    async for response in streaming_response:
+        responses.append(response)
+
+    # Verify we got responses
+    assert len(responses) > 0, "Should receive streaming responses"
+
+    # Verify tool was called
+    tool_calls_found = False
+    for response in responses:
+        if response.info and "tool_calls" in response.info:
+            tool_calls = response.info["tool_calls"]
+            if tool_calls:
+                tool_calls_found = True
+                # Verify the tool was executed correctly
+                for tc in tool_calls:
+                    if tc.tool_name == "test_add":
+                        assert tc.result == 3, "Tool should return 3"
+                break
+
+    assert tool_calls_found, "Tool calls should be found in responses"

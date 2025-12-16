@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 from enum import EnumMeta
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
+
+from pydantic import BaseModel
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import (
@@ -27,8 +29,13 @@ from camel.types import (
 
 
 class CamelJSONEncoder(json.JSONEncoder):
-    r"""A custom JSON encoder for serializing specifically enumerated types.
-    Ensures enumerated types can be stored in and retrieved from JSON format.
+    r"""A custom JSON encoder for serializing CAMEL-specific types.
+
+    Handles serialization of:
+    - Enumerated types (RoleType, TaskType, ModelType, OpenAIBackendRole)
+    - Pydantic BaseModel objects (from structured outputs)
+
+    Ensures these types can be stored in and retrieved from JSON format.
     """
 
     CAMEL_ENUMS: ClassVar[Dict[str, EnumMeta]] = {
@@ -39,8 +46,14 @@ class CamelJSONEncoder(json.JSONEncoder):
     }
 
     def default(self, obj) -> Any:
+        # Handle CAMEL enum types
         if type(obj) in self.CAMEL_ENUMS.values():
             return {"__enum__": str(obj)}
+
+        # Handle Pydantic BaseModel objects (e.g., from structured outputs)
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
 

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,9 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import OpenAPIToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -22,14 +21,10 @@ sys_msg = "You are a helpful assistant"
 
 # Set model config
 tools = OpenAPIToolkit().get_tools()
-model_config_dict = ChatGPTConfig(
-    temperature=0.0,
-).as_dict()
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=model_config_dict,
 )
 
 # Set agent

@@ -5,7 +5,7 @@
 ## GoogleDriveMCPToolkit
 
 ```python
-class GoogleDriveMCPToolkit(BaseToolkit):
+class GoogleDriveMCPToolkit(MCPToolkit):
 ```
 
 GoogleDriveMCPToolkit provides an interface for interacting with
@@ -33,15 +33,3 @@ Initializes the GoogleDriveMCPToolkit.
 
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
 - **credentials_path** (Optional[str]): Path to the Google Drive credentials file. (default: :obj:`None`)
-
-<a id="camel.toolkits.google_drive_mcp_toolkit.GoogleDriveMCPToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-**Returns:**
-
-  List[FunctionTool]: List of available tools.

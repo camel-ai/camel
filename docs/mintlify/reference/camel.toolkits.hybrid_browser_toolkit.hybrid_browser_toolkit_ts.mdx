@@ -1,0 +1,132 @@
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts"></a>
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.SheetCell"></a>
+
+## SheetCell
+
+```python
+class SheetCell(TypedDict):
+```
+
+Type definition for a sheet cell input.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit"></a>
+
+## HybridBrowserToolkit
+
+```python
+class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
+```
+
+A hybrid browser toolkit that combines non-visual, DOM-based browser
+automation with visual, screenshot-based capabilities.
+
+This toolkit now uses TypeScript implementation with Playwright's
+_snapshotForAI functionality for enhanced AI integration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize the HybridBrowserToolkit.
+
+**Parameters:**
+
+- **headless** (bool): Whether to run browser in headless mode. Defaults to True.
+- **user_data_dir** (Optional[str]): Directory for user data persistence. Defaults to None.
+- **stealth** (bool): Whether to enable stealth mode. Defaults to False.
+- **cache_dir** (str): Directory for caching. Defaults to "tmp/". (default: `"tmp/"`)
+- **enabled_tools** (Optional[List[str]]): List of enabled tools. Defaults to None.
+- **browser_log_to_file** (bool): Whether to log browser actions to file. Defaults to False.
+- **log_dir** (Optional[str]): Custom directory path for log files. If None, defaults to "browser_log". Defaults to None.
+- **session_id** (Optional[str]): Session identifier. Defaults to None.
+- **default_start_url** (str): Default URL to start with. Defaults to "https://google.com/".
+- **default_timeout** (Optional[int]): Default timeout in milliseconds. Defaults to None.
+- **short_timeout** (Optional[int]): Short timeout in milliseconds. Defaults to None.
+- **navigation_timeout** (Optional[int]): Navigation timeout in milliseconds. Defaults to None.
+- **network_idle_timeout** (Optional[int]): Network idle timeout in milliseconds. Defaults to None.
+- **screenshot_timeout** (Optional[int]): Screenshot timeout in milliseconds. Defaults to None.
+- **page_stability_timeout** (Optional[int]): Page stability timeout in milliseconds. Defaults to None.
+- **dom_content_loaded_timeout** (Optional[int]): DOM content loaded timeout in milliseconds. Defaults to None.
+- **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. When True, only elements within the current viewport bounds will be included in snapshots. When False (default), all elements on the page are included. Defaults to False.
+- **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False.
+- **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection (e.g., 'ws://localhost:9222/devtools/browser/...'). Required when connect_over_cdp is True. Defaults to None.
+- **cdp_keep_current_page** (bool): When True and using CDP mode, won't create new pages but use the existing one. Defaults to False.
+- **full_visual_mode** (bool): When True, browser actions like click, browser_open, visit_page, etc. will not return snapshots. Defaults to False.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Cleanup browser resources on garbage collection.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.cache_dir"></a>
+
+### cache_dir
+
+```python
+def cache_dir(self):
+```
+
+Get the cache directory.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit._trim_sheet_content"></a>
+
+### _trim_sheet_content
+
+```python
+def _trim_sheet_content(self, content: str):
+```
+
+Trim sheet content and add row/column labels.
+
+Remove all empty rows and columns, then add:
+- Column headers: A, B, C, D...
+- Row numbers: 0, 1, 2, 3...
+
+**Parameters:**
+
+- **content** (str): Raw sheet content with tabs and newlines.
+
+**Returns:**
+
+  str: Trimmed content with row/column labels.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.clone_for_new_session"></a>
+
+### clone_for_new_session
+
+```python
+def clone_for_new_session(self, new_session_id: Optional[str] = None):
+```
+
+Create a new instance of HybridBrowserToolkit with a unique
+session.
+
+**Parameters:**
+
+- **new_session_id**: Optional new session ID. If None, a UUID will be generated.
+
+**Returns:**
+
+  A new HybridBrowserToolkit instance with the same configuration
+but a different session.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Get available function tools based
+on enabled_tools configuration.

@@ -17,3 +17,4 @@ Applications
    customer_service_Discord_bot_using_SambaNova_with_agentic_RAG
    customer_service_Discord_bot_using_local_model_with_agentic_RAG
    finance_discord_bot
+   pptx_toolkit

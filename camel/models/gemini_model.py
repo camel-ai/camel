@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,14 +10,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import Gemini_API_PARAMS, GeminiConfig
+from camel.configs import GeminiConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -112,15 +121,337 @@ class GeminiModel(OpenAICompatibleModel):
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,
-        which is not accepted by Gemini.
+        which is not accepted by Gemini. Also preserves thought signatures
+        required for Gemini 3 Pro function calling.
+
+        This method also merges consecutive assistant messages with single
+        tool calls into a single assistant message with multiple tool calls,
+        as required by Gemini's OpenAI-compatible API for parallel function
+        calling.
         """
-        processed_messages = []
-        for msg in messages:
-            msg_copy = msg.copy()
+        import copy
+
+        processed_messages: List[OpenAIMessage] = []
+        i = 0
+        n = len(messages)
+
+        while i < n:
+            msg = messages[i]
+
+            # Check if this is an assistant message with a single tool_call
+            # that might need to be merged with subsequent ones
+            if (
+                msg.get('role') == 'assistant'
+                and 'tool_calls' in msg
+                and isinstance(msg['tool_calls'], list)
+                and len(msg['tool_calls']) == 1
+            ):
+                # Look ahead to check if there are more assistant messages
+                # with single tool calls (interleaved with their tool results)
+                j = i + 1
+                has_more_tool_calls = False
+
+                # Collect tool_call_ids we've seen so far
+                first_tool_call_id = msg['tool_calls'][0].get('id')
+                seen_tool_call_ids = (
+                    {first_tool_call_id} if first_tool_call_id else set()
+                )
+
+                # Scan ahead to find pattern: tool_result, assistant,
+                # tool_result, ...
+                while j < n:
+                    next_msg = messages[j]
+                    next_role = next_msg.get('role')
+
+                    if next_role == 'tool':
+                        # Tool result - check if it belongs to our batch
+                        if next_msg.get('tool_call_id') in seen_tool_call_ids:
+                            j += 1
+                            continue
+                        else:
+                            # Tool result for unknown call, stop scanning
+                            break
+                    elif (
+                        next_role == 'assistant'
+                        and 'tool_calls' in next_msg
+                        and isinstance(next_msg['tool_calls'], list)
+                        and len(next_msg['tool_calls']) == 1
+                    ):
+                        # Another single tool call - mark for merging
+                        has_more_tool_calls = True
+                        tc_id = next_msg['tool_calls'][0].get('id')
+                        if tc_id:
+                            seen_tool_call_ids.add(tc_id)
+                        j += 1
+                        continue
+                    else:
+                        # Something else, stop scanning
+                        break
+
+                if has_more_tool_calls:
+                    # Need to merge: collect all tool calls and results
+                    merged_tool_calls = []
+                    tool_results = []
+                    is_first = True
+
+                    for k in range(i, j):
+                        m = messages[k]
+                        if m.get('role') == 'assistant' and 'tool_calls' in m:
+                            tc = m['tool_calls'][0]
+                            if is_first:
+                                # Keep extra_content only on first tool call
+                                merged_tool_calls.append(copy.deepcopy(tc))
+                                is_first = False
+                            else:
+                                # Remove extra_content from subsequent tool
+                                # calls
+                                tc_copy = {
+                                    k: v
+                                    for k, v in tc.items()
+                                    if k != 'extra_content'
+                                }
+                                merged_tool_calls.append(tc_copy)
+                        elif m.get('role') == 'tool':
+                            tool_results.append(copy.deepcopy(m))
+
+                    # Build merged assistant message
+                    merged_msg = copy.deepcopy(msg)
+                    merged_msg['tool_calls'] = merged_tool_calls
+                    if 'content' in merged_msg and merged_msg['content'] == '':
+                        merged_msg['content'] = 'null'
+
+                    processed_messages.append(merged_msg)
+                    processed_messages.extend(tool_results)
+                    i = j
+                    continue
+
+            # Regular message processing (no merging needed)
+            msg_copy = copy.deepcopy(msg)
             if 'content' in msg_copy and msg_copy['content'] == '':
                 msg_copy['content'] = 'null'
             processed_messages.append(msg_copy)
+            i += 1
+
         return processed_messages
+
+    def _preserve_thought_signatures(
+        self,
+        response: Union[
+            ChatCompletion,
+            Stream[ChatCompletionChunk],
+            AsyncStream[ChatCompletionChunk],
+        ],
+    ) -> Union[
+        ChatCompletion,
+        Generator[ChatCompletionChunk, None, None],
+        AsyncGenerator[ChatCompletionChunk, None],
+    ]:
+        r"""Preserve thought signatures from Gemini responses for future
+        requests.
+
+        According to the Gemini documentation, when a response contains tool
+        calls with thought signatures, these signatures must be preserved
+        exactly as received when the response is added to conversation history
+        for subsequent requests.
+
+        Args:
+            response: The response from Gemini API
+
+        Returns:
+            The response with thought signatures properly preserved.
+            For streaming responses, returns generators that preserve
+            signatures.
+        """
+        # For streaming responses, we need to wrap the stream to preserve
+        # thought signatures in tool calls as they come in
+        if isinstance(response, Stream):
+            return self._wrap_stream_with_thought_preservation(response)
+        elif isinstance(response, AsyncStream):
+            return self._wrap_async_stream_with_thought_preservation(response)
+
+        # For non-streaming responses, thought signatures are already preserved
+        # in _process_messages when the response becomes part of conversation
+        # history
+        return response
+
+    def _wrap_stream_with_thought_preservation(
+        self, stream: Stream[ChatCompletionChunk]
+    ) -> Generator[ChatCompletionChunk, None, None]:
+        r"""Wrap a streaming response to preserve thought signatures in tool
+        calls.
+
+        This method ensures that when Gemini streaming responses contain tool
+        calls with thought signatures, these are properly preserved in the
+        extra_content field for future conversation context.
+
+        Args:
+            stream: The original streaming response from Gemini
+
+        Returns:
+            A wrapped stream that preserves thought signatures
+        """
+
+        def thought_preserving_generator():
+            accumulated_signatures = {}  # Store signatures by tool call index
+
+            for chunk in stream:
+                # Process chunk normally first
+                processed_chunk = chunk
+
+                # Check if this chunk contains tool call deltas with thought
+                # signatures
+                if (
+                    hasattr(chunk, 'choices')
+                    and chunk.choices
+                    and hasattr(chunk.choices[0], 'delta')
+                    and hasattr(chunk.choices[0].delta, 'tool_calls')
+                ):
+                    delta_tool_calls = chunk.choices[0].delta.tool_calls
+                    if delta_tool_calls:
+                        for tool_call_delta in delta_tool_calls:
+                            index = tool_call_delta.index
+
+                            # Check for thought signatures in the tool call
+                            # response Gemini may include these in custom
+                            # fields
+                            if hasattr(tool_call_delta, 'extra_content'):
+                                extra_content = tool_call_delta.extra_content
+                                if (
+                                    isinstance(extra_content, dict)
+                                    and 'google' in extra_content
+                                ):
+                                    google_content = extra_content['google']
+                                    if 'thought_signature' in google_content:
+                                        # Store the thought signature for this
+                                        # tool call
+                                        accumulated_signatures[index] = (
+                                            extra_content
+                                        )
+
+                            # Also check if thought signature is in function
+                            # response
+                            elif hasattr(
+                                tool_call_delta, 'function'
+                            ) and hasattr(
+                                tool_call_delta.function, 'extra_content'
+                            ):
+                                func_extra = (
+                                    tool_call_delta.function.extra_content
+                                )
+                                if (
+                                    isinstance(func_extra, dict)
+                                    and 'google' in func_extra
+                                ):
+                                    accumulated_signatures[index] = func_extra
+
+                            # If we have accumulated signature for this tool
+                            # call, ensure it's preserved in the chunk
+                            if index in accumulated_signatures:
+                                # Add extra_content to tool call delta if it
+                                # doesn't exist
+                                if not hasattr(
+                                    tool_call_delta, 'extra_content'
+                                ):
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+                                elif tool_call_delta.extra_content is None:
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+
+                yield processed_chunk
+
+        return thought_preserving_generator()
+
+    def _wrap_async_stream_with_thought_preservation(
+        self, stream: AsyncStream[ChatCompletionChunk]
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
+        r"""Wrap an async streaming response to preserve thought signatures in
+        tool calls.
+
+        This method ensures that when Gemini async streaming responses contain
+        tool calls with thought signatures, these are properly preserved in
+        the extra_content field for future conversation context.
+
+        Args:
+            stream: The original async streaming response from Gemini
+
+        Returns:
+            A wrapped async stream that preserves thought signatures
+        """
+
+        async def async_thought_preserving_generator():
+            accumulated_signatures = {}  # Store signatures by tool call index
+
+            async for chunk in stream:
+                # Process chunk normally first
+                processed_chunk = chunk
+
+                # Check if this chunk contains tool call deltas with thought
+                # signatures
+                if (
+                    hasattr(chunk, 'choices')
+                    and chunk.choices
+                    and hasattr(chunk.choices[0], 'delta')
+                    and hasattr(chunk.choices[0].delta, 'tool_calls')
+                ):
+                    delta_tool_calls = chunk.choices[0].delta.tool_calls
+                    if delta_tool_calls:
+                        for tool_call_delta in delta_tool_calls:
+                            index = tool_call_delta.index
+
+                            # Check for thought signatures in the tool call
+                            # response
+                            if hasattr(tool_call_delta, 'extra_content'):
+                                extra_content = tool_call_delta.extra_content
+                                if (
+                                    isinstance(extra_content, dict)
+                                    and 'google' in extra_content
+                                ):
+                                    google_content = extra_content['google']
+                                    if 'thought_signature' in google_content:
+                                        # Store the thought signature for this
+                                        # tool call
+                                        accumulated_signatures[index] = (
+                                            extra_content
+                                        )
+
+                            # Also check if thought signature is in function
+                            # response
+                            elif hasattr(
+                                tool_call_delta, 'function'
+                            ) and hasattr(
+                                tool_call_delta.function, 'extra_content'
+                            ):
+                                func_extra = (
+                                    tool_call_delta.function.extra_content
+                                )
+                                if (
+                                    isinstance(func_extra, dict)
+                                    and 'google' in func_extra
+                                ):
+                                    accumulated_signatures[index] = func_extra
+
+                            # If we have accumulated signature for this tool
+                            # call, ensure it's preserved in the chunk
+                            if index in accumulated_signatures:
+                                # Add extra_content to tool call delta if it
+                                # doesn't exist
+                                if not hasattr(
+                                    tool_call_delta, 'extra_content'
+                                ):
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+                                elif tool_call_delta.extra_content is None:
+                                    tool_call_delta.extra_content = (
+                                        accumulated_signatures[index]
+                                    )
+
+                yield processed_chunk
+
+        return async_thought_preserving_generator()
 
     @observe()
     def _run(
@@ -276,11 +607,14 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        return self._client.chat.completions.create(
+        response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
+
+        # Preserve thought signatures from the response for future requests
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]
 
     async def _arequest_chat_completion(
         self,
@@ -330,23 +664,11 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        return await self._async_client.chat.completions.create(
+        response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Gemini API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Gemini API.
-        """
-        for param in self.model_config_dict:
-            if param not in Gemini_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Gemini model backend."
-                )
+        # Preserve thought signatures from the response for future requests
+        return self._preserve_thought_signatures(response)  # type: ignore[return-value]

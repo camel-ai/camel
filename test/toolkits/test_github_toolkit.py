@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -105,8 +105,8 @@ def test_get_tools(mock_github):
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
-def test_create_pull_request(mock_github):
-    """Test create_pull_request functionality."""
+def test_github_create_pull_request(mock_github):
+    """Test github_create_pull_request functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -124,9 +124,9 @@ def test_create_pull_request(mock_github):
     mock_pr_response.body = "Fixes #1"
     mock_repo.create_pull.return_value = mock_pr_response
 
-    # Create a simplified version of create_pull_request that
+    # Create a simplified version of github_create_pull_request that
     # skips the isinstance check
-    def simplified_create_pull_request(
+    def simplified_github_create_pull_request(
         self, repo_name, file_path, new_content, pr_title, body, branch_name
     ):
         # Get the repo using the repo_name parameter
@@ -139,9 +139,9 @@ def test_create_pull_request(mock_github):
         return f"Title: {pr_title}\nBody: {body}\n"
 
     # Replace the method temporarily
-    original_method = github_toolkit.create_pull_request
-    github_toolkit.create_pull_request = (
-        simplified_create_pull_request.__get__(github_toolkit)
+    original_method = github_toolkit.github_create_pull_request
+    github_toolkit.github_create_pull_request = (
+        simplified_github_create_pull_request.__get__(github_toolkit)
     )
 
     try:
@@ -150,7 +150,7 @@ def test_create_pull_request(mock_github):
     for product_of_array_except_self.py"""
         body = "Fixes #1"
 
-        pr = github_toolkit.create_pull_request(
+        pr = github_toolkit.github_create_pull_request(
             repo_name="repo_name",
             file_path="path/to/file",
             branch_name="branch_name",
@@ -160,7 +160,7 @@ def test_create_pull_request(mock_github):
         )
     finally:
         # Restore the original method
-        github_toolkit.create_pull_request = original_method
+        github_toolkit.github_create_pull_request = original_method
 
     expected_response = f"Title: {pr_title}\nBody: {body}\n"
     assert pr == expected_response, f"Expected {expected_response}, got {pr}"
@@ -169,7 +169,7 @@ def test_create_pull_request(mock_github):
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
 def test_get_all_issues(mock_github):
-    r"""Test get_issue_list functionality."""
+    r"""Test github_get_issue_list functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -180,13 +180,13 @@ def test_get_all_issues(mock_github):
     mock_issue.number = 1
     mock_issue.title = "Test Issue"
     mock_repo.get_issues.return_value = [mock_issue]
-    # Mock the get_issue_list method to return our expected result
+    # Mock the github_get_issue_list method to return our expected result
     with patch.object(
         github_toolkit,
-        'get_issue_list',
+        'github_get_issue_list',
         return_value=[{"number": 1, "title": "Test Issue"}],
     ):
-        issues = github_toolkit.get_issue_list(repo_name="repo_name")
+        issues = github_toolkit.github_get_issue_list(repo_name="repo_name")
         expected_issues = [{"number": 1, "title": "Test Issue"}]
         assert (
             issues == expected_issues
@@ -195,8 +195,8 @@ def test_get_all_issues(mock_github):
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
-def test_get_issue_content(mock_github):
-    r"""Test get_issue_content functionality."""
+def test_github_get_issue_content(mock_github):
+    r"""Test github_get_issue_content functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -206,11 +206,13 @@ def test_get_issue_content(mock_github):
     mock_issue = MagicMock()
     mock_issue.body = "Issue content"
     mock_repo.get_issue.return_value = mock_issue
-    # Mock the get_issue_content method to return our expected result
+    # Mock the github_get_issue_content method to return our expected result
     with patch.object(
-        github_toolkit, 'get_issue_content', return_value="Issue content"
+        github_toolkit,
+        'github_get_issue_content',
+        return_value="Issue content",
     ):
-        content = github_toolkit.get_issue_content(
+        content = github_toolkit.github_get_issue_content(
             repo_name="repo_name", issue_number=1
         )
         expected_content = "Issue content"
@@ -222,7 +224,7 @@ def test_get_issue_content(mock_github):
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
 def test_get_all_pull_requests(mock_github):
-    r"""Test get_pull_request_list functionality."""
+    r"""Test github_get_pull_request_list functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -233,21 +235,24 @@ def test_get_all_pull_requests(mock_github):
     mock_pr.number = 1
     mock_pr.title = "Test PR"
     mock_repo.get_pulls.return_value = [mock_pr]
-    # Mock the get_pull_request_list method to return our expected result
+    # Mock the github_get_pull_request_list method to return our expected
+    # result
     with patch.object(
         github_toolkit,
-        'get_pull_request_list',
+        'github_get_pull_request_list',
         return_value=[{"number": 1, "title": "Test PR"}],
     ):
-        prs = github_toolkit.get_pull_request_list(repo_name="repo_name")
+        prs = github_toolkit.github_get_pull_request_list(
+            repo_name="repo_name"
+        )
         expected_prs = [{"number": 1, "title": "Test PR"}]
         assert prs == expected_prs, f"Expected {expected_prs}, got {prs}"
 
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
-def test_get_pull_request_code(mock_github):
-    r"""Test get_pull_request_code functionality."""
+def test_github_get_pull_request_code(mock_github):
+    r"""Test github_get_pull_request_code functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -260,13 +265,14 @@ def test_get_pull_request_code(mock_github):
     mock_pr = MagicMock()
     mock_pr.get_files.return_value = [mock_file]
     mock_repo.get_pull.return_value = mock_pr
-    # Mock the get_pull_request_code method to return our expected result
+    # Mock the github_get_pull_request_code method to return our expected
+    # result
     with patch.object(
         github_toolkit,
-        'get_pull_request_code',
+        'github_get_pull_request_code',
         return_value=[{"filename": "file1.py", "patch": "code changes"}],
     ):
-        files_changed = github_toolkit.get_pull_request_code(
+        files_changed = github_toolkit.github_get_pull_request_code(
             repo_name="repo_name", pr_number=1
         )
         expected_files = [{"filename": "file1.py", "patch": "code changes"}]
@@ -277,8 +283,8 @@ def test_get_pull_request_code(mock_github):
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
-def test_get_pull_request_comments(mock_github):
-    r"""Test get_pull_request_comments functionality."""
+def test_github_get_pull_request_comments(mock_github):
+    r"""Test github_get_pull_request_comments functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -293,13 +299,14 @@ def test_get_pull_request_comments(mock_github):
     mock_pr = MagicMock()
     mock_pr.get_comments.return_value = [mock_comment]
     mock_repo.get_pull.return_value = mock_pr
-    # Mock the get_pull_request_comments method to return our expected result
+    # Mock the github_get_pull_request_comments method to return our expected
+    # result
     with patch.object(
         github_toolkit,
-        'get_pull_request_comments',
+        'github_get_pull_request_comments',
         return_value=[{"user": "user1", "body": "Test comment"}],
     ):
-        comments = github_toolkit.get_pull_request_comments(
+        comments = github_toolkit.github_get_pull_request_comments(
             repo_name="repo_name", pr_number=1
         )
         expected_comments = [{"user": "user1", "body": "Test comment"}]
@@ -310,8 +317,8 @@ def test_get_pull_request_comments(mock_github):
 
 @patch.dict('sys.modules', mock_modules)
 @patch('github.Github')
-def test_get_all_file_paths(mock_github):
-    r"""Test get_all_file_paths functionality."""
+def test_github_get_all_file_paths(mock_github):
+    r"""Test github_get_all_file_paths functionality."""
     # Set up mock
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
@@ -320,11 +327,13 @@ def test_get_all_file_paths(mock_github):
     # Setup content
     content_file = ContentFile(path="path/to/file.py", type="file")
     mock_repo.get_contents.return_value = [content_file]
-    # Mock the get_all_file_paths method to return our expected result
+    # Mock the github_get_all_file_paths method to return our expected result
     with patch.object(
-        github_toolkit, 'get_all_file_paths', return_value=["path/to/file.py"]
+        github_toolkit,
+        'github_get_all_file_paths',
+        return_value=["path/to/file.py"],
     ):
-        files = github_toolkit.get_all_file_paths(repo_name="repo_name")
+        files = github_toolkit.github_get_all_file_paths(repo_name="repo_name")
         expected_files = ["path/to/file.py"]
         assert (
             files == expected_files

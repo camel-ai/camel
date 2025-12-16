@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import unittest
@@ -68,7 +68,7 @@ def test_init_with_env_vars(mock_config, mock_daytona):
     )
 
 
-@patch('daytona_sdk.CreateSandboxParams')
+@patch('daytona_sdk.CreateSandboxBaseParams')
 @patch('daytona_sdk.Daytona')
 @patch('daytona_sdk.DaytonaConfig')
 def test_build_success(mock_config, mock_daytona, mock_params):
@@ -89,7 +89,7 @@ def test_build_success(mock_config, mock_daytona, mock_params):
     assert result == runtime  # Should return self
 
 
-@patch('daytona_sdk.CreateSandboxParams')
+@patch('daytona_sdk.CreateSandboxBaseParams')
 @patch('daytona_sdk.Daytona')
 @patch('daytona_sdk.DaytonaConfig')
 def test_build_failure(mock_config, mock_daytona, mock_params):
@@ -123,8 +123,8 @@ def test_stop(mock_config, mock_daytona):
     # Stop sandbox
     result = runtime.stop()
 
-    # Assert sandbox was removed
-    mock_daytona_instance.remove.assert_called_once_with(mock_sandbox)
+    # Assert sandbox was deleted
+    mock_daytona_instance.delete.assert_called_once_with(mock_sandbox)
     assert runtime.sandbox is None
     assert result == runtime  # Should return self
 
@@ -172,8 +172,8 @@ def test_reset(mock_config, mock_daytona):
     # Reset sandbox
     result = runtime.reset()
 
-    # Assert sandbox was removed and rebuilt
-    mock_daytona_instance.remove.assert_called_once_with(mock_sandbox)
+    # Assert sandbox was deleted and rebuilt
+    mock_daytona_instance.delete.assert_called_once_with(mock_sandbox)
     assert runtime.build.called
     assert result == runtime  # Should return self
 

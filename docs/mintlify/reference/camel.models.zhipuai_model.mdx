@@ -38,10 +38,15 @@ def __init__(
 ):
 ```
 
-<a id="camel.models.zhipuai_model.ZhipuAIModel.check_model_config"></a>
+<a id="camel.models.zhipuai_model.ZhipuAIModel._request_parse"></a>
 
-### check_model_config
+### _request_parse
 
 ```python
-def check_model_config(self):
+def _request_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
 ```

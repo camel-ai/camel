@@ -45,15 +45,15 @@ Initialize the WebDeployToolkit.
 - **remote_server_ip** (Optional[str]): Remote server IP for deployment. (default: :obj:`None` - use local deployment)
 - **remote_server_port** (int): Remote server port. (default: :obj:`8080`)
 
-<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_ip"></a>
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_ip_or_domain"></a>
 
-### _validate_ip
+### _validate_ip_or_domain
 
 ```python
-def _validate_ip(self, ip: str):
+def _validate_ip_or_domain(self, address: str):
 ```
 
-Validate IP address format.
+Validate IP address or domain name format.
 
 <a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._validate_port"></a>
 
@@ -316,6 +316,58 @@ Deploy a folder containing web files.
 **Returns:**
 
   Dict[str, Any]: Deployment result with custom domain info.
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_folder_to_local_server"></a>
+
+### _deploy_folder_to_local_server
+
+```python
+def _deploy_folder_to_local_server(
+    self,
+    folder_path: str,
+    port: int,
+    domain: Optional[str],
+    subdirectory: Optional[str]
+):
+```
+
+Deploy folder to local server (original functionality).
+
+**Parameters:**
+
+- **folder_path** (str): Path to the folder to deploy
+- **port** (int): Port to serve on
+- **domain** (Optional[str]): Custom domain
+- **subdirectory** (Optional[str]): Subdirectory path
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
+
+<a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit._deploy_folder_to_remote_server"></a>
+
+### _deploy_folder_to_remote_server
+
+```python
+def _deploy_folder_to_remote_server(
+    self,
+    folder_path: str,
+    subdirectory: Optional[str] = None,
+    domain: Optional[str] = None
+):
+```
+
+Deploy folder to remote server via API.
+
+**Parameters:**
+
+- **folder_path** (str): Path to the folder to deploy
+- **subdirectory** (Optional[str]): Subdirectory path for deployment
+- **domain** (Optional[str]): Custom domain
+
+**Returns:**
+
+  Dict[str, Any]: Deployment result
 
 <a id="camel.toolkits.web_deploy_toolkit.WebDeployToolkit.stop_server"></a>
 

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 
@@ -53,7 +53,7 @@ async def main():
 '''
 ===============================================================================
 I can assist you with a variety of tasks related to chemical compounds
-and substances using the PubChem database. 
+and substances using the PubChem database.
 Here are some of the things I can do:
 
 1. **Search for Compounds and Substances**:
@@ -68,10 +68,10 @@ Here are some of the things I can do:
 3. **Synonyms and Identifiers**:
    - Find synonyms for compounds and substances.
    - Get CAS Registry Numbers, CIDs, and SIDs.
-   
+
 4. **3D Structure and Conformers**:
    - Access 3D structures and conformer identifiers.
-   
+
 5. **Bioassay Activities**:
    - Summarize bioassay activities for compounds and substances.
 

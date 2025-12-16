@@ -53,16 +53,6 @@ def _prepare_request(
 ):
 ```
 
-<a id="camel.models.deepseek_model.DeepSeekModel._post_handle_response"></a>
-
-### _post_handle_response
-
-```python
-def _post_handle_response(self, response: ChatCompletion):
-```
-
-Handle reasoning content with `<think>` tags at the beginning.
-
 <a id="camel.models.deepseek_model.DeepSeekModel._run"></a>
 
 ### _run
@@ -87,11 +77,3 @@ Runs inference of DeepSeek chat completion.
   Union[ChatCompletion, Stream[ChatCompletionChunk]]:
 `ChatCompletion` in the non-stream mode, or
 `Stream[ChatCompletionChunk]` in the stream mode.
-
-<a id="camel.models.deepseek_model.DeepSeekModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```

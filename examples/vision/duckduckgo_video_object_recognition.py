@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List
 
 from PIL import Image
@@ -68,7 +68,7 @@ def main():
         image_list = downloader.get_video_screenshots(video_url, 3)
         if image_list and len(image_list) > 0:
             print(
-                f'''Successfully downloaded video and captured screenshots 
+                f'''Successfully downloaded video and captured screenshots
                 from: {video_url}'''
             )
             detect_image_obj(image_list)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
-Successfully downloaded video and captured screenshots 
+Successfully downloaded video and captured screenshots
                 from: https://www.youtube.com/embed/RRMVF0PPqZI?autoplay=1
 ==================== SYS MSG ====================
 You have been assigned an object recognition task.

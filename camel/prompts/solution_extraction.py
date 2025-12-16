@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any
 
 from camel.prompts.base import TextPrompt, TextPromptDict
@@ -29,13 +29,13 @@ class SolutionExtractionPromptTemplateDict(TextPromptDict):
     """
 
     ASSISTANT_PROMPT = TextPrompt(
-        """You are an experienced solution extracting agent. 
-Your task is to extract full and complete solutions by looking at the conversation between a user and an assistant with particular specializations. 
-You should present me with a final and detailed solution purely based on the conversation. 
-You should present the solution as if its yours. 
-Use present tense and as if you are the one presenting the solution. 
+        """You are an experienced solution extracting agent.
+Your task is to extract full and complete solutions by looking at the conversation between a user and an assistant with particular specializations.
+You should present me with a final and detailed solution purely based on the conversation.
+You should present the solution as if its yours.
+Use present tense and as if you are the one presenting the solution.
 You should not miss any necessary details or examples.
-Keep all provided explanations and codes provided throughout the conversation. 
+Keep all provided explanations and codes provided throughout the conversation.
 Remember your task is not to summarize rather to extract the full solution."""
     )
 

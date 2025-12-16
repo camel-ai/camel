@@ -1,0 +1,267 @@
+<a id="camel.toolkits.artifact_toolkit"></a>
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit"></a>
+
+## ArtifactToolkit
+
+```python
+class ArtifactToolkit(BaseToolkit):
+```
+
+A toolkit for creating and managing artifacts like HTML, SVG, charts, and diagrams.
+
+This toolkit enables agents to generate visual content that can be previewed
+in the CAMEL web application, similar to Claude's artifact system.
+
+Supported artifact types:
+- HTML documents
+- SVG graphics
+- Mermaid flowcharts and diagrams
+- Code snippets (with syntax highlighting)
+- Markdown documents
+- LaTeX math expressions
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit._generate_artifact_id"></a>
+
+### _generate_artifact_id
+
+```python
+def _generate_artifact_id(self, artifact_type: str):
+```
+
+Generate a unique artifact ID with microsecond precision.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_html_artifact"></a>
+
+### create_html_artifact
+
+```python
+def create_html_artifact(
+    self,
+    content: str,
+    title: str = 'HTML Artifact',
+    include_css: bool = True,
+    css_styles: Optional[str] = None
+):
+```
+
+Create an HTML artifact that can be rendered in the web interface.
+
+**Parameters:**
+
+- **content** (str): The HTML content to be displayed.
+- **title** (str, optional): Title for the artifact. Defaults to "HTML Artifact". (default: `"HTML Artifact"`)
+- **include_css** (bool, optional): Whether to include basic CSS styling. Defaults to True. (default: True)
+- **css_styles** (str, optional): Additional CSS styles to include.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the artifact data with metadata.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit._wrap_html_content"></a>
+
+### _wrap_html_content
+
+```python
+def _wrap_html_content(
+    self,
+    content: str,
+    title: str,
+    include_css: bool,
+    css_styles: Optional[str]
+):
+```
+
+Wrap content in a complete HTML document with optional styling.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit._create_html_document"></a>
+
+### _create_html_document
+
+```python
+def _create_html_document(
+    self,
+    title: str,
+    body_content: str,
+    head_content: str = '',
+    body_class: str = ''
+):
+```
+
+Create a complete HTML document with consistent structure.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit._get_base_styles"></a>
+
+### _get_base_styles
+
+```python
+def _get_base_styles(self):
+```
+
+Get base CSS styles used across all artifacts.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_svg_artifact"></a>
+
+### create_svg_artifact
+
+```python
+def create_svg_artifact(
+    self,
+    svg_content: str,
+    title: str = 'SVG Graphic',
+    width: Optional[int] = None,
+    height: Optional[int] = None
+):
+```
+
+Create an SVG artifact for vector graphics.
+
+**Parameters:**
+
+- **svg_content** (str): The SVG content (can be just the inner elements or complete SVG).
+- **title** (str, optional): Title for the artifact. Defaults to "SVG Graphic". (default: `"SVG Graphic"`)
+- **width** (int, optional): Width of the SVG. If not provided, uses SVG's viewBox or defaults.
+- **height** (int, optional): Height of the SVG. If not provided, uses SVG's viewBox or defaults.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the SVG artifact data.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_mermaid_flowchart"></a>
+
+### create_mermaid_flowchart
+
+```python
+def create_mermaid_flowchart(
+    self,
+    flowchart_definition: str,
+    title: str = 'Flowchart',
+    direction: str = 'TD'
+):
+```
+
+Create a Mermaid flowchart artifact.
+
+**Parameters:**
+
+- **flowchart_definition** (str): The Mermaid flowchart definition.
+- **title** (str, optional): Title for the flowchart. Defaults to "Flowchart". (default: `"Flowchart"`)
+- **direction** (str, optional): Flow direction (TD, LR, BT, RL). Defaults to "TD". (default: `"TD"`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the Mermaid flowchart data.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_code_artifact"></a>
+
+### create_code_artifact
+
+```python
+def create_code_artifact(
+    self,
+    code: str,
+    language: str = 'python',
+    title: str = 'Code Snippet',
+    show_line_numbers: bool = True,
+    theme: str = 'github'
+):
+```
+
+Create a code artifact with syntax highlighting.
+
+**Parameters:**
+
+- **code** (str): The source code content.
+- **language** (str, optional): Programming language for syntax highlighting. Defaults to "python". (default: `"python"`)
+- **title** (str, optional): Title for the code artifact. Defaults to "Code Snippet". (default: `"Code Snippet"`)
+- **show_line_numbers** (bool, optional): Whether to show line numbers. Defaults to True. (default: True)
+- **theme** (str, optional): Syntax highlighting theme. Defaults to "github". (default: `"github"`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the code artifact data.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_markdown_artifact"></a>
+
+### create_markdown_artifact
+
+```python
+def create_markdown_artifact(
+    self,
+    markdown_content: str,
+    title: str = 'Document',
+    include_toc: bool = False,
+    theme: str = 'github'
+):
+```
+
+Create a Markdown document artifact with rendering.
+
+**Parameters:**
+
+- **markdown_content** (str): The Markdown content.
+- **title** (str, optional): Title for the document. Defaults to "Document". (default: `"Document"`)
+- **include_toc** (bool, optional): Whether to include a table of contents. Defaults to False. (default: False)
+- **theme** (str, optional): Styling theme for the document. Defaults to "github". (default: `"github"`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the Markdown artifact data.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.create_latex_math"></a>
+
+### create_latex_math
+
+```python
+def create_latex_math(
+    self,
+    latex_expression: str,
+    title: str = 'Mathematical Expression',
+    display_mode: str = 'block',
+    show_source: bool = False
+):
+```
+
+Create a LaTeX mathematical expression artifact.
+
+**Parameters:**
+
+- **latex_expression** (str): The LaTeX mathematical expression.
+- **title** (str, optional): Title for the math artifact. Defaults to "Mathematical Expression". (default: `"Mathematical Expression"`)
+- **display_mode** (str, optional): Display mode - "block" for centered equations, "inline" for text-style. Defaults to "block". (default: `"block"`)
+- **show_source** (bool, optional): Whether to show the LaTeX source code. Defaults to False. (default: False)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the LaTeX math artifact data.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.get_artifact_info"></a>
+
+### get_artifact_info
+
+```python
+def get_artifact_info(self, artifact: Dict[str, Any]):
+```
+
+Get formatted information about an artifact.
+
+**Parameters:**
+
+- **artifact** (Dict[str, Any]): The artifact dictionary.
+
+**Returns:**
+
+  str: Formatted information about the artifact.
+
+<a id="camel.toolkits.artifact_toolkit.ArtifactToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

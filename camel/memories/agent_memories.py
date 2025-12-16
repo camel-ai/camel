@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import warnings
 from typing import List, Optional
@@ -51,7 +51,9 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage,
+        )
         self._agent_id = agent_id
 
     @property
@@ -101,30 +103,49 @@ class ChatHistoryMemory(AgentMemory):
         if not record_dicts:
             return
 
-        # Filter out tool-related messages
-        cleaned_records = []
-        for record in record_dicts:
+        # Track indices to remove (reverse order for efficient deletion)
+        indices_to_remove = []
+
+        # Identify indices of tool-related messages
+        for i, record in enumerate(record_dicts):
             role = record.get('role_at_backend')
 
-            # Skip FUNCTION messages
+            # Mark FUNCTION messages for removal
             if role == OpenAIBackendRole.FUNCTION.value:
-                continue
+                indices_to_remove.append(i)
+            # Mark TOOL messages for removal
+            elif role == OpenAIBackendRole.TOOL.value:
+                indices_to_remove.append(i)
+            # Mark ASSISTANT messages with tool_calls for removal
+            elif role == OpenAIBackendRole.ASSISTANT.value:
+                message_dict = record.get('message', {})
+                # Check for tool_calls in message
+                has_tool_calls = 'tool_calls' in message_dict
+                is_func_calling = (
+                    message_dict.get('__class__') == 'FunctionCallingMessage'
+                    and 'args' in message_dict
+                )
 
-            # Skip TOOL messages
-            if role == OpenAIBackendRole.TOOL.value:
-                continue
+                if has_tool_calls or is_func_calling:
+                    indices_to_remove.append(i)
 
-            # Skip ASSISTANT messages with tool_calls
-            if role == OpenAIBackendRole.ASSISTANT.value:
-                meta_dict = record.get('meta_dict', {})
-                if meta_dict and 'tool_calls' in meta_dict:
-                    continue
+        # Remove records in-place
+        for i in reversed(indices_to_remove):
+            del record_dicts[i]
 
-            # Keep all other messages
-            cleaned_records.append(record)
+        # Clear storage and save the modified records back
+        self._chat_history_block.storage.clear()
+        self._chat_history_block.storage.save(record_dicts)
 
-        # Save the cleaned records back to storage
-        self._chat_history_block.storage.save(cleaned_records)
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes the most recent records from chat history memory."""
+        return self._chat_history_block.pop_records(count)
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from chat history memory."""
+        return self._chat_history_block.remove_records_by_indices(indices)
 
 
 class VectorDBMemory(AgentMemory):
@@ -189,6 +210,20 @@ class VectorDBMemory(AgentMemory):
     def clear(self) -> None:
         r"""Removes all records from the vector database memory."""
         self._vectordb_block.clear()
+
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Rolling back is unsupported for vector database memory."""
+        raise NotImplementedError(
+            "VectorDBMemory does not support removing historical records."
+        )
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removing by indices is unsupported for vector database memory."""
+        raise NotImplementedError(
+            "VectorDBMemory does not support removing records by indices."
+        )
 
 
 class LongtermAgentMemory(AgentMemory):
@@ -274,3 +309,13 @@ class LongtermAgentMemory(AgentMemory):
         r"""Removes all records from the memory."""
         self.chat_history_block.clear()
         self.vector_db_block.clear()
+
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes recent chat history records while leaving vector memory."""
+        return self.chat_history_block.pop_records(count)
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from chat history."""
+        return self.chat_history_block.remove_records_by_indices(indices)

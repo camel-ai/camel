@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -38,11 +38,11 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy, 
-the answer to the meaning of life, the universe, and everything is **42**. 
-However, the trick lies in figuring out the actual question to which 42 is the 
-answer. Isn't that just like life, full of mysteries and unanswered questions? 
-Keep pondering, for the journey of discovery is as important as the answer 
+Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy,
+the answer to the meaning of life, the universe, and everything is **42**.
+However, the trick lies in figuring out the actual question to which 42 is the
+answer. Isn't that just like life, full of mysteries and unanswered questions?
+Keep pondering, for the journey of discovery is as important as the answer
 itself!
 ===============================================================================
 """

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -19,11 +19,13 @@ import pytest
 from camel.memories import (
     BaseContextCreator,
     ChatHistoryBlock,
+    ChatHistoryMemory,
     LongtermAgentMemory,
     MemoryRecord,
     VectorDBBlock,
 )
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, FunctionCallingMessage
+from camel.storages.key_value_storages import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole, RoleType
 
 
@@ -121,3 +123,201 @@ class TestLongtermAgentMemory:
         memory.clear()
         mock_chat_history_block.clear.assert_called_once()
         mock_vector_db_block.clear.assert_called_once()
+
+
+class TestChatHistoryMemoryCleanToolCalls:
+    @pytest.fixture
+    def mock_context_creator(self):
+        creator = MagicMock(spec=BaseContextCreator)
+        creator.create_context.return_value = ([], 0)
+        return creator
+
+    def test_clean_tool_calls_removes_function_messages(
+        self, mock_context_creator
+    ):
+        r"""Test that clean_tool_calls removes FUNCTION role messages."""
+        storage = InMemoryKeyValueStorage()
+        memory = ChatHistoryMemory(mock_context_creator, storage=storage)
+
+        # Create records with FUNCTION messages
+        records = [
+            MemoryRecord(
+                message=BaseMessage("user", RoleType.USER, None, "Question"),
+                role_at_backend=OpenAIBackendRole.USER,
+            ),
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "assistant",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="tool",
+                    result="result",
+                ),
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+            ),
+        ]
+        memory.write_records(records)
+
+        memory.clean_tool_calls()
+        remaining = memory.retrieve()
+
+        assert len(remaining) == 1
+        assert (
+            remaining[0].memory_record.role_at_backend
+            == OpenAIBackendRole.USER
+        )
+
+    def test_clean_tool_calls_removes_assistant_with_tool_calls(
+        self, mock_context_creator
+    ):
+        r"""Test that clean_tool_calls removes ASSISTANT messages with tool
+        calls.
+        """
+        storage = InMemoryKeyValueStorage()
+        memory = ChatHistoryMemory(mock_context_creator, storage=storage)
+
+        records = [
+            MemoryRecord(
+                message=BaseMessage("user", RoleType.USER, None, "Question"),
+                role_at_backend=OpenAIBackendRole.USER,
+            ),
+            # Assistant with tool call (has args)
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "assistant",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="add",
+                    args={"a": 1, "b": 2},
+                    tool_call_id="call_123",
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            # Function result
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "function",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="add",
+                    result="3",
+                    tool_call_id="call_123",
+                ),
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+            ),
+            # Final assistant response (should be kept)
+            MemoryRecord(
+                message=BaseMessage(
+                    "assistant", RoleType.ASSISTANT, None, "Answer"
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+        ]
+        memory.write_records(records)
+
+        memory.clean_tool_calls()
+        remaining = memory.retrieve()
+
+        # Should only have USER and final ASSISTANT
+        assert len(remaining) == 2
+        assert (
+            remaining[0].memory_record.role_at_backend
+            == OpenAIBackendRole.USER
+        )
+        assert (
+            remaining[1].memory_record.role_at_backend
+            == OpenAIBackendRole.ASSISTANT
+        )
+        assert remaining[1].memory_record.message.content == "Answer"
+
+    def test_clean_tool_calls_handles_multiple_tool_calls(
+        self, mock_context_creator
+    ):
+        r"""Test clean_tool_calls with multiple tool call sequences."""
+        storage = InMemoryKeyValueStorage()
+        memory = ChatHistoryMemory(mock_context_creator, storage=storage)
+
+        records = [
+            MemoryRecord(
+                message=BaseMessage("user", RoleType.USER, None, "Q1"),
+                role_at_backend=OpenAIBackendRole.USER,
+            ),
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "assistant",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="tool1",
+                    args={"x": 1},
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "function",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="tool1",
+                    result="R1",
+                ),
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+            ),
+            MemoryRecord(
+                message=BaseMessage(
+                    "assistant", RoleType.ASSISTANT, None, "A1"
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            MemoryRecord(
+                message=BaseMessage("user", RoleType.USER, None, "Q2"),
+                role_at_backend=OpenAIBackendRole.USER,
+            ),
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "assistant",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="tool2",
+                    args={"y": 2},
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            MemoryRecord(
+                message=FunctionCallingMessage(
+                    "function",
+                    RoleType.ASSISTANT,
+                    None,
+                    "",
+                    func_name="tool2",
+                    result="R2",
+                ),
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+            ),
+            MemoryRecord(
+                message=BaseMessage(
+                    "assistant", RoleType.ASSISTANT, None, "A2"
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+        ]
+        memory.write_records(records)
+
+        memory.clean_tool_calls()
+        remaining = memory.retrieve()
+
+        # Should only have: USER, ASSISTANT, USER, ASSISTANT
+        assert len(remaining) == 4
+        expected_roles = [
+            OpenAIBackendRole.USER,
+            OpenAIBackendRole.ASSISTANT,
+            OpenAIBackendRole.USER,
+            OpenAIBackendRole.ASSISTANT,
+        ]
+        actual_roles = [r.memory_record.role_at_backend for r in remaining]
+        assert actual_roles == expected_roles

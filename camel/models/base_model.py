@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
 import os
 import re
@@ -24,6 +24,7 @@ from openai.lib.streaming.chat import (
 )
 from pydantic import BaseModel
 
+from camel.logger import get_logger as camel_get_logger
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -32,7 +33,22 @@ from camel.types import (
     ParsedChatCompletion,
     UnifiedModelType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, Constants
+
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import get_logger  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import]
+
+        logger = get_logger('base_model')
+    except ImportError:
+        from camel.utils import observe
+
+        logger = camel_get_logger('base_model')
+else:
+    from camel.utils import observe
+
+    logger = camel_get_logger('base_model')
 
 
 class ModelBackendMeta(abc.ABCMeta):
@@ -87,7 +103,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         max_retries: int = 3,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
@@ -105,7 +121,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             == "true"
         )
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
-        self.check_model_config()
 
     @property
     @abstractmethod
@@ -365,6 +380,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
+    @observe()
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -404,7 +420,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = self._run(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
@@ -412,6 +434,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return result
 
+    @observe()
     async def arun(
         self,
         messages: List[OpenAIMessage],
@@ -449,24 +472,19 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = await self._arun(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
             self._log_response(log_path, result)
 
         return result
-
-    @abstractmethod
-    def check_model_config(self):
-        r"""Check whether the input model configuration contains unexpected
-        arguments
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected argument for this model class.
-        """
-        pass
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count the number of tokens in the messages using the specific

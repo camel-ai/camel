@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Literal, Optional, Union
 
 from camel.interpreters import (
@@ -18,6 +18,7 @@ from camel.interpreters import (
     E2BInterpreter,
     InternalPythonInterpreter,
     JupyterKernelInterpreter,
+    MicrosandboxInterpreter,
     SubprocessInterpreter,
 )
 from camel.logger import get_logger
@@ -43,18 +44,31 @@ class CodeExecutionToolkit(BaseToolkit):
             (default: :obj:`None`)
         require_confirm (bool): Whether to require confirmation before
             executing code. (default: :obj:`False`)
+        timeout (Optional[float]): General timeout for toolkit operations.
+            (default: :obj:`None`)
+        microsandbox_config (Optional[dict]): Configuration for microsandbox
+            interpreter. Available keys: 'server_url', 'api_key',
+            'namespace', 'sandbox_name', 'timeout'.
+            If None, uses default configuration. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         sandbox: Literal[
-            "internal_python", "jupyter", "docker", "subprocess", "e2b"
+            "internal_python",
+            "jupyter",
+            "docker",
+            "subprocess",
+            "e2b",
+            "microsandbox",
         ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
         require_confirm: bool = False,
         timeout: Optional[float] = None,
+        # Microsandbox configuration dictionary
+        microsandbox_config: Optional[dict] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.verbose = verbose
@@ -68,6 +82,7 @@ class CodeExecutionToolkit(BaseToolkit):
             DockerInterpreter,
             SubprocessInterpreter,
             E2BInterpreter,
+            MicrosandboxInterpreter,
         ]
 
         if sandbox == "internal_python":
@@ -95,6 +110,18 @@ class CodeExecutionToolkit(BaseToolkit):
             )
         elif sandbox == "e2b":
             self.interpreter = E2BInterpreter(require_confirm=require_confirm)
+        elif sandbox == "microsandbox":
+            # Extract parameters with proper types for microsandbox
+            config = microsandbox_config or {}
+
+            self.interpreter = MicrosandboxInterpreter(
+                require_confirm=require_confirm,
+                server_url=config.get("server_url"),
+                api_key=config.get("api_key"),
+                namespace=config.get("namespace", "default"),
+                sandbox_name=config.get("sandbox_name"),
+                timeout=config.get("timeout", 30),
+            )
         else:
             raise RuntimeError(
                 f"The sandbox type `{sandbox}` is not supported."

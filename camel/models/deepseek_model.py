@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from typing import Any, Dict, List, Optional, Type, Union
@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from camel.configs import DeepSeekConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
@@ -165,44 +165,6 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return request_config
 
-    def _post_handle_response(
-        self, response: ChatCompletion
-    ) -> ChatCompletion:
-        r"""Handle reasoning content with <think> tags at the beginning."""
-        if (
-            self.model_type in [ModelType.DEEPSEEK_REASONER]
-            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
-            == "true"
-        ):
-            reasoning_content = response.choices[0].message.reasoning_content  # type: ignore[attr-defined]
-            combined_content = (  # type: ignore[operator]
-                f"<think>\n{reasoning_content}\n</think>\n"
-                if reasoning_content
-                else ""
-            ) + response.choices[0].message.content
-
-            response = ChatCompletion.construct(
-                id=response.id,
-                choices=[
-                    dict(
-                        index=response.choices[0].index,
-                        message={
-                            "role": response.choices[0].message.role,
-                            "content": combined_content,
-                            "tool_calls": None,
-                        },
-                        finish_reason=response.choices[0].finish_reason
-                        if response.choices[0].finish_reason
-                        else None,
-                    )
-                ],
-                created=response.created,
-                model=response.model,
-                object="chat.completion",
-                usage=response.usage,
-            )
-        return response
-
     @observe()
     def _run(
         self,
@@ -244,7 +206,7 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
+        return response
 
     @observe()
     async def _arun(
@@ -286,19 +248,4 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to DeepSeek API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to DeepSeek API.
-        """
-        for param in self.model_config_dict:
-            if param not in DEEPSEEK_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into DeepSeek model backend."
-                )
+        return response

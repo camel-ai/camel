@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import Union, cast
@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
+    SYSTEM = "system"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
@@ -48,6 +49,11 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5_1 = "gpt-5.1"
+    GPT_5_2 = ("gpt-5.2",)
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-5-mini"
+    GPT_5_NANO = "gpt-5-nano"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -59,6 +65,9 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
     AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
+
+    AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -77,11 +86,57 @@ class ModelType(UnifiedModelType, Enum):
     # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
-    GROQ_LLAMA_3_3_70B_PREVIEW = "llama-3.3-70b-specdec"
-    GROQ_LLAMA_3_8B = "llama3-8b-8192"
-    GROQ_LLAMA_3_70B = "llama3-70b-8192"
-    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
-    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
+
+    # Cerebras platform models
+    CEREBRAS_GPT_OSS_120B = "gpt-oss-120b"
+    CEREBRAS_LLAMA_3_1_8B = "llama3.1-8b"
+    CEREBRAS_LLAMA_3_3_70B = "llama3.3-70b"
+    CEREBRAS_QWEN_3_32B = "qwen-3-32b"
+
+    # Nebius AI Studio platform models
+    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
+    NEBIUS_GLM_4_5 = "GLM-4.5"
+    NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    NEBIUS_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NEBIUS_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    NEBIUS_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.3"
+
+    # CometAPI platform models
+    COMETAPI_GPT_5_CHAT_LATEST = "gpt-5-chat-latest"
+    COMETAPI_CHATGPT_4O_LATEST = "chatgpt-4o-latest"
+    COMETAPI_GPT_5_MINI = "gpt-5-mini"
+    COMETAPI_GPT_5_NANO = "gpt-5-nano"
+    COMETAPI_GPT_5 = "gpt-5"
+    COMETAPI_GPT_4_1 = "gpt-4.1"
+    COMETAPI_GPT_4O_MINI = "gpt-4o-mini"
+    COMETAPI_O4_MINI_2025_04_16 = "o4-mini-2025-04-16"
+    COMETAPI_O3_PRO_2025_06_10 = "o3-pro-2025-06-10"
+    COMETAPI_CLAUDE_OPUS_4_1_20250805 = "claude-opus-4-1-20250805"
+    COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING = (
+        "claude-opus-4-1-20250805-thinking"
+    )
+    COMETAPI_CLAUDE_SONNET_4_20250514 = "claude-sonnet-4-20250514"
+    COMETAPI_CLAUDE_SONNET_4_20250514_THINKING = (
+        "claude-sonnet-4-20250514-thinking"
+    )
+    COMETAPI_CLAUDE_3_7_SONNET_LATEST = "claude-3-7-sonnet-latest"
+    COMETAPI_CLAUDE_3_5_HAIKU_LATEST = "claude-3-5-haiku-latest"
+    COMETAPI_GEMINI_2_5_PRO = "gemini-2.5-pro"
+    COMETAPI_GEMINI_2_5_FLASH = "gemini-2.5-flash"
+    COMETAPI_GEMINI_2_5_FLASH_LITE = "gemini-2.5-flash-lite"
+    COMETAPI_GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    COMETAPI_GROK_4_0709 = "grok-4-0709"
+    COMETAPI_GROK_3 = "grok-3"
+    COMETAPI_GROK_3_MINI = "grok-3-mini"
+    COMETAPI_GROK_2_IMAGE_1212 = "grok-2-image-1212"
+    COMETAPI_DEEPSEEK_V3_1 = "deepseek-v3.1"
+    COMETAPI_DEEPSEEK_V3 = "deepseek-v3"
+    COMETAPI_DEEPSEEK_R1_0528 = "deepseek-r1-0528"
+    COMETAPI_DEEPSEEK_CHAT = "deepseek-chat"
+    COMETAPI_DEEPSEEK_REASONER = "deepseek-reasoner"
+    COMETAPI_QWEN3_30B_A3B = "qwen3-30b-a3b"
+    COMETAPI_QWEN3_CODER_PLUS_2025_07_22 = "qwen3-coder-plus-2025-07-22"
 
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
@@ -91,6 +146,7 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+    OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -155,8 +211,11 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
+    CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
+    CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -185,6 +244,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_3_PRO = "gemini-3-pro-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
@@ -193,8 +253,6 @@ class ModelType(UnifiedModelType, Enum):
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
     GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
-    GEMINI_1_5_FLASH = "gemini-1.5-flash"
-    GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -207,9 +265,10 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
-    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
-    MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
+    MAGISTRAL_SMALL_1_2 = "magistral-small-1.2"
+    MAGISTRAL_MEDIUM_1_2 = "magistral-medium-1.2"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -245,6 +304,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
     QWEN_QWQ_PLUS = "qwq-plus"
+    QWEN_3_CODER_PLUS = "qwen3-coder-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -275,9 +335,31 @@ class ModelType(UnifiedModelType, Enum):
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_PRO_DEEPSEEK_V3 = "Pro/deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_PRO_DEEPSEEK_R1 = "Pro/deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
     SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
     SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
     SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
+    SILICONFLOW_QWQ_32B = "Qwen/QwQ-32B"
     SILICONFLOW_QWEN2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
     SILICONFLOW_QWEN2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
     SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
@@ -285,6 +367,12 @@ class ModelType(UnifiedModelType, Enum):
     SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
     SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
     SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
+    SILICONFLOW_THUDM_GLM_Z1_32B_0414 = "THUDM/GLM-Z1-32B-0414"
+    SILICONFLOW_THUDM_GLM_4_32B_0414 = "THUDM/GLM-4-32B-0414"
+    SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414 = (
+        "THUDM/GLM-Z1-Rumination-32B-0414"
+    )
+    SILICONFLOW_THUDM_GLM_4_9B_0414 = "THUDM/GLM-4-9B-0414"
 
     # AIML models support tool calling
     AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
@@ -371,6 +459,9 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
     MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
+    MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING = (
+        "PaddlePaddle/ERNIE-4.5-VL-28B-A3B-Thinking"
+    )
 
     # WatsonX models
     WATSONX_GRANITE_3_8B_INSTRUCT = "ibm/granite-3-8b-instruct"
@@ -397,6 +488,8 @@ class ModelType(UnifiedModelType, Enum):
     DEEPSEEK_V3 = "deepseek-v3"
     DEEPSEEK_R1 = "deepseek-r1"
     QWEN3_235B_A22B = "qwen3-235b-a22b"
+    ERNIE_5_0_THINKING = "ernie-5.0-thinking-latest"
+    ERNIE_4_5_TURBO_VL = "ernie-4.5-turbo-vl-latest"
 
     # Crynux models
     CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
@@ -416,6 +509,10 @@ class ModelType(UnifiedModelType, Enum):
 
     CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
+    # Minimax M2 models
+    MINIMAX_M2 = "MiniMax-M2"
+    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     def __str__(self):
         return self.value
@@ -463,6 +560,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
+                self.is_cerebras,
                 self.is_openrouter,
                 self.is_lmstudio,
                 self.is_sglang,
@@ -494,8 +592,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
+        }
+
+    @property
+    def is_amd(self) -> bool:
+        r"""Returns whether this type of models is a AMD model."""
+        return self in {
+            ModelType.AMD_GPT4,
         }
 
     @property
@@ -512,6 +622,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -534,6 +645,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -574,8 +686,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
+            ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -584,11 +699,66 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_3_70B,
-            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_MIXTRAL_8_7B,
-            ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_cerebras(self) -> bool:
+        r"""Returns whether this type of models is served by Cerebras."""
+        return self in {
+            ModelType.CEREBRAS_GPT_OSS_120B,
+            ModelType.CEREBRAS_LLAMA_3_1_8B,
+            ModelType.CEREBRAS_LLAMA_3_3_70B,
+            ModelType.CEREBRAS_QWEN_3_32B,
+        }
+
+    @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether this type of models is served by Nebius AI
+        Studio."""
+        return self in {
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether this type of models is served by CometAPI."""
+        return self in {
+            ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+            ModelType.COMETAPI_CHATGPT_4O_LATEST,
+            ModelType.COMETAPI_GPT_5_MINI,
+            ModelType.COMETAPI_GPT_5_NANO,
+            ModelType.COMETAPI_GPT_5,
+            ModelType.COMETAPI_GPT_4_1,
+            ModelType.COMETAPI_GPT_4O_MINI,
+            ModelType.COMETAPI_O4_MINI_2025_04_16,
+            ModelType.COMETAPI_O3_PRO_2025_06_10,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514_THINKING,
+            ModelType.COMETAPI_CLAUDE_3_7_SONNET_LATEST,
+            ModelType.COMETAPI_CLAUDE_3_5_HAIKU_LATEST,
+            ModelType.COMETAPI_GEMINI_2_5_PRO,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH_LITE,
+            ModelType.COMETAPI_GEMINI_2_0_FLASH,
+            ModelType.COMETAPI_GROK_4_0709,
+            ModelType.COMETAPI_GROK_3,
+            ModelType.COMETAPI_GROK_3_MINI,
+            ModelType.COMETAPI_GROK_2_IMAGE_1212,
+            ModelType.COMETAPI_DEEPSEEK_V3_1,
+            ModelType.COMETAPI_DEEPSEEK_V3,
+            ModelType.COMETAPI_DEEPSEEK_R1_0528,
+            ModelType.COMETAPI_DEEPSEEK_CHAT,
+            ModelType.COMETAPI_DEEPSEEK_REASONER,
+            ModelType.COMETAPI_QWEN3_30B_A3B,
+            ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
         }
 
     @property
@@ -602,6 +772,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }
 
     @property
@@ -649,9 +820,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.MISTRAL_MEDIUM_3,
-            ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
         }
 
     @property
@@ -680,6 +852,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -688,8 +861,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -763,6 +934,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS_2025_04_28,
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
+            ModelType.QWEN_3_CODER_PLUS,
         }
 
     @property
@@ -829,6 +1001,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
+            ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
         }
 
     @property
@@ -859,9 +1032,19 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.SILICONFLOW_DEEPSEEK_V2_5,
             ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
             ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
             ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
             ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
@@ -869,6 +1052,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
         }
 
     @property
@@ -895,6 +1082,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.DEEPSEEK_V3,
             ModelType.DEEPSEEK_R1,
             ModelType.QWEN3_235B_A22B,
+            ModelType.ERNIE_5_0_THINKING,
+            ModelType.ERNIE_4_5_TURBO_VL,
         }
 
     @property
@@ -992,11 +1181,8 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 4_096
         elif self in {
+            ModelType.CEREBRAS_LLAMA_3_1_8B,
             ModelType.GPT_4,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
-            ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
@@ -1079,7 +1265,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
-            ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.YI_LARGE,
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
@@ -1125,10 +1310,23 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
+            ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.CEREBRAS_GPT_OSS_120B,
+            ModelType.CEREBRAS_LLAMA_3_3_70B,
+            ModelType.CEREBRAS_QWEN_3_32B,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
@@ -1145,6 +1343,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B,
             ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B,
             ModelType.NOVITA_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+            ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
         }:
             return 64_000
         elif self in {
@@ -1174,6 +1383,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
             ModelType.QWEN_2_5_CODER_32B,
             ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
@@ -1207,10 +1417,55 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
-            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+            ModelType.COMETAPI_CHATGPT_4O_LATEST,
+            ModelType.COMETAPI_GPT_5_MINI,
+            ModelType.COMETAPI_GPT_5_NANO,
+            ModelType.COMETAPI_GPT_5,
+            ModelType.COMETAPI_GPT_4_1,
+            ModelType.COMETAPI_GPT_4O_MINI,
+            ModelType.COMETAPI_O4_MINI_2025_04_16,
+            ModelType.COMETAPI_O3_PRO_2025_06_10,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805,
+            ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805_THINKING,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514,
+            ModelType.COMETAPI_CLAUDE_SONNET_4_20250514_THINKING,
+            ModelType.COMETAPI_CLAUDE_3_7_SONNET_LATEST,
+            ModelType.COMETAPI_CLAUDE_3_5_HAIKU_LATEST,
+            ModelType.COMETAPI_GEMINI_2_5_PRO,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH,
+            ModelType.COMETAPI_GEMINI_2_5_FLASH_LITE,
+            ModelType.COMETAPI_GEMINI_2_0_FLASH,
+            ModelType.COMETAPI_GROK_4_0709,
+            ModelType.COMETAPI_GROK_3,
+            ModelType.COMETAPI_GROK_3_MINI,
+            ModelType.COMETAPI_GROK_2_IMAGE_1212,
+            ModelType.COMETAPI_DEEPSEEK_V3_1,
+            ModelType.COMETAPI_DEEPSEEK_V3,
+            ModelType.COMETAPI_DEEPSEEK_R1_0528,
+            ModelType.COMETAPI_DEEPSEEK_CHAT,
+            ModelType.COMETAPI_DEEPSEEK_REASONER,
+            ModelType.COMETAPI_QWEN3_30B_A3B,
+            ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
+            ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
+            ModelType.ERNIE_5_0_THINKING,
+            ModelType.ERNIE_4_5_TURBO_VL,
         }:
             return 128_000
         elif self in {
@@ -1245,6 +1500,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
         }:
             return 131_072
         elif self in {
@@ -1258,8 +1514,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
+            ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1267,6 +1526,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_3_7_SONNET,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1274,6 +1534,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }:
             return 256_000
 
@@ -1282,11 +1543,20 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 320_000
         elif self in {
+            ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5,
+        }:
+            return 400_000
+        elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
         }:
             return 512_000
         elif self in {
+            ModelType.GEMINI_3_PRO,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1294,12 +1564,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.AMD_GPT4,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
@@ -1307,14 +1576,19 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 1_048_576
         elif self in {
+            ModelType.QWEN_3_CODER_PLUS,
+        }:
+            return 1_000_000
+        elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
         elif self in {
-            ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
         }:
-            return 40_000
+            return 32_000
 
         else:
             logger.warning(
@@ -1513,6 +1787,8 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    NEBIUS = "nebius"
+    COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
@@ -1529,6 +1805,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AMD = "amd"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     PPIO = "ppio"
@@ -1544,6 +1821,9 @@ class ModelPlatformType(Enum):
     WATSONX = "watsonx"
     QIANFAN = "qianfan"
     CRYNUX = "crynux"
+    AIHUBMIX = "aihubmix"
+    MINIMAX = "minimax"
+    CEREBRAS = "cerebras"
 
     @classmethod
     def from_name(cls, name):
@@ -1723,6 +2003,21 @@ class ModelPlatformType(Enum):
     def is_crynux(self) -> bool:
         r"""Returns whether this platform is Crynux."""
         return self is ModelPlatformType.CRYNUX
+
+    @property
+    def is_aihubmix(self) -> bool:
+        r"""Returns whether this platform is AihubMix."""
+        return self is ModelPlatformType.AIHUBMIX
+
+    @property
+    def is_minimax(self) -> bool:
+        r"""Returns whether this platform is Minimax M2."""
+        return self is ModelPlatformType.MINIMAX
+
+    @property
+    def is_cerebras(self) -> bool:
+        r"""Returns whether this platform is Cerebras."""
+        return self is ModelPlatformType.CEREBRAS
 
 
 class AudioModelType(Enum):

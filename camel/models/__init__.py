@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,14 +10,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aihubmix_model import AihubMixModel
 from .aiml_model import AIMLModel
+from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
+from .cerebras_model import CerebrasModel
 from .cohere_model import CohereModel
+from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
@@ -26,11 +30,13 @@ from .groq_model import GroqModel
 from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
 from .lmstudio_model import LMStudioModel
+from .minimax_model import MinimaxModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
+from .nebius_model import NebiusModel
 from .nemotron_model import NemotronModel
 from .netmind_model import NetmindModel
 from .novita_model import NovitaModel
@@ -61,11 +67,14 @@ __all__ = [
     'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
+    'AMDModel',
     'MistralModel',
     'GroqModel',
     'StubModel',
     'ZhipuAIModel',
+    'CerebrasModel',
     'CohereModel',
+    'CometAPIModel',
     'ModelFactory',
     'ModelManager',
     'LiteLLMModel',
@@ -87,6 +96,7 @@ __all__ = [
     'QwenModel',
     'AWSBedrockModel',
     'ModelProcessingError',
+    'NebiusModel',
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',
@@ -97,7 +107,9 @@ __all__ = [
     'SiliconFlowModel',
     'VolcanoModel',
     'LMStudioModel',
+    'MinimaxModel',
     'WatsonXModel',
     'QianfanModel',
     'CrynuxModel',
+    'AihubMixModel',
 ]
