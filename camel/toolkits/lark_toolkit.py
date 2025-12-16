@@ -16,6 +16,8 @@ import os
 from typing import Any, Callable, Dict, List, Literal, Optional
 from urllib.parse import quote
 
+from typing_extensions import TypedDict
+
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -43,6 +45,46 @@ BLOCK_TYPES = {
     "divider": 22,
     "callout": 19,
 }
+
+
+class BlockOperation(TypedDict, total=False):
+    r"""Type definition for batch block operations.
+
+    This TypedDict defines the structure for operations passed to
+    lark_batch_update_blocks. Using TypedDict ensures OpenAI's function
+    calling schema validation passes (requires additionalProperties: false).
+
+    Attributes:
+        action: The operation type - "create", "update", or "delete".
+        block_id: The block ID (required for "update" and "delete").
+        block_type: The block type (required for "create").
+        content: The text content (required for "create" and "update").
+        parent_block_id: Optional parent block ID (for "create").
+    """
+
+    action: Literal["create", "update", "delete"]
+    block_id: str
+    block_type: Literal[
+        "text",
+        "heading1",
+        "heading2",
+        "heading3",
+        "heading4",
+        "heading5",
+        "heading6",
+        "heading7",
+        "heading8",
+        "heading9",
+        "bullet",
+        "ordered",
+        "code",
+        "quote",
+        "todo",
+        "divider",
+        "callout",
+    ]
+    content: str
+    parent_block_id: str
 
 
 def _extract_text_from_element(element: Any) -> str:
@@ -755,10 +797,15 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
     ) -> Dict[str, Any]:
         r"""Creates a new Lark document.
 
+        The document will be created in the specified folder, or in the user's
+        root folder if no folder_token is provided. This ensures the document
+        appears in the user's document list immediately.
+
         Args:
             title (str): The title of the document.
             folder_token (Optional[str]): The folder token where the document
-                will be created. If not provided, creates in the root folder.
+                will be created. If not provided, automatically creates in the
+                user's root folder so it appears in their document list.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -766,6 +813,7 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - title: The document title
                 - url: The URL to access the document
                 - revision_id: The revision ID of the document
+                - folder_token: The folder where the document was created
         """
         from lark_oapi.api.docx.v1 import (
             CreateDocumentRequest,
@@ -773,15 +821,24 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
         )
 
         try:
+            # If no folder token provided, get the user's root folder
+            # This ensures documents appear in the user's document list
+            target_folder = folder_token
+            if not target_folder:
+                root_result = self.lark_get_root_folder_token()
+                if "error" not in root_result:
+                    target_folder = root_result.get("token")
+                    logger.info(f"Using root folder token: {target_folder}")
+
             request_body = (
                 CreateDocumentRequestBody.builder().title(title).build()
             )
 
-            if folder_token:
+            if target_folder:
                 request_body = (
                     CreateDocumentRequestBody.builder()
                     .title(title)
-                    .folder_token(folder_token)
+                    .folder_token(target_folder)
                     .build()
                 )
 
@@ -817,6 +874,7 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 "title": doc.title,
                 "revision_id": doc.revision_id,
                 "url": f"https://{domain}.com/docx/{doc.document_id}",
+                "folder_token": target_folder,
             }
 
         except Exception as e:
@@ -1488,7 +1546,7 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
     def lark_batch_update_blocks(
         self,
         document_id: str,
-        operations: List[Dict[str, Any]],
+        operations_json: str,
     ) -> Dict[str, Any]:
         r"""Performs batch operations on document blocks.
 
@@ -1497,8 +1555,9 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
 
         Args:
             document_id (str): The unique identifier of the document.
-            operations (List[Dict[str, Any]]): A list of operations to perform.
-                Each operation should be a dictionary with:
+            operations_json (str): A JSON string containing a list of
+                operations.
+                Each operation is a dictionary with:
                 - action: "create", "update", or "delete"
                 - block_id: Required for "update" and "delete" actions
                 - block_type: Required for "create" action
@@ -1512,15 +1571,25 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - document_revision_id: The final document revision ID
 
         Example:
-            >>> operations = [
+            >>> operations_json = '''[
             ...     {"action": "create", "block_type": "text",
             ...      "content": "New paragraph"},
             ...     {"action": "update", "block_id": "block123",
             ...      "content": "Updated text"},
-            ...     {"action": "delete", "block_id": "block456"},
-            ... ]
-            >>> toolkit.lark_batch_update_blocks(document_id, operations)
+            ...     {"action": "delete", "block_id": "block456"}
+            ... ]'''
+            >>> toolkit.lark_batch_update_blocks(document_id, operations_json)
         """
+        import json
+
+        try:
+            operations = json.loads(operations_json)
+        except json.JSONDecodeError as e:
+            return {"error": f"Invalid JSON in operations_json: {e}"}
+
+        if not isinstance(operations, list):
+            return {"error": "operations_json must be a JSON array"}
+
         results = []
         final_revision_id = None
 
@@ -1597,6 +1666,264 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             "document_revision_id": final_revision_id,
         }
 
+    def lark_list_folder_contents(
+        self,
+        folder_token: Optional[str] = None,
+        page_size: int = 50,
+        page_token: Optional[str] = None,
+        order_by: Literal[
+            "EditedTime", "CreatedTime", "DeletedTime"
+        ] = "EditedTime",
+        direction: Literal["ASC", "DESC"] = "DESC",
+    ) -> Dict[str, Any]:
+        r"""Lists files and folders in a Lark Drive folder.
+
+        Use this method to discover folder tokens for use with
+        lark_create_document(). Files created via API don't appear in your
+        document list until you either visit them or create them in a specific
+        folder.
+
+        Args:
+            folder_token (Optional[str]): The folder token to list contents of.
+                If not provided, lists the root folder contents.
+            page_size (int): Number of items to return per page (max 200).
+                (default: 50)
+            page_token (Optional[str]): Token for pagination. Use the
+                page_token from previous response to get next page.
+            order_by (str): Field to sort by. Options: "EditedTime",
+                "CreatedTime", "DeletedTime". (default: "EditedTime")
+            direction (str): Sort direction. Options: "ASC", "DESC".
+                (default: "DESC")
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - files: List of file/folder objects with token, name, type
+                - has_more: Whether there are more items to fetch
+                - page_token: Token to fetch the next page
+
+        Example:
+            >>> # List root folder to find available folders
+            >>> result = toolkit.lark_list_folder_contents()
+            >>> for item in result["files"]:
+            ...     print(f"{item['name']} ({item['type']}): {item['token']}")
+            ...
+            >>> # Use a folder token to create documents in that folder
+            >>> toolkit.lark_create_document(
+            ...     title="My Doc",
+            ...     folder_token=result["files"][0]["token"]
+            ... )
+        """
+        from lark_oapi.api.drive.v1 import ListFileRequest
+
+        try:
+            # Build the request
+            request_builder = (
+                ListFileRequest.builder()
+                .page_size(page_size)
+                .order_by(order_by)
+                .direction(direction)
+            )
+
+            if folder_token:
+                request_builder = request_builder.folder_token(folder_token)
+
+            if page_token:
+                request_builder = request_builder.page_token(page_token)
+
+            request = request_builder.build()
+
+            # Use user token if available (OAuth), otherwise app token
+            option = self._get_request_option()
+            if option:
+                response = self._client.drive.v1.file.list(request, option)
+            else:
+                response = self._client.drive.v1.file.list(request)
+
+            if not response.success():
+                logger.error(
+                    f"Failed to list folder contents: {response.code} - "
+                    f"{response.msg}"
+                )
+                return {
+                    "error": f"Failed to list folder contents: {response.msg}",
+                    "code": response.code,
+                }
+
+            files = []
+            if response.data.files:
+                for file in response.data.files:
+                    file_info = {
+                        "token": file.token,
+                        "name": file.name,
+                        "type": file.type,
+                        "parent_token": file.parent_token,
+                        "created_time": file.created_time,
+                        "modified_time": file.modified_time,
+                        "owner_id": file.owner_id,
+                    }
+
+                    # Add URL for easy access
+                    if file.type == "folder":
+                        file_info["url"] = (
+                            f"https://larksuite.com/drive/folder/{file.token}"
+                        )
+                    elif file.type == "docx":
+                        file_info["url"] = (
+                            f"https://larksuite.com/docx/{file.token}"
+                        )
+                    elif file.type == "sheet":
+                        file_info["url"] = (
+                            f"https://larksuite.com/sheets/{file.token}"
+                        )
+                    elif file.type == "bitable":
+                        file_info["url"] = (
+                            f"https://larksuite.com/base/{file.token}"
+                        )
+
+                    files.append(file_info)
+
+            return {
+                "folder_token": folder_token or "root",
+                "files": files,
+                "has_more": response.data.has_more or False,
+                "page_token": response.data.next_page_token,
+            }
+
+        except Exception as e:
+            logger.error(f"Error listing folder contents: {e}")
+            return {"error": f"Error listing folder contents: {e!s}"}
+
+    def lark_get_root_folder_token(self) -> Dict[str, Any]:
+        r"""Gets the token of the user's root folder in Lark Drive.
+
+        The root folder is the top-level "My Space" folder where you can
+        create documents that will be visible in your document list.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - token: The root folder token
+                - id: The root folder ID
+                - user_id: The owner's user ID
+
+        Example:
+            >>> # Get root folder and create a document there
+            >>> root = toolkit.lark_get_root_folder_token()
+            >>> toolkit.lark_create_document(
+            ...     title="My Doc",
+            ...     folder_token=root["token"]
+            ... )
+        """
+        try:
+            # Get the root folder token by listing files and extracting
+            # the parent_token from any file in the root folder.
+            # This is more reliable than the explorer/v2 endpoint which
+            # may not be available in all SDK versions.
+            result = self.lark_list_folder_contents(page_size=1)
+
+            if "error" in result:
+                return result
+
+            # If there are files, get the parent_token which is the root
+            if result.get("files") and len(result["files"]) > 0:
+                root_token = result["files"][0].get("parent_token")
+                if root_token:
+                    return {
+                        "token": root_token,
+                        "id": root_token,
+                        "user_id": None,
+                    }
+
+            # If no files exist, we can still use "root" as a fallback
+            # which works for some operations
+            return {
+                "token": "root",
+                "id": "root",
+                "user_id": None,
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting root folder: {e}")
+            return {"error": f"Error getting root folder: {e!s}"}
+
+    def lark_create_folder(
+        self,
+        name: str,
+        folder_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Creates a new folder in Lark Drive.
+
+        Args:
+            name (str): The name of the folder to create.
+            folder_token (Optional[str]): The parent folder token. If not
+                provided, creates in the root folder.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - token: The token of the created folder
+                - url: The URL to access the folder
+
+        Example:
+            >>> # Create a folder in root
+            >>> folder = toolkit.lark_create_folder("My Project")
+            >>> # Create a document in the new folder
+            >>> toolkit.lark_create_document(
+            ...     title="README",
+            ...     folder_token=folder["token"]
+            ... )
+        """
+        from lark_oapi.api.drive.v1 import (
+            CreateFolderFileRequest,
+            CreateFolderFileRequestBody,
+        )
+
+        try:
+            # If no folder token provided, get the root folder
+            parent_token = folder_token
+            if not parent_token:
+                root_result = self.lark_get_root_folder_token()
+                if "error" in root_result:
+                    return root_result
+                parent_token = root_result["token"]
+
+            request = (
+                CreateFolderFileRequest.builder()
+                .request_body(
+                    CreateFolderFileRequestBody.builder()
+                    .name(name)
+                    .folder_token(parent_token)
+                    .build()
+                )
+                .build()
+            )
+
+            # Use user token if available (OAuth), otherwise app token
+            option = self._get_request_option()
+            if option:
+                response = self._client.drive.v1.file.create_folder(
+                    request, option
+                )
+            else:
+                response = self._client.drive.v1.file.create_folder(request)
+
+            if not response.success():
+                logger.error(
+                    f"Failed to create folder: {response.code} - "
+                    f"{response.msg}"
+                )
+                return {
+                    "error": f"Failed to create folder: {response.msg}",
+                    "code": response.code,
+                }
+
+            return {
+                "token": response.data.token,
+                "url": response.data.url,
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating folder: {e}")
+            return {"error": f"Error creating folder: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1606,6 +1933,10 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
+            # Drive operations
+            FunctionTool(self.lark_get_root_folder_token),
+            FunctionTool(self.lark_list_folder_contents),
+            FunctionTool(self.lark_create_folder),
             # Basic document operations
             FunctionTool(self.lark_create_document),
             FunctionTool(self.lark_get_document),

@@ -33,36 +33,11 @@ Usage:
     python examples/toolkits/lark_toolkit_example.py
 """
 
-import json
 import os
 import time
-from pathlib import Path
 
 from camel.toolkits import LarkToolkit
 from camel.toolkits.lark_toolkit import BLOCK_TYPES
-
-# Token storage file (in production, use a secure database)
-TOKEN_FILE = Path(__file__).parent / ".lark_tokens.json"
-
-
-def save_tokens(access_token: str, refresh_token: str) -> None:
-    """Save tokens to file for persistence."""
-    TOKEN_FILE.write_text(
-        json.dumps(
-            {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }
-        )
-    )
-    print(f"Tokens saved to {TOKEN_FILE}")
-
-
-def load_tokens() -> dict | None:
-    """Load tokens from file if they exist."""
-    if TOKEN_FILE.exists():
-        return json.loads(TOKEN_FILE.read_text())
-    return None
 
 
 def print_result(title: str, result: dict):
@@ -86,43 +61,6 @@ def print_result(title: str, result: dict):
                 print(f"{key}: {value}")
 
 
-def authenticate_with_cache(toolkit: LarkToolkit) -> bool:
-    """Authenticate with Lark, using cached tokens if available.
-
-    Args:
-        toolkit: The LarkToolkit instance to authenticate.
-
-    Returns:
-        bool: True if authentication was successful, False otherwise.
-    """
-    # Check for existing tokens
-    tokens = load_tokens()
-    if tokens:
-        print("\nFound existing tokens. Attempting to use them...")
-        toolkit.set_user_access_token(tokens["access_token"])
-        toolkit.set_refresh_token(tokens["refresh_token"])
-
-        # Try to refresh the token to ensure it's valid
-        refresh_result = toolkit.refresh_user_token()
-        if "error" not in refresh_result:
-            print("Token refreshed successfully!")
-            return True
-        else:
-            print("Existing tokens expired. Starting new OAuth flow...")
-            TOKEN_FILE.unlink(missing_ok=True)
-            toolkit.clear_user_tokens()
-
-    # Use the new authenticate() method - handles everything automatically
-    print("\nStarting OAuth authentication flow...")
-    result = toolkit.authenticate()
-
-    if "error" in result:
-        print(f"Authentication failed: {result['error']}")
-        return False
-
-    return True
-
-
 def main():
     """Run the Lark Toolkit example with OAuth authentication."""
     print("=" * 60)
@@ -138,12 +76,36 @@ def main():
         f"{'Set' if os.environ.get('LARK_APP_SECRET') else 'NOT SET'}"
     )
 
-    # Initialize the toolkit with token refresh callback
-    toolkit = LarkToolkit(on_token_refresh=save_tokens)
-
-    # Authenticate using the new OAuth flow
-    if not authenticate_with_cache(toolkit):
+    if not os.environ.get("LARK_APP_ID") or not os.environ.get(
+        "LARK_APP_SECRET"
+    ):
+        print("\nPlease set the required environment variables first.")
         return
+
+    # Initialize toolkit
+    toolkit = LarkToolkit()
+
+    # Authenticate using the simplified browser flow
+    print("\n" + "-" * 60)
+    print("Starting OAuth authentication...")
+    print("-" * 60)
+
+    result = toolkit.authenticate(
+        port=9000,
+        timeout=120,
+        open_browser=True,
+    )
+
+    if "error" in result:
+        print(f"\nAuthentication failed: {result['error']}")
+        return
+
+    print("\n" + "-" * 60)
+    print("Authentication successful!")
+    print("-" * 60)
+    print(
+        f"Access token expires in: {result.get('expires_in', 'N/A')} seconds"
+    )
 
     # =========================================================================
     # Run Document Examples
@@ -376,10 +338,23 @@ toolkit.lark_create_document(title="My Doc")"""
         print_result("Block Details", result)
 
     # =========================================================================
-    # Example 14: Update an existing block
+    # Example 14: Get block children
+    # =========================================================================
+    if root_block_id:
+        print("\n\n14. GET BLOCK CHILDREN")
+        print("-" * 40)
+        print(f"Fetching children of root block: {root_block_id}")
+
+        result = toolkit.lark_get_block_children(
+            document_id=doc_id, block_id=root_block_id, page_size=10
+        )
+        print_result("Block Children", result)
+
+    # =========================================================================
+    # Example 15: Update an existing block
     # =========================================================================
     if text_block_id:
-        print("\n\n14. UPDATE AN EXISTING BLOCK")
+        print("\n\n15. UPDATE AN EXISTING BLOCK")
         print("-" * 40)
         print(f"Updating the text block: {text_block_id}")
 
@@ -393,9 +368,9 @@ toolkit.lark_create_document(title="My Doc")"""
         print_result("Updated Block", result)
 
     # =========================================================================
-    # Example 15: Batch update blocks
+    # Example 16: Batch update blocks
     # =========================================================================
-    print("\n\n15. BATCH UPDATE BLOCKS")
+    print("\n\n16. BATCH UPDATE BLOCKS")
     print("-" * 40)
     print("Performing batch operations...")
 
@@ -426,6 +401,20 @@ toolkit.lark_create_document(title="My Doc")"""
         document_id=doc_id, operations=operations
     )
     print_result("Batch Update Results", result)
+
+    # =========================================================================
+    # Example 17: Delete a block
+    # =========================================================================
+    if bullet_block_ids:
+        print("\n\n17. DELETE A BLOCK")
+        print("-" * 40)
+        block_to_delete = bullet_block_ids[-1]  # Delete the last bullet
+        print(f"Deleting block: {block_to_delete}")
+
+        result = toolkit.lark_delete_block(
+            document_id=doc_id, block_id=block_to_delete
+        )
+        print_result("Deleted Block", result)
 
     # =========================================================================
     # Summary
