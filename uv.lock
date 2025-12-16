@@ -868,12 +868,13 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.81a0"
+version = "0.2.82.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "astor" },
     { name = "colorama" },
     { name = "docstring-parser" },
+    { name = "google-search-results" },
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "mcp" },
@@ -912,6 +913,7 @@ all = [
     { name = "docker" },
     { name = "docx" },
     { name = "docx2txt" },
+    { name = "duckdb" },
     { name = "e2b-code-interpreter" },
     { name = "exa-py" },
     { name = "faiss-cpu" },
@@ -1250,6 +1252,7 @@ storage = [
     { name = "azure-storage-blob" },
     { name = "botocore" },
     { name = "chromadb" },
+    { name = "duckdb" },
     { name = "faiss-cpu" },
     { name = "google-cloud-storage" },
     { name = "grpcio" },
@@ -1367,6 +1370,8 @@ requires-dist = [
     { name = "docx2txt", marker = "extra == 'all'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'document-tools'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'owl'", specifier = ">=0.8,<0.9" },
+    { name = "duckdb", marker = "extra == 'all'", specifier = ">=1.4.3" },
+    { name = "duckdb", marker = "extra == 'storage'", specifier = ">=1.4.3" },
     { name = "e2b-code-interpreter", marker = "extra == 'all'", specifier = ">=1.0.3,<2" },
     { name = "e2b-code-interpreter", marker = "extra == 'dev-tools'", specifier = ">=1.0.3,<2" },
     { name = "e2b-code-interpreter", marker = "extra == 'owl'", specifier = ">=1.0.3,<2" },
@@ -1405,6 +1410,7 @@ requires-dist = [
     { name = "google-cloud-storage", marker = "extra == 'storage'", specifier = ">=2.18.0,<3" },
     { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.13.0" },
     { name = "google-genai", marker = "extra == 'rag'", specifier = ">=1.13.0" },
+    { name = "google-search-results", specifier = ">=2.4.2" },
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
@@ -2788,6 +2794,48 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/7d/60ee3f2b16d9bfdfa72e8599470a2c1a5b759cb113c6fe1006be28359327/docx2txt-0.8.tar.gz", hash = "sha256:2c06d98d7cfe2d3947e5760a57d924e3ff07745b379c8737723922e7009236e5", size = 2814, upload-time = "2019-06-23T19:58:36.94Z" }
 
 [[package]]
+name = "duckdb"
+version = "1.4.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/da/17c3eb5458af69d54dedc8d18e4a32ceaa8ce4d4c699d45d6d8287e790c3/duckdb-1.4.3.tar.gz", hash = "sha256:fea43e03604c713e25a25211ada87d30cd2a044d8f27afab5deba26ac49e5268", size = 18478418, upload-time = "2025-12-09T10:59:22.945Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/3a/ea8e237e1ba40203dea4ed6a8798ea51e66a4c4f34605697025e5fa06fdd/duckdb-1.4.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:efa7f1191c59e34b688fcd4e588c1b903a4e4e1f4804945902cf0b20e08a9001", size = 29016021, upload-time = "2025-12-09T10:57:46.847Z" },
+    { url = "https://files.pythonhosted.org/packages/48/88/07615298a2871362b454237b6a2d7724e6ba0afba2bddedddde5bbf129d5/duckdb-1.4.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4fef6a053a1c485292000bf0c338bba60f89d334f6a06fc76ba4085a5a322b76", size = 15405906, upload-time = "2025-12-09T10:57:49.213Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/66/b407ab3cd4822191aa5defb27522213b6ba670437c7da09a062d8b75b0a4/duckdb-1.4.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:702dabbc22b27dc5b73e7599c60deef3d8c59968527c36b391773efddd8f4cf1", size = 13732991, upload-time = "2025-12-09T10:57:51.189Z" },
+    { url = "https://files.pythonhosted.org/packages/33/f0/e8edab80446d87b4e0faf3aaa440f9cfd9d0609c21a4be56174c8ba7d23c/duckdb-1.4.3-cp310-cp310-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:854b79375fa618f6ffa8d84fb45cbc9db887f6c4834076ea10d20bc106f1fd90", size = 18471503, upload-time = "2025-12-09T10:57:53.186Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/7a/8d257bc847f0ac6a6639ae0a6e7f35f0b5bfbae472ee4846ee32404670a6/duckdb-1.4.3-cp310-cp310-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1bb8bd5a3dd205983726185b280a211eacc9f5bc0c4d4505bec8c87ac33a8ccb", size = 20466012, upload-time = "2025-12-09T10:57:55.702Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/d1/8f6bdaf2da6a076dd63c84ed87fb82d0741c9f4acb3dd476d73ca0a08ffe/duckdb-1.4.3-cp310-cp310-win_amd64.whl", hash = "sha256:d0ff08388ef8b1d1a4c95c321d6c5fa11201b241036b1ee740f9d841df3d6ba2", size = 12328392, upload-time = "2025-12-09T10:57:57.718Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/bc/7c5e50e440c8629495678bc57bdfc1bb8e62f61090f2d5441e2bd0a0ed96/duckdb-1.4.3-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:366bf607088053dce845c9d24c202c04d78022436cc5d8e4c9f0492de04afbe7", size = 29019361, upload-time = "2025-12-09T10:57:59.845Z" },
+    { url = "https://files.pythonhosted.org/packages/26/15/c04a4faf0dfddad2259cab72bf0bd4b3d010f2347642541bd254d516bf93/duckdb-1.4.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:8d080e8d1bf2d226423ec781f539c8f6b6ef3fd42a9a58a7160de0a00877a21f", size = 15407465, upload-time = "2025-12-09T10:58:02.465Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/54/a049490187c9529932fc153f7e1b92a9e145586281fe4e03ce0535a0497c/duckdb-1.4.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9dc049ba7e906cb49ca2b6d4fbf7b6615ec3883193e8abb93f0bef2652e42dda", size = 13735781, upload-time = "2025-12-09T10:58:04.847Z" },
+    { url = "https://files.pythonhosted.org/packages/14/b7/ee594dcecbc9469ec3cd1fb1f81cb5fa289ab444b80cfb5640c8f467f75f/duckdb-1.4.3-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2b30245375ea94ab528c87c61fc3ab3e36331180b16af92ee3a37b810a745d24", size = 18470729, upload-time = "2025-12-09T10:58:07.116Z" },
+    { url = "https://files.pythonhosted.org/packages/df/5f/a6c1862ed8a96d8d930feb6af5e55aadd983310aab75142468c2cb32a2a3/duckdb-1.4.3-cp311-cp311-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a7c864df027da1ee95f0c32def67e15d02cd4a906c9c1cbae82c09c5112f526b", size = 20471399, upload-time = "2025-12-09T10:58:09.714Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/80/c05c0b6a6107b618927b7dcabe3bba6a7eecd951f25c9dbcd9c1f9577cc8/duckdb-1.4.3-cp311-cp311-win_amd64.whl", hash = "sha256:813f189039b46877b5517f1909c7b94a8fe01b4bde2640ab217537ea0fe9b59b", size = 12329359, upload-time = "2025-12-09T10:58:12.147Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/83/9d8fc3413f854effa680dcad1781f68f3ada8679863c0c94ba3b36bae6ff/duckdb-1.4.3-cp311-cp311-win_arm64.whl", hash = "sha256:fbc63ffdd03835f660155b37a1b6db2005bcd46e5ad398b8cac141eb305d2a3d", size = 13070898, upload-time = "2025-12-09T10:58:14.301Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/d7/fdc2139b94297fc5659110a38adde293d025e320673ae5e472b95d323c50/duckdb-1.4.3-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:6302452e57aef29aae3977063810ed7b2927967b97912947b9cca45c1c21955f", size = 29033112, upload-time = "2025-12-09T10:58:16.52Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/d9/ca93df1ce19aef8f799e3aaacf754a4dde7e9169c0b333557752d21d076a/duckdb-1.4.3-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:deab351ac43b6282a3270e3d40e3d57b3b50f472d9fd8c30975d88a31be41231", size = 15414646, upload-time = "2025-12-09T10:58:19.36Z" },
+    { url = "https://files.pythonhosted.org/packages/16/90/9f2748e740f5fc05b739e7c5c25aab6ab4363e5da4c3c70419c7121dc806/duckdb-1.4.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5634e40e1e2d972e4f75bced1fbdd9e9e90faa26445c1052b27de97ee546944a", size = 13740477, upload-time = "2025-12-09T10:58:21.778Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/ec/279723615b4fb454efd823b7efe97cf2504569e2e74d15defbbd6b027901/duckdb-1.4.3-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:274d4a31aba63115f23e7e7b401e3e3a937f3626dc9dea820a9c7d3073f450d2", size = 18483715, upload-time = "2025-12-09T10:58:24.346Z" },
+    { url = "https://files.pythonhosted.org/packages/10/63/af20cd20fd7fd6565ea5a1578c16157b6a6e07923e459a6f9b0dc9ada308/duckdb-1.4.3-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4f868a7e6d9b37274a1aa34849ea92aa964e9bd59a5237d6c17e8540533a1e4f", size = 20495188, upload-time = "2025-12-09T10:58:26.806Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/ab/0acb4b64afb2cc6c1d458a391c64e36be40137460f176c04686c965ce0e0/duckdb-1.4.3-cp312-cp312-win_amd64.whl", hash = "sha256:ef7ef15347ce97201b1b5182a5697682679b04c3374d5a01ac10ba31cf791b95", size = 12335622, upload-time = "2025-12-09T10:58:29.707Z" },
+    { url = "https://files.pythonhosted.org/packages/50/d5/2a795745f6597a5e65770141da6efdc4fd754e5ee6d652f74bcb7f9c7759/duckdb-1.4.3-cp312-cp312-win_arm64.whl", hash = "sha256:1b9b445970fd18274d5ac07a0b24c032e228f967332fb5ebab3d7db27738c0e4", size = 13075834, upload-time = "2025-12-09T10:58:32.036Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/76/288cca43a10ddd082788e1a71f1dc68d9130b5d078c3ffd0edf2f3a8719f/duckdb-1.4.3-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:16952ac05bd7e7b39946695452bf450db1ebbe387e1e7178e10f593f2ea7b9a8", size = 29033392, upload-time = "2025-12-09T10:58:34.631Z" },
+    { url = "https://files.pythonhosted.org/packages/64/07/cbad3d3da24af4d1add9bccb5fb390fac726ffa0c0cebd29bf5591cef334/duckdb-1.4.3-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:de984cd24a6cbefdd6d4a349f7b9a46e583ca3e58ce10d8def0b20a6e5fcbe78", size = 15414567, upload-time = "2025-12-09T10:58:37.051Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/19/57af0cc66ba2ffb8900f567c9aec188c6ab2a7b3f2260e9c6c3c5f9b57b1/duckdb-1.4.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:1e5457dda91b67258aae30fb1a0df84183a9f6cd27abac1d5536c0d876c6dfa1", size = 13740960, upload-time = "2025-12-09T10:58:39.658Z" },
+    { url = "https://files.pythonhosted.org/packages/73/dd/23152458cf5fd51e813fadda60b9b5f011517634aa4bb9301f5f3aa951d8/duckdb-1.4.3-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:006aca6a6d6736c441b02ff5c7600b099bb8b7f4de094b8b062137efddce42df", size = 18484312, upload-time = "2025-12-09T10:58:42.054Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/7b/adf3f611f11997fc429d4b00a730604b65d952417f36a10c4be6e38e064d/duckdb-1.4.3-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a2813f4635f4d6681cc3304020374c46aca82758c6740d7edbc237fe3aae2744", size = 20495571, upload-time = "2025-12-09T10:58:44.646Z" },
+    { url = "https://files.pythonhosted.org/packages/40/d5/6b7ddda7713a788ab2d622c7267ec317718f2bdc746ce1fca49b7ff0e50f/duckdb-1.4.3-cp313-cp313-win_amd64.whl", hash = "sha256:6db124f53a3edcb32b0a896ad3519e37477f7e67bf4811cb41ab60c1ef74e4c8", size = 12335680, upload-time = "2025-12-09T10:58:46.883Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/28/0670135cf54525081fded9bac1254f78984e3b96a6059cd15aca262e3430/duckdb-1.4.3-cp313-cp313-win_arm64.whl", hash = "sha256:a8b0a8764e1b5dd043d168c8f749314f7a1252b5a260fa415adaa26fa3b958fd", size = 13075161, upload-time = "2025-12-09T10:58:49.47Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/f4/a38651e478fa41eeb8e43a0a9c0d4cd8633adea856e3ac5ac95124b0fdbf/duckdb-1.4.3-cp314-cp314-macosx_10_15_universal2.whl", hash = "sha256:316711a9e852bcfe1ed6241a5f654983f67e909e290495f3562cccdf43be8180", size = 29042272, upload-time = "2025-12-09T10:58:51.826Z" },
+    { url = "https://files.pythonhosted.org/packages/16/de/2cf171a66098ce5aeeb7371511bd2b3d7b73a2090603b0b9df39f8aaf814/duckdb-1.4.3-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:9e625b2b4d52bafa1fd0ebdb0990c3961dac8bb00e30d327185de95b68202131", size = 15419343, upload-time = "2025-12-09T10:58:54.439Z" },
+    { url = "https://files.pythonhosted.org/packages/35/28/6b0a7830828d4e9a37420d87e80fe6171d2869a9d3d960bf5d7c3b8c7ee4/duckdb-1.4.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:130c6760f6c573f9c9fe9aba56adba0fab48811a4871b7b8fd667318b4a3e8da", size = 13748905, upload-time = "2025-12-09T10:58:56.656Z" },
+    { url = "https://files.pythonhosted.org/packages/15/4d/778628e194d63967870873b9581c8a6b4626974aa4fbe09f32708a2d3d3a/duckdb-1.4.3-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:20c88effaa557a11267706b01419c542fe42f893dee66e5a6daa5974ea2d4a46", size = 18487261, upload-time = "2025-12-09T10:58:58.866Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/5f/87e43af2e4a0135f9675449563e7c2f9b6f1fe6a2d1691c96b091f3904dd/duckdb-1.4.3-cp314-cp314-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1b35491db98ccd11d151165497c084a9d29d3dc42fc80abea2715a6c861ca43d", size = 20497138, upload-time = "2025-12-09T10:59:01.241Z" },
+    { url = "https://files.pythonhosted.org/packages/94/41/abec537cc7c519121a2a83b9a6f180af8915fabb433777dc147744513e74/duckdb-1.4.3-cp314-cp314-win_amd64.whl", hash = "sha256:23b12854032c1a58d0452e2b212afa908d4ce64171862f3792ba9a596ba7c765", size = 12836056, upload-time = "2025-12-09T10:59:03.388Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/5a/8af5b96ce5622b6168854f479ce846cf7fb589813dcc7d8724233c37ded3/duckdb-1.4.3-cp314-cp314-win_arm64.whl", hash = "sha256:90f241f25cffe7241bf9f376754a5845c74775e00e1c5731119dc88cd71e0cb2", size = 13527759, upload-time = "2025-12-09T10:59:05.496Z" },
+]
+
+[[package]]
 name = "durationpy"
 version = "0.10"
 source = { registry = "https://pypi.org/simple" }
@@ -3647,6 +3695,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/64/d7/520b62a35b23038ff
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/0b/93afde9cfe012260e9fe1522f35c9b72d6ee222f316586b1f23ecf44d518/google_resumable_media-2.8.0-py3-none-any.whl", hash = "sha256:dd14a116af303845a8d932ddae161a26e86cc229645bc98b39f026f9b1717582", size = 81340, upload-time = "2025-11-17T15:38:05.594Z" },
 ]
+
+[[package]]
+name = "google-search-results"
+version = "2.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/77/30/b3a6f6a2e00f8153549c2fa345c58ae1ce8e5f3153c2fe0484d444c3abcb/google_search_results-2.4.2.tar.gz", hash = "sha256:603a30ecae2af8e600b22635757a6df275dad4b934f975e67878ccd640b78245", size = 18818, upload-time = "2023-03-10T11:13:09.953Z" }
 
 [[package]]
 name = "googleapis-common-protos"
