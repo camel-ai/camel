@@ -17,7 +17,8 @@ import tempfile
 import pytest
 from PIL import Image
 
-from camel.tasks import Task, TaskManager
+from camel.tasks import Task, TaskGroup, TaskManager
+from camel.tasks.task import parse_response_grouped
 
 
 def test_task():
@@ -84,6 +85,114 @@ def test_task_management():
         "3",
         "0",
     ]
+
+
+def test_task_group_basic_add_remove():
+    group = TaskGroup(content="Group summary", id="g1")
+    task1 = Task(content="Task 1", id="t1")
+    task2 = Task(content="Task 2", id="t2")
+
+    # Add tasks
+    group.add_task(task1)
+    group.add_task(task2)
+
+    assert task1 in group.get_tasks()
+    assert task2 in group.get_tasks()
+    assert task1.group is group
+    assert task2.group is group
+
+    # Adding the same task again should be a no-op (no duplicates)
+    group.add_task(task1)
+    assert group.get_tasks().count(task1) == 1
+
+    # Removing a task should also clear its group reference
+    group.remove_task(task1)
+    assert task1 not in group.get_tasks()
+    assert task1.group is None
+
+    # Removing a task that is not in the group should not raise
+    group.remove_task(task1)
+
+
+def test_task_group_set_id():
+    group = TaskGroup(content="Group summary")
+    original_id = group.id
+
+    group.set_id("custom-group-id")
+
+    assert group.id == "custom-group-id"
+    assert group.id != original_id
+
+
+def test_task_set_group_links_with_task_group():
+    group = TaskGroup(content="Group summary", id="g1")
+    task = Task(content="Linked task", id="t1")
+
+    # Directly setting the group on task should add it into the group's list
+    task.set_group(group)
+
+    assert task.group is group
+    assert task in group.get_tasks()
+
+
+def test_parse_response_grouped_creates_task_groups():
+    response = """
+    <tasks>
+        <task_group>
+            <summary>Group 1 summary</summary>
+            <task>First task in group 1</task>
+            <task>Second task in group 1</task>
+        </task_group>
+        <task_group>
+            <summary>Group 2 summary</summary>
+            <task>Only task in group 2</task>
+        </task_group>
+    </tasks>
+    """
+
+    tasks = parse_response_grouped(response, task_id="0")
+
+    # We should have three tasks across two groups
+    assert len(tasks) == 3
+
+    t1, t2, t3 = tasks
+
+    # IDs should be hierarchical: 0.<group_idx>.<task_idx>
+    assert t1.id == "0.1.1"
+    assert t2.id == "0.1.2"
+    assert t3.id == "0.2.1"
+
+    # Group relationships
+    assert isinstance(t1.group, TaskGroup)
+    assert isinstance(t2.group, TaskGroup)
+    assert isinstance(t3.group, TaskGroup)
+
+    # First two tasks share the same group; third is in a different group
+    assert t1.group is t2.group
+    assert t1.group is not t3.group
+
+    # Group metadata
+    group1 = t1.group
+    group2 = t3.group
+    assert group1.id == "0.1"
+    assert group2.id == "0.2"
+    assert group1.content == "Group 1 summary"
+    assert group2.content == "Group 2 summary"
+
+    # Group task lists should be consistent
+    assert t1 in group1.get_tasks()
+    assert t2 in group1.get_tasks()
+    assert t3 in group2.get_tasks()
+
+
+def test_parse_response_grouped_requires_task_group():
+    # Missing <task_group> should raise a clear error
+    bad_response = "<tasks></tasks>"
+
+    with pytest.raises(ValueError) as exc_info:
+        parse_response_grouped(bad_response, task_id="0")
+
+    assert "<tasks> must contain at least one <task_group>" in str(exc_info.value)
 
 
 @pytest.fixture
