@@ -2134,7 +2134,7 @@ comparing relative growth or decline.
 
   - percent (float): The percentage change, computed as
 ((b - a) / a) * 100. Positive values indicate increase,
-negative values indicate decrease.
+negative values indicate decrease. Returns +inf if a = 0.
 
 <a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.kelvin_to_celsius"></a>
 
@@ -2683,8 +2683,8 @@ threshold that exceeds a specified ratio.
 
 **Returns:**
 
-  int:
-Number of images whose pixel ratio exceeds the ratio_threshold.
+  int: Number of images whose pixel ratio exceeds the
+ratio_threshold.
 
 <a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.average_ratio_exceeding_threshold"></a>
 
