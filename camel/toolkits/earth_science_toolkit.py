@@ -4435,7 +4435,7 @@ class EarthScienceToolkit(BaseToolkit):
                 - 'above': pixels > value_threshold
                 - 'below': pixels < value_threshold
                 Default is 'above'.
-            verbose (bool): If True, logger.infos detailed ratio results per 
+            verbose (bool): If True, logger.infos detailed ratio results per
                 image.
 
         Returns:
