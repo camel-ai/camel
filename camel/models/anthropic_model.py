@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from camel.configs import AnthropicConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
+from camel.configs.anthropic_config import ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
@@ -117,6 +118,8 @@ class AnthropicModel(BaseModelBackend):
             creating a new one. (default: :obj:`None`)
         cache_control (Optional[str], optional): The cache control value for
             the request. Must be either '5m' or '1h'. (default: :obj:`None`)
+        use_beta_for_structured_outputs (bool, optional): Whether to use the 
+            beta API for structured outputs. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -139,6 +142,7 @@ class AnthropicModel(BaseModelBackend):
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
         cache_control: Optional[str] = None,
+        use_beta_for_structured_outputs: bool = False,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -191,6 +195,8 @@ class AnthropicModel(BaseModelBackend):
                 "type": "ephemeral",
                 "ttl": cache_control,
             }
+
+        self._use_beta_for_structured_outputs = use_beta_for_structured_outputs
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -581,6 +587,8 @@ class AnthropicModel(BaseModelBackend):
                     "description": func.get("description", ""),
                     "input_schema": func.get("parameters", {}),
                 }
+                if self._use_beta_for_structured_outputs:
+                    anthropic_tool["strict"] = func.get("strict", True)
                 anthropic_tools.append(anthropic_tool)
 
         return anthropic_tools
@@ -651,18 +659,25 @@ class AnthropicModel(BaseModelBackend):
         if self._cache_control_config:
             request_params["cache_control"] = self._cache_control_config
 
+        # Add beta for structured outputs if configured
+        if self._use_beta_for_structured_outputs:
+            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
+            create_func = self._client.beta.messages.create
+        else:
+            create_func = self._client.messages.create
+
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
 
         if is_streaming:
             # Return streaming response
-            stream = self._client.messages.create(
+            stream = create_func(
                 **request_params, stream=True
             )
             return self._wrap_anthropic_stream(stream, str(self.model_type))
         else:
             # Return non-streaming response
-            response = self._client.messages.create(**request_params)
+            response = create_func(**request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
@@ -733,12 +748,19 @@ class AnthropicModel(BaseModelBackend):
         if self._cache_control_config:
             request_params["cache_control"] = self._cache_control_config
 
+        # Add beta for structured outputs if configured
+        if self._use_beta_for_structured_outputs:
+            request_params["betas"] = [ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS]
+            create_func = self._async_client.beta.messages.create
+        else:
+            create_func = self._async_client.messages.create
+
         # Check if streaming
         is_streaming = self.model_config_dict.get("stream", False)
 
         if is_streaming:
             # Return streaming response
-            stream = await self._async_client.messages.create(
+            stream = await create_func(
                 **request_params, stream=True
             )
             return self._wrap_anthropic_async_stream(
@@ -746,7 +768,7 @@ class AnthropicModel(BaseModelBackend):
             )
         else:
             # Return non-streaming response
-            response = await self._async_client.messages.create(
+            response = await create_func(
                 **request_params
             )
             return self._convert_anthropic_to_openai_response(

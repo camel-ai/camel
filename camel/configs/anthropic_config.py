@@ -17,6 +17,8 @@ from typing import List, Optional
 
 from camel.configs.base_config import BaseConfig
 
+ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
+
 
 class AnthropicConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
