@@ -20,9 +20,11 @@ The client can automatically detect the transport type based on configuration.
 """
 
 import inspect
+import operator
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from enum import Enum
+from functools import reduce
 from pathlib import Path
 from typing import (
     Any,
@@ -814,8 +816,14 @@ class MCPClient:
             type_value = type_map.get(tool_types[0], Any)
         else:
             # Multiple valid types (e.g., ["string", "integer"])
-            # Create a Union type. Note that Union requires a tuple of types.
-            type_value = Union[tuple(type_map.get(t, Any) for t in tool_types)]
+            # Dynamically build a union type (e.g., str | int) from the allowed types.
+            python_types: List[Any] = [type_map.get(t, Any) for t in tool_types]
+            unique_python_types: List[Any] = []
+            for python_type in python_types:
+                if python_type not in unique_python_types:
+                    unique_python_types.append(python_type)
+
+            type_value = reduce(operator.or_, unique_python_types)
 
         # Apply Optional wrapper if necessary
         # e.g., str -> Optional[str]
