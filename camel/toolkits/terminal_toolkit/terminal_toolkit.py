@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import platform
 import select
@@ -100,6 +100,18 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
     ):
+        # auto-detect if running inside a CAMEL runtime container
+        # when inside a runtime, use local execution (already sandboxed)
+        runtime_env = os.environ.get("CAMEL_RUNTIME", "").lower()
+        self._in_runtime = runtime_env == "true"
+        if self._in_runtime and use_docker_backend:
+            logger.info(
+                "Detected CAMEL_RUNTIME environment - disabling Docker "
+                "backend since we're already inside a sandboxed container"
+            )
+            use_docker_backend = False
+            docker_container_name = None
+
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
         self.shell_sessions: Dict[str, Dict[str, Any]] = {}
@@ -219,8 +231,13 @@ class TerminalToolkit(BaseToolkit):
             except APIError as e:
                 raise RuntimeError(f"Failed to connect to Docker daemon: {e}")
 
-        # Set up environments (only for local backend)
-        if not self.use_docker_backend:
+        # Set up environments (only for local backend, skip in runtime mode)
+        if self._in_runtime:
+            logger.info(
+                "[ENV] Skipping environment setup - running inside "
+                "CAMEL runtime container"
+            )
+        elif not self.use_docker_backend:
             if self.clone_current_env:
                 self._setup_cloned_environment()
             else:

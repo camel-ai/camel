@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.81a0"
+version = "0.2.82.dev1"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -224,6 +224,7 @@ storage = [
     "pgvector>=0.2.4,<0.3",
     "surrealdb>=1.0.6",
     "chromadb>=0.6.0,<1.0.0",
+    "duckdb>=1.4.3",
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -444,6 +445,7 @@ all = [
     "onnxruntime<=1.19.2",
     "google-cloud-aiplatform>=1.111.0",
     "httplib2>=0.31.0",
+    "duckdb>=1.4.3",
 ]
 
 [project.urls]

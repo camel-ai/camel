@@ -553,6 +553,7 @@
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
               "reference/camel.toolkits.slack_toolkit",
+              "reference/camel.toolkits.sql_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
               "reference/camel.toolkits.task_planning_toolkit",
@@ -764,6 +765,54 @@
   "integrations": {
     "ga4": {
       "measurementId": "G-XV5VXFS2RG"
+    }
+  },
+  "seo": {
+    "metatags": {
+      "charset": "utf-8",
+      "viewport": "width=device-width, initial-scale=1.0",
+      "description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "keywords": "CAMEL, AI agents, multi-agent systems, LLM agents, agent communication, agentic workflows, AI toolkits, agent memory, RAG, agent society, MCP, Model Context Protocol, open source AI, workforce",
+      "author": "CAMEL-AI Team",
+      "robots": "index, follow",
+      "googlebot": "index, follow",
+      "google": "notranslate",
+      "theme-color": "#5603fc",
+      "color-scheme": "light dark",
+      "format-detection": "telephone=no",
+      "referrer": "origin",
+      "language": "en",
+      "copyright": "Copyright 2025 CAMEL-AI",
+      "distribution": "global",
+      "coverage": "Worldwide",
+      "category": "Technology",
+      "target": "developers, researchers, AI engineers",
+      "HandheldFriendly": "True",
+      "MobileOptimized": "320",
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-status-bar-style": "black-translucent",
+      "apple-mobile-web-app-title": "CAMEL-AI",
+      "application-name": "CAMEL-AI",
+      "msapplication-TileColor": "#5603fc",
+      "og:title": "CAMEL - Build Multi-Agent AI Systems",
+      "og:type": "website",
+      "og:url": "https://docs.camel-ai.org",
+      "og:image": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+      "og:description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "og:site_name": "CAMEL-AI",
+      "og:locale": "en_US",
+      "twitter:card": "summary_large_image",
+      "twitter:site": "@CamelAIOrg",
+      "twitter:creator": "@CamelAIOrg",
+      "twitter:title": "CAMEL - Build Multi-Agent AI Systems",
+      "twitter:description": "CAMEL: The first and the best multi-agent framework. Finding the Scaling Law of Agents.",
+      "twitter:image": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+      "twitter:image:alt": "CAMEL-AI logo - multi-agent system framework",
+      "article:published_time": "2023-03-01T00:00:00+00:00",
+      "article:modified_time": "2025-12-14T00:00:00+00:00",
+      "article:author": "CAMEL-AI Team",
+      "article:section": "Technology",
+      "article:tag": "CAMEL, AI agents, multi-agent systems, LLM, open source, developers, MCP"
     }
   }
 }
