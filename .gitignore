@@ -465,3 +465,6 @@ yarn-error.log*
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Lark OAuth tokens (sensitive)
+.lark_tokens.json
