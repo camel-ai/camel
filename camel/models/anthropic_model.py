@@ -13,15 +13,17 @@
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import time
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import AnthropicConfig
+from camel.configs.anthropic_config import (
+    ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS,
+)
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.configs.anthropic_config import ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
@@ -118,7 +120,7 @@ class AnthropicModel(BaseModelBackend):
             creating a new one. (default: :obj:`None`)
         cache_control (Optional[str], optional): The cache control value for
             the request. Must be either '5m' or '1h'. (default: :obj:`None`)
-        use_beta_for_structured_outputs (bool, optional): Whether to use the 
+        use_beta_for_structured_outputs (bool, optional): Whether to use the
             beta API for structured outputs. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
@@ -273,7 +275,7 @@ class AnthropicModel(BaseModelBackend):
                             {"type": "text", "text": str(content)}
                         )
 
-                    for tool_call in msg["tool_calls"]:
+                    for tool_call in msg.get("tool_calls"):  # type: ignore[attr-defined]
                         tool_use_block = {
                             "type": "tool_use",
                             "id": tool_call.get("id", ""),
@@ -298,7 +300,7 @@ class AnthropicModel(BaseModelBackend):
                         content_blocks.append(tool_use_block)
 
                     anthropic_messages.append(
-                        MessageParam(role="assistant", content=content_blocks)
+                        MessageParam(role="assistant", content=content_blocks)  # type: ignore[typeddict-item]
                     )
                 else:
                     if isinstance(content, str):
@@ -310,7 +312,8 @@ class AnthropicModel(BaseModelBackend):
 
                     anthropic_messages.append(
                         MessageParam(
-                            role="assistant", content=assistant_content
+                            role="assistant",
+                            content=assistant_content,  # type: ignore[typeddict-item]
                         )
                     )
             elif role == "tool":
@@ -323,7 +326,7 @@ class AnthropicModel(BaseModelBackend):
                     MessageParam(
                         role="user",
                         content=[
-                            {
+                            {  # type: ignore[list-item]
                                 "type": "tool_result",
                                 "tool_use_id": tool_call_id,
                                 "content": tool_content,
@@ -643,7 +646,38 @@ class AnthropicModel(BaseModelBackend):
         }
 
         if system_message:
-            request_params["system"] = system_message
+            # if cache_control is configured, add it to the system message
+            if self._cache_control_config:
+                request_params["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_message,
+                        "cache_control": self._cache_control_config,
+                    }
+                ]
+            else:
+                request_params["system"] = system_message
+
+        # if cache_control is configured, add it to the last message
+        if self._cache_control_config:
+            if isinstance(request_params["messages"], list):
+                if isinstance(request_params["messages"][-1]["content"], str):
+                    request_params["messages"][-1]["content"] = [
+                        {
+                            "type": "text",
+                            "text": request_params["messages"][-1]["content"],
+                            "cache_control": self._cache_control_config,
+                        }
+                    ]
+                elif isinstance(
+                    request_params["messages"][-1]["content"], list
+                ):
+                    if isinstance(
+                        request_params["messages"][-1]["content"][-1], dict
+                    ):
+                        request_params["messages"][-1]["content"][-1][
+                            "cache_control"
+                        ] = self._cache_control_config
 
         # Add config parameters
         for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
@@ -654,10 +688,6 @@ class AnthropicModel(BaseModelBackend):
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
-
-        # Add cache control if configured
-        if self._cache_control_config:
-            request_params["cache_control"] = self._cache_control_config
 
         # Add beta for structured outputs if configured
         if self._use_beta_for_structured_outputs:
@@ -671,9 +701,7 @@ class AnthropicModel(BaseModelBackend):
 
         if is_streaming:
             # Return streaming response
-            stream = create_func(
-                **request_params, stream=True
-            )
+            stream = create_func(**request_params, stream=True)
             return self._wrap_anthropic_stream(stream, str(self.model_type))
         else:
             # Return non-streaming response
@@ -732,7 +760,38 @@ class AnthropicModel(BaseModelBackend):
         }
 
         if system_message:
-            request_params["system"] = system_message
+            # if cache_control is configured, add it to the system message
+            if self._cache_control_config:
+                request_params["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_message,
+                        "cache_control": self._cache_control_config,
+                    }
+                ]
+            else:
+                request_params["system"] = system_message
+
+        # if cache_control is configured, add it to the last message
+        if self._cache_control_config:
+            if isinstance(request_params["messages"], list):
+                if isinstance(request_params["messages"][-1]["content"], str):
+                    request_params["messages"][-1]["content"] = [
+                        {
+                            "type": "text",
+                            "text": request_params["messages"][-1]["content"],
+                            "cache_control": self._cache_control_config,
+                        }
+                    ]
+                elif isinstance(
+                    request_params["messages"][-1]["content"], list
+                ):
+                    if isinstance(
+                        request_params["messages"][-1]["content"][-1], dict
+                    ):
+                        request_params["messages"][-1]["content"][-1][
+                            "cache_control"
+                        ] = self._cache_control_config
 
         # Add config parameters
         for key in ["temperature", "top_p", "top_k", "stop_sequences"]:
@@ -743,10 +802,6 @@ class AnthropicModel(BaseModelBackend):
         anthropic_tools = self._convert_openai_tools_to_anthropic(tools)
         if anthropic_tools:
             request_params["tools"] = anthropic_tools
-
-        # Add cache control if configured
-        if self._cache_control_config:
-            request_params["cache_control"] = self._cache_control_config
 
         # Add beta for structured outputs if configured
         if self._use_beta_for_structured_outputs:
@@ -760,17 +815,13 @@ class AnthropicModel(BaseModelBackend):
 
         if is_streaming:
             # Return streaming response
-            stream = await create_func(
-                **request_params, stream=True
-            )
+            stream = await create_func(**request_params, stream=True)
             return self._wrap_anthropic_async_stream(
                 stream, str(self.model_type)
             )
         else:
             # Return non-streaming response
-            response = await create_func(
-                **request_params
-            )
+            response = await create_func(**request_params)
             return self._convert_anthropic_to_openai_response(
                 response, str(self.model_type)
             )
@@ -787,7 +838,6 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             Stream[ChatCompletionChunk]: Stream in OpenAI format.
         """
-        from openai import Stream as OpenAIStream
 
         def _generate_chunks():
             for chunk in stream:
@@ -795,12 +845,12 @@ class AnthropicModel(BaseModelBackend):
                     chunk, model
                 )
 
-        return OpenAIStream(_generate_chunks())
+        return cast(Stream[ChatCompletionChunk], _generate_chunks())
 
     def _wrap_anthropic_async_stream(
         self, stream: Any, model: str
     ) -> AsyncStream[ChatCompletionChunk]:
-        r"""Wrap Anthropic async streaming response to OpenAI AsyncStream format.
+        r"""Wrap Anthropic async streaming response to OpenAI AsyncStream.
 
         Args:
             stream: The async streaming response from Anthropic API.
@@ -809,7 +859,6 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             AsyncStream[ChatCompletionChunk]: AsyncStream in OpenAI format.
         """
-        from openai import AsyncStream as OpenAIAsyncStream
 
         async def _generate_chunks():
             async for chunk in stream:
@@ -817,7 +866,7 @@ class AnthropicModel(BaseModelBackend):
                     chunk, model
                 )
 
-        return OpenAIAsyncStream(_generate_chunks())
+        return cast(AsyncStream[ChatCompletionChunk], _generate_chunks())
 
     @property
     def stream(self) -> bool:

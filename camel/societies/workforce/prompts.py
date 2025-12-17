@@ -338,8 +338,8 @@ DECISION GUIDELINES
 **Priority Rules:**
 1. Connection / Network Errors → **retry** (almost always)
 2. Deep Tasks (task depth > 2) → Avoid **decompose**, prefer **retry** or **replan**
-3. Worker Skill Mismatch →  
-   - Quality issue → **reassign**  
+3. Worker Skill Mismatch →
+   - Quality issue → **reassign**
    - Failure → **decompose**
 4. Unclear Requirements → **replan** with clearer specifics
 5. Task Too Complex → **decompose** into subtasks

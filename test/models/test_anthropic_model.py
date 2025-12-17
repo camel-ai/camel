@@ -19,7 +19,6 @@ from camel.models import AnthropicModel
 from camel.types import ModelType
 from camel.utils import AnthropicTokenCounter, BaseTokenCounter
 
-
 # Skip all tests in this module if the anthropic package is not available.
 pytest.importorskip("anthropic", reason="anthropic package is required")
 
