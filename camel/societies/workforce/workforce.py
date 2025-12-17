@@ -250,8 +250,7 @@ class Workforce(BaseNode):
             - `AUTO_DECOMPOSE`: automatic task decomposition with per-task
               assignment (original behavior).
             - `AUTO_DECOMPOSE_GROUPED`: automatic decomposition with task
-              groups / worker groups (coarse routing, reduced coordinator
-              load).
+              groups (coarse routing, reduced coordinator load).
             - `PIPELINE`: predefined pipeline mode, simple retry, failed
               tasks may still feed into dependents.
             (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)

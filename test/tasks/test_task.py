@@ -192,7 +192,9 @@ def test_parse_response_grouped_requires_task_group():
     with pytest.raises(ValueError) as exc_info:
         parse_response_grouped(bad_response, task_id="0")
 
-    assert "<tasks> must contain at least one <task_group>" in str(exc_info.value)
+    assert "<tasks> must contain at least one <task_group>" in str(
+        exc_info.value
+    )
 
 
 @pytest.fixture

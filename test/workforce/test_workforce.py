@@ -21,8 +21,14 @@ import pytest
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.societies.workforce.task_channel import TaskChannel
-from camel.societies.workforce.workforce import Workforce
-from camel.tasks.task import Task, TaskState
+from camel.societies.workforce.utils import (
+    TaskAssignment,
+    TaskAssignResult,
+    TaskGroupAssignment,
+    TaskGroupAssignResult,
+)
+from camel.societies.workforce.workforce import Workforce, WorkforceMode
+from camel.tasks.task import Task, TaskGroup, TaskState
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -491,3 +497,204 @@ def test_start_child_node_helper():
     workforce._state = WorkforceState.PAUSED
     workforce._loop = None
     workforce._start_child_node_when_paused(mock_coroutine())
+
+
+def _build_grouped_tasks():
+    """Helper to build two task groups with two tasks each."""
+    group1 = TaskGroup(content="Group 1", id="g1")
+    group2 = TaskGroup(content="Group 2", id="g2")
+
+    g1_t1 = Task(content="G1 Task 1", id="g1-1")
+    g1_t2 = Task(content="G1 Task 2", id="g1-2")
+    g2_t1 = Task(content="G2 Task 1", id="g2-1")
+    g2_t2 = Task(content="G2 Task 2", id="g2-2")
+
+    group1.add_task(g1_t1)
+    group1.add_task(g1_t2)
+    group2.add_task(g2_t1)
+    group2.add_task(g2_t2)
+
+    tasks = [g1_t1, g1_t2, g2_t1, g2_t2]
+    return tasks, group1, group2
+
+
+def test_expand_group_to_task_dependencies_any_mode_parallelization():
+    r"""In AUTO_DECOMPOSE_GROUPED, ANY dependency should parallelize tasks
+    between two groups when group sizes match."""
+    workforce = Workforce(description="Grouped Workforce Test")
+
+    tasks, group1, group2 = _build_grouped_tasks()
+
+    group_assign_result = TaskGroupAssignResult(
+        assignments=[
+            TaskGroupAssignment(
+                task_group_id=group1.id,
+                assignee_id="worker-A",
+                dependencies=[],
+            ),
+            TaskGroupAssignment(
+                task_group_id=group2.id,
+                assignee_id="worker-B",
+                dependencies=[[group1.id, "ANY"]],
+            ),
+        ]
+    )
+
+    result = workforce._expand_group_to_task_dependencies(
+        tasks, group_assign_result
+    )
+
+    # We should have one assignment per task
+    assert len(result.assignments) == 4
+    by_task = {a.task_id: a for a in result.assignments}
+
+    # Group 1 tasks have no dependencies and are assigned to worker-A
+    assert by_task["g1-1"].assignee_id == "worker-A"
+    assert by_task["g1-2"].assignee_id == "worker-A"
+    assert by_task["g1-1"].dependencies == []
+    assert by_task["g1-2"].dependencies == []
+
+    # Group 2 tasks are parallelized: each depends on the corresponding
+    # task from group 1 and assigned to worker-B
+    assert by_task["g2-1"].assignee_id == "worker-B"
+    assert by_task["g2-2"].assignee_id == "worker-B"
+    assert by_task["g2-1"].dependencies == ["g1-1"]
+    assert by_task["g2-2"].dependencies == ["g1-2"]
+
+
+def test_expand_group_to_task_dependencies_all_mode_aggregates():
+    r"""In AUTO_DECOMPOSE_GROUPED, ALL dependency should expand to all tasks
+    in the upstream group."""
+    workforce = Workforce(description="Grouped Workforce Test")
+
+    tasks, group1, group2 = _build_grouped_tasks()
+
+    group_assign_result = TaskGroupAssignResult(
+        assignments=[
+            TaskGroupAssignment(
+                task_group_id=group1.id,
+                assignee_id="worker-A",
+                dependencies=[],
+            ),
+            TaskGroupAssignment(
+                task_group_id=group2.id,
+                assignee_id="worker-B",
+                dependencies=[[group1.id, "ALL"]],
+            ),
+        ]
+    )
+
+    result = workforce._expand_group_to_task_dependencies(
+        tasks, group_assign_result
+    )
+
+    by_task = {a.task_id: a for a in result.assignments}
+
+    # Group 2 tasks should depend on all tasks in group 1
+    expected_deps = {task.id for task in group1.get_tasks()}
+    assert set(by_task["g2-1"].dependencies) == expected_deps
+    assert set(by_task["g2-2"].dependencies) == expected_deps
+
+
+def test_expand_group_to_task_dependencies_unknown_group_raises():
+    r"""Unknown task_group_id in TaskGroupAssignResult should raise ValueError."""
+    workforce = Workforce(description="Grouped Workforce Test")
+
+    tasks, _, _ = _build_grouped_tasks()
+
+    group_assign_result = TaskGroupAssignResult(
+        assignments=[
+            TaskGroupAssignment(
+                task_group_id="nonexistent-group",
+                assignee_id="worker-X",
+                dependencies=[],
+            )
+        ]
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        workforce._expand_group_to_task_dependencies(
+            tasks, group_assign_result
+        )
+
+    assert "Unknown task_group_id: nonexistent-group" in str(exc_info.value)
+
+
+def test_decompose_task_uses_grouped_mode(monkeypatch):
+    r"""AUTO_DECOMPOSE_GROUPED mode should use Task.decompose_grouped."""
+    workforce = Workforce(description="Grouped Decompose Test")
+    workforce.set_mode(WorkforceMode.AUTO_DECOMPOSE_GROUPED)
+
+    task = Task(content="Main grouped task", id="0")
+    fake_subtasks = [Task(content="Subtask 1", id="0.1")]
+
+    with (
+        patch.object(
+            Task, "decompose_grouped", return_value=fake_subtasks
+        ) as mock_grouped,
+        patch.object(Task, "decompose") as mock_decompose,
+    ):
+        result = workforce._decompose_task(task)
+
+    # Should call grouped decomposition but not the regular one
+    mock_grouped.assert_called_once()
+    mock_decompose.assert_not_called()
+    assert result == fake_subtasks
+
+
+@pytest.mark.asyncio
+async def test_find_assignee_uses_grouped_assignment_in_grouped_mode(
+    monkeypatch,
+):
+    r"""In AUTO_DECOMPOSE_GROUPED mode, _find_assignee should use the
+    grouped assignment path and update task dependencies."""
+    workforce = Workforce(description="Grouped Assignment Test")
+    workforce.set_mode(WorkforceMode.AUTO_DECOMPOSE_GROUPED)
+
+    # Avoid readiness wait loop by returning non-empty valid workers
+    monkeypatch.setattr(
+        workforce, "_get_valid_worker_ids", lambda: {"worker-1"}
+    )
+
+    tasks = [
+        Task(content="Task 1", id="t1"),
+        Task(content="Task 2", id="t2"),
+    ]
+
+    grouped_result = TaskAssignResult(
+        assignments=[
+            TaskAssignment(
+                task_id="t1", assignee_id="worker-1", dependencies=[]
+            ),
+            TaskAssignment(
+                task_id="t2", assignee_id="worker-1", dependencies=["t1"]
+            ),
+        ]
+    )
+
+    with (
+        patch.object(
+            workforce,
+            "_call_coordinator_for_assignment_grouped",
+            return_value=grouped_result,
+        ) as mock_grouped,
+        patch.object(
+            workforce, "_call_coordinator_for_assignment"
+        ) as mock_plain,
+    ):
+        assign_result = await workforce._find_assignee(tasks)
+
+    # Should use grouped assignment path only
+    mock_grouped.assert_called_once()
+    mock_plain.assert_not_called()
+
+    # Result should be exactly the grouped_result we returned
+    assert isinstance(assign_result, TaskAssignResult)
+    assert [a.task_id for a in assign_result.assignments] == ["t1", "t2"]
+
+    # _find_assignee should also update Task.dependencies from assignments
+    t1 = next(t for t in tasks if t.id == "t1")
+    t2 = next(t for t in tasks if t.id == "t2")
+
+    assert t1.dependencies == []
+    assert t2.dependencies == [t1]
