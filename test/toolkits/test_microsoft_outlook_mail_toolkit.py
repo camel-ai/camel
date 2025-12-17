@@ -12,12 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import os
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
 from camel.toolkits import OutlookMailToolkit
+from camel.toolkits.microsoft_outlook_mail_toolkit import (
+    AsyncCustomAzureCredential,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -124,6 +128,11 @@ def outlook_toolkit(mock_graph_service):
         ),
         patch.object(
             OutlookMailToolkit,
+            '_get_dynamic_redirect_uri',
+            return_value="http://localhost:12345",
+        ),
+        patch.object(
+            OutlookMailToolkit,
             '_authenticate',
             return_value=mock_credentials,
         ),
@@ -226,6 +235,43 @@ async def test_create_email_draft(outlook_toolkit, mock_graph_service):
     assert result['subject'] == 'Test Subject'
 
     mock_graph_service.me.messages.post.assert_called_once()
+
+
+async def test_browser_auth_persists_refresh_token(tmp_path):
+    toolkit = OutlookMailToolkit.__new__(OutlookMailToolkit)
+    toolkit.scopes = ["Mail.Send", "Mail.ReadWrite"]
+    toolkit.redirect_uri = "http://localhost:12345"
+    toolkit.refresh_token_file_path = tmp_path / "refresh_token.json"
+    toolkit.timeout = 5
+    toolkit.tenant_id = "common"
+    toolkit.client_id = "mock_client_id"
+    toolkit.client_secret = "mock_client_secret"
+
+    toolkit._get_auth_url = MagicMock(return_value="https://example.com/auth")
+    toolkit._get_authorization_code_via_browser = MagicMock(
+        return_value="mock_auth_code"
+    )
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "access_token": "mock_access_token",
+        "refresh_token": "mock_refresh_token",
+        "expires_in": 3600,
+    }
+
+    with patch(
+        "camel.toolkits.microsoft_outlook_mail_toolkit.requests.post",
+        return_value=mock_response,
+    ):
+        credentials = toolkit._authenticate_using_browser()
+
+    assert isinstance(credentials, AsyncCustomAzureCredential)
+    assert credentials.refresh_token == "mock_refresh_token"
+    assert credentials._access_token == "mock_access_token"
+
+    with open(toolkit.refresh_token_file_path, "r") as f:
+        token_data = json.load(f)
+    assert token_data["refresh_token"] == "mock_refresh_token"
 
 
 async def test_create_email_draft_with_attachments(
