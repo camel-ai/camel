@@ -840,8 +840,8 @@ class EarthScienceToolkit(BaseToolkit):
                 lst_min_vals_list.append(np.min(lst_valid[bin_mask]))
         if len(ndvi_bin_centers_list) < 2:
             logger.info(
-                'Warning: Not enough data bins for regression in '
-                '{output_path}'
+                f'Warning: Not enough data bins for regression in '
+                f'{output_path}'
             )
             tvdi = np.full_like(ndvi, np.nan, dtype=np.float32)
             profile.update(dtype=rasterio.float32, count=1, compress='lzw')
@@ -2809,7 +2809,7 @@ class EarthScienceToolkit(BaseToolkit):
         (TEMP_DIR / output_path).parent.mkdir(parents=True, exist_ok=True)
         driver = gdal.GetDriverByName('GTiff')
         out_ds = driver.Create(
-            TEMP_DIR / output_path,
+            str(TEMP_DIR / output_path),
             xsize=gi_star.shape[1],
             ysize=gi_star.shape[0],
             bands=1,
@@ -3575,8 +3575,10 @@ class EarthScienceToolkit(BaseToolkit):
         Returns:
         - percent (float): The percentage change, computed as
             ((b - a) / a) * 100. Positive values indicate increase,
-            negative values indicate decrease.
+            negative values indicate decrease. Returns +inf if a = 0.
         """
+        if a == 0:
+            return float('inf')
         percent = (b - a) / a * 100
         return float(percent)
 
@@ -4425,22 +4427,20 @@ class EarthScienceToolkit(BaseToolkit):
         threshold that exceeds a specified ratio.
 
         Args:
-            image_paths (str or list):
-                Path(s) to image file(s).
-            value_threshold (float):
-                Pixel value threshold (e.g., NDVI > 0.7).
-            ratio_threshold (float):
-                Percentage threshold for comparison (e.g., 20.0 means 20%).
+            image_paths (str or list): Path(s) to image file(s).
+            value_threshold (float): Pixel value threshold (e.g., NDVI > 0.7).
+            ratio_threshold (float): Percentage threshold for comparison
+                (e.g., 20.0 means 20%).
             mode (str):
                 - 'above': pixels > value_threshold
                 - 'below': pixels < value_threshold
                 Default is 'above'.
-            verbose (bool):
-                If True, logger.infos detailed ratio results per image.
+            verbose (bool): If True, logger.infos detailed ratio results per 
+                image.
 
         Returns:
-            int:
-                Number of images whose pixel ratio exceeds the ratio_threshold.
+            int: Number of images whose pixel ratio exceeds the
+                ratio_threshold.
 
         Example:
             >>> count_images_exceeding_threshold_ratio(
@@ -4475,7 +4475,7 @@ class EarthScienceToolkit(BaseToolkit):
                 ratio = np.sum(selected_mask) / total_pixels * 100
             if ratio > ratio_threshold:
                 count_exceeding += 1
-                status = 'wright'
+                status = 'right'
             else:
                 status = 'wrong'
             if verbose:
@@ -5105,15 +5105,17 @@ class EarthScienceToolkit(BaseToolkit):
                 out_ds.GetRasterBand(i + 1).WriteArray(
                     color_img_uint8[:, :, i]
                 )
-                gt = ds.GetGeoTransform()
-                prj = ds.GetProjection()
-                if gt:
-                    out_ds.SetGeoTransform(gt)
-                if prj:
-                    out_ds.SetProjection(prj)
+            gt = ds.GetGeoTransform()
+            prj = ds.GetProjection()
+            if gt:
+                out_ds.SetGeoTransform(gt)
+            if prj:
+                out_ds.SetProjection(prj)
             out_ds.FlushCache()
             out_ds = None
+            ds = None
         else:
+            ds = None
             bgr_img = cv2.cvtColor(color_img_uint8, cv2.COLOR_RGB2BGR)
             cv2.imwrite(str(save_path), bgr_img)
         return f'Result save at {save_path}'
