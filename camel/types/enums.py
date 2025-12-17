@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import Union, cast
@@ -50,6 +50,7 @@ class ModelType(UnifiedModelType, Enum):
     O3 = "o3"
     O3_PRO = "o3-pro"
     GPT_5_1 = "gpt-5.1"
+    GPT_5_2 = ("gpt-5.2",)
     GPT_5 = "gpt-5"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
@@ -597,6 +598,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O4_MINI,
             ModelType.O3,
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
         }
 
     @property
@@ -1542,6 +1544,7 @@ class ModelType(UnifiedModelType, Enum):
             return 320_000
         elif self in {
             ModelType.GPT_5_1,
+            ModelType.GPT_5_2,
             ModelType.GPT_5_MINI,
             ModelType.GPT_5_NANO,
             ModelType.GPT_5,
