@@ -597,7 +597,7 @@ def test_expand_group_to_task_dependencies_all_mode_aggregates():
 
 
 def test_expand_group_to_task_dependencies_unknown_group_raises():
-    r"""Unknown task_group_id in TaskGroupAssignResult should raise ValueError."""
+    r"""Unknown task_group_id in TaskGroupAssignResult should raise ValueError."""  # noqa: E501
     workforce = Workforce(description="Grouped Workforce Test")
 
     tasks, _, _ = _build_grouped_tasks()

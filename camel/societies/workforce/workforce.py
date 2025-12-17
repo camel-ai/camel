@@ -3628,14 +3628,14 @@ class Workforce(BaseNode):
         task_group_assign_result: TaskGroupAssignResult,
     ) -> TaskAssignResult:
         """
-        Expand task-group-level dependencies (ALL / ANY) into task-level dependencies.
+        Expand task-group-level dependencies into task-level dependencies.
 
         Args:
             tasks: List[Task]: List of tasks to expand dependencies for.
             task_group_assign_result: TaskGroupAssignResult
 
         Returns:
-            TaskAssignResult: Task assignment result with task-level dependencies.
+            TaskAssignResult: Task assignment result.
         """
 
         task_groups: List["TaskGroup"] = []
@@ -3689,7 +3689,8 @@ class Workforce(BaseNode):
                         )
                     continue
 
-            # if there is more than one dependent task group, and the mode is ALL
+            # if there is more than one dependent task group
+            # and the mode is ALL
             # then ignore any dependencies that are ANY
             all_dependencies = []
             for dep_group_id, _ in dependencies:
@@ -3720,13 +3721,13 @@ class Workforce(BaseNode):
     def _call_coordinator_for_assignment_grouped(
         self, tasks: List[Task], invalid_ids: Optional[List[str]] = None
     ) -> TaskAssignResult:
-        r"""Call coordinator agent to assign task groups with optional validation
-        feedback in the case of invalid worker IDs.
+        r"""Call coordinator agent to assign task groups with optional
+        validation feedback in the case of invalid worker IDs.
 
         Args:
             tasks (List[Task]): Tasks to assign.
-            invalid_ids (List[str], optional): Invalid worker IDs from previous
-                attempt (if any).
+            invalid_ids (List[str], optional): Invalid worker IDs from
+                previous attempt (if any).
 
         Returns:
             TaskAssignResult: Assignment result from coordinator.

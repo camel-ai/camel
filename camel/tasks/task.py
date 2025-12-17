@@ -219,7 +219,8 @@ def parse_response_grouped(
     if task_id is None:
         task_id = "0"
 
-    # Extract <tasks>...</tasks> in case response contains extra text around it.
+    # Extract <tasks>...</tasks> in case response contains extra text
+    # around it.
     m = re.search(
         r"<tasks\b[^>]*>.*?</tasks>", response, re.DOTALL | re.IGNORECASE
     )
@@ -239,7 +240,7 @@ def parse_response_grouped(
 
     if root.tag != "tasks":
         raise ValueError(
-            f"Invalid response: root element must be <tasks>, got <{root.tag}>."
+            f"Invalid response: root element must be <tasks>, got <{root.tag}>."  # noqa: E501
         )
 
     task_groups_xml = root.findall("./task_group")
@@ -251,7 +252,8 @@ def parse_response_grouped(
     tasks: List["Task"] = []
 
     for g_idx, tg_elem in enumerate(task_groups_xml, start=1):
-        # Enforce children of <task_group>: exactly one <summary> then one-or-more <task>
+        # Enforce children of <task_group>
+        # exactly one <summary> then one-or-more <task>
         children = list(tg_elem)
 
         if not children:
@@ -262,19 +264,19 @@ def parse_response_grouped(
         # First child must be <summary>
         if children[0].tag != "summary":
             raise ValueError(
-                f"Invalid response: <task_group> #{g_idx} must start with <summary>."
+                f"Invalid response: <task_group> #{g_idx} must start with <summary>."  # noqa: E501
             )
 
         summary_elems = tg_elem.findall("./summary")
         if len(summary_elems) != 1:
             raise ValueError(
-                f"Invalid response: <task_group> #{g_idx} must contain exactly one <summary>, got {len(summary_elems)}."
+                f"Invalid response: <task_group> #{g_idx} must contain exactly one <summary>, got {len(summary_elems)}."  # noqa: E501
             )
 
         summary_elem = summary_elems[0]
         if list(summary_elem):
             raise ValueError(
-                f"Invalid response: <summary> in group {g_idx} contains nested XML elements."
+                f"Invalid response: <summary> in group {g_idx} contains nested XML elements."  # noqa: E501
             )
         summary_text = (summary_elem.text or "").strip()
         if not summary_text:
@@ -286,7 +288,7 @@ def parse_response_grouped(
         for child in children:
             if child.tag not in ("summary", "task"):
                 raise ValueError(
-                    f"Invalid response: <task_group> #{g_idx} contains <{child.tag}>; "
+                    f"Invalid response: <task_group> #{g_idx} contains <{child.tag}>; "  # noqa: E501
                     "only <summary> and <task> children are allowed."
                 )
 
@@ -297,13 +299,13 @@ def parse_response_grouped(
                 seen_task = True
             elif child.tag == "summary" and seen_task:
                 raise ValueError(
-                    f"Invalid response: <summary> in group {g_idx} must appear before all <task> elements."
+                    f"Invalid response: <summary> in group {g_idx} must appear before all <task> elements."  # noqa: E501
                 )
 
         task_elems = tg_elem.findall("./task")
         if not task_elems:
             raise ValueError(
-                f"Invalid response: <task_group> #{g_idx} contains no <task> elements."
+                f"Invalid response: <task_group> #{g_idx} contains no <task> elements."  # noqa: E501
             )
 
         group = TaskGroup(id=f"{task_id}.{g_idx}", content=summary_text)
@@ -312,7 +314,7 @@ def parse_response_grouped(
             # Enforce that <task> contains only plain text (no nested XML)
             if list(task_elem):
                 raise ValueError(
-                    f"Invalid response: <task> in group {g_idx} task {t_idx} contains nested XML elements."
+                    f"Invalid response: <task> in group {g_idx} task {t_idx} contains nested XML elements."  # noqa: E501
                 )
 
             content = (task_elem.text or "").strip()
@@ -324,13 +326,13 @@ def parse_response_grouped(
                 tasks.append(task)
             else:
                 logger.warning(
-                    f"Skipping invalid subtask {task_full_id} during decomposition: "
+                    f"Skipping invalid subtask {task_full_id} during decomposition: "  # noqa: E501
                     f"Content '{content}' failed validation"
                 )
 
         if not group.get_tasks():
             raise ValueError(
-                f"Invalid response: <task_group> #{g_idx} has no valid <task> after validation."
+                f"Invalid response: <task_group> #{g_idx} has no valid <task> after validation."  # noqa: E501
             )
 
     return tasks

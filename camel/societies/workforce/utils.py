@@ -177,8 +177,10 @@ class TaskGroupAssignment(BaseModel):
     )
     dependencies: List[List[str]] = Field(
         default_factory=list,
-        description="List of dependency descriptors. Each descriptor is a 2-element array of the form: "
-        "['<task_group_id>', '<mode>'], where '<mode>' is one of 'ALL' or 'ANY'.",
+        description="List of dependency descriptors."
+        "Each descriptor is a 2-element array of the form: "
+        "['<task_group_id>', '<mode>'], "
+        "where '<mode>' is one of 'ALL' or 'ANY'.",
     )
 
 
