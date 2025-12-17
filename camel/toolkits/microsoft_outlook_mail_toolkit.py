@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,15 +10,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import json
 import os
 import time
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from dotenv import load_dotenv
@@ -32,6 +32,10 @@ load_dotenv()
 logger = get_logger(__name__)
 
 
+class OAuthHTTPServer(HTTPServer):
+    code: Optional[str] = None
+
+
 class RedirectHandler(BaseHTTPRequestHandler):
     """Handler for OAuth redirect requests."""
 
@@ -42,14 +46,14 @@ class RedirectHandler(BaseHTTPRequestHandler):
         try:
             query = parse_qs(urlparse(self.path).query)
             code = query.get("code", [None])[0]
-            self.server.code = code
+            cast(OAuthHTTPServer, self.server).code = code
             self.send_response(200)
             self.end_headers()
             self.wfile.write(
                 b"Authentication complete. You can close this window."
             )
         except Exception as e:
-            self.server.code = None
+            cast(OAuthHTTPServer, self.server).code = None
             self.send_response(500)
             self.end_headers()
             self.wfile.write(
@@ -496,12 +500,19 @@ class OutlookMailToolkit(BaseToolkit):
             ValueError: If the authorization code cannot be captured.
         """
         import webbrowser
-        from http.server import HTTPServer
         from urllib.parse import urlparse
 
         parsed_uri = urlparse(self.redirect_uri)
-        server_address = (parsed_uri.hostname, parsed_uri.port)
-        server = HTTPServer(server_address, RedirectHandler)
+        hostname = parsed_uri.hostname
+        port = parsed_uri.port
+        if not hostname or not port:
+            raise ValueError(
+                f"Invalid redirect_uri, expected host and port: "
+                f"{self.redirect_uri}"
+            )
+
+        server_address = (hostname, port)
+        server = OAuthHTTPServer(server_address, RedirectHandler)
         server.code = None
 
         logger.info(f"Opening browser for authentication: {auth_url}")
@@ -510,9 +521,10 @@ class OutlookMailToolkit(BaseToolkit):
         server.handle_request()
         server.server_close()
 
-        if not server.code:
+        authorization_code = server.code
+        if not authorization_code:
             raise ValueError("Failed to get authorization code")
-        return server.code
+        return authorization_code
 
     def _exchange_authorization_code_for_tokens(
         self, authorization_code: str, scope: List[str]
