@@ -29,7 +29,6 @@ from typing import (
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils.commons import dependencies_required
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
@@ -554,7 +553,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get page snapshot: {e}")
             return f"Error capturing snapshot: {e}"
 
-    @dependencies_required('PIL')
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
@@ -570,7 +568,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Args:
             read_image (bool, optional): If `True`, the screenshot image will
                 be included in the agent's context for direct visual analysis.
-                If `False`, only the file path will be returned.
+                If `False`, only a text message (including the saved file
+                path) will be returned.
                 (default: :obj:`True`)
 
         Returns:
