@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import contextlib
@@ -20,6 +20,7 @@ import os
 import subprocess
 import time
 import uuid
+from contextvars import ContextVar
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -37,6 +38,11 @@ from camel.utils.tool_result import ToolResult
 from .installer import check_and_install_dependencies
 
 logger = get_logger(__name__)
+
+# Context variable to track if we're inside a high-level action
+_in_high_level_action: ContextVar[bool] = ContextVar(
+    '_in_high_level_action', default=False
+)
 
 
 def _create_memory_aware_error(base_msg: str) -> str:
@@ -71,10 +77,18 @@ async def _cleanup_process_and_tasks(process, log_reader_task, ts_log_file):
 
 
 def action_logger(func):
-    """Decorator to add logging to action methods."""
+    """Decorator to add logging to action methods.
+
+    Skips logging if already inside a high-level action to avoid
+    logging internal calls.
+    """
 
     @wraps(func)
     async def wrapper(self, *args, **kwargs):
+        # Skip logging if we're already inside a high-level action
+        if _in_high_level_action.get():
+            return await func(self, *args, **kwargs)
+
         action_name = func.__name__
         start_time = time.time()
 
@@ -118,6 +132,67 @@ def action_logger(func):
     return wrapper
 
 
+def high_level_action(func):
+    """Decorator for high-level actions that should suppress low-level logging.
+
+    When a function is decorated with this, all low-level action_logger
+    decorated functions called within it will skip logging. This decorator
+    itself will log the high-level action.
+    """
+
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        action_name = func.__name__
+        start_time = time.time()
+
+        inputs = {
+            "args": args,
+            "kwargs": kwargs,
+        }
+
+        # Set the context variable to indicate we're in a high-level action
+        token = _in_high_level_action.set(True)
+        try:
+            result = await func(self, *args, **kwargs)
+            execution_time = time.time() - start_time
+
+            # Log the high-level action
+            if hasattr(self, '_get_ws_wrapper'):
+                # This is a HybridBrowserToolkit instance
+                ws_wrapper = await self._get_ws_wrapper()
+                await ws_wrapper._log_action(
+                    action_name=action_name,
+                    inputs=inputs,
+                    outputs=result,
+                    execution_time=execution_time,
+                    page_load_time=None,
+                )
+
+            return result
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            error_msg = f"{type(e).__name__}: {e!s}"
+
+            # Log the error
+            if hasattr(self, '_get_ws_wrapper'):
+                ws_wrapper = await self._get_ws_wrapper()
+                await ws_wrapper._log_action(
+                    action_name=action_name,
+                    inputs=inputs,
+                    outputs=None,
+                    execution_time=execution_time,
+                    error=error_msg,
+                )
+
+            raise
+        finally:
+            # Reset the context variable
+            _in_high_level_action.reset(token)
+
+    return wrapper
+
+
 class WebSocketBrowserWrapper:
     """Python wrapper for the TypeScript hybrid browser
     toolkit implementation using WebSocket."""
@@ -140,6 +215,9 @@ class WebSocketBrowserWrapper:
         self.websocket = None
         self.server_port = None
         self._send_lock = asyncio.Lock()
+        self._request_timeout = self.config.get(
+            'requestTimeout', 60
+        )  # seconds
         self._receive_task = None
         self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
         self._browser_opened = False
@@ -588,7 +666,9 @@ class WebSocketBrowserWrapper:
             # Wait for response (no lock needed, handled by background
             # receiver)
             try:
-                response = await asyncio.wait_for(future, timeout=60.0)
+                response = await asyncio.wait_for(
+                    future, timeout=self._request_timeout
+                )
 
                 if not response.get('success'):
                     raise RuntimeError(

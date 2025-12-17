@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
@@ -93,7 +93,7 @@ class ChatHistoryBlock(MemoryBlock):
             Message Processing Logic:
             1. Preserve first system/developer message (if needed)
             2. Keep latest window_size messages from the rest
-            
+
             Examples:
             - Case 1: First message is SYSTEM, total 5 messages, window_size=2
             Input: [system_msg, user_msg1, user_msg2, user_msg3, user_msg4]

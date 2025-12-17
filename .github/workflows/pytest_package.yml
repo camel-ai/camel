@@ -6,8 +6,16 @@ name: Pytest Camel package
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -16,7 +24,12 @@ jobs:
   pytest_package_fast_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -82,6 +95,8 @@ jobs:
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -103,7 +118,12 @@ jobs:
   pytest_package_llm_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -169,6 +189,8 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -190,7 +212,12 @@ jobs:
   pytest_package_very_slow_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -254,6 +281,8 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from PIL import Image
 
 from camel.agents.chat_agent import ChatAgent
@@ -49,7 +49,7 @@ def main(image_paths: list[str]) -> list[str]:
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content='''Please generate an image based on the provided images and 
+        content='''Please generate an image based on the provided images and
         text, make the backgroup of this image is in the morning''',
         image_list=image_list,
     )
@@ -77,8 +77,8 @@ Here is the generated image of a serene desert scene in the morning:
 
 ![Morning Desert Scene](img/3d8310e8-9f14-48be-94db-c66dd0461cd0.png)
 
-The scene features a camel standing on a sand dune, palm trees, and an oasis 
-in the background. The sun is rising, casting a soft golden light over the 
+The scene features a camel standing on a sand dune, palm trees, and an oasis
+in the background. The sun is rising, casting a soft golden light over the
 landscape with clear skies and a few scattered clouds.
 ===============================================================================
 """

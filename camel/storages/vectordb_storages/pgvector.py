@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 from typing import Any, Dict, List, Optional
@@ -119,8 +119,8 @@ class PgVectorStorage(BaseVectorStorage):
             with self._conn.cursor() as cur:
                 index_name = f"{self.table_name}_vector_idx"
                 query = SQL("""
-                    CREATE INDEX IF NOT EXISTS {index_name} 
-                    ON {table} 
+                    CREATE INDEX IF NOT EXISTS {index_name}
+                    ON {table}
                     USING hnsw (vector vector_cosine_ops)
                 """).format(
                     index_name=Identifier(index_name),
@@ -168,8 +168,8 @@ class PgVectorStorage(BaseVectorStorage):
                 query = SQL("""
                     INSERT INTO {table} (id, vector, payload)
                     VALUES (%s, %s, %s)
-                    ON CONFLICT (id) DO UPDATE SET 
-                    vector=EXCLUDED.vector, 
+                    ON CONFLICT (id) DO UPDATE SET
+                    vector=EXCLUDED.vector,
                     payload=EXCLUDED.payload
                 """).format(table=Identifier(self.table_name))
 
@@ -249,7 +249,7 @@ class PgVectorStorage(BaseVectorStorage):
                 from psycopg.sql import SQL, Identifier, Literal
 
                 query_sql = SQL("""
-                    SELECT id, vector, payload, (vector {} %s::vector) 
+                    SELECT id, vector, payload, (vector {} %s::vector)
                     AS similarity
                     FROM {}
                     ORDER BY similarity {}

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Setup guide - https://developers.google.com/calendar/api/quickstart/python
 
 import datetime
@@ -45,8 +45,21 @@ class GoogleCalendarToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
+
+        Note:
+            Before using this toolkit, make sure to:
+            1. Set the required environment variables: GOOGLE_CLIENT_ID and
+               GOOGLE_CLIENT_SECRET
+            2. Configure the redirect URI in Google Cloud Console to
+               http://localhost/
         """
         super().__init__(timeout=timeout)
+        logger.info(
+            "Initializing GoogleCalendarToolkit. Make sure to set "
+            "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables, "
+            "and configure the redirect URI in Google Cloud Console to "
+            "http://localhost/"
+        )
         self.service = self._get_calendar_service()
 
     def create_event(
@@ -197,15 +210,36 @@ class GoogleCalendarToolkit(BaseToolkit):
 
             result = []
             for event in events:
-                start = event['start'].get(
-                    'dateTime', event['start'].get('date')
+                start_info = event.get('start', {})
+                end_info = event.get('end', {})
+                start_time = start_info.get(
+                    'dateTime', start_info.get('date', 'Unknown')
                 )
+                end_time = end_info.get(
+                    'dateTime', end_info.get('date', 'Unknown')
+                )
+                timezone = (
+                    start_info.get('timeZone')
+                    or end_info.get('timeZone')
+                    or event.get('timeZone')
+                )
+                attendees = [
+                    attendee.get('email')
+                    for attendee in event.get('attendees', [])
+                    if attendee.get('email')
+                ]
+                organizer = event.get('organizer', {}).get('email')
+
                 result.append(
                     {
-                        'Event ID': event['id'],
+                        'Event ID': event.get('id'),
                         'Summary': event.get('summary', 'No Title'),
-                        'Start Time': start,
+                        'Start Time': start_time,
+                        'End Time': end_time,
+                        'Timezone': timezone,
                         'Link': event.get('htmlLink'),
+                        'Attendees': attendees,
+                        'Organizer': organizer,
                     }
                 )
 

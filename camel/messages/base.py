@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
@@ -71,8 +71,10 @@ class BaseMessage:
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. (default: :obj:`auto`)
-        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
+        parsed (Optional[Union[Type[BaseModel], dict]]): Optional object which
             is parsed from the content. (default: :obj:`None`)
+        reasoning_content (Optional[str]): Optional reasoning trace associated
+            with the message. (default: :obj:`None`)
     """
 
     role_name: str
@@ -85,6 +87,7 @@ class BaseMessage:
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "auto"
     parsed: Optional[Union[BaseModel, dict]] = None
+    reasoning_content: Optional[str] = None
 
     @classmethod
     def make_user_message(
@@ -219,6 +222,12 @@ class BaseMessage:
             role_type=self.role_type,
             meta_dict=self.meta_dict,
             content=content,
+            video_bytes=self.video_bytes,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_detail=self.video_detail,
+            parsed=self.parsed,
+            reasoning_content=self.reasoning_content,
         )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:

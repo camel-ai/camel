@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import socket
 
@@ -117,7 +117,7 @@ def test_jupyter_execute_code(jupyter_code_execution_toolkit):
     code = """
 def add(a, b):
     return a + b
-    
+
 result = add(10, 20)
 print(result)
 """
@@ -129,7 +129,7 @@ def test_jupyter_execute_code_error(jupyter_code_execution_toolkit):
     code = """
 def divide(a, b):
     return a / b
-    
+
 result = divide(10, 0)
 print(result)
 """
@@ -141,7 +141,7 @@ def test_docker_execute_code(docker_code_execution_toolkit):
     code = """
 def multiply(a, b):
     return a * b
-    
+
 result = multiply(6, 7)
 print(result)
 """
@@ -165,7 +165,7 @@ def factorial(n):
     if n <= 1:
         return 1
     return n * factorial(n - 1)
-    
+
 result = factorial(5)
 print(result)
 """

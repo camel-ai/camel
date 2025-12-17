@@ -62,7 +62,7 @@ def __init__(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
     max_retries: int = 3
 ):
 ```

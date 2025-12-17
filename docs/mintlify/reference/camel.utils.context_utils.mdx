@@ -57,7 +57,8 @@ def __init__(
     self,
     working_directory: Optional[str] = None,
     session_id: Optional[str] = None,
-    create_folder: bool = True
+    create_folder: bool = True,
+    use_session_subfolder: bool = True
 ):
 ```
 
@@ -68,6 +69,7 @@ Initialize the ContextUtility.
 - **working_directory** (str, optional): The directory path where files will be stored. If not provided, a default directory will be used.
 - **session_id** (str, optional): The session ID to use. If provided, this instance will use the same session folder as other instances with the same session_id. If not provided, a new session ID will be generated.
 - **create_folder** (bool): Whether to create the session folder immediately. If False, the folder will be created only when needed (e.g., when saving files). Default is True for backward compatibility.
+- **use_session_subfolder** (bool): Whether to append session_id as a subfolder. If False, files are saved directly to working_directory without session subfolder. Use False for role-based organization. Default is True for backward compatibility.
 
 <a id="camel.utils.context_utils.ContextUtility._setup_storage"></a>
 
@@ -78,7 +80,8 @@ def _setup_storage(
     self,
     working_directory: Optional[str],
     session_id: Optional[str] = None,
-    create_folder: bool = True
+    create_folder: bool = True,
+    use_session_subfolder: bool = True
 ):
 ```
 
@@ -191,7 +194,8 @@ def structured_output_to_markdown(
     structured_data: BaseModel,
     metadata: Optional[Dict[str, Any]] = None,
     title: Optional[str] = None,
-    field_mappings: Optional[Dict[str, str]] = None
+    field_mappings: Optional[Dict[str, str]] = None,
+    exclude_fields: Optional[List[str]] = None
 ):
 ```
 
@@ -203,6 +207,7 @@ Convert any Pydantic BaseModel instance to markdown format.
 - **metadata**: Optional metadata to include in the markdown
 - **title**: Optional custom title, defaults to model class name (default: model class name)
 - **field_mappings**: Optional mapping of field names to custom section titles
+- **exclude_fields**: Optional list of field names to exclude from the markdown output
 
 **Returns:**
 
@@ -321,13 +326,25 @@ Create a session-specific directory.
 ### get_session_metadata
 
 ```python
-def get_session_metadata(self):
+def get_session_metadata(
+    self,
+    workflow_version: int = 1,
+    created_at: Optional[str] = None
+):
 ```
+
+Collect comprehensive session information including identifiers,
+timestamps, and directory paths for tracking and reference.
+
+**Parameters:**
+
+- **workflow_version** (int): Version number of the workflow. Defaults to 1 for new workflows. (default: :obj:`1`)
+- **created_at** (Optional[str]): ISO timestamp when workflow was first created. If None, uses current timestamp for new workflows. (default: :obj:`None`)
 
 **Returns:**
 
   Dict[str, Any]: Session metadata including ID, timestamp,
-directory.
+directory, version, and update timestamp.
 
 <a id="camel.utils.context_utils.ContextUtility.list_sessions"></a>
 
@@ -514,6 +531,11 @@ def get_workforce_shared(cls, session_id: Optional[str] = None):
 
 Get or create shared workforce context utility with lazy init.
 
+.. note::
+Session-based workflow storage will be deprecated in a future
+version. Consider using :meth:`get_workforce_shared_by_role` for
+role-based organization instead.
+
 This method provides a centralized way to access shared context
 utilities for workforce workflows, ensuring all workforce components
 use the same session directory.
@@ -525,6 +547,27 @@ use the same session directory.
 **Returns:**
 
   ContextUtility: Shared context utility instance for workforce.
+
+<a id="camel.utils.context_utils.ContextUtility.get_workforce_shared_by_role"></a>
+
+### get_workforce_shared_by_role
+
+```python
+def get_workforce_shared_by_role(cls, role_identifier: str):
+```
+
+Get or create shared workforce context utility based on role.
+
+This method provides role-based context utilities for workforce
+workflows, organizing workflows by agent role instead of session ID.
+
+**Parameters:**
+
+- **role_identifier** (str): Role identifier (e.g., role_name or agent_title). Will be sanitized for filesystem use.
+
+**Returns:**
+
+  ContextUtility: Shared context utility instance for the role.
 
 <a id="camel.utils.context_utils.ContextUtility.reset_shared_sessions"></a>
 

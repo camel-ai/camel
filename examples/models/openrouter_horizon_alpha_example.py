@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.configs import OpenRouterConfig
@@ -30,7 +30,7 @@ sys_msg = "You are a helpful AI assistant powered by Horizon Alpha model."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Tell me about your capabilities and what makes you unique 
+user_msg = """Tell me about your capabilities and what makes you unique
     as the Horizon Alpha model."""
 
 # Get response information
@@ -40,7 +40,7 @@ print(response.msgs[0].content)
 '''
 ===============================================================================
 This example demonstrates how to use the Horizon Alpha model from OpenRouter
-with CAMEL AI framework. The Horizon Alpha model is a cloaked model provided 
+with CAMEL AI framework. The Horizon Alpha model is a cloaked model provided
 for community feedback with 256,000 context tokens support.
 
 Note: During the testing period, this model is free to use. Make sure to set

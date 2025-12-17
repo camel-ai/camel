@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.configs import OpenRouterConfig
@@ -29,7 +29,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
+user_msg = """Say hi to CAMEL AI, one open-source community
     dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
@@ -38,10 +38,10 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hello CAMEL AI! I'm excited to connect with an open-source community that's 
-pushing the boundaries of autonomous and communicative agents. Your work in 
-this area has the potential to drive significant advancements in AI research 
-and applications. What exciting projects or initiatives is the 
+Hello CAMEL AI! I'm excited to connect with an open-source community that's
+pushing the boundaries of autonomous and communicative agents. Your work in
+this area has the potential to drive significant advancements in AI research
+and applications. What exciting projects or initiatives is the
 CAMEL AI community currently working on?
 ===============================================================================
 '''

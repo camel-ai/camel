@@ -8,7 +8,7 @@ icon: 'play'
 
 MCP (Model Context Protocol) originated from an [Anthropic article](https://www.anthropic.com/news/model-context-protocol) published on November 25, 2024: *Introducing the Model Context Protocol*.
 
-MCP defines **how applications and AI models exchange contextual information**.  
+MCP defines **how applications and AI models exchange contextual information**.
 It enables developers to connect data sources, tools, and functions to LLMs using a universal, standardized protocol—much like USB-C enables diverse devices to connect via a single interface.
 
 <CardGroup cols={2}>
@@ -70,26 +70,26 @@ MCP follows a **client-server model** with three main roles:
 ![MCP Server/Client diagram](/images/mcp-client-server-example.png)
 ### How it works, step by step:
 
-1. **User asks:**  
+1. **User asks:**
    “What documents do I have on my desktop?” via the Host (e.g., Claude Desktop).
 
-2. **Host (MCP Host):**  
+2. **Host (MCP Host):**
    Receives your question and forwards it to the Claude model.
 
-3. **Client (MCP Client):**  
+3. **Client (MCP Client):**
    Claude model decides it needs more data, Client is activated to connect to a file system MCP Server.
 
-4. **Server (MCP Server):**  
+4. **Server (MCP Server):**
    The server reads your desktop directory and returns a list of documents.
 
-5. **Results:**  
+5. **Results:**
    Claude uses this info to answer your question, displayed in your desktop app.
 
-This architecture **lets agents dynamically call tools and access data**—local or remote—while developers only focus on building the relevant MCPServer.  
+This architecture **lets agents dynamically call tools and access data**—local or remote—while developers only focus on building the relevant MCPServer.
 **You don’t have to handle the nitty-gritty of connecting Hosts and Clients.**
 
 <Note type="info">
-For deeper architecture details and diagrams, see the  
+For deeper architecture details and diagrams, see the
 <a href="https://modelcontextprotocol.io/docs/concepts/architecture" target="_blank">official MCP docs: Architecture Concepts</a>.
 </Note>
 
@@ -100,4 +100,3 @@ For deeper architecture details and diagrams, see the
 - **Users** get safer, more flexible, and privacy-friendly AI workflows.
 
 ---
-

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
 from hashlib import md5
@@ -642,9 +642,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -710,9 +710,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -766,7 +766,7 @@ class Neo4jGraph(BaseGraphStorage):
                 WHERE ($subj IS NULL OR n1.id = $subj)
                 AND ($obj IS NULL OR n2.id = $obj)
                 AND ($rel IS NULL OR type(r) = $rel)
-                RETURN n1.id AS subj, n2.id AS obj, 
+                RETURN n1.id AS subj, n2.id AS obj,
                 type(r) AS rel, r.timestamp AS timestamp
             """
 

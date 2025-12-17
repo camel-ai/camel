@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -64,7 +64,9 @@ class ZhipuAIConfig(BaseConfig):
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}
