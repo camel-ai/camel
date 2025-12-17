@@ -86,16 +86,16 @@ print(response_flash.msgs[0].content)
 ===============================================================================
 Generative AI works in three simple steps:
 
-1.  **Training:** It "reads" or "looks at" massive amounts of existing data 
+1.  **Training:** It "reads" or "looks at" massive amounts of existing data
 (like books, code, or images) to learn patterns, styles, and structures.
-2.  **Prediction:** When you give it a prompt, it doesn't "think"—it calculates 
-probability. It predicts what word, pixel, or note should come next based on the 
-patterns it learned.
-3.  **Creation:** By repeating these predictions millions of times per second, 
-it generates entirely new content that looks or sounds like it was made by a 
+2.  **Prediction:** When you give it a prompt, it doesn't "think"—it
+calculates probability. It predicts what word, pixel, or note should come next
+based on the patterns it learned.
+3.  **Creation:** By repeating these predictions millions of times per second,
+it generates entirely new content that looks or sounds like it was made by a
 human.
 
-**In short:** It is a super-powered version of **autocomplete** that uses math 
+**In short:** It is a super-powered version of **autocomplete** that uses math
 to guess the most likely next piece of information.
 ===============================================================================
 '''
