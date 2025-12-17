@@ -20,11 +20,9 @@ The client can automatically detect the transport type based on configuration.
 """
 
 import inspect
-import operator
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from enum import Enum
-from functools import reduce
 from pathlib import Path
 from typing import (
     Any,
@@ -746,11 +744,12 @@ class MCPClient:
                     raise
 
         # Add an async_call method to the function for explicit async usage
-        adaptive_dynamic_function.async_call = async_mcp_call  # type: ignore[attr-defined]
+        dynamic_fn = adaptive_dynamic_function
+        dynamic_fn.async_call = async_mcp_call  # type: ignore[attr-defined]
 
-        adaptive_dynamic_function.__name__ = func_name
-        adaptive_dynamic_function.__doc__ = func_desc
-        adaptive_dynamic_function.__annotations__ = annotations
+        dynamic_fn.__name__ = func_name
+        dynamic_fn.__doc__ = func_desc
+        dynamic_fn.__annotations__ = annotations
 
         sig = inspect.Signature(
             parameters=[
@@ -763,24 +762,27 @@ class MCPClient:
                 for param in func_params
             ]
         )
-        adaptive_dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
+        dynamic_fn.__signature__ = sig  # type: ignore[attr-defined]
 
-        return adaptive_dynamic_function
-
+        return dynamic_fn
 
     def _build_function_param_type(self, param_type) -> Any:
         """
-            Dynamically generates a Python type hint corresponding to a given MCP tool parameter type.
+        Dynamically generates a Python type hint corresponding to a given MCP
+        tool parameter type.
 
-            This method maps JSON Schema types (used in MCP) to Python's typing system.
+        This method maps JSON Schema types (used in MCP) to Python's typing
+        system.
 
-            Examples:
-                - "string" -> str
-                - ["string", "null"] -> Optional[str]
-                - ["string", "integer"] -> Union[str, int]
+        Examples:
+            - "string" -> str
+            - ["string", "null"] -> Optional[str]
+            - ["string", "integer"] -> Union[str, int]
 
-            :param param_type: The 'type' field from the JSON Schema (can be a string or a list of strings).
-            :return: A Python type object (e.g., str, int, Optional[str], Union[...]).
+        :param param_type: The 'type' field from the JSON Schema (can be a
+            string or a list of strings).
+        :return: A Python type object (e.g., str, int, Optional[str],
+            Union[...]).
         """
 
         # Map JSON Schema types to Python built-in types
@@ -802,33 +804,31 @@ class MCPClient:
         # List of types (Union Type in JSON Schema)
 
         # Pre-processing: Filter out "null".
-        # In JSON Schema, the presence of "null" implies the field is Nullable/Optional.
+        # In JSON Schema, the presence of "null" implies the field is
+        # Nullable/Optional.
         tool_types = [t for t in param_type if t != "null"]
 
-        # If the list is empty (or contained only "null"), we cannot determine a specific type.
+        # If the list is empty (or contained only "null"), we cannot determine
+        # a specific type.
         if len(tool_types) == 0:
             return Any
         exist_optional = 'null' in param_type
 
         # Construct the base Python type
-        if len(tool_types) == 1:
-            # Only one valid type remains (e.g., ["string", "null"] -> "string")
-            type_value = type_map.get(tool_types[0], Any)
-        else:
-            # Multiple valid types (e.g., ["string", "integer"])
-            # Dynamically build a union type (e.g., str | int) from the allowed types.
-            python_types: List[Any] = [type_map.get(t, Any) for t in tool_types]
-            unique_python_types: List[Any] = []
-            for python_type in python_types:
-                if python_type not in unique_python_types:
-                    unique_python_types.append(python_type)
+        type_value: Any
+        python_types: List[Any] = [type_map.get(t, Any) for t in tool_types]
+        unique_python_types: List[Any] = []
+        for python_type in python_types:
+            if python_type not in unique_python_types:
+                unique_python_types.append(python_type)
 
-            type_value = reduce(operator.or_, unique_python_types)
-
-        # Apply Optional wrapper if necessary
-        # e.g., str -> Optional[str]
         if exist_optional:
-            type_value = Optional[type_value]
+            unique_python_types.append(type(None))
+
+        if len(unique_python_types) == 1:
+            type_value = unique_python_types[0]
+        else:
+            type_value = Union[tuple(unique_python_types)]
 
         return type_value
 
