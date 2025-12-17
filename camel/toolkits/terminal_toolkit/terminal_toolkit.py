@@ -477,12 +477,59 @@ class TerminalToolkit(BaseToolkit):
                 f"output_{context}_{timestamp}_"
                 f"{self._output_file_counter}.log"
             )
-            output_file_path = os.path.join(self.log_dir, filename)
+
+            if self.use_docker_backend:
+                # For Docker, save inside the container
+                container_log_dir = f"{self.docker_workdir}/terminal_logs"
+                output_file_path = f"{container_log_dir}/{filename}"
+            else:
+                # For local, save to local filesystem
+                output_file_path = os.path.join(self.log_dir, filename)
 
         # Write full output to file
         try:
-            with open(output_file_path, "w", encoding="utf-8") as f:
-                f.write(_to_plain(output))
+            if self.use_docker_backend:
+                # Write file inside Docker container using base64 encoding
+                # to avoid all shell quoting issues
+                import base64
+
+                plain_output = _to_plain(output)
+                # Encode content as base64
+                encoded_content = base64.b64encode(
+                    plain_output.encode('utf-8')
+                ).decode('ascii')
+
+                # Create directory and write file in container
+                mkdir_cmd = (
+                    f'sh -c "mkdir -p {shlex.quote(container_log_dir)}"'
+                )
+                # Use base64 decode to write file - avoids all quoting issues
+                write_cmd = (
+                    f"sh -c 'echo {shlex.quote(encoded_content)} | "
+                    f"base64 -d > {shlex.quote(output_file_path)}'"
+                )
+
+                try:
+                    # Create directory
+                    exec_id = self.docker_api_client.exec_create(
+                        self.container.id, mkdir_cmd
+                    )["Id"]
+                    self.docker_api_client.exec_start(exec_id)
+
+                    # Write file
+                    exec_id = self.docker_api_client.exec_create(
+                        self.container.id, write_cmd
+                    )["Id"]
+                    self.docker_api_client.exec_start(exec_id)
+                except Exception as docker_err:
+                    raise RuntimeError(
+                        "Failed to write output file in ",
+                        "Docker container: {docker_err}",
+                    ) from docker_err
+            else:
+                # Write to local filesystem
+                with open(output_file_path, "w", encoding="utf-8") as f:
+                    f.write(_to_plain(output))
 
             # Create truncated response showing beginning and end
             # Reserve space for the truncation message
@@ -499,21 +546,16 @@ class TerminalToolkit(BaseToolkit):
                 + output[-ending_chars:]
             )
 
-            # Get relative path for better readability
-            try:
-                rel_path = os.path.relpath(output_file_path, self.working_dir)
-            except ValueError:
-                # On Windows, relpath fails if paths are on different drives
-                rel_path = output_file_path
-
-            return (
-                f"{truncated}\n\n"
+            # Format path information
+            path_info = (
                 f"--- FULL OUTPUT SAVED ---\n"
                 f"Total: {len(output)} characters\n"
-                f"File: {rel_path}\n"
-                f"Absolute path: {output_file_path}\n"
-                f"Use shell_exec with truncate=False to view complete output."
+                f"File path: {output_file_path}\n"
+                f"Use shell_exec with truncate=False to view complete output\n"
+                f", or read the file with: cat {shlex.quote(output_file_path)}"
             )
+
+            return f"{truncated}\n\n{path_info}"
         except Exception as e:
             logger.warning(f"Failed to save output to file: {e}")
             # If we can't save to file, just truncate showing beginning and end
@@ -800,6 +842,16 @@ class TerminalToolkit(BaseToolkit):
                 log_entry += f"--- Output ---\n{output}\n"
                 if output.strip():
                     plain_output = _to_plain(output)
+                    # Check if truncation will occur
+                    if (
+                        truncate
+                        and self.max_output_length is not None
+                        and len(plain_output) > self.max_output_length
+                    ):
+                        log_entry += (
+                            f"Truncated from {len(plain_output)} to "
+                            f"{self.max_output_length} chars\n"
+                        )
                     return self._truncate_and_save_output(
                         plain_output,
                         f"blocking_{session_id}",
