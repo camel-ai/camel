@@ -200,12 +200,11 @@ class TerminalToolkit(BaseToolkit):
                     "provided when using Docker backend."
                 )
             try:
-                # APIClient is used for operations that need a timeout,
-                # like exec_start
-                self.docker_api_client = docker.APIClient(
-                    base_url='unix://var/run/docker.sock', timeout=self.timeout
-                )
-                self.docker_client = docker.from_env()
+                # Use from_env() to auto-detect the correct connection method
+                # (Unix socket on Linux, named pipe on Windows)
+                self.docker_client = docker.from_env(timeout=self.timeout)
+                # Create APIClient with default connection (auto-detects)
+                self.docker_api_client = docker.APIClient(timeout=self.timeout)
                 try:
                     # Try to get existing container
                     self.container = self.docker_client.containers.get(
@@ -557,32 +556,69 @@ class TerminalToolkit(BaseToolkit):
                     finally:
                         session["process"].stdout.close()
                 elif session["backend"] == "docker":
-                    # For Docker, read from the raw socket
-                    socket = session["process"]._sock
+                    # For Docker, read from the socket stream
+                    # Handle both Unix sockets and Windows named pipes
+                    socket_stream = session["process"]
+                    try:
+                        # Try to get the underlying socket (Unix)
+                        socket = getattr(socket_stream, '_sock', None)
+                        use_select = socket is not None
+                    except AttributeError:
+                        use_select = False
+
                     while True:
-                        # Check if the socket is still open before reading
-                        if socket.fileno() == -1:
-                            break
+                        # Check if process is still running
                         try:
-                            ready, _, _ = select.select([socket], [], [], 0.1)
-                        except (ValueError, OSError):
-                            # Socket may have been closed by another thread
-                            break
-                        if ready:
-                            data = socket.recv(4096)
-                            if not data:
+                            exec_status = self.docker_api_client.exec_inspect(
+                                session["exec_id"]
+                            )
+                            if not exec_status['Running']:
                                 break
-                            decoded_data = data.decode(
-                                'utf-8', errors='ignore'
-                            )
-                            session["output_stream"].put(decoded_data)
-                            self._write_to_log(
-                                session["log_file"], decoded_data
-                            )
-                        # Check if the process is still running
-                        if not self.docker_api_client.exec_inspect(
-                            session["exec_id"]
-                        )['Running']:
+                        except Exception:
+                            break
+
+                        try:
+                            if use_select and socket:
+                                # Unix socket: use select
+                                if socket.fileno() == -1:
+                                    break
+                                ready, _, _ = select.select(
+                                    [socket], [], [], 0.1
+                                )
+                                if ready:
+                                    data = socket.recv(4096)
+                                    if not data:
+                                        break
+                                    decoded_data = data.decode(
+                                        'utf-8', errors='ignore'
+                                    )
+                                    session["output_stream"].put(decoded_data)
+                                    self._write_to_log(
+                                        session["log_file"], decoded_data
+                                    )
+                            else:
+                                # Windows named pipe: direct read
+                                # Set a small read timeout to avoid blocking
+                                try:
+                                    data = socket_stream.read(4096)
+                                    if data:
+                                        decoded_data = data.decode(
+                                            'utf-8', errors='ignore'
+                                        )
+                                        session["output_stream"].put(
+                                            decoded_data
+                                        )
+                                        self._write_to_log(
+                                            session["log_file"], decoded_data
+                                        )
+                                    else:
+                                        # No data, small sleep to avoid
+                                        # busy loop
+                                        time.sleep(0.1)
+                                except Exception:
+                                    # Socket closed or error
+                                    break
+                        except (ValueError, OSError):
                             break
             except Exception as e:
                 # Log the exception for diagnosis and store it on the session
@@ -943,8 +979,14 @@ class TerminalToolkit(BaseToolkit):
                 process.stdin.write(command + '\n')
                 process.stdin.flush()
             else:  # docker
-                socket = process._sock
-                socket.sendall((command + '\n').encode('utf-8'))
+                # Handle both Unix sockets and Windows named pipes
+                socket = getattr(process, '_sock', None)
+                if socket:
+                    # Unix socket
+                    socket.sendall((command + '\n').encode('utf-8'))
+                else:
+                    # Windows named pipe
+                    process._sock.sendall((command + '\n').encode('utf-8'))
 
             # Wait for and collect the new output
             output = self._collect_output_until_idle(id)
