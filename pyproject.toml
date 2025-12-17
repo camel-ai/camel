@@ -440,6 +440,26 @@ all = [
     "google-cloud-aiplatform>=1.111.0",
     "httplib2>=0.31.0",
     "duckdb>=1.4.3",
+    "opencv-python>=4.11.0.86",
+    "rasterio>=1.4.4",
+    "ruptures>=1.1.10",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "statsmodels>=0.14.6",
+]
+earth-science = [
+    "numpy>=1.2,<=2.2",
+    "pandas>=2",
+    "matplotlib>=3.10.7",
+    "opencv-python>=4.11.0.86",
+    "rasterio>=1.4.4",
+    "ruptures>=1.1.10",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "statsmodels>=0.14.6",
+    # Note: GDAL/osgeo requires system-level installation
+    # Install via: brew install gdal (macOS) or apt-get install gdal-bin libgdal-dev (Linux)
+    # Then: pip install gdal==$(gdal-config --version)
 ]
 
 [project.urls]
@@ -655,6 +675,15 @@ module = [
     "outlines.*",
     "torch.*",
     "cv2",
+    "matplotlib.*",
+    "rasterio",
+    "rasterio.*",
+    "ruptures",
+    "osgeo",
+    "osgeo.*",
+    "scipy.*",
+    "skimage.*",
+    "statsmodels.*",
     "rlcard.*",
     "pytesseract",
     "psycopg.*",
@@ -679,4 +708,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,ND,'
