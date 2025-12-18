@@ -91,26 +91,24 @@ def _extract_text_from_element(element: Any) -> str:
     r"""Extracts plain text from a text element.
 
     Args:
-        element: A text element object (Lark SDK object or dictionary).
+        element: A text element object (dictionary from HTTP response).
 
     Returns:
         str: The plain text content.
     """
-    # Handle Lark SDK objects using getattr
-    text_run = getattr(element, "text_run", None)
-    if text_run is not None:
-        content = getattr(text_run, "content", "")
-        return content if content else ""
+    # Handle dictionary responses from HTTP API
+    if isinstance(element, dict):
+        text_run = element.get("text_run")
+        if text_run:
+            return text_run.get("content", "")
 
-    mention_user = getattr(element, "mention_user", None)
-    if mention_user is not None:
-        user_id = getattr(mention_user, "user_id", "user")
-        return f"@{user_id}"
+        mention_user = element.get("mention_user")
+        if mention_user:
+            return f"@{mention_user.get('user_id', 'user')}"
 
-    mention_doc = getattr(element, "mention_doc", None)
-    if mention_doc is not None:
-        title = getattr(mention_doc, "title", "document")
-        return f"[Doc: {title}]"
+        mention_doc = element.get("mention_doc")
+        if mention_doc:
+            return f"[Doc: {mention_doc.get('title', 'document')}]"
 
     return ""
 
@@ -119,34 +117,36 @@ def _extract_text_from_block(block: Any) -> str:
     r"""Extracts plain text from a block structure.
 
     Args:
-        block: A Lark document block (SDK object or dictionary).
+        block: A Lark document block (dictionary from HTTP response).
 
     Returns:
         str: The extracted plain text content.
     """
-    block_type = getattr(block, "block_type", 0)
+    if not isinstance(block, dict):
+        return ""
+
+    block_type = block.get("block_type", 0)
     text_parts = []
 
     def _get_elements(content_obj: Any) -> list:
         """Helper to safely get elements from a content object."""
-        if content_obj is None:
+        if content_obj is None or not isinstance(content_obj, dict):
             return []
-        elements = getattr(content_obj, "elements", None)
-        return elements if elements else []
+        return content_obj.get("elements", []) or []
 
     # Handle different block types
     if block_type == 1:  # Page block
-        page = getattr(block, "page", None)
-        title = getattr(page, "title", "") if page else ""
+        page = block.get("page", {})
+        title = page.get("title", "") if page else ""
         text_parts.append(f"# {title}")
     elif block_type == 2:  # Text block
-        text_content = getattr(block, "text", None)
+        text_content = block.get("text", {})
         elements = _get_elements(text_content)
         for elem in elements:
             text_parts.append(_extract_text_from_element(elem))
     elif 3 <= block_type <= 11:  # Heading blocks (1-9)
         heading_level = block_type - 2
-        heading_content = getattr(block, f"heading{heading_level}", None)
+        heading_content = block.get(f"heading{heading_level}", {})
         elements = _get_elements(heading_content)
         prefix = "#" * heading_level
         heading_text = "".join(
@@ -154,40 +154,40 @@ def _extract_text_from_block(block: Any) -> str:
         )
         text_parts.append(f"{prefix} {heading_text}")
     elif block_type == 12:  # Bullet list
-        bullet_content = getattr(block, "bullet", None)
+        bullet_content = block.get("bullet", {})
         elements = _get_elements(bullet_content)
         bullet_text = "".join(
             _extract_text_from_element(elem) for elem in elements
         )
         text_parts.append(f"• {bullet_text}")
     elif block_type == 13:  # Ordered list
-        ordered_content = getattr(block, "ordered", None)
+        ordered_content = block.get("ordered", {})
         elements = _get_elements(ordered_content)
         ordered_text = "".join(
             _extract_text_from_element(elem) for elem in elements
         )
         text_parts.append(f"1. {ordered_text}")
     elif block_type == 14:  # Code block
-        code_content = getattr(block, "code", None)
+        code_content = block.get("code", {})
         elements = _get_elements(code_content)
         code_text = "".join(
             _extract_text_from_element(elem) for elem in elements
         )
-        style = getattr(code_content, "style", None) if code_content else None
-        language = getattr(style, "language", "") if style else ""
+        style = code_content.get("style", {}) if code_content else {}
+        language = style.get("language", "") if style else ""
         text_parts.append(f"```{language}\n{code_text}\n```")
     elif block_type == 15:  # Quote block
-        quote_content = getattr(block, "quote", None)
+        quote_content = block.get("quote", {})
         elements = _get_elements(quote_content)
         quote_text = "".join(
             _extract_text_from_element(elem) for elem in elements
         )
         text_parts.append(f"> {quote_text}")
     elif block_type == 17:  # Todo block
-        todo_content = getattr(block, "todo", None)
+        todo_content = block.get("todo", {})
         elements = _get_elements(todo_content)
-        style = getattr(todo_content, "style", None) if todo_content else None
-        done = getattr(style, "done", False) if style else False
+        style = todo_content.get("style", {}) if todo_content else {}
+        done = style.get("done", False) if style else False
         todo_text = "".join(
             _extract_text_from_element(elem) for elem in elements
         )
@@ -196,7 +196,7 @@ def _extract_text_from_block(block: Any) -> str:
     elif block_type == 22:  # Divider
         text_parts.append("---")
     elif block_type == 19:  # Callout
-        callout_content = getattr(block, "callout", None)
+        callout_content = block.get("callout", {})
         elements = _get_elements(callout_content)
         callout_text = "".join(
             _extract_text_from_element(elem) for elem in elements
@@ -319,10 +319,34 @@ class LarkOAuthMixin:
 
         encoded_redirect = quote(self._oauth_redirect_uri, safe="")
 
+        # Request scopes for Drive and Document APIs
+        # IMPORTANT: These scopes must ALSO be enabled in your Lark Developer
+        # Console under "Permissions & Scopes" before OAuth will grant them.
+        # Visit: https://open.larksuite.com/app/<your-app-id>/permission
+        #
+        # Scopes requested:
+        #   - drive:drive: Full drive access (create/read/write files)
+        #   - drive:drive:readonly: Read-only drive access (listing, reading)
+        #   - drive:file: File operations including folder creation
+        #   - docx:document: Full document operations (create, edit, delete)
+        #   - docx:document:readonly: Read-only document access
+        #
+        # For folder creation (lark_create_folder), ensure both "drive:drive"
+        # and "drive:file" are enabled in your app's permissions.
+        scopes = (
+            "drive:drive "
+            "drive:drive:readonly "
+            "drive:file "
+            "docx:document "
+            "docx:document:readonly"
+        )
+        encoded_scopes = quote(scopes, safe="")
+
         return (
             f"{base}/open-apis/authen/v1/authorize"
             f"?app_id={self._app_id}"
             f"&redirect_uri={encoded_redirect}"
+            f"&scope={encoded_scopes}"
             f"&state={state}"
         )
 
@@ -790,6 +814,26 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
         if user_access_token:
             logger.info("Using user access token for authentication")
 
+    def _get_http_headers(self) -> Dict[str, str]:
+        r"""Get HTTP headers with appropriate authorization.
+
+        Uses user_access_token if available (OAuth), otherwise gets a
+        tenant_access_token from the client.
+
+        Returns:
+            Dict[str, str]: Headers dict with Content-Type and Authorization.
+        """
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+
+        if self._user_access_token:
+            headers["Authorization"] = f"Bearer {self._user_access_token}"
+        else:
+            # Get tenant access token from the SDK client
+            token = self._client._token_manager.get_tenant_access_token()
+            headers["Authorization"] = f"Bearer {token}"
+
+        return headers
+
     def lark_create_document(
         self,
         title: str,
@@ -815,66 +859,39 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - revision_id: The revision ID of the document
                 - folder_token: The folder where the document was created
         """
-        from lark_oapi.api.docx.v1 import (
-            CreateDocumentRequest,
-            CreateDocumentRequestBody,
-        )
+        import requests
 
         try:
-            # If no folder token provided, get the user's root folder
-            # This ensures documents appear in the user's document list
-            target_folder = folder_token
-            if not target_folder:
-                root_result = self.lark_get_root_folder_token()
-                if "error" not in root_result:
-                    target_folder = root_result.get("token")
-                    logger.info(f"Using root folder token: {target_folder}")
+            url = f"{self._domain}/open-apis/docx/v1/documents"
+            headers = self._get_http_headers()
 
-            request_body = (
-                CreateDocumentRequestBody.builder().title(title).build()
+            body: Dict[str, Any] = {"title": title}
+            if folder_token:
+                body["folder_token"] = folder_token
+
+            response = requests.post(
+                url, headers=headers, json=body, timeout=30
             )
+            result = response.json()
 
-            if target_folder:
-                request_body = (
-                    CreateDocumentRequestBody.builder()
-                    .title(title)
-                    .folder_token(target_folder)
-                    .build()
-                )
-
-            request = (
-                CreateDocumentRequest.builder()
-                .request_body(request_body)
-                .build()
-            )
-
-            # Use user token if available (OAuth), otherwise app token
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document.create(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document.create(request)
-
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to create document: {response.code} - "
-                    f"{response.msg}"
+                    f"Failed to create document: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to create document: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to create document: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
-            doc = response.data.document
+            doc = result.get("data", {}).get("document", {})
             domain = "feishu" if "feishu" in self._domain else "larksuite"
             return {
-                "document_id": doc.document_id,
-                "title": doc.title,
-                "revision_id": doc.revision_id,
-                "url": f"https://{domain}.com/docx/{doc.document_id}",
-                "folder_token": target_folder,
+                "document_id": doc.get("document_id"),
+                "title": doc.get("title"),
+                "revision_id": doc.get("revision_id"),
+                "url": f"https://{domain}.com/docx/{doc.get('document_id')}",
+                "folder_token": folder_token,
             }
 
         except Exception as e:
@@ -895,35 +912,31 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - document_id: The document ID
                 - title: The document title
                 - revision_id: Current revision ID
-                - create_time: Document creation timestamp
         """
-        from lark_oapi.api.docx.v1 import GetDocumentRequest
+        import requests
 
         try:
-            request = (
-                GetDocumentRequest.builder().document_id(document_id).build()
-            )
+            url = f"{self._domain}/open-apis/docx/v1/documents/{document_id}"
+            headers = self._get_http_headers()
 
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document.get(request, option)
-            else:
-                response = self._client.docx.v1.document.get(request)
+            response = requests.get(url, headers=headers, timeout=30)
+            result = response.json()
 
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to get document: {response.code} - {response.msg}"
+                    f"Failed to get document: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to get document: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to get document: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
-            doc = response.data.document
+            doc = result.get("data", {}).get("document", {})
             return {
-                "document_id": doc.document_id,
-                "title": doc.title,
-                "revision_id": doc.revision_id,
+                "document_id": doc.get("document_id"),
+                "title": doc.get("title"),
+                "revision_id": doc.get("revision_id"),
             }
 
         except Exception as e:
@@ -946,38 +959,33 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             Dict[str, Any]: A dictionary containing:
                 - document_id: The document ID
                 - content: The extracted plain text content
-                - block_count: Total number of blocks in the document
         """
-        from lark_oapi.api.docx.v1 import RawContentDocumentRequest
+        import requests
 
         try:
-            request = (
-                RawContentDocumentRequest.builder()
-                .document_id(document_id)
-                .build()
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/raw_content"
             )
+            headers = self._get_http_headers()
 
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document.raw_content(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document.raw_content(request)
+            response = requests.get(url, headers=headers, timeout=30)
+            result = response.json()
 
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to get document content: {response.code} - "
-                    f"{response.msg}"
+                    f"Failed to get document content: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to get document content: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to get document content: "
+                    f"{result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
             return {
                 "document_id": document_id,
-                "content": response.data.content,
+                "content": result.get("data", {}).get("content", ""),
             }
 
         except Exception as e:
@@ -1006,57 +1014,56 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - has_more: Whether there are more blocks to fetch
                 - page_token: Token to fetch the next page
         """
-        from lark_oapi.api.docx.v1 import ListDocumentBlockRequest
+        import requests
 
         try:
-            request_builder = (
-                ListDocumentBlockRequest.builder()
-                .document_id(document_id)
-                .page_size(page_size)
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks"
             )
+            headers = self._get_http_headers()
 
+            params: Dict[str, Any] = {"page_size": page_size}
             if page_token:
-                request_builder = request_builder.page_token(page_token)
+                params["page_token"] = page_token
 
-            request = request_builder.build()
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document_block.list(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document_block.list(request)
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
 
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to list blocks: {response.code} - {response.msg}"
+                    f"Failed to list blocks: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to list blocks: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to list blocks: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             blocks = []
-            if response.data.items:
-                for block in response.data.items:
-                    block_info = {
-                        "block_id": block.block_id,
-                        "block_type": block.block_type,
-                        "parent_id": block.parent_id,
-                    }
+            items = data.get("items", []) or []
+            for block in items:
+                block_info = {
+                    "block_id": block.get("block_id"),
+                    "block_type": block.get("block_type"),
+                    "parent_id": block.get("parent_id"),
+                }
 
-                    # Try to extract text content
-                    text_content = _extract_text_from_block(block)
-                    if text_content:
-                        block_info["text_content"] = text_content
+                # Try to extract text content
+                text_content = _extract_text_from_block(block)
+                if text_content:
+                    block_info["text_content"] = text_content
 
-                    blocks.append(block_info)
+                blocks.append(block_info)
 
             return {
                 "document_id": document_id,
                 "blocks": blocks,
-                "has_more": response.data.has_more or False,
-                "page_token": response.data.page_token,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token"),
             }
 
         except Exception as e:
@@ -1082,39 +1089,34 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - children: List of child block IDs
                 - text_content: Extracted text content (if applicable)
         """
-        from lark_oapi.api.docx.v1 import GetDocumentBlockRequest
+        import requests
 
         try:
-            request = (
-                GetDocumentBlockRequest.builder()
-                .document_id(document_id)
-                .block_id(block_id)
-                .build()
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks/{block_id}"
             )
+            headers = self._get_http_headers()
 
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document_block.get(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document_block.get(request)
+            response = requests.get(url, headers=headers, timeout=30)
+            result = response.json()
 
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to get block: {response.code} - {response.msg}"
+                    f"Failed to get block: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to get block: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to get block: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
-            block = response.data.block
+            block = result.get("data", {}).get("block", {})
             block_info = {
-                "block_id": block.block_id,
-                "block_type": block.block_type,
-                "parent_id": block.parent_id,
-                "children": block.children or [],
+                "block_id": block.get("block_id"),
+                "block_type": block.get("block_type"),
+                "parent_id": block.get("parent_id"),
+                "children": block.get("children", []) or [],
             }
 
             # Try to extract text content
@@ -1151,60 +1153,56 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - has_more: Whether there are more children to fetch
                 - page_token: Token to fetch the next page
         """
-        from lark_oapi.api.docx.v1 import GetDocumentBlockChildrenRequest
+        import requests
 
         try:
-            request_builder = (
-                GetDocumentBlockChildrenRequest.builder()
-                .document_id(document_id)
-                .block_id(block_id)
-                .page_size(page_size)
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks/{block_id}/children"
             )
+            headers = self._get_http_headers()
 
+            params: Dict[str, Any] = {"page_size": page_size}
             if page_token:
-                request_builder = request_builder.page_token(page_token)
+                params["page_token"] = page_token
 
-            request = request_builder.build()
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document_block_children.get(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document_block_children.get(
-                    request
-                )
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
 
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to get block children: {response.code} - "
-                    f"{response.msg}"
+                    f"Failed to get block children: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to get block children: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to get block children: "
+                    f"{result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             children = []
-            if response.data.items:
-                for block in response.data.items:
-                    block_info = {
-                        "block_id": block.block_id,
-                        "block_type": block.block_type,
-                        "parent_id": block.parent_id,
-                    }
+            items = data.get("items", []) or []
+            for block in items:
+                block_info = {
+                    "block_id": block.get("block_id"),
+                    "block_type": block.get("block_type"),
+                    "parent_id": block.get("parent_id"),
+                }
 
-                    text_content = _extract_text_from_block(block)
-                    if text_content:
-                        block_info["text_content"] = text_content
+                text_content = _extract_text_from_block(block)
+                if text_content:
+                    block_info["text_content"] = text_content
 
-                    children.append(block_info)
+                children.append(block_info)
 
             return {
                 "block_id": block_id,
                 "children": children,
-                "has_more": response.data.has_more or False,
-                "page_token": response.data.page_token,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token"),
             }
 
         except Exception as e:
@@ -1256,126 +1254,68 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - block_type: The type of the created block
                 - document_revision_id: The new document revision ID
         """
-        from lark_oapi.api.docx.v1 import (
-            BlockBuilder,
-            CalloutBuilder,
-            CreateDocumentBlockChildrenRequest,
-            CreateDocumentBlockChildrenRequestBody,
-            DividerBuilder,
-            TextBuilder,
-            TextElementBuilder,
-            TextRunBuilder,
-        )
+        import requests
 
         try:
-            # Get the block type number
-            block_type_num = BLOCK_TYPES.get(block_type, 2)
-
-            # Build text element
-            text_element = (
-                TextElementBuilder()
-                .text_run(TextRunBuilder().content(content).build())
-                .build()
-            )
-
-            # Build a Text object (used for most block types)
-            text_obj = TextBuilder().elements([text_element]).build()
-
-            # Build the block based on type using the builder pattern
-            block_builder = BlockBuilder().block_type(block_type_num)
-
-            if block_type == "text":
-                block_builder = block_builder.text(text_obj)
-            elif block_type == "heading1":
-                block_builder = block_builder.heading1(text_obj)
-            elif block_type == "heading2":
-                block_builder = block_builder.heading2(text_obj)
-            elif block_type == "heading3":
-                block_builder = block_builder.heading3(text_obj)
-            elif block_type == "heading4":
-                block_builder = block_builder.heading4(text_obj)
-            elif block_type == "heading5":
-                block_builder = block_builder.heading5(text_obj)
-            elif block_type == "heading6":
-                block_builder = block_builder.heading6(text_obj)
-            elif block_type == "heading7":
-                block_builder = block_builder.heading7(text_obj)
-            elif block_type == "heading8":
-                block_builder = block_builder.heading8(text_obj)
-            elif block_type == "heading9":
-                block_builder = block_builder.heading9(text_obj)
-            elif block_type == "bullet":
-                block_builder = block_builder.bullet(text_obj)
-            elif block_type == "ordered":
-                block_builder = block_builder.ordered(text_obj)
-            elif block_type == "code":
-                block_builder = block_builder.code(text_obj)
-            elif block_type == "quote":
-                block_builder = block_builder.quote(text_obj)
-            elif block_type == "todo":
-                block_builder = block_builder.todo(text_obj)
-            elif block_type == "divider":
-                block_builder = block_builder.divider(DividerBuilder().build())
-            elif block_type == "callout":
-                block_builder = block_builder.callout(
-                    CalloutBuilder().elements([text_element]).build()
-                )
-
-            block = block_builder.build()
-
-            # Build the request
-            request_body_builder = (
-                CreateDocumentBlockChildrenRequestBody.builder().children(
-                    [block]
-                )
-            )
-
-            if index >= 0:
-                request_body_builder = request_body_builder.index(index)
-
-            request_body = request_body_builder.build()
-
             # Determine the parent block ID
             target_block_id = parent_block_id or document_id
 
-            request = (
-                CreateDocumentBlockChildrenRequest.builder()
-                .document_id(document_id)
-                .block_id(target_block_id)
-                .request_body(request_body)
-                .build()
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks/{target_block_id}/children"
             )
+            headers = self._get_http_headers()
 
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document_block_children.create(
-                    request, option
-                )
+            # Get the block type number
+            block_type_num = BLOCK_TYPES.get(block_type, 2)
+
+            # Build text element structure
+            text_element = {"text_run": {"content": content}}
+            text_obj = {"elements": [text_element]}
+
+            # Build the block based on type
+            block: Dict[str, Any] = {"block_type": block_type_num}
+
+            if block_type == "divider":
+                block["divider"] = {}
+            elif block_type == "callout":
+                block["callout"] = {"elements": [text_element]}
             else:
-                response = self._client.docx.v1.document_block_children.create(
-                    request
-                )
+                # For text, headings, bullet, ordered, code, quote, todo
+                block[block_type] = text_obj
 
-            if not response.success():
+            # Build request body
+            body: Dict[str, Any] = {"children": [block]}
+            if index >= 0:
+                body["index"] = index
+
+            response = requests.post(
+                url, headers=headers, json=body, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to create block: {response.code} - {response.msg}"
+                    f"Failed to create block: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to create block: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to create block: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
-            created_blocks = response.data.children or []
+            data = result.get("data", {})
+            created_blocks = data.get("children", []) or []
             if created_blocks:
                 return {
-                    "block_id": created_blocks[0].block_id,
+                    "block_id": created_blocks[0].get("block_id"),
                     "block_type": block_type,
-                    "document_revision_id": response.data.document_revision_id,
+                    "document_revision_id": data.get("document_revision_id"),
                 }
 
             return {
                 "success": True,
-                "document_revision_id": response.data.document_revision_id,
+                "document_revision_id": data.get("document_revision_id"),
             }
 
         except Exception as e:
@@ -1404,63 +1344,42 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - block_id: The ID of the updated block
                 - document_revision_id: The new document revision ID
         """
-        from lark_oapi.api.docx.v1 import (
-            PatchDocumentBlockRequest,
-            TextElementBuilder,
-            TextRunBuilder,
-            UpdateBlockRequestBuilder,
-            UpdateTextElementsRequestBuilder,
-        )
+        import requests
 
         try:
-            # Build the text element with content
-            text_run = TextRunBuilder().content(content).build()
-            text_element = TextElementBuilder().text_run(text_run).build()
-
-            # Build the update text elements request
-            update_text_elements = (
-                UpdateTextElementsRequestBuilder()
-                .elements([text_element])
-                .build()
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks/{block_id}"
             )
+            headers = self._get_http_headers()
 
-            # Build the update block request
-            update_block = (
-                UpdateBlockRequestBuilder()
-                .update_text_elements(update_text_elements)
-                .build()
+            # Build the update request body
+            body = {
+                "update_text_elements": {
+                    "elements": [{"text_run": {"content": content}}]
+                }
+            }
+
+            response = requests.patch(
+                url, headers=headers, json=body, timeout=30
             )
+            result = response.json()
 
-            # Build the patch request
-            request = (
-                PatchDocumentBlockRequest.builder()
-                .document_id(document_id)
-                .block_id(block_id)
-                .request_body(update_block)
-                .build()
-            )
-
-            option = self._get_request_option()
-            if option:
-                response = self._client.docx.v1.document_block.patch(
-                    request, option
-                )
-            else:
-                response = self._client.docx.v1.document_block.patch(request)
-
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to update block: {response.code} - {response.msg}"
+                    f"Failed to update block: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to update block: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to update block: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             return {
                 "success": True,
                 "block_id": block_id,
-                "document_revision_id": response.data.document_revision_id,
+                "document_revision_id": data.get("document_revision_id"),
             }
 
         except Exception as e:
@@ -1484,10 +1403,7 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                 - block_id: The ID of the deleted block
                 - document_revision_id: The new document revision ID
         """
-        from lark_oapi.api.docx.v1 import (
-            BatchDeleteDocumentBlockChildrenRequest,
-            BatchDeleteDocumentBlockChildrenRequestBody,
-        )
+        import requests
 
         try:
             # First, get the parent block ID
@@ -1497,46 +1413,35 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
 
             parent_id = block_info.get("parent_id", document_id)
 
-            request = (
-                BatchDeleteDocumentBlockChildrenRequest.builder()
-                .document_id(document_id)
-                .block_id(parent_id)
-                .request_body(
-                    BatchDeleteDocumentBlockChildrenRequestBody.builder()
-                    .start_index(0)
-                    .end_index(1)
-                    .build()
-                )
-                .build()
+            url = (
+                f"{self._domain}/open-apis/docx/v1/documents/"
+                f"{document_id}/blocks/{parent_id}/children/batch_delete"
             )
+            headers = self._get_http_headers()
 
-            option = self._get_request_option()
-            if option:
-                response = (
-                    self._client.docx.v1.document_block_children.batch_delete(
-                        request, option
-                    )
-                )
-            else:
-                response = (
-                    self._client.docx.v1.document_block_children.batch_delete(
-                        request
-                    )
-                )
+            # Build request body with start and end index
+            body = {"start_index": 0, "end_index": 1}
 
-            if not response.success():
+            response = requests.post(
+                url, headers=headers, json=body, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to delete block: {response.code} - {response.msg}"
+                    f"Failed to delete block: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to delete block: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to delete block: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             return {
                 "success": True,
                 "block_id": block_id,
-                "document_revision_id": response.data.document_revision_id,
+                "document_revision_id": data.get("document_revision_id"),
             }
 
         except Exception as e:
@@ -1713,80 +1618,79 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             ...     folder_token=result["files"][0]["token"]
             ... )
         """
-        from lark_oapi.api.drive.v1 import ListFileRequest
+        import requests
 
         try:
-            # Build the request
-            request_builder = (
-                ListFileRequest.builder()
-                .page_size(page_size)
-                .order_by(order_by)
-                .direction(direction)
-            )
+            url = f"{self._domain}/open-apis/drive/v1/files"
+            headers = self._get_http_headers()
 
+            params: Dict[str, Any] = {
+                "page_size": page_size,
+                "order_by": order_by,
+                "direction": direction,
+            }
             if folder_token:
-                request_builder = request_builder.folder_token(folder_token)
-
+                params["folder_token"] = folder_token
             if page_token:
-                request_builder = request_builder.page_token(page_token)
+                params["page_token"] = page_token
 
-            request = request_builder.build()
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
 
-            # Use user token if available (OAuth), otherwise app token
-            option = self._get_request_option()
-            if option:
-                response = self._client.drive.v1.file.list(request, option)
-            else:
-                response = self._client.drive.v1.file.list(request)
-
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to list folder contents: {response.code} - "
-                    f"{response.msg}"
+                    f"Failed to list folder contents: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to list folder contents: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to list folder contents: "
+                    f"{result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             files = []
-            if response.data.files:
-                for file in response.data.files:
-                    file_info = {
-                        "token": file.token,
-                        "name": file.name,
-                        "type": file.type,
-                        "parent_token": file.parent_token,
-                        "created_time": file.created_time,
-                        "modified_time": file.modified_time,
-                        "owner_id": file.owner_id,
-                    }
+            file_list = data.get("files", []) or []
+            for file in file_list:
+                file_info = {
+                    "token": file.get("token"),
+                    "name": file.get("name"),
+                    "type": file.get("type"),
+                    "parent_token": file.get("parent_token"),
+                    "created_time": file.get("created_time"),
+                    "modified_time": file.get("modified_time"),
+                    "owner_id": file.get("owner_id"),
+                }
 
-                    # Add URL for easy access
-                    if file.type == "folder":
-                        file_info["url"] = (
-                            f"https://larksuite.com/drive/folder/{file.token}"
-                        )
-                    elif file.type == "docx":
-                        file_info["url"] = (
-                            f"https://larksuite.com/docx/{file.token}"
-                        )
-                    elif file.type == "sheet":
-                        file_info["url"] = (
-                            f"https://larksuite.com/sheets/{file.token}"
-                        )
-                    elif file.type == "bitable":
-                        file_info["url"] = (
-                            f"https://larksuite.com/base/{file.token}"
-                        )
+                # Add URL for easy access
+                file_type = file.get("type")
+                file_token = file.get("token")
+                if file_type == "folder":
+                    file_info["url"] = (
+                        f"https://larksuite.com/drive/folder/{file_token}"
+                    )
+                elif file_type == "docx":
+                    file_info["url"] = (
+                        f"https://larksuite.com/docx/{file_token}"
+                    )
+                elif file_type == "sheet":
+                    file_info["url"] = (
+                        f"https://larksuite.com/sheets/{file_token}"
+                    )
+                elif file_type == "bitable":
+                    file_info["url"] = (
+                        f"https://larksuite.com/base/{file_token}"
+                    )
 
-                    files.append(file_info)
+                files.append(file_info)
 
             return {
                 "folder_token": folder_token or "root",
                 "files": files,
-                "has_more": response.data.has_more or False,
-                "page_token": response.data.next_page_token,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("next_page_token"),
             }
 
         except Exception as e:
@@ -1799,11 +1703,16 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
         The root folder is the top-level "My Space" folder where you can
         create documents that will be visible in your document list.
 
+        This method uses the dedicated Root Folder Meta API to get the
+        authenticated user's personal root folder token. When using OAuth
+        (user_access_token), this returns the USER's personal folder, not
+        the app's folder.
+
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - token: The root folder token
-                - id: The root folder ID
-                - user_id: The owner's user ID
+                - id: The folder ID
+                - user_id: The folder owner's user ID
 
         Example:
             >>> # Get root folder and create a document there
@@ -1813,32 +1722,40 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             ...     folder_token=root["token"]
             ... )
         """
+        import requests
+
         try:
-            # Get the root folder token by listing files and extracting
-            # the parent_token from any file in the root folder.
-            # This is more reliable than the explorer/v2 endpoint which
-            # may not be available in all SDK versions.
-            result = self.lark_list_folder_contents(page_size=1)
+            url = (
+                f"{self._domain}/open-apis/drive/explorer/v2/root_folder/meta"
+            )
+            headers = self._get_http_headers()
 
-            if "error" in result:
-                return result
+            response = requests.get(url, headers=headers, timeout=30)
+            result = response.json()
 
-            # If there are files, get the parent_token which is the root
-            if result.get("files") and len(result["files"]) > 0:
-                root_token = result["files"][0].get("parent_token")
-                if root_token:
-                    return {
-                        "token": root_token,
-                        "id": root_token,
-                        "user_id": None,
-                    }
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to get root folder meta: {result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to get root folder meta: "
+                    f"{result.get('msg')}",
+                    "code": result.get("code"),
+                }
 
-            # If no files exist, we can still use "root" as a fallback
-            # which works for some operations
+            data = result.get("data", {})
+            token = data.get("token")
+            folder_id = data.get("id")
+            user_id = data.get("user_id")
+
+            logger.info(
+                f"Got root folder token: {token}, owner user_id: {user_id}"
+            )
+
             return {
-                "token": "root",
-                "id": "root",
-                "user_id": None,
+                "token": token,
+                "id": folder_id,
+                "user_id": user_id,
             }
 
         except Exception as e:
@@ -1871,10 +1788,7 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             ...     folder_token=folder["token"]
             ... )
         """
-        from lark_oapi.api.drive.v1 import (
-            CreateFolderFileRequest,
-            CreateFolderFileRequestBody,
-        )
+        import requests
 
         try:
             # If no folder token provided, get the root folder
@@ -1885,39 +1799,30 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
                     return root_result
                 parent_token = root_result["token"]
 
-            request = (
-                CreateFolderFileRequest.builder()
-                .request_body(
-                    CreateFolderFileRequestBody.builder()
-                    .name(name)
-                    .folder_token(parent_token)
-                    .build()
-                )
-                .build()
+            url = f"{self._domain}/open-apis/drive/v1/files/create_folder"
+            headers = self._get_http_headers()
+
+            body = {"name": name, "folder_token": parent_token}
+
+            response = requests.post(
+                url, headers=headers, json=body, timeout=30
             )
+            result = response.json()
 
-            # Use user token if available (OAuth), otherwise app token
-            option = self._get_request_option()
-            if option:
-                response = self._client.drive.v1.file.create_folder(
-                    request, option
-                )
-            else:
-                response = self._client.drive.v1.file.create_folder(request)
-
-            if not response.success():
+            if result.get("code") != 0:
                 logger.error(
-                    f"Failed to create folder: {response.code} - "
-                    f"{response.msg}"
+                    f"Failed to create folder: {result.get('code')} - "
+                    f"{result.get('msg')}"
                 )
                 return {
-                    "error": f"Failed to create folder: {response.msg}",
-                    "code": response.code,
+                    "error": f"Failed to create folder: {result.get('msg')}",
+                    "code": result.get("code"),
                 }
 
+            data = result.get("data", {})
             return {
-                "token": response.data.token,
-                "url": response.data.url,
+                "token": data.get("token"),
+                "url": data.get("url"),
             }
 
         except Exception as e:
