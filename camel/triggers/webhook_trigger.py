@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -353,6 +353,19 @@ class WebhookTrigger(BaseTrigger):
         try:
             # Get raw body for authentication
             raw_body = await request.read()
+
+            # Check payload size limit
+            if len(raw_body) > self.webhook_config.max_payload_size:
+                logger.warning(
+                    f"Payload size {len(raw_body)} exceeds limit "
+                    f"{self.webhook_config.max_payload_size}"
+                )
+                return web.json_response(
+                    {"error": "Payload too large"},
+                    status=413,
+                    headers=self.webhook_config.custom_headers or {},
+                )
+
             headers: Dict[str, str] = dict(request.headers)
 
             # Authenticate request if required
@@ -364,7 +377,9 @@ class WebhookTrigger(BaseTrigger):
             ):
                 logger.warning("Webhook authentication failed")
                 return web.json_response(
-                    {"error": "Authentication failed"}, status=403
+                    {"error": "Authentication failed"},
+                    status=403,
+                    headers=self.webhook_config.custom_headers or {},
                 )
 
             if self.auth_handler:
@@ -386,7 +401,9 @@ class WebhookTrigger(BaseTrigger):
                 except Exception:
                     logger.error("Failed to parse JSON payload")
                     return web.json_response(
-                        {"error": "Invalid JSON payload"}, status=400
+                        {"error": "Invalid JSON payload"},
+                        status=400,
+                        headers=self.webhook_config.custom_headers or {},
                     )
             elif 'application/x-www-form-urlencoded' in content_type:
                 form_data = await request.post()
@@ -411,11 +428,19 @@ class WebhookTrigger(BaseTrigger):
             await self._emit_trigger_event(event)
 
             # Return default success response
-            return web.json_response({"status": "success"})
+            return web.json_response(
+                {"status": "success"},
+                status=200,
+                headers=self.webhook_config.custom_headers or {},
+            )
 
         except Exception as e:
             logger.error(f"Webhook error: {e}")
-            return web.json_response({"error": str(e)}, status=500)
+            return web.json_response(
+                {"error": str(e)},
+                status=500,
+                headers=self.webhook_config.custom_headers or {},
+            )
 
     async def process_trigger_event(
         self, event_data: Dict[str, Any]
