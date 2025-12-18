@@ -63,15 +63,17 @@ verification_model = ModelFactory.create(
 
 # System prompt for browser automation
 SYSTEM_PROMPT = """
-填写日期的时候先点击日期框，然后再分别输入去程和返程日期，用正确格式如：2026-01-28
-enter可以作为确认，也可以用来执行搜索
+When filling in the dates, first click the date input field, then separately enter the departure date and the return date using the correct format, for example: 2026-01-28.
 
-你需要每次操作后都用正则表达式/其他过滤的方式尝试确实是否正确填入
-你可以用正则表达式/其他过滤的方式来过滤出你需要的snapshot,不一定要每次看到完整的snapshot
+The Enter key can be used either to confirm the input or to execute the search.
 
-如果没有成功执行搜索，一般来说是没有完整输入所有必要信息
+After each operation, you need to use regular expressions or other filtering methods to verify whether the input has been entered correctly.
 
-你可以执行browser.get_screenshot()来查看页面截屏，执行后，系统会自动把页面截屏放在你的上下文里
+You may use regular expressions or other filtering methods to extract the snapshot you need; it is not necessary to view the complete snapshot every time.
+
+If the search is not successfully executed, it usually means that not all required information has been fully entered.
+
+You can call browser.get_screenshot() to view a screenshot of the page. After execution, the system will automatically place the page screenshot into your context.
 """
 
 # Custom tools selection
@@ -84,7 +86,7 @@ custom_tools = [
     "browser_type",
     "browser_enter",
     "browser_get_page_snapshot",
-    "browser_get_som_screenshot"
+    "browser_get_som_screenshot",
 ]
 
 # Create output directory

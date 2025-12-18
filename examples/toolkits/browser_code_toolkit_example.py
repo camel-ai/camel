@@ -146,7 +146,10 @@ Step 2: After seeing the snapshot, write code to interact with ACTUAL refs
 ```python
 # Now you know ref="e15" is the search box from previous output
 browser.type(ref="e15", text="search query")
-browser.enter()
+time.sleep(2) # always time sleep few seconds after type
+browser.enter() # always enter after type
+snapshot = browser.get_snapshot()
+print(snapshot)  # Check is the type action success or not
 ```
 
 Step 3: Get new snapshot after interaction if needed
@@ -175,7 +178,17 @@ COMMON MISTAKES TO AVOID:
 3. Execute new code using those actual ref IDs
 4. Repeat until task is complete
 
+When filling in the dates, first click the date input field, then separately enter the departure date and the return date using the correct format, for example: 2026-01-28.
 
+The Enter key can be used either to confirm the input or to execute the search.
+
+After each operation, you need to use regular expressions or other filtering methods to verify whether the input has been entered correctly.
+
+You may use regular expressions or other filtering methods to extract the snapshot you need; it is not necessary to view the complete snapshot every time.
+
+If the search is not successfully executed, it usually means that not all required information has been fully entered.
+
+You can call browser.get_screenshot() to view a screenshot of the page. After execution, the system will automatically place the page screenshot into your context.
 """
 
 # Create Agent with system prompt
@@ -207,8 +220,7 @@ Use the execute_browser_code tool.
 # Complex search task
 SEARCH_TASK = r"""
 Visit the website "https://www.google.com/travel/flights/" using a browser and search for a round-trip journey from Edinburgh to Manchester on January 28th, 2026, departing and returning on the same day. Find and extract the lowest price available for this itinerary. Return the lowest price option as a plain text summary including outbound and return departure times, total price, and airline details.      
-填写日期的时候先点击日期框，然后再分别输入去程和返程日期，用正确格式如：2026-01-28
-enter可以作为确认
+
 """
 
 
