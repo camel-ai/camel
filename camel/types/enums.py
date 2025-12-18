@@ -245,6 +245,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # Gemini models
     GEMINI_3_PRO = "gemini-3-pro-preview"
+    GEMINI_3_FLASH = "gemini-3-flash-preview"
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
@@ -853,6 +854,7 @@ class ModelType(UnifiedModelType, Enum):
         """
         return self in {
             ModelType.GEMINI_3_PRO,
+            ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1557,6 +1559,7 @@ class ModelType(UnifiedModelType, Enum):
             return 512_000
         elif self in {
             ModelType.GEMINI_3_PRO,
+            ModelType.GEMINI_3_FLASH,
             ModelType.GEMINI_2_5_FLASH,
             ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
@@ -1824,6 +1827,7 @@ class ModelPlatformType(Enum):
     AIHUBMIX = "aihubmix"
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
+    FUNCTION_GEMMA = "function-gemma"
 
     @classmethod
     def from_name(cls, name):
