@@ -89,7 +89,7 @@ class TerminalToolkit(BaseToolkit):
         max_output_length (Optional[int]): Maximum length of output to return
             directly. If output exceeds this length, it will be saved to a
             file and a truncated response with file path will be returned.
-            Defaults to 5000 characters. Set to None to disable truncation.
+            Defaults to None.
     """
 
     def __init__(
@@ -103,7 +103,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
-        max_output_length: Optional[int] = 5000,
+        max_output_length: Optional[int] = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
