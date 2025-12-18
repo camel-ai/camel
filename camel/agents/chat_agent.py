@@ -65,7 +65,6 @@ from camel.agents._utils import (
     handle_logprobs,
     safe_model_dump,
 )
-from camel.utils.tool_result import ToolResult
 from camel.agents.base import BaseAgent
 from camel.logger import get_logger
 from camel.memories import (
@@ -106,6 +105,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.tool_result import ToolResult
 
 TOKEN_LIMIT_ERROR_MARKERS = (
     "context_length_exceeded",
