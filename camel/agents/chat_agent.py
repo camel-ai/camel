@@ -4076,7 +4076,7 @@ class ChatAgent(BaseAgent):
                     if pil_images:
                         # Create a user message with the image(s)
                         visual_msg = BaseMessage.make_user_message(
-                            role_name="System",
+                            role_name="Tool",
                             content=f"[Visual output from {func_name}]",
                             image_list=pil_images,
                         )
