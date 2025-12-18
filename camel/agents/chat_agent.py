@@ -398,6 +398,10 @@ class ChatAgent(BaseAgent):
             window that triggers summarization. If `None`, will trigger
             summarization when the context window is full.
             (default: :obj:`None`)
+        token_limit (int, optional): The maximum number of tokens allowed for
+            the context window. If `None`, uses the model's default token
+            limit. This can be used to restrict the context size below the
+            model's maximum capacity. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
@@ -529,10 +533,24 @@ class ChatAgent(BaseAgent):
         self._tool_output_history: List[_ToolOutputHistoryEntry] = []
 
         # Set up memory
+        # Use user-provided token_limit if valid, otherwise use model's default
+        model_token_limit = self.model_backend.token_limit
+        if token_limit is not None and token_limit > model_token_limit:
+            logger.warning(
+                f"Provided token_limit ({token_limit}) exceeds model's "
+                f"maximum capacity ({model_token_limit}). "
+                f"Using model's token_limit instead."
+            )
+        effective_token_limit = (
+            min(token_limit, model_token_limit)
+            if token_limit is not None
+            else model_token_limit
+        )
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            self.model_backend.token_limit,
+            effective_token_limit,
         )
+        self._token_limit = effective_token_limit
 
         self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
@@ -774,6 +792,11 @@ class ChatAgent(BaseAgent):
     def tool_dict(self) -> Dict[str, FunctionTool]:
         r"""Returns a dictionary of internal tools."""
         return self._internal_tools
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the token limit for the agent's context window."""
+        return self._token_limit
 
     @property
     def output_language(self) -> Optional[str]:
