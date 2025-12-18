@@ -22,6 +22,7 @@ from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from .function_gemma_config import FUNCTION_GEMMA_API_PARAMS, FunctionGemmaConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
@@ -136,4 +137,6 @@ __all__ = [
     'QIANFAN_API_PARAMS',
     'CrynuxConfig',
     'CRYNUX_API_PARAMS',
+    'FunctionGemmaConfig',
+    'FUNCTION_GEMMA_API_PARAMS',
 ]

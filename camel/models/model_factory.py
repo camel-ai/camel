@@ -27,6 +27,7 @@ from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
+from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
@@ -113,6 +114,7 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
+        ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,
     }
 
     @staticmethod
