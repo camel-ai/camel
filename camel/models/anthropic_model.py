@@ -19,9 +19,6 @@ from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import AnthropicConfig
-from camel.configs.anthropic_config import (
-    ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS,
-)
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
@@ -33,6 +30,8 @@ from camel.utils import (
     get_current_agent_session_id,
     update_langfuse_trace,
 )
+
+ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
