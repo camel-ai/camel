@@ -1083,12 +1083,24 @@ class ChatAgent(BaseAgent):
         return threshold
 
     def _update_memory_with_summary(
-        self, summary: str, include_summaries: bool = False
+        self,
+        summary: str,
+        include_summaries: bool,
+        current_user_input: BaseMessage,
     ) -> None:
         r"""Update memory with summary result.
 
         This method handles memory clearing and restoration of summaries based
         on whether it's a progressive or full compression.
+
+        Args:
+            summary (str): The summary content to add to memory.
+            include_summaries (bool): Whether previous summaries were included
+                in the summarization.
+            current_user_input (BaseMessage): The current step's user input
+                message to preserve after summarization. This message will be
+                re-added to memory after clearing, ensuring the agent retains
+                the original instruction.
         """
 
         summary_content: str = summary
@@ -1121,16 +1133,19 @@ class ChatAgent(BaseAgent):
             role_name="assistant", content=summary_content
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
-        input_message = BaseMessage.make_assistant_message(
-            role_name="assistant",
-            content=(
-                "Please continue the conversation from "
-                "where we left it off without asking the user any further "
-                "questions. Continue with the last task that you were "
-                "asked to work on."
-            ),
+
+        # Re-add current user input with context hint
+        enhanced_content = (
+            "[CONTEXT_SUMMARY] The context above is a summary of our "
+            "previous conversation. Continue executing the original task "
+            "below.\n\n"
+            f"{current_user_input.content}"
         )
-        self.update_memory(input_message, OpenAIBackendRole.ASSISTANT)
+        enhanced_user_input = current_user_input.create_new_instance(
+            enhanced_content
+        )
+        self.update_memory(enhanced_user_input, OpenAIBackendRole.USER)
+
         # Update token count
         try:
             summary_tokens = (
@@ -2827,6 +2842,7 @@ class ChatAgent(BaseAgent):
                             self._update_memory_with_summary(
                                 summary.get("summary", ""),
                                 include_summaries=True,
+                                current_user_input=input_message,
                             )
                         elif num_tokens > threshold:
                             logger.info(
@@ -2838,6 +2854,7 @@ class ChatAgent(BaseAgent):
                             self._update_memory_with_summary(
                                 summary.get("summary", ""),
                                 include_summaries=False,
+                                current_user_input=input_message,
                             )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
@@ -2917,7 +2934,9 @@ class ChatAgent(BaseAgent):
                         summary_messages += "\n\n" + tool_notice
 
                     self._update_memory_with_summary(
-                        summary_messages, include_summaries=False
+                        summary_messages,
+                        include_summaries=False,
+                        current_user_input=input_message,
                     )
                     self._last_token_limit_tool_signature = tool_signature
                     return self._step_impl(input_message, response_format)
@@ -3150,6 +3169,7 @@ class ChatAgent(BaseAgent):
                             self._update_memory_with_summary(
                                 summary.get("summary", ""),
                                 include_summaries=True,
+                                current_user_input=input_message,
                             )
                         elif num_tokens > threshold:
                             logger.info(
@@ -3163,6 +3183,7 @@ class ChatAgent(BaseAgent):
                             self._update_memory_with_summary(
                                 summary.get("summary", ""),
                                 include_summaries=False,
+                                current_user_input=input_message,
                             )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
@@ -3242,7 +3263,9 @@ class ChatAgent(BaseAgent):
                     if tool_notice:
                         summary_messages += "\n\n" + tool_notice
                     self._update_memory_with_summary(
-                        summary_messages, include_summaries=False
+                        summary_messages,
+                        include_summaries=False,
+                        current_user_input=input_message,
                     )
                     self._last_token_limit_tool_signature = tool_signature
                     return await self._astep_non_streaming_task(
