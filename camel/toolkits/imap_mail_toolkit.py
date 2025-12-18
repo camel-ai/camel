@@ -110,6 +110,11 @@ class IMAPMailToolkit(BaseToolkit):
         Returns:
             imaplib.IMAP4_SSL: Connected IMAP client
         """
+        if not self.imap_server or not self.username or not self.password:
+            raise ValueError(
+                "IMAP server, username, and password must be provided"
+            )
+
         current_time = time.time()
 
         # Check if existing connection has exceeded idle timeout

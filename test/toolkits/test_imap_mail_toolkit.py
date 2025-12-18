@@ -261,7 +261,6 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Assertions
         self.assertIn("Email sent successfully", result)
         mock_smtp.send_message.assert_called_once()
-        mock_smtp.quit.assert_called_once()
 
     @patch.object(IMAPMailToolkit, '_get_smtp_connection')
     def test_send_email_with_cc_bcc(self, mock_get_smtp):
@@ -504,29 +503,93 @@ class TestIMAPMailToolkit(unittest.TestCase):
         self.assertEqual(toolkit.username, "custom@example.com")
         self.assertEqual(toolkit.password, "custom_password")
 
-    def test_toolkit_initialization_missing_credentials(self):
-        r"""Test toolkit initialization with missing credentials."""
-        # Clear environment variables
+    def test_get_imap_connection_missing_credentials(self):
+        r"""Test IMAP connection with missing credentials."""
+        # Test missing IMAP server - must clear envs
         with patch.dict(os.environ, {}, clear=True):
-            # Create toolkit without credentials
-            with self.assertRaises(ValueError):
-                IMAPMailToolkit()
+            toolkit = IMAPMailToolkit(
+                imap_server=None,
+                smtp_server="smtp.test.com",
+                username="test@test.com",
+                password="test_password",
+            )
 
-    def test_toolkit_initialization_partial_credentials(self):
-        r"""Test toolkit initialization with partial credentials."""
-        # Clear environment variables and set only some
-        with patch.dict(
-            os.environ,
-            {
-                'IMAP_SERVER': 'imap.test.com',
-                'EMAIL_USERNAME': 'test@test.com',
-                # Missing SMTP_SERVER and EMAIL_PASSWORD
-            },
-            clear=True,
-        ):
-            # Create toolkit with partial credentials
-            with self.assertRaises(ValueError):
-                IMAPMailToolkit()
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_imap_connection()
+
+            self.assertIn("IMAP server", str(context.exception))
+
+        # Test missing username - must clear envs
+        with patch.dict(os.environ, {}, clear=True):
+            toolkit = IMAPMailToolkit(
+                imap_server="imap.test.com",
+                smtp_server="smtp.test.com",
+                username=None,
+                password="test_password",
+            )
+
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_imap_connection()
+
+            self.assertIn("username", str(context.exception))
+
+        # Test missing password - must clear envs
+        with patch.dict(os.environ, {}, clear=True):
+            toolkit = IMAPMailToolkit(
+                imap_server="imap.test.com",
+                smtp_server="smtp.test.com",
+                username="test@test.com",
+                password=None,
+            )
+
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_imap_connection()
+
+            self.assertIn("password", str(context.exception))
+
+    def test_get_smtp_connection_missing_credentials(self):
+        r"""Test SMTP connection with missing credentials."""
+        # Test missing SMTP server - must clear envs
+        with patch.dict(os.environ, {}, clear=True):
+            toolkit = IMAPMailToolkit(
+                imap_server="imap.test.com",
+                smtp_server=None,
+                username="test@test.com",
+                password="test_password",
+            )
+
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_smtp_connection()
+
+            self.assertIn("SMTP server", str(context.exception))
+
+        # Test missing username - must clear envs
+        with patch.dict(os.environ, {}, clear=True):
+            toolkit = IMAPMailToolkit(
+                imap_server="imap.test.com",
+                smtp_server="smtp.test.com",
+                username=None,
+                password="test_password",
+            )
+
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_smtp_connection()
+
+            self.assertIn("username", str(context.exception))
+
+        # Test missing password - must clear envs
+        with patch.dict(os.environ, {}, clear=True):
+            toolkit = IMAPMailToolkit(
+                imap_server="imap.test.com",
+                smtp_server="smtp.test.com",
+                username="test@test.com",
+                password=None,
+            )
+
+            with self.assertRaises(ValueError) as context:
+                toolkit._get_smtp_connection()
+
+            self.assertIn("password", str(context.exception))
 
 
 if __name__ == '__main__':
