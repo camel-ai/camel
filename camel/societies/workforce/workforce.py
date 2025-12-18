@@ -80,13 +80,14 @@ from camel.societies.workforce.utils import (
     TaskGroupAssignResult,
     WorkerConf,
     check_if_running,
+    expand_group_to_task_dependencies,
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import (
     Task,
-    TaskGroup,
     TaskState,
     is_task_result_insufficient,
+    parse_response_grouped,
     validate_task_content,
 )
 from camel.toolkits import (
@@ -1402,9 +1403,10 @@ class Workforce(BaseNode):
             )
         self.task_agent.reset()
         if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
-            result = task.decompose_grouped(
+            result = task.decompose(
                 self.task_agent,
                 decompose_prompt,
+                task_parser=parse_response_grouped,
                 stream_callback=stream_callback,
             )
         else:
@@ -3527,231 +3529,45 @@ class Workforce(BaseNode):
         Returns:
             TaskAssignResult: Assignment result from coordinator.
         """
-        # format tasks information for the prompt
-        tasks_info = ""
-        for task in tasks:
-            tasks_info += f"Task ID: {task.id}\n"
-            tasks_info += f"Content: {task.content}\n"
-            if task.additional_info:
-                tasks_info += f"Additional Info: {task.additional_info}\n"
-            tasks_info += "---\n"
-
-        prompt = str(
-            ASSIGN_TASK_PROMPT.format(
-                tasks_info=tasks_info,
-                child_nodes_info=self._get_child_nodes_info(),
-            )
-        )
-
-        # add feedback if this is a retry
-        if invalid_ids:
-            valid_worker_ids = list(self._get_valid_worker_ids())
-            feedback = (
-                f"VALIDATION ERROR: The following worker IDs are invalid: "
-                f"{invalid_ids}. "
-                f"VALID WORKER IDS: {valid_worker_ids}. "
-                f"Please reassign ONLY the above tasks using these valid IDs."
-            )
-            prompt = prompt + f"\n\n{feedback}"
-
-        # Check if we should use structured handler
-        if self.use_structured_output_handler:
-            # Use structured handler for prompt-based extraction
-            enhanced_prompt = (
-                self.structured_handler.generate_structured_prompt(
-                    base_prompt=prompt,
-                    schema=TaskAssignResult,
-                    examples=[
-                        {
-                            "assignments": [
-                                {
-                                    "task_id": "task_1",
-                                    "assignee_id": "worker_123",
-                                    "dependencies": [],
-                                }
-                            ]
-                        }
-                    ],
-                )
-            )
-
-            # Get response without structured format
-            response = self.coordinator_agent.step(enhanced_prompt)
-
-            if response.msg is None or response.msg.content is None:
-                logger.error(
-                    "Coordinator agent returned empty response for "
-                    "task assignment"
-                )
-                return TaskAssignResult(assignments=[])
-
-            # Parse with structured handler
-            result = self.structured_handler.parse_structured_response(
-                response.msg.content,
-                schema=TaskAssignResult,
-                fallback_values={"assignments": []},
-            )
-            # Ensure we return a TaskAssignResult instance
-            if isinstance(result, TaskAssignResult):
-                return result
-            elif isinstance(result, dict):
-                return TaskAssignResult(**result)
-            else:
-                return TaskAssignResult(assignments=[])
-        else:
-            # Use existing native structured output code
-            response = self.coordinator_agent.step(
-                prompt, response_format=TaskAssignResult
-            )
-
-            if response.msg is None or response.msg.content is None:
-                logger.error(
-                    "Coordinator agent returned empty response for "
-                    "task assignment"
-                )
-                return TaskAssignResult(assignments=[])
-
-            try:
-                result_dict = json.loads(response.msg.content, parse_int=str)
-                return TaskAssignResult(**result_dict)
-            except json.JSONDecodeError as e:
-                logger.error(
-                    f"JSON parsing error in task assignment: Invalid response "
-                    f"format - {e}. Response content: "
-                    f"{response.msg.content}"
-                )
-                return TaskAssignResult(assignments=[])
-
-    def _expand_group_to_task_dependencies(
-        self,
-        tasks: List[Task],
-        task_group_assign_result: TaskGroupAssignResult,
-    ) -> TaskAssignResult:
-        """
-        Expand task-group-level dependencies into task-level dependencies.
-
-        Args:
-            tasks: List[Task]: List of tasks to expand dependencies for.
-            task_group_assign_result: TaskGroupAssignResult
-
-        Returns:
-            TaskAssignResult: Task assignment result.
-        """
-
-        task_groups: List["TaskGroup"] = []
-        for task in tasks:
-            if task.group and task.group not in task_groups:
-                task_groups.append(task.group)
-
-        group_id_to_tasks: Dict[str, List["Task"]] = {
-            g.id: g.get_tasks() for g in task_groups
-        }
-
-        task_assignments: List[TaskAssignment] = []
-
-        for assignment in task_group_assign_result.assignments:
-            group_id = assignment.task_group_id
-            dependencies = assignment.dependencies
-
-            if group_id not in group_id_to_tasks:
-                raise ValueError(f"Unknown task_group_id: {group_id}")
-
-            current_tasks = group_id_to_tasks[group_id]
-
-            # when there is no dependencies
-            if len(dependencies) == 0:
-                for task in current_tasks:
-                    task_assignments.append(
-                        TaskAssignment(
-                            task_id=task.id,
-                            assignee_id=assignment.assignee_id,
-                            dependencies=[],
-                        )
-                    )
-                continue
-
-            # if there is only one dependent task group, and the mode is ANY
-            # then parallelize the tasks in the current group
-            if len(dependencies) == 1 and dependencies[0][1] == "ANY":
-                # check if the number of tasks in each group is the same
-                dependent_tasks = group_id_to_tasks[dependencies[0][0]]
-                if len(current_tasks) == len(dependent_tasks):
-                    # parallelize the tasks in the current group
-                    for task, dependent_task in zip(
-                        current_tasks, dependent_tasks
-                    ):
-                        task_assignments.append(
-                            TaskAssignment(
-                                task_id=task.id,
-                                assignee_id=assignment.assignee_id,
-                                dependencies=[dependent_task.id],
-                            )
-                        )
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            # format task groups information for the prompt
+            task_groups_info = ""
+            seen_task_groups = set()
+            for task in tasks:
+                if not task.group:
                     continue
+                if task.group.id in seen_task_groups:
+                    continue
+                seen_task_groups.add(task.group.id)
+                task_groups_info += f"Task group ID: {task.group.id}\n"
+                task_groups_info += f"Summary: {task.group.content}\n"
+                # TODO: add additional info if available
+                task_groups_info += "---\n"
 
-            # if there is more than one dependent task group
-            # and the mode is ALL
-            # then ignore any dependencies that are ANY
-            all_dependencies = []
-            for dep_group_id, _ in dependencies:
-                if dep_group_id not in group_id_to_tasks:
-                    raise ValueError(
-                        f"Unknown dependency task_group_id: {dep_group_id}"
-                    )
-
-                upstream_tasks = group_id_to_tasks[dep_group_id]
-                if not upstream_tasks:
-                    raise ValueError(f"Task group {dep_group_id} has no tasks")
-
-                upstream_task_ids = [t.id for t in upstream_tasks]
-
-                all_dependencies.extend(upstream_task_ids)
-
-            for task in current_tasks:
-                task_assignments.append(
-                    TaskAssignment(
-                        task_id=task.id,
-                        assignee_id=assignment.assignee_id,
-                        dependencies=all_dependencies,
-                    )
+            prompt = str(
+                ASSIGN_TASK_GROUPED_PROMPT.format(
+                    tasks_info=task_groups_info,
+                    child_nodes_info=self._get_child_nodes_info(),
                 )
-
-        return TaskAssignResult(assignments=task_assignments)
-
-    def _call_coordinator_for_assignment_grouped(
-        self, tasks: List[Task], invalid_ids: Optional[List[str]] = None
-    ) -> TaskAssignResult:
-        r"""Call coordinator agent to assign task groups with optional
-        validation feedback in the case of invalid worker IDs.
-
-        Args:
-            tasks (List[Task]): Tasks to assign.
-            invalid_ids (List[str], optional): Invalid worker IDs from
-                previous attempt (if any).
-
-        Returns:
-            TaskAssignResult: Assignment result from coordinator.
-        """
-        # format task groups information for the prompt
-        task_groups_info = ""
-        seen_task_groups = set()
-        for task in tasks:
-            if not task.group:
-                continue
-            if task.group.id in seen_task_groups:
-                continue
-            seen_task_groups.add(task.group.id)
-            task_groups_info += f"Task group ID: {task.group.id}\n"
-            task_groups_info += f"Summary: {task.group.content}\n"
-            # TODO: add additional info if available
-            task_groups_info += "---\n"
-
-        prompt = str(
-            ASSIGN_TASK_GROUPED_PROMPT.format(
-                tasks_info=task_groups_info,
-                child_nodes_info=self._get_child_nodes_info(),
             )
-        )
+            response_format = TaskGroupAssignResult
+        else:
+            # format tasks information for the prompt
+            tasks_info = ""
+            for task in tasks:
+                tasks_info += f"Task ID: {task.id}\n"
+                tasks_info += f"Content: {task.content}\n"
+                if task.additional_info:
+                    tasks_info += f"Additional Info: {task.additional_info}\n"
+                tasks_info += "---\n"
+
+            prompt = str(
+                ASSIGN_TASK_PROMPT.format(
+                    tasks_info=tasks_info,
+                    child_nodes_info=self._get_child_nodes_info(),
+                )
+            )
+            response_format = TaskAssignResult  # type: ignore[assignment]
 
         # add feedback if this is a retry
         if invalid_ids:
@@ -3767,31 +3583,45 @@ class Workforce(BaseNode):
         # Check if we should use structured handler
         if self.use_structured_output_handler:
             # Use structured handler for prompt-based extraction
+            if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                examples = [
+                    {
+                        "assignments": [
+                            {
+                                "task_group_id": "0.1",
+                                "assignee_id": "node_research_1",
+                                "dependencies": [],
+                            },
+                            {
+                                "task_group_id": "0.2",
+                                "assignee_id": "node_analysis_1",
+                                "dependencies": [["0.1", "ALL"]],
+                            },
+                            {
+                                "task_group_id": "0.3",
+                                "assignee_id": "node_compile_1",
+                                "dependencies": [["0.2", "ANY"]],
+                            },
+                        ]
+                    }
+                ]
+            else:
+                examples = [
+                    {
+                        "assignments": [
+                            {
+                                "task_id": "task_1",
+                                "assignee_id": "worker_123",
+                                "dependencies": [],
+                            }
+                        ]
+                    }
+                ]
             enhanced_prompt = (
                 self.structured_handler.generate_structured_prompt(
                     base_prompt=prompt,
-                    schema=TaskGroupAssignResult,
-                    examples=[
-                        {
-                            "assignments": [
-                                {
-                                    "task_group_id": "0.1",
-                                    "assignee_id": "node_research_1",
-                                    "dependencies": [],
-                                },
-                                {
-                                    "task_group_id": "0.2",
-                                    "assignee_id": "node_analysis_1",
-                                    "dependencies": [["0.1", "ALL"]],
-                                },
-                                {
-                                    "task_group_id": "0.3",
-                                    "assignee_id": "node_compile_1",
-                                    "dependencies": [["0.2", "ANY"]],
-                                },
-                            ]
-                        }
-                    ],
+                    schema=response_format,
+                    examples=examples,
                 )
             )
 
@@ -3808,22 +3638,28 @@ class Workforce(BaseNode):
             # Parse with structured handler
             result = self.structured_handler.parse_structured_response(
                 response.msg.content,
-                schema=TaskGroupAssignResult,
+                schema=response_format,
                 fallback_values={"assignments": []},
             )
-            # Ensure we return a TaskAssignResult instance
-            if isinstance(result, TaskGroupAssignResult):
-                return self._expand_group_to_task_dependencies(tasks, result)
+            # Ensure we return a proper instance
+            if isinstance(result, response_format):
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(tasks, result)
+                else:
+                    return result  # type: ignore[return-value]
             elif isinstance(result, dict):
-                return self._expand_group_to_task_dependencies(
-                    tasks, TaskGroupAssignResult(**result)
-                )
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(
+                        tasks, TaskGroupAssignResult(**result)
+                    )
+                else:
+                    return TaskAssignResult(**result)
             else:
                 return TaskAssignResult(assignments=[])
         else:
             # Use existing native structured output code
             response = self.coordinator_agent.step(
-                prompt, response_format=TaskGroupAssignResult
+                prompt, response_format=response_format
             )
 
             if response.msg is None or response.msg.content is None:
@@ -3835,9 +3671,12 @@ class Workforce(BaseNode):
 
             try:
                 result_dict = json.loads(response.msg.content, parse_int=str)
-                return self._expand_group_to_task_dependencies(
-                    tasks, TaskGroupAssignResult(**result_dict)
-                )
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(
+                        tasks, TaskGroupAssignResult(**result_dict)
+                    )
+                else:
+                    return TaskAssignResult(**result_dict)
             except json.JSONDecodeError as e:
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
@@ -3936,14 +3775,9 @@ class Workforce(BaseNode):
             )
 
         # retry assignment with feedback
-        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
-            retry_result = self._call_coordinator_for_assignment_grouped(
-                invalid_tasks, invalid_ids
-            )
-        else:
-            retry_result = self._call_coordinator_for_assignment(
-                invalid_tasks, invalid_ids
-            )
+        retry_result = self._call_coordinator_for_assignment(
+            invalid_tasks, invalid_ids
+        )
         final_assignments = []
 
         if retry_result.assignments:
@@ -4063,12 +3897,7 @@ class Workforce(BaseNode):
             f"for {len(tasks)} tasks."
         )
 
-        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
-            assignment_result = self._call_coordinator_for_assignment_grouped(
-                tasks
-            )
-        else:
-            assignment_result = self._call_coordinator_for_assignment(tasks)
+        assignment_result = self._call_coordinator_for_assignment(tasks)
 
         # validate assignments
         valid_assignments, invalid_assignments = self._validate_assignments(

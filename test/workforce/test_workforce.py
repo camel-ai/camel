@@ -26,6 +26,7 @@ from camel.societies.workforce.utils import (
     TaskAssignResult,
     TaskGroupAssignment,
     TaskGroupAssignResult,
+    expand_group_to_task_dependencies,
 )
 from camel.societies.workforce.workforce import Workforce, WorkforceMode
 from camel.tasks.task import Task, TaskGroup, TaskState
@@ -521,7 +522,6 @@ def _build_grouped_tasks():
 def test_expand_group_to_task_dependencies_any_mode_parallelization():
     r"""In AUTO_DECOMPOSE_GROUPED, ANY dependency should parallelize tasks
     between two groups when group sizes match."""
-    workforce = Workforce(description="Grouped Workforce Test")
 
     tasks, group1, group2 = _build_grouped_tasks()
 
@@ -540,9 +540,7 @@ def test_expand_group_to_task_dependencies_any_mode_parallelization():
         ]
     )
 
-    result = workforce._expand_group_to_task_dependencies(
-        tasks, group_assign_result
-    )
+    result = expand_group_to_task_dependencies(tasks, group_assign_result)
 
     # We should have one assignment per task
     assert len(result.assignments) == 4
@@ -565,7 +563,6 @@ def test_expand_group_to_task_dependencies_any_mode_parallelization():
 def test_expand_group_to_task_dependencies_all_mode_aggregates():
     r"""In AUTO_DECOMPOSE_GROUPED, ALL dependency should expand to all tasks
     in the upstream group."""
-    workforce = Workforce(description="Grouped Workforce Test")
 
     tasks, group1, group2 = _build_grouped_tasks()
 
@@ -584,9 +581,7 @@ def test_expand_group_to_task_dependencies_all_mode_aggregates():
         ]
     )
 
-    result = workforce._expand_group_to_task_dependencies(
-        tasks, group_assign_result
-    )
+    result = expand_group_to_task_dependencies(tasks, group_assign_result)
 
     by_task = {a.task_id: a for a in result.assignments}
 
@@ -598,7 +593,6 @@ def test_expand_group_to_task_dependencies_all_mode_aggregates():
 
 def test_expand_group_to_task_dependencies_unknown_group_raises():
     r"""Unknown task_group_id in TaskGroupAssignResult should raise ValueError."""  # noqa: E501
-    workforce = Workforce(description="Grouped Workforce Test")
 
     tasks, _, _ = _build_grouped_tasks()
 
@@ -613,9 +607,7 @@ def test_expand_group_to_task_dependencies_unknown_group_raises():
     )
 
     with pytest.raises(ValueError) as exc_info:
-        workforce._expand_group_to_task_dependencies(
-            tasks, group_assign_result
-        )
+        expand_group_to_task_dependencies(tasks, group_assign_result)
 
     assert "Unknown task_group_id: nonexistent-group" in str(exc_info.value)
 

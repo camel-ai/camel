@@ -43,7 +43,6 @@ from camel.prompts import TextPrompt
 # Note: validate_task_content moved here to avoid circular imports
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
-    TASK_DECOMPOSE_GROUPED_PROMPT,
     TASK_DECOMPOSE_PROMPT,
     TASK_EVOLVE_PROMPT,
 )
@@ -592,69 +591,6 @@ class Task(BaseModel):
 
         role_name = agent.role_name
         content = prompt or TASK_DECOMPOSE_PROMPT.format(
-            role_name=role_name,
-            content=self.content,
-        )
-        msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
-        )
-        response = agent.step(msg)
-
-        # Auto-detect streaming based on response type
-        from camel.agents.chat_agent import StreamingChatAgentResponse
-
-        is_streaming = isinstance(
-            response, StreamingChatAgentResponse
-        ) or isinstance(response, GeneratorType)
-        if (
-            not is_streaming
-            and hasattr(response, "__iter__")
-            and not hasattr(response, "msg")
-        ):
-            is_streaming = True
-
-        if is_streaming:
-            return self._decompose_streaming(
-                response, task_parser, stream_callback=stream_callback
-            )
-        return self._decompose_non_streaming(response, task_parser)
-
-    def decompose_grouped(
-        self,
-        agent: "ChatAgent",
-        prompt: Optional[str] = None,
-        task_parser: Callable[
-            [str, str], List["Task"]
-        ] = parse_response_grouped,
-        stream_callback: Optional[
-            Callable[["ChatAgentResponse"], None]
-        ] = None,
-    ) -> Union[List["Task"], Generator[List["Task"], None, None]]:
-        r"""Decompose a task to a list of sub-tasks grouped into task groups.
-        Automatically detects streaming or non-streaming based on
-        agent configuration.
-
-        Args:
-            agent (ChatAgent): An agent that used to decompose the task.
-            prompt (str, optional): A prompt to decompose the task. If not
-                provided, the default prompt will be used.
-            task_parser (Callable[[str, str], List[Task]], optional): A
-                function to extract Task from response. If not provided,
-                the default parse_response_grouped will be used.
-            stream_callback (Callable[[ChatAgentResponse], None], optional): A
-                callback function that receives each chunk (ChatAgentResponse)
-                during streaming. This allows tracking the decomposition
-                progress in real-time.
-
-        Returns:
-            Union[List[Task], Generator[List[Task], None, None]]: If agent is
-                configured for streaming, returns a generator that yields lists
-                of new tasks as they are parsed. Otherwise returns a list of
-                all tasks.
-        """
-
-        role_name = agent.role_name
-        content = prompt or TASK_DECOMPOSE_GROUPED_PROMPT.format(
             role_name=role_name,
             content=self.content,
         )

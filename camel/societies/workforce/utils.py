@@ -13,9 +13,11 @@
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from enum import Enum
 from functools import wraps
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+from camel.tasks.task import Task, TaskGroup
 
 # generic role names that should trigger fallback in role identification
 # used for workflow organization to avoid using generic names as folder names
@@ -864,3 +866,98 @@ def check_if_running(
         return wrapper
 
     return decorator
+
+
+def expand_group_to_task_dependencies(
+    tasks: List["Task"],
+    task_group_assign_result: TaskGroupAssignResult,
+) -> TaskAssignResult:
+    r"""Expand task-group-level dependencies into task-level dependencies.
+
+    Args:
+        tasks: List[Task]: List of tasks to expand dependencies for.
+        task_group_assign_result: TaskGroupAssignResult
+
+    Returns:
+        TaskAssignResult: Task assignment result.
+    """
+
+    task_groups: List[TaskGroup] = []
+    for task in tasks:
+        if task.group and task.group not in task_groups:
+            task_groups.append(task.group)
+
+    group_id_to_tasks: Dict[str, List[Task]] = {
+        g.id: g.get_tasks() for g in task_groups
+    }
+
+    task_assignments: List[TaskAssignment] = []
+
+    for assignment in task_group_assign_result.assignments:
+        group_id = assignment.task_group_id
+        dependencies = assignment.dependencies
+
+        if group_id not in group_id_to_tasks:
+            raise ValueError(f"Unknown task_group_id: {group_id}")
+
+        current_tasks = group_id_to_tasks[group_id]
+
+        # when there is no dependencies
+        if len(dependencies) == 0:
+            for task in current_tasks:
+                task_assignments.append(
+                    TaskAssignment(
+                        task_id=task.id,
+                        assignee_id=assignment.assignee_id,
+                        dependencies=[],
+                    )
+                )
+            continue
+
+        # if there is only one dependent task group, and the mode is ANY
+        # then parallelize the tasks in the current group
+        if len(dependencies) == 1 and dependencies[0][1] == "ANY":
+            # check if the number of tasks in each group is the same
+            dependent_tasks = group_id_to_tasks[dependencies[0][0]]
+            if len(current_tasks) == len(dependent_tasks):
+                # parallelize the tasks in the current group
+                for task, dependent_task in zip(
+                    current_tasks, dependent_tasks
+                ):
+                    task_assignments.append(
+                        TaskAssignment(
+                            task_id=task.id,
+                            assignee_id=assignment.assignee_id,
+                            dependencies=[dependent_task.id],
+                        )
+                    )
+                continue
+
+        # if there is more than one dependent task group
+        # and the mode is ALL
+        # then ignore any dependencies that are ANY
+        all_dependencies = []
+        for dep_group_id, _ in dependencies:
+            if dep_group_id not in group_id_to_tasks:
+                raise ValueError(
+                    f"Unknown dependency task_group_id: {dep_group_id}"
+                )
+
+            upstream_tasks = group_id_to_tasks[dep_group_id]
+            if not upstream_tasks:
+                raise ValueError(f"Task group {dep_group_id} has no tasks")
+
+            upstream_task_ids = [t.id for t in upstream_tasks]
+
+            all_dependencies.extend(upstream_task_ids)
+
+        for task in current_tasks:
+            task_assignments.append(
+                TaskAssignment(
+                    task_id=task.id,
+                    assignee_id=assignment.assignee_id,
+                    dependencies=all_dependencies,
+                )
+            )
+
+    return TaskAssignResult(assignments=task_assignments)
