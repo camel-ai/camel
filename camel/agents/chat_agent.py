@@ -65,6 +65,7 @@ from camel.agents._utils import (
     handle_logprobs,
     safe_model_dump,
 )
+from camel.utils.tool_result import ToolResult
 from camel.agents.base import BaseAgent
 from camel.logger import get_logger
 from camel.memories import (
@@ -4035,9 +4036,6 @@ class ChatAgent(BaseAgent):
                 serialized_result,
                 cast(List[MemoryRecord], func_records),
             )
-
-        # NEW: Handle ToolResult with images - inject visual content
-        from camel.utils.tool_result import ToolResult
 
         if isinstance(result, ToolResult) and result.images:
             try:
