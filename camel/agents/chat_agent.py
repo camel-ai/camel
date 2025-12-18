@@ -1217,9 +1217,9 @@ class ChatAgent(BaseAgent):
         if result_tokens <= max_tokens:
             return result, False
 
-        # Reserve ~100 tokens for notice
+        # Reserve ~100 tokens for notice, use char-based truncation directly
         target_tokens = max(max_tokens - 100, 100)
-        truncated = self._truncate_text_by_tokens(serialized, target_tokens)
+        truncated = serialized[: target_tokens * 3]
 
         notice = (
             f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
@@ -1233,28 +1233,6 @@ class ChatAgent(BaseAgent):
         )
 
         return notice + truncated, True
-
-    def _truncate_text_by_tokens(self, text: str, max_tokens: int) -> str:
-        r"""Truncate text to approximately the specified number of tokens.
-
-        Args:
-            text (str): The text to truncate.
-            max_tokens (int): The maximum number of tokens to keep.
-
-        Returns:
-            str: The truncated text.
-        """
-        if hasattr(self.model_backend, 'token_counter'):
-            try:
-                encoder = self.model_backend.token_counter
-                tokens = encoder.encode(text)
-                return encoder.decode(tokens[:max_tokens])
-            except BaseException as e:
-                logger.debug(
-                    f"Token encoding failed, using char fallback: {e}"
-                )
-        # Fallback: ~3 chars per token
-        return text[: max_tokens * 3]
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
