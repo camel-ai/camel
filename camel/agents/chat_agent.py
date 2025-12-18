@@ -3357,9 +3357,11 @@ class ChatAgent(BaseAgent):
             tracker (Dict[str, int]): The token usage tracker to update.
             usage_dict (Dict[str, int]): The usage dictionary with new values.
         """
-        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens", 0)
-        tracker["completion_tokens"] += usage_dict.get("completion_tokens", 0)
-        tracker["total_tokens"] += usage_dict.get("total_tokens", 0)
+        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens") or 0
+        tracker["completion_tokens"] += (
+            usage_dict.get("completion_tokens") or 0
+        )
+        tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
 
     def _convert_to_chatagent_response(
         self,
