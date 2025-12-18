@@ -1827,6 +1827,7 @@ class ModelPlatformType(Enum):
     AIHUBMIX = "aihubmix"
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
+    FUNCTION_GEMMA = "function-gemma"
 
     @classmethod
     def from_name(cls, name):
