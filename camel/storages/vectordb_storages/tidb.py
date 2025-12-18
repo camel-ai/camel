@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import logging
 import re
@@ -107,7 +107,7 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _get_table_model(self, collection_name: str) -> Any:
-        from pytidb.datatype import JSON
+        from pytidb.datatype import JSON  # type: ignore[import-not-found]
         from pytidb.schema import Field, TableModel, VectorField
 
         class VectorDBRecordBase(TableModel, table=False):
@@ -130,7 +130,8 @@ class TiDBStorage(BaseVectorStorage):
         if table is None:
             table_model = self._get_table_model(self.collection_name)
             table = self._client.create_table(
-                schema=table_model, if_exists="skip"
+                schema=table_model,
+                if_exists="skip",  # type: ignore[call-arg]
             )
         return table
 

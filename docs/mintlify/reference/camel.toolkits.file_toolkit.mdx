@@ -354,7 +354,7 @@ def _write_csv_file(
     self,
     file_path: Path,
     content: Union[str, List[List]],
-    encoding: str = 'utf-8'
+    encoding: str = 'utf-8-sig'
 ):
 ```
 
@@ -364,7 +364,7 @@ Write CSV content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (Union[str, List[List]]): The CSV content as a string or list of lists.
-- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8-sig`)
 
 <a id="camel.toolkits.file_toolkit.FileToolkit._write_json_file"></a>
 
@@ -508,6 +508,57 @@ and writes the result back.
 
   str: A success message if the edit was successful, or an
 error message if the content wasn't found or an error occurred.
+
+<a id="camel.toolkits.file_toolkit.FileToolkit.search_files"></a>
+
+### search_files
+
+```python
+def search_files(
+    self,
+    pattern: str,
+    file_types: Optional[List[str]] = None,
+    file_pattern: Optional[str] = None,
+    path: Optional[str] = None
+):
+```
+
+Search for a text pattern in files with specified extensions or
+file patterns.
+
+This method searches for a text pattern (case-insensitive substring
+match) in files matching either the specified file types or a file
+pattern. It returns structured results showing which files contain
+the pattern, along with line numbers and matching content.
+
+**Parameters:**
+
+- **pattern** (str): The text pattern to search for (case-insensitive string match).
+- **file_types** (Optional[List[str]]): List of file extensions to search (e.g., ["md", "txt", "py"]). Do not include the dot. If not provided and file_pattern is also not provided, defaults to ["md"] (markdown files). Ignored if file_pattern is provided. (default: :obj:`None`)
+- **file_pattern** (Optional[str]): Glob pattern for matching files (e.g., "*_workflow.md", "test_*.py"). If provided, this overrides file_types. (default: :obj:`None`)
+- **path** (Optional[str]): Directory to search in. If not provided, uses the working_directory. Can be relative or absolute. (default: :obj:`None`)
+
+**Returns:**
+
+  str: JSON-formatted string containing search results with the
+structure:
+`\{
+"pattern": "search_pattern",
+"searched_path": "/absolute/path",
+"file_types": ["md", "txt"],
+"file_pattern": "*_workflow.md",
+"matches": [
+\{
+"file": "relative/path/to/file.md",
+"line": 42,
+"content": "matching line content"
+\},
+...
+],
+"total_matches": 10,
+"files_searched": 5
+\}`
+If an error occurs, returns a JSON string with an "error" key.
 
 <a id="camel.toolkits.file_toolkit.FileToolkit.get_tools"></a>
 

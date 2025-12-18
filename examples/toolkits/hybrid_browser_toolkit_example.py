@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import logging
 
@@ -88,15 +88,14 @@ print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
-    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant 
+Use Google Search to search for news in Munich today, and click on relevant
 websites to get the news and write it in markdown.
 
-I mean you need to browse multiple websites. After visiting each website, 
+I mean you need to browse multiple websites. After visiting each website,
 return to the Google search results page and click on other websites.
 
 Use enter to confirm search or input.

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import glob
 import os
@@ -191,7 +191,7 @@ class ContextSummarizerToolkit(BaseToolkit):
             summary (str): The summary text to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for unified markdown saving
@@ -221,7 +221,7 @@ class ContextSummarizerToolkit(BaseToolkit):
                 to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for markdown saving
@@ -430,7 +430,7 @@ Summary:"""
             )
 
             return (
-                "Full context summarized, summary added as system message, "
+                "Full context summarized, summary added as user message, "
                 "and full history removed."
             )
 
@@ -454,17 +454,18 @@ Summary:"""
             # clear the memory
             self.agent.clear_memory()
 
-            # add summary as context
+            # add summary as context as a USER message
             if summary and summary.strip():
                 from camel.messages import BaseMessage
                 from camel.types import OpenAIBackendRole
 
-                summary_message = BaseMessage.make_assistant_message(
-                    role_name="Assistant",
-                    content=f"[Context Summary]\n\n{summary}",
+                summary_message = BaseMessage.make_user_message(
+                    role_name="User",
+                    content=f"[Context Summary from Previous "
+                    f"Conversation]\n\n{summary}",
                 )
                 self.agent.update_memory(
-                    summary_message, OpenAIBackendRole.SYSTEM
+                    summary_message, OpenAIBackendRole.USER
                 )
                 return True
             return False

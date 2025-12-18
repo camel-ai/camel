@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import os
@@ -34,6 +34,12 @@ class ChunkrReaderConfig:
         high_resolution (bool, optional): Whether to use high resolution OCR.
             (default: :obj:`True`)
         ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
+        **kwargs: Additional keyword arguments to pass to the Chunkr
+            Configuration. This accepts all other Configuration parameters
+            such as expires_in, pipeline, segment_processing,
+            segmentation_strategy, etc.
+            See: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/
+            models/task.rs#L749
     """
 
     def __init__(
@@ -41,10 +47,12 @@ class ChunkrReaderConfig:
         chunk_processing: int = 512,
         high_resolution: bool = True,
         ocr_strategy: str = "Auto",
+        **kwargs,
     ):
         self.chunk_processing = chunk_processing
         self.high_resolution = high_resolution
         self.ocr_strategy = ocr_strategy
+        self.kwargs = kwargs
 
 
 class ChunkrReader:
@@ -190,4 +198,5 @@ class ChunkrReader:
                 "Auto": OcrStrategy.AUTO,
                 "All": OcrStrategy.ALL,
             }.get(chunkr_config.ocr_strategy, OcrStrategy.ALL),
+            **chunkr_config.kwargs,
         )

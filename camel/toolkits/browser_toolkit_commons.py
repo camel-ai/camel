@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import io
@@ -134,7 +134,7 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
 
 TASK_PLANNING_PROMPT_TEMPLATE = """
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`?
 
 Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
 Please first restate the task in detail, and then provide a detailed plan to solve the task.
@@ -156,7 +156,7 @@ Now please carefully examine the current task planning schema, and our history a
 
 Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string.
 """  # noqa: E501
 
 AVAILABLE_ACTIONS_PROMPT = """

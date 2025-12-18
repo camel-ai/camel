@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 import time
@@ -88,8 +88,16 @@ class SambaModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. Only applicable when using
+            SambaNova Cloud API. (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. Only applicable when using
+            SambaNova Cloud API. (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the client
-            initialization.
+            initialization. Ignored if custom clients are provided.
     """
 
     @api_keys_required(
@@ -106,6 +114,8 @@ class SambaModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -126,21 +136,30 @@ class SambaModel(BaseModelBackend):
             max_retries,
         )
 
+        # Only create clients for Cloud API mode
         if self._url == "https://api.sambanova.ai/v1":
-            self._client = OpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
-            self._async_client = AsyncOpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
+            # Use custom clients if provided, otherwise create new ones
+            if client is not None:
+                self._client = client
+            else:
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+
+            if async_client is not None:
+                self._async_client = async_client
+            else:
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
 
     @property
     def token_counter(self) -> BaseTokenCounter:

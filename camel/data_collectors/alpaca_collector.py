@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Any, Dict, List, Optional, Union
 
@@ -26,7 +26,7 @@ DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
     and convert them into a structured JSON format.
     For example:
-    Instruction: You are a helpful assistant. 
+    Instruction: You are a helpful assistant.
     User: When is the release date of the video game Portal?
     Assistant: The release date of the video game Portal is October 9.
     Your output should be:
@@ -70,16 +70,25 @@ class AlpacaDataCollector(BaseDataCollector):
         if not history:
             raise ValueError("No data collected.")
 
-        # Validate and process history
-        if len(history) == 3 and history[0].role == "system":
-            history = history[1:]  # Ignore the system message.
-        elif len(history) != 2:
+        # Filter out system and tool-related messages
+        # Keep only user and final assistant messages
+        filtered_history = []
+        for msg in history:
+            if msg.role == "user":
+                filtered_history.append(msg)
+            elif msg.role == "assistant" and msg.message:
+                # Keep assistant messages with actual content
+                # (skip empty ones that only contain tool calls)
+                filtered_history.append(msg)
+
+        # Validate filtered history
+        if len(filtered_history) != 2:
             raise ValueError(
                 f"AlpacaDataCollector only supports one message pair, but "
-                f"got {len(history)}"
+                f"got {len(filtered_history)} after filtering tool messages"
             )
 
-        input_message, output_message = history
+        input_message, output_message = filtered_history
         instruction = (
             self.system_message.content if self.system_message else ""
         ) + str(input_message.message)

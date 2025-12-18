@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import Mock, patch
 
 import pytest
@@ -29,7 +29,7 @@ Markdown Content:
 | [![Image 1](https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Hollow_Knight_first_cover_art.webp/220px-Hollow_Knight_first_cover_art.webp.png)](https://en.wikipedia.org/wiki/File:Hollow_Knight_first_cover_art.webp) |
 | [Developer(s)](https://en.wikipedia.org/wiki/Video_game_developer "Video game developer") | Team Cherry |
 | [Publisher(s)](https://en.wikipedia.org/wiki/Video_game_publisher "Video game publisher") | Team Cherry |
-| [Designer(s)](https://en.wikipedia.org/wiki/Video_game_designer "Video game designer") | 
+| [Designer(s)](https://en.wikipedia.org/wiki/Video_game_designer "Video game designer") |
 *   Ari Gibson
 *   William Pellen
 

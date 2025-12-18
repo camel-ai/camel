@@ -22,8 +22,10 @@ class Workforce(BaseNode):
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
         graceful_shutdown_timeout: float = 15.0,
+        task_timeout_seconds: Optional[float] = None,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
+        callbacks: Optional[List[WorkforceCallback]] = None,
     ) -> None:
     # ...
 ```
@@ -35,8 +37,10 @@ class Workforce(BaseNode):
 -   `coordinator_agent`: A `ChatAgent` for assigning tasks.
 -   `task_agent`: A `ChatAgent` for decomposing tasks.
 -   `new_worker_agent`: A template `ChatAgent` for creating new workers.
+-   `task_timeout_seconds`: Optional per-workforce task timeout in seconds.
 -   `share_memory`: If `True`, `SingleAgentWorker` instances will share memory.
 -   `use_structured_output_handler`: Defaults to `True`. Enables structured output handling so models without native JSON + tool-calling can still interop reliably.
+-   `callbacks`: Optional A list of callback handlers to observe and record workforce lifecycle events and metrics.
 </Card>
 
 <Card title="Worker Types" icon="users-gear">

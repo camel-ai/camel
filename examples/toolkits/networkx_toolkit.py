@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -48,20 +48,20 @@ print(str(response.info['tool_calls']))
 
 '''
 ===============================================================================
-[ToolCallingRecord(tool_name='add_edge', args={'source': 'A', 'target': 'B'}, 
+[ToolCallingRecord(tool_name='add_edge', args={'source': 'A', 'target': 'B'},
 result=None, tool_call_id='call_iewKMXQd2GKwKWy7XJ5e5d8e'), ToolCallingRecord
-(tool_name='add_edge', args={'source': 'A', 'target': 'B'}, result=None, 
+(tool_name='add_edge', args={'source': 'A', 'target': 'B'}, result=None,
 tool_call_id='call_Xn8wq22oKeKekuPEqcSj5HuJ'), ToolCallingRecord
-(tool_name='add_edge', args={'source': 'B', 'target': 'C'}, result=None, 
+(tool_name='add_edge', args={'source': 'B', 'target': 'C'}, result=None,
 tool_call_id='call_bPeCvUBk1iQ6vv5060Zd7nbi'), ToolCallingRecord
-(tool_name='add_edge', args={'source': 'C', 'target': 'A'}, result=None, 
+(tool_name='add_edge', args={'source': 'C', 'target': 'A'}, result=None,
 tool_call_id='call_inCnY60iSBVghsrrHEDh7hNw'), ToolCallingRecord
-(tool_name='get_shortest_path', args={'source': 'A', 'target': 'C', 'weight': 
-'weight', 'method': 'dijkstra'}, result=['A', 'B', 'C'], 
+(tool_name='get_shortest_path', args={'source': 'A', 'target': 'C', 'weight':
+'weight', 'method': 'dijkstra'}, result=['A', 'B', 'C'],
 tool_call_id='call_Gwy3Ca8RDQCZFuiy2h0Z6SSF'), ToolCallingRecord
-(tool_name='get_edges', args={}, result=[('A', 'B'), ('B', 'C'), ('C', 'A')], 
+(tool_name='get_edges', args={}, result=[('A', 'B'), ('B', 'C'), ('C', 'A')],
 tool_call_id='call_LU2xhb2W4h5a6LOx4U8gLuxa'), ToolCallingRecord
-(tool_name='get_nodes', args={}, result=['A', 'B', 'C'], 
+(tool_name='get_nodes', args={}, result=['A', 'B', 'C'],
 tool_call_id='call_WLuB1nBrhFeGj4FKrbwfnCrG')]
 ===============================================================================
 '''

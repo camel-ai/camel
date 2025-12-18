@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from json import JSONDecodeError
@@ -78,9 +78,21 @@ class OpenAICompatibleModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. Useful for RL frameworks
+            like AReaL or rLLM that provide OpenAI-compatible clients (e.g.,
+            ArealOpenAI). The client should implement the OpenAI client
+            interface with `.chat.completions.create()` and `.beta.chat.
+            completions.parse()` methods. (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. The client should implement
+            the AsyncOpenAI client interface. (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
+            Ignored if custom clients are provided.
     """
 
     def __init__(
@@ -92,6 +104,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
@@ -107,39 +121,55 @@ class OpenAICompatibleModel(BaseModelBackend):
             timeout,
             max_retries,
         )
-        if is_langfuse_available():
-            from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
-            from langfuse.openai import OpenAI as LangfuseOpenAI
 
-            self._client = LangfuseOpenAI(
-                timeout=self._timeout,
-                max_retries=max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
-            self._async_client = LangfuseAsyncOpenAI(
-                timeout=self._timeout,
-                max_retries=max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
+        # Use custom clients if provided, otherwise create new ones
+        if client is not None:
+            # Use the provided custom sync client
+            self._client = client
         else:
-            self._client = OpenAI(
-                timeout=self._timeout,
-                max_retries=max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
-            self._async_client = AsyncOpenAI(
-                timeout=self._timeout,
-                max_retries=max_retries,
-                base_url=self._url,
-                api_key=self._api_key,
-                **kwargs,
-            )
+            # Create default sync client
+            if is_langfuse_available():
+                from langfuse.openai import OpenAI as LangfuseOpenAI
+
+                self._client = LangfuseOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+
+        if async_client is not None:
+            # Use the provided custom async client
+            self._async_client = async_client
+        else:
+            # Create default async client
+            if is_langfuse_available():
+                from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+
+                self._async_client = LangfuseAsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
+            else:
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=max_retries,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                    **kwargs,
+                )
 
     @observe()
     def _run(

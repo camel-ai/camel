@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
@@ -77,7 +77,7 @@ from the video and transcription sources.
 
     5. Important Considerations:
         - Pay close attention to subtle differences that could distinguish \
-similar-looking species or objects 
+similar-looking species or objects
           (e.g., juveniles vs. adults, closely related species).
         - Provide concise yet complete explanations to ensure clarity.
 
@@ -600,7 +600,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             msg = BaseMessage.make_user_message(
                 role_name="User",
                 content=prompt,
-                image_list=video_frames,
+                image_list=video_frames,  # type: ignore[arg-type]
             )
             # Reset the agent to clear previous state
             self.vl_agent.reset()

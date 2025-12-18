@@ -49,7 +49,7 @@
 <br>
 
 
-Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents. 
+Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents.
 
 🌟 Star CAMEL on GitHub and be instantly notified of new releases.
 
@@ -213,7 +213,7 @@ We are a community-driven research collective comprising over 100 researchers de
 </div>
 
 <div align="center">
-  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html">
+  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag">
     <img src="docs/images/rag_pipeline.png" alt="RAG Pipeline">
   </a>
 </div>
@@ -382,7 +382,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 >### Research with US
 >
->We warmly invite you to use CAMEL for your impactful research. 
+>We warmly invite you to use CAMEL for your impactful research.
 >
 > Rigorous research takes time and resources. We are a community-driven research collective with 100+ researchers exploring the frontier research of Multi-agent Systems. Join our ongoing projects or test new ideas with us, [reach out via email](mailto:camel-ai@eigent.ai) for more information.
 >
@@ -517,6 +517,7 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 |:---|:---|
 | **[ChatDev](https://github.com/OpenBMB/ChatDev/tree/main/camel)** | Communicative Agents for software Development |
 | **[Paper2Poster](https://github.com/Paper2Poster/Paper2Poster)** | Multimodal poster automation from scientific papers |
+| **[Paper2Video](https://github.com/showlab/Paper2Video)** | Automatic video generation from scientific papers |
 
 ### Product Projects
 
@@ -537,7 +538,7 @@ We are actively involved in community events including:
 - 🎙️ **Community Meetings** — Weekly virtual syncs with the CAMEL team
 - 🏆 **Competitions** — Hackathons, Bounty Tasks and coding challenges hosted by CAMEL
 - 🤝 **Volunteer Activities** — Contributions, documentation drives, and mentorship
-- 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups 
+- 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups
 
 > Want to host or participate in a CAMEL event? Join our [Discord](https://discord.com/invite/CNcNpquyDc) or want to be part of [Ambassador Program](https://www.camel-ai.org/ambassador).
 
@@ -548,6 +549,14 @@ We are actively involved in community events including:
 > For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
 >
 > We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
+
+## Contributors
+
+<a href="https://github.com/camel-ai/camel/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 <br>
 
@@ -601,7 +610,7 @@ The source code is licensed under Apache 2.0.
 <br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://camel-ai.github.io/camel/index.html
+[docs-url]: https://camel-ai.github.io/camel/index
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg

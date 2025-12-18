@@ -1,0 +1,398 @@
+<a id="camel.models.function_gemma_model"></a>
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel"></a>
+
+## FunctionGemmaModel
+
+```python
+class FunctionGemmaModel(BaseModelBackend):
+```
+
+FunctionGemma model backend for Ollama with custom tool calling format.
+
+FunctionGemma is a specialized Gemma model fine-tuned for function calling.
+It uses a custom chat template format that differs from OpenAI's format.
+This backend handles conversion between CAMEL's OpenAI-style tool schemas
+and FunctionGemma's native format.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created (e.g., "functiongemma").
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary of configuration options. If :obj:`None`, :obj:`FunctionGemmaConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): Not required for local Ollama. (default: :obj:`None`)
+- **url** (Optional[str], optional): The URL to the Ollama server. (default: :obj:`http://localhost:11434`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3
+):
+```
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+**Returns:**
+
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._escape_string"></a>
+
+### _escape_string
+
+```python
+def _escape_string(self, s: str):
+```
+
+Wrap string values in `<escape>` tags for FunctionGemma format.
+
+**Parameters:**
+
+- **s** (str): The string to escape.
+
+**Returns:**
+
+  str: The escaped string.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._unescape_string"></a>
+
+### _unescape_string
+
+```python
+def _unescape_string(self, s: str):
+```
+
+Remove `<escape>` tags from string values.
+
+**Parameters:**
+
+- **s** (str): The string to unescape.
+
+**Returns:**
+
+  str: The unescaped string.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._type_to_function_gemma"></a>
+
+### _type_to_function_gemma
+
+```python
+def _type_to_function_gemma(self, json_type: Union[str, List[str]]):
+```
+
+Convert JSON schema type to FunctionGemma type (uppercase).
+
+**Parameters:**
+
+- **json_type** (Union[str, List[str]]): The JSON schema type. Can be a string like "string" or a list like ["string", "null"] for optional parameters.
+
+**Returns:**
+
+  str: The FunctionGemma type.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_parameter_properties"></a>
+
+### _format_parameter_properties
+
+```python
+def _format_parameter_properties(self, properties: Dict[str, Any], required: List[str]):
+```
+
+Format parameter properties for FunctionGemma declaration.
+
+**Parameters:**
+
+- **properties** (Dict[str, Any]): The properties dictionary.
+- **required** (List[str]): List of required parameter names.
+
+**Returns:**
+
+  str: Formatted properties string.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._convert_tool_to_function_gemma"></a>
+
+### _convert_tool_to_function_gemma
+
+```python
+def _convert_tool_to_function_gemma(self, tool: Dict[str, Any]):
+```
+
+Convert OpenAI tool schema to FunctionGemma declaration format.
+
+**Parameters:**
+
+- **tool** (Dict[str, Any]): The OpenAI tool schema.
+
+**Returns:**
+
+  str: The FunctionGemma declaration string.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_developer_turn"></a>
+
+### _format_developer_turn
+
+```python
+def _format_developer_turn(self, content: str, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+Format the developer/system turn with function declarations.
+
+**Parameters:**
+
+- **content** (str): The system message content.
+- **tools** (Optional[List[Dict[str, Any]]]): List of tool schemas.
+
+**Returns:**
+
+  str: Formatted developer turn.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_user_turn"></a>
+
+### _format_user_turn
+
+```python
+def _format_user_turn(self, content: str):
+```
+
+Format a user message turn.
+
+**Parameters:**
+
+- **content** (str): The user message content.
+
+**Returns:**
+
+  str: Formatted user turn.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_model_turn"></a>
+
+### _format_model_turn
+
+```python
+def _format_model_turn(self, message: OpenAIMessage):
+```
+
+Format an assistant/model message turn.
+
+**Parameters:**
+
+- **message** (OpenAIMessage): The assistant message.
+
+**Returns:**
+
+  str: Formatted model turn.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_tool_response"></a>
+
+### _format_tool_response
+
+```python
+def _format_tool_response(self, message: OpenAIMessage):
+```
+
+Format a tool response message.
+
+**Parameters:**
+
+- **message** (OpenAIMessage): The tool response message.
+
+**Returns:**
+
+  str: Formatted tool response.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._format_messages"></a>
+
+### _format_messages
+
+```python
+def _format_messages(
+    self,
+    messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Format all messages into a FunctionGemma prompt string.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): List of messages in OpenAI format.
+- **tools** (Optional[List[Dict[str, Any]]]): List of tool schemas.
+
+**Returns:**
+
+  str: Complete formatted prompt.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._extract_function_calls"></a>
+
+### _extract_function_calls
+
+```python
+def _extract_function_calls(self, text: str, tools: Optional[List[Dict[str, Any]]] = None):
+```
+
+Extract function calls from model output.
+
+**Parameters:**
+
+- **text** (str): The model output text.
+- **tools** (Optional[List[Dict[str, Any]]]): Available tools to infer function names when the model outputs malformed calls.
+
+**Returns:**
+
+  Tuple[str, List[Dict[str, Any]]]: Tuple of
+(remaining_content, list_of_tool_calls).
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._infer_function_name"></a>
+
+### _infer_function_name
+
+```python
+def _infer_function_name(self, args_str: str, tools: Optional[List[Dict[str, Any]]]):
+```
+
+Infer the function name from available tools.
+
+**Parameters:**
+
+- **args_str** (str): The arguments string from the model output.
+- **tools** (Optional[List[Dict[str, Any]]]): Available tools.
+
+**Returns:**
+
+  Optional[str]: The inferred function name, or None if not found.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._parse_function_args"></a>
+
+### _parse_function_args
+
+```python
+def _parse_function_args(self, args_str: str):
+```
+
+Parse function arguments from FunctionGemma format.
+
+**Parameters:**
+
+- **args_str** (str): The arguments string (e.g., "a:15,b:27").
+
+**Returns:**
+
+  Dict[str, Any]: Parsed arguments dictionary.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._parse_value"></a>
+
+### _parse_value
+
+```python
+def _parse_value(self, value: str):
+```
+
+Parse a value string to appropriate Python type.
+
+**Parameters:**
+
+- **value** (str): The value string.
+
+**Returns:**
+
+  Any: Parsed value (int, float, bool, or str).
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._to_chat_completion"></a>
+
+### _to_chat_completion
+
+```python
+def _to_chat_completion(
+    self,
+    response_text: str,
+    model: str,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Convert parsed response to OpenAI ChatCompletion format.
+
+**Parameters:**
+
+- **response_text** (str): The model response text.
+- **model** (str): The model name.
+- **tools** (Optional[List[Dict[str, Any]]]): Available tools for function name inference.
+
+**Returns:**
+
+  ChatCompletion: OpenAI-compatible ChatCompletion object.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._call_ollama_generate"></a>
+
+### _call_ollama_generate
+
+```python
+def _call_ollama_generate(self, prompt: str):
+```
+
+Call Ollama's /api/generate endpoint with raw prompt.
+
+**Parameters:**
+
+- **prompt** (str): The formatted prompt string.
+
+**Returns:**
+
+  str: The model response text.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Run inference using FunctionGemma via Ollama.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+- **response_format** (Optional[Type[BaseModel]]): Not supported for FunctionGemma. (default: :obj:`None`)
+- **tools** (Optional[List[Dict[str, Any]]]): The schema of the tools to use for the request.
+
+**Returns:**
+
+  ChatCompletion: The model response in OpenAI ChatCompletion format.
+
+<a id="camel.models.function_gemma_model.FunctionGemmaModel.stream"></a>
+
+### stream
+
+```python
+def stream(self):
+```
+
+**Returns:**
+
+  bool: Always False for FunctionGemma.

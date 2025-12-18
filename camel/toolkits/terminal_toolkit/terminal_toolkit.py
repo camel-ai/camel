@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import atexit
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import platform
 import select
@@ -42,12 +41,10 @@ logger = get_logger(__name__)
 try:
     import docker
     from docker.errors import APIError, NotFound
-    from docker.models.containers import Container
 except ImportError:
     docker = None
     NotFound = None
     APIError = None
-    Container = None
 
 
 def _to_plain(text: str) -> str:
@@ -87,6 +84,8 @@ class TerminalToolkit(BaseToolkit):
             when safe_mode is True. If None, uses default safety rules.
         clone_current_env (bool): Whether to clone the current Python
             environment for local execution. Defaults to False.
+        install_dependencies (List): A list of user specified libraries
+            to install.
     """
 
     def __init__(
@@ -99,7 +98,20 @@ class TerminalToolkit(BaseToolkit):
         safe_mode: bool = True,
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
+        install_dependencies: Optional[List[str]] = None,
     ):
+        # auto-detect if running inside a CAMEL runtime container
+        # when inside a runtime, use local execution (already sandboxed)
+        runtime_env = os.environ.get("CAMEL_RUNTIME", "").lower()
+        self._in_runtime = runtime_env == "true"
+        if self._in_runtime and use_docker_backend:
+            logger.info(
+                "Detected CAMEL_RUNTIME environment - disabling Docker "
+                "backend since we're already inside a sandboxed container"
+            )
+            use_docker_backend = False
+            docker_container_name = None
+
         self.use_docker_backend = use_docker_backend
         self.timeout = timeout
         self.shell_sessions: Dict[str, Dict[str, Any]] = {}
@@ -148,8 +160,7 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path: Optional[str] = None
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
-
-        atexit.register(self.__del__)
+        self.install_dependencies = install_dependencies or []
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -185,13 +196,20 @@ class TerminalToolkit(BaseToolkit):
                     base_url='unix://var/run/docker.sock', timeout=self.timeout
                 )
                 self.docker_client = docker.from_env()
-                self.container = self.docker_client.containers.get(
-                    docker_container_name
-                )
-                logger.info(
-                    f"Successfully attached to Docker container "
-                    f"'{docker_container_name}'."
-                )
+                try:
+                    # Try to get existing container
+                    self.container = self.docker_client.containers.get(
+                        docker_container_name
+                    )
+                    logger.info(
+                        f"Successfully attached to existing Docker container "
+                        f"'{docker_container_name}'."
+                    )
+                except NotFound:
+                    raise RuntimeError(
+                        f"Container '{docker_container_name}' not found. "
+                    )
+
                 # Ensure the working directory exists inside the container
                 if self.docker_workdir:
                     try:
@@ -213,8 +231,13 @@ class TerminalToolkit(BaseToolkit):
             except APIError as e:
                 raise RuntimeError(f"Failed to connect to Docker daemon: {e}")
 
-        # Set up environments (only for local backend)
-        if not self.use_docker_backend:
+        # Set up environments (only for local backend, skip in runtime mode)
+        if self._in_runtime:
+            logger.info(
+                "[ENV] Skipping environment setup - running inside "
+                "CAMEL runtime container"
+            )
+        elif not self.use_docker_backend:
             if self.clone_current_env:
                 self._setup_cloned_environment()
             else:
@@ -225,6 +248,10 @@ class TerminalToolkit(BaseToolkit):
                 "[ENV CLONE] Skipping environment setup for Docker backend "
                 "- container is already isolated"
             )
+
+        # Install dependencies
+        if self.install_dependencies:
+            self._install_dependencies()
 
     def _setup_cloned_environment(self):
         r"""Set up a cloned Python environment."""
@@ -252,6 +279,80 @@ class TerminalToolkit(BaseToolkit):
                 "[ENV CLONE] Failed to create cloned environment, "
                 "using system Python"
             )
+
+    def _install_dependencies(self):
+        r"""Install user specified dependencies in the current environment."""
+        if not self.install_dependencies:
+            return
+
+        logger.info("Installing dependencies...")
+
+        if self.use_docker_backend:
+            pkg_str = " ".join(
+                shlex.quote(p) for p in self.install_dependencies
+            )
+            install_cmd = f'sh -lc "pip install {pkg_str}"'
+
+            try:
+                exec_id = self.docker_api_client.exec_create(
+                    self.container.id, install_cmd
+                )["Id"]
+                log = self.docker_api_client.exec_start(exec_id)
+                logger.info(f"Package installation output:\n{log}")
+
+                # Check exit code to ensure installation succeeded
+                exec_info = self.docker_api_client.exec_inspect(exec_id)
+                if exec_info['ExitCode'] != 0:
+                    error_msg = (
+                        f"Failed to install dependencies in Docker: "
+                        f"{log.decode('utf-8', errors='ignore')}"
+                    )
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+
+                logger.info(
+                    "Successfully installed all dependencies in Docker."
+                )
+            except Exception as e:
+                if not isinstance(e, RuntimeError):
+                    logger.error(f"Docker dependency installation error: {e}")
+                    raise RuntimeError(
+                        f"Docker dependency installation error: {e}"
+                    ) from e
+                raise
+
+        else:
+            pip_cmd = [
+                self.python_executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                *self.install_dependencies,
+            ]
+
+            try:
+                subprocess.run(
+                    pip_cmd,
+                    check=True,
+                    cwd=self.working_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minutes timeout for installation
+                )
+                logger.info("Successfully installed all dependencies.")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install dependencies: {e.stderr}")
+                raise RuntimeError(
+                    f"Failed to install dependencies: {e.stderr}"
+                ) from e
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    "Dependency installation timed out after 5 minutes"
+                )
+                raise RuntimeError(
+                    "Dependency installation timed out after 5 minutes"
+                )
 
     def _setup_initial_environment(self):
         r"""Set up an initial environment with Python 3.10."""
@@ -400,9 +501,11 @@ class TerminalToolkit(BaseToolkit):
                     with self._session_lock:
                         if session_id in self.shell_sessions:
                             self.shell_sessions[session_id]["error"] = str(e)
-                except Exception:
-                    # Swallow any secondary errors during cleanup
-                    pass
+                except Exception as cleanup_error:
+                    logger.warning(
+                        f"[SESSION {session_id}] Failed to store error state: "
+                        f"{cleanup_error}"
+                    )
             finally:
                 try:
                     with self._session_lock:
@@ -480,39 +583,40 @@ class TerminalToolkit(BaseToolkit):
 
         warning_message = (
             "\n--- WARNING: Process is still actively outputting "
-            "after max wait time. Consider using shell_wait() "
-            "before sending the next command. ---"
+            "after max wait time. Consider waiting before "
+            "sending the next command. ---"
         )
         return "".join(output_parts) + warning_message
 
     def shell_exec(self, id: str, command: str, block: bool = True) -> str:
-        r"""This function executes a shell command. The command can run in
-        blocking mode (waits for completion) or non-blocking mode
-        (runs in the background). A unique session ID is created for
-        each session.
+        r"""Executes a shell command in blocking or non-blocking mode.
 
         Args:
-            command (str): The command to execute.
-            block (bool): If True, the command runs synchronously,
-                waiting for it to complete or time out, and returns
-                its full output. If False, the command runs
-                asynchronously in the background.
-            id (Optional[str]): A specific ID for the session. If not provided,
-                a unique ID is generated for non-blocking sessions.
+            id (str): A unique identifier for the command's session. This ID is
+                used to interact with non-blocking processes.
+            command (str): The shell command to execute.
+            block (bool, optional): Determines the execution mode. Defaults to
+                True. If `True` (blocking mode), the function waits for the
+                command to complete and returns the full output. Use this for
+                most commands . If `False` (non-blocking mode), the function
+                starts the command in the background. Use this only for
+                interactive sessions or long-running tasks, or servers.
 
         Returns:
-            str: If block is True, returns the complete stdout and stderr.
-                 If block is False, returns a message containing the new
-                 session ID and the initial output from the command after
-                 it goes idle.
+            str: The output of the command execution, which varies by mode.
+                In blocking mode, returns the complete standard output and
+                standard error from the command.
+                In non-blocking mode, returns a confirmation message with the
+                session `id`. To interact with the background process, use
+                other functions: `shell_view(id)` to see output,
+                `shell_write_to_process(id, "input")` to send input, and
+                `shell_kill_process(id)` to terminate.
         """
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
                 return f"Error: {message}"
             command = message
-        else:
-            command = command
 
         if self.use_docker_backend:
             # For Docker, we always run commands in a shell
@@ -562,7 +666,10 @@ class TerminalToolkit(BaseToolkit):
                     output = exec_output.decode('utf-8', errors='ignore')
 
                 log_entry += f"--- Output ---\n{output}\n"
-                return _to_plain(output)
+                if output.strip():
+                    return _to_plain(output)
+                else:
+                    return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
                 error_msg = (
                     f"Error: Command timed out after {self.timeout} seconds."
@@ -570,7 +677,10 @@ class TerminalToolkit(BaseToolkit):
                 log_entry += f"--- Error ---\n{error_msg}\n"
                 return error_msg
             except Exception as e:
-                if "Read timed out" in str(e):
+                if (
+                    isinstance(e, (subprocess.TimeoutExpired, TimeoutError))
+                    or "timed out" in str(e).lower()
+                ):
                     error_msg = (
                         f"Error: Command timed out after "
                         f"{self.timeout} seconds."
@@ -593,6 +703,14 @@ class TerminalToolkit(BaseToolkit):
                 f"> {command}\n",
             )
 
+            # PYTHONUNBUFFERED=1 for real-time output
+            # Without this, Python subprocesses buffer output (4KB buffer)
+            # and shell_view() won't see output until buffer fills or process
+            # exits
+            env_vars = os.environ.copy()
+            env_vars["PYTHONUNBUFFERED"] = "1"
+            docker_env = {"PYTHONUNBUFFERED": "1"}
+
             with self._session_lock:
                 self.shell_sessions[session_id] = {
                     "id": session_id,
@@ -606,6 +724,8 @@ class TerminalToolkit(BaseToolkit):
                     else "local",
                 }
 
+            process = None
+            exec_socket = None
             try:
                 if not self.use_docker_backend:
                     process = subprocess.Popen(
@@ -617,6 +737,7 @@ class TerminalToolkit(BaseToolkit):
                         text=True,
                         cwd=self.working_dir,
                         encoding="utf-8",
+                        env=env_vars,
                     )
                     with self._session_lock:
                         self.shell_sessions[session_id]["process"] = process
@@ -630,6 +751,7 @@ class TerminalToolkit(BaseToolkit):
                         stdin=True,
                         tty=True,
                         workdir=self.docker_workdir,
+                        environment=docker_env,
                     )
                     exec_id = exec_instance['Id']
                     exec_socket = self.docker_api_client.exec_start(
@@ -643,15 +765,29 @@ class TerminalToolkit(BaseToolkit):
 
                 self._start_output_reader_thread(session_id)
 
-                # time.sleep(0.1)
-                initial_output = self._collect_output_until_idle(session_id)
-
+                # Return immediately with session ID and instructions
                 return (
-                    f"Session started with ID: {session_id}\n\n"
-                    f"[Initial Output]:\n{initial_output}"
+                    f"Session '{session_id}' started.\n\n"
+                    f"You could use:\n"
+                    f"  - shell_view('{session_id}') - get output\n"
+                    f"  - shell_write_to_process('{session_id}', '<input>')"
+                    f" - send input\n"
+                    f"  - shell_kill_process('{session_id}') - terminate"
                 )
 
             except Exception as e:
+                # Clean up resources on failure
+                if process is not None:
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+                if exec_socket is not None:
+                    try:
+                        exec_socket.close()
+                    except Exception:
+                        pass
+
                 with self._session_lock:
                     if session_id in self.shell_sessions:
                         self.shell_sessions[session_id]["running"] = False
@@ -708,24 +844,27 @@ class TerminalToolkit(BaseToolkit):
             # Wait for and collect the new output
             output = self._collect_output_until_idle(id)
 
-            return output
+            if output.strip():
+                return output
+            else:
+                return (
+                    f"Input sent to session '{id}' successfully (no output)."
+                )
 
         except Exception as e:
             return f"Error writing to session '{id}': {e}"
 
     def shell_view(self, id: str) -> str:
-        r"""This function retrieves any new output from a non-blocking session
-        since the last time this function was called. If the process has
-        terminated, it drains the output queue and appends a termination
-        message. If the process is still running, it simply returns any
-        new output.
+        r"""Retrieves new output from a non-blocking session.
+
+        This function returns only NEW output since the last call. It does NOT
+        wait or block - it returns immediately with whatever is available.
 
         Args:
             id (str): The unique session ID of the non-blocking process.
 
         Returns:
-            str: The new output from the process's stdout and stderr. Returns
-                 an empty string if there is no new output.
+            str: New output if available, or a status message.
         """
         with self._session_lock:
             if id not in self.shell_sessions:
@@ -734,7 +873,6 @@ class TerminalToolkit(BaseToolkit):
             is_running = session["running"]
 
         # If session is terminated, drain the queue and return
-        # with a status message.
         if not is_running:
             final_output = []
             try:
@@ -742,9 +880,13 @@ class TerminalToolkit(BaseToolkit):
                     final_output.append(session["output_stream"].get_nowait())
             except Empty:
                 pass
-            return "".join(final_output) + "\n--- SESSION TERMINATED ---"
 
-        # Otherwise, just drain the queue for a live session.
+            if final_output:
+                return "".join(final_output) + "\n\n--- SESSION TERMINATED ---"
+            else:
+                return "--- SESSION TERMINATED (no new output) ---"
+
+        # For running session, check for new output
         output = []
         try:
             while True:
@@ -752,38 +894,18 @@ class TerminalToolkit(BaseToolkit):
         except Empty:
             pass
 
-        return "".join(output)
-
-    def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
-        r"""This function waits for a specified duration for a
-        non-blocking process to produce more output or terminate.
-
-        Args:
-            id (str): The unique session ID of the non-blocking process.
-            wait_seconds (float): The maximum number of seconds to wait.
-
-        Returns:
-            str: All output collected during the wait period.
-        """
-        with self._session_lock:
-            if id not in self.shell_sessions:
-                return f"Error: No session found with ID '{id}'."
-            session = self.shell_sessions[id]
-            if not session["running"]:
-                return (
-                    "Session is no longer running. "
-                    "Use shell_view to get final output."
-                )
-
-        output_collected = []
-        end_time = time.time() + wait_seconds
-        while time.time() < end_time and session["running"]:
-            new_output = self.shell_view(id)
-            if new_output:
-                output_collected.append(new_output)
-            time.sleep(0.2)
-
-        return "".join(output_collected)
+        if output:
+            return "".join(output)
+        else:
+            # No new output - guide the agent
+            return (
+                "[No new output]\n"
+                "Session is running but idle. Actions could take:\n"
+                "  - For interactive sessions: Send input "
+                "with shell_write_to_process()\n"
+                "  - For long tasks: Check again later (don't poll "
+                "too frequently)"
+            )
 
     def shell_kill_process(self, id: str) -> str:
         r"""This function forcibly terminates a running non-blocking process.
@@ -848,7 +970,7 @@ class TerminalToolkit(BaseToolkit):
                  been executed, or help information for general queries.
         """
         logger.info("\n" + "=" * 60)
-        logger.info("🤖 LLM Agent needs your help!")
+        logger.info("LLM Agent needs your help!")
         logger.info(f"PROMPT: {prompt}")
 
         # Case 1: Session doesn't exist - offer to create one
@@ -873,15 +995,14 @@ class TerminalToolkit(BaseToolkit):
         else:
             # Get the latest output to show the user the current state
             last_output = self._collect_output_until_idle(id)
+            last_output_display = (
+                last_output.strip() if last_output.strip() else "(no output)"
+            )
 
             logger.info(f"SESSION: '{id}' (active)")
             logger.info("=" * 60)
             logger.info("--- LAST OUTPUT ---")
-            logger.info(
-                last_output.strip()
-                if last_output.strip()
-                else "(no recent output)"
-            )
+            logger.info(last_output_display)
             logger.info("-------------------")
 
             try:
@@ -894,8 +1015,17 @@ class TerminalToolkit(BaseToolkit):
             except EOFError:
                 return f"User input interrupted for session '{id}'."
 
-    def __del__(self):
-        # Clean up any sessions
+    def __enter__(self):
+        r"""Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        r"""Context manager exit - clean up all sessions."""
+        self.cleanup()
+        return False
+
+    def cleanup(self):
+        r"""Clean up all active sessions."""
         with self._session_lock:
             session_ids = list(self.shell_sessions.keys())
         for session_id in session_ids:
@@ -904,7 +1034,24 @@ class TerminalToolkit(BaseToolkit):
                     "running", False
                 )
             if is_running:
-                self.shell_kill_process(session_id)
+                try:
+                    self.shell_kill_process(session_id)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to kill session '{session_id}' "
+                        f"during cleanup: {e}"
+                    )
+
+    cleanup._manual_timeout = True  # type: ignore[attr-defined]
+
+    def __del__(self):
+        r"""Fallback cleanup in destructor."""
+        try:
+            self.cleanup()
+        except Exception:
+            pass
+
+    __del__._manual_timeout = True  # type: ignore[attr-defined]
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -917,7 +1064,6 @@ class TerminalToolkit(BaseToolkit):
         return [
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
-            FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.shell_ask_user_for_help),

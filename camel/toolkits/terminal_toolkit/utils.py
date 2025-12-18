@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import platform
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -27,38 +26,99 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 
-def contains_command_chaining(command: str) -> bool:
-    r"""Check if command contains chaining operators that could be used to
-    bypass security.
-    """
-    # Pattern to match command chaining operators: ;, &&, ||, |
-    # But exclude cases where they are inside quotes or escaped
-    chaining_pattern = r'''
-        (?<!\\)      # Not preceded by backslash (not escaped)
-        (?:          # Group for alternation
-            ;        # Semicolon
-            |        # OR
-            \|\|     # Logical OR
-            |        # OR  
-            &&       # Logical AND
-            |        # OR
-            (?<!\|)  # Not preceded by pipe (to avoid matching ||)
-            \|       # Single pipe
-            (?!\|)   # Not followed by pipe (to avoid matching ||)
-        )
-        (?=          # Positive lookahead
-            (?:      # Group
-                [^"'] # Not a quote
-                |     # OR
-                "[^"]*" # Content in double quotes
-                |     # OR
-                '[^']*' # Content in single quotes
-            )*       # Zero or more times
-            $        # End of string
-        )
-    '''
+def check_command_safety(
+    command: str,
+    allowed_commands: Optional[Set[str]] = None,
+) -> Tuple[bool, str]:
+    r"""Check if a command (potentially with chaining) is safe to execute.
 
-    return bool(re.search(chaining_pattern, command, re.VERBOSE))
+    Args:
+        command (str): The command string to check
+        allowed_commands (Optional[Set[str]]): Set of allowed commands
+            (whitelist mode)
+
+    Returns:
+        Tuple[bool, str]: (is_safe, reason)
+    """
+    if not command.strip():
+        return False, "Empty command is not allowed."
+
+    # Dangerous commands list - including ALL rm operations
+    dangerous_commands = [
+        # System administration
+        'sudo',
+        'su',
+        'reboot',
+        'shutdown',
+        'halt',
+        'poweroff',
+        'init',
+        # File system manipulation
+        'rm',
+        'chown',
+        'chgrp',
+        'umount',
+        'mount',
+        # Disk operations
+        'dd',
+        'mkfs',
+        'fdisk',
+        'parted',
+        'fsck',
+        'mkswap',
+        'swapon',
+        'swapoff',
+        # Process management
+        'service',
+        'systemctl',
+        'systemd',
+        # Network configuration
+        'iptables',
+        'ip6tables',
+        'ifconfig',
+        'route',
+        'iptables-save',
+        # Cron and scheduling
+        'crontab',
+        'at',
+        'batch',
+        # User management
+        'useradd',
+        'userdel',
+        'usermod',
+        'passwd',
+        'chpasswd',
+        'newgrp',
+        # Kernel modules
+        'modprobe',
+        'rmmod',
+        'insmod',
+        'lsmod',
+    ]
+
+    # Remove quoted strings to avoid false positives
+    clean_command = re.sub(r'''["'][^"']*["']''', ' ', command)
+
+    # If whitelist mode, check ALL commands against the whitelist
+    if allowed_commands is not None:
+        # Extract all command words (at start or after operators)
+        cmd_pattern = r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)'
+        found_commands = re.findall(cmd_pattern, clean_command, re.IGNORECASE)
+        for cmd in found_commands:
+            if cmd.lower() not in allowed_commands:
+                return (
+                    False,
+                    f"Command '{cmd}' is not in the allowed commands list.",
+                )
+        return True, ""
+
+    # Check for dangerous commands
+    for cmd in dangerous_commands:
+        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
+        if re.search(pattern, clean_command, re.IGNORECASE):
+            return False, f"Command '{cmd}' is blocked for safety."
+
+    return True, ""
 
 
 def sanitize_command(
@@ -80,133 +140,25 @@ def sanitize_command(
     Returns:
         Tuple[bool, str]: (is_safe, message_or_command)
     """
-    # Apply security checks to both backends - security should be consistent
     if not safe_mode:
         return True, command  # Skip all checks if safe_mode is disabled
 
-    # First check for command chaining and pipes
-    if contains_command_chaining(command):
-        return (
-            False,
-            "Command chaining (;, &&, ||, |) is not allowed "
-            "for security reasons.",
-        )
+    # Use safety checker
+    is_safe, reason = check_command_safety(command, allowed_commands)
+    if not is_safe:
+        return False, reason
 
-    parts = shlex.split(command)
-    if not parts:
-        return False, "Empty command is not allowed."
-    base_cmd = parts[0].lower()
-
-    # If whitelist is defined, only allow whitelisted commands
-    if allowed_commands is not None:
-        if base_cmd not in allowed_commands:
-            return (
-                False,
-                f"Command '{base_cmd}' is not in the allowed commands list.",
+    # Additional check for Docker backend: prevent cd outside working directory
+    if not use_docker_backend and working_dir and 'cd ' in command:
+        # Extract cd commands and check their targets
+        cd_pattern = r'\bcd\s+([^\s;|&]+)'
+        for match in re.finditer(cd_pattern, command):
+            target_path = match.group(1).strip('\'"')
+            target_dir = os.path.abspath(
+                os.path.join(working_dir, target_path)
             )
-        # If command is whitelisted, skip the dangerous commands check
-        # but still apply other safety checks
-    else:
-        # Block dangerous commands (only when no whitelist is defined)
-        dangerous_commands = [
-            # System administration
-            'sudo',
-            'su',
-            'reboot',
-            'shutdown',
-            'halt',
-            'poweroff',
-            'init',
-            # File system manipulation
-            'rm',
-            'mv',
-            'chmod',
-            'chown',
-            'chgrp',
-            'umount',
-            'mount',
-            # Disk operations
-            'dd',
-            'mkfs',
-            'fdisk',
-            'parted',
-            'fsck',
-            'mkswap',
-            'swapon',
-            'swapoff',
-            # Process management
-            'kill',
-            'killall',
-            'pkill',
-            'service',
-            'systemctl',
-            'systemd',
-            # Network configuration
-            'iptables',
-            'ip6tables',
-            'ifconfig',
-            'route',
-            'iptables-save',
-            # Cron and scheduling
-            'crontab',
-            'at',
-            'batch',
-            # User management
-            'useradd',
-            'userdel',
-            'usermod',
-            'passwd',
-            'chpasswd',
-            'newgrp',
-            # Kernel modules
-            'modprobe',
-            'rmmod',
-            'insmod',
-            'lsmod',
-            # System information that could leak sensitive data
-            'dmesg',
-            'last',
-            'lastlog',
-            'who',
-            'w',
-        ]
-        if base_cmd in dangerous_commands:
-            # Special handling for rm command - use regex for precise checking
-            if base_cmd == 'rm':
-                # Check for dangerous rm options using regex
-                dangerous_rm_pattern = (
-                    r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|'
-                    r'\s--recursive\s|\s-rf\s|\s-fr\s'
-                )
-                if re.search(dangerous_rm_pattern, command, re.IGNORECASE):
-                    return (
-                        False,
-                        f"Command '{base_cmd}' with forceful or "
-                        f"recursive options is blocked for safety.",
-                    )
-                # Also block rm without any target (could be dangerous)
-                if len(parts) < 2:
-                    return (
-                        False,
-                        "rm command requires target "
-                        "file/directory specification.",
-                    )
-            else:
-                return False, f"Command '{base_cmd}' is blocked for safety."
-
-    # For local backend only: prevent changing
-    # directory outside the workspace
-    # Docker containers are already sandboxed,
-    # so this check is not needed there
-    if (
-        not use_docker_backend
-        and base_cmd == 'cd'
-        and len(parts) > 1
-        and working_dir
-    ):
-        target_dir = os.path.abspath(os.path.join(working_dir, parts[1]))
-        if not target_dir.startswith(working_dir):
-            return False, "Cannot 'cd' outside of the working directory."
+            if not target_dir.startswith(working_dir):
+                return False, "Cannot 'cd' outside of the working directory."
 
     return True, command
 

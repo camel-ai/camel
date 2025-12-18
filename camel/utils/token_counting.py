@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from __future__ import annotations
 
@@ -195,24 +195,32 @@ class OpenAITokenCounter(BaseTokenCounter):
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
 
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
+                            # Only count tokens for base64 encoded images
+                            # For URLs, we cannot reliably determine token count without fetching the image
+                            if image_str.startswith("data:image"):
+                                # Base64 encoded image
+                                image_prefix_format = "data:image/{};base64,"
+                                image_prefix: Optional[str] = None
+                                for image_type in list(OpenAIImageType):
+                                    # Find the correct image format
+                                    image_prefix = image_prefix_format.format(
+                                        image_type.value
+                                    )
+                                    if image_prefix in image_str:
+                                        break
+                                assert isinstance(image_prefix, str)
+                                encoded_image = image_str.split(image_prefix)[
+                                    1
+                                ]
+                                image_bytes = BytesIO(
+                                    base64.b64decode(encoded_image)
                                 )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
-                            image_bytes = BytesIO(
-                                base64.b64decode(encoded_image)
-                            )
-                            image = Image.open(image_bytes)
-                            num_tokens += self._count_tokens_from_image(
-                                image, OpenAIVisionDetailType(detail)
-                            )
+                                image = Image.open(image_bytes)
+                                num_tokens += self._count_tokens_from_image(
+                                    image, OpenAIVisionDetailType(detail)
+                                )
+                            # Note: For regular URLs, token count cannot be determined without fetching the image
+                            # The actual token usage will be reported by the API response
                 if key == "name":
                     num_tokens += self.tokens_per_name
 

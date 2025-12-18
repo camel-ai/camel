@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
@@ -64,14 +64,17 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
             with the message. (default: :obj:`None`)
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. (default: :obj:`None`)
+        image_list (Optional[List[Union[Image.Image, str]]]): Optional list of
+            PIL Image objects or image URLs (strings) associated with the
+            message. (default: :obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. (default: :obj:`auto`)
-        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
+        parsed (Optional[Union[Type[BaseModel], dict]]): Optional object which
             is parsed from the content. (default: :obj:`None`)
+        reasoning_content (Optional[str]): Optional reasoning trace associated
+            with the message. (default: :obj:`None`)
     """
 
     role_name: str
@@ -80,10 +83,11 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
-    image_list: Optional[List[Image.Image]] = None
+    image_list: Optional[List[Union[Image.Image, str]]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "auto"
     parsed: Optional[Union[BaseModel, dict]] = None
+    reasoning_content: Optional[str] = None
 
     @classmethod
     def make_user_message(
@@ -92,7 +96,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
+        image_list: Optional[List[Union[Image.Image, str]]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -109,8 +113,9 @@ class BaseMessage:
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
-            image_list (Optional[List[Image.Image]]): Optional list of PIL
-                Image objects associated with the message.
+            image_list (Optional[List[Union[Image.Image, str]]]): Optional list
+                of PIL Image objects or image URLs (strings) associated with
+                the message.
             image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
                 the images associated with the message.
             video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
@@ -137,7 +142,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
+        image_list: Optional[List[Union[Image.Image, str]]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -154,8 +159,9 @@ class BaseMessage:
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
-            image_list (Optional[List[Image.Image]]): Optional list of PIL
-                Image objects associated with the message.
+            image_list (Optional[List[Union[Image.Image, str]]]): Optional list
+                of PIL Image objects or image URLs (strings) associated with
+                the message.
             image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
                 the images associated with the message.
             video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
@@ -175,6 +181,32 @@ class BaseMessage:
             OpenAIVisionDetailType(video_detail).value,
         )
 
+    @classmethod
+    def make_system_message(
+        cls,
+        content: str,
+        role_name: str = "System",
+        meta_dict: Optional[Dict[str, str]] = None,
+    ) -> "BaseMessage":
+        r"""Create a new system message.
+
+        Args:
+            content (str): The content of the system message.
+            role_name (str): The name of the system role.
+                (default: :obj:`"System"`)
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+
+        Returns:
+            BaseMessage: The new system message.
+        """
+        return cls(
+            role_name,
+            RoleType.SYSTEM,
+            meta_dict,
+            content,
+        )
+
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.
@@ -190,6 +222,12 @@ class BaseMessage:
             role_type=self.role_type,
             meta_dict=self.meta_dict,
             content=content,
+            video_bytes=self.video_bytes,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_detail=self.video_detail,
+            parsed=self.parsed,
+            reasoning_content=self.reasoning_content,
         )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
@@ -436,31 +474,64 @@ class BaseMessage:
         )
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
-                if image.format is None:
-                    # Set default format to PNG as fallback
-                    image.format = 'PNG'
+                # Check if image is a URL string or PIL Image
+                if isinstance(image, str):
+                    # Image is a URL string
+                    hybrid_content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image,
+                                "detail": self.image_detail,
+                            },
+                        }
+                    )
+                else:
+                    # Image is a PIL Image object
+                    if image.format is None:
+                        # Set default format to PNG as fallback
+                        image.format = 'PNG'
 
-                image_type: str = image.format.lower()
-                if image_type not in OpenAIImageType:
-                    raise ValueError(
-                        f"Image type {image.format} "
-                        f"is not supported by OpenAI vision model"
+                    image_type: str = image.format.lower()
+                    if image_type not in OpenAIImageType:
+                        raise ValueError(
+                            f"Image type {image.format} "
+                            f"is not supported by OpenAI vision model"
+                        )
+
+                    # Convert RGBA to RGB for formats that don't support
+                    # transparency or when the image has transparency channel
+                    img_to_save = image
+                    if image.mode in ('RGBA', 'LA', 'P') and image_type in (
+                        'jpeg',
+                        'jpg',
+                    ):
+                        # JPEG doesn't support transparency, convert to RGB
+                        img_to_save = image.convert('RGB')
+                    elif (
+                        image.mode in ('RGBA', 'LA', 'P')
+                        and image_type == 'png'
+                    ):
+                        # For PNG with transparency, convert to RGBA if needed
+                        if image.mode in ('LA', 'P'):
+                            img_to_save = image.convert('RGBA')
+                        # else: RGBA mode, keep as-is
+
+                    with io.BytesIO() as buffer:
+                        img_to_save.save(fp=buffer, format=image.format)
+                        encoded_image = base64.b64encode(
+                            buffer.getvalue()
+                        ).decode("utf-8")
+                    image_prefix = f"data:image/{image_type};base64,"
+                    hybrid_content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"{image_prefix}{encoded_image}",
+                                "detail": self.image_detail,
+                            },
+                        }
                     )
-                with io.BytesIO() as buffer:
-                    image.save(fp=buffer, format=image.format)
-                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                        "utf-8"
-                    )
-                image_prefix = f"data:image/{image_type};base64,"
-                hybrid_content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"{image_prefix}{encoded_image}",
-                            "detail": self.image_detail,
-                        },
-                    }
-                )
 
         if self.video_bytes:
             import imageio.v3 as iio
@@ -552,9 +623,66 @@ class BaseMessage:
         Returns:
             dict: The converted dictionary.
         """
-        return {
+        result = {
             "role_name": self.role_name,
             "role_type": self.role_type.value,
             **(self.meta_dict or {}),
             "content": self.content,
         }
+
+        # Include image/video fields if present
+        if self.image_list is not None:
+            # Handle both PIL Images and URL strings
+            import base64
+            from io import BytesIO
+
+            image_data_list = []
+            for img in self.image_list:
+                if isinstance(img, str):
+                    # Image is a URL string, store as-is
+                    image_data_list.append({"type": "url", "data": img})
+                else:
+                    # Image is a PIL Image, convert to base64
+                    # Preserve format, default to PNG if not set
+                    img_format = img.format if img.format else "PNG"
+
+                    # Handle transparency for different formats
+                    img_to_save = img
+                    if img.mode in (
+                        'RGBA',
+                        'LA',
+                        'P',
+                    ) and img_format.upper() in ('JPEG', 'JPG'):
+                        # JPEG doesn't support transparency, convert to RGB
+                        img_to_save = img.convert('RGB')
+                    elif (
+                        img.mode in ('LA', 'P') and img_format.upper() == 'PNG'
+                    ):
+                        # For PNG with transparency, convert to RGBA if needed
+                        img_to_save = img.convert('RGBA')
+                    # else: keep as-is for other combinations
+
+                    buffered = BytesIO()
+                    img_to_save.save(buffered, format=img_format)
+                    img_str = base64.b64encode(buffered.getvalue()).decode()
+                    image_data_list.append(
+                        {
+                            "type": "base64",
+                            "data": img_str,
+                            "format": img_format,  # Preserve format
+                        }
+                    )
+            result["image_list"] = image_data_list
+
+        if self.video_bytes is not None:
+            import base64
+
+            result["video_bytes"] = base64.b64encode(self.video_bytes).decode()
+
+        if self.image_detail is not None:
+            result["image_detail"] = self.image_detail
+
+        if self.video_detail is not None:
+            result["video_detail"] = self.video_detail
+
+        return result

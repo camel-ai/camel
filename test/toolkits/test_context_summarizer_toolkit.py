@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import tempfile
 from pathlib import Path
@@ -244,9 +244,12 @@ def test_conversation_history_removal_and_summary_push(
         backend_role = call_args[0][1]  # Second argument (role)
 
         # Verify the summary message content
-        assert "[Context Summary]" in summary_message.content
+        assert (
+            "[Context Summary from Previous Conversation]"
+            in summary_message.content
+        )
         assert summary_text in summary_message.content
-        assert backend_role == OpenAIBackendRole.SYSTEM
+        assert backend_role == OpenAIBackendRole.USER
 
         # Verify successful completion
         assert "Full context summarized" in result

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import platform
 import tempfile
 from pathlib import Path
@@ -21,8 +21,11 @@ from camel.toolkits import TerminalToolkit
 
 
 @pytest.fixture
-def terminal_toolkit(temp_dir):
-    return TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+def terminal_toolkit(temp_dir, request):
+    toolkit = TerminalToolkit(working_directory=temp_dir, safe_mode=False)
+    # Ensure cleanup happens after test completes
+    request.addfinalizer(toolkit.cleanup)
+    return toolkit
 
 
 @pytest.fixture
@@ -41,9 +44,12 @@ def test_file(temp_dir):
 
 def test_init():
     toolkit = TerminalToolkit()
-    assert toolkit.timeout == 20.0
-    assert isinstance(toolkit.shell_sessions, dict)
-    assert toolkit.os_type == platform.system()
+    try:
+        assert toolkit.timeout == 20.0
+        assert isinstance(toolkit.shell_sessions, dict)
+        assert toolkit.os_type == platform.system()
+    finally:
+        toolkit.cleanup()
 
 
 def test_shell_exec(terminal_toolkit, temp_dir):

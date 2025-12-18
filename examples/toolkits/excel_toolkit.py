@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import tempfile
@@ -65,7 +65,7 @@ response1 = agent.step(prompt1)
 print(response1.msgs[0].content)
 """--- 1. Creating a new workbook ---
 The Excel workbook has been created successfully at the specified path,
- and the 'Employees' sheet has been populated with the provided data. 
+ and the 'Employees' sheet has been populated with the provided data.
  If you need any further assistance, feel free to ask!
 """
 
@@ -80,7 +80,7 @@ response2 = agent.step(prompt2)
 print(response2.msgs[0].content)
 """--- 2. Add a new row to the 'Employees' sheet ---
 The row ['David', 40, 'Chicago', 'HR'] has been successfully
- appended to the 'Employees' sheet in the workbook. If you 
+ appended to the 'Employees' sheet in the workbook. If you
  need any more modifications or assistance, just let me know!"""
 
 # --- 3. Get all rows from the sheet to verify ---
@@ -115,7 +115,7 @@ response4 = agent.step(prompt4)
 print(response4.msgs[0].content)
 """--- 4. Updating a row ---
 Row 3 in the 'Employees' sheet has been successfully updated with the
- new data: ['Bob', 30, 'San Francisco', 'Sales']. If you need any more 
+ new data: ['Bob', 30, 'San Francisco', 'Sales']. If you need any more
  changes or assistance, just let me know!"""
 
 # --- 5. Verifying data after update ---

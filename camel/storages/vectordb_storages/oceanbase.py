@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import logging
@@ -121,10 +121,11 @@ class OceanBaseStorage(BaseVectorStorage):
             )
 
             # Get the first index parameter
-            first_index_param = next(iter(index_params))
-            self._client.create_vidx_with_vec_index_param(
-                table_name=self.table_name, vidx_param=first_index_param
-            )
+            first_index_param = next(iter(index_params), None)
+            if first_index_param is not None:
+                self._client.create_vidx_with_vec_index_param(
+                    table_name=self.table_name, vidx_param=first_index_param
+                )
 
             logger.info(f"Created table {self.table_name} with vector index")
         else:

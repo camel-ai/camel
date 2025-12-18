@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,7 +34,7 @@ from camel.types import (
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_5_MINI,
+    model_type=ModelType.DEFAULT,
 )
 
 model_backend_rsp = ChatCompletion(
@@ -105,11 +105,11 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model is None:
-        assert assistant_agent.model_backend.model_type == ModelType.GPT_5_MINI
-        assert user_agent.model_backend.model_type == ModelType.GPT_5_MINI
+        assert assistant_agent.model_backend.model_type == ModelType.DEFAULT
+        assert user_agent.model_backend.model_type == ModelType.DEFAULT
     else:
-        assert assistant_agent.model_backend.model_type == ModelType.GPT_5_MINI
-        assert user_agent.model_backend.model_type == ModelType.GPT_5_MINI
+        assert assistant_agent.model_backend.model_type == ModelType.DEFAULT
+        assert user_agent.model_backend.model_type == ModelType.DEFAULT
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -121,9 +121,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert critic.model_backend.model_type == ModelType.GPT_5_MINI
+                assert critic.model_backend.model_type == ModelType.DEFAULT
             else:
-                assert critic.model_backend.model_type == ModelType.GPT_5_MINI
+                assert critic.model_backend.model_type == ModelType.DEFAULT
 
 
 @pytest.mark.model_backend

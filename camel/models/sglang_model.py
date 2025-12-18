@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
 import subprocess
@@ -72,8 +72,16 @@ class SGLangModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        client (Optional[Any], optional): A custom synchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. Note: When using custom
+            clients with SGLang, server auto-start features will be disabled.
+            (default: :obj:`None`)
+        async_client (Optional[Any], optional): A custom asynchronous
+            OpenAI-compatible client instance. If provided, this client will
+            be used instead of creating a new one. (default: :obj:`None`)
         **kwargs (Any): Additional arguments to pass to the client
-            initialization.
+            initialization. Ignored if custom clients are provided.
 
     Reference: https://sgl-project.github.io/backend/openai_api_completions.
     html
@@ -88,6 +96,8 @@ class SGLangModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -111,9 +121,10 @@ class SGLangModel(BaseModelBackend):
             max_retries,
         )
 
-        self._client = None
-
-        if self._url:
+        # Use custom clients if provided, otherwise create new ones
+        if client is not None:
+            self._client = client
+        elif self._url:
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
                 timeout=self._timeout,
@@ -122,6 +133,12 @@ class SGLangModel(BaseModelBackend):
                 base_url=self._url,
                 **kwargs,
             )
+        else:
+            self._client = None
+
+        if async_client is not None:
+            self._async_client = async_client
+        elif self._url:
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
                 max_retries=self._max_retries,
@@ -129,6 +146,8 @@ class SGLangModel(BaseModelBackend):
                 base_url=self._url,
                 **kwargs,
             )
+        else:
+            self._async_client = None
 
     def _start_server(self) -> None:
         try:
@@ -159,13 +178,24 @@ class SGLangModel(BaseModelBackend):
                 )
                 self._inactivity_thread.start()
             self.last_run_time = time.time()
-            # Initialize the client after the server starts
-            self._client = OpenAI(
-                timeout=self._timeout,
-                max_retries=self._max_retries,
-                api_key="Set-but-ignored",  # required but ignored
-                base_url=self._url,
-            )
+            # Initialize client after server starts if not already set
+            if self._client is None:
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    api_key="Set-but-ignored",  # required but ignored
+                    base_url=self._url,
+                )
+            if (
+                not hasattr(self, '_async_client')
+                or self._async_client is None
+            ):
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=self._max_retries,
+                    api_key="Set-but-ignored",  # required but ignored
+                    base_url=self._url,
+                )
         except Exception as e:
             raise RuntimeError(f"Failed to start SGLang server: {e}") from e
 
@@ -256,15 +286,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            async_client = self._async_client
 
-        if self._client is None:
+        if async_client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = await self._async_client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = await async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(
@@ -322,15 +361,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            client = self._client
 
-        if self._client is None:
+        if client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = self._client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(
@@ -456,10 +504,10 @@ def _wait_for_server(base_url: str, timeout: Optional[float] = 30) -> None:
                 print(
                     """\n
                     NOTE: Typically, the server runs in a separate terminal.
-                    In this notebook, we run the server and notebook code 
+                    In this notebook, we run the server and notebook code
                     together, so their outputs are combined.
-                    To improve clarity, the server logs are displayed in the 
-                    original black color, while the notebook outputs are 
+                    To improve clarity, the server logs are displayed in the
+                    original black color, while the notebook outputs are
                     highlighted in blue.
                     """
                 )
