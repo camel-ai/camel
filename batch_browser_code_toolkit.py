@@ -62,64 +62,21 @@ verification_model = ModelFactory.create(
 )
 
 # System prompt for browser automation
-SYSTEM_PROMPT = """You are a browser automation expert. You can write Python code to control a browser.
-
-CRITICAL RULES:
-1. **DO NOT write placeholder code** - Never use comments like "# find ref here" or fake ref values
-2. **Work step-by-step** - You CANNOT complete tasks in one code execution
-3. **Get information first** - Always call browser.get_snapshot() to see actual ref IDs before using them
-4. **Use actual values only** - Only use ref IDs that you have seen in snapshot output
-
-WORKFLOW (MUST FOLLOW):
-Step 1: Open browser and get initial snapshot
-```python
-browser.open()
-browser.visit_page("https://example.com")
-snapshot = browser.get_snapshot()
-print(snapshot)  # You will see the actual ref IDs here
-```
-
-Step 2: After seeing the snapshot, write code to interact with ACTUAL refs
-```python
-# Now you know ref="e15" is the search box from previous output
-browser.type(ref="e15", text="search query")
-browser.enter()
-```
-
-Step 3: Get new snapshot after interaction if needed
-```python
-snapshot = browser.get_snapshot()
-print(snapshot)  # See updated page structure
-```
-
-EXECUTION RETURNS:
-When you execute code, you will receive:
-- The code you executed
-- All print() output showing snapshots, results, etc.
-- Any error messages
-
-USE THIS OUTPUT to decide your next step!
-
-COMMON MISTAKES TO AVOID:
-❌ Writing all code at once without seeing ref IDs
-❌ Using placeholder refs like "ref_to_find" or "element_ref"
-❌ Assuming ref IDs without checking snapshot
-❌ Not reading the execution output from previous step
-
-✅ CORRECT APPROACH:
-1. Execute code to get snapshot
-2. Read the output to find actual ref IDs
-3. Execute new code using those actual ref IDs
-4. Repeat until task is complete
-
+SYSTEM_PROMPT = """
 填写日期的时候先点击日期框，然后再分别输入去程和返程日期，用正确格式如：2026-01-28
 enter可以作为确认，也可以用来执行搜索
+
+你需要每次操作后都用正则表达式/其他过滤的方式尝试确实是否正确填入
+你可以用正则表达式/其他过滤的方式来过滤出你需要的snapshot,不一定要每次看到完整的snapshot
+
+如果没有成功执行搜索，一般来说是没有完整输入所有必要信息
+
+你可以执行browser.get_screenshot()来查看页面截屏，执行后，系统会自动把页面截屏放在你的上下文里
 """
 
 # Custom tools selection
 custom_tools = [
     "browser_open",
-    "browser_close",
     "browser_visit_page",
     "browser_back",
     "browser_forward",
@@ -127,6 +84,7 @@ custom_tools = [
     "browser_type",
     "browser_enter",
     "browser_get_page_snapshot",
+    "browser_get_som_screenshot"
 ]
 
 # Create output directory
@@ -254,7 +212,6 @@ async def process_single_task(
         user_data_dir=USER_DATA_DIR,
         enabled_tools=custom_tools,
         print_code_output=True,
-        browser_log_to_file=True,
         stealth=True,
         viewport_limit=True,
     )
@@ -276,7 +233,6 @@ Visit the website: {task['web']}
 
 Task: {task['question']}
 
-Use the execute_browser_code tool to control the browser and complete this task.
 """
 
     result = {

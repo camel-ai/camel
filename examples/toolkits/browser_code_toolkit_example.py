@@ -113,7 +113,6 @@ toolkit_custom = BrowserCodeToolkit(
     user_data_dir=USER_DATA_DIR,
     enabled_tools=custom_tools,
     print_code_output=True,  # Print code execution to console (default: True)
-    browser_log_to_file=True,  # Generate detailed logs
     stealth=True,  # Enable stealth mode
     viewport_limit=True,  # Limit snapshot to current viewport
 )
@@ -291,10 +290,7 @@ print("\\nGetting page snapshot...")
 snapshot = browser.get_snapshot()
 print(f"Snapshot (first 300 chars):\\n{snapshot[:300]}")
 
-# Close browser
-print("\\nClosing browser...")
-browser.close()
-print("Done!")
+
 """
 
     print("Executing code:\n")
