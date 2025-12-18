@@ -1095,14 +1095,19 @@ class ChatAgent(BaseAgent):
         summary_content: str = summary
 
         existing_summaries = []
-        if not include_summaries:
-            messages, _ = self.memory.get_context()
-            for msg in messages:
-                content = msg.get('content', '')
-                if isinstance(content, str) and content.startswith(
-                    '[CONTEXT_SUMMARY]'
-                ):
-                    existing_summaries.append(msg)
+        last_user_message: Optional[str] = None
+        messages, _ = self.memory.get_context()
+        for msg in messages:
+            content = msg.get('content', '')
+            role = msg.get('role', '')
+            if role == 'user' and isinstance(content, str) and content:
+                last_user_message = content
+            if (
+                not include_summaries
+                and isinstance(content, str)
+                and content.startswith('[CONTEXT_SUMMARY]')
+            ):
+                existing_summaries.append(msg)
 
         # Clear memory
         self.clear_memory()
@@ -1122,16 +1127,27 @@ class ChatAgent(BaseAgent):
             role_name="assistant", content=summary_content
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
-        input_message = BaseMessage.make_assistant_message(
-            role_name="assistant",
-            content=(
-                "Please continue the conversation from "
-                "where we left it off without asking the user any further "
-                "questions. Continue with the last task that you were "
-                "asked to work on."
-            ),
-        )
-        self.update_memory(input_message, OpenAIBackendRole.ASSISTANT)
+
+        # Restore last user message to maintain conversation structure
+        if last_user_message:
+            if not last_user_message.startswith("[Previous Request]"):
+                last_user_message = f"[Previous Request] {last_user_message}"
+            user_msg = BaseMessage.make_user_message(
+                role_name="user",
+                content=last_user_message,
+            )
+            self.update_memory(user_msg, OpenAIBackendRole.USER)
+
+            # Add continuation prompt to guide the model
+            continue_msg = BaseMessage.make_assistant_message(
+                role_name="assistant",
+                content=(
+                    "I'll continue working on this request based on the "
+                    "context summary above."
+                ),
+            )
+            self.update_memory(continue_msg, OpenAIBackendRole.ASSISTANT)
+
         # Update token count
         try:
             summary_tokens = (
@@ -1178,6 +1194,67 @@ class ChatAgent(BaseAgent):
             return json.dumps(result, ensure_ascii=False)
         except (TypeError, ValueError):
             return str(result)
+
+    def _truncate_tool_result(
+        self, func_name: str, result: Any
+    ) -> Tuple[Any, bool]:
+        r"""Truncate tool result if it exceeds the maximum token limit.
+
+        Args:
+            func_name (str): The name of the tool function called.
+            result (Any): The result returned by the tool execution.
+
+        Returns:
+            Tuple[Any, bool]: A tuple containing:
+                - The (possibly truncated) result
+                - A boolean indicating whether truncation occurred
+        """
+        serialized = self._serialize_tool_result(result)
+        # Leave 10% room for system message, user input, and model response
+        max_tokens = int(self.model_backend.token_limit * 0.9)
+        result_tokens = self._get_token_count(serialized)
+
+        if result_tokens <= max_tokens:
+            return result, False
+
+        # Reserve ~100 tokens for notice
+        target_tokens = max(max_tokens - 100, 100)
+        truncated = self._truncate_text_by_tokens(serialized, target_tokens)
+
+        notice = (
+            f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
+            f"({result_tokens} > {max_tokens} tokens). "
+            f"Tool executed successfully."
+        )
+
+        logger.warning(
+            f"Tool '{func_name}' result truncated: "
+            f"{result_tokens} -> ~{target_tokens} tokens"
+        )
+
+        return notice + truncated, True
+
+    def _truncate_text_by_tokens(self, text: str, max_tokens: int) -> str:
+        r"""Truncate text to approximately the specified number of tokens.
+
+        Args:
+            text (str): The text to truncate.
+            max_tokens (int): The maximum number of tokens to keep.
+
+        Returns:
+            str: The truncated text.
+        """
+        if hasattr(self.model_backend, 'token_counter'):
+            try:
+                encoder = self.model_backend.token_counter
+                tokens = encoder.encode(text)
+                return encoder.decode(tokens[:max_tokens])
+            except BaseException as e:
+                logger.debug(
+                    f"Token encoding failed, using char fallback: {e}"
+                )
+        # Fallback: ~3 chars per token
+        return text[: max_tokens * 3]
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
@@ -3985,6 +4062,13 @@ class ChatAgent(BaseAgent):
             ToolCallingRecord: A struct containing information about
             this tool call.
         """
+        # Truncate tool result if it exceeds the maximum token limit
+        # This prevents single tool calls from exceeding context window
+        truncated_result, was_truncated = self._truncate_tool_result(
+            func_name, result
+        )
+        result_for_memory = truncated_result if was_truncated else result
+
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -4001,7 +4085,7 @@ class ChatAgent(BaseAgent):
             meta_dict=None,
             content="",
             func_name=func_name,
-            result=result,
+            result=result_for_memory,
             tool_call_id=tool_call_id,
             mask_output=mask_output,
             extra_content=extra_content,
@@ -4031,7 +4115,7 @@ class ChatAgent(BaseAgent):
 
         # Register tool output for snapshot cleaning if enabled
         if self._enable_snapshot_clean and not mask_output and func_records:
-            serialized_result = self._serialize_tool_result(result)
+            serialized_result = self._serialize_tool_result(result_for_memory)
             self._register_tool_output_for_cache(
                 func_name,
                 tool_call_id,
@@ -4099,13 +4183,14 @@ class ChatAgent(BaseAgent):
                 )
 
         # Record information about this tool call
+        # Note: tool_record contains the original result for the caller,
+        # while result_for_memory (possibly truncated) is stored in memory
         tool_record = ToolCallingRecord(
             tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
         )
-
         self._update_last_tool_call_state(tool_record)
         return tool_record
 
@@ -4152,9 +4237,14 @@ class ChatAgent(BaseAgent):
     def _get_token_count(self, content: str) -> int:
         r"""Get token count for content with fallback."""
         if hasattr(self.model_backend, 'token_counter'):
-            return len(self.model_backend.token_counter.encode(content))
-        else:
-            return len(content.split())
+            try:
+                return len(self.model_backend.token_counter.encode(content))
+            except BaseException as e:
+                logger.debug(
+                    f"Token counting failed, using char fallback: {e}"
+                )
+        # Conservative estimate: ~3 chars per token
+        return len(content) // 3
 
     def _stream_response(
         self,
