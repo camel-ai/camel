@@ -14,10 +14,13 @@
 
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import IMAPMailToolkit
 from camel.types import ModelPlatformType, ModelType
+
+logger = get_logger(__name__)
 
 
 def main() -> None:
@@ -51,16 +54,16 @@ def main() -> None:
     )
 
     # Fetch emails
-    print("Fetching recent emails...")
+    logger.info("Fetching recent emails...")
     response = agent.step(
         BaseMessage.make_user_message(
             role_name="User", content="Get my 2 most recent emails"
         )
     )
-    print(f"Assistant: {response.msgs[0].content}\n")
+    logger.info(f"Assistant: {response.msgs[0].content}\n")
 
     # Send email
-    print("Sending test email...")
+    logger.info("Sending test email...")
     response = agent.step(
         BaseMessage.make_user_message(
             role_name="User",
@@ -68,10 +71,11 @@ def main() -> None:
             subject 'Test' and body 'Hello from CAMEL'""",
         )
     )
-    print(f"Assistant: {response.msgs[0].content}")
+    logger.info(f"Assistant: {response.msgs[0].content}")
 
     # Connections will be auto-closed after idle timeout or when
     # mail_toolkit is destroyed
+    mail_toolkit.close()  # Explicit cleanup (optional)
 
 
 def main_with_context_manager() -> None:
@@ -107,7 +111,7 @@ def main_with_context_manager() -> None:
                 role_name="User", content="Get my recent emails"
             )
         )
-        print(f"Assistant: {response.msgs[0].content}")
+        logger.info(f"Assistant: {response.msgs[0].content}")
 
     # Connections automatically closed here
 
@@ -125,7 +129,7 @@ Assistant: Here are your two most recent emails (newest first):
    Date: Tue, 22 Nov 2024 07:07:16 -0600
    Subject: Get an exclusive experience in Dubai
    Size: 87,767 bytes
-   Snippet: "WELCOME TO THE FAMILY HOUSE — A truly 
+   Snippet: "WELCOME TO THE FAMILY HOUSE - A truly 
    interactive experience... Join raffle on app to 
    win an exclusive opportunity for you and 10 friends..."
 
