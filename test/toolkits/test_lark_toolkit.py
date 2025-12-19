@@ -76,11 +76,11 @@ def test_lark_toolkit_init(mock_env_vars, mock_lark_client):
     assert toolkit._domain == "https://open.larksuite.com"
 
 
-def test_lark_toolkit_init_with_custom_domain(mock_env_vars, mock_lark_client):
-    """Test LarkToolkit initialization with custom domain."""
+def test_lark_toolkit_init_with_feishu(mock_env_vars, mock_lark_client):
+    """Test LarkToolkit initialization with Feishu (China) domain."""
     from camel.toolkits import LarkToolkit
 
-    toolkit = LarkToolkit(domain="https://open.feishu.cn")
+    toolkit = LarkToolkit(use_feishu=True)
     assert toolkit._domain == "https://open.feishu.cn"
 
 

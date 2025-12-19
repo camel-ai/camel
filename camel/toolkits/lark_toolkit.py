@@ -15,7 +15,7 @@
 import json
 import os
 import time
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import quote
 
 from typing_extensions import TypedDict
@@ -230,10 +230,17 @@ class LarkToolkit(BaseToolkit):
     for creating, reading, updating, and deleting documents and document
     blocks.
 
+    Note:
+        This toolkit uses browser-based OAuth which requires a local
+        environment with browser access (CLI tools, local development,
+        Jupyter notebooks). For server deployments without browser access,
+        obtain tokens externally and provide them via the ``user_access_token``
+        and ``refresh_token`` parameters.
+
     Attributes:
         app_id (Optional[str]): The Lark application ID.
         app_secret (Optional[str]): The Lark application secret.
-        domain (str): The API domain (default: https://open.larksuite.com).
+        use_feishu (bool): Whether to use Feishu (China) instead of Lark.
     """
 
     @api_keys_required(
@@ -247,13 +254,11 @@ class LarkToolkit(BaseToolkit):
         self,
         app_id: Optional[str] = None,
         app_secret: Optional[str] = None,
-        domain: str = "https://open.larksuite.com",
+        use_feishu: bool = False,
         timeout: Optional[float] = None,
-        # ---- OAuth parameters (optional, remove if OAuth not needed) ----
         user_access_token: Optional[str] = None,
         refresh_token: Optional[str] = None,
-        oauth_redirect_uri: Optional[str] = None,
-        on_token_refresh: Optional[Callable[[str, str], None]] = None,
+        oauth_port: int = 9000,
     ) -> None:
         r"""Initializes the LarkToolkit.
 
@@ -262,32 +267,30 @@ class LarkToolkit(BaseToolkit):
                 uses LARK_APP_ID environment variable.
             app_secret (Optional[str]): The Lark application secret. If not
                 provided, uses LARK_APP_SECRET environment variable.
-            domain (str): The API domain. Use "https://open.larksuite.com" for
-                international or "https://open.feishu.cn" for China.
-                (default: "https://open.larksuite.com")
+            use_feishu (bool): Set to True to use Feishu (China) API endpoints
+                instead of Lark (international). (default: False)
             timeout (Optional[float]): Request timeout in seconds.
             user_access_token (Optional[str]): Pre-existing user access token
                 for OAuth authentication. If provided, API calls will be made
                 as this user instead of as the application.
             refresh_token (Optional[str]): Pre-existing refresh token for
                 refreshing the user access token.
-            oauth_redirect_uri (Optional[str]): Redirect URI for OAuth flow.
-                Required if you want to use get_oauth_url().
-            on_token_refresh (Optional[Callable[[str, str], None]]): Callback
-                function called when tokens are refreshed. Receives
-                (access_token, refresh_token). Use this to persist tokens.
+            oauth_port (int): Port number for the local OAuth callback server.
+                (default: 9000)
         """
         super().__init__(timeout=timeout)
         import lark_oapi as lark
 
         self._app_id = app_id or os.environ.get("LARK_APP_ID", "")
         self._app_secret = app_secret or os.environ.get("LARK_APP_SECRET", "")
-        self._domain = domain
+        self._use_feishu = use_feishu
 
-        # Determine the domain constant
-        if "feishu" in domain.lower():
+        # Set domain based on region
+        if use_feishu:
+            self._domain = "https://open.feishu.cn"
             lark_domain = lark.FEISHU_DOMAIN
         else:
+            self._domain = "https://open.larksuite.com"
             lark_domain = lark.LARK_DOMAIN
 
         # Build the client with automatic token management
@@ -304,13 +307,13 @@ class LarkToolkit(BaseToolkit):
 
         self._user_access_token = user_access_token
         self._refresh_token = refresh_token
-        self._oauth_redirect_uri = oauth_redirect_uri
-        self._on_token_refresh = on_token_refresh
+        self._oauth_redirect_uri: Optional[str] = None
         self._token_file_path = str(Path.home() / '.camel' / 'lark_token.json')
         self._token_expires_at: Optional[float] = None
-        self._token_uri = self._get_token_uri()
+        self._oauth_port = oauth_port
 
-        logger.info(f"LarkToolkit initialized with domain: {domain}")
+        region = "Feishu (China)" if use_feishu else "Lark (International)"
+        logger.info(f"LarkToolkit initialized for {region}")
 
         # Auto-authenticate: use provided token, cached token, or browser OAuth
         if user_access_token:
@@ -322,25 +325,12 @@ class LarkToolkit(BaseToolkit):
     # OAuth / Authentication (Internal)
     # =========================================================================
 
-    def _get_token_uri(self) -> str:
-        r"""Get the token URI based on the configured domain."""
-        if "feishu" in self._domain.lower():
-            return (
-                "https://open.feishu.cn/open-apis/authen/v1/oidc/access_token"
-            )
-        return (
-            "https://open.larksuite.com/open-apis/authen/v1/oidc/access_token"
-        )
-
     def _get_oauth_url(self, state: str = "") -> str:
         r"""Generate the OAuth authorization URL for user login."""
         if not self._oauth_redirect_uri:
             raise ValueError("oauth_redirect_uri must be set to use OAuth.")
 
-        if "feishu" in self._domain.lower():
-            base = "https://open.feishu.cn"
-        else:
-            base = "https://open.larksuite.com"
+        base = self._domain
 
         encoded_redirect = quote(self._oauth_redirect_uri, safe="")
 
@@ -355,14 +345,70 @@ class LarkToolkit(BaseToolkit):
             f"&state={state}"
         )
 
+    def _save_tokens_to_disk(self) -> None:
+        r"""Save current tokens to disk cache."""
+        if not self._token_file_path:
+            return
+
+        from pathlib import Path
+
+        token_file = Path(self._token_file_path)
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(token_file, 'w') as f:
+                json.dump(
+                    {
+                        'user_access_token': self._user_access_token,
+                        'refresh_token': self._refresh_token,
+                        'expires_at': self._token_expires_at,
+                    },
+                    f,
+                )
+            os.chmod(token_file, 0o600)
+            logger.info(f"Tokens saved to {token_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save tokens: {e}")
+
+    def clear_cached_tokens(self) -> bool:
+        r"""Clears cached OAuth tokens from memory and disk.
+
+        Use this method to force re-authentication on the next API call,
+        or when switching users/accounts.
+
+        Returns:
+            bool: True if tokens were cleared successfully, False otherwise.
+
+        Example:
+            >>> toolkit.clear_cached_tokens()
+            >>> # Next API call will trigger browser OAuth flow
+        """
+        from pathlib import Path
+
+        # Clear in-memory tokens
+        self._user_access_token = None
+        self._refresh_token = None
+        self._token_expires_at = None
+
+        # Delete cached token file
+        if self._token_file_path:
+            token_file = Path(self._token_file_path)
+            if token_file.exists():
+                try:
+                    token_file.unlink()
+                    logger.info(f"Deleted cached token file: {token_file}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete token file: {e}")
+                    return False
+
+        logger.info("Cleared cached OAuth tokens")
+        return True
+
     def _exchange_code_for_token(self, code: str) -> None:
         r"""Exchange an authorization code for user access tokens.
 
         Raises:
             RuntimeError: If the token exchange fails.
         """
-        from pathlib import Path
-
         from lark_oapi.api.authen.v1 import (
             CreateOidcAccessTokenRequest,
             CreateOidcAccessTokenRequestBody,
@@ -393,29 +439,7 @@ class LarkToolkit(BaseToolkit):
         self._refresh_token = data.refresh_token
         self._token_expires_at = time.time() + data.expires_in
 
-        # Save tokens to disk
-        if self._token_file_path:
-            token_file = Path(self._token_file_path)
-            token_file.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                with open(token_file, 'w') as f:
-                    json.dump(
-                        {
-                            'user_access_token': self._user_access_token,
-                            'refresh_token': self._refresh_token,
-                            'expires_at': self._token_expires_at,
-                            'token_uri': self._token_uri,
-                        },
-                        f,
-                    )
-                os.chmod(token_file, 0o600)
-                logger.info(f"Tokens saved to {token_file}")
-            except Exception as e:
-                logger.warning(f"Failed to save tokens: {e}")
-
-        if self._on_token_refresh and data.access_token and data.refresh_token:
-            self._on_token_refresh(data.access_token, data.refresh_token)
-
+        self._save_tokens_to_disk()
         logger.info("Successfully obtained user access token via OAuth")
 
     def _refresh_user_token(self) -> None:
@@ -427,8 +451,6 @@ class LarkToolkit(BaseToolkit):
         """
         if not self._refresh_token:
             raise ValueError("No refresh token available.")
-
-        from pathlib import Path
 
         from lark_oapi.api.authen.v1 import (
             CreateOidcRefreshAccessTokenRequest,
@@ -462,85 +484,19 @@ class LarkToolkit(BaseToolkit):
         self._refresh_token = data.refresh_token
         self._token_expires_at = time.time() + data.expires_in
 
-        # Save tokens to disk
-        if self._token_file_path:
-            token_file = Path(self._token_file_path)
-            token_file.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                with open(token_file, 'w') as f:
-                    json.dump(
-                        {
-                            'user_access_token': self._user_access_token,
-                            'refresh_token': self._refresh_token,
-                            'expires_at': self._token_expires_at,
-                            'token_uri': self._token_uri,
-                        },
-                        f,
-                    )
-                os.chmod(token_file, 0o600)
-                logger.info(f"Tokens saved to {token_file}")
-            except Exception as e:
-                logger.warning(f"Failed to save tokens: {e}")
-
-        if self._on_token_refresh and data.access_token and data.refresh_token:
-            self._on_token_refresh(data.access_token, data.refresh_token)
-
+        self._save_tokens_to_disk()
         logger.info("Successfully refreshed user access token")
-
-    def _validate_token(self) -> bool:
-        r"""Validate the current access token by making a test API call.
-
-        Returns:
-            bool: True if the token is valid, False otherwise.
-        """
-        import requests
-
-        if not self._user_access_token:
-            return False
-
-        try:
-            # Use a lightweight API call to validate the token
-            url = (
-                f"{self._domain}/open-apis/drive/explorer/v2/root_folder/meta"
-            )
-            headers = {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": f"Bearer {self._user_access_token}",
-            }
-
-            response = requests.get(url, headers=headers, timeout=10)
-            result = response.json()
-
-            # Code 0 means success, token is valid
-            if result.get("code") == 0:
-                logger.debug("Token validation successful")
-                return True
-
-            # Check for auth-related error codes
-            error_code = result.get("code")
-            error_msg = result.get("msg", "")
-            logger.warning(
-                f"Token validation failed: {error_code} - {error_msg}"
-            )
-            return False
-
-        except Exception as e:
-            logger.warning(f"Token validation request failed: {e}")
-            return False
 
     def _authenticate(
         self,
-        port: int = 9000,
         timeout: int = 120,
     ) -> None:
         r"""Authenticate with Lark, using cached tokens if available.
 
         This method attempts authentication in the following order:
         1. Load cached tokens from disk
-        2. If cached token is expired, near expiry, or missing expiry info,
-           attempt to refresh it
-        3. Validate token against API if expiry info is missing
-        4. If no valid cached tokens, start browser OAuth flow
+        2. If cached token is expired or near expiry, attempt to refresh it
+        3. If no valid cached tokens, start browser OAuth flow
 
         Raises:
             RuntimeError: If authentication fails.
@@ -559,58 +515,37 @@ class LarkToolkit(BaseToolkit):
                     self._user_access_token = data.get('user_access_token')
                     self._refresh_token = data.get('refresh_token')
                     self._token_expires_at = data.get('expires_at')
-                    cached_token_uri = data.get('token_uri')
-                    if cached_token_uri:
-                        self._token_uri = cached_token_uri
 
-                    if self._user_access_token:
+                    if self._user_access_token and self._token_expires_at:
                         logger.info("Loaded cached Lark tokens")
                         token_loaded = True
                 except Exception as e:
                     logger.warning(f"Failed to load cached tokens: {e}")
 
-        if token_loaded:
-            # Check if token is expired or will expire soon (within 5 minutes)
-            token_needs_refresh = False
-            token_expiry_unknown = False
-
-            if self._token_expires_at:
-                time_remaining = self._token_expires_at - time.time()
-                if time_remaining < 300:  # Less than 5 minutes
-                    token_needs_refresh = True
-                    logger.info(
-                        f"Token expires in {time_remaining:.0f}s, "
-                        "refreshing..."
-                    )
+        if token_loaded and self._token_expires_at is not None:
+            # Check if token is expired or will expire soon
+            # user_access_token has 2-hour lifetime, use 60s buffer
+            time_remaining = self._token_expires_at - time.time()
+            if time_remaining < 60:
+                logger.info(
+                    f"Token expires in {time_remaining:.0f}s, refreshing..."
+                )
+                if self._refresh_token:
+                    try:
+                        self._refresh_user_token()
+                        logger.info("Successfully refreshed cached tokens")
+                        return
+                    except Exception as e:
+                        logger.warning(f"Token refresh failed: {e}")
+                        # Fall through to browser auth
             else:
-                # No expiry info - validate token against API
-                token_expiry_unknown = True
-                logger.info("Token expiry unknown, validating against API...")
-
-            # If expiry is unknown, validate the token first
-            if token_expiry_unknown:
-                if self._validate_token():
-                    logger.info("Cached token is still valid")
-                    return
-                else:
-                    # Token is invalid, try to refresh
-                    token_needs_refresh = True
-                    logger.info("Cached token invalid, attempting refresh...")
-
-            if token_needs_refresh and self._refresh_token:
-                try:
-                    self._refresh_user_token()
-                    logger.info("Successfully refreshed cached tokens")
-                    return
-                except Exception as e:
-                    logger.warning(f"Token refresh failed: {e}")
-                    # Fall through to browser auth
-            elif not token_needs_refresh:
                 logger.info("Using cached access token")
                 return
 
         logger.info("No valid cached tokens, starting browser authentication")
-        self._run_browser_oauth(port=port, timeout=timeout, open_browser=True)
+        self._run_browser_oauth(
+            port=self._oauth_port, timeout=timeout, open_browser=True
+        )
 
     def _run_browser_oauth(
         self,
@@ -637,13 +572,12 @@ class LarkToolkit(BaseToolkit):
 
         if open_browser:
             logger.info("Opening browser for Lark authentication...")
-            print("\nOpening browser for Lark authentication...")
-            print("If the browser doesn't open, visit this URL manually:")
-            print(f"\n{auth_url}\n")
+            logger.info(f"If browser doesn't open, visit: {auth_url}")
             webbrowser.open(auth_url)
         else:
-            print("\nOpen this URL in your browser to authenticate:")
-            print(f"\n{auth_url}\n")
+            logger.info(
+                f"Open this URL in your browser to authenticate: {auth_url}"
+            )
 
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -652,8 +586,10 @@ class LarkToolkit(BaseToolkit):
         try:
             server.bind(("localhost", port))
             server.listen(1)
-            logger.info(f"Waiting for OAuth callback on port {port}...")
-            print(f"Waiting for authentication (timeout: {timeout}s)...")
+            logger.info(
+                f"Waiting for OAuth callback on port {port} "
+                f"(timeout: {timeout}s)..."
+            )
 
             conn, addr = server.accept()
             conn.settimeout(10)
@@ -728,11 +664,7 @@ class LarkToolkit(BaseToolkit):
             )
 
         logger.info("Exchanging authorization code for tokens...")
-        print("Authentication received! Exchanging code for tokens...")
-
         self._exchange_code_for_token(received_code)
-
-        print("Successfully authenticated with Lark!")
         logger.info("OAuth authentication completed successfully")
 
     # =========================================================================
@@ -768,8 +700,6 @@ class LarkToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Headers dict with Content-Type and Authorization.
         """
-        import json
-
         from lark_oapi.api.auth.v3 import (
             InternalTenantAccessTokenRequest,
             InternalTenantAccessTokenRequestBody,
@@ -858,12 +788,12 @@ class LarkToolkit(BaseToolkit):
                 }
 
             doc = result.get("data", {}).get("document", {})
-            domain = "feishu" if "feishu" in self._domain else "larksuite"
+            base_url = "feishu.cn" if self._use_feishu else "larksuite.com"
             return {
                 "document_id": doc.get("document_id"),
                 "title": doc.get("title"),
                 "revision_id": doc.get("revision_id"),
-                "url": f"https://{domain}.com/docx/{doc.get('document_id')}",
+                "url": f"https://{base_url}/docx/{doc.get('document_id')}",
                 "folder_token": folder_token,
             }
 
@@ -1680,22 +1610,19 @@ class LarkToolkit(BaseToolkit):
                 # Add URL for easy access
                 file_type = file.get("type")
                 file_token = file.get("token")
+                base_url = "feishu.cn" if self._use_feishu else "larksuite.com"
                 if file_type == "folder":
                     file_info["url"] = (
-                        f"https://larksuite.com/drive/folder/{file_token}"
+                        f"https://{base_url}/drive/folder/{file_token}"
                     )
                 elif file_type == "docx":
-                    file_info["url"] = (
-                        f"https://larksuite.com/docx/{file_token}"
-                    )
+                    file_info["url"] = f"https://{base_url}/docx/{file_token}"
                 elif file_type == "sheet":
                     file_info["url"] = (
-                        f"https://larksuite.com/sheets/{file_token}"
+                        f"https://{base_url}/sheets/{file_token}"
                     )
                 elif file_type == "bitable":
-                    file_info["url"] = (
-                        f"https://larksuite.com/base/{file_token}"
-                    )
+                    file_info["url"] = f"https://{base_url}/base/{file_token}"
 
                 files.append(file_info)
 
