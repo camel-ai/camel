@@ -84,15 +84,15 @@ class IMAPMailToolkit(BaseToolkit):
         r"""Initialize the IMAP Mail Toolkit.
 
         Args:
-            imap_server: IMAP server hostname
-            imap_port: IMAP server port (default: 993)
-            smtp_server: SMTP server hostname
-            smtp_port: SMTP server port (default: 587)
-            username: Email username
-            password: Email password
-            timeout: Timeout for operations
+            imap_server: IMAP server hostname (default: :obj:`None`)
+            imap_port: IMAP server port (default: :obj:`993`)
+            smtp_server: SMTP server hostname (default: :obj:`None`)
+            smtp_port: SMTP server port (default: :obj:`587`)
+            username: Email username (default: :obj:`None`)
+            password: Email password (default: :obj:`None`)
+            timeout: Timeout for operations (default: :obj:`None`)
             connection_idle_timeout: Max idle time before auto-close (default:
-            300s)
+            :obj:`300` seconds)
         """
         super().__init__(timeout=timeout)
 
@@ -243,14 +243,15 @@ class IMAPMailToolkit(BaseToolkit):
 
         Args:
             folder (Literal["INBOX"]): Email folder to search in
-                (default: "INBOX")
+                (default: :obj:`"INBOX"`)
             limit (int): Maximum number of emails to retrieve
-                (default: 10)
+                (default: :obj:`10`)
             unread_only (bool): If True, only fetch unread
-                emails (default: False)
+                emails (default: :obj:`False`)
             sender_filter (str, optional): Filter emails by
-                sender email address
+                sender email address (default: :obj:`None`)
             subject_filter (str, optional): Filter emails by subject content
+                (default: :obj:`None`)
 
         Returns:
             List[Dict]: List of email dictionaries with metadata
@@ -364,7 +365,7 @@ class IMAPMailToolkit(BaseToolkit):
         Args:
             email_id (str): ID of the email to retrieve
             folder (Literal["INBOX"]): Folder containing the email
-                (default: "INBOX")
+                (default: :obj:`"INBOX"`)
 
         Returns:
             Dict: Email dictionary with complete metadata
@@ -477,8 +478,10 @@ class IMAPMailToolkit(BaseToolkit):
             logger.info(
                 "Email sent successfully to %s", ", ".join(to_recipients)
             )
-            return f"Email sent successfully. To recipients: " \
-                   f"{', '.join(to_recipients)}"
+            return (
+                f"Email sent successfully. To recipients: "
+                f"{', '.join(to_recipients)}"
+            )
 
         except (ConnectionError, smtplib.SMTPException) as e:
             logger.error("Error sending email: %s", e)
@@ -497,8 +500,9 @@ class IMAPMailToolkit(BaseToolkit):
             original_email_id (str): ID of the email to reply to
             reply_body (str): Reply message body
             folder (Literal["INBOX"]): Folder containing the original
-                email (default: "INBOX")
+                email (default: :obj:`"INBOX"`)
             html_body (str, optional): HTML version of reply body
+                (default: :obj:`None`)
 
         Returns:
             str: Success message
@@ -550,7 +554,7 @@ class IMAPMailToolkit(BaseToolkit):
             email_id (str): ID of the email to move
             target_folder (str): Destination folder name
             source_folder (Literal["INBOX"]): Source folder name
-                (default: "INBOX")
+                (default: :obj:`"INBOX"`)
 
         Returns:
             str: Success message
@@ -594,9 +598,9 @@ class IMAPMailToolkit(BaseToolkit):
         Args:
             email_id (str): ID of the email to delete
             folder (Literal["INBOX"]): Folder containing the email
-                (default: "INBOX")
+                (default: :obj:`"INBOX"`)
             permanent (bool): If True, permanently
-                delete the email (default: False)
+                delete the email (default: :obj:`False`)
 
         Returns:
             str: Success message
