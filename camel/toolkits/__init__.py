@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # ruff: noqa: I001
 from .function_tool import (
     FunctionTool,
@@ -72,6 +72,7 @@ from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .sql_toolkit import SQLToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
@@ -95,6 +96,8 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
+from .earth_science_toolkit import EarthScienceToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -154,6 +157,7 @@ __all__ = [
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
     'SearxNGToolkit',
+    'SQLToolkit',
     'JinaRerankerToolkit',
     'OrigeneToolkit',
     'PulseMCPSearchToolkit',
@@ -180,4 +184,6 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    "OutlookMailToolkit",
+    'EarthScienceToolkit',
 ]
