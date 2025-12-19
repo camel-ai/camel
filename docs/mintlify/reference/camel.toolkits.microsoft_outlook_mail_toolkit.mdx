@@ -28,15 +28,15 @@ Handles GET request and extracts authorization code.
 def log_message(self, format, *args):
 ```
 
-<a id="camel.toolkits.microsoft_outlook_mail_toolkit.AsyncCustomAzureCredential"></a>
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential"></a>
 
-## AsyncCustomAzureCredential
+## CustomAzureCredential
 
 ```python
-class AsyncCustomAzureCredential:
+class CustomAzureCredential:
 ```
 
-Creates an async Azure credential to pass into MSGraph client.
+Creates a sync Azure credential to pass into MSGraph client.
 
 Implements Azure credential interface with automatic token refresh using
 a refresh token. Updates the refresh token file whenever Microsoft issues
@@ -51,7 +51,7 @@ a new refresh token during the refresh flow.
 - **scopes** (List[str]): List of OAuth permission scopes.
 - **refresh_token_file_path** (Optional[Path]): File path of json file with refresh token.
 
-<a id="camel.toolkits.microsoft_outlook_mail_toolkit.AsyncCustomAzureCredential.__init__"></a>
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential.__init__"></a>
 
 ### __init__
 
@@ -67,7 +67,15 @@ def __init__(
 ):
 ```
 
-<a id="camel.toolkits.microsoft_outlook_mail_toolkit.AsyncCustomAzureCredential._save_refresh_token"></a>
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential._refresh_access_token"></a>
+
+### _refresh_access_token
+
+```python
+def _refresh_access_token(self):
+```
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential._save_refresh_token"></a>
 
 ### _save_refresh_token
 
@@ -80,6 +88,23 @@ Saves the refresh token to file.
 **Parameters:**
 
 - **refresh_token** (str): The refresh token to save.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.CustomAzureCredential.get_token"></a>
+
+### get_token
+
+```python
+def get_token(self, *args, **kwargs):
+```
+
+Gets a valid AccessToken object for msgraph (sync).
+
+Called by Microsoft Graph SDK when making API requests.
+Automatically refreshes the token if expired.
+
+**Returns:**
+
+  AccessToken: Azure AccessToken with token and expiration.
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit"></a>
 
@@ -206,7 +231,7 @@ def _authenticate_using_refresh_token(self):
 
 **Returns:**
 
-  _RefreshableCredential: Credential with auto-refresh capability.
+  CustomAzureCredential: Credential with auto-refresh capability.
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._authenticate_using_browser"></a>
 
@@ -218,7 +243,7 @@ def _authenticate_using_browser(self):
 
 **Returns:**
 
-  AsyncCustomAzureCredential or AuthorizationCodeCredential :
+  CustomAzureCredential or AuthorizationCodeCredential :
 Credential for Microsoft Graph API.
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_authorization_code_via_browser"></a>
@@ -268,7 +293,7 @@ def _authenticate(self):
 
 **Returns:**
 
-  AuthorizationCodeCredential or AsyncCustomAzureCredential
+  AuthorizationCodeCredential or CustomAzureCredential
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_graph_client"></a>
 
@@ -345,7 +370,7 @@ Creates Microsoft Graph FileAttachment objects from file paths.
 ### _create_recipients
 
 ```python
-def _create_recipients(self, email_list: Optional[List[str]]):
+def _create_recipients(self, email_list: List[str]):
 ```
 
 Creates Microsoft Graph Recipient objects from email addresses.
@@ -355,7 +380,7 @@ name-email format ("John Doe `<email@example.com>`").
 
 **Parameters:**
 
-- **email_list** (Optional[List[str]]): List of email addresses, which can include display names.
+- **email_list** (List[str]): List of email addresses, which can include display names.
 
 **Returns:**
 
@@ -402,6 +427,172 @@ optional to allow partial updates when modifying existing messages.
   message.Message: A Microsoft Graph message object with only the
 provided fields set.
 
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_send_email"></a>
+
+### outlook_send_email
+
+```python
+def outlook_send_email(
+    self,
+    to_email: List[str],
+    subject: str,
+    content: str,
+    is_content_html: bool = False,
+    attachments: Optional[List[str]] = None,
+    cc_recipients: Optional[List[str]] = None,
+    bcc_recipients: Optional[List[str]] = None,
+    reply_to: Optional[List[str]] = None,
+    save_to_sent_items: bool = True
+):
+```
+
+Sends an email via Microsoft Outlook.
+
+**Parameters:**
+
+- **to_email** (List[str]): List of recipient email addresses.
+- **subject** (str): The subject of the email.
+- **content** (str): The body content of the email.
+- **is_content_html** (bool): If True, the content type will be set to HTML; otherwise, it will be Text. (default: :obj:`False`)
+- **attachments** (Optional[List[str]]): List of file paths to attach to the email. (default: :obj:`None`)
+- **cc_recipients** (Optional[List[str]]): List of CC recipient email addresses. (default: :obj:`None`)
+- **bcc_recipients** (Optional[List[str]]): List of BCC recipient email addresses. (default: :obj:`None`)
+- **reply_to** (Optional[List[str]]): List of email addresses that will receive replies when recipients use the "Reply" button. This allows replies to be directed to different addresses than the sender's address. (default: :obj:`None`)
+- **save_to_sent_items** (bool): Whether to save the email to sent items. (default: :obj:`True`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the email
+sending operation.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_create_draft_email"></a>
+
+### outlook_create_draft_email
+
+```python
+def outlook_create_draft_email(
+    self,
+    to_email: List[str],
+    subject: str,
+    content: str,
+    is_content_html: bool = False,
+    attachments: Optional[List[str]] = None,
+    cc_recipients: Optional[List[str]] = None,
+    bcc_recipients: Optional[List[str]] = None,
+    reply_to: Optional[List[str]] = None
+):
+```
+
+Creates a draft email in Microsoft Outlook.
+
+**Parameters:**
+
+- **to_email** (List[str]): List of recipient email addresses.
+- **subject** (str): The subject of the email.
+- **content** (str): The body content of the email.
+- **is_content_html** (bool): If True, the content type will be set to HTML; otherwise, it will be Text. (default: :obj:`False`)
+- **attachments** (Optional[List[str]]): List of file paths to attach to the email. (default: :obj:`None`)
+- **cc_recipients** (Optional[List[str]]): List of CC recipient email addresses. (default: :obj:`None`)
+- **bcc_recipients** (Optional[List[str]]): List of BCC recipient email addresses. (default: :obj:`None`)
+- **reply_to** (Optional[List[str]]): List of email addresses that will receive replies when recipients use the "Reply" button. This allows replies to be directed to different addresses than the sender's address. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the draft
+email creation operation, including the draft ID.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_send_draft_email"></a>
+
+### outlook_send_draft_email
+
+```python
+def outlook_send_draft_email(self, draft_id: str):
+```
+
+Sends a draft email via Microsoft Outlook.
+
+**Parameters:**
+
+- **draft_id** (str): The ID of the draft email to send. Can be obtained either by creating a draft via `create_draft_email()` or from the 'message_id' field in messages returned by `list_messages()`.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the draft
+email sending operation.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_delete_email"></a>
+
+### outlook_delete_email
+
+```python
+def outlook_delete_email(self, message_id: str):
+```
+
+Deletes an email from Microsoft Outlook.
+
+**Parameters:**
+
+- **message_id** (str): The ID of the email to delete. Can be obtained from the 'message_id' field in messages returned by `list_messages()`.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the email
+deletion operation.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_move_message_to_folder"></a>
+
+### outlook_move_message_to_folder
+
+```python
+def outlook_move_message_to_folder(self, message_id: str, destination_folder_id: str):
+```
+
+Moves an email to a specified folder in Microsoft Outlook.
+
+**Parameters:**
+
+- **message_id** (str): The ID of the email to move. Can be obtained from the 'message_id' field in messages returned by `list_messages()`.
+- **destination_folder_id** (str): The destination folder ID, or a well-known folder name. Supported well-known folder names are ("inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive", "outbox").
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the email
+move operation.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_get_attachments"></a>
+
+### outlook_get_attachments
+
+```python
+def outlook_get_attachments(
+    self,
+    message_id: str,
+    metadata_only: bool = True,
+    include_inline_attachments: bool = False,
+    save_path: Optional[str] = None
+):
+```
+
+Retrieves attachments from a Microsoft Outlook email message.
+
+This method fetches attachments from a specified email message and can
+either return metadata only or download the full attachment content.
+Inline attachments (like embedded images) can optionally be included
+or excluded from the results.
+Also, if a save_path is provided, attachments will be saved to disk.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the email message from which to retrieve attachments. Can be obtained from the 'message_id' field in messages returned by `list_messages()`.
+- **metadata_only** (bool): If True, returns only attachment metadata (name, size, content type, etc.) without downloading the actual file content. If False, downloads the full attachment content. (default: :obj:`True`)
+- **include_inline_attachments** (bool): If True, includes inline attachments (such as embedded images) in the results. If False, filters them out. (default: :obj:`False`)
+- **save_path** (Optional[str]): The local directory path where attachments should be saved. If provided, attachments are saved to disk and the file paths are returned. If None, attachment content is returned as base64-encoded strings (only when metadata_only=False). (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the attachment retrieval
+results
+
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._build_attachment_query"></a>
 
 ### _build_attachment_query
@@ -410,16 +601,29 @@ provided fields set.
 def _build_attachment_query(self):
 ```
 
-Constructs the query configuration for fetching attachments.
-
-**Parameters:**
-
-- **metadata_only** (bool): Whether to fetch only metadata or include content bytes.
-
 **Returns:**
 
   AttachmentsRequestBuilderGetRequestConfiguration: Query config
 for the Graph API request.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._fetch_attachments"></a>
+
+### _fetch_attachments
+
+```python
+def _fetch_attachments(self, message_id: str, request_config: Optional[Any] = None):
+```
+
+Fetches attachments from the Microsoft Graph API.
+
+**Parameters:**
+
+- **message_id** (str): The email message ID.
+- **request_config** (Optional[Any]): The request configuration with query parameters. (default: :obj:`None`)
+
+**Returns:**
+
+  Attachments response from the Graph API.
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._process_attachment"></a>
 
@@ -501,6 +705,201 @@ def _get_recipients(self, recipient_list: Optional[List[Any]]):
 ```
 
 Gets a list of recipients from a recipient list object.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._extract_message_details"></a>
+
+### _extract_message_details
+
+```python
+def _extract_message_details(
+    self,
+    message: Any,
+    return_html_content: bool = False,
+    include_attachments: bool = False,
+    attachment_metadata_only: bool = True,
+    include_inline_attachments: bool = False,
+    attachment_save_path: Optional[str] = None
+):
+```
+
+Extracts detailed information from a message object.
+
+This function processes a message object (either from a list response
+or a direct fetch) and extracts all relevant details. It can
+optionally fetch attachments but does not make additional API calls
+for basic message information.
+
+**Parameters:**
+
+- **message** (Any): The Microsoft Graph message object to extract details from.
+- **return_html_content** (bool): If True and body content type is HTML, returns the raw HTML content without converting it to plain text. If False and body_type is 'text', HTML content will be converted to plain text. (default: :obj:`False`)
+- **include_attachments** (bool): Whether to include attachment information. If True, will make an API call to fetch attachments. (default: :obj:`False`)
+- **attachment_metadata_only** (bool): If True, returns only attachment metadata without downloading content. If False, downloads full attachment content. Only used when include_attachments=True. (default: :obj:`True`)
+- **include_inline_attachments** (bool): If True, includes inline attachments in the results. Only used when include_attachments=True. (default: :obj:`False`)
+- **attachment_save_path** (Optional[str]): Directory path where attachments should be saved. Only used when include_attachments=True and attachment_metadata_only=False. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the message details
+including:
+- Basic info (message_id, subject, from, received_date_time,
+body etc.)
+- Recipients (to_recipients, cc_recipients, bcc_recipients)
+- Attachment information (if requested)
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_get_message"></a>
+
+### outlook_get_message
+
+```python
+def outlook_get_message(
+    self,
+    message_id: str,
+    return_html_content: bool = False,
+    include_attachments: bool = False,
+    attachment_metadata_only: bool = True,
+    include_inline_attachments: bool = False,
+    attachment_save_path: Optional[str] = None
+):
+```
+
+Retrieves a single email message by ID from Microsoft Outlook.
+
+This method fetches a specific email message using its unique
+identifier and returns detailed information including subject, sender,
+recipients, body content, and optionally attachments.
+
+**Parameters:**
+
+- **message_id** (str): The unique identifier of the email message to retrieve. Can be obtained from the 'message_id' field in messages returned by `list_messages()`.
+- **return_html_content** (bool): If True and body content type is HTML, returns the raw HTML content without converting it to plain text. If False and body_type is HTML, content will be converted to plain text. (default: :obj:`False`)
+- **include_attachments** (bool): Whether to include attachment information in the response. (default: :obj:`False`)
+- **attachment_metadata_only** (bool): If True, returns only attachment metadata without downloading content. If False, downloads full attachment content. Only used when include_attachments=True. (default: :obj:`True`)
+- **include_inline_attachments** (bool): If True, includes inline attachments in the results. Only used when include_attachments=True. (default: :obj:`False`)
+- **attachment_save_path** (Optional[str]): Directory path where attachments should be saved. Only used when include_attachments=True and attachment_metadata_only=False. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the message details
+including message_id, subject, from, to_recipients,
+cc_recipients, bcc_recipients, received_date_time,
+sent_date_time, body, body_type, has_attachments, importance,
+is_read, is_draft, body_preview, and optionally attachments.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit._get_messages_from_folder"></a>
+
+### _get_messages_from_folder
+
+```python
+def _get_messages_from_folder(self, folder_id: str, request_config):
+```
+
+Fetches messages from a specific folder.
+
+**Parameters:**
+
+- **folder_id** (str): The folder ID or well-known folder name.
+- **request_config**: The request configuration with query parameters.
+
+**Returns:**
+
+  Messages response from the Graph API, or None if folder not found.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_list_messages"></a>
+
+### outlook_list_messages
+
+```python
+def outlook_list_messages(
+    self,
+    folder_ids: Optional[List[str]] = None,
+    filter_query: Optional[str] = None,
+    order_by: Optional[List[str]] = None,
+    top: int = 10,
+    skip: int = 0,
+    return_html_content: bool = False,
+    include_attachment_metadata: bool = False
+):
+```
+
+Retrieves messages from Microsoft Outlook using Microsoft Graph API.
+
+**Parameters:**
+
+- **folder_ids** (Optional[List[str]]): Folder IDs or well-known names ("inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive", "outbox"). None searches the entire mailbox.
+- **filter_query** (Optional[str]): OData filter for messages.
+
+**Returns:**
+
+  Dict[str, Any]: Dictionary containing messages and
+attachment metadata if requested.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_reply_to_email"></a>
+
+### outlook_reply_to_email
+
+```python
+def outlook_reply_to_email(
+    self,
+    message_id: str,
+    content: str,
+    reply_all: bool = False
+):
+```
+
+Replies to an email in Microsoft Outlook.
+
+**Parameters:**
+
+- **message_id** (str): The ID of the email to reply to.
+- **content** (str): The body content of the reply email.
+- **reply_all** (bool): If True, replies to all recipients of the original email. If False, replies only to the sender. (default: :obj:`False`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the email
+reply operation.
+
+<a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.outlook_update_draft_message"></a>
+
+### outlook_update_draft_message
+
+```python
+def outlook_update_draft_message(
+    self,
+    message_id: str,
+    subject: Optional[str] = None,
+    content: Optional[str] = None,
+    is_content_html: bool = False,
+    to_email: Optional[List[str]] = None,
+    cc_recipients: Optional[List[str]] = None,
+    bcc_recipients: Optional[List[str]] = None,
+    reply_to: Optional[List[str]] = None
+):
+```
+
+Updates an existing draft email message in Microsoft Outlook.
+
+Important: Any parameter provided will completely replace the original
+value. For example, if you want to add a new recipient while keeping
+existing ones, you must pass all recipients (both original and new) in
+the to_email parameter.
+
+**Parameters:**
+
+- **message_id** (str): The ID of the draft message to update.
+- **subject** (Optional[str]): Change the subject of the email. Replaces the original subject completely. (default: :obj:`None`)
+- **content** (Optional[str]): Change the body content of the email. Replaces the original content completely. (default: :obj:`None`)
+- **is_content_html** (bool): Change the content type. If True, sets content type to HTML; if False, sets to plain text. (default: :obj:`False`)
+- **to_email** (Optional[List[str]]): Change the recipient email addresses. Replaces all original recipients completely. (default: :obj:`None`)
+- **cc_recipients** (Optional[List[str]]): Change the CC recipient email addresses. Replaces all original CC recipients completely. (default: :obj:`None`)
+- **bcc_recipients** (Optional[List[str]]): Change the BCC recipient email addresses. Replaces all original BCC recipients completely. (default: :obj:`None`)
+- **reply_to** (Optional[List[str]]): Change the email addresses that will receive replies. Replaces all original reply-to addresses completely. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the result of the update
+operation.
 
 <a id="camel.toolkits.microsoft_outlook_mail_toolkit.OutlookMailToolkit.get_tools"></a>
 
