@@ -477,7 +477,8 @@ class IMAPMailToolkit(BaseToolkit):
             logger.info(
                 "Email sent successfully to %s", ", ".join(to_recipients)
             )
-            return "Email sent successfully. Message ID: Unknown"
+            return f"Email sent successfully. To recipients: " \
+                   f"{', '.join(to_recipients)}"
 
         except (ConnectionError, smtplib.SMTPException) as e:
             logger.error("Error sending email: %s", e)
