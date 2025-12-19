@@ -19,7 +19,8 @@ import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Literal, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -27,6 +28,14 @@ from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
+
+
+# Type aliases for mail operations
+class IMAP_RETURN_STATUS(Enum):
+    r"""IMAP operation return status codes."""
+
+    OK = "OK"
+    NO = "NO"  # according to imap source code
 
 
 @MCPServer()
@@ -224,7 +233,7 @@ class IMAPMailToolkit(BaseToolkit):
 
     def fetch_emails(
         self,
-        folder: str = "INBOX",
+        folder: Literal["INBOX"] = "INBOX",
         limit: int = 10,
         unread_only: bool = False,
         sender_filter: Optional[str] = None,
@@ -233,8 +242,10 @@ class IMAPMailToolkit(BaseToolkit):
         r"""Fetch emails from a folder with optional filtering.
 
         Args:
-            folder (str): Email folder to search in (default: "INBOX")
-            limit (int): Maximum number of emails to retrieve (default: 10)
+            folder (Literal["INBOX"]): Email folder to search in
+                (default: "INBOX")
+            limit (int): Maximum number of emails to retrieve
+                (default: 10)
             unread_only (bool): If True, only fetch unread
                 emails (default: False)
             sender_filter (str, optional): Filter emails by
@@ -264,7 +275,7 @@ class IMAPMailToolkit(BaseToolkit):
             search_string = " ".join(search_criteria)
             status, messages = imap.search(None, search_string)
 
-            if status != "OK":
+            if status != IMAP_RETURN_STATUS.OK.value:
                 raise ConnectionError("Failed to search emails")
 
             email_ids = messages[0].split()
@@ -277,7 +288,11 @@ class IMAPMailToolkit(BaseToolkit):
             for email_id in email_ids:
                 try:
                     status, msg_data = imap.fetch(email_id, "(RFC822)")
-                    if status == "OK" and msg_data and len(msg_data) > 0:
+                    if (
+                        status == IMAP_RETURN_STATUS.OK.value
+                        and msg_data
+                        and len(msg_data) > 0
+                    ):
                         # msg_data is a list of tuples, get the first one
                         msg_tuple = msg_data[0]
                         if (
@@ -339,12 +354,17 @@ class IMAPMailToolkit(BaseToolkit):
             logger.error("Error fetching emails: %s", e)
             raise
 
-    def get_email_by_id(self, email_id: str, folder: str = "INBOX") -> Dict:
+    def get_email_by_id(
+        self,
+        email_id: str,
+        folder: Literal["INBOX"] = "INBOX",
+    ) -> Dict:
         r"""Retrieve a specific email by ID with full metadata.
 
         Args:
             email_id (str): ID of the email to retrieve
-            folder (str): Folder containing the email (default: "INBOX")
+            folder (Literal["INBOX"]): Folder containing the email
+                (default: "INBOX")
 
         Returns:
             Dict: Email dictionary with complete metadata
@@ -354,7 +374,7 @@ class IMAPMailToolkit(BaseToolkit):
             imap.select(folder)
 
             status, msg_data = imap.fetch(email_id, "(RFC822)")
-            if status != "OK":
+            if status != IMAP_RETURN_STATUS.OK.value:
                 raise ConnectionError(f"Failed to fetch email {email_id}")
 
             msg_tuple = msg_data[0]
@@ -467,7 +487,7 @@ class IMAPMailToolkit(BaseToolkit):
         self,
         original_email_id: str,
         reply_body: str,
-        folder: str = "INBOX",
+        folder: Literal["INBOX"] = "INBOX",
         html_body: Optional[str] = None,
     ) -> str:
         r"""Send a reply to an existing email.
@@ -475,7 +495,7 @@ class IMAPMailToolkit(BaseToolkit):
         Args:
             original_email_id (str): ID of the email to reply to
             reply_body (str): Reply message body
-            folder (str): Folder containing the original
+            folder (Literal["INBOX"]): Folder containing the original
                 email (default: "INBOX")
             html_body (str, optional): HTML version of reply body
 
@@ -518,14 +538,18 @@ class IMAPMailToolkit(BaseToolkit):
             raise
 
     def move_email_to_folder(
-        self, email_id: str, target_folder: str, source_folder: str = "INBOX"
+        self,
+        email_id: str,
+        target_folder: str,
+        source_folder: Literal["INBOX"] = "INBOX",
     ) -> str:
         r"""Move an email to a different folder.
 
         Args:
             email_id (str): ID of the email to move
             target_folder (str): Destination folder name
-            source_folder (str): Source folder name (default: "INBOX")
+            source_folder (Literal["INBOX"]): Source folder name
+                (default: "INBOX")
 
         Returns:
             str: Success message
@@ -559,13 +583,17 @@ class IMAPMailToolkit(BaseToolkit):
             raise
 
     def delete_email(
-        self, email_id: str, folder: str = "INBOX", permanent: bool = False
+        self,
+        email_id: str,
+        folder: Literal["INBOX"] = "INBOX",
+        permanent: bool = False,
     ) -> str:
         r"""Delete an email.
 
         Args:
             email_id (str): ID of the email to delete
-            folder (str): Folder containing the email (default: "INBOX")
+            folder (Literal["INBOX"]): Folder containing the email
+                (default: "INBOX")
             permanent (bool): If True, permanently
                 delete the email (default: False)
 
