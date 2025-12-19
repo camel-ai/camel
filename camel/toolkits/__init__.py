@@ -96,6 +96,7 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 
 __all__ = [
@@ -183,5 +184,6 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    "OutlookMailToolkit",
     'EarthScienceToolkit',
 ]
