@@ -239,6 +239,7 @@ class LarkOAuthMixin:
     _app_id: str  # Type hint for app_id from main class
     _client: Any  # Type hint for the Lark client from main class
     _domain: str  # Type hint for domain from main class
+    _token_file_path: Optional[str] = None  # Path to cached token file
 
     def _init_oauth(
         self,
@@ -263,6 +264,67 @@ class LarkOAuthMixin:
         self._refresh_token = refresh_token
         self._oauth_redirect_uri = oauth_redirect_uri
         self._on_token_refresh = on_token_refresh
+
+        # Set up token file path
+        from pathlib import Path
+
+        self._token_file_path = str(Path.home() / '.camel' / 'lark_token.json')
+
+    def _load_cached_tokens(self) -> bool:
+        r"""Load cached tokens from disk.
+
+        Returns:
+            bool: True if valid tokens were loaded, False otherwise.
+        """
+        import json
+        from pathlib import Path
+
+        if self._token_file_path is None:
+            return False
+        token_file = Path(self._token_file_path)
+        if not token_file.exists():
+            return False
+
+        try:
+            with open(token_file, 'r') as f:
+                data = json.load(f)
+
+            self._user_access_token = data.get('user_access_token')
+            self._refresh_token = data.get('refresh_token')
+
+            if self._user_access_token:
+                logger.info("Loaded cached Lark tokens")
+                return True
+            return False
+
+        except Exception as e:
+            logger.warning(f"Failed to load cached tokens: {e}")
+            return False
+
+    def _save_tokens(self) -> None:
+        r"""Save current tokens to disk for future sessions."""
+        import json
+        from pathlib import Path
+
+        if not self._user_access_token or self._token_file_path is None:
+            return
+
+        token_file = Path(self._token_file_path)
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with open(token_file, 'w') as f:
+                json.dump(
+                    {
+                        'user_access_token': self._user_access_token,
+                        'refresh_token': self._refresh_token,
+                    },
+                    f,
+                )
+            os.chmod(token_file, 0o600)
+            logger.info(f"Tokens saved to {token_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save tokens: {e}")
 
     def _get_request_option(self) -> Any:
         r"""Get request options with user access token if available.
@@ -330,15 +392,27 @@ class LarkOAuthMixin:
         #   - drive:file: File operations including folder creation
         #   - docx:document: Full document operations (create, edit, delete)
         #   - docx:document:readonly: Read-only document access
+        #   - im:message: Send messages to users and groups
+        #   - im:message:readonly: Read message history
+        #   - im:chat: Chat operations (create, update)
+        #   - im:chat:readonly: List and read chat information
         #
         # For folder creation (lark_create_folder), ensure both "drive:drive"
         # and "drive:file" are enabled in your app's permissions.
+        #
+        # For reading group chat history (lark_get_chat_history), ensure
+        # "im:message.group_msg:readonly" is enabled.
         scopes = (
             "drive:drive "
             "drive:drive:readonly "
             "drive:file "
             "docx:document "
-            "docx:document:readonly"
+            "docx:document:readonly "
+            "im:message "
+            "im:message:readonly "
+            "im:message.group_msg:readonly "
+            "im:chat "
+            "im:chat:readonly"
         )
         encoded_scopes = quote(scopes, safe="")
 
@@ -406,6 +480,9 @@ class LarkOAuthMixin:
             data = response.data
             self._user_access_token = data.access_token
             self._refresh_token = data.refresh_token
+
+            # Save tokens to disk for future sessions
+            self._save_tokens()
 
             # Notify callback so tokens can be persisted
             if (
@@ -491,6 +568,9 @@ class LarkOAuthMixin:
             self._user_access_token = data.access_token
             self._refresh_token = data.refresh_token
 
+            # Save refreshed tokens to disk
+            self._save_tokens()
+
             # Notify callback so tokens can be persisted
             if (
                 self._on_token_refresh
@@ -547,6 +627,57 @@ class LarkOAuthMixin:
             bool: True if user authentication is active.
         """
         return self._user_access_token is not None
+
+    def _authenticate(
+        self,
+        port: int = 9000,
+        timeout: int = 120,
+    ) -> None:
+        r"""Authenticate with Lark, using cached tokens if available.
+
+        This method is called automatically during initialization. It:
+        1. Tries to load cached tokens from ~/.camel/lark_token.json
+        2. If tokens exist, attempts to refresh them
+        3. If no valid tokens, opens browser for OAuth flow
+
+        Args:
+            port (int): Local port for OAuth callback. (default: 9000)
+            timeout (int): Seconds to wait for login. (default: 120)
+
+        Raises:
+            RuntimeError: If authentication fails.
+        """
+        # Try to load cached tokens first
+        if self._load_cached_tokens():
+            logger.info("Found cached Lark tokens, attempting to refresh...")
+            # Try to refresh the token to ensure it's valid
+            if self._refresh_token:
+                try:
+                    result = self.refresh_user_token()
+                    if "error" not in result:
+                        logger.info("Successfully refreshed cached tokens")
+                        return
+                    logger.warning(
+                        f"Token refresh failed: {result.get('error')}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Token refresh failed: {e}")
+            else:
+                # No refresh token, but we have access token - try using it
+                # It may still be valid
+                logger.info("Using cached access token (no refresh token)")
+                return
+
+        # No valid cached tokens, need browser auth
+        logger.info("No valid cached tokens, starting browser authentication")
+        result = self.authenticate(
+            port=port, timeout=timeout, open_browser=True
+        )
+
+        if "error" in result:
+            raise RuntimeError(
+                f"Lark authentication failed: {result['error']}"
+            )
 
     def authenticate(
         self,
@@ -811,8 +942,12 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
         )
 
         logger.info(f"LarkToolkit initialized with domain: {domain}")
+
+        # Auto-authenticate: use provided token, cached token, or browser OAuth
         if user_access_token:
-            logger.info("Using user access token for authentication")
+            logger.info("Using provided user access token")
+        else:
+            self._authenticate()
 
     def _get_http_headers(self) -> Dict[str, str]:
         r"""Get HTTP headers with appropriate authorization.
@@ -831,6 +966,54 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             # Get tenant access token from the SDK client
             token = self._client._token_manager.get_tenant_access_token()
             headers["Authorization"] = f"Bearer {token}"
+
+        return headers
+
+    def _get_tenant_http_headers(self) -> Dict[str, str]:
+        r"""Get HTTP headers with tenant access token authorization.
+
+        Always uses tenant_access_token regardless of whether user_access_token
+        is available. Use this for bot operations like sending messages.
+
+        Returns:
+            Dict[str, str]: Headers dict with Content-Type and Authorization.
+        """
+        import json
+
+        from lark_oapi.api.auth.v3 import (
+            InternalTenantAccessTokenRequest,
+            InternalTenantAccessTokenRequestBody,
+        )
+
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+
+        # Get tenant access token using the SDK
+        request = (
+            InternalTenantAccessTokenRequest.builder()
+            .request_body(
+                InternalTenantAccessTokenRequestBody.builder()
+                .app_id(self._app_id)
+                .app_secret(self._app_secret)
+                .build()
+            )
+            .build()
+        )
+
+        response = self._client.auth.v3.tenant_access_token.internal(request)
+
+        if response.success():
+            # Parse token from raw response
+            raw_data = json.loads(response.raw.content.decode())
+            token = raw_data.get("tenant_access_token")
+            headers["Authorization"] = f"Bearer {token}"
+        else:
+            logger.error(
+                f"Failed to get tenant access token: {response.code} - "
+                f"{response.msg}"
+            )
+            raise RuntimeError(
+                f"Failed to get tenant access token: {response.msg}"
+            )
 
         return headers
 
@@ -1406,12 +1589,33 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
         import requests
 
         try:
-            # First, get the parent block ID
+            # First, get the block info to find its parent
             block_info = self.lark_get_block(document_id, block_id)
             if "error" in block_info:
                 return block_info
 
             parent_id = block_info.get("parent_id", document_id)
+
+            # Get the parent's children to find the index of our target block
+            children_result = self.lark_get_block_children(
+                document_id, parent_id
+            )
+            if "error" in children_result:
+                return children_result
+
+            # Find the index of the block we want to delete
+            children = children_result.get("children", [])
+            block_index = None
+            for i, child in enumerate(children):
+                if child.get("block_id") == block_id:
+                    block_index = i
+                    break
+
+            if block_index is None:
+                return {
+                    "error": f"Block {block_id} not found in parent",
+                    "code": "BLOCK_NOT_FOUND",
+                }
 
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -1419,13 +1623,28 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             )
             headers = self._get_http_headers()
 
-            # Build request body with start and end index
-            body = {"start_index": 0, "end_index": 1}
+            # Use the correct index for the target block
+            body = {"start_index": block_index, "end_index": block_index + 1}
 
-            response = requests.post(
+            response = requests.delete(
                 url, headers=headers, json=body, timeout=30
             )
-            result = response.json()
+
+            # Handle non-JSON responses
+            try:
+                result = response.json()
+            except Exception as json_err:
+                logger.error(
+                    f"Failed to parse delete response: {json_err}, "
+                    f"status={response.status_code}, "
+                    f"body={response.text[:500]}"
+                )
+                return {
+                    "error": (
+                        f"Invalid response from API: {response.text[:200]}"
+                    ),
+                    "status_code": response.status_code,
+                }
 
             if result.get("code") != 0:
                 logger.error(
@@ -1829,6 +2048,443 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             logger.error(f"Error creating folder: {e}")
             return {"error": f"Error creating folder: {e!s}"}
 
+    # =========================================================================
+    # Messaging Operations
+    # =========================================================================
+
+    def lark_send_message(
+        self,
+        receive_id: str,
+        content: str,
+        receive_id_type: Literal[
+            "open_id", "user_id", "union_id", "email", "chat_id"
+        ] = "open_id",
+    ) -> Dict[str, Any]:
+        r"""Sends a text message to a user or group chat.
+
+        Use this method to send direct messages (DMs) to individual users or
+        messages to group chats. For DMs, use the user's open_id, user_id,
+        union_id, or email. For group messages, use the chat_id.
+
+        Args:
+            receive_id (str): The recipient identifier. This can be a user ID
+                (for DMs) or a chat ID (for group messages).
+            content (str): The text message content to send.
+            receive_id_type (str): The type of receive_id being used:
+                - "open_id": User's open ID (default, recommended for DMs)
+                - "user_id": User's user ID
+                - "union_id": User's union ID (for cross-app identification)
+                - "email": User's email address
+                - "chat_id": Group chat ID (for group messages)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - message_id: The unique identifier of the sent message
+                - chat_id: The chat ID where the message was sent
+                - create_time: Timestamp when the message was created
+
+        Example:
+            >>> # Send DM to a user by open_id
+            >>> toolkit.lark_send_message(
+            ...     receive_id="ou_xxx",
+            ...     content="Hello!",
+            ...     receive_id_type="open_id"
+            ... )
+            >>> # Send message to a group chat
+            >>> toolkit.lark_send_message(
+            ...     receive_id="oc_xxx",
+            ...     content="Hello team!",
+            ...     receive_id_type="chat_id"
+            ... )
+        """
+        import json
+
+        import requests
+
+        try:
+            url = f"{self._domain}/open-apis/im/v1/messages"
+            headers = self._get_tenant_http_headers()
+            params = {"receive_id_type": receive_id_type}
+
+            body = {
+                "receive_id": receive_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": content}),
+            }
+
+            response = requests.post(
+                url, headers=headers, params=params, json=body, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to send message: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to send message: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {})
+            return {
+                "message_id": data.get("message_id"),
+                "chat_id": data.get("chat_id"),
+                "create_time": data.get("create_time"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error sending message: {e}")
+            return {"error": f"Error sending message: {e!s}"}
+
+    def lark_list_chats(
+        self,
+        page_size: int = 50,
+        page_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Lists chats and groups that the user belongs to.
+
+        Use this method to discover available chats and obtain chat_id values
+        for sending group messages with lark_send_message().
+
+        Args:
+            page_size (int): Number of chats to return per page (max 100).
+                (default: 50)
+            page_token (Optional[str]): Token for pagination. Use the
+                page_token from previous response to get next page.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - items: List of chat objects with chat_id, name, avatar,
+                    owner_id, chat_type (p2p or group)
+                - has_more: Whether there are more chats to fetch
+                - page_token: Token to fetch the next page
+
+        Example:
+            >>> chats = toolkit.lark_list_chats()
+            >>> for chat in chats["items"]:
+            ...     print(f"{chat['name']}: {chat['chat_id']}")
+        """
+        import requests
+
+        try:
+            url = f"{self._domain}/open-apis/im/v1/chats"
+            headers = self._get_tenant_http_headers()
+
+            params: Dict[str, Any] = {"page_size": page_size}
+            if page_token:
+                params["page_token"] = page_token
+
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to list chats: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to list chats: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {})
+            items = []
+            chat_list = data.get("items", []) or []
+            for chat in chat_list:
+                chat_info = {
+                    "chat_id": chat.get("chat_id"),
+                    "name": chat.get("name"),
+                    "avatar": chat.get("avatar"),
+                    "owner_id": chat.get("owner_id"),
+                    "chat_type": chat.get("chat_type"),
+                    "description": chat.get("description"),
+                }
+                items.append(chat_info)
+
+            return {
+                "items": items,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error listing chats: {e}")
+            return {"error": f"Error listing chats: {e!s}"}
+
+    def lark_get_chat(
+        self,
+        chat_id: str,
+    ) -> Dict[str, Any]:
+        r"""Gets detailed information about a specific chat.
+
+        Args:
+            chat_id (str): The unique identifier of the chat.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing chat details:
+                - chat_id: The chat ID
+                - name: The chat name
+                - description: The chat description
+                - owner_id: The owner's user ID
+                - chat_type: Type of chat (p2p or group)
+                - member_count: Number of members in the chat
+                - avatar: Chat avatar URL
+        """
+        import requests
+
+        try:
+            url = f"{self._domain}/open-apis/im/v1/chats/{chat_id}"
+            headers = self._get_tenant_http_headers()
+
+            response = requests.get(url, headers=headers, timeout=30)
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to get chat: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to get chat: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {})
+            return {
+                "chat_id": data.get("chat_id"),
+                "name": data.get("name"),
+                "description": data.get("description"),
+                "owner_id": data.get("owner_id"),
+                "chat_type": data.get("chat_type"),
+                "member_count": data.get("user_count"),
+                "avatar": data.get("avatar"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting chat: {e}")
+            return {"error": f"Error getting chat: {e!s}"}
+
+    def lark_get_chat_messages(
+        self,
+        container_id: str,
+        page_size: int = 50,
+        page_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Gets message history from a chat.
+
+        Retrieves messages from a specific chat in reverse chronological order
+        (newest first).
+
+        Args:
+            container_id (str): The chat ID to retrieve messages from.
+            page_size (int): Number of messages to return per page (max 50).
+                (default: 50)
+            page_token (Optional[str]): Token for pagination. Use the
+                page_token from previous response to get next page.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - items: List of message objects with message_id, msg_type,
+                    content, sender_id, create_time
+                - has_more: Whether there are more messages to fetch
+                - page_token: Token to fetch the next page
+
+        Example:
+            >>> messages = toolkit.lark_get_chat_messages(chat_id="oc_xxx")
+            >>> for msg in messages["items"]:
+            ...     print(f"{msg['sender_id']}: {msg['content']}")
+        """
+        import requests
+
+        try:
+            url = f"{self._domain}/open-apis/im/v1/messages"
+            headers = self._get_tenant_http_headers()
+
+            params: Dict[str, Any] = {
+                "container_id_type": "chat",
+                "container_id": container_id,
+                "page_size": page_size,
+            }
+            if page_token:
+                params["page_token"] = page_token
+
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to get chat messages: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to get messages: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {})
+            items = []
+            message_list = data.get("items", []) or []
+            for msg in message_list:
+                # Extract sender info
+                sender = msg.get("sender", {})
+                sender_id = sender.get("id") if sender else None
+
+                # Parse message content
+                content = msg.get("body", {}).get("content", "")
+
+                msg_info = {
+                    "message_id": msg.get("message_id"),
+                    "msg_type": msg.get("msg_type"),
+                    "content": content,
+                    "sender_id": sender_id,
+                    "sender_type": sender.get("sender_type")
+                    if sender
+                    else None,
+                    "create_time": msg.get("create_time"),
+                    "chat_id": msg.get("chat_id"),
+                }
+                items.append(msg_info)
+
+            return {
+                "items": items,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting chat messages: {e}")
+            return {"error": f"Error getting chat messages: {e!s}"}
+
+    def lark_get_chat_history(
+        self,
+        container_id: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        sort_type: str = "ByCreateTimeDesc",
+        page_size: int = 50,
+        page_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Gets chat history with time filtering and sorting options.
+
+        This method retrieves message history from a chat with additional
+        filtering options compared to lark_get_chat_messages(). Supports
+        time-based filtering and sort order control.
+
+        Requires the bot to be a member of the chat.
+
+        API Reference: https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/list
+
+        Args:
+            container_id (str): The chat ID to retrieve messages from.
+            start_time (Optional[str]): Start time filter (Unix timestamp in
+                seconds, e.g., "1609459200"). Messages created after this time.
+            end_time (Optional[str]): End time filter (Unix timestamp in
+                seconds). Messages created before this time.
+            sort_type (str): Sort order for messages. Options:
+                - "ByCreateTimeAsc": Oldest first
+                - "ByCreateTimeDesc": Newest first (default)
+            page_size (int): Number of messages per page (max 50, default 50).
+            page_token (Optional[str]): Token for pagination. Use the
+                page_token from previous response to get next page.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - items: List of message objects with message_id, msg_type,
+                    content, sender_id, sender_type, create_time, chat_id
+                - has_more: Whether there are more messages to fetch
+                - page_token: Token to fetch the next page
+
+        Example:
+            >>> # Get recent messages from a chat (user must be a member)
+            >>> history = toolkit.lark_get_chat_history(container_id="oc_xxx")
+            >>> for msg in history["items"]:
+            ...     print(f"{msg['sender_id']}: {msg['content']}")
+
+            >>> # Get messages from a specific time range
+            >>> history = toolkit.lark_get_chat_history(
+            ...     container_id="oc_xxx",
+            ...     start_time="1609459200",
+            ...     end_time="1609545600",
+            ...     sort_type="ByCreateTimeAsc"
+            ... )
+        """
+        import requests
+
+        try:
+            url = f"{self._domain}/open-apis/im/v1/messages"
+            # Use tenant_access_token (bot auth)
+            headers = self._get_tenant_http_headers()
+
+            params: Dict[str, Any] = {
+                "container_id_type": "chat",
+                "container_id": container_id,
+                "page_size": min(page_size, 50),
+                "sort_type": sort_type,
+            }
+            if start_time:
+                params["start_time"] = start_time
+            if end_time:
+                params["end_time"] = end_time
+            if page_token:
+                params["page_token"] = page_token
+
+            response = requests.get(
+                url, headers=headers, params=params, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to get chat history: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to get history: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {})
+            items = []
+            message_list = data.get("items", []) or []
+            for msg in message_list:
+                # Extract sender info
+                sender = msg.get("sender", {})
+                sender_id = sender.get("id") if sender else None
+
+                # Parse message content (may be JSON string)
+                content = msg.get("body", {}).get("content", "")
+
+                msg_info = {
+                    "message_id": msg.get("message_id"),
+                    "msg_type": msg.get("msg_type"),
+                    "content": content,
+                    "sender_id": sender_id,
+                    "sender_type": sender.get("sender_type")
+                    if sender
+                    else None,
+                    "create_time": msg.get("create_time"),
+                    "chat_id": msg.get("chat_id"),
+                    "update_time": msg.get("update_time"),
+                    "deleted": msg.get("deleted", False),
+                }
+                items.append(msg_info)
+
+            return {
+                "items": items,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting chat history: {e}")
+            return {"error": f"Error getting chat history: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1854,4 +2510,10 @@ class LarkToolkit(LarkOAuthMixin, BaseToolkit):
             FunctionTool(self.lark_update_block),
             FunctionTool(self.lark_delete_block),
             FunctionTool(self.lark_batch_update_blocks),
+            # Messaging operations
+            FunctionTool(self.lark_send_message),
+            FunctionTool(self.lark_list_chats),
+            FunctionTool(self.lark_get_chat),
+            FunctionTool(self.lark_get_chat_messages),
+            FunctionTool(self.lark_get_chat_history),
         ]

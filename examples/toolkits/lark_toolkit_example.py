@@ -11,144 +11,84 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
-Lark Toolkit Example with OAuth Authentication
-
-This example demonstrates how to use the LarkToolkit with OAuth to delete
-a block from a Lark document.
-
-Prerequisites:
-1. Create an app at https://open.larksuite.com/app
-2. Enable OAuth 2.0 in your app settings
-3. Add http://localhost:9000/callback as a redirect URI
-4. Enable document permissions (docx:document, drive:drive)
-5. Set environment variables:
-   - LARK_APP_ID: Your application ID
-   - LARK_APP_SECRET: Your application secret
-
-Usage:
-    python examples/toolkits/lark_toolkit_example.py
-"""
-
-import os
-import time
-
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
 from camel.toolkits import LarkToolkit
+from camel.types import ModelPlatformType, ModelType
 
+# Initialize the LarkToolkit
+# (auto-authenticates using cached tokens or browser)
+# Requires LARK_APP_ID and LARK_APP_SECRET environment variables
+toolkit = LarkToolkit()
 
-def print_result(title: str, result: dict):
-    """Pretty print the result of an operation."""
-    print(f"\n{'='*60}")
-    print(f"{title}")
-    print(f"{'='*60}")
-    if "error" in result:
-        print(f"Error: {result['error']}")
-        if "code" in result:
-            print(f"Code: {result['code']}")
-    else:
-        for key, value in result.items():
-            if isinstance(value, list):
-                print(f"{key}:")
-                for i, item in enumerate(value[:5], 1):  # Show first 5 items
-                    print(f"  {i}. {item}")
-                if len(value) > 5:
-                    print(f"  ... and {len(value) - 5} more items")
-            else:
-                print(f"{key}: {value}")
+# Create the model
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+)
 
+# Create a ChatAgent with the Lark toolkit tools
+agent = ChatAgent(
+    system_message="You are a Lark document assistant.",
+    model=model,
+    tools=toolkit.get_tools(),
+)
 
-def main():
-    """Run the Lark Toolkit example with OAuth authentication."""
-    print("=" * 60)
-    print("Lark Toolkit Example - Delete a Block")
-    print("=" * 60)
+# Example 1: Document operations
+print("=" * 60)
+print("Example 1: Document Operations")
+print("=" * 60)
 
-    # Check environment variables
-    if not os.environ.get("LARK_APP_ID") or not os.environ.get(
-        "LARK_APP_SECRET"
-    ):
-        print("\nPlease set the required environment variables first.")
-        app_id = os.environ.get("LARK_APP_ID")
-        app_secret = os.environ.get("LARK_APP_SECRET")
-        print(f"  LARK_APP_ID: {'Set' if app_id else 'NOT SET'}")
-        print(f"  LARK_APP_SECRET: {'Set' if app_secret else 'NOT SET'}")
-        return
+response = agent.step(
+    "Get my root folder, create a document called 'Weekly Status Report', "
+    "add a heading 'Team Status Update', and show me the final content."
+)
+print(f"Agent response: {response.msgs[0].content}")
 
-    # Initialize toolkit
-    toolkit = LarkToolkit()
+# Example 2: Messaging operations
+print("\n" + "=" * 60)
+print("Example 2: Messaging Operations")
+print("=" * 60)
 
-    # Authenticate
-    print("\nStarting OAuth authentication...")
-    result = toolkit.authenticate(
-        port=9000,
-        timeout=120,
-        open_browser=True,
-    )
+response = agent.step(
+    "List my available chats, then send a message saying 'Hello from CAMEL!' "
+    "to the first group chat you find."
+)
+print(f"Agent response: {response.msgs[0].content}")
 
-    if "error" in result:
-        print(f"\nAuthentication failed: {result['error']}")
-        return
+"""
+==========================================================================
+Example 1 output:
 
-    print("\nAuthentication successful!")
+I've completed all the tasks. Here's a summary:
 
-    # Get root folder token
-    result = toolkit.lark_get_root_folder_token()
-    root_folder_token = result.get("token") if "error" not in result else None
+1. **Root Folder**: Retrieved your root folder token.
 
-    # Create a document to work with
-    print("\nCreating a test document...")
-    result = toolkit.lark_create_document(
-        title="CAMEL Delete Block Demo",
-        folder_token=root_folder_token,
-    )
+2. **Document Created**: Created a new document called "Weekly Status Report"
+   - Document URL: https://xxx.larksuite.com/docx/xxx
 
-    if "error" in result:
-        print(f"\nFailed to create document: {result['error']}")
-        return
+3. **Heading Added**: Added the heading "Team Status Update" to the document.
 
-    doc_id = result["document_id"]
-    print(f"Document created! ID: {doc_id}")
+4. **Final Content**: The document now contains:
+   - Title: Weekly Status Report
+   - Heading: Team Status Update
 
-    time.sleep(1)
+You can access your new document using the link above.
 
-    # Get root block ID
-    result = toolkit.lark_list_document_blocks(
-        document_id=doc_id, page_size=50
-    )
-    root_block_id = None
-    if result.get("blocks"):
-        root_block_id = result["blocks"][0]["block_id"]
+==========================================================================
+Example 2 output:
 
-    # Create a block to delete
-    print("\nCreating a block to delete...")
-    result = toolkit.lark_create_block(
-        document_id=doc_id,
-        block_type="text",
-        content="This block will be deleted.",
-        parent_block_id=root_block_id,
-    )
-    print_result("Created Block", result)
+I've completed the messaging tasks:
 
-    block_to_delete = result.get("block_id")
+1. **Listed Chats**: Found 3 chats you belong to:
+   - "Engineering Team" (group)
+   - "Project Alpha" (group)
+   - "John Doe" (p2p)
 
-    if block_to_delete:
-        # =====================================================================
-        # Delete a block
-        # =====================================================================
-        print("\n\nDELETE A BLOCK")
-        print("-" * 40)
-        print(f"Deleting block: {block_to_delete}")
+2. **Message Sent**: Successfully sent "Hello from CAMEL!"
+   to "Engineering Team"
+   - Message ID: om_xxx
+   - Chat ID: oc_xxx
 
-        result = toolkit.lark_delete_block(
-            document_id=doc_id, block_id=block_to_delete
-        )
-        print_result("Deleted Block", result)
-
-    print("\n" + "=" * 60)
-    print("EXAMPLE COMPLETED!")
-    print("=" * 60)
-    print(f"\nDocument URL: https://larksuite.com/docx/{doc_id}")
-
-
-if __name__ == "__main__":
-    main()
+==========================================================================
+"""
