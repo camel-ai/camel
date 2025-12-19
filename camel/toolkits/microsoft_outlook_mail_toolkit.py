@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import asyncio
 import json
 import os
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -64,8 +64,8 @@ class RedirectHandler(BaseHTTPRequestHandler):
         pass
 
 
-class AsyncCustomAzureCredential:
-    """Creates an async Azure credential to pass into MSGraph client.
+class CustomAzureCredential:
+    """Creates a sync Azure credential to pass into MSGraph client.
 
     Implements Azure credential interface with automatic token refresh using
     a refresh token. Updates the refresh token file whenever Microsoft issues
@@ -99,10 +99,10 @@ class AsyncCustomAzureCredential:
 
         self._access_token = None
         self._expires_at = 0
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
         self._debug_claims_logged = False
 
-    async def _refresh_access_token(self):
+    def _refresh_access_token(self):
         """Refreshes the access token using the refresh token.
 
         Requests a new access token from Microsoft's token endpoint.
@@ -112,8 +112,6 @@ class AsyncCustomAzureCredential:
         Raises:
             Exception: If token refresh fails or returns an error.
         """
-        import httpx
-
         token_url = (
             f"https://login.microsoftonline.com/{self.tenant_id}"
             f"/oauth2/v2.0/token"
@@ -126,9 +124,8 @@ class AsyncCustomAzureCredential:
             "scope": " ".join(self.scopes),
         }
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(token_url, data=data)
-            result = response.json()
+        response = requests.post(token_url, data=data, timeout=30)
+        result = response.json()
 
         # Raise exception if error in response
         if "error" in result:
@@ -170,8 +167,8 @@ class AsyncCustomAzureCredential:
         except Exception as e:
             logger.warning(f"Failed to save refresh token: {e!s}")
 
-    async def get_token(self, *args, **kwargs):
-        """Gets a valid AccessToken object for msgraph (async).
+    def get_token(self, *args, **kwargs):
+        """Gets a valid AccessToken object for msgraph (sync).
 
         Called by Microsoft Graph SDK when making API requests.
         Automatically refreshes the token if expired.
@@ -188,9 +185,7 @@ class AsyncCustomAzureCredential:
         """
         from azure.core.credentials import AccessToken
 
-        def _maybe_log_token_claims(token: Optional[str]) -> None:
-            if not token:
-                return
+        def _maybe_log_token_claims(token: str) -> None:
             if self._debug_claims_logged:
                 return
             if os.getenv("CAMEL_OUTLOOK_DEBUG_TOKEN_CLAIMS") != "1":
@@ -218,16 +213,13 @@ class AsyncCustomAzureCredential:
         # Check if token needs refresh
         now = int(time.time())
         if now >= self._expires_at:
-            async with self._lock:
+            with self._lock:
                 # Double-check after lock (another thread may have refreshed)
                 if now >= self._expires_at:
-                    await self._refresh_access_token()
+                    self._refresh_access_token()
 
         _maybe_log_token_claims(self._access_token)
         return AccessToken(self._access_token, self._expires_at)
-
-    async def close(self) -> None:
-        return None
 
 
 @MCPServer()
@@ -388,14 +380,14 @@ class OutlookMailToolkit(BaseToolkit):
 
     def _authenticate_using_refresh_token(
         self,
-    ) -> AsyncCustomAzureCredential:
+    ) -> CustomAzureCredential:
         """Authenticates using a saved refresh token.
 
         Loads the refresh token from disk and creates a credential object
         that will automatically refresh access tokens as needed.
 
         Returns:
-            _RefreshableCredential: Credential with auto-refresh capability.
+            CustomAzureCredential: Credential with auto-refresh capability.
 
         Raises:
             ValueError: If refresh token cannot be loaded or is invalid.
@@ -406,7 +398,7 @@ class OutlookMailToolkit(BaseToolkit):
             raise ValueError("No valid refresh token found in file")
 
         # Create credential with automatic refresh capability
-        credentials = AsyncCustomAzureCredential(
+        credentials = CustomAzureCredential(
             client_id=self.client_id,
             client_secret=self.client_secret,
             tenant_id=self.tenant_id,
@@ -425,13 +417,13 @@ class OutlookMailToolkit(BaseToolkit):
         code for tokens, and saves refresh token for future use.
 
         Returns:
-            AsyncCustomAzureCredential or AuthorizationCodeCredential :
+            CustomAzureCredential or AuthorizationCodeCredential :
                 Credential for Microsoft Graph API.
 
         Raises:
             ValueError: If authentication fails or no authorization code.
         """
-        from azure.identity.aio import AuthorizationCodeCredential
+        from azure.identity import AuthorizationCodeCredential
 
         # offline_access scope is needed so the azure credential can refresh
         # internally after access token expires as azure handles it internally
@@ -455,7 +447,7 @@ class OutlookMailToolkit(BaseToolkit):
         refresh_token = token_result.get("refresh_token")
         if refresh_token:
             self._save_token_to_file(refresh_token)
-            credentials = AsyncCustomAzureCredential(
+            credentials = CustomAzureCredential(
                 client_id=self.client_id,
                 client_secret=self.client_secret,
                 tenant_id=self.tenant_id,
@@ -578,12 +570,12 @@ class OutlookMailToolkit(BaseToolkit):
         2. Falls back to browser OAuth if no token or token invalid
 
         Returns:
-            AuthorizationCodeCredential or AsyncCustomAzureCredential
+            AuthorizationCodeCredential or CustomAzureCredential
 
         Raises:
             ValueError: If authentication fails through both methods.
         """
-        from azure.identity.aio import AuthorizationCodeCredential
+        from azure.identity import AuthorizationCodeCredential
 
         try:
             self.tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common")
@@ -596,7 +588,7 @@ class OutlookMailToolkit(BaseToolkit):
                 and self.refresh_token_file_path.exists()
             ):
                 try:
-                    credentials: AsyncCustomAzureCredential = (
+                    credentials: CustomAzureCredential = (
                         self._authenticate_using_refresh_token()
                     )
                     return credentials
@@ -634,8 +626,7 @@ class OutlookMailToolkit(BaseToolkit):
         from msgraph import GraphServiceClient
 
         try:
-            client = GraphServiceClient(credentials=credentials, scopes=scopes)
-            return client
+            return GraphServiceClient(credentials=credentials, scopes=scopes)
         except Exception as e:
             error_msg = f"Failed to create Graph client: {e!s}"
             logger.error(error_msg)
@@ -708,11 +699,10 @@ class OutlookMailToolkit(BaseToolkit):
 
                 file_name = os.path.basename(file_path)
 
-                # Create attachment with proper properties
-                attachment_obj = FileAttachment()
-                attachment_obj.odata_type = "#microsoft.graph.fileAttachment"
-                attachment_obj.name = file_name
-                attachment_obj.content_bytes = file_content
+                attachment_obj = FileAttachment(
+                    name=file_name,
+                    content_bytes=file_content,
+                )
 
                 attachment_list.append(attachment_obj)
 
@@ -721,14 +711,14 @@ class OutlookMailToolkit(BaseToolkit):
 
         return attachment_list
 
-    def _create_recipients(self, email_list: Optional[List[str]]) -> List[Any]:
+    def _create_recipients(self, email_list: List[str]) -> List[Any]:
         """Creates Microsoft Graph Recipient objects from email addresses.
 
         Supports both simple email format ("email@example.com") and
         name-email format ("John Doe <email@example.com>").
 
         Args:
-            email_list (Optional[List[str]]): List of email addresses,
+            email_list (List[str]): List of email addresses,
                 which can include display names.
 
         Returns:
@@ -737,9 +727,6 @@ class OutlookMailToolkit(BaseToolkit):
         from email.utils import parseaddr
 
         from msgraph.generated.models import email_address, recipient
-
-        if not email_list:
-            return []
 
         recipients: List[Any] = []
         for email in email_list:
@@ -796,11 +783,11 @@ class OutlookMailToolkit(BaseToolkit):
         """
         from msgraph.generated.models import body_type, item_body, message
 
-        # Determine content type
-        if is_content_html:
-            content_type = body_type.BodyType.Html
-        else:
-            content_type = body_type.BodyType.Text
+        content_type = (
+            body_type.BodyType.Html
+            if is_content_html
+            else body_type.BodyType.Text
+        )
 
         mail_message = message.Message()
 
@@ -839,7 +826,7 @@ class OutlookMailToolkit(BaseToolkit):
 
         return mail_message
 
-    async def outlook_send_email(
+    def outlook_send_email(
         self,
         to_email: List[str],
         subject: str,
@@ -875,7 +862,6 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the result of the email
                 sending operation.
-
         """
         from msgraph.generated.users.item.send_mail.send_mail_post_request_body import (  # noqa: E501
             SendMailPostRequestBody,
@@ -910,7 +896,7 @@ class OutlookMailToolkit(BaseToolkit):
                 save_to_sent_items=save_to_sent_items,
             )
 
-            await self.client.me.send_mail.post(request)
+            self.client.me.send_mail.post(request)
 
             logger.info("Email sent successfully.")
             return {
@@ -923,7 +909,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.exception("Failed to send email")
             return {"error": f"Failed to send email: {e!s}"}
 
-    async def outlook_create_draft_email(
+    def outlook_create_draft_email(
         self,
         to_email: List[str],
         subject: str,
@@ -982,7 +968,7 @@ class OutlookMailToolkit(BaseToolkit):
                 reply_to=reply_to,
             )
 
-            result = await self.client.me.messages.post(request_body)
+            result = self.client.me.messages.post(request_body)
 
             logger.info("Draft email created successfully.")
             return {
@@ -997,7 +983,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_send_draft_email(self, draft_id: str) -> Dict[str, Any]:
+    def outlook_send_draft_email(self, draft_id: str) -> Dict[str, Any]:
         """Sends a draft email via Microsoft Outlook.
 
         Args:
@@ -1009,10 +995,9 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the result of the draft
                 email sending operation.
-
         """
         try:
-            await self.client.me.messages.by_message_id(draft_id).send.post()
+            self.client.me.messages.by_message_id(draft_id).send.post()
 
             logger.info(f"Draft email with ID {draft_id} sent successfully.")
             return {
@@ -1025,7 +1010,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_delete_email(self, message_id: str) -> Dict[str, Any]:
+    def outlook_delete_email(self, message_id: str) -> Dict[str, Any]:
         """Deletes an email from Microsoft Outlook.
 
         Args:
@@ -1036,10 +1021,9 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the result of the email
                 deletion operation.
-
         """
         try:
-            await self.client.me.messages.by_message_id(message_id).delete()
+            self.client.me.messages.by_message_id(message_id).delete()
             logger.info(f"Email with ID {message_id} deleted successfully.")
             return {
                 'status': 'success',
@@ -1051,7 +1035,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_move_message_to_folder(
+    def outlook_move_message_to_folder(
         self, message_id: str, destination_folder_id: str
     ) -> Dict[str, Any]:
         """Moves an email to a specified folder in Microsoft Outlook.
@@ -1068,7 +1052,6 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the result of the email
                 move operation.
-
         """
         from msgraph.generated.users.item.messages.item.move.move_post_request_body import (  # noqa: E501
             MovePostRequestBody,
@@ -1079,7 +1062,7 @@ class OutlookMailToolkit(BaseToolkit):
                 destination_id=destination_folder_id,
             )
             message = self.client.me.messages.by_message_id(message_id)
-            await message.move.post(request_body)
+            message.move.post(request_body)
 
             logger.info(
                 f"Email with ID {message_id} moved to folder "
@@ -1096,7 +1079,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_get_attachments(
+    def outlook_get_attachments(
         self,
         message_id: str,
         metadata_only: bool = True,
@@ -1131,14 +1114,13 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the attachment retrieval
             results
-
         """
         try:
             request_config = None
             if metadata_only:
                 request_config = self._build_attachment_query()
 
-            attachments_response = await self._fetch_attachments(
+            attachments_response = self._fetch_attachments(
                 message_id, request_config
             )
             if not attachments_response:
@@ -1173,11 +1155,7 @@ class OutlookMailToolkit(BaseToolkit):
             return {"error": error_msg}
 
     def _build_attachment_query(self):
-        """Constructs the query configuration for fetching attachments.
-
-        Args:
-            metadata_only (bool): Whether to fetch only metadata or include
-                content bytes.
+        """Constructs the query configuration for fetching attachment metadata.
 
         Returns:
             AttachmentsRequestBuilderGetRequestConfiguration: Query config
@@ -1202,7 +1180,7 @@ class OutlookMailToolkit(BaseToolkit):
             query_parameters=query_params
         )
 
-    async def _fetch_attachments(
+    def _fetch_attachments(
         self, message_id: str, request_config: Optional[Any] = None
     ):
         """Fetches attachments from the Microsoft Graph API.
@@ -1217,10 +1195,10 @@ class OutlookMailToolkit(BaseToolkit):
             Attachments response from the Graph API.
         """
         if not request_config:
-            return await self.client.me.messages.by_message_id(
+            return self.client.me.messages.by_message_id(
                 message_id
             ).attachments.get()
-        return await self.client.me.messages.by_message_id(
+        return self.client.me.messages.by_message_id(
             message_id
         ).attachments.get(request_configuration=request_config)
 
@@ -1242,6 +1220,7 @@ class OutlookMailToolkit(BaseToolkit):
         """
         import base64
 
+        last_modified = getattr(attachment, 'last_modified_date_time', None)
         info = {
             'id': attachment.id,
             'name': attachment.name,
@@ -1249,14 +1228,14 @@ class OutlookMailToolkit(BaseToolkit):
             'size': attachment.size,
             'is_inline': getattr(attachment, 'is_inline', False),
             'last_modified_date_time': (
-                attachment.last_modified_date_time.isoformat()
+                last_modified.isoformat() if last_modified else None
             ),
         }
 
         if not metadata_only:
             content_bytes = getattr(attachment, 'content_bytes', None)
             if content_bytes:
-                # Decode once because bytes contain Base64 text '
+                # Decode once because bytes contain Base64 text
                 decoded_bytes = base64.b64decode(content_bytes)
 
                 if save_path:
@@ -1355,7 +1334,7 @@ class OutlookMailToolkit(BaseToolkit):
             recipients.append({'address': email, 'name': name})
         return recipients
 
-    async def _extract_message_details(
+    def _extract_message_details(
         self,
         message: Any,
         return_html_content: bool = False,
@@ -1401,7 +1380,6 @@ class OutlookMailToolkit(BaseToolkit):
                   body etc.)
                 - Recipients (to_recipients, cc_recipients, bcc_recipients)
                 - Attachment information (if requested)
-
         """
         try:
             # Validate message object
@@ -1454,7 +1432,7 @@ class OutlookMailToolkit(BaseToolkit):
             if not include_attachments:
                 return details
 
-            attachments_info = await self.outlook_get_attachments(
+            attachments_info = self.outlook_get_attachments(
                 message_id=details['message_id'],
                 metadata_only=attachment_metadata_only,
                 include_inline_attachments=include_inline_attachments,
@@ -1468,7 +1446,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def outlook_get_message(
+    def outlook_get_message(
         self,
         message_id: str,
         return_html_content: bool = False,
@@ -1511,19 +1489,16 @@ class OutlookMailToolkit(BaseToolkit):
                 cc_recipients, bcc_recipients, received_date_time,
                 sent_date_time, body, body_type, has_attachments, importance,
                 is_read, is_draft, body_preview, and optionally attachments.
-
         """
         try:
-            message = await self.client.me.messages.by_message_id(
-                message_id
-            ).get()
+            message = self.client.me.messages.by_message_id(message_id).get()
 
             if not message:
                 error_msg = f"Message with ID {message_id} not found"
                 logger.error(error_msg)
                 return {"error": error_msg}
 
-            details = await self._extract_message_details(
+            details = self._extract_message_details(
                 message=message,
                 return_html_content=return_html_content,
                 include_attachments=include_attachments,
@@ -1543,7 +1518,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def _get_messages_from_folder(
+    def _get_messages_from_folder(
         self,
         folder_id: str,
         request_config,
@@ -1558,7 +1533,7 @@ class OutlookMailToolkit(BaseToolkit):
             Messages response from the Graph API, or None if folder not found.
         """
         try:
-            messages = await self.client.me.mail_folders.by_mail_folder_id(
+            messages = self.client.me.mail_folders.by_mail_folder_id(
                 folder_id
             ).messages.get(request_configuration=request_config)
             return messages
@@ -1568,7 +1543,7 @@ class OutlookMailToolkit(BaseToolkit):
             )
             return None
 
-    async def outlook_list_messages(
+    def outlook_list_messages(
         self,
         folder_ids: Optional[List[str]] = None,
         filter_query: Optional[str] = None,
@@ -1638,38 +1613,30 @@ class OutlookMailToolkit(BaseToolkit):
             )
 
             # Build query parameters
-            if order_by:
-                query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
-                    top=top,
-                    skip=skip,
-                    orderby=order_by,
-                )
-            else:
-                query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
-                    top=top,
-                    skip=skip,
-                )
-
-            if filter_query:
-                query_params.filter = filter_query
+            query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(  # noqa: E501
+                top=top,
+                skip=skip,
+                orderby=order_by,
+                filter=filter_query,
+            )
 
             request_config = MessagesRequestBuilder.MessagesRequestBuilderGetRequestConfiguration(  # noqa: E501
                 query_parameters=query_params
             )
             if not folder_ids:
                 # Search entire mailbox in a single API call
-                messages_response = await self.client.me.messages.get(
+                messages_response = self.client.me.messages.get(
                     request_configuration=request_config
                 )
                 all_messages = []
                 if messages_response and messages_response.value:
                     for message in messages_response.value:
-                        details = await self._extract_message_details(
+                        details = self._extract_message_details(
                             message=message,
                             return_html_content=return_html_content,
                             include_attachments=include_attachment_metadata,
                             attachment_metadata_only=True,
-                            include_inline_attachments=True,
+                            include_inline_attachments=False,
                             attachment_save_path=None,
                         )
                         all_messages.append(details)
@@ -1689,7 +1656,7 @@ class OutlookMailToolkit(BaseToolkit):
             # Search specific folders (requires multiple API calls)
             all_messages = []
             for folder_id in folder_ids:
-                messages_response = await self._get_messages_from_folder(
+                messages_response = self._get_messages_from_folder(
                     folder_id=folder_id,
                     request_config=request_config,
                 )
@@ -1699,7 +1666,7 @@ class OutlookMailToolkit(BaseToolkit):
 
                 # Extract details from each message
                 for message in messages_response.value:
-                    details = await self._extract_message_details(
+                    details = self._extract_message_details(
                         message=message,
                         return_html_content=return_html_content,
                         include_attachments=include_attachment_metadata,
@@ -1728,7 +1695,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_reply_to_email(
+    def outlook_reply_to_email(
         self,
         message_id: str,
         content: str,
@@ -1763,10 +1730,10 @@ class OutlookMailToolkit(BaseToolkit):
                 request_body_reply_all = ReplyAllPostRequestBody(
                     comment=content
                 )
-                await message_request.reply_all.post(request_body_reply_all)
+                message_request.reply_all.post(request_body_reply_all)
             else:
                 request_body = ReplyPostRequestBody(comment=content)
-                await message_request.reply.post(request_body)
+                message_request.reply.post(request_body)
 
             reply_type = "Reply All" if reply_all else "Reply"
             logger.info(
@@ -1786,7 +1753,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    async def outlook_update_draft_message(
+    def outlook_update_draft_message(
         self,
         message_id: str,
         subject: Optional[str] = None,
@@ -1834,7 +1801,6 @@ class OutlookMailToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing the result of the update
                 operation.
-
         """
         try:
             # Validate all email addresses if provided
@@ -1861,7 +1827,7 @@ class OutlookMailToolkit(BaseToolkit):
             )
 
             # Update the message using PATCH
-            await self.client.me.messages.by_message_id(message_id).patch(
+            self.client.me.messages.by_message_id(message_id).patch(
                 mail_message
             )
 
@@ -1869,20 +1835,19 @@ class OutlookMailToolkit(BaseToolkit):
                 f"Draft message with ID {message_id} updated successfully."
             )
 
-            # Build dict of updated parameters
-            updated_params: Dict[str, Any] = dict()
-            if subject:
-                updated_params['subject'] = subject
-            if content:
-                updated_params['content'] = content
-            if to_email:
-                updated_params['to_email'] = to_email
-            if cc_recipients:
-                updated_params['cc_recipients'] = cc_recipients
-            if bcc_recipients:
-                updated_params['bcc_recipients'] = bcc_recipients
-            if reply_to:
-                updated_params['reply_to'] = reply_to
+            # Build dict of updated parameters (only include non-None values)
+            updated_params = {
+                k: v
+                for k, v in {
+                    'subject': subject,
+                    'content': content,
+                    'to_email': to_email,
+                    'cc_recipients': cc_recipients,
+                    'bcc_recipients': bcc_recipients,
+                    'reply_to': reply_to,
+                }.items()
+                if v
+            }
 
             return {
                 'status': 'success',
