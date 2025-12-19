@@ -26,6 +26,11 @@ class ToolCallingRecord(BaseModel):
         tool_call_id (str): The ID of the tool call, if available.
         images (Optional[List[str]]): List of base64-encoded images returned
             by the tool, if any.
+        token_usage (Optional[Dict[str, int]]): Token usage information for
+            the LLM call that generated this tool call. Contains keys like
+            'prompt_tokens', 'completion_tokens', and 'total_tokens'.
+            If multiple tools are called in a single LLM response, they share
+            the same token usage dict. (default: :obj:`None`)
     """
 
     tool_name: str
@@ -33,6 +38,7 @@ class ToolCallingRecord(BaseModel):
     result: Any
     tool_call_id: str
     images: Optional[List[str]] = None
+    token_usage: Optional[Dict[str, int]] = None
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.
@@ -40,11 +46,14 @@ class ToolCallingRecord(BaseModel):
         Returns:
             str: Modified string to represent the tool calling.
         """
-        return (
+        base_str = (
             f"Tool Execution: {self.tool_name}\n"
             f"\tArgs: {self.args}\n"
             f"\tResult: {self.result}\n"
         )
+        if self.token_usage:
+            base_str += f"\tToken Usage: {self.token_usage}\n"
+        return base_str
 
     def as_dict(self) -> dict[str, Any]:
         r"""Returns the tool calling record as a dictionary.

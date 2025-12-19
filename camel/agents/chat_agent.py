@@ -3025,6 +3025,9 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
+                # All tools in this batch share the same token usage from the
+                # LLM call that generated them
+                current_token_usage = response.usage_dict
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -3043,7 +3046,9 @@ class ChatAgent(BaseAgent):
                             else:
                                 while not self.pause_event.is_set():
                                     time.sleep(0.001)
-                        result = self._execute_tool(tool_call_request)
+                        result = self._execute_tool(
+                            tool_call_request, token_usage=current_token_usage
+                        )
                         tool_call_records.append(result)
 
                 # If we found external tool calls, break the loop
@@ -3352,6 +3357,9 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
+                # All tools in this batch share the same token usage from the
+                # LLM call that generated them
+                current_token_usage = response.usage_dict
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -3373,7 +3381,7 @@ class ChatAgent(BaseAgent):
                                     None, self.pause_event.wait
                                 )
                         tool_call_record = await self._aexecute_tool(
-                            tool_call_request
+                            tool_call_request, token_usage=current_token_usage
                         )
                         tool_call_records.append(tool_call_record)
 
@@ -3941,11 +3949,15 @@ class ChatAgent(BaseAgent):
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
+        token_usage: Optional[Dict[str, int]] = None,
     ) -> ToolCallingRecord:
         r"""Execute the tool with arguments following the model's response.
 
         Args:
             tool_call_request (_ToolCallRequest): The tool call request.
+            token_usage (Optional[Dict[str, int]], optional): Token usage
+                information for the LLM call that generated this tool call.
+                (default: :obj:`None`)
 
         Returns:
             FunctionCallingRecord: A struct for logging information about this
@@ -3981,12 +3993,14 @@ class ChatAgent(BaseAgent):
             result,
             tool_call_id,
             mask_output=mask_flag,
+            token_usage=token_usage,
             extra_content=tool_call_request.extra_content,
         )
 
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
+        token_usage: Optional[Dict[str, int]] = None,
     ) -> ToolCallingRecord:
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
@@ -4028,6 +4042,7 @@ class ChatAgent(BaseAgent):
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
         return self._record_tool_calling(
+            func_name, args, result, tool_call_id, token_usage=token_usage
             func_name,
             args,
             result,
@@ -4042,6 +4057,7 @@ class ChatAgent(BaseAgent):
         result: Any,
         tool_call_id: str,
         mask_output: bool = False,
+        token_usage: Optional[Dict[str, int]] = None,
         extra_content: Optional[Dict[str, Any]] = None,
     ):
         r"""Record the tool calling information in the memory, and return the
@@ -4055,6 +4071,8 @@ class ChatAgent(BaseAgent):
             mask_output (bool, optional): Whether to return a sanitized
                 placeholder instead of the raw tool output.
                 (default: :obj:`False`)
+            token_usage (Optional[Dict[str, int]], optional): Token usage
+                information for the LLM call that generated this tool call.
             extra_content (Optional[Dict[str, Any]], optional): Additional
                 content associated with the tool call.
                 (default: :obj:`None`)
@@ -4191,6 +4209,7 @@ class ChatAgent(BaseAgent):
             args=args,
             result=result,
             tool_call_id=tool_call_id,
+            token_usage=token_usage,
         )
         self._update_last_tool_call_state(tool_record)
         return tool_record
