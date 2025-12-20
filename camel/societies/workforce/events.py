@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class WorkforceEventBase(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
     event_type: Literal[
+        "log",
         "task_decomposed",
         "task_created",
         "task_assigned",
@@ -37,6 +38,25 @@ class WorkforceEventBase(BaseModel):
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+
+class LogEvent(WorkforceEventBase):
+    event_type: Literal["log"] = "log"
+    message: str
+    level: Literal["debug", "info", "warning", "error", "critical"]
+    color: (
+        Literal[
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "cyan",
+            "magenta",
+            "gray",
+            "black",
+        ]
+        | None
+    ) = None
 
 
 class WorkerCreatedEvent(WorkforceEventBase):
@@ -109,6 +129,7 @@ class QueueStatusEvent(WorkforceEventBase):
 
 
 WorkforceEvent = Union[
+    LogEvent,
     TaskDecomposedEvent,
     TaskCreatedEvent,
     TaskAssignedEvent,

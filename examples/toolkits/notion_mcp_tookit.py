@@ -35,8 +35,11 @@ async def main():
         tools=notion_mcp_toolkit.get_tools(),
     )
 
+    page_id = 'your-page-id'
+
     response = await chat_agent.astep(
-        """create a new page in my notion named 'Camel Introduction'
+        f"""create a new page in my notion named 'Camel Introduction'
+under the parent page with ID '{page_id}'
 and add some content describing Camel as a lightweight multi-agent framework
 that supports role-driven collaboration and modular workflows."""
     )

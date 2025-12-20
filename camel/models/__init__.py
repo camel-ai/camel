@@ -25,6 +25,7 @@ from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
+from .function_gemma_model import FunctionGemmaModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
@@ -114,4 +115,8 @@ __all__ = [
     'WatsonXModel',
     'YiModel',
     'ZhipuAIModel',
+    'QianfanModel',
+    'CrynuxModel',
+    'AihubMixModel',
+    'FunctionGemmaModel',
 ]
