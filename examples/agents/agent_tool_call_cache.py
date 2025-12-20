@@ -19,7 +19,7 @@ and a mock browser snapshot tool. The workflow is:
 1. Configure caching in ChatAgent initialization with threshold and cache_dir
 2. Ask the agent to capture two snapshots: a long smartphone page and a short
    weather widget
-3. Use tool_call_history_cache=True in a step() call to cache tool outputs
+3. Use tool_call_cache_history=True in a step() call to cache tool outputs
    exceeding the threshold
 4. Ask the agent a question requiring BOTH cached snapshots - it will use the
    automatically registered ``retrieve_cached_tool_output`` tool to access them
@@ -193,16 +193,16 @@ def main() -> None:
         f"{WEATHER_DASHBOARD}"
     )
     # Print memory before caching
-    print("\n=== Memory BEFORE tool_call_history_cache ===")
+    print("\n=== Memory BEFORE tool_call_cache_history ===")
     response2 = agent.step(prompt2)
     print(f"Assistant response: {response2.msg.content}")
     _print_memory(agent)
 
-    # Print memory after caching (using tool_call_history_cache=True)
-    print("\n=== Memory AFTER tool_call_history_cache ===")
+    # Print memory after caching (using tool_call_cache_history=True)
+    print("\n=== Memory AFTER tool_call_cache_history ===")
     response2_cached = agent.step(
         "Confirm that both snapshots have been saved.",
-        tool_call_history_cache=True,
+        tool_call_cache_history=True,
     )
     print(f"Assistant response: {response2_cached.msg.content}")
     _print_memory(agent)
@@ -242,7 +242,7 @@ Assistant response: The current NovaPhone X Ultra smartphone page has been store
 
 >>> Step 2: Capture weather snapshot
 
-=== Memory BEFORE tool_call_history_cache ===
+=== Memory BEFORE tool_call_cache_history ===
 Assistant response: The weather dashboard widget has been stored exactly as you provided it. You can reference or retrieve this snapshot any time. Let me know if you need to review, compare, or analyze the widget's contents!
 01. role=system content=You are a browsing assistant.
 02. role=user content=You just browsed the NovaPhone store.Store the current smartphone page exactly as-is so we can reference it later. Here is the full markup:
@@ -263,7 +263,7 @@ Assistant response: The weather dashboard widget has been stored exactly as you 
       preview: [browser_snapshot length=225 characters] BEGIN_SNAPSHOT  <div class="weather-widget">   <h1>City Weather</h1>   <p>Currently 68°F, partly cl
 09. role=assistant content=The weather dashboard widget has been stored exactly as you provided it. You can reference or retrieve this snapshot any time. Let me know i
 
-=== Memory AFTER tool_call_history_cache ===
+=== Memory AFTER tool_call_cache_history ===
 Assistant response: Confirmation: Both snapshots have been successfully saved.
 
 1. NovaPhone smartphone page — contains the launch event details, specs, comparisons, and availability.

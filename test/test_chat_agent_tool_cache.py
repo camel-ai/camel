@@ -1,3 +1,5 @@
+import json
+
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -92,7 +94,31 @@ def test_tool_output_caching(tmp_path, threshold):
     assert cached_message.result != long_result
 
     retrieved = agent.retrieve_cached_tool_output(cached_entry.cache_id)
-    assert long_result in retrieved
+    result_dict = json.loads(retrieved)
+    assert cached_entry.cache_id in result_dict
+    assert long_result in result_dict[cached_entry.cache_id]
+
+
+def test_tool_output_caching_disabled_with_zero(tmp_path):
+    agent = ChatAgent(
+        system_message="Caching disabled tester.",
+        model=StubModel(model_type=ModelType.STUB),
+        tool_call_cache_threshold=0,
+        tool_call_cache_dir=tmp_path,
+    )
+
+    agent._record_tool_calling(
+        "dummy_tool",
+        args={"value": 1},
+        result="A" * 50,
+        tool_call_id="call-1",
+    )
+
+    assert agent._tool_output_cache_threshold == 0
+    assert not agent._tool_output_cache_enabled
+    assert agent._tool_output_history == []
+    assert agent._cache_tool_calls() == 0
+    assert agent._cache_lookup_tool_name not in agent._internal_tools
 
 
 def test_tool_output_history_cleared_on_reset(tmp_path):
@@ -163,8 +189,6 @@ def test_retrieve_multiple_cached_outputs(tmp_path):
     assert "A" * 20 in result1
 
     # Test multiple retrieval (same tool, multiple IDs)
-    import json
-
     result_multiple = agent.retrieve_cached_tool_output(
         f"{cache_ids[0]}, {cache_ids[1]}"
     )

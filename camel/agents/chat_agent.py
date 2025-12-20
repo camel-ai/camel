@@ -524,9 +524,11 @@ class ChatAgent(BaseAgent):
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
-        # Used for tool call output cache
+        # Used for tool call output cache (0 disables caching)
         self._tool_output_cache_threshold = (
-            tool_call_cache_threshold if tool_call_cache_threshold else 2000
+            tool_call_cache_threshold
+            if tool_call_cache_threshold is not None
+            else 2000
         )
         self._tool_output_cache_dir: Path = (
             Path(tool_call_cache_dir).expanduser().resolve()
@@ -846,7 +848,7 @@ class ChatAgent(BaseAgent):
         r"""Load cached tool output(s) by cache identifier(s).
 
         Supports both single and multiple cache ID retrieval:
-        - Single ID: Returns the cached content directly as a string
+        - Single ID: Returns a JSON string mapping the cache_id to its content
         - Multiple IDs (comma-separated): Returns a JSON dictionary mapping
           each cache_id to its content
 
@@ -855,9 +857,8 @@ class ChatAgent(BaseAgent):
                 of cache identifiers.
 
         Returns:
-            str: For single ID, returns the cached content directly.
-                For multiple IDs, returns a JSON-formatted dictionary mapping
-                cache_ids to their content or error messages.
+            str: JSON-formatted dictionary mapping cache_ids to their content
+                or error messages.
         """
         if not self._tool_output_cache_manager:
             return "Tool output caching is disabled for this agent instance."
@@ -868,20 +869,26 @@ class ChatAgent(BaseAgent):
         if not id_list:
             return "Please provide at least one cache_id."
 
-        # Single cache_id - return content directly
+        # Single cache_id - return JSON dictionary
         if len(id_list) == 1:
             cache_id = id_list[0]
             try:
-                return self._tool_output_cache_manager.load(cache_id)
+                content = self._tool_output_cache_manager.load(cache_id)
+                return json.dumps(
+                    {cache_id: content}, indent=2, ensure_ascii=False
+                )
             except FileNotFoundError:
-                return (
-                    f"Cache entry '{cache_id}' was not found. "
-                    "Verify the identifier and try again."
+                return json.dumps(
+                    {
+                        cache_id: (
+                            f"[ERROR] Cache entry '{cache_id}' not found"
+                        )
+                    },
+                    indent=2,
+                    ensure_ascii=False,
                 )
 
         # Multiple cache_ids - return JSON dictionary
-        import json
-
         results = {}
         for cache_id in id_list:
             try:
@@ -901,6 +908,11 @@ class ChatAgent(BaseAgent):
         return self._tool_output_cache_threshold > 0
 
     def _ensure_tool_cache_lookup_tool(self) -> None:
+        r"""Register the cache lookup tool when caching is enabled.
+
+        This helper lazily injects the retrieval tool so tool outputs can be
+        fetched by cache_id. No-op when caching is disabled.
+        """
         if not self._tool_output_cache_enabled:
             return
 
@@ -939,6 +951,10 @@ class ChatAgent(BaseAgent):
         return cached_count
 
     def _serialize_tool_result(self, result: Any) -> str:
+        r"""Convert a tool result to string for caching.
+
+        Tries JSON serialization first; falls back to ``str(result)``.
+        """
         if isinstance(result, str):
             return result
         try:
@@ -947,6 +963,7 @@ class ChatAgent(BaseAgent):
             return str(result)
 
     def _summarize_tool_result(self, text: str, limit: int = 160) -> str:
+        r"""Create a short preview of tool output for cached references."""
         normalized = re.sub(r"\s+", " ", text).strip()
         if len(normalized) <= limit:
             return normalized
@@ -959,6 +976,7 @@ class ChatAgent(BaseAgent):
         result_text: str,
         records: List[MemoryRecord],
     ) -> None:
+        r"""Track tool outputs so they can be cached later."""
         if not records:
             return
 
@@ -973,6 +991,7 @@ class ChatAgent(BaseAgent):
         self._tool_output_history.append(entry)
 
     def _process_tool_output_cache(self) -> int:
+        r"""Cache all uncached tool outputs that exceed the threshold."""
         if (
             not self._tool_output_history
             or self._tool_output_cache_manager is None
@@ -994,6 +1013,7 @@ class ChatAgent(BaseAgent):
         return cached_count
 
     def _cache_tool_output_entry(self, entry: _ToolOutputHistoryEntry) -> None:
+        r"""Persist a single tool output entry and update memory references."""
         if self._tool_output_cache_manager is None or not entry.record_uuids:
             return
 
@@ -1472,8 +1492,6 @@ class ChatAgent(BaseAgent):
 
                         # Parse and format arguments for readability
                         try:
-                            import json
-
                             args_dict = json.loads(func_args_str)
                             args_formatted = ', '.join(
                                 f"{k}={v}" for k, v in args_dict.items()
@@ -1874,10 +1892,6 @@ class ChatAgent(BaseAgent):
             if message.content:
                 try:
                     # Try to extract JSON from the response content
-                    import json
-
-                    from pydantic import ValidationError
-
                     # Try to find JSON in the content
                     content = message.content.strip()
 
@@ -1987,7 +2001,7 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -2000,7 +2014,7 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            tool_call_history_cache (bool, optional): When ``True``, cache all
+            tool_call_cache_history (bool, optional): When ``True``, cache all
                 tool outputs exceeding the configured threshold after this step
                 completes. (default: :obj:`False`)
 
@@ -2020,7 +2034,7 @@ class ChatAgent(BaseAgent):
         if stream:
             # Return wrapped generator that has ChatAgentResponse interface
             generator = self._stream(
-                input_message, response_format, tool_call_history_cache
+                input_message, response_format, tool_call_cache_history
             )
             return StreamingChatAgentResponse(generator)
 
@@ -2033,7 +2047,7 @@ class ChatAgent(BaseAgent):
                     self._step_impl,
                     input_message,
                     response_format,
-                    tool_call_history_cache,
+                    tool_call_cache_history,
                 )
                 try:
                     return future.result(timeout=self.step_timeout)
@@ -2044,14 +2058,14 @@ class ChatAgent(BaseAgent):
                     )
         else:
             return self._step_impl(
-                input_message, response_format, tool_call_history_cache
+                input_message, response_format, tool_call_cache_history
             )
 
     def _step_impl(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
         # Set Langfuse session_id using agent_id for trace grouping
@@ -2197,7 +2211,7 @@ class ChatAgent(BaseAgent):
             self.memory.clean_tool_calls()
 
         # Cache tool outputs if requested
-        if tool_call_history_cache:
+        if tool_call_cache_history:
             self._cache_tool_calls()
 
         return self._convert_to_chatagent_response(
@@ -2220,7 +2234,7 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -2237,7 +2251,7 @@ class ChatAgent(BaseAgent):
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
-            tool_call_history_cache (bool, optional): When ``True``, cache all
+            tool_call_cache_history (bool, optional): When ``True``, cache all
                 tool outputs exceeding the configured threshold after this step
                 completes. (default: :obj:`False`)
         Returns:
@@ -2263,7 +2277,7 @@ class ChatAgent(BaseAgent):
         if stream:
             # Return wrapped async generator that is awaitable
             async_generator = self._astream(
-                input_message, response_format, tool_call_history_cache
+                input_message, response_format, tool_call_cache_history
             )
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
@@ -2273,7 +2287,7 @@ class ChatAgent(BaseAgent):
                         self._astep_non_streaming_task(
                             input_message,
                             response_format,
-                            tool_call_history_cache,
+                            tool_call_cache_history,
                         ),
                         timeout=self.step_timeout,
                     )
@@ -2283,14 +2297,14 @@ class ChatAgent(BaseAgent):
                     )
             else:
                 return await self._astep_non_streaming_task(
-                    input_message, response_format, tool_call_history_cache
+                    input_message, response_format, tool_call_cache_history
                 )
 
     async def _astep_non_streaming_task(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
 
@@ -2432,7 +2446,7 @@ class ChatAgent(BaseAgent):
             self.memory.clean_tool_calls()
 
         # Cache tool outputs if requested
-        if tool_call_history_cache:
+        if tool_call_cache_history:
             self._cache_tool_calls()
 
         return self._convert_to_chatagent_response(
@@ -3125,7 +3139,7 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Executes a streaming step in the chat session, yielding
         intermediate responses as they are generated.
@@ -3163,7 +3177,7 @@ class ChatAgent(BaseAgent):
         )
 
         # Cache tool outputs if requested (after streaming completes)
-        if tool_call_history_cache:
+        if tool_call_cache_history:
             self._cache_tool_calls()
 
     def _get_token_count(self, content: str) -> int:
@@ -3877,7 +3891,7 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        tool_call_history_cache: bool = False,
+        tool_call_cache_history: bool = False,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Asynchronous version of stream method."""
 
@@ -3913,7 +3927,7 @@ class ChatAgent(BaseAgent):
                 self.memory.clean_tool_calls()
 
         # Cache tool outputs if requested (after streaming completes)
-        if tool_call_history_cache:
+        if tool_call_cache_history:
             self._cache_tool_calls()
 
     async def _astream_response(
