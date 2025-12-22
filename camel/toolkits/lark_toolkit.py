@@ -16,7 +16,6 @@ import json
 import os
 import time
 from typing import Any, Dict, List, Literal, Optional
-from urllib.parse import quote
 
 import requests
 
@@ -108,7 +107,7 @@ def _extract_text_from_block(block: Any) -> str:
     text_parts = []
 
     def _get_elements(content_obj: Any) -> list:
-        """Helper to safely get elements from a content object."""
+        r"""Helper to safely get elements from a content object."""
         if content_obj is None or not isinstance(content_obj, dict):
             return []
         return content_obj.get("elements", []) or []
@@ -193,14 +192,7 @@ class LarkToolkit(BaseToolkit):
     for creating, reading, updating, and deleting documents and document
     blocks.
 
-    Note:
-        This toolkit uses browser-based OAuth which requires a local
-        environment with browser access (CLI tools, local development,
-        Jupyter notebooks). For server deployments without browser access,
-        obtain tokens externally and provide them via the ``user_access_token``
-        and ``refresh_token`` parameters.
-
-    Attributes:
+    Args:
         app_id (Optional[str]): The Lark application ID.
         app_secret (Optional[str]): The Lark application secret.
         use_feishu (bool): Whether to use Feishu (China) instead of Lark.
@@ -231,7 +223,7 @@ class LarkToolkit(BaseToolkit):
             app_secret (Optional[str]): The Lark application secret. If not
                 provided, uses LARK_APP_SECRET environment variable.
             use_feishu (bool): Set to True to use Feishu (China) API endpoints
-                instead of Lark (international). (default: False)
+                instead of Lark (international). (default: :obj:`False`)
             timeout (Optional[float]): Request timeout in seconds.
             user_access_token (Optional[str]): Pre-existing user access token
                 for OAuth authentication. If provided, API calls will be made
@@ -239,7 +231,7 @@ class LarkToolkit(BaseToolkit):
             refresh_token (Optional[str]): Pre-existing refresh token for
                 refreshing the user access token.
             oauth_port (int): Port number for the local OAuth callback server.
-                (default: 9000)
+                (default: :obj:`9000`)
         """
         super().__init__(timeout=timeout)
         import lark_oapi as lark
@@ -289,7 +281,17 @@ class LarkToolkit(BaseToolkit):
     # =========================================================================
 
     def _get_oauth_url(self, state: str = "") -> str:
-        r"""Generate the OAuth authorization URL for user login."""
+        r"""Generate the OAuth authorization URL for user login.
+
+        Args:
+            state (str): Optional state parameter for CSRF protection.
+                (default: :obj:`""`)
+
+        Returns:
+            str: The OAuth authorization URL.
+        """
+        from urllib.parse import quote
+
         if not self._oauth_redirect_uri:
             raise ValueError("oauth_redirect_uri must be set to use OAuth.")
 
@@ -341,9 +343,6 @@ class LarkToolkit(BaseToolkit):
         Returns:
             bool: True if tokens were cleared successfully, False otherwise.
 
-        Example:
-            >>> toolkit.clear_cached_tokens()
-            >>> # Next API call will trigger browser OAuth flow
         """
         from pathlib import Path
 
@@ -368,6 +367,9 @@ class LarkToolkit(BaseToolkit):
 
     def _exchange_code_for_token(self, code: str) -> None:
         r"""Exchange an authorization code for user access tokens.
+
+        Args:
+            code (str): The authorization code received from OAuth callback.
 
         Raises:
             RuntimeError: If the token exchange fails.
@@ -461,6 +463,10 @@ class LarkToolkit(BaseToolkit):
         2. If cached token is expired or near expiry, attempt to refresh it
         3. If no valid cached tokens, start browser OAuth flow
 
+        Args:
+            timeout (int): Timeout in seconds for browser OAuth flow.
+                (default: :obj:`120`)
+
         Raises:
             RuntimeError: If authentication fails.
         """
@@ -516,6 +522,14 @@ class LarkToolkit(BaseToolkit):
         open_browser: bool = True,
     ) -> None:
         r"""Run the browser-based OAuth flow.
+
+        Args:
+            port (int): Port number for the local OAuth callback server.
+                (default: :obj:`9000`)
+            timeout (int): Timeout in seconds for waiting for OAuth callback.
+                (default: :obj:`120`)
+            open_browser (bool): Whether to automatically open the browser.
+                (default: :obj:`True`)
 
         Raises:
             TimeoutError: If authentication times out.
@@ -879,7 +893,7 @@ class LarkToolkit(BaseToolkit):
         Args:
             document_id (str): The unique identifier of the document.
             page_size (int): Number of blocks to return per page (max 500).
-                (default: 50)
+                (default: :obj:`50`)
             page_token (Optional[str]): Token for pagination. Use the
                 page_token from previous response to get next page.
 
@@ -1015,7 +1029,7 @@ class LarkToolkit(BaseToolkit):
             document_id (str): The unique identifier of the document.
             block_id (str): The unique identifier of the parent block.
             page_size (int): Number of children to return per page (max 500).
-                (default: 50)
+                (default: :obj:`50`)
             page_token (Optional[str]): Token for pagination.
 
         Returns:
@@ -1118,7 +1132,7 @@ class LarkToolkit(BaseToolkit):
             parent_block_id (Optional[str]): The parent block ID. If not
                 provided, the block will be added to the document root.
             index (int): The position to insert the block. -1 means append
-                at the end. (default: -1)
+                at the end. (default: :obj:`-1`)
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -1232,9 +1246,6 @@ class LarkToolkit(BaseToolkit):
         content: str,
     ) -> Dict[str, Any]:
         r"""Updates the content of an existing block.
-
-        Note: This method updates the text content of a block. The block type
-        cannot be changed through this method.
 
         Args:
             document_id (str): The unique identifier of the document.
@@ -1406,31 +1417,19 @@ class LarkToolkit(BaseToolkit):
             folder_token (Optional[str]): The folder token to list contents of.
                 If not provided, lists the root folder contents.
             page_size (int): Number of items to return per page (max 200).
-                (default: 50)
+                (default: :obj:`50`)
             page_token (Optional[str]): Token for pagination. Use the
                 page_token from previous response to get next page.
             order_by (str): Field to sort by. Options: "EditedTime",
-                "CreatedTime", "DeletedTime". (default: "EditedTime")
+                "CreatedTime", "DeletedTime". (default: :obj:`"EditedTime"`)
             direction (str): Sort direction. Options: "ASC", "DESC".
-                (default: "DESC")
+                (default: :obj:`"DESC"`)
 
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - files: List of file/folder objects with token, name, type
                 - has_more: Whether there are more items to fetch
                 - page_token: Token to fetch the next page
-
-        Example:
-            >>> # List root folder to find available folders
-            >>> result = toolkit.lark_list_folder_contents()
-            >>> for item in result["files"]:
-            ...     print(f"{item['name']} ({item['type']}): {item['token']}")
-            ...
-            >>> # Use a folder token to create documents in that folder
-            >>> toolkit.lark_create_document(
-            ...     title="My Doc",
-            ...     folder_token=result["files"][0]["token"]
-            ... )
         """
         try:
             url = f"{self._domain}/open-apis/drive/v1/files"
@@ -1522,14 +1521,6 @@ class LarkToolkit(BaseToolkit):
                 - token: The root folder token
                 - id: The folder ID
                 - user_id: The folder owner's user ID
-
-        Example:
-            >>> # Get root folder and create a document there
-            >>> root = toolkit.lark_get_root_folder_token()
-            >>> toolkit.lark_create_document(
-            ...     title="My Doc",
-            ...     folder_token=root["token"]
-            ... )
         """
         try:
             url = (
@@ -1585,15 +1576,6 @@ class LarkToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing:
                 - token: The token of the created folder
                 - url: The URL to access the folder
-
-        Example:
-            >>> # Create a folder in root
-            >>> folder = toolkit.lark_create_folder("My Project")
-            >>> # Create a document in the new folder
-            >>> toolkit.lark_create_document(
-            ...     title="README",
-            ...     folder_token=folder["token"]
-            ... )
         """
         try:
             # If no folder token provided, get the root folder
@@ -1634,10 +1616,6 @@ class LarkToolkit(BaseToolkit):
             logger.error(f"Error creating folder: {e}")
             return {"error": f"Error creating folder: {e!s}"}
 
-    # =========================================================================
-    # Messaging Operations
-    # =========================================================================
-
     def lark_send_message(
         self,
         receive_id: str,
@@ -1668,20 +1646,6 @@ class LarkToolkit(BaseToolkit):
                 - message_id: The unique identifier of the sent message
                 - chat_id: The chat ID where the message was sent
                 - create_time: Timestamp when the message was created
-
-        Example:
-            >>> # Send DM to a user by open_id
-            >>> toolkit.lark_send_message(
-            ...     receive_id="ou_xxx",
-            ...     content="Hello!",
-            ...     receive_id_type="open_id"
-            ... )
-            >>> # Send message to a group chat
-            >>> toolkit.lark_send_message(
-            ...     receive_id="oc_xxx",
-            ...     content="Hello team!",
-            ...     receive_id_type="chat_id"
-            ... )
         """
 
         try:
@@ -1733,7 +1697,7 @@ class LarkToolkit(BaseToolkit):
 
         Args:
             page_size (int): Number of chats to return per page (max 100).
-                (default: 50)
+                (default: :obj:`50`)
             page_token (Optional[str]): Token for pagination. Use the
                 page_token from previous response to get next page.
 
@@ -1743,11 +1707,6 @@ class LarkToolkit(BaseToolkit):
                     owner_id, chat_type (p2p or group)
                 - has_more: Whether there are more chats to fetch
                 - page_token: Token to fetch the next page
-
-        Example:
-            >>> chats = toolkit.lark_list_chats()
-            >>> for chat in chats["items"]:
-            ...     print(f"{chat['name']}: {chat['chat_id']}")
         """
         try:
             url = f"{self._domain}/open-apis/im/v1/chats"
@@ -1873,7 +1832,7 @@ class LarkToolkit(BaseToolkit):
                 - "ByCreateTimeAsc": Oldest first
                 - "ByCreateTimeDesc": Newest first (default)
             page_size (int): Number of messages to return per page (max 50).
-                (default: 50)
+                (default: :obj:`50`)
             page_token (Optional[str]): Token for pagination. Use the
                 page_token from previous response to get next page.
 
@@ -1883,22 +1842,6 @@ class LarkToolkit(BaseToolkit):
                     content, sender_id, sender_type, create_time, chat_id
                 - has_more: Whether there are more messages to fetch
                 - page_token: Token to fetch the next page
-
-        Example:
-            >>> # Get recent messages
-            >>> messages = toolkit.lark_get_chat_messages(
-            ...     container_id="oc_xxx"
-            ... )
-            >>> for msg in messages["items"]:
-            ...     print(f"{msg['sender_id']}: {msg['content']}")
-
-            >>> # Get messages from a specific time range
-            >>> messages = toolkit.lark_get_chat_messages(
-            ...     container_id="oc_xxx",
-            ...     start_time="1609459200",
-            ...     end_time="1609545600",
-            ...     sort_type="ByCreateTimeAsc"
-            ... )
         """
         try:
             url = f"{self._domain}/open-apis/im/v1/messages"
@@ -1975,22 +1918,18 @@ class LarkToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            # Drive operations
             FunctionTool(self.lark_get_root_folder_token),
             FunctionTool(self.lark_list_folder_contents),
             FunctionTool(self.lark_create_folder),
-            # Basic document operations
             FunctionTool(self.lark_create_document),
             FunctionTool(self.lark_get_document),
             FunctionTool(self.lark_get_document_content),
             FunctionTool(self.lark_list_document_blocks),
-            # Block operations
             FunctionTool(self.lark_get_block),
             FunctionTool(self.lark_get_block_children),
             FunctionTool(self.lark_create_block),
             FunctionTool(self.lark_update_block),
             FunctionTool(self.lark_delete_block),
-            # Messaging operations
             FunctionTool(self.lark_send_message),
             FunctionTool(self.lark_list_chats),
             FunctionTool(self.lark_get_chat),
