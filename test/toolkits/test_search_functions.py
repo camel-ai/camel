@@ -899,3 +899,63 @@ def test_search_metaso_invalid_json(mock_https_connection, search_toolkit):
     # Verify connection was attempted
     mock_https_connection.assert_called_once_with("metaso.cn")
     mock_conn.request.assert_called_once()
+
+
+@patch('requests.post')
+def test_search_serper_success(mock_post, search_toolkit):
+    """Test successful Serper search."""
+    import json
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "searchParameters": {
+            "q": "apple inc",
+            "gl": "us",
+            "hl": "en",
+            "num": 10,
+            "type": "search",
+        },
+        "organic": [
+            {
+                "title": "Apple",
+                "link": "https://www.apple.com/",
+                "snippet": "Discover the innovative world of Apple...",
+                "position": 1,
+            }
+        ],
+    }
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'SERPER_API_KEY': 'test_key'}):
+        result = search_toolkit.search_serper(query="apple inc")
+
+    assert result == mock_response.json.return_value
+
+    # Verify request
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert args[0] == "https://google.serper.dev/search"
+    assert kwargs['headers'] == {
+        "X-API-KEY": "test_key",
+        "Content-Type": "application/json",
+    }
+    # Verify payload structure matches exactly what user requested
+    # Note: requests.post(json=payload) sets data to json dump
+    assert json.loads(kwargs['data']) == {
+        "q": "apple inc",
+        "location": "United States",
+        "page": 1,
+    }
+
+
+@patch('requests.post')
+def test_search_serper_error(mock_post, search_toolkit):
+    """Test error handling in Serper search."""
+    mock_post.side_effect = requests.exceptions.RequestException("API Error")
+
+    with patch.dict(os.environ, {'SERPER_API_KEY': 'test_key'}):
+        with pytest.raises(RuntimeError) as excinfo:
+            search_toolkit.search_serper(query="test")
+
+    assert "Error making request to Serper" in str(excinfo.value)
