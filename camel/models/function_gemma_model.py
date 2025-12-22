@@ -279,25 +279,25 @@ class FunctionGemmaModel(BaseModelBackend):
             str: Formatted model turn.
         """
         content = message.get("content", "") or ""
-        tool_calls = message.get("tool_calls", [])
+        tool_calls = message.get("tool_calls")
 
         result = f"<start_of_turn>model\n{content}"
 
-        if tool_calls:
+        if tool_calls and isinstance(tool_calls, list):
             for tool_call in tool_calls:
                 func = tool_call.get("function", {})
                 func_name = func.get("name", "")
-                args = func.get("arguments", "{}")
-                if isinstance(args, str):
-                    args = json.loads(args)
+                args_raw = func.get("arguments", "{}")
+                if isinstance(args_raw, str):
+                    args: Dict[str, Any] = json.loads(args_raw)
+                else:
+                    args = dict(args_raw) if args_raw else {}
 
                 # format arguments
                 arg_parts = []
                 for key, value in sorted(args.items()):
                     if isinstance(value, str):
-                        arg_parts.append(
-                            f"{key}:{self._escape_string(value)}"
-                        )
+                        arg_parts.append(f"{key}:{self._escape_string(value)}")
                     else:
                         arg_parts.append(f"{key}:{json.dumps(value)}")
 
@@ -324,6 +324,8 @@ class FunctionGemmaModel(BaseModelBackend):
 
         # try to parse content as json for structured response
         try:
+            if not isinstance(content, str):
+                content = str(content) if content else ""
             result_data = json.loads(content)
             # check if it's a dict (structured response)
             if isinstance(result_data, dict):
@@ -552,7 +554,7 @@ class FunctionGemmaModel(BaseModelBackend):
         Returns:
             Dict[str, Any]: Parsed arguments dictionary.
         """
-        args = {}
+        args: Dict[str, Any] = {}
         if not args_str:
             return args
 
@@ -567,7 +569,7 @@ class FunctionGemmaModel(BaseModelBackend):
             char = args_str[i]
 
             # check for <escape> tag
-            if args_str[i:i+8] == "<escape>":
+            if args_str[i : i + 8] == "<escape>":
                 in_escape = not in_escape
                 i += 8
                 continue
@@ -627,7 +629,7 @@ class FunctionGemmaModel(BaseModelBackend):
         # return as string
         return value
 
-    def _to_chat_completion(
+    def _to_chat_completion(  # type: ignore[override]
         self,
         response_text: str,
         model: str,
