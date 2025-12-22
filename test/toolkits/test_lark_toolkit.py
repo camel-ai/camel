@@ -223,7 +223,8 @@ def test_lark_update_block(lark_toolkit):
             content="Updated content",
         )
 
-        assert result["success"] is True
+        assert result["block_id"] == "block_1"
+        assert "document_revision_id" in result
         mock_patch.assert_called_once()
 
 
@@ -236,7 +237,13 @@ def test_lark_delete_block(lark_toolkit):
         mock_get_block = MagicMock()
         mock_get_block.json.return_value = {
             "code": 0,
-            "data": {"block": {"block_id": "block_1", "block_type": 2}},
+            "data": {
+                "block": {
+                    "block_id": "block_1",
+                    "block_type": 2,
+                    "parent_id": "doc_123",
+                }
+            },
         }
         mock_get_children = MagicMock()
         mock_get_children.json.return_value = {
@@ -254,7 +261,39 @@ def test_lark_delete_block(lark_toolkit):
             document_id="doc_123", block_id="block_1"
         )
 
-        assert result["success"] is True
+        assert result["block_id"] == "block_1"
+        assert "document_revision_id" in result
+        mock_delete.assert_called_once()
+
+
+def test_lark_delete_block_with_parent(lark_toolkit):
+    """Test deleting a block with parent_block_id provided."""
+    with (
+        patch("requests.get") as mock_get,
+        patch("requests.delete") as mock_delete,
+    ):
+        # Only mock get_children since get_block is skipped
+        mock_get_children = MagicMock()
+        mock_get_children.json.return_value = {
+            "code": 0,
+            "data": {"items": [{"block_id": "block_1"}], "has_more": False},
+        }
+        mock_get.return_value = mock_get_children
+
+        mock_delete.return_value.json.return_value = {
+            "code": 0,
+            "data": {"document_revision_id": 13},
+        }
+
+        result = lark_toolkit.lark_delete_block(
+            document_id="doc_123",
+            block_id="block_1",
+            parent_block_id="parent_block",
+        )
+
+        assert result["block_id"] == "block_1"
+        # Should only call get once (for children), not twice
+        assert mock_get.call_count == 1
         mock_delete.assert_called_once()
 
 
@@ -290,13 +329,11 @@ def test_get_tools(lark_toolkit):
         "lark_create_block",
         "lark_update_block",
         "lark_delete_block",
-        "lark_batch_update_blocks",
         # Messaging operations
         "lark_send_message",
         "lark_list_chats",
         "lark_get_chat",
         "lark_get_chat_messages",
-        "lark_get_chat_history",
     ]
 
     for expected_tool in expected_tools:
@@ -471,6 +508,68 @@ def test_lark_list_chats(lark_toolkit, mock_lark_client):
 # ============================================================================
 
 
+def test_clear_cached_tokens(lark_toolkit):
+    """Test clearing cached OAuth tokens from memory and disk."""
+    from pathlib import Path
+
+    # Set up tokens in memory
+    lark_toolkit._user_access_token = "test_token"
+    lark_toolkit._refresh_token = "test_refresh"
+    lark_toolkit._token_expires_at = 12345.0
+
+    # Mock the token file existence and deletion
+    with patch.object(Path, 'exists', return_value=True):
+        with patch.object(Path, 'unlink') as mock_unlink:
+            result = lark_toolkit.clear_cached_tokens()
+
+            # Verify tokens were cleared from memory
+            assert result is True
+            assert lark_toolkit._user_access_token is None
+            assert lark_toolkit._refresh_token is None
+            assert lark_toolkit._token_expires_at is None
+
+            # Verify file deletion was attempted
+            mock_unlink.assert_called_once()
+
+
+def test_clear_cached_tokens_no_file(lark_toolkit):
+    """Test clearing tokens when no cached file exists."""
+    from pathlib import Path
+
+    # Set up tokens in memory
+    lark_toolkit._user_access_token = "test_token"
+    lark_toolkit._refresh_token = "test_refresh"
+    lark_toolkit._token_expires_at = 12345.0
+
+    # Mock no token file exists
+    with patch.object(Path, 'exists', return_value=False):
+        result = lark_toolkit.clear_cached_tokens()
+
+        # Should still succeed and clear memory tokens
+        assert result is True
+        assert lark_toolkit._user_access_token is None
+        assert lark_toolkit._refresh_token is None
+        assert lark_toolkit._token_expires_at is None
+
+
+def test_clear_cached_tokens_delete_failure(lark_toolkit):
+    """Test clearing tokens when file deletion fails."""
+    from pathlib import Path
+
+    lark_toolkit._user_access_token = "test_token"
+
+    # Mock file exists but deletion fails
+    with patch.object(Path, 'exists', return_value=True):
+        err = OSError("Permission denied")
+        with patch.object(Path, 'unlink', side_effect=err):
+            result = lark_toolkit.clear_cached_tokens()
+
+            # Should return False on deletion failure
+            assert result is False
+            # Memory tokens should still be cleared
+            assert lark_toolkit._user_access_token is None
+
+
 # ============================================================================
 # Document Block Tests
 # ============================================================================
@@ -633,39 +732,6 @@ def test_lark_create_folder(lark_toolkit):
         assert "url" in result
 
 
-def test_lark_batch_update_blocks(lark_toolkit):
-    """Test batch updating blocks."""
-    with patch("requests.post") as mock_post:
-        mock_post.return_value.json.return_value = {
-            "code": 0,
-            "data": {
-                "children": [{"block_id": "new_block_1"}],
-                "document_revision_id": 10,
-            },
-        }
-
-        operations = (
-            '[{"action": "create", "block_type": "text", '
-            '"content": "New text"}]'
-        )
-        result = lark_toolkit.lark_batch_update_blocks(
-            document_id="doc_123", operations_json=operations
-        )
-
-        assert result["success"] is True
-        assert len(result["results"]) == 1
-
-
-def test_lark_batch_update_blocks_invalid_json(lark_toolkit):
-    """Test batch update with invalid JSON."""
-    result = lark_toolkit.lark_batch_update_blocks(
-        document_id="doc_123", operations_json="invalid json{"
-    )
-
-    assert "error" in result
-    assert "Invalid JSON" in result["error"]
-
-
 def test_lark_get_chat(lark_toolkit, mock_lark_client):
     """Test getting chat details."""
     with patch("requests.get") as mock_get:
@@ -713,8 +779,8 @@ def test_lark_get_chat_messages(lark_toolkit, mock_lark_client):
         assert result["has_more"] is False
 
 
-def test_lark_get_chat_history(lark_toolkit, mock_lark_client):
-    """Test getting chat history with time filters."""
+def test_lark_get_chat_messages_time_filters(lark_toolkit, mock_lark_client):
+    """Test getting chat messages with time filtering options."""
     with patch("requests.get") as mock_get:
         token_resp = mock_lark_client.auth.v3.tenant_access_token.internal
         token_resp.return_value.success.return_value = True
@@ -731,12 +797,22 @@ def test_lark_get_chat_history(lark_toolkit, mock_lark_client):
             },
         }
 
-        result = lark_toolkit.lark_get_chat_history(
-            container_id="oc_123", start_time="1609459200"
+        result = lark_toolkit.lark_get_chat_messages(
+            container_id="oc_123",
+            start_time="1609459200",
+            end_time="1609545600",
+            sort_type="ByCreateTimeAsc",
         )
 
         assert len(result["items"]) == 1
         assert result["has_more"] is True
+
+        # Verify time filters were passed in the request
+        call_args = mock_get.call_args
+        params = call_args[1]["params"]
+        assert params["start_time"] == "1609459200"
+        assert params["end_time"] == "1609545600"
+        assert params["sort_type"] == "ByCreateTimeAsc"
 
 
 # ============================================================================

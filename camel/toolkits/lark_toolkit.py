@@ -18,7 +18,7 @@ import time
 from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import quote
 
-from typing_extensions import TypedDict
+import requests
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -62,45 +62,8 @@ BLOCK_TYPES = {
     "callout": 19,
 }
 
-
-class BlockOperation(TypedDict, total=False):
-    r"""Type definition for batch block operations.
-
-    This TypedDict defines the structure for operations passed to
-    lark_batch_update_blocks. Using TypedDict ensures OpenAI's function
-    calling schema validation passes (requires additionalProperties: false).
-
-    Attributes:
-        action: The operation type - "create", "update", or "delete".
-        block_id: The block ID (required for "update" and "delete").
-        block_type: The block type (required for "create").
-        content: The text content (required for "create" and "update").
-        parent_block_id: Optional parent block ID (for "create").
-    """
-
-    action: Literal["create", "update", "delete"]
-    block_id: str
-    block_type: Literal[
-        "text",
-        "heading1",
-        "heading2",
-        "heading3",
-        "heading4",
-        "heading5",
-        "heading6",
-        "heading7",
-        "heading8",
-        "heading9",
-        "bullet",
-        "ordered",
-        "code",
-        "quote",
-        "todo",
-        "divider",
-        "callout",
-    ]
-    content: str
-    parent_block_id: str
+# Token refresh buffer - refresh tokens this many seconds before expiry
+TOKEN_REFRESH_BUFFER_SECONDS = 300  # 5 minutes
 
 
 def _extract_text_from_element(element: Any) -> str:
@@ -524,9 +487,8 @@ class LarkToolkit(BaseToolkit):
 
         if token_loaded and self._token_expires_at is not None:
             # Check if token is expired or will expire soon
-            # user_access_token has 2-hour lifetime, use 60s buffer
             time_remaining = self._token_expires_at - time.time()
-            if time_remaining < 60:
+            if time_remaining < TOKEN_REFRESH_BUFFER_SECONDS:
                 logger.info(
                     f"Token expires in {time_remaining:.0f}s, refreshing..."
                 )
@@ -672,24 +634,41 @@ class LarkToolkit(BaseToolkit):
     # =========================================================================
 
     def _get_http_headers(self) -> Dict[str, str]:
-        r"""Get HTTP headers with appropriate authorization.
+        r"""Get HTTP headers with user access token authorization.
 
-        Uses user_access_token if available (OAuth), otherwise gets a
-        tenant_access_token from the client.
+        Requires user_access_token from OAuth flow. Use this for user
+        operations like reading documents, listing files, etc.
+
+        Automatically refreshes the token if it's expired or near expiry
+        (within 5 minutes).
 
         Returns:
             Dict[str, str]: Headers dict with Content-Type and Authorization.
+
+        Raises:
+            ValueError: If user_access_token is not available.
         """
-        headers = {"Content-Type": "application/json; charset=utf-8"}
+        if not self._user_access_token:
+            raise ValueError(
+                "user_access_token is required for this operation. "
+                "Please authenticate using OAuth flow first."
+            )
 
-        if self._user_access_token:
-            headers["Authorization"] = f"Bearer {self._user_access_token}"
-        else:
-            # Get tenant access token from the SDK client
-            token = self._client._token_manager.get_tenant_access_token()
-            headers["Authorization"] = f"Bearer {token}"
+        # Auto-refresh if token is expired or near expiry
+        if self._token_expires_at:
+            time_remaining = self._token_expires_at - time.time()
+            if time_remaining < TOKEN_REFRESH_BUFFER_SECONDS:
+                try:
+                    self._refresh_user_token()
+                    logger.info("Auto-refreshed expired user token")
+                except Exception as e:
+                    logger.warning(f"Failed to auto-refresh token: {e}")
+                    # Continue with current token, let API call fail if invalid
 
-        return headers
+        return {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": f"Bearer {self._user_access_token}",
+        }
 
     def _get_tenant_http_headers(self) -> Dict[str, str]:
         r"""Get HTTP headers with tenant access token authorization.
@@ -762,8 +741,6 @@ class LarkToolkit(BaseToolkit):
                 - revision_id: The revision ID of the document
                 - folder_token: The folder where the document was created
         """
-        import requests
-
         try:
             url = f"{self._domain}/open-apis/docx/v1/documents"
             headers = self._get_http_headers()
@@ -816,8 +793,6 @@ class LarkToolkit(BaseToolkit):
                 - title: The document title
                 - revision_id: Current revision ID
         """
-        import requests
-
         try:
             url = f"{self._domain}/open-apis/docx/v1/documents/{document_id}"
             headers = self._get_http_headers()
@@ -863,8 +838,6 @@ class LarkToolkit(BaseToolkit):
                 - document_id: The document ID
                 - content: The extracted plain text content
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -917,8 +890,6 @@ class LarkToolkit(BaseToolkit):
                 - has_more: Whether there are more blocks to fetch
                 - page_token: Token to fetch the next page
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -992,8 +963,6 @@ class LarkToolkit(BaseToolkit):
                 - children: List of child block IDs
                 - text_content: Extracted text content (if applicable)
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -1056,8 +1025,6 @@ class LarkToolkit(BaseToolkit):
                 - has_more: Whether there are more children to fetch
                 - page_token: Token to fetch the next page
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -1117,15 +1084,7 @@ class LarkToolkit(BaseToolkit):
         document_id: str,
         block_type: Literal[
             "text",
-            "heading1",
-            "heading2",
-            "heading3",
-            "heading4",
-            "heading5",
-            "heading6",
-            "heading7",
-            "heading8",
-            "heading9",
+            "heading",
             "bullet",
             "ordered",
             "code",
@@ -1134,7 +1093,10 @@ class LarkToolkit(BaseToolkit):
             "divider",
             "callout",
         ],
-        content: str,
+        content: Optional[str] = None,
+        heading_level: Optional[int] = None,
+        code_language: Optional[str] = None,
+        todo_checked: Optional[bool] = None,
         parent_block_id: Optional[str] = None,
         index: int = -1,
     ) -> Dict[str, Any]:
@@ -1143,9 +1105,16 @@ class LarkToolkit(BaseToolkit):
         Args:
             document_id (str): The unique identifier of the document.
             block_type (str): The type of block to create. Supported types:
-                text, heading1-9, bullet, ordered, code, quote, todo, divider,
+                text, heading, bullet, ordered, code, quote, todo, divider,
                 callout.
-            content (str): The text content of the block.
+            content (Optional[str]): The text content of the block. Required
+                for all types except "divider".
+            heading_level (Optional[int]): Heading level 1-9. Only used when
+                block_type is "heading". Defaults to 1.
+            code_language (Optional[str]): Programming language for syntax
+                highlighting. Only used when block_type is "code".
+            todo_checked (Optional[bool]): Whether the todo item is checked.
+                Only used when block_type is "todo". Defaults to False.
             parent_block_id (Optional[str]): The parent block ID. If not
                 provided, the block will be added to the document root.
             index (int): The position to insert the block. -1 means append
@@ -1157,9 +1126,26 @@ class LarkToolkit(BaseToolkit):
                 - block_type: The type of the created block
                 - document_revision_id: The new document revision ID
         """
-        import requests
-
         try:
+            # Validate content requirement
+            if block_type != "divider" and not content:
+                return {
+                    "error": "content is required for non-divider blocks",
+                    "code": "INVALID_PARAMETER",
+                }
+
+            # Validate heading level
+            if block_type == "heading":
+                level = heading_level or 1
+                if not 1 <= level <= 9:
+                    return {
+                        "error": "heading_level must be between 1 and 9",
+                        "code": "INVALID_PARAMETER",
+                    }
+                actual_block_type = f"heading{level}"
+            else:
+                actual_block_type = block_type
+
             # Normalize index (LLM tool calls may pass None)
             if index is None:
                 index = -1
@@ -1174,11 +1160,7 @@ class LarkToolkit(BaseToolkit):
             headers = self._get_http_headers()
 
             # Get the block type number
-            block_type_num = BLOCK_TYPES.get(block_type, 2)
-
-            # Build text element structure
-            text_element = {"text_run": {"content": content}}
-            text_obj = {"elements": [text_element]}
+            block_type_num = BLOCK_TYPES.get(actual_block_type, 2)
 
             # Build the block based on type
             block: Dict[str, Any] = {"block_type": block_type_num}
@@ -1186,10 +1168,25 @@ class LarkToolkit(BaseToolkit):
             if block_type == "divider":
                 block["divider"] = {}
             elif block_type == "callout":
+                text_element = {"text_run": {"content": content or ""}}
                 block["callout"] = {"elements": [text_element]}
+            elif block_type == "code":
+                text_element = {"text_run": {"content": content or ""}}
+                code_obj: Dict[str, Any] = {"elements": [text_element]}
+                if code_language:
+                    code_obj["style"] = {"language": code_language}
+                block["code"] = code_obj
+            elif block_type == "todo":
+                text_element = {"text_run": {"content": content or ""}}
+                todo_obj: Dict[str, Any] = {"elements": [text_element]}
+                if todo_checked is not None:
+                    todo_obj["style"] = {"done": todo_checked}
+                block["todo"] = todo_obj
             else:
-                # For text, headings, bullet, ordered, code, quote, todo
-                block[block_type] = text_obj
+                # For text, headings, bullet, ordered, quote
+                text_element = {"text_run": {"content": content or ""}}
+                text_obj = {"elements": [text_element]}
+                block[actual_block_type] = text_obj
 
             # Build request body
             body: Dict[str, Any] = {"children": [block]}
@@ -1221,7 +1218,6 @@ class LarkToolkit(BaseToolkit):
                 }
 
             return {
-                "success": True,
                 "document_revision_id": data.get("document_revision_id"),
             }
 
@@ -1247,12 +1243,9 @@ class LarkToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary containing:
-                - success: Whether the update was successful
                 - block_id: The ID of the updated block
                 - document_revision_id: The new document revision ID
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/docx/v1/documents/"
@@ -1284,7 +1277,6 @@ class LarkToolkit(BaseToolkit):
 
             data = result.get("data", {})
             return {
-                "success": True,
                 "block_id": block_id,
                 "document_revision_id": data.get("document_revision_id"),
             }
@@ -1297,28 +1289,31 @@ class LarkToolkit(BaseToolkit):
         self,
         document_id: str,
         block_id: str,
+        parent_block_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Deletes a block from a Lark document.
 
         Args:
             document_id (str): The unique identifier of the document.
             block_id (str): The unique identifier of the block to delete.
+            parent_block_id (Optional[str]): The parent block ID. If provided,
+                skips an API call to look up the parent. Use this when you
+                already know the parent from lark_list_document_blocks.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
-                - success: Whether the deletion was successful
                 - block_id: The ID of the deleted block
                 - document_revision_id: The new document revision ID
         """
-        import requests
-
         try:
-            # First, get the block info to find its parent
-            block_info = self.lark_get_block(document_id, block_id)
-            if "error" in block_info:
-                return block_info
-
-            parent_id = block_info.get("parent_id", document_id)
+            # Use provided parent_id or fetch it
+            if parent_block_id:
+                parent_id = parent_block_id
+            else:
+                block_info = self.lark_get_block(document_id, block_id)
+                if "error" in block_info:
+                    return block_info
+                parent_id = block_info.get("parent_id", document_id)
 
             # Get the parent's children to find the index of our target block
             children_result = self.lark_get_block_children(
@@ -1382,7 +1377,6 @@ class LarkToolkit(BaseToolkit):
 
             data = result.get("data", {})
             return {
-                "success": True,
                 "block_id": block_id,
                 "document_revision_id": data.get("document_revision_id"),
             }
@@ -1390,129 +1384,6 @@ class LarkToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error deleting block: {e}")
             return {"error": f"Error deleting block: {e!s}"}
-
-    def lark_batch_update_blocks(
-        self,
-        document_id: str,
-        operations_json: str,
-    ) -> Dict[str, Any]:
-        r"""Performs batch operations on document blocks.
-
-        This method allows you to perform multiple block operations in a single
-        API call, which is more efficient than making individual requests.
-
-        Args:
-            document_id (str): The unique identifier of the document.
-            operations_json (str): A JSON string containing a list of
-                operations.
-                Each operation is a dictionary with:
-                - action: "create", "update", or "delete"
-                - block_id: Required for "update" and "delete" actions
-                - block_type: Required for "create" action
-                - content: Required for "create" and "update" actions
-                - parent_block_id: Optional, for "create" action
-
-        Returns:
-            Dict[str, Any]: A dictionary containing:
-                - success: Whether all operations were successful
-                - results: List of results for each operation
-                - document_revision_id: The final document revision ID
-
-        Example:
-            >>> operations_json = '''[
-            ...     {"action": "create", "block_type": "text",
-            ...      "content": "New paragraph"},
-            ...     {"action": "update", "block_id": "block123",
-            ...      "content": "Updated text"},
-            ...     {"action": "delete", "block_id": "block456"}
-            ... ]'''
-            >>> toolkit.lark_batch_update_blocks(document_id, operations_json)
-        """
-        import json
-
-        try:
-            operations = json.loads(operations_json)
-        except json.JSONDecodeError as e:
-            return {"error": f"Invalid JSON in operations_json: {e}"}
-
-        if not isinstance(operations, list):
-            return {"error": "operations_json must be a JSON array"}
-
-        results = []
-        final_revision_id = None
-
-        for i, op in enumerate(operations):
-            action = op.get("action", "").lower()
-            result = {"index": i, "action": action}
-
-            try:
-                if action == "create":
-                    block_type = op.get("block_type", "text")
-                    content = op.get("content", "")
-                    parent_block_id = op.get("parent_block_id")
-
-                    create_result = self.lark_create_block(
-                        document_id=document_id,
-                        block_type=block_type,
-                        content=content,
-                        parent_block_id=parent_block_id,
-                    )
-                    result.update(create_result)
-                    if "document_revision_id" in create_result:
-                        final_revision_id = create_result[
-                            "document_revision_id"
-                        ]
-
-                elif action == "update":
-                    block_id = op.get("block_id")
-                    content = op.get("content", "")
-
-                    if not block_id:
-                        result["error"] = "block_id is required for update"
-                    else:
-                        update_result = self.lark_update_block(
-                            document_id=document_id,
-                            block_id=block_id,
-                            content=content,
-                        )
-                        result.update(update_result)
-                        if "document_revision_id" in update_result:
-                            final_revision_id = update_result[
-                                "document_revision_id"
-                            ]
-
-                elif action == "delete":
-                    block_id = op.get("block_id")
-
-                    if not block_id:
-                        result["error"] = "block_id is required for delete"
-                    else:
-                        delete_result = self.lark_delete_block(
-                            document_id=document_id,
-                            block_id=block_id,
-                        )
-                        result.update(delete_result)
-                        if "document_revision_id" in delete_result:
-                            final_revision_id = delete_result[
-                                "document_revision_id"
-                            ]
-
-                else:
-                    result["error"] = f"Unknown action: {action}"
-
-            except Exception as e:
-                result["error"] = str(e)
-
-            results.append(result)
-
-        # Check if all operations were successful
-        all_success = all("error" not in r for r in results)
-
-        return {
-            "success": all_success,
-            "results": results,
-            "document_revision_id": final_revision_id,
-        }
 
     def lark_list_folder_contents(
         self,
@@ -1561,8 +1432,6 @@ class LarkToolkit(BaseToolkit):
             ...     folder_token=result["files"][0]["token"]
             ... )
         """
-        import requests
-
         try:
             url = f"{self._domain}/open-apis/drive/v1/files"
             headers = self._get_http_headers()
@@ -1662,8 +1531,6 @@ class LarkToolkit(BaseToolkit):
             ...     folder_token=root["token"]
             ... )
         """
-        import requests
-
         try:
             url = (
                 f"{self._domain}/open-apis/drive/explorer/v2/root_folder/meta"
@@ -1728,8 +1595,6 @@ class LarkToolkit(BaseToolkit):
             ...     folder_token=folder["token"]
             ... )
         """
-        import requests
-
         try:
             # If no folder token provided, get the root folder
             parent_token = folder_token
@@ -1818,9 +1683,6 @@ class LarkToolkit(BaseToolkit):
             ...     receive_id_type="chat_id"
             ... )
         """
-        import json
-
-        import requests
 
         try:
             url = f"{self._domain}/open-apis/im/v1/messages"
@@ -1887,8 +1749,6 @@ class LarkToolkit(BaseToolkit):
             >>> for chat in chats["items"]:
             ...     print(f"{chat['name']}: {chat['chat_id']}")
         """
-        import requests
-
         try:
             url = f"{self._domain}/open-apis/im/v1/chats"
             headers = self._get_tenant_http_headers()
@@ -1955,8 +1815,6 @@ class LarkToolkit(BaseToolkit):
                 - member_count: Number of members in the chat
                 - avatar: Chat avatar URL
         """
-        import requests
-
         try:
             url = f"{self._domain}/open-apis/im/v1/chats/{chat_id}"
             headers = self._get_tenant_http_headers()
@@ -1992,16 +1850,28 @@ class LarkToolkit(BaseToolkit):
     def lark_get_chat_messages(
         self,
         container_id: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        sort_type: Literal[
+            "ByCreateTimeAsc", "ByCreateTimeDesc"
+        ] = "ByCreateTimeDesc",
         page_size: int = 50,
         page_token: Optional[str] = None,
     ) -> Dict[str, Any]:
-        r"""Gets message history from a chat.
+        r"""Gets message history from a chat with optional time filtering.
 
-        Retrieves messages from a specific chat in reverse chronological order
-        (newest first).
+        Retrieves messages from a specific chat. Requires the bot to be a
+        member of the chat.
 
         Args:
             container_id (str): The chat ID to retrieve messages from.
+            start_time (Optional[str]): Start time filter (Unix timestamp in
+                seconds, e.g., "1609459200"). Messages created after this time.
+            end_time (Optional[str]): End time filter (Unix timestamp in
+                seconds). Messages created before this time.
+            sort_type (str): Sort order for messages. Options:
+                - "ByCreateTimeAsc": Oldest first
+                - "ByCreateTimeDesc": Newest first (default)
             page_size (int): Number of messages to return per page (max 50).
                 (default: 50)
             page_token (Optional[str]): Token for pagination. Use the
@@ -2010,17 +1880,26 @@ class LarkToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - items: List of message objects with message_id, msg_type,
-                    content, sender_id, create_time
+                    content, sender_id, sender_type, create_time, chat_id
                 - has_more: Whether there are more messages to fetch
                 - page_token: Token to fetch the next page
 
         Example:
-            >>> messages = toolkit.lark_get_chat_messages(chat_id="oc_xxx")
+            >>> # Get recent messages
+            >>> messages = toolkit.lark_get_chat_messages(
+            ...     container_id="oc_xxx"
+            ... )
             >>> for msg in messages["items"]:
             ...     print(f"{msg['sender_id']}: {msg['content']}")
-        """
-        import requests
 
+            >>> # Get messages from a specific time range
+            >>> messages = toolkit.lark_get_chat_messages(
+            ...     container_id="oc_xxx",
+            ...     start_time="1609459200",
+            ...     end_time="1609545600",
+            ...     sort_type="ByCreateTimeAsc"
+            ... )
+        """
         try:
             url = f"{self._domain}/open-apis/im/v1/messages"
             headers = self._get_tenant_http_headers()
@@ -2028,8 +1907,13 @@ class LarkToolkit(BaseToolkit):
             params: Dict[str, Any] = {
                 "container_id_type": "chat",
                 "container_id": container_id,
-                "page_size": page_size,
+                "page_size": min(page_size, 50),
+                "sort_type": sort_type,
             }
+            if start_time:
+                params["start_time"] = start_time
+            if end_time:
+                params["end_time"] = end_time
             if page_token:
                 params["page_token"] = page_token
 
@@ -2082,130 +1966,6 @@ class LarkToolkit(BaseToolkit):
             logger.error(f"Error getting chat messages: {e}")
             return {"error": f"Error getting chat messages: {e!s}"}
 
-    def lark_get_chat_history(
-        self,
-        container_id: str,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        sort_type: str = "ByCreateTimeDesc",
-        page_size: int = 50,
-        page_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        r"""Gets chat history with time filtering and sorting options.
-
-        This method retrieves message history from a chat with additional
-        filtering options compared to lark_get_chat_messages(). Supports
-        time-based filtering and sort order control.
-
-        Requires the bot to be a member of the chat.
-
-        API Reference: https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/list
-
-        Args:
-            container_id (str): The chat ID to retrieve messages from.
-            start_time (Optional[str]): Start time filter (Unix timestamp in
-                seconds, e.g., "1609459200"). Messages created after this time.
-            end_time (Optional[str]): End time filter (Unix timestamp in
-                seconds). Messages created before this time.
-            sort_type (str): Sort order for messages. Options:
-                - "ByCreateTimeAsc": Oldest first
-                - "ByCreateTimeDesc": Newest first (default)
-            page_size (int): Number of messages per page (max 50, default 50).
-            page_token (Optional[str]): Token for pagination. Use the
-                page_token from previous response to get next page.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing:
-                - items: List of message objects with message_id, msg_type,
-                    content, sender_id, sender_type, create_time, chat_id
-                - has_more: Whether there are more messages to fetch
-                - page_token: Token to fetch the next page
-
-        Example:
-            >>> # Get recent messages from a chat (user must be a member)
-            >>> history = toolkit.lark_get_chat_history(container_id="oc_xxx")
-            >>> for msg in history["items"]:
-            ...     print(f"{msg['sender_id']}: {msg['content']}")
-
-            >>> # Get messages from a specific time range
-            >>> history = toolkit.lark_get_chat_history(
-            ...     container_id="oc_xxx",
-            ...     start_time="1609459200",
-            ...     end_time="1609545600",
-            ...     sort_type="ByCreateTimeAsc"
-            ... )
-        """
-        import requests
-
-        try:
-            url = f"{self._domain}/open-apis/im/v1/messages"
-            # Use tenant_access_token (bot auth)
-            headers = self._get_tenant_http_headers()
-
-            params: Dict[str, Any] = {
-                "container_id_type": "chat",
-                "container_id": container_id,
-                "page_size": min(page_size, 50),
-                "sort_type": sort_type,
-            }
-            if start_time:
-                params["start_time"] = start_time
-            if end_time:
-                params["end_time"] = end_time
-            if page_token:
-                params["page_token"] = page_token
-
-            response = requests.get(
-                url, headers=headers, params=params, timeout=30
-            )
-            result = response.json()
-
-            if result.get("code") != 0:
-                logger.error(
-                    f"Failed to get chat history: {result.get('code')} - "
-                    f"{result.get('msg')}"
-                )
-                return {
-                    "error": f"Failed to get history: {result.get('msg')}",
-                    "code": result.get("code"),
-                }
-
-            data = result.get("data", {})
-            items = []
-            message_list = data.get("items", []) or []
-            for msg in message_list:
-                # Extract sender info
-                sender = msg.get("sender", {})
-                sender_id = sender.get("id") if sender else None
-
-                # Parse message content (may be JSON string)
-                content = msg.get("body", {}).get("content", "")
-
-                msg_info = {
-                    "message_id": msg.get("message_id"),
-                    "msg_type": msg.get("msg_type"),
-                    "content": content,
-                    "sender_id": sender_id,
-                    "sender_type": sender.get("sender_type")
-                    if sender
-                    else None,
-                    "create_time": msg.get("create_time"),
-                    "chat_id": msg.get("chat_id"),
-                    "update_time": msg.get("update_time"),
-                    "deleted": msg.get("deleted", False),
-                }
-                items.append(msg_info)
-
-            return {
-                "items": items,
-                "has_more": data.get("has_more", False),
-                "page_token": data.get("page_token"),
-            }
-
-        except Exception as e:
-            logger.error(f"Error getting chat history: {e}")
-            return {"error": f"Error getting chat history: {e!s}"}
-
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -2230,11 +1990,9 @@ class LarkToolkit(BaseToolkit):
             FunctionTool(self.lark_create_block),
             FunctionTool(self.lark_update_block),
             FunctionTool(self.lark_delete_block),
-            FunctionTool(self.lark_batch_update_blocks),
             # Messaging operations
             FunctionTool(self.lark_send_message),
             FunctionTool(self.lark_list_chats),
             FunctionTool(self.lark_get_chat),
             FunctionTool(self.lark_get_chat_messages),
-            FunctionTool(self.lark_get_chat_history),
         ]
