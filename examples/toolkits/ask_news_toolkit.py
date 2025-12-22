@@ -24,18 +24,18 @@ print(news_output[:1000])
 <doc>
 [1]:
 Title: Can Elon Musk Become President of the United States?
-Summary: Elon Musk, the American billionaire, has been appointed to lead the 
-Department of Government Efficiency in Donald Trump's upcoming administration, 
-sparking speculation about his potential presidential ambitions. However, 
-according to the US Constitution, the President must be a natural-born citizen 
-of the United States. As Musk was born in South Africa and became a Canadian 
-citizen through his mother, he does not meet this requirement. While he 
-acquired US citizenship in 2002, this does not make him a natural-born 
-citizen. Additionally, the Constitution requires the President to be at least 
-35 years old and a resident of the United States for at least 14 years. Musk 
-can, however, hold other government positions, as the requirement of being a 
-natural-born citizen only applies to the President and Vice President. Many 
-non-US-born citizens have held prominent government positions in the past, 
+Summary: Elon Musk, the American billionaire, has been appointed to lead the
+Department of Government Efficiency in Donald Trump's upcoming administration,
+sparking speculation about his potential presidential ambitions. However,
+according to the US Constitution, the President must be a natural-born citizen
+of the United States. As Musk was born in South Africa and became a Canadian
+citizen through his mother, he does not meet this requirement. While he
+acquired US citizenship in 2002, this does not make him a natural-born
+citizen. Additionally, the Constitution requires the President to be at least
+35 years old and a resident of the United States for at least 14 years. Musk
+can, however, hold other government positions, as the requirement of being a
+natural-born citizen only applies to the President and Vice President. Many
+non-US-born citizens have held prominent government positions in the past,
 including Henry
 ===============================================================================
 """

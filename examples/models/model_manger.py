@@ -91,17 +91,17 @@ print(agent_2_response.msg.content)
 
 """
 ===============================================================================
-The phrase "the meaning of life, the universe, and everything" is famously 
-associated with Douglas Adams' science fiction series "The Hitchhiker's Guide 
-to the Galaxy." In the story, a group of hyper-intelligent beings builds a 
-supercomputer named Deep Thought to calculate the answer to the ultimate 
-question of life, the universe, and everything. After much contemplation, the 
-computer reveals that the answer is simply the number 42, though the actual 
-question remains unknown. 
+The phrase "the meaning of life, the universe, and everything" is famously
+associated with Douglas Adams' science fiction series "The Hitchhiker's Guide
+to the Galaxy." In the story, a group of hyper-intelligent beings builds a
+supercomputer named Deep Thought to calculate the answer to the ultimate
+question of life, the universe, and everything. After much contemplation, the
+computer reveals that the answer is simply the number 42, though the actual
+question remains unknown.
 
-This has led to various interpretations and discussions about the nature of 
-existence, purpose, and the search for meaning in life. Ultimately, the 
-meaning of life can vary greatly from person to person, shaped by individual 
+This has led to various interpretations and discussions about the nature of
+existence, purpose, and the search for meaning in life. Ultimately, the
+meaning of life can vary greatly from person to person, shaped by individual
 beliefs, experiences, and values.
 ===============================================================================
 """

@@ -128,8 +128,8 @@ async def run_demo() -> None:
 
     teacher = build_teacher_agent()
     student = build_student_agent()
-    await workforce.add_single_agent_worker("Teacher Worker", teacher)
-    await workforce.add_single_agent_worker("Student Worker", student)
+    await workforce.add_single_agent_worker_async("Teacher Worker", teacher)
+    await workforce.add_single_agent_worker_async("Student Worker", student)
     await workforce.process_task_async(
         Task(
             content="The teacher set an exam question and had the "
@@ -138,8 +138,8 @@ async def run_demo() -> None:
     )
 
     # Read KPIs and a simple "tree"
-    print(f"KPIs: {await workforce.get_workforce_kpis()}")
-    print(f"Tree: {await workforce.get_workforce_log_tree()}")
+    print(f"KPIs: {await workforce.get_workforce_kpis_async()}")
+    print(f"Tree: {await workforce.get_workforce_log_tree_async()}")
 
 
 if __name__ == "__main__":

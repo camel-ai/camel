@@ -27,6 +27,14 @@ Initializes a new instance of the GoogleCalendarToolkit class.
 
 - **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
 
+**Note:**
+
+Before using this toolkit, make sure to:
+1. Set the required environment variables: GOOGLE_CLIENT_ID and
+GOOGLE_CLIENT_SECRET
+2. Configure the redirect URI in Google Cloud Console to
+http://localhost/
+
 <a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.create_event"></a>
 
 ### create_event

@@ -43,8 +43,8 @@ async def main():
     # Create specialized agents for the workforce
     web_researcher_sys_msg = BaseMessage.make_assistant_message(
         role_name="Web Researcher",
-        content="""You are an expert at researching information on the web. 
-You can search for and analyze web content to extract accurate information. 
+        content="""You are an expert at researching information on the web.
+You can search for and analyze web content to extract accurate information.
 You excel at understanding complex queries and finding precise answers.""",
     )
 
@@ -69,13 +69,13 @@ You excel at understanding complex queries and finding precise answers.""",
         new_worker_agent=new_worker_agent,
     )
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         description="Web content researcher",
         worker=web_researcher_agent,
     )
 
     # Add a role-playing worker for complex queries
-    await workforce.add_role_playing_worker(
+    await workforce.add_role_playing_worker_async(
         description="Collaborative research team",
         assistant_role_name="Research Assistant",
         user_role_name="Research Lead",

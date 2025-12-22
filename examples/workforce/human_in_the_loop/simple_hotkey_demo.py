@@ -60,8 +60,8 @@ async def create_simple_workforce():
     )
 
     workforce = Workforce('Simple Demo Workforce')
-    await workforce.add_single_agent_worker("Poet Agent", poet_agent)
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async("Poet Agent", poet_agent)
+    await workforce.add_single_agent_worker_async(
         "File Write Agent", file_write_agent
     )
 

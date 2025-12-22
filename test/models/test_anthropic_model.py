@@ -34,6 +34,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.CLAUDE_3_5_HAIKU,
         ModelType.CLAUDE_3_7_SONNET,
         ModelType.CLAUDE_SONNET_4_5,
+        ModelType.CLAUDE_OPUS_4_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,
         ModelType.CLAUDE_OPUS_4_1,

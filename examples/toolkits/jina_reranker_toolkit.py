@@ -46,17 +46,17 @@ response = agent.step(
 print(str(response.info['tool_calls'])[:1000])
 """"
 ===========================================================================
-[ToolCallingRecord(tool_name='rerank_text_documents', args={'query': 'How to 
-use markdown with small language models', 'documents': ['Markdown is a 
-lightweight markup language with plain-text formatting syntax.', 'Python is a 
-high-level, interpreted programming language known for its readability.', 'SLM 
-(Small Language Models) are compact AI models designed for specific tasks.', 
-'JavaScript is a scripting language primarily used for creating interactive 
-web pages.'], 'max_length': 1024}, result=[('Markdown is a lightweight markup 
-language with plain-text formatting syntax.', 0.7915633916854858), ('SLM 
+[ToolCallingRecord(tool_name='rerank_text_documents', args={'query': 'How to
+use markdown with small language models', 'documents': ['Markdown is a
+lightweight markup language with plain-text formatting syntax.', 'Python is a
+high-level, interpreted programming language known for its readability.', 'SLM
+(Small Language Models) are compact AI models designed for specific tasks.',
+'JavaScript is a scripting language primarily used for creating interactive
+web pages.'], 'max_length': 1024}, result=[('Markdown is a lightweight markup
+language with plain-text formatting syntax.', 0.7915633916854858), ('SLM
 (Small Language Models) are compact AI models designed for specific tasks.', 0.
-7915633916854858), ('Python is a high-level, interpreted programming language 
-known for its readability.', 0.43936243653297424), ('JavaScript is a scripting 
+7915633916854858), ('Python is a high-level, interpreted programming language
+known for its readability.', 0.43936243653297424), ('JavaScript is a scripting
 language primarily used for creating interactive web pages.', 0.
 3716837763786316)], tool_call_id='call_JKnuvTO1fUQP7PWhyCSQCK7N')]
 ===========================================================================

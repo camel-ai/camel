@@ -19,6 +19,7 @@ from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
+from .cerebras_model import CerebrasModel
 from .cohere_model import CohereModel
 from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
@@ -29,6 +30,7 @@ from .groq_model import GroqModel
 from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
 from .lmstudio_model import LMStudioModel
+from .minimax_model import MinimaxModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
@@ -70,6 +72,7 @@ __all__ = [
     'GroqModel',
     'StubModel',
     'ZhipuAIModel',
+    'CerebrasModel',
     'CohereModel',
     'CometAPIModel',
     'ModelFactory',
@@ -104,6 +107,7 @@ __all__ = [
     'SiliconFlowModel',
     'VolcanoModel',
     'LMStudioModel',
+    'MinimaxModel',
     'WatsonXModel',
     'QianfanModel',
     'CrynuxModel',

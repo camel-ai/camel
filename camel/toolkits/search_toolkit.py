@@ -20,7 +20,11 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 logger = get_logger(__name__)
 
@@ -161,7 +165,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"An unexpected error occurred: {e!s}"}
 
-    @dependencies_required("duckduckgo_search")
+    @dependencies_required("ddgs")
     def search_duckduckgo(
         self,
         query: str,
@@ -188,16 +192,14 @@ class SearchToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
                 represents a search result.
         """
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
 
         ddgs = DDGS()
         responses: List[Dict[str, Any]] = []
 
         if source == "text":
             try:
-                results = ddgs.text(
-                    keywords=query, max_results=number_of_result_pages
-                )
+                results = ddgs.text(query, max_results=number_of_result_pages)
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
                     # Creating a response object with a similar structure
@@ -215,7 +217,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "images":
             try:
                 results = ddgs.images(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
@@ -235,7 +237,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "videos":
             try:
                 results = ddgs.videos(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):

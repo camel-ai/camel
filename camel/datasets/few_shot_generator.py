@@ -29,24 +29,24 @@ from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """**You are an advanced data generation assistant.**  
-Your goal is to generate high-quality synthetic data points based on 
-provided examples. Your output must be well-structured, 
-logically sound, and formatted correctly. 
+SYSTEM_PROMPT = """**You are an advanced data generation assistant.**
+Your goal is to generate high-quality synthetic data points based on
+provided examples. Your output must be well-structured,
+logically sound, and formatted correctly.
 
 **Instructions:**
-1. **Follow the Structure**  
-   Each data point must include:  
-   - **Question**: A clear, well-formed query.  
-   - **Rationale**: A step-by-step, executable reasoning process ending 
-   with `print(final_answer)`.  
-   - **Final Answer**: The correct, concise result.  
+1. **Follow the Structure**
+   Each data point must include:
+   - **Question**: A clear, well-formed query.
+   - **Rationale**: A step-by-step, executable reasoning process ending
+   with `print(final_answer)`.
+   - **Final Answer**: The correct, concise result.
 
-2. **Ensure Logical Consistency**  
-   - The `rationale` must be code that runs correctly.  
-   - The `final_answer` should match the printed output.  
+2. **Ensure Logical Consistency**
+   - The `rationale` must be code that runs correctly.
+   - The `final_answer` should match the printed output.
 
-3. **Output Format (Strict)**  
+3. **Output Format (Strict)**
 ```
 Question: [Generated question]
 Rationale: [Code that solves the question, ending in a print statement,

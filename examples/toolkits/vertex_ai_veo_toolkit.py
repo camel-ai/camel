@@ -174,7 +174,7 @@ def agent_integration_example():
     agent = ChatAgent(
         model=model,
         tools=toolkit.get_tools(),
-        system_message="""You are a video generation assistant. 
+        system_message="""You are a video generation assistant.
         You can help users create videos using Google's Vertex AI Veo models.
         Always explain the video generation process and parameters to users.""",  # noqa: E501
     )

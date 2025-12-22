@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.79a2"
+version = "0.2.81a0"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -26,13 +26,13 @@ dependencies = [
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.17.0,<0.18",
-    "pydantic>=2.10.6",
+    "pydantic>=2.10.6,<=2.12.0",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
-    "pillow>=10.1.0,<11.0.0",
-    "openai>=1.86.0,<2",
+    "openai>=1.86.0",
     "websockets>=13.0,<15.1",
     "astor>=0.8.1",
+    "pillow>=10.0.0",
 ]
 
 
@@ -75,6 +75,7 @@ rag = [
     "faiss-cpu>=1.7.2,<2",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -87,7 +88,7 @@ rag = [
     "chromadb>=0.6.0,<1.0.0",
 ]
 web_tools = [
-    "duckduckgo-search>=6.3.5,<7",
+    "ddgs>=9.0.0,<10",
     "wikipedia>=1,<2",
     "firecrawl-py>=1.0.0,<2",
     "apify_client>=1.8.1,<2",
@@ -99,6 +100,7 @@ web_tools = [
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "sympy>=1.13.3,<2",
@@ -187,7 +189,7 @@ model_platforms = [
     "reka-api>=3.0.8,<4",
     "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
-    "fish-audio-sdk>=2024.12.5,<2025",
+    "fish-audio-sdk>=1.0.0",
     "ibm-watsonx-ai>=1.3.11",
 ]
 huggingface = [
@@ -213,6 +215,7 @@ storage = [
     "pyobvector>=0.1.18; python_version < '3.13'",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "surrealdb>=1.0.6",
@@ -244,7 +247,7 @@ owl = [
     "tabulate>=0.9.0",
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
-    "duckduckgo-search>=6.3.5,<7",
+    "ddgs>=9.0.0,<10",
     "wikipedia>=1,<2",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
@@ -301,6 +304,7 @@ eigent = [
     "google-api-python-client==2.166.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
+    "httplib2>=0.31.0",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -315,12 +319,13 @@ all = [
     "unstructured==0.16.20; python_version < '3.13'",
     "wikipedia>=1,<2",
     "linkup-sdk>=0.2.1,<0.3",
-    "duckduckgo-search>=6.3.5,<7",
+    "ddgs>=9.0.0,<10",
     "wolframalpha>=5.0.0,<6",
     "sympy>=1.13.3,<2",
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "google-api-python-client==2.166.0",
+    "google-auth>=2.0.0,<3.0.0",
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "requests_oauthlib>=1.3.1,<2",
@@ -372,7 +377,7 @@ all = [
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
-    "fish-audio-sdk>=2024.12.5,<2025",
+    "fish-audio-sdk>=1.0.0",
     "anthropic>=0.47.0,<0.50.0",
     "reka-api>=3.0.8,<4",
     "redis>=5.0.6,<6",
@@ -418,6 +423,7 @@ all = [
     "chunkr-ai>=0.0.50, <0.1.0",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
+    "grpcio>=1.72.0",
     "python-pptx>=1.0.2",
     "langfuse>=2.60.5",
     "Flask>=2.0",
@@ -430,6 +436,7 @@ all = [
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
     "google-cloud-aiplatform>=1.111.0",
+    "httplib2>=0.31.0",
 ]
 
 [project.urls]
@@ -541,7 +548,7 @@ module = [
     "huggingface_hub.errors",
     "wikipedia",
     "linkup-sdk",
-    "duckduckgo_search",
+    "ddgs",
     "newspaper",
     "wolframalpha",
     "pyowm",
@@ -654,7 +661,8 @@ module = [
     "surrealdb.*",
     "microsandbox.*",
     "sentence_transformers.*",
-    "markitdown"
+    "markitdown",
+    "httplib2",
 ]
 ignore_missing_imports = true
 
@@ -662,8 +670,8 @@ ignore_missing_imports = true
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 # the .py file needs to be listed twice since pre-commit and codespell treat
 # that path differently.
-skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py,examples/usecases,./examples/usecases'
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py'
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,'

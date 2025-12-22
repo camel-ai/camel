@@ -36,8 +36,8 @@ def _configure_library_logging():
             f"CAMEL library logging has been configured "
             f"(level: {_logger.getEffectiveLevel()}). "
             f"To change level, use set_log_level() or "
-            "set CAMEL_LOGGING_LEVEL env var. To disable logging, "
-            "set CAMEL_LOGGING_DISABLED=true or use disable_logging()"
+            f"set CAMEL_LOGGING_LEVEL env var. To disable logging, "
+            f"set CAMEL_LOGGING_DISABLED=true or use disable_logging()"
         )
     else:
         _logger.debug("Existing logger configuration found, using that.")

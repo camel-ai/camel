@@ -63,8 +63,8 @@ async def main():
     )
 
     workforce = Workforce('a travel group')
-    await workforce.add_single_agent_worker('planner', planner_agent)
-    await workforce.add_role_playing_worker(
+    await workforce.add_single_agent_worker_async('planner', planner_agent)
+    await workforce.add_role_playing_worker_async(
         description='research Group',
         assistant_role_name=assistant_role_name,
         user_role_name=user_role_name,
@@ -73,7 +73,7 @@ async def main():
         summarize_agent_kwargs={},
         chat_turn_limit=1,
     )
-    await workforce.add_single_agent_worker('tour guide', guide_agent)
+    await workforce.add_single_agent_worker_async('tour guide', guide_agent)
 
     human_task = Task(
         content="research history of Paris and plan a tour.",
@@ -83,16 +83,16 @@ async def main():
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(await workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree_async())
 
     print("\n--- Workforce KPIs ---")
-    kpis = await workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis_async()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "role_playing_with_agents_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    await workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs_async(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 

@@ -208,7 +208,7 @@ class AudioAnalysisToolkit(BaseToolkit):
             <speech_transcription_result>{transcript}</
             speech_transcription_result>
 
-            Please answer the following question based on the speech 
+            Please answer the following question based on the speech
             transcription result above:
             <question>{question}</question>
             """

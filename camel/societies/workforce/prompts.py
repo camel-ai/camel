@@ -57,7 +57,7 @@ Your response MUST be a valid JSON object containing an 'assignments' field with
 
 Each assignment dictionary should have:
 - "task_id": the ID of the task
-- "assignee_id": the ID of the chosen worker node  
+- "assignee_id": the ID of the chosen worker node
 - "dependencies": list of task IDs that this task depends on (empty list if no dependencies)
 
 Example valid response:
@@ -278,7 +278,9 @@ Following are the available workers, given in the format <ID>: <description>:<to
 {child_nodes_info}
 ==============================
 
-You must return the subtasks as a list of individual subtasks within <tasks> tags. If your decomposition, following the principles and detailed example above (e.g., for summarizing multiple papers), results in several parallelizable actions, EACH of those actions must be represented as a separate <task> entry. For instance, the general format is:
+You must output all subtasks strictly as individual <task> elements enclosed within a single <tasks> root.
+If your decomposition produces multiple parallelizable or independent actions, each action MUST be represented as its own <task> element, without grouping or merging.
+Your final output must follow exactly this structure:
 
 <tasks>
 <task>Subtask 1</task>
@@ -415,7 +417,7 @@ FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
 QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
 {
   "quality_score": 0-100,
-  "reasoning": "explanation (1-2 sentences)", 
+  "reasoning": "explanation (1-2 sentences)",
   "issues": ["issue1", "issue2"],
   "recovery_strategy": "retry|reassign|replan|decompose or null",
   "modified_task_content": "new content if replan, else null"

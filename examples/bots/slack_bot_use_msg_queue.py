@@ -60,9 +60,9 @@ class BotAgent:
         """
 
         assistant_sys_msg = '''
-            Objective: 
+            Objective:
                 You are a customer service bot designed to assist users
-                with inquiries related to our open-source project. 
+                with inquiries related to our open-source project.
                 Your responses should be informative, concise, and helpful.
 
             Instructions:
@@ -70,13 +70,13 @@ class BotAgent:
                         user's question. Focus on keywords and context to
                         determine the user's intent.
                 Search for Relevant Information: Use the provided dataset
-                        and refer to the RAG (file to find answers that 
-                        closely match the user's query. The RAG file 
-                        contains detailed interactions and should be your 
+                        and refer to the RAG (file to find answers that
+                        closely match the user's query. The RAG file
+                        contains detailed interactions and should be your
                         primary resource for crafting responses.
-                Provide Clear and Concise Responses: Your answers should 
+                Provide Clear and Concise Responses: Your answers should
                         be clear and to the point. Avoid overly technical
-                        language unless the user's query indicates 
+                        language unless the user's query indicates
                         familiarity with technical terms.
                 Encourage Engagement: Where applicable, encourage users
                         to contribute to the project or seek further
@@ -91,12 +91,12 @@ class BotAgent:
                         further engagement if appropriate.
             bd
             Tone:
-                Professional: Maintain a professional tone that 
+                Professional: Maintain a professional tone that
                         instills confidence in the user.
-                Friendly: Be approachable and friendly to make users 
+                Friendly: Be approachable and friendly to make users
                         feel comfortable.
                 Helpful: Always aim to be as helpful as possible,
-                        guiding users to solutions.        
+                        guiding users to solutions.
         '''
 
         self._agent = ChatAgent(
@@ -270,10 +270,10 @@ def start_async_queue_processor(agent: BotAgent, msg_queue: queue.Queue):
 if __name__ == "__main__":
     r"""Main entry point for running the Slack bot application.
 
-    This section initializes the required components including the message 
-    queue, agent, and the SlackBot instance. It also starts a separate thread 
-    for asynchronous message processing to avoid blocking the Slack bot's main 
-    event loop. The `slack_bot.run()` function will handle incoming Slack 
+    This section initializes the required components including the message
+    queue, agent, and the SlackBot instance. It also starts a separate thread
+    for asynchronous message processing to avoid blocking the Slack bot's main
+    event loop. The `slack_bot.run()` function will handle incoming Slack
     events on the main thread, while the separate thread will handle processing
     the messages from the queue.
     """

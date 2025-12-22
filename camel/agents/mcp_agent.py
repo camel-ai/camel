@@ -62,9 +62,9 @@ logger = get_logger(__name__)
 
 
 SYS_MSG_CONTENT = """
-You are a helpful assistant, and you prefer to use tools provided by the user 
+You are a helpful assistant, and you prefer to use tools provided by the user
 to solve problems.
-Using a tool, you will tell the user `server_idx`, `tool_name` and 
+Using a tool, you will tell the user `server_idx`, `tool_name` and
 `tool_args` formatted in JSON as following:
 ```json
 {

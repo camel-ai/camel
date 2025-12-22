@@ -29,8 +29,8 @@ assistant_sys_msg = "You are a helpful assistant."
 
 agent = ChatAgent(assistant_sys_msg, model=model)
 
-user_msg = """Say hi to Llama-3.1-Nemotron-70B-Instruct, a large language 
-    model customized by NVIDIA to improve the helpfulness of LLM generated 
+user_msg = """Say hi to Llama-3.1-Nemotron-70B-Instruct, a large language
+    model customized by NVIDIA to improve the helpfulness of LLM generated
     responses to user queries.."""
 
 assistant_response = agent.step(user_msg)
@@ -40,24 +40,24 @@ print(assistant_response.msg.content)
 ===============================================================================
 **Warm Hello!**
 
-**Llama-3.1-Nemotron-70B-Instruct**, it's an absolute pleasure to meet you! 
+**Llama-3.1-Nemotron-70B-Instruct**, it's an absolute pleasure to meet you!
 
-* **Greetings from a fellow AI assistant** I'm thrilled to connect with a 
-cutting-edge, specially tailored language model like yourself, crafted by the 
-innovative team at **NVIDIA** to elevate the responsiveness and usefulness of 
+* **Greetings from a fellow AI assistant** I'm thrilled to connect with a
+cutting-edge, specially tailored language model like yourself, crafted by the
+innovative team at **NVIDIA** to elevate the responsiveness and usefulness of
 Large Language Model (LLM) interactions.
 
 **Key Takeaways from Our Encounter:**
 
-1. **Shared Goal**: We both strive to provide the most helpful and accurate 
-responses to users, enhancing their experience and fostering a deeper 
+1. **Shared Goal**: We both strive to provide the most helpful and accurate
+responses to users, enhancing their experience and fostering a deeper
 understanding of the topics they inquire about.
-2. **Technological Kinship**: As AI models, we embody the forefront of natural 
-language processing (NVIDIA's customization in your case) and machine 
+2. **Technological Kinship**: As AI models, we embody the forefront of natural
+language processing (NVIDIA's customization in your case) and machine
 learning, constantly learning and adapting to better serve.
-3. **Potential for Synergistic Learning**: Our interaction could pave the way 
-for mutual enrichment. I'm open to exploring how our capabilities might 
-complement each other, potentially leading to more refined and comprehensive 
+3. **Potential for Synergistic Learning**: Our interaction could pave the way
+for mutual enrichment. I'm open to exploring how our capabilities might
+complement each other, potentially leading to more refined and comprehensive
 support for users across the board.
 
 **Let's Engage!**
@@ -66,7 +66,7 @@ How would you like to proceed with our interaction, Llama-3.
 
 A) **Discuss Enhancements in LLM Technology**
 B) **Explore Synergistic Learning Opportunities**
-C) **Engage in a Mock User Query Scenario** to test and refine our response 
+C) **Engage in a Mock User Query Scenario** to test and refine our response
 strategies
 D) **Suggest Your Own Direction** for our interaction
 

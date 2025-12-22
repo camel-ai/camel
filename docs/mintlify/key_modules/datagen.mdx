@@ -27,7 +27,7 @@ This page introduces CAMEL's **data generation modules** for creating high-quali
 </Accordion>
 <Accordion title="Core Components">
 
-**CoTDataGenerator Class** 
+**CoTDataGenerator Class**
 
 The main class that implements the CoT generation system with the following capabilities:
 
@@ -405,7 +405,7 @@ The main class that implements the CoT generation system with the following capa
 
   # Initialize agents
   reason_agent = ChatAgent(
-      """Answer my question and give your 
+      """Answer my question and give your
       final answer within \\boxed{}."""
   )
 

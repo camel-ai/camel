@@ -72,11 +72,11 @@ async def main():
     # Create workforce with 2 agents
     workforce = Workforce('Multi-turn Assistant Team')
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "A researcher who gathers and analyzes information",
         worker=research_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "A writer who synthesizes information into clear responses",
         worker=writer_agent,
     )

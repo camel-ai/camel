@@ -70,15 +70,15 @@ async def main():
         graceful_shutdown_timeout=30.0,
     )
 
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "A researcher who can search online for information.",
         worker=search_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "An analyst who can process research findings.",
         worker=analyst_agent,
     )
-    await workforce.add_single_agent_worker(
+    await workforce.add_single_agent_worker_async(
         "A writer who can create a final report from the analysis.",
         worker=writer_agent,
     )
@@ -100,16 +100,16 @@ async def main():
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
-    print(await workforce.get_workforce_log_tree())
+    print(await workforce.get_workforce_log_tree_async())
 
     print("\n--- Workforce KPIs ---")
-    kpis = await workforce.get_workforce_kpis()
+    kpis = await workforce.get_workforce_kpis_async()
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
     log_file_path = "multiple_single_agents_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    await workforce.dump_workforce_logs(log_file_path)
+    await workforce.dump_workforce_logs_async(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
