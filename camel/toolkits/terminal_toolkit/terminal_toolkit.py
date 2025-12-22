@@ -86,6 +86,10 @@ class TerminalToolkit(BaseToolkit):
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries
             to install.
+        max_output_length (Optional[int]): Maximum length of output to return
+            directly. If output exceeds this length, it will be saved to a
+            file and a truncated response with file path will be returned.
+            Defaults to None.
     """
 
     def __init__(
@@ -99,6 +103,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
+        max_output_length: Optional[int] = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -169,6 +174,11 @@ class TerminalToolkit(BaseToolkit):
             self.log_dir, "blocking_commands.log"
         )
         self.os_type = platform.system()
+        self.max_output_length = max_output_length
+
+        # Counter for generating unique output file names
+        self._output_file_counter = 0
+        self._output_file_lock = threading.Lock()
 
         os.makedirs(self.log_dir, exist_ok=True)
 
@@ -190,12 +200,11 @@ class TerminalToolkit(BaseToolkit):
                     "provided when using Docker backend."
                 )
             try:
-                # APIClient is used for operations that need a timeout,
-                # like exec_start
-                self.docker_api_client = docker.APIClient(
-                    base_url='unix://var/run/docker.sock', timeout=self.timeout
-                )
-                self.docker_client = docker.from_env()
+                # Use from_env() to auto-detect the correct connection method
+                # (Unix socket on Linux, named pipe on Windows)
+                self.docker_client = docker.from_env(timeout=self.timeout)
+                # Create APIClient with default connection (auto-detects)
+                self.docker_api_client = docker.APIClient(timeout=self.timeout)
                 try:
                     # Try to get existing container
                     self.container = self.docker_client.containers.get(
@@ -438,6 +447,128 @@ class TerminalToolkit(BaseToolkit):
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(_to_plain(content) + "\n")
 
+    def _truncate_and_save_output(
+        self, output: str, context: str = "output", truncate: bool = True
+    ) -> str:
+        r"""Truncate output if it exceeds max_output_length and save to file.
+
+        Args:
+            output (str): The output to potentially truncate
+            context (str): Context string to use in filename (e.g., "blocking",
+                "session_id")
+            truncate (bool): Whether to apply truncation. If False, returns
+                output as-is. (default: True)
+
+        Returns:
+            str: Either the original output (if short enough or truncate=False)
+                or a truncated version showing beginning and end with file path
+        """
+        if not truncate or self.max_output_length is None:
+            return output
+
+        if len(output) <= self.max_output_length:
+            return output
+
+        # Output is too long, save to file
+        with self._output_file_lock:
+            self._output_file_counter += 1
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            filename = (
+                f"output_{context}_{timestamp}_"
+                f"{self._output_file_counter}.log"
+            )
+
+            if self.use_docker_backend:
+                # For Docker, save inside the container
+                container_log_dir = f"{self.docker_workdir}/terminal_logs"
+                output_file_path = f"{container_log_dir}/{filename}"
+            else:
+                # For local, save to local filesystem
+                output_file_path = os.path.join(self.log_dir, filename)
+
+        # Write full output to file
+        try:
+            if self.use_docker_backend:
+                # Write file inside Docker container using base64 encoding
+                # to avoid all shell quoting issues
+                import base64
+
+                plain_output = _to_plain(output)
+                # Encode content as base64
+                encoded_content = base64.b64encode(
+                    plain_output.encode('utf-8')
+                ).decode('ascii')
+
+                # Create directory and write file in container
+                mkdir_cmd = (
+                    f'sh -c "mkdir -p {shlex.quote(container_log_dir)}"'
+                )
+                # Use base64 decode to write file - avoids all quoting issues
+                write_cmd = (
+                    f"sh -c 'echo {shlex.quote(encoded_content)} | "
+                    f"base64 -d > {shlex.quote(output_file_path)}'"
+                )
+
+                try:
+                    # Create directory
+                    exec_id = self.docker_api_client.exec_create(
+                        self.container.id, mkdir_cmd
+                    )["Id"]
+                    self.docker_api_client.exec_start(exec_id)
+
+                    # Write file
+                    exec_id = self.docker_api_client.exec_create(
+                        self.container.id, write_cmd
+                    )["Id"]
+                    self.docker_api_client.exec_start(exec_id)
+                except Exception as docker_err:
+                    raise RuntimeError(
+                        "Failed to write output file in ",
+                        "Docker container: {docker_err}",
+                    ) from docker_err
+            else:
+                # Write to local filesystem
+                with open(output_file_path, "w", encoding="utf-8") as f:
+                    f.write(_to_plain(output))
+
+            # Create truncated response showing beginning and end
+            # Reserve space for the truncation message
+            truncation_msg = "\n\n" "... OUTPUT TRUNCATED ...\n\n"
+            available_space = self.max_output_length - len(truncation_msg)
+
+            # Split available space between beginning and end (60/40 ratio)
+            beginning_chars = int(available_space * 0.6)
+            ending_chars = int(available_space * 0.4)
+
+            truncated = (
+                output[:beginning_chars]
+                + truncation_msg
+                + output[-ending_chars:]
+            )
+
+            # Format path information
+            path_info = (
+                f"--- FULL OUTPUT SAVED ---\n"
+                f"Total: {len(output)} characters\n"
+                f"File path: {output_file_path}\n"
+                f"Use shell_exec with truncate=False to view complete output\n"
+                f", or read the file with: cat {shlex.quote(output_file_path)}"
+            )
+
+            return f"{truncated}\n\n{path_info}"
+        except Exception as e:
+            logger.warning(f"Failed to save output to file: {e}")
+            # If we can't save to file, just truncate showing beginning and end
+            available_space = self.max_output_length
+            beginning_chars = int(available_space * 0.6)
+            ending_chars = int(available_space * 0.4)
+            return (
+                f"{output[:beginning_chars]}\n\n"
+                f"... OUTPUT TRUNCATED ...\n\n"
+                f"{output[-ending_chars:]}\n\n"
+                f"--- TRUNCATION ERROR (failed to save to file: {e}) ---"
+            )
+
     def _sanitize_command(self, command: str) -> tuple[bool, str]:
         r"""A comprehensive command sanitizer for both local and
         Docker backends."""
@@ -467,32 +598,69 @@ class TerminalToolkit(BaseToolkit):
                     finally:
                         session["process"].stdout.close()
                 elif session["backend"] == "docker":
-                    # For Docker, read from the raw socket
-                    socket = session["process"]._sock
+                    # For Docker, read from the socket stream
+                    # Handle both Unix sockets and Windows named pipes
+                    socket_stream = session["process"]
+                    try:
+                        # Try to get the underlying socket (Unix)
+                        socket = getattr(socket_stream, '_sock', None)
+                        use_select = socket is not None
+                    except AttributeError:
+                        use_select = False
+
                     while True:
-                        # Check if the socket is still open before reading
-                        if socket.fileno() == -1:
-                            break
+                        # Check if process is still running
                         try:
-                            ready, _, _ = select.select([socket], [], [], 0.1)
-                        except (ValueError, OSError):
-                            # Socket may have been closed by another thread
-                            break
-                        if ready:
-                            data = socket.recv(4096)
-                            if not data:
+                            exec_status = self.docker_api_client.exec_inspect(
+                                session["exec_id"]
+                            )
+                            if not exec_status['Running']:
                                 break
-                            decoded_data = data.decode(
-                                'utf-8', errors='ignore'
-                            )
-                            session["output_stream"].put(decoded_data)
-                            self._write_to_log(
-                                session["log_file"], decoded_data
-                            )
-                        # Check if the process is still running
-                        if not self.docker_api_client.exec_inspect(
-                            session["exec_id"]
-                        )['Running']:
+                        except Exception:
+                            break
+
+                        try:
+                            if use_select and socket:
+                                # Unix socket: use select
+                                if socket.fileno() == -1:
+                                    break
+                                ready, _, _ = select.select(
+                                    [socket], [], [], 0.1
+                                )
+                                if ready:
+                                    data = socket.recv(4096)
+                                    if not data:
+                                        break
+                                    decoded_data = data.decode(
+                                        'utf-8', errors='ignore'
+                                    )
+                                    session["output_stream"].put(decoded_data)
+                                    self._write_to_log(
+                                        session["log_file"], decoded_data
+                                    )
+                            else:
+                                # Windows named pipe: direct read
+                                # Set a small read timeout to avoid blocking
+                                try:
+                                    data = socket_stream.read(4096)
+                                    if data:
+                                        decoded_data = data.decode(
+                                            'utf-8', errors='ignore'
+                                        )
+                                        session["output_stream"].put(
+                                            decoded_data
+                                        )
+                                        self._write_to_log(
+                                            session["log_file"], decoded_data
+                                        )
+                                    else:
+                                        # No data, small sleep to avoid
+                                        # busy loop
+                                        time.sleep(0.1)
+                                except Exception:
+                                    # Socket closed or error
+                                    break
+                        except (ValueError, OSError):
                             break
             except Exception as e:
                 # Log the exception for diagnosis and store it on the session
@@ -588,7 +756,9 @@ class TerminalToolkit(BaseToolkit):
         )
         return "".join(output_parts) + warning_message
 
-    def shell_exec(self, id: str, command: str, block: bool = True) -> str:
+    def shell_exec(
+        self, id: str, command: str, block: bool = True, truncate: bool = True
+    ) -> str:
         r"""Executes a shell command in blocking or non-blocking mode.
 
         Args:
@@ -601,6 +771,10 @@ class TerminalToolkit(BaseToolkit):
                 most commands . If `False` (non-blocking mode), the function
                 starts the command in the background. Use this only for
                 interactive sessions or long-running tasks, or servers.
+            truncate (bool, optional): Whether to truncate long outputs in
+                blocking mode. Defaults to True. Set to False to get the
+                complete output without truncation (useful for reading saved
+                files).
 
         Returns:
             str: The output of the command execution, which varies by mode.
@@ -667,7 +841,22 @@ class TerminalToolkit(BaseToolkit):
 
                 log_entry += f"--- Output ---\n{output}\n"
                 if output.strip():
-                    return _to_plain(output)
+                    plain_output = _to_plain(output)
+                    # Check if truncation will occur
+                    if (
+                        truncate
+                        and self.max_output_length is not None
+                        and len(plain_output) > self.max_output_length
+                    ):
+                        log_entry += (
+                            f"Truncated from {len(plain_output)} to "
+                            f"{self.max_output_length} chars\n"
+                        )
+                    return self._truncate_and_save_output(
+                        plain_output,
+                        f"blocking_{session_id}",
+                        truncate=truncate,
+                    )
                 else:
                     return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
@@ -797,7 +986,9 @@ class TerminalToolkit(BaseToolkit):
                 )
                 return error_msg
 
-    def shell_write_to_process(self, id: str, command: str) -> str:
+    def shell_write_to_process(
+        self, id: str, command: str, truncate: bool = True
+    ) -> str:
         r"""This function sends command to a running non-blocking
         process and returns the resulting output after the process
         becomes idle again. A newline \n is automatically appended
@@ -806,6 +997,8 @@ class TerminalToolkit(BaseToolkit):
         Args:
             id (str): The unique session ID of the non-blocking process.
             command (str): The text to write to the process's standard input.
+            truncate (bool, optional): Whether to truncate long outputs.
+                Defaults to True. Set to False to get complete output.
 
         Returns:
             str: The output from the process after the command is sent.
@@ -838,14 +1031,22 @@ class TerminalToolkit(BaseToolkit):
                 process.stdin.write(command + '\n')
                 process.stdin.flush()
             else:  # docker
-                socket = process._sock
-                socket.sendall((command + '\n').encode('utf-8'))
+                # Handle both Unix sockets and Windows named pipes
+                socket = getattr(process, '_sock', None)
+                if socket:
+                    # Unix socket
+                    socket.sendall((command + '\n').encode('utf-8'))
+                else:
+                    # Windows named pipe
+                    process._sock.sendall((command + '\n').encode('utf-8'))
 
             # Wait for and collect the new output
             output = self._collect_output_until_idle(id)
 
             if output.strip():
-                return output
+                return self._truncate_and_save_output(
+                    output, f"session_{id}", truncate=truncate
+                )
             else:
                 return (
                     f"Input sent to session '{id}' successfully (no output)."
@@ -854,7 +1055,7 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             return f"Error writing to session '{id}': {e}"
 
-    def shell_view(self, id: str) -> str:
+    def shell_view(self, id: str, truncate: bool = True) -> str:
         r"""Retrieves new output from a non-blocking session.
 
         This function returns only NEW output since the last call. It does NOT
@@ -862,6 +1063,8 @@ class TerminalToolkit(BaseToolkit):
 
         Args:
             id (str): The unique session ID of the non-blocking process.
+            truncate (bool, optional): Whether to truncate long outputs.
+                Defaults to True. Set to False to get complete output.
 
         Returns:
             str: New output if available, or a status message.
@@ -895,7 +1098,10 @@ class TerminalToolkit(BaseToolkit):
             pass
 
         if output:
-            return "".join(output)
+            combined_output = "".join(output)
+            return self._truncate_and_save_output(
+                combined_output, f"view_{id}", truncate=truncate
+            )
         else:
             # No new output - guide the agent
             return (
@@ -912,6 +1118,8 @@ class TerminalToolkit(BaseToolkit):
 
         Args:
             id (str): The unique session ID of the process to kill.
+            truncate (bool, optional): Whether to truncate long outputs.
+                Defaults to True. Set to False to get complete output.
 
         Returns:
             str: A confirmation message indicating the process was terminated.
