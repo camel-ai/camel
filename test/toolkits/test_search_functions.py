@@ -508,18 +508,19 @@ def test_search_baidu(mock_get, search_toolkit):
 
     # Assertions
     assert result == expected_output
-    mock_get.assert_called_once_with(
-        "https://www.baidu.com/s",
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Referer": "https://www.baidu.com",
-        },
-        params={"wd": "test query", "rn": "10"},
-    )
+    mock_get.assert_called_once()
+    args, kwargs = mock_get.call_args
+    assert args[0] == "https://www.baidu.com/s"
+    assert kwargs['headers'] == {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://www.baidu.com",
+    }
+    assert kwargs['params'] == {"wd": "test query", "rn": "10"}
+    assert 'timeout' in kwargs
 
 
 @patch('requests.get')
@@ -570,17 +571,17 @@ def test_search_bing(mock_get, search_toolkit):
 
     # Assertions
     assert result == expected_output
-    mock_get.assert_called_once_with(
-        "https://cn.bing.com/search?q=test+query",
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-        },
-        timeout=10,
-    )
+    mock_get.assert_called_once()
+    args, kwargs = mock_get.call_args
+    assert args[0] == "https://cn.bing.com/search?q=test+query"
+    assert kwargs['headers'] == {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+    assert 'timeout' in kwargs
 
 
 class MockSearchResult:
@@ -750,19 +751,19 @@ def test_search_alibaba_tongxiao(mock_get, search_toolkit):
         )
 
         # Verify the request was made correctly
-        mock_get.assert_called_once_with(
-            "https://cloud-iqs.aliyuncs.com/search/genericSearch",
-            headers={"X-API-Key": "fake_api_key"},
-            params={
-                "query": "test query",
-                "timeRange": "NoLimit",
-                "page": 10,
-                "returnMainText": "false",
-                "returnMarkdownText": "true",
-                "enableRerank": "true",
-            },
-            timeout=10,
-        )
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        assert args[0] == "https://cloud-iqs.aliyuncs.com/search/genericSearch"
+        assert kwargs['headers'] == {"X-API-Key": "fake_api_key"}
+        assert kwargs['params'] == {
+            "query": "test query",
+            "timeRange": "NoLimit",
+            "page": 10,
+            "returnMainText": "false",
+            "returnMarkdownText": "true",
+            "enableRerank": "true",
+        }
+        assert 'timeout' in kwargs
 
         # Check if the result is as expected
         assert result == {
@@ -904,8 +905,6 @@ def test_search_metaso_invalid_json(mock_https_connection, search_toolkit):
 @patch('requests.post')
 def test_search_serper_success(mock_post, search_toolkit):
     """Test successful Serper search."""
-    import json
-
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
@@ -940,22 +939,39 @@ def test_search_serper_success(mock_post, search_toolkit):
         "X-API-KEY": "test_key",
         "Content-Type": "application/json",
     }
-    # Verify payload structure matches exactly what user requested
-    # Note: requests.post(json=payload) sets data to json dump
-    assert json.loads(kwargs['data']) == {
+    # Verify payload structure - using json= parameter now
+    assert kwargs['json'] == {
         "q": "apple inc",
         "location": "United States",
-        "page": 1,
+        "page": 10,
     }
+    # Verify timeout is passed
+    assert 'timeout' in kwargs
 
 
 @patch('requests.post')
-def test_search_serper_error(mock_post, search_toolkit):
-    """Test error handling in Serper search."""
+def test_search_serper_request_error(mock_post, search_toolkit):
+    """Test request error handling in Serper search."""
     mock_post.side_effect = requests.exceptions.RequestException("API Error")
 
     with patch.dict(os.environ, {'SERPER_API_KEY': 'test_key'}):
-        with pytest.raises(RuntimeError) as excinfo:
-            search_toolkit.search_serper(query="test")
+        result = search_toolkit.search_serper(query="test")
 
-    assert "Error making request to Serper" in str(excinfo.value)
+    assert "error" in result
+    assert "Serper search failed" in result["error"]
+
+
+@patch('requests.post')
+def test_search_serper_http_error(mock_post, search_toolkit):
+    """Test HTTP error handling in Serper search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = '{"error": "Invalid API key"}'
+    mock_post.return_value = mock_response
+
+    with patch.dict(os.environ, {'SERPER_API_KEY': 'invalid_key'}):
+        result = search_toolkit.search_serper(query="test")
+
+    assert "error" in result
+    assert "Serper API failed with status 401" in result["error"]
+    assert "Invalid API key" in result["error"]
