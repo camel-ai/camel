@@ -258,6 +258,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **memory** (AgentMemory, optional): The agent memory for managing chat messages. If `None`, a :obj:`ChatHistoryMemory` will be used. (default: :obj:`None`)
 - **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
 - **summarize_threshold** (int, optional): The percentage of the context window that triggers summarization. If `None`, will trigger summarization when the context window is full. (default: :obj:`None`)
+- **token_limit** (int, optional): The maximum number of tokens allowed for the context window. If `None`, uses the model's default token limit. This can be used to restrict the context size below the model's maximum capacity. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agent. (default: :obj:`None`)
 - **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]], optional): List of toolkit instances that inherit from :obj:`RegisteredAgentToolkit`. The agent will register itself with these toolkits, allowing them to access the agent instance. Note: This does NOT add the toolkit's tools to the agent. To use tools from these toolkits, pass them explicitly via the `tools` parameter. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
 - **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
@@ -385,6 +386,16 @@ def tool_dict(self):
 ```
 
 Returns a dictionary of internal tools.
+
+<a id="camel.agents.chat_agent.ChatAgent.token_limit"></a>
+
+### token_limit
+
+```python
+def token_limit(self):
+```
+
+Returns the token limit for the agent's context window.
 
 <a id="camel.agents.chat_agent.ChatAgent.output_language"></a>
 
@@ -616,6 +627,27 @@ Add a list of tools to the agent.
 ```python
 def _serialize_tool_result(self, result: Any):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._truncate_tool_result"></a>
+
+### _truncate_tool_result
+
+```python
+def _truncate_tool_result(self, func_name: str, result: Any):
+```
+
+Truncate tool result if it exceeds the maximum token limit.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function called.
+- **result** (Any): The result returned by the tool execution.
+
+**Returns:**
+
+  Tuple[Any, bool]: A tuple containing:
+- The (possibly truncated) result
+- A boolean indicating whether truncation occurred
 
 <a id="camel.agents.chat_agent.ChatAgent._clean_snapshot_line"></a>
 

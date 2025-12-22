@@ -265,8 +265,9 @@ def save_workflow(self, conversation_accumulator: Optional[ChatAgent] = None):
 Save the worker's current workflow memories using agent
 summarization.
 
-This method generates a workflow summary from the worker agent's
-conversation history and saves it to a markdown file.
+This method uses a two-pass approach: first generates the workflow
+summary to determine operation_mode (update vs create), then saves
+to the appropriate file path based on that decision.
 
 **Parameters:**
 
@@ -277,6 +278,68 @@ conversation history and saves it to a markdown file.
   Dict[str, Any]: Result dictionary with keys:
 - status (str): "success" or "error"
 - summary (str): Generated workflow summary
+- file_path (str): Path to saved file
+- worker_description (str): Worker description used
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager.generate_workflow_summary"></a>
+
+### generate_workflow_summary
+
+```python
+def generate_workflow_summary(self, conversation_accumulator: Optional[ChatAgent] = None):
+```
+
+Generate a workflow summary without saving to disk.
+
+This method generates a workflow summary by calling a dedicated
+summarizer agent. It does NOT save to disk - only generates the
+summary content and structured output. Use this when you need to
+inspect the summary (e.g., extract operation_mode) before determining
+where to save it.
+
+**Parameters:**
+
+- **conversation_accumulator** (Optional[ChatAgent]): Optional accumulator agent with collected conversations. If provided, uses this instead of the main worker agent.
+
+**Returns:**
+
+  Dict[str, Any]: Result dictionary with:
+- structured_summary: WorkflowSummary instance or None
+- summary_content: Raw text content
+- status: "success" or error message
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager.save_workflow_content"></a>
+
+### save_workflow_content
+
+```python
+def save_workflow_content(
+    self,
+    workflow_summary: 'WorkflowSummary',
+    context_utility: Optional[ContextUtility] = None,
+    conversation_accumulator: Optional[ChatAgent] = None
+):
+```
+
+Save a pre-generated workflow summary to disk.
+
+This method takes a pre-generated WorkflowSummary object and saves
+it to disk using the provided context utility. It does NOT call the
+LLM - just formats and saves the content. Use this for two-pass
+workflows where the summary is generated first, then saved to a
+location determined by the summary content.
+
+**Parameters:**
+
+- **workflow_summary** (WorkflowSummary): Pre-generated workflow summary object containing task_title, agent_title, etc.
+- **context_utility** (Optional[ContextUtility]): Context utility with correct working directory. If None, uses default.
+- **conversation_accumulator** (Optional[ChatAgent]): An optional agent that holds accumulated conversation history. Used to get accurate message_count metadata. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: Result dictionary with keys:
+- status (str): "success" or "error"
+- summary (str): Formatted workflow summary
 - file_path (str): Path to saved file
 - worker_description (str): Worker description used
 
@@ -390,6 +453,9 @@ def _collect_workflow_contents(self, workflow_files: List[str]):
 
 Collect and load workflow file contents.
 
+Also populates the _loaded_workflow_paths mapping for use during
+workflow save operations (to support update mode).
+
 **Parameters:**
 
 - **workflow_files** (List[str]): List of workflow file paths to load.
@@ -398,6 +464,28 @@ Collect and load workflow file contents.
 
   List[Dict[str, str]]: List of dicts with 'filename' and
 'content' keys.
+
+<a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._format_workflow_list"></a>
+
+### _format_workflow_list
+
+```python
+def _format_workflow_list(self, workflows_to_load: List[Dict[str, str]]):
+```
+
+Format a list of workflows into a readable string.
+
+This is a helper method that formats workflow content without
+adding outer headers/footers. Used by _format_workflows_for_context
+and _prepare_workflow_prompt.
+
+**Parameters:**
+
+- **workflows_to_load** (List[Dict[str, str]]): List of workflow dicts with 'filename' and 'content' keys.
+
+**Returns:**
+
+  str: Formatted workflow list string.
 
 <a id="camel.societies.workforce.workflow_memory_manager.WorkflowMemoryManager._format_workflows_for_context"></a>
 
@@ -447,6 +535,7 @@ def _load_workflow_files(self, workflow_files: List[str], max_workflows: int):
 Load workflow files and return count of successful loads.
 
 Loads all workflows together with a single header to avoid repetition.
+Clears and repopulates the _loaded_workflow_paths mapping.
 
 **Parameters:**
 
