@@ -553,6 +553,7 @@ class Workforce(BaseNode):
         )
         for cb in self._callbacks:
             await cb.log_worker_created(event)
+
     async def _flush_initial_worker_created_callbacks(self) -> None:
         r"""Flush pending worker-created callbacks that were queued during
         initialization before an event loop was available."""
