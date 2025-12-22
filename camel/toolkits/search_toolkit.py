@@ -63,14 +63,15 @@ class SearchToolkit(BaseToolkit):
     def search_serper(
         self,
         query: str,
-        page: int = 1,
+        page: int = 10,
         location: str = "United States",
     ) -> Dict[str, Any]:
         r"""Use Serper.dev API to perform Google search.
 
         Args:
             query (str): The search query.
-            page (int): The page number of results to retrieve. (default: :obj:`1`)
+            page (int): The page number of results to retrieve.
+                (default: :obj:`10`)
             location (str): The location for the search results.
                 (default: :obj:`"United States"`)
 
@@ -78,19 +79,15 @@ class SearchToolkit(BaseToolkit):
             Dict[str, Any]: The search result dictionary containing 'organic',
                 'peopleAlsoAsk', etc.
         """
-        import json
-
         SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
         url = "https://google.serper.dev/search"
 
-        payload = json.dumps(
-            {
-                "q": query,
-                "location": location,
-                "page": page,
-            }
-        )
+        payload = {
+            "q": query,
+            "location": location,
+            "page": page,
+        }
 
         headers = {
             "X-API-KEY": SERPER_API_KEY,
@@ -98,11 +95,19 @@ class SearchToolkit(BaseToolkit):
         }
 
         try:
-            response = requests.post(url, headers=headers, data=payload)
-            response.raise_for_status()
+            response = requests.post(
+                url, headers=headers, json=payload, timeout=self.timeout
+            )
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Serper API failed with status {response.status_code}: "
+                        f"{response.text}"
+                    )
+                }
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Error making request to Serper: {e}")
+            return {"error": f"Serper search failed: {e!s}"}
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
@@ -458,7 +463,9 @@ class SearchToolkit(BaseToolkit):
         }
         params = {k: v for k, v in params.items() if v is not None}
 
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(
+            url, headers=headers, params=params, timeout=self.timeout
+        )
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
@@ -628,7 +635,7 @@ class SearchToolkit(BaseToolkit):
         # Fetch the results given the URL
         try:
             # Make the get
-            result = requests.get(url)
+            result = requests.get(url, timeout=self.timeout)
             data = result.json()
 
             # Get the result items
@@ -834,7 +841,9 @@ class SearchToolkit(BaseToolkit):
             ensure_ascii=False,
         )
         try:
-            response = requests.post(url, headers=headers, data=payload)
+            response = requests.post(
+                url, headers=headers, data=payload, timeout=self.timeout
+            )
             if response.status_code != 200:
                 return {
                     "error": (
@@ -878,7 +887,9 @@ class SearchToolkit(BaseToolkit):
             }
             params = {"wd": query, "rn": str(number_of_result_pages)}
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(
+                url, headers=headers, params=params, timeout=self.timeout
+            )
             response.encoding = "utf-8"
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -962,8 +973,7 @@ class SearchToolkit(BaseToolkit):
                     "Chrome/120.0.0.0 Safari/537.36"
                 ),
             }
-            # Add timeout to prevent hanging
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
 
             # Check if the request was successful
             if response.status_code != 200:
@@ -1248,7 +1258,7 @@ class SearchToolkit(BaseToolkit):
         try:
             # Send GET request with proper typing for params
             response = requests.get(
-                base_url, headers=headers, params=params, timeout=10
+                base_url, headers=headers, params=params, timeout=self.timeout
             )
 
             # Check response status
