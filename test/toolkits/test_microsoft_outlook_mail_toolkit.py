@@ -14,16 +14,14 @@
 
 import json
 import os
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
 from camel.toolkits import OutlookMailToolkit
 from camel.toolkits.microsoft_outlook_mail_toolkit import (
-    AsyncCustomAzureCredential,
+    CustomAzureCredential,
 )
-
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -44,13 +42,13 @@ def mock_graph_service():
         # Mock send_mail endpoint
         mock_send_mail = MagicMock()
         mock_me.send_mail = mock_send_mail
-        mock_send_mail.post = AsyncMock()
+        mock_send_mail.post = MagicMock()
 
         # Mock messages.get for listing messages
-        mock_messages.get = AsyncMock()
+        mock_messages.get = MagicMock()
 
         # Mock messages.post for creating drafts
-        mock_messages.post = AsyncMock()
+        mock_messages.post = MagicMock()
 
         # Mock messages.by_message_id for specific message operations
         mock_by_message_id = MagicMock()
@@ -59,38 +57,38 @@ def mock_graph_service():
         )
 
         # Mock get message by ID
-        mock_by_message_id.get = AsyncMock()
+        mock_by_message_id.get = MagicMock()
 
         # Mock send draft
         mock_send = MagicMock()
         mock_by_message_id.send = mock_send
-        mock_send.post = AsyncMock()
+        mock_send.post = MagicMock()
 
         # Mock delete message
-        mock_by_message_id.delete = AsyncMock()
+        mock_by_message_id.delete = MagicMock()
 
         # Mock move message
         mock_move = MagicMock()
         mock_by_message_id.move = mock_move
-        mock_move.post = AsyncMock()
+        mock_move.post = MagicMock()
 
         # Mock attachments
         mock_attachments = MagicMock()
         mock_by_message_id.attachments = mock_attachments
-        mock_attachments.get = AsyncMock()
+        mock_attachments.get = MagicMock()
 
         # Mock reply endpoint
         mock_reply = MagicMock()
         mock_by_message_id.reply = mock_reply
-        mock_reply.post = AsyncMock()
+        mock_reply.post = MagicMock()
 
         # Mock reply_all endpoint
         mock_reply_all = MagicMock()
         mock_by_message_id.reply_all = mock_reply_all
-        mock_reply_all.post = AsyncMock()
+        mock_reply_all.post = MagicMock()
 
         # Mock patch endpoint for updating messages
-        mock_by_message_id.patch = AsyncMock()
+        mock_by_message_id.patch = MagicMock()
 
         # Mock mail_folders for folder-specific operations
         mock_mail_folders = MagicMock()
@@ -105,7 +103,7 @@ def mock_graph_service():
         # Mock folder messages
         mock_folder_messages = MagicMock()
         mock_by_folder_id.messages = mock_folder_messages
-        mock_folder_messages.get = AsyncMock()
+        mock_folder_messages.get = MagicMock()
 
         yield mock_client
 
@@ -147,11 +145,11 @@ def outlook_toolkit(mock_graph_service):
         yield toolkit
 
 
-async def test_send_email(outlook_toolkit, mock_graph_service):
+def test_send_email(outlook_toolkit, mock_graph_service):
     """Test sending an email successfully."""
     mock_graph_service.me.send_mail.post.return_value = None
 
-    result = await outlook_toolkit.outlook_send_email(
+    result = outlook_toolkit.outlook_send_email(
         to_email=['test@example.com'],
         subject='Test Subject',
         content='Test Body',
@@ -165,21 +163,18 @@ async def test_send_email(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.send_mail.post.assert_called_once()
 
 
-async def test_send_email_with_attachments(
-    outlook_toolkit, mock_graph_service
-):
+def test_send_email_with_attachments(outlook_toolkit, mock_graph_service):
     """Test sending an email with attachments."""
     mock_graph_service.me.send_mail.post.return_value = None
 
     with (
         patch('os.path.isfile', return_value=True),
-        patch('builtins.open', create=True) as mock_open,
+        patch('builtins.open', create=True) as mock_file_open,
     ):
-        mock_open.return_value.__enter__.return_value.read.return_value = (
-            b'test content'
-        )
+        mock_file = mock_file_open.return_value.__enter__.return_value
+        mock_file.read.return_value = b'test content'
 
-        result = await outlook_toolkit.outlook_send_email(
+        result = outlook_toolkit.outlook_send_email(
             to_email=['test@example.com'],
             subject='Test Subject',
             content='Test Body',
@@ -190,9 +185,9 @@ async def test_send_email_with_attachments(
         mock_graph_service.me.send_mail.post.assert_called_once()
 
 
-async def test_send_email_invalid_email(outlook_toolkit):
+def test_send_email_invalid_email(outlook_toolkit):
     """Test sending email with invalid email address."""
-    result = await outlook_toolkit.outlook_send_email(
+    result = outlook_toolkit.outlook_send_email(
         to_email=['invalid-email'],
         subject='Test Subject',
         content='Test Body',
@@ -202,11 +197,11 @@ async def test_send_email_invalid_email(outlook_toolkit):
     assert 'Invalid email address' in result['error']
 
 
-async def test_send_email_failure(outlook_toolkit, mock_graph_service):
+def test_send_email_failure(outlook_toolkit, mock_graph_service):
     """Test sending email failure."""
     mock_graph_service.me.send_mail.post.side_effect = Exception("API Error")
 
-    result = await outlook_toolkit.outlook_send_email(
+    result = outlook_toolkit.outlook_send_email(
         to_email=['test@example.com'],
         subject='Test Subject',
         content='Test Body',
@@ -216,13 +211,13 @@ async def test_send_email_failure(outlook_toolkit, mock_graph_service):
     assert 'Failed to send email' in result['error']
 
 
-async def test_create_email_draft(outlook_toolkit, mock_graph_service):
+def test_create_email_draft(outlook_toolkit, mock_graph_service):
     """Test creating an email draft."""
     mock_draft_result = MagicMock()
     mock_draft_result.id = 'draft123'
     mock_graph_service.me.messages.post.return_value = mock_draft_result
 
-    result = await outlook_toolkit.outlook_create_draft_email(
+    result = outlook_toolkit.outlook_create_draft_email(
         to_email=['test@example.com'],
         subject='Test Subject',
         content='Test Body',
@@ -237,7 +232,7 @@ async def test_create_email_draft(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.post.assert_called_once()
 
 
-async def test_browser_auth_persists_refresh_token(tmp_path):
+def test_browser_auth_persists_refresh_token(tmp_path):
     toolkit = OutlookMailToolkit.__new__(OutlookMailToolkit)
     toolkit.scopes = ["Mail.Send", "Mail.ReadWrite"]
     toolkit.redirect_uri = "http://localhost:12345"
@@ -265,7 +260,7 @@ async def test_browser_auth_persists_refresh_token(tmp_path):
     ):
         credentials = toolkit._authenticate_using_browser()
 
-    assert isinstance(credentials, AsyncCustomAzureCredential)
+    assert isinstance(credentials, CustomAzureCredential)
     assert credentials.refresh_token == "mock_refresh_token"
     assert credentials._access_token == "mock_access_token"
 
@@ -274,7 +269,7 @@ async def test_browser_auth_persists_refresh_token(tmp_path):
     assert token_data["refresh_token"] == "mock_refresh_token"
 
 
-async def test_create_email_draft_with_attachments(
+def test_create_email_draft_with_attachments(
     outlook_toolkit, mock_graph_service
 ):
     """Test creating an email draft with attachments."""
@@ -284,13 +279,12 @@ async def test_create_email_draft_with_attachments(
 
     with (
         patch('os.path.isfile', return_value=True),
-        patch('builtins.open', create=True) as mock_open,
+        patch('builtins.open', create=True) as mock_file_open,
     ):
-        mock_open.return_value.__enter__.return_value.read.return_value = (
-            b'test content'
-        )
+        mock_file = mock_file_open.return_value.__enter__.return_value
+        mock_file.read.return_value = b'test content'
 
-        result = await outlook_toolkit.outlook_create_draft_email(
+        result = outlook_toolkit.outlook_create_draft_email(
             to_email=['test@example.com'],
             subject='Test Subject',
             content='Test Body',
@@ -302,9 +296,9 @@ async def test_create_email_draft_with_attachments(
         mock_graph_service.me.messages.post.assert_called_once()
 
 
-async def test_create_email_draft_invalid_email(outlook_toolkit):
+def test_create_email_draft_invalid_email(outlook_toolkit):
     """Test creating draft with invalid email address."""
-    result = await outlook_toolkit.outlook_create_draft_email(
+    result = outlook_toolkit.outlook_create_draft_email(
         to_email=['invalid-email'],
         subject='Test Subject',
         content='Test Body',
@@ -314,11 +308,11 @@ async def test_create_email_draft_invalid_email(outlook_toolkit):
     assert 'Invalid email address' in result['error']
 
 
-async def test_create_email_draft_failure(outlook_toolkit, mock_graph_service):
+def test_create_email_draft_failure(outlook_toolkit, mock_graph_service):
     """Test creating email draft failure."""
     mock_graph_service.me.messages.post.side_effect = Exception("API Error")
 
-    result = await outlook_toolkit.outlook_create_draft_email(
+    result = outlook_toolkit.outlook_create_draft_email(
         to_email=['test@example.com'],
         subject='Test Subject',
         content='Test Body',
@@ -328,15 +322,13 @@ async def test_create_email_draft_failure(outlook_toolkit, mock_graph_service):
     assert 'Failed to create draft email' in result['error']
 
 
-async def test_send_draft_email(outlook_toolkit, mock_graph_service):
+def test_send_draft_email(outlook_toolkit, mock_graph_service):
     """Test sending a draft email."""
     mock_graph_service.me.messages.by_message_id().send.post.return_value = (
         None
     )
 
-    result = await outlook_toolkit.outlook_send_draft_email(
-        draft_id='draft123'
-    )
+    result = outlook_toolkit.outlook_send_draft_email(draft_id='draft123')
 
     assert result['status'] == 'success'
     assert result['message'] == 'Draft email sent successfully'
@@ -345,25 +337,23 @@ async def test_send_draft_email(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.by_message_id().send.post.assert_called_once()
 
 
-async def test_send_draft_email_failure(outlook_toolkit, mock_graph_service):
+def test_send_draft_email_failure(outlook_toolkit, mock_graph_service):
     """Test sending draft email failure."""
     mock_graph_service.me.messages.by_message_id().send.post.side_effect = (
         Exception("API Error")
     )
 
-    result = await outlook_toolkit.outlook_send_draft_email(
-        draft_id='draft123'
-    )
+    result = outlook_toolkit.outlook_send_draft_email(draft_id='draft123')
 
     assert 'error' in result
     assert 'Failed to send draft email' in result['error']
 
 
-async def test_delete_email(outlook_toolkit, mock_graph_service):
+def test_delete_email(outlook_toolkit, mock_graph_service):
     """Test deleting an email successfully."""
     mock_graph_service.me.messages.by_message_id().delete.return_value = None
 
-    result = await outlook_toolkit.outlook_delete_email(message_id='msg123')
+    result = outlook_toolkit.outlook_delete_email(message_id='msg123')
 
     assert result['status'] == 'success'
     assert result['message'] == 'Email deleted successfully'
@@ -372,25 +362,25 @@ async def test_delete_email(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.by_message_id().delete.assert_called_once()
 
 
-async def test_delete_email_failure(outlook_toolkit, mock_graph_service):
+def test_delete_email_failure(outlook_toolkit, mock_graph_service):
     """Test deleting email failure."""
     mock_graph_service.me.messages.by_message_id().delete.side_effect = (
         Exception("API Error")
     )
 
-    result = await outlook_toolkit.outlook_delete_email(message_id='msg123')
+    result = outlook_toolkit.outlook_delete_email(message_id='msg123')
 
     assert 'error' in result
     assert 'Failed to delete email' in result['error']
 
 
-async def test_move_message_to_folder(outlook_toolkit, mock_graph_service):
+def test_move_message_to_folder(outlook_toolkit, mock_graph_service):
     """Test moving an email to a folder successfully."""
     mock_graph_service.me.messages.by_message_id().move.post.return_value = (
         None
     )
 
-    result = await outlook_toolkit.outlook_move_message_to_folder(
+    result = outlook_toolkit.outlook_move_message_to_folder(
         message_id='msg123', destination_folder_id='inbox'
     )
 
@@ -402,15 +392,13 @@ async def test_move_message_to_folder(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.by_message_id().move.post.assert_called_once()
 
 
-async def test_move_message_to_folder_failure(
-    outlook_toolkit, mock_graph_service
-):
+def test_move_message_to_folder_failure(outlook_toolkit, mock_graph_service):
     """Test moving email failure."""
     mock_graph_service.me.messages.by_message_id().move.post.side_effect = (
         Exception("API Error")
     )
 
-    result = await outlook_toolkit.outlook_move_message_to_folder(
+    result = outlook_toolkit.outlook_move_message_to_folder(
         message_id='msg123', destination_folder_id='inbox'
     )
 
@@ -418,7 +406,7 @@ async def test_move_message_to_folder_failure(
     assert 'Failed to move email' in result['error']
 
 
-async def test_get_attachments(outlook_toolkit, mock_graph_service):
+def test_get_attachments(outlook_toolkit, mock_graph_service):
     """Test getting attachments and saving to disk."""
     import base64
 
@@ -437,7 +425,7 @@ async def test_get_attachments(outlook_toolkit, mock_graph_service):
         patch('os.path.exists', return_value=False),
         patch('builtins.open', create=True),
     ):
-        result = await outlook_toolkit.outlook_get_attachments(
+        result = outlook_toolkit.outlook_get_attachments(
             message_id='msg123',
         )
 
@@ -445,9 +433,7 @@ async def test_get_attachments(outlook_toolkit, mock_graph_service):
         assert result['total_count'] == 1
 
 
-async def test_get_attachments_exclude_inline(
-    outlook_toolkit, mock_graph_service
-):
+def test_get_attachments_exclude_inline(outlook_toolkit, mock_graph_service):
     """Test getting attachments excluding inline attachments (default)."""
     mock_attachment1 = MagicMock()
     mock_attachment1.name = 'image.png'
@@ -458,7 +444,7 @@ async def test_get_attachments_exclude_inline(
     mock_attachments = mock_graph_service.me.messages.by_message_id()
     mock_attachments.attachments.get.return_value = mock_response
 
-    result = await outlook_toolkit.outlook_get_attachments(
+    result = outlook_toolkit.outlook_get_attachments(
         message_id='msg123',
         include_inline_attachments=False,
     )
@@ -468,9 +454,7 @@ async def test_get_attachments_exclude_inline(
     assert not result['attachments']
 
 
-async def test_get_attachments_include_inline(
-    outlook_toolkit, mock_graph_service
-):
+def test_get_attachments_include_inline(outlook_toolkit, mock_graph_service):
     """Test getting attachments including inline attachments."""
     mock_attachment1 = MagicMock()
     mock_attachment1.name = 'document.pdf'
@@ -485,7 +469,7 @@ async def test_get_attachments_include_inline(
     mock_attachments = mock_graph_service.me.messages.by_message_id()
     mock_attachments.attachments.get.return_value = mock_response
 
-    result = await outlook_toolkit.outlook_get_attachments(
+    result = outlook_toolkit.outlook_get_attachments(
         message_id='msg123',
         metadata_only=True,
         include_inline_attachments=True,
@@ -497,18 +481,18 @@ async def test_get_attachments_include_inline(
     assert result['attachments'][1]['name'] == 'image.png'
 
 
-async def test_get_attachments_failure(outlook_toolkit, mock_graph_service):
+def test_get_attachments_failure(outlook_toolkit, mock_graph_service):
     """Test getting attachments failure."""
     mock_attachments = mock_graph_service.me.messages.by_message_id()
     mock_attachments.attachments.get.side_effect = Exception("API Error")
 
-    result = await outlook_toolkit.outlook_get_attachments(message_id='msg123')
+    result = outlook_toolkit.outlook_get_attachments(message_id='msg123')
 
     assert 'error' in result
     assert 'Failed to get attachments' in result['error']
 
 
-async def test_get_attachments_with_content_and_save_path(
+def test_get_attachments_with_content_and_save_path(
     outlook_toolkit, mock_graph_service
 ):
     """Test getting attachments with metadata_only=False and save_path."""
@@ -536,7 +520,7 @@ async def test_get_attachments_with_content_and_save_path(
             patch('os.path.exists', return_value=False),
             patch('builtins.open', m_open),
         ):
-            result = await outlook_toolkit.outlook_get_attachments(
+            result = outlook_toolkit.outlook_get_attachments(
                 message_id='msg456',
                 metadata_only=False,
                 save_path=temp_dir,
@@ -615,9 +599,7 @@ def create_mock_message(request):
     return mock_msg
 
 
-async def test_get_message(
-    outlook_toolkit, mock_graph_service, create_mock_message
-):
+def test_get_message(outlook_toolkit, mock_graph_service, create_mock_message):
     """Test getting messages with different content types."""
     with patch(
         'camel.toolkits.microsoft_outlook_mail_toolkit.isinstance',
@@ -627,7 +609,7 @@ async def test_get_message(
             create_mock_message
         )
 
-        result = await outlook_toolkit.outlook_get_message(message_id='msg123')
+        result = outlook_toolkit.outlook_get_message(message_id='msg123')
 
     assert result['status'] == 'success'
     assert 'message' in result
@@ -643,19 +625,19 @@ async def test_get_message(
     mock_graph_service.me.messages.by_message_id().get.assert_called_once()
 
 
-async def test_get_message_failure(outlook_toolkit, mock_graph_service):
+def test_get_message_failure(outlook_toolkit, mock_graph_service):
     """Test get_message handles API errors correctly."""
     mock_graph_service.me.messages.by_message_id().get.side_effect = Exception(
         "API Error"
     )
 
-    result = await outlook_toolkit.outlook_get_message(message_id='msg123')
+    result = outlook_toolkit.outlook_get_message(message_id='msg123')
 
     assert 'error' in result
     assert 'Failed to get message' in result['error']
 
 
-async def test_list_messages(
+def test_list_messages(
     outlook_toolkit, mock_graph_service, create_mock_message
 ):
     """Test listing messages with different content types."""
@@ -667,7 +649,7 @@ async def test_list_messages(
         mock_response.value = [create_mock_message]
         mock_graph_service.me.messages.get.return_value = mock_response
 
-        result = await outlook_toolkit.outlook_list_messages()
+        result = outlook_toolkit.outlook_list_messages()
 
     assert result['status'] == 'success'
     assert 'messages' in result
@@ -685,23 +667,23 @@ async def test_list_messages(
     mock_graph_service.me.messages.get.assert_called_once()
 
 
-async def test_list_messages_failure(outlook_toolkit, mock_graph_service):
+def test_list_messages_failure(outlook_toolkit, mock_graph_service):
     """Test list_messages handles API errors correctly."""
     mock_graph_service.me.messages.get.side_effect = Exception("API Error")
 
-    result = await outlook_toolkit.outlook_list_messages()
+    result = outlook_toolkit.outlook_list_messages()
 
     assert 'error' in result
     assert 'Failed to list messages' in result['error']
 
 
-async def test_reply_to_email(outlook_toolkit, mock_graph_service):
+def test_reply_to_email(outlook_toolkit, mock_graph_service):
     """Test replying to an email (reply to sender only)."""
     mock_graph_service.me.messages.by_message_id().reply.post.return_value = (
         None
     )
 
-    result = await outlook_toolkit.outlook_reply_to_email(
+    result = outlook_toolkit.outlook_reply_to_email(
         message_id='msg123',
         content='This is my reply',
         reply_all=False,
@@ -716,12 +698,12 @@ async def test_reply_to_email(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.by_message_id().reply_all.post.assert_not_called()
 
 
-async def test_reply_to_email_all(outlook_toolkit, mock_graph_service):
+def test_reply_to_email_all(outlook_toolkit, mock_graph_service):
     """Test replying to all recipients of an email."""
     mock_reply_all = mock_graph_service.me.messages.by_message_id().reply_all
     mock_reply_all.post.return_value = None
 
-    result = await outlook_toolkit.outlook_reply_to_email(
+    result = outlook_toolkit.outlook_reply_to_email(
         message_id='msg456',
         content='This is my reply to all',
         reply_all=True,
@@ -736,13 +718,13 @@ async def test_reply_to_email_all(outlook_toolkit, mock_graph_service):
     mock_graph_service.me.messages.by_message_id().reply.post.assert_not_called()
 
 
-async def test_reply_to_email_failure(outlook_toolkit, mock_graph_service):
+def test_reply_to_email_failure(outlook_toolkit, mock_graph_service):
     """Test reply to email failure when using simple reply."""
     mock_graph_service.me.messages.by_message_id().reply.post.side_effect = (
         Exception("API Error: Unable to send reply")
     )
 
-    result = await outlook_toolkit.outlook_reply_to_email(
+    result = outlook_toolkit.outlook_reply_to_email(
         message_id='msg123',
         content='This reply will fail',
         reply_all=False,
@@ -753,14 +735,14 @@ async def test_reply_to_email_failure(outlook_toolkit, mock_graph_service):
     assert 'API Error: Unable to send reply' in result['error']
 
 
-async def test_reply_to_email_all_failure(outlook_toolkit, mock_graph_service):
+def test_reply_to_email_all_failure(outlook_toolkit, mock_graph_service):
     """Test reply to email failure when using reply all."""
     mock_reply_all = mock_graph_service.me.messages.by_message_id().reply_all
     mock_reply_all.post.side_effect = Exception(
         "API Error: Unable to send reply all"
     )
 
-    result = await outlook_toolkit.outlook_reply_to_email(
+    result = outlook_toolkit.outlook_reply_to_email(
         message_id='msg456',
         content='This reply all will fail',
         reply_all=True,
@@ -771,12 +753,12 @@ async def test_reply_to_email_all_failure(outlook_toolkit, mock_graph_service):
     assert 'API Error: Unable to send reply all' in result['error']
 
 
-async def test_update_draft_message(outlook_toolkit, mock_graph_service):
+def test_update_draft_message(outlook_toolkit, mock_graph_service):
     """Test updating a draft message with all parameters."""
     mock_by_message_id = mock_graph_service.me.messages.by_message_id()
     mock_by_message_id.patch.return_value = None
 
-    result = await outlook_toolkit.outlook_update_draft_message(
+    result = outlook_toolkit.outlook_update_draft_message(
         message_id='draft123',
         subject='Updated Subject',
         content='Updated content',
@@ -800,14 +782,14 @@ async def test_update_draft_message(outlook_toolkit, mock_graph_service):
     mock_by_message_id.patch.assert_called_once()
 
 
-async def test_update_draft_message_subject_only(
+def test_update_draft_message_subject_only(
     outlook_toolkit, mock_graph_service
 ):
     """Test updating only the subject of a draft message."""
     mock_by_message_id = mock_graph_service.me.messages.by_message_id()
     mock_by_message_id.patch.return_value = None
 
-    result = await outlook_toolkit.outlook_update_draft_message(
+    result = outlook_toolkit.outlook_update_draft_message(
         message_id='draft456',
         subject='New Subject Only',
     )
@@ -821,16 +803,14 @@ async def test_update_draft_message_subject_only(
     mock_by_message_id.patch.assert_called_once()
 
 
-async def test_update_draft_message_failure(
-    outlook_toolkit, mock_graph_service
-):
+def test_update_draft_message_failure(outlook_toolkit, mock_graph_service):
     """Test update draft message failure."""
     mock_by_message_id = mock_graph_service.me.messages.by_message_id()
     mock_by_message_id.patch.side_effect = Exception(
         "API Error: Unable to update draft"
     )
 
-    result = await outlook_toolkit.outlook_update_draft_message(
+    result = outlook_toolkit.outlook_update_draft_message(
         message_id='draft123',
         subject='This update will fail',
     )
