@@ -30,16 +30,18 @@ import threading
 import time
 import uuid
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
+    AsyncIterator,
     Callable,
     Dict,
     Generator,
+    Iterator,
     List,
     Optional,
     Set,
@@ -62,7 +64,6 @@ from camel.agents._utils import (
     convert_to_function_tool,
     convert_to_schema,
     get_info_dict,
-    handle_logprobs,
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
@@ -87,10 +88,16 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
+from camel.responses.adapters.chat_completions import (
+    adapt_chat_to_camel_response,
+)
+from camel.responses.adapters.responses_adapter import (
+    responses_to_camel_response,
+)
+from camel.responses.model_response import CamelModelResponse
 from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
-    ChatCompletion,
     ChatCompletionChunk,
     ModelPlatformType,
     ModelType,
@@ -3543,12 +3550,8 @@ class ChatAgent(BaseAgent):
             f"[{current_iteration}]: {sanitized}"
         )
 
-        if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
-
-        return self._handle_batch_response(response)
+        camel_resp = self._normalize_to_camel_response(response)
+        return self._handle_camel_response(camel_resp)
 
     @observe()
     async def _aget_model_response(
@@ -3610,12 +3613,8 @@ class ChatAgent(BaseAgent):
             f"[{current_iteration}]: {sanitized}"
         )
 
-        if not isinstance(response, ChatCompletion):
-            raise TypeError(
-                f"Expected ChatCompletion, got {type(response).__name__}"
-            )
-
-        return self._handle_batch_response(response)
+        camel_resp = self._normalize_to_camel_response(response)
+        return self._handle_camel_response(camel_resp)
 
     def _sanitize_messages_for_logging(
         self, messages, prev_num_openai_messages: int
@@ -3822,78 +3821,90 @@ class ChatAgent(BaseAgent):
             external_tool_call_requests,
         )
 
-    def _handle_batch_response(
-        self, response: ChatCompletion
-    ) -> ModelResponse:
-        r"""Process a batch response from the model and extract the necessary
-        information.
+    def _normalize_to_camel_response(self, resp: Any) -> CamelModelResponse:
+        """Normalize backend response into CamelModelResponse.
 
-        Args:
-            response (ChatCompletion): Model response.
-
-        Returns:
-            _ModelResponse: parsed model response.
+        Accepts ChatCompletion (legacy) or already-normalized
+        CamelModelResponse.
         """
-        output_messages: List[BaseMessage] = []
-        for choice in response.choices:
-            # Skip messages with no meaningful content
-            if (
-                choice.message.content is None
-                or choice.message.content.strip() == ""
-            ) and not choice.message.tool_calls:
-                continue
-
-            meta_dict = {}
-            if logprobs_info := handle_logprobs(choice):
-                meta_dict["logprobs_info"] = logprobs_info
-
-            reasoning_content = getattr(
-                choice.message, "reasoning_content", None
+        if isinstance(resp, CamelModelResponse):
+            return resp
+        # Best-effort detect ChatCompletion without tight import coupling
+        try:
+            from camel.types import (
+                ChatCompletion as _CC,  # local import to avoid cycles
             )
 
-            chat_message = BaseMessage(
+            if isinstance(resp, _CC):
+                return adapt_chat_to_camel_response(resp)
+        except Exception as exc:
+            logger.warning(
+                "Failed to normalize response of type %s via ChatCompletion adapter: %s",  # noqa:E501
+                type(resp).__name__,
+                exc,
+            )
+        raise TypeError(
+            f"Unsupported response type for normalization: {type(resp).__name__}"  # noqa:E501
+        )
+
+    def _handle_camel_response(
+        self, response: CamelModelResponse
+    ) -> ModelResponse:
+        """Process a CamelModelResponse and build the legacy ModelResponse."""
+        output_messages: List[BaseMessage] = []
+        for msg in response.output_messages:
+            # Re-wrap to preserve agent role naming convention
+            chat_message = replace(
+                msg,
                 role_name=self.role_name,
                 role_type=self.role_type,
-                meta_dict=meta_dict,
-                content=choice.message.content or "",
-                parsed=getattr(choice.message, "parsed", None),
-                reasoning_content=reasoning_content,
             )
-
             output_messages.append(chat_message)
 
-        finish_reasons = [
-            str(choice.finish_reason) for choice in response.choices
-        ]
+        finish_reasons = response.finish_reasons or []
 
-        usage = {}
-        if response.usage is not None:
-            usage = safe_model_dump(response.usage)
+        usage: Dict[str, Any] = {}
+        if response.usage and response.usage.raw:
+            usage = dict(response.usage.raw)
+        else:
+            # Synthesize from normalized fields if raw missing
+            usage = {
+                "prompt_tokens": response.usage.input_tokens
+                if response.usage
+                else 0,
+                "completion_tokens": response.usage.output_tokens
+                if response.usage
+                else 0,
+                "total_tokens": response.usage.total_tokens
+                if response.usage
+                else 0,
+            }
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
-        if tool_calls := response.choices[0].message.tool_calls:
+        if response.tool_call_requests:
             tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
-
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
+            for tc in response.tool_call_requests:
+                tool_call_requests.append(
+                    ToolCallRequest(
+                        tool_name=tc.name,
+                        args=tc.args,
+                        tool_call_id=tc.id,
+                    )
                 )
-                tool_call_requests.append(tool_call_request)
+
+        # For compatibility, return original provider payload when available
+        provider_payload = getattr(response, "raw", None)
+        response_id = response.id or ""
 
         return ModelResponse(
-            response=response,
+            response=provider_payload
+            if provider_payload is not None
+            else response,
             tool_call_requests=tool_call_requests,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage,
-            response_id=response.id or "",
+            response_id=response_id,
         )
 
     def _step_terminate(
@@ -4289,7 +4300,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream) or inspect.isgenerator(response):
+            if isinstance(response, (Stream, Iterator)):
                 (
                     stream_completed,
                     tool_calls_complete,
@@ -4338,95 +4349,103 @@ class ChatAgent(BaseAgent):
             ):
                 # Handle structured output stream (ChatCompletionStreamManager)
                 with response as stream:
-                    parsed_object = None
+                    if hasattr(stream, "get_final_response"):
+                        for item in self._process_responses_stream(
+                            stream,
+                            content_accumulator,
+                            tool_call_records,
+                            step_token_usage,
+                            num_tokens,
+                            response_format,
+                        ):
+                            yield item
+                        break
+                    else:
+                        parsed_object = None
 
-                    for event in stream:
-                        if event.type == "content.delta":
-                            if getattr(event, "delta", None):
-                                # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
-                                    content_accumulator,
-                                    getattr(event, "delta", ""),
-                                    step_token_usage,
-                                    tool_call_records=tool_call_records.copy(),
+                        for event in stream:
+                            if event.type == "content.delta":
+                                if getattr(event, "delta", None):
+                                    partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                        content_accumulator,
+                                        getattr(event, "delta", ""),
+                                        step_token_usage,
+                                        tool_call_records=tool_call_records.copy(),
+                                    )
+                                    yield partial_response
+
+                            elif event.type == "content.done":
+                                parsed_object = getattr(event, "parsed", None)
+                                break
+                            elif event.type == "error":
+                                logger.error(
+                                    f"Error in structured stream: "
+                                    f"{getattr(event, 'error', '')}"
                                 )
-                                yield partial_response
+                                yield self._create_error_response(
+                                    str(getattr(event, 'error', '')),
+                                    tool_call_records,
+                                )
+                                return
 
-                        elif event.type == "content.done":
-                            parsed_object = getattr(event, "parsed", None)
+                        try:
+                            final_completion = stream.get_final_completion()
+                            final_content = (
+                                final_completion.choices[0].message.content
+                                or ""
+                            )
+
+                            final_message = BaseMessage(
+                                role_name=self.role_name,
+                                role_type=self.role_type,
+                                meta_dict={},
+                                content=final_content,
+                                parsed=cast(
+                                    "BaseModel | dict[str, Any] | None",
+                                    parsed_object,
+                                ),  # type: ignore[arg-type]
+                            )
+
+                            self.record_message(final_message)
+
+                            final_response = ChatAgentResponse(
+                                msgs=[final_message],
+                                terminated=False,
+                                info={
+                                    "id": final_completion.id or "",
+                                    "usage": safe_model_dump(
+                                        final_completion.usage
+                                    )
+                                    if final_completion.usage
+                                    else {},
+                                    "finish_reasons": [
+                                        choice.finish_reason or "stop"
+                                        for choice in final_completion.choices
+                                    ],
+                                    "num_tokens": self._get_token_count(
+                                        final_content
+                                    ),
+                                    "tool_calls": tool_call_records,
+                                    "external_tool_requests": None,
+                                    "streaming": False,
+                                    "partial": False,
+                                },
+                            )
+                            yield final_response
                             break
-                        elif event.type == "error":
+
+                        except Exception as e:
                             logger.error(
-                                f"Error in structured stream: "
-                                f"{getattr(event, 'error', '')}"
+                                f"Error getting final completion: {e}"
                             )
                             yield self._create_error_response(
-                                str(getattr(event, 'error', '')),
-                                tool_call_records,
+                                str(e), tool_call_records
                             )
                             return
-
-                    # Get final completion and record final message
-                    try:
-                        final_completion = stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
-                        )
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
-
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
-                        )
-
-                        self.record_message(final_message)
-
-                        # Create final response
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                            },
-                        )
-                        yield final_response
-                        break
-
-                    except Exception as e:
-                        logger.error(f"Error getting final completion: {e}")
-                        yield self._create_error_response(
-                            str(e), tool_call_records
-                        )
-                        return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                camel_response = self._normalize_to_camel_response(response)
+                model_response = self._handle_camel_response(camel_response)
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -5098,12 +5117,7 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            # Note: Also check for async generators since some model backends
-            # (e.g., GeminiModel) wrap AsyncStream in async generators for
-            # additional processing
-            if isinstance(response, AsyncStream) or inspect.isasyncgen(
-                response
-            ):
+            if isinstance(response, (AsyncStream, AsyncIterator)):
                 stream_completed = False
                 tool_calls_complete = False
 
@@ -5164,97 +5178,105 @@ class ChatAgent(BaseAgent):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
                 async with response as stream:
-                    parsed_object = None
+                    if hasattr(stream, "get_final_response"):
+                        async for item in self._aprocess_responses_stream(
+                            stream,
+                            content_accumulator,
+                            tool_call_records,
+                            step_token_usage,
+                            num_tokens,
+                            response_format,
+                        ):
+                            yield item
+                        break
+                    else:
+                        parsed_object = None
 
-                    async for event in stream:
-                        if event.type == "content.delta":
-                            if getattr(event, "delta", None):
-                                # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
-                                    content_accumulator,
-                                    getattr(event, "delta", ""),
-                                    step_token_usage,
-                                    tool_call_records=tool_call_records.copy(),
+                        async for event in stream:
+                            if event.type == "content.delta":
+                                if getattr(event, "delta", None):
+                                    partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                        content_accumulator,
+                                        getattr(event, "delta", ""),
+                                        step_token_usage,
+                                        tool_call_records=tool_call_records.copy(),
+                                    )
+                                    yield partial_response
+
+                            elif event.type == "content.done":
+                                parsed_object = getattr(event, "parsed", None)
+                                break
+                            elif event.type == "error":
+                                logger.error(
+                                    f"Error in async structured stream: "
+                                    f"{getattr(event, 'error', '')}"
                                 )
-                                yield partial_response
+                                yield self._create_error_response(
+                                    str(getattr(event, 'error', '')),
+                                    tool_call_records,
+                                )
+                                return
 
-                        elif event.type == "content.done":
-                            parsed_object = getattr(event, "parsed", None)
+                        try:
+                            final_completion = (
+                                await stream.get_final_completion()
+                            )
+                            final_content = (
+                                final_completion.choices[0].message.content
+                                or ""
+                            )
+
+                            final_message = BaseMessage(
+                                role_name=self.role_name,
+                                role_type=self.role_type,
+                                meta_dict={},
+                                content=final_content,
+                                parsed=cast(
+                                    "BaseModel | dict[str, Any] | None",
+                                    parsed_object,
+                                ),  # type: ignore[arg-type]
+                            )
+
+                            self.record_message(final_message)
+
+                            final_response = ChatAgentResponse(
+                                msgs=[final_message],
+                                terminated=False,
+                                info={
+                                    "id": final_completion.id or "",
+                                    "usage": safe_model_dump(
+                                        final_completion.usage
+                                    )
+                                    if final_completion.usage
+                                    else {},
+                                    "finish_reasons": [
+                                        choice.finish_reason or "stop"
+                                        for choice in final_completion.choices
+                                    ],
+                                    "num_tokens": self._get_token_count(
+                                        final_content
+                                    ),
+                                    "tool_calls": tool_call_records,
+                                    "external_tool_requests": None,
+                                    "streaming": False,
+                                    "partial": False,
+                                },
+                            )
+                            yield final_response
                             break
-                        elif event.type == "error":
+
+                        except Exception as e:
                             logger.error(
-                                f"Error in async structured stream: "
-                                f"{getattr(event, 'error', '')}"
+                                f"Error getting async final completion: {e}"
                             )
                             yield self._create_error_response(
-                                str(getattr(event, 'error', '')),
-                                tool_call_records,
+                                str(e), tool_call_records
                             )
                             return
-
-                    # Get final completion and record final message
-                    try:
-                        final_completion = await stream.get_final_completion()
-                        final_content = (
-                            final_completion.choices[0].message.content or ""
-                        )
-                        final_reasoning = (
-                            content_accumulator.get_full_reasoning_content()
-                            or None
-                        )
-
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
-                        )
-
-                        self.record_message(final_message)
-
-                        # Create final response
-                        final_response = ChatAgentResponse(
-                            msgs=[final_message],
-                            terminated=False,
-                            info={
-                                "id": final_completion.id or "",
-                                "usage": safe_model_dump(
-                                    final_completion.usage
-                                )
-                                if final_completion.usage
-                                else {},
-                                "finish_reasons": [
-                                    choice.finish_reason or "stop"
-                                    for choice in final_completion.choices
-                                ],
-                                "num_tokens": self._get_token_count(
-                                    final_content
-                                ),
-                                "tool_calls": tool_call_records,
-                                "external_tool_requests": None,
-                                "streaming": False,
-                                "partial": False,
-                            },
-                        )
-                        yield final_response
-                        break
-
-                    except Exception as e:
-                        logger.error(
-                            f"Error getting async final completion: {e}"
-                        )
-                        yield self._create_error_response(
-                            str(e), tool_call_records
-                        )
-                        return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                camel_response = self._normalize_to_camel_response(response)
+                model_response = self._handle_camel_response(camel_response)
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -5606,6 +5628,142 @@ class ChatAgent(BaseAgent):
                 "streaming": True,
                 "partial": True,
             },
+        )
+
+    def _process_responses_stream(
+        self,
+        stream: Any,
+        content_accumulator: StreamContentAccumulator,
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+        num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Generator[ChatAgentResponse, None, None]:
+        """Handle streaming events from the Responses API."""
+
+        try:
+            for event in stream:
+                event_type = getattr(event, "type", "")
+                if event_type == "response.output_text.delta":
+                    delta = getattr(event, "delta", "")
+                    if delta:
+                        yield self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta,
+                            step_token_usage,
+                            getattr(event, "item_id", ""),
+                            tool_call_records=tool_call_records.copy(),
+                        )
+                elif "error" in event_type or event_type.endswith(".failed"):
+                    error_payload = getattr(event, "error", None)
+                    message = getattr(error_payload, "message", None)
+                    logger.error(
+                        "Responses stream reported error (%s): %s",
+                        event_type,
+                        message or error_payload or "unknown",
+                    )
+                    yield self._create_error_response(
+                        str(
+                            message
+                            or error_payload
+                            or "responses stream error"
+                        ),
+                        tool_call_records,
+                    )
+                    return
+        except Exception as exc:
+            logger.error("Error while iterating Responses stream: %s", exc)
+            yield self._create_error_response(str(exc), tool_call_records)
+            return
+
+        try:
+            final_response = stream.get_final_response()
+        except Exception as exc:
+            logger.error("Failed to finalize Responses stream: %s", exc)
+            yield self._create_error_response(str(exc), tool_call_records)
+            return
+
+        camel_response = responses_to_camel_response(
+            final_response, response_format
+        )
+        model_response = self._handle_camel_response(camel_response)
+        yield self._convert_to_chatagent_response(
+            model_response,
+            tool_call_records,
+            num_tokens,
+            None,
+            model_response.usage_dict.get("prompt_tokens", 0),
+            model_response.usage_dict.get("completion_tokens", 0),
+            model_response.usage_dict.get("total_tokens", 0),
+        )
+
+    async def _aprocess_responses_stream(
+        self,
+        stream: Any,
+        content_accumulator: StreamContentAccumulator,
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+        num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        """Async variant for Responses streaming events."""
+
+        try:
+            async for event in stream:
+                event_type = getattr(event, "type", "")
+                if event_type == "response.output_text.delta":
+                    delta = getattr(event, "delta", "")
+                    if delta:
+                        yield self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta,
+                            step_token_usage,
+                            getattr(event, "item_id", ""),
+                            tool_call_records=tool_call_records.copy(),
+                        )
+                elif "error" in event_type or event_type.endswith(".failed"):
+                    error_payload = getattr(event, "error", None)
+                    message = getattr(error_payload, "message", None)
+                    logger.error(
+                        "Responses stream reported async error (%s): %s",
+                        event_type,
+                        message or error_payload or "unknown",
+                    )
+                    yield self._create_error_response(
+                        str(
+                            message
+                            or error_payload
+                            or "responses stream error"
+                        ),
+                        tool_call_records,
+                    )
+                    return
+        except Exception as exc:
+            logger.error(
+                "Error while iterating async Responses stream: %s", exc
+            )
+            yield self._create_error_response(str(exc), tool_call_records)
+            return
+
+        try:
+            final_response = await stream.get_final_response()
+        except Exception as exc:
+            logger.error("Failed to finalize async Responses stream: %s", exc)
+            yield self._create_error_response(str(exc), tool_call_records)
+            return
+
+        camel_response = responses_to_camel_response(
+            final_response, response_format
+        )
+        model_response = self._handle_camel_response(camel_response)
+        yield self._convert_to_chatagent_response(
+            model_response,
+            tool_call_records,
+            num_tokens,
+            None,
+            model_response.usage_dict.get("prompt_tokens", 0),
+            model_response.usage_dict.get("completion_tokens", 0),
+            model_response.usage_dict.get("total_tokens", 0),
         )
 
     def get_usage_dict(

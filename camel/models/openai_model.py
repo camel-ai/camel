@@ -26,6 +26,9 @@ from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.responses.adapters.chat_completions import (
+    adapt_chat_to_camel_response,
+)
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -105,6 +108,12 @@ class OpenAIModel(BaseModelBackend):
             OpenAI client initialization. These can include parameters like
             'organization', 'default_headers', 'http_client', etc.
             Ignored if custom clients are provided.
+
+    Environment Variables:
+        CAMEL_USE_CAMEL_RESPONSE (str): If set to "true", the model's response
+            will be automatically converted to :obj:`CamelModelResponse`. This
+            is useful for standardizing responses across different models.
+            (default: "false")
     """
 
     @api_keys_required(
@@ -336,11 +345,36 @@ class OpenAIModel(BaseModelBackend):
                 )
             else:
                 # Use non-streaming parse for structured output
-                return self._request_parse(messages, response_format, tools)
+                result = self._request_parse(messages, response_format, tools)
+                if (
+                    os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                    == "true"
+                ):
+                    try:
+                        return adapt_chat_to_camel_response(result)  # type: ignore[return-value]
+                    except Exception as exc:
+                        logger.warning(
+                            "Failed to convert ChatCompletion to CamelModelResponse: %s",  # noqa:E501
+                            exc,
+                        )
+                return result
         else:
-            result = self._request_chat_completion(messages, tools)
+            resp_or_stream = self._request_chat_completion(messages, tools)
+            if (
+                os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                == "true"
+            ):
+                try:
+                    from camel.types import ChatCompletion as _CC
 
-        return result
+                    if isinstance(resp_or_stream, _CC):
+                        return adapt_chat_to_camel_response(resp_or_stream)  # type: ignore[return-value]
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to convert streamed ChatCompletion to CamelModelResponse: %s",  # noqa:E501
+                        exc,
+                    )
+            return resp_or_stream
 
     @observe()
     async def _arun(
@@ -407,13 +441,34 @@ class OpenAIModel(BaseModelBackend):
                 )
             else:
                 # Use non-streaming parse for structured output
-                return await self._arequest_parse(
+                result = await self._arequest_parse(
                     messages, response_format, tools
                 )
+                if (
+                    os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                    == "true"
+                ):
+                    try:
+                        return adapt_chat_to_camel_response(result)  # type: ignore[return-value]
+                    except Exception:
+                        pass
+                return result
         else:
-            result = await self._arequest_chat_completion(messages, tools)
+            resp_or_stream = await self._arequest_chat_completion(
+                messages, tools
+            )
+            if (
+                os.environ.get("CAMEL_USE_CAMEL_RESPONSE", "false").lower()
+                == "true"
+            ):
+                try:
+                    from camel.types import ChatCompletion as _CC
 
-        return result
+                    if isinstance(resp_or_stream, _CC):
+                        return adapt_chat_to_camel_response(resp_or_stream)  # type: ignore[return-value]
+                except Exception:
+                    pass
+            return resp_or_stream
 
     def _request_chat_completion(
         self,

@@ -44,6 +44,7 @@ from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.openai_responses_model import OpenAIResponsesModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
 from camel.models.qianfan_model import QianfanModel
@@ -88,6 +89,7 @@ class ModelFactory:
         ModelPlatformType.VOLCANO: VolcanoModel,
         ModelPlatformType.NETMIND: NetmindModel,
         ModelPlatformType.OPENAI: OpenAIModel,
+        ModelPlatformType.OPENAI_RESPONSES: OpenAIResponsesModel,
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,

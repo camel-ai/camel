@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import base64
-import io
 import re
 from dataclasses import dataclass
 from typing import (
@@ -71,6 +70,10 @@ class BaseMessage:
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. (default: :obj:`auto`)
+        audio_bytes (Optional[bytes]): Optional bytes of audio associated
+            with the message. (default: :obj:`None`)
+        audio_transcript (Optional[str]): Optional transcript of the audio.
+            (default: :obj:`None`)
         parsed (Optional[Union[Type[BaseModel], dict]]): Optional object which
             is parsed from the content. (default: :obj:`None`)
         reasoning_content (Optional[str]): Optional reasoning trace associated
@@ -86,6 +89,9 @@ class BaseMessage:
     image_list: Optional[List[Union[Image.Image, str]]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "auto"
+    audio_bytes: Optional[bytes] = None
+    audio_transcript: Optional[str] = None
+    file_list: Optional[List[Dict[str, Any]]] = None
     parsed: Optional[Union[BaseModel, dict]] = None
     reasoning_content: Optional[str] = None
 
@@ -473,65 +479,67 @@ class BaseMessage:
             }
         )
         if self.image_list and len(self.image_list) > 0:
-            for image in self.image_list:
-                # Check if image is a URL string or PIL Image
-                if isinstance(image, str):
-                    # Image is a URL string
+            import io
+
+            for img in self.image_list:
+                # Support str URLs and dict image specs
+                if isinstance(img, str):
                     hybrid_content.append(
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": image,
+                                "url": img,
                                 "detail": self.image_detail,
                             },
                         }
                     )
-                else:
-                    # Image is a PIL Image object
-                    if image.format is None:
-                        # Set default format to PNG as fallback
-                        image.format = 'PNG'
-
-                    image_type: str = image.format.lower()
-                    if image_type not in OpenAIImageType:
-                        raise ValueError(
-                            f"Image type {image.format} "
-                            f"is not supported by OpenAI vision model"
-                        )
-
-                    # Convert RGBA to RGB for formats that don't support
-                    # transparency or when the image has transparency channel
-                    img_to_save = image
-                    if image.mode in ('RGBA', 'LA', 'P') and image_type in (
-                        'jpeg',
-                        'jpg',
-                    ):
-                        # JPEG doesn't support transparency, convert to RGB
-                        img_to_save = image.convert('RGB')
-                    elif (
-                        image.mode in ('RGBA', 'LA', 'P')
-                        and image_type == 'png'
-                    ):
-                        # For PNG with transparency, convert to RGBA if needed
-                        if image.mode in ('LA', 'P'):
-                            img_to_save = image.convert('RGBA')
-                        # else: RGBA mode, keep as-is
-
-                    with io.BytesIO() as buffer:
-                        img_to_save.save(fp=buffer, format=image.format)
-                        encoded_image = base64.b64encode(
-                            buffer.getvalue()
-                        ).decode("utf-8")
-                    image_prefix = f"data:image/{image_type};base64,"
+                    continue
+                elif isinstance(img, dict):
                     hybrid_content.append(
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"{image_prefix}{encoded_image}",
-                                "detail": self.image_detail,
-                            },
+                            "image_url": img,
                         }
                     )
+                    continue
+
+                # PIL Image - process and encode
+                if img.format is None:
+                    img.format = 'PNG'
+
+                image_type: str = img.format.lower()
+                if image_type not in OpenAIImageType:
+                    raise ValueError(
+                        f"Image type {img.format} "
+                        f"is not supported by OpenAI vision model"
+                    )
+
+                # Convert RGBA to RGB for formats that don't support transparency
+                img_to_save = img
+                if img.mode in ('RGBA', 'LA', 'P') and image_type in (
+                    'jpeg',
+                    'jpg',
+                ):
+                    img_to_save = img.convert('RGB')
+                elif img.mode in ('RGBA', 'LA', 'P') and image_type == 'png':
+                    if img.mode in ('LA', 'P'):
+                        img_to_save = img.convert('RGBA')
+
+                with io.BytesIO() as buffer:
+                    img_to_save.save(fp=buffer, format=img.format)
+                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    )
+                image_prefix = f"data:image/{image_type};base64,"
+                hybrid_content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"{image_prefix}{encoded_image}",
+                            "detail": self.image_detail,
+                        },
+                    }
+                )
 
         if self.video_bytes:
             import imageio.v3 as iio
@@ -539,7 +547,6 @@ class BaseMessage:
 
             base64Frames: List[str] = []
             frame_count = 0
-            # read video bytes
             video = iio.imiter(
                 self.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
             )
@@ -550,20 +557,14 @@ class BaseMessage:
                     frame_count % Constants.VIDEO_IMAGE_EXTRACTION_INTERVAL
                     == 0
                 ):
-                    # convert frame to numpy array
                     frame_array = np.asarray(frame)
                     frame_image = Image.fromarray(frame_array)
-
-                    # Get the dimensions of the frame
                     width, height = frame_image.size
-
-                    # resize the frame to the default image size
                     new_width = Constants.VIDEO_DEFAULT_IMAGE_SIZE
                     aspect_ratio = width / height
                     new_height = int(new_width / aspect_ratio)
                     resized_img = frame_image.resize((new_width, new_height))
 
-                    # encode the image to base64
                     with io.BytesIO() as buffer:
                         image_format = OpenAIImageType.JPEG.value
                         image_format = image_format.upper()
@@ -582,7 +583,24 @@ class BaseMessage:
                         "detail": self.video_detail,
                     },
                 }
+                hybrid_content.append(item)
 
+        if self.audio_bytes:
+            encoded_audio = base64.b64encode(self.audio_bytes).decode("utf-8")
+            hybrid_content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": encoded_audio,
+                        "format": "wav",
+                    },
+                }
+            )
+
+        if self.file_list:
+            for file_item in self.file_list:
+                item = {"type": "input_file"}
+                item.update(file_item)
                 hybrid_content.append(item)
 
         if len(hybrid_content) > 1:
@@ -604,9 +622,25 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
+        content: Union[str, List[Dict[str, Any]]] = self.content
+        if self.audio_bytes:
+            import base64
+
+            encoded_audio = base64.b64encode(self.audio_bytes).decode("utf-8")
+            content = [
+                {"type": "text", "text": self.content},
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": encoded_audio,
+                        "format": "wav",
+                    },
+                },
+            ]
+
         message_dict: Dict[str, Any] = {
             "role": "assistant",
-            "content": self.content,
+            "content": content,
         }
 
         # Check if meta_dict contains tool_calls
@@ -641,6 +675,9 @@ class BaseMessage:
                 if isinstance(img, str):
                     # Image is a URL string, store as-is
                     image_data_list.append({"type": "url", "data": img})
+                elif isinstance(img, dict):
+                    # Image spec dict (e.g., {"url": "...", "detail": "..."})
+                    image_data_list.append({"type": "dict", "data": img})
                 else:
                     # Image is a PIL Image, convert to base64
                     # Preserve format, default to PNG if not set
@@ -684,5 +721,16 @@ class BaseMessage:
 
         if self.video_detail is not None:
             result["video_detail"] = self.video_detail
+
+        if self.audio_bytes is not None:
+            import base64
+
+            result["audio_bytes"] = base64.b64encode(self.audio_bytes).decode()
+
+        if self.audio_transcript is not None:
+            result["audio_transcript"] = self.audio_transcript
+
+        if self.file_list is not None:
+            result["file_list"] = self.file_list
 
         return result
