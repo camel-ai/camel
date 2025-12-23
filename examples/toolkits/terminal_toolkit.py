@@ -18,6 +18,8 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import TerminalToolkit
+from camel.toolkits.resend_toolkit import ResendToolkit
+from camel.toolkits.search_toolkit import SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Get current script directory
@@ -342,3 +344,60 @@ root 4096 Sep 23 16:49 logs', tool_call_id='call_YRYlz8KozpxXE2uGkcHIUnZU',
 images=None)]
 ===============================================================================
 """
+
+
+tools = (
+    TerminalToolkit(
+        working_directory=workspace_dir, safe_mode=True
+    ).get_tools()
+    + SearchToolkit().get_tools()
+    + ResendToolkit().get_tools()
+)
+
+model_config_dict = ChatGPTConfig(
+    temperature=0.0,
+).as_dict()
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+    model_config_dict=model_config_dict,
+)
+
+sys_msg = "You are a helpful assistant."
+
+agent = ChatAgent(
+    system_message=sys_msg,
+    model=model,
+    tools=tools,
+)
+agent.reset()
+
+usr_msg = """
+You should use shell_exec_use_toolkit_via_code to write code to search
+wikipedia for 'Artificial Intelligence' and send email to
+capel2333@gmail.com with the search result attached."""
+response = agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+
+'''
+=========================================================================
+[[ToolCallingRecord(tool_name='shell_exec_use_toolkit_via_code', args={
+'id': 'wiki_search_and_email', 'code': '\nfrom camel.toolkits import
+WikipediaToolkit\nfrom camel.toolkits import EmailToolkit\nimport os
+\n\n# Initialize toolkits\nwiki_toolkit = WikipediaToolkit()\n
+email_toolkit = EmailToolkit()\n\n# Search Wikipedia for 'Artificial
+Intelligence'\nprint("Searching Wikipedia for 'Artificial
+Intelligence'...")\nsearch_result = wiki_toolkit.search_wiki(
+entity="Artificial Intelligence")\nprint(f"Search completed. Result
+length: {len(search_result)} characters")\nprint("\\n--- Wikipedia
+Search Result ---")\nprint(search_result[:500] + "..." if
+len(search_result) > 500 else search_result)\nprint("\\n")\n\n
+# Prepare email content\nsubject = "Wikipedia Search Result:
+Artificial Intelligence"\nhtml_content = f"""\n<html>\n<body>\n
+<h2>Wikipedia Search Result for 'Artificial Intelligence'</h2>\n
+<div style="background-color: #f5f5f5; padding: 20px;
+border-radius: 5px;">\n<pre style="white-space: pre-wrap;
+word-wrap: bre
+=========================================================================
+'''
