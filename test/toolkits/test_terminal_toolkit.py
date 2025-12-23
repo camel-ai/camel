@@ -96,3 +96,87 @@ def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
     # For non-blocking mode, sessions should be created immediately
     assert session1 in terminal_toolkit.shell_sessions
     assert session2 in terminal_toolkit.shell_sessions
+
+
+def test_shell_exec_use_toolkit_via_code_with_toolkit(terminal_toolkit):
+    # Test actual toolkit usage via code execution
+    code = """
+from camel.toolkits import MathToolkit
+
+math_toolkit = MathToolkit()
+result = math_toolkit.math_add(10, 20)
+print(f'Add result: {result}')
+
+result2 = math_toolkit.math_multiply(5, 6)
+print(f'Mul result: {result2}')
+"""
+    result = terminal_toolkit.shell_exec_use_toolkit_via_code(
+        id="toolkit_session",
+        code=code,
+    )
+    assert "Add result: 30" in result
+    assert "Mul result: 30" in result
+
+
+def test_shell_exec_use_toolkit_via_code_toolkit_error_handling(
+    terminal_toolkit,
+):
+    # Test error handling when toolkit method fails
+    code = """
+from camel.toolkits import MathToolkit
+
+math_toolkit = MathToolkit()
+# Test division by zero through toolkit
+result = math_toolkit.math_divide(10, 0)
+print(f'Result: {result}')
+"""
+    result = terminal_toolkit.shell_exec_use_toolkit_via_code(
+        id="error_session",
+        code=code,
+    )
+    # MathToolkit.math_divide will raise ZeroDivisionError
+    assert (
+        "ZeroDivisionError" in result or "division by zero" in result.lower()
+    )
+
+
+def test_shell_exec_use_toolkit_via_code_non_blocking_cleanup(
+    terminal_toolkit, temp_dir
+):
+    # Test non-blocking execution and temp file cleanup
+    import os
+    import time
+
+    code = """
+from camel.toolkits import MathToolkit
+
+math_toolkit = MathToolkit()
+result = math_toolkit.math_add(1, 2)
+print(f'Result: {result}')
+"""
+    result = terminal_toolkit.shell_exec_use_toolkit_via_code(
+        id="nonblock_session",
+        code=code,
+        block=False,
+    )
+    # Non-blocking should return session info immediately
+    assert "Session 'nonblock_session' started" in result
+    assert "nonblock_session" in terminal_toolkit.shell_sessions
+
+    # Check temp_file is recorded in session
+    assert "temp_file" in terminal_toolkit.shell_sessions["nonblock_session"]
+    temp_file = terminal_toolkit.shell_sessions["nonblock_session"][
+        "temp_file"
+    ]
+    assert os.path.exists(temp_file)
+
+    # Wait for execution to complete
+    time.sleep(1)
+
+    # Verify output contains toolkit result
+    output = terminal_toolkit.shell_view("nonblock_session")
+    assert "Result: 3" in output or "TERMINATED" in output
+
+    # After cleanup, temp file should be removed
+    terminal_toolkit.cleanup()
+    assert not os.path.exists(temp_file)

@@ -19,6 +19,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from queue import Empty, Queue
 from typing import Any, Dict, List, Optional
 
@@ -998,6 +999,95 @@ class TerminalToolkit(BaseToolkit):
             except EOFError:
                 return f"User input interrupted for session '{id}'."
 
+    def shell_exec_use_toolkit_via_code(
+        self, id: str, code: str, block: bool = True
+    ) -> str:
+        r"""Executes Python code that uses camel.toolkits to perform tasks.
+
+        This method enables executing Python code that leverages the camel
+        toolkit ecosystem to accomplish complex tasks while reducing token
+        consumption compared to multiple individual tool calls.
+
+        The code should follow this pattern:
+        1. Import required toolkit(s) from camel.toolkits
+        2. Initialize toolkit instance(s) with necessary parameters
+        3. Call appropriate methods and print/return results
+        4. Handle results and chain multiple toolkits if needed
+
+        Example Code:
+            ```python
+            from camel.toolkits import ArxivToolkit, FileToolkit
+
+            # Initialize toolkits
+            arxiv_toolkit = ArxivToolkit()
+            file_toolkit = FileToolkit()
+
+            # Search for papers
+            papers = arxiv_toolkit.search_papers(
+                query="large language models",
+                max_results=5
+            )
+
+            # Save results to file
+            file_toolkit.write_file(
+                file_path="research_results.txt",
+                content=str(papers)
+            )
+            ```
+
+        Args:
+            id (str): A unique identifier for the code execution session.
+                This ID is used to track and manage the execution.
+            code (str): The Python code to execute. The code should import
+                and use camel.toolkits to perform the desired tasks.
+            block (bool, optional): Determines the execution mode.
+                Defaults to True.
+                If True (blocking mode), waits for execution to complete.
+                If False (non-blocking mode), starts execution in background.
+
+        Returns:
+            str: The output of the code execution, which varies by mode.
+                In blocking mode, returns the complete stdout/stderr output.
+                In non-blocking mode, returns a session confirmation message.
+                Use shell_view(id) to check output of non-blocking execution.
+        """
+
+        # Create a unique temporary file for the code
+        temp_filename = f"_camel_toolkit_code_{uuid.uuid4().hex[:8]}.py"
+        temp_filepath = os.path.join(self.working_dir, temp_filename)
+
+        try:
+            # Write code to temporary file
+            with open(temp_filepath, 'w', encoding='utf-8') as f:
+                f.write(code)
+
+            # Build command to execute the file with current Python interpreter
+            python_cmd = f'"{sys.executable}" "{temp_filepath}"'
+
+            # Execute the code
+            result = self.shell_exec(id=id, command=python_cmd, block=block)
+
+            # Non-blocking mode: record temp file path in session for cleanup
+            if not block:
+                with self._session_lock:
+                    if id in self.shell_sessions:
+                        self.shell_sessions[id]["temp_file"] = temp_filepath
+
+            return result
+
+        except Exception as e:
+            error_msg = f"Error executing code: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+        finally:
+            # Clean up temporary file (only for blocking mode)
+            if block and os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except Exception:
+                    pass
+
     def __enter__(self):
         r"""Context manager entry."""
         return self
@@ -1008,14 +1098,17 @@ class TerminalToolkit(BaseToolkit):
         return False
 
     def cleanup(self):
-        r"""Clean up all active sessions."""
+        r"""Clean up all active sessions and temporary files."""
         with self._session_lock:
             session_ids = list(self.shell_sessions.keys())
+
         for session_id in session_ids:
             with self._session_lock:
-                is_running = self.shell_sessions.get(session_id, {}).get(
-                    "running", False
-                )
+                session = self.shell_sessions.get(session_id, {})
+                is_running = session.get("running", False)
+                temp_file = session.get("temp_file")
+
+            # Terminate running processes
             if is_running:
                 try:
                     self.shell_kill_process(session_id)
@@ -1024,6 +1117,13 @@ class TerminalToolkit(BaseToolkit):
                         f"Failed to kill session '{session_id}' "
                         f"during cleanup: {e}"
                     )
+
+            # Clean up temporary file associated with this session
+            if temp_file and os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except Exception:
+                    pass
 
     cleanup._manual_timeout = True  # type: ignore[attr-defined]
 
@@ -1050,4 +1150,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.shell_ask_user_for_help),
+            FunctionTool(self.shell_exec_use_toolkit_via_code),
         ]
