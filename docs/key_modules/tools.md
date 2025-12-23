@@ -111,6 +111,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. |
 | HumanToolkit | A toolkit for facilitating human-in-the-loop interactions and feedback in AI systems. |
 | ImageAnalysisToolkit | A toolkit for comprehensive image analysis and understanding using vision-capable language models. |
+| IMAPMailToolkit | A toolkit for IMAP email operations to spring agents into email action |
 | JinaRerankerToolkit | A toolkit for reranking documents (text or images) based on their relevance to a given query using the Jina Reranker model. |
 | LinkedInToolkit | A toolkit for LinkedIn operations including creating posts, deleting posts, and retrieving user profile information. |
 | MathToolkit | A toolkit for performing basic mathematical operations such as addition, subtraction, and multiplication. |
