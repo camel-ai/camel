@@ -346,12 +346,18 @@ images=None)]
 """
 
 
+# Create toolkit instances
+terminal_toolkit = TerminalToolkit(
+    working_directory=workspace_dir, safe_mode=True
+)
+search_toolkit = SearchToolkit()
+resend_toolkit = ResendToolkit()
+
+# Combine all tools
 tools = (
-    TerminalToolkit(
-        working_directory=workspace_dir, safe_mode=True
-    ).get_tools()
-    + SearchToolkit().get_tools()
-    + ResendToolkit().get_tools()
+    terminal_toolkit.get_tools()
+    + search_toolkit.get_tools()
+    + resend_toolkit.get_tools()
 )
 
 model_config_dict = ChatGPTConfig(
@@ -366,10 +372,13 @@ model = ModelFactory.create(
 
 sys_msg = "You are a helpful assistant."
 
+# Pass terminal_toolkit to toolkits_to_register_agent to enable
+# automatic toolkit import guidance for shell_exec_use_toolkit_via_code
 agent = ChatAgent(
     system_message=sys_msg,
     model=model,
     tools=tools,
+    toolkits_to_register_agent=[terminal_toolkit],
 )
 agent.reset()
 
@@ -378,26 +387,37 @@ You should use shell_exec_use_toolkit_via_code to write code to search
 wikipedia for 'Artificial Intelligence' and send email to
 capel2333@gmail.com with the search result attached."""
 response = agent.step(usr_msg)
-print(str(response.info['tool_calls'])[:1000])
+print(str(response.info['tool_calls']))
 
 '''
 =========================================================================
-[[ToolCallingRecord(tool_name='shell_exec_use_toolkit_via_code', args={
-'id': 'wiki_search_and_email', 'code': '\nfrom camel.toolkits import
-WikipediaToolkit\nfrom camel.toolkits import EmailToolkit\nimport os
-\n\n# Initialize toolkits\nwiki_toolkit = WikipediaToolkit()\n
-email_toolkit = EmailToolkit()\n\n# Search Wikipedia for 'Artificial
-Intelligence'\nprint("Searching Wikipedia for 'Artificial
-Intelligence'...")\nsearch_result = wiki_toolkit.search_wiki(
-entity="Artificial Intelligence")\nprint(f"Search completed. Result
-length: {len(search_result)} characters")\nprint("\\n--- Wikipedia
-Search Result ---")\nprint(search_result[:500] + "..." if
-len(search_result) > 500 else search_result)\nprint("\\n")\n\n
-# Prepare email content\nsubject = "Wikipedia Search Result:
-Artificial Intelligence"\nhtml_content = f"""\n<html>\n<body>\n
-<h2>Wikipedia Search Result for 'Artificial Intelligence'</h2>\n
-<div style="background-color: #f5f5f5; padding: 20px;
-border-radius: 5px;">\n<pre style="white-space: pre-wrap;
-word-wrap: bre
+[ToolCallingRecord(tool_name='shell_exec_use_toolkit_via_code', args=
+{'block': True, 'code': '\nfrom camel.toolkits import SearchToolkit\n
+from camel.toolkits import ResendToolkit\n\n# Initialize the toolkits
+\nsearch_toolkit = SearchToolkit()\nresend_toolkit = ResendToolkit()\n
+\n# Search Wikipedia for \'Artificial Intelligence\'\nprint("Searching
+Wikipedia for \'Artificial Intelligence\'...")\nwiki_result =
+search_toolkit.search_wiki(entity="Artificial Intelligence")\n
+print(f"Search completed. Result length: {len(str(wiki_result))}
+characters")\n\n# Prepare email content\nemail_subject = "Wikipedia
+Search Result: Artificial Intelligence"\nemail_html = f"""\n<html>\n
+<body>\n<h2>Wikipedia Search Result for \'Artificial Intelligence\'
+</h2>\n<hr>\n<div style="font-family: Arial, sans-serif; line-height:
+1.6;">\n{wiki_result}\n</div>\n<hr>\n<p><i>This email was automatically
+generated with Wikipedia search results.</i></p>\n</body>\n</html>
+\n"""\n\nemail_text = f"""\nWikipedia Search Result for \'Artificial
+Intelligence\'\n\n{wiki_result}\n\n---\nThis email was automatically
+generated with Wikipedia search results.\n"""\n\n# Send the email\nprint
+("Sending email to capel2333@gmail.com...")\nresult = resend_toolkit.
+send_email(\n    to=["capel2333@gmail.com"],\n    subject=email_subject,
+\n    from_email="onboarding@resend.dev",\n    html=email_html,\n
+text=email_text,\n    cc=None,\n    bcc=None,\n    reply_to=None,\n
+tags=None,\n    headers=None\n)\n\nprint("Email sent successfully!")
+\nprint(f"Result: {result}")\n', 'id': 'wiki_search_and_email'},
+result="Searching Wikipedia for 'Artificial Intelligence'...\nSearch
+completed. Result length: 1369 characters\nSending email to
+capel2333@gmail.com...\nEmail sent successfully!\nResult: Email
+sent successfully. Email ID: d6f51fcd-8119-43b8-b691-6a1182b14986",
+tool_call_id='toolu_01MZYpKWZoJTCSRSNUojLnKo', images=None)]
 =========================================================================
 '''

@@ -21,11 +21,14 @@ import threading
 import time
 import uuid
 from queue import Empty, Queue
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.logger import get_logger
-from camel.toolkits.base import BaseToolkit
+from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
@@ -59,7 +62,7 @@ def _to_plain(text: str) -> str:
 
 
 @MCPServer()
-class TerminalToolkit(BaseToolkit):
+class TerminalToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A toolkit for LLM agents to execute and interact with terminal commands
     in either a local or a sandboxed Docker environment.
 
@@ -101,8 +104,11 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
     ):
+        # Initialize parent classes
+        BaseToolkit.__init__(self, timeout=timeout)
+        RegisteredAgentToolkit.__init__(self)
+
         self.use_docker_backend = use_docker_backend
-        self.timeout = timeout
         self.shell_sessions: Dict[str, Dict[str, Any]] = {}
         # Thread-safe guard for concurrent access to
         # shell_sessions and session state
@@ -236,6 +242,83 @@ class TerminalToolkit(BaseToolkit):
         # Install dependencies
         if self.install_dependencies:
             self._install_dependencies()
+
+    def register_agent(self, agent: "ChatAgent") -> None:
+        r"""Register a ChatAgent with this toolkit and update
+        shell_exec_use_toolkit_via_codetool schemas.
+
+        Args:
+            agent (ChatAgent): The ChatAgent instance to register.
+        """
+        # Call parent's register_agent
+        super().register_agent(agent)
+
+        # Generate import guide from agent's tools
+        import_guide = self._generate_import_guide_from_agent(agent)
+
+        if import_guide:
+            # Find and update shell_exec_use_toolkit_via_code's schema
+            tool_name = "shell_exec_use_toolkit_via_code"
+            if tool_name in agent._internal_tools:
+                tool = agent._internal_tools[tool_name]
+                schema = tool.get_openai_tool_schema()
+
+                # Append import guide to description
+                original_desc = schema["function"].get("description", "")
+                schema["function"]["description"] = (
+                    original_desc + import_guide
+                )
+
+                # Update the schema
+                tool.set_openai_tool_schema(schema)
+                logger.info(
+                    f"Updated {tool_name} schema with toolkit import guide"
+                )
+
+    def _generate_import_guide_from_agent(self, agent: "ChatAgent") -> str:
+        r"""Generate toolkit import guide and method mapping from agent's
+        registered tools.
+
+        Args:
+            agent (ChatAgent): The ChatAgent instance containing the tools.
+
+        Returns:
+            str: A formatted string containing import statements for all
+                detected toolkits, or empty string if no toolkits found.
+        """
+        # Collect toolkit info: {class_name: (module_name, [tool_names])}
+        toolkit_info: Dict[str, tuple] = {}
+
+        for tool_name, tool in agent._internal_tools.items():
+            # Get the underlying function
+            func = tool.func
+
+            # Check if it's a bound method (has __self__)
+            if hasattr(func, "__self__"):
+                toolkit_instance = func.__self__
+                toolkit_class = type(toolkit_instance)
+                class_name = toolkit_class.__name__
+                module_name = toolkit_class.__module__
+
+                # Add or update toolkit info
+                if class_name not in toolkit_info:
+                    toolkit_info[class_name] = (module_name, [])
+                toolkit_info[class_name][1].append(tool_name)
+
+        if not toolkit_info:
+            return ""
+
+        # Generate import guide with method mapping
+        lines = ["\n\n=== Available Toolkit Imports ==="]
+        lines.append("Use these import statements and methods in your code:\n")
+
+        for class_name, (module_name, tool_names) in sorted(
+            toolkit_info.items()
+        ):
+            lines.append(f"from {module_name} import {class_name}")
+            lines.append(f"  # Methods: {', '.join(sorted(tool_names))}")
+
+        return "\n".join(lines)
 
     def _setup_cloned_environment(self):
         r"""Set up a cloned Python environment."""
@@ -1013,6 +1096,9 @@ class TerminalToolkit(BaseToolkit):
         2. Initialize toolkit instance(s) with necessary parameters
         3. Call appropriate methods and print/return results
         4. Handle results and chain multiple toolkits if needed
+        5. F-string expressions ({...}) CANNOT contain backslashes (\)
+           wrong: f"{text.replace('\n', '<br>')}" correct:
+           text_br = text.replace('\n', '<br>') f"{text_br}"
 
         Example Code:
             ```python
