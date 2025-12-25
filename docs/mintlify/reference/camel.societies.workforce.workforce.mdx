@@ -72,7 +72,7 @@ capabilities
 - **children** (Optional[List[BaseNode]], optional): List of child nodes under this node. Each child node can be a worker node or another workforce node. (default: :obj:`None`)
 - **coordinator_agent** (Optional[ChatAgent], optional): A custom coordinator agent instance for task assignment and worker creation. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message and functionality. If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
 - **task_agent** (Optional[ChatAgent], optional): A custom task planning agent instance for task decomposition and composition. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message. If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
-- **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
+- **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`) default_model (Optional[Union[BaseModelBackend, ModelManager]], optional): Model backend or manager to use when creating default coordinator, task, or dynamic worker agents. If None, agents will be created using ModelPlatformType.DEFAULT and ModelType.DEFAULT settings. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **task_timeout_seconds** (Optional[float], optional): The timeout in seconds for waiting for tasks to be returned by workers. If None, uses the global TASK_TIMEOUT_SECONDS value (600.0 seconds). Increase this value for tasks that require more processing time. (default: :obj:`None`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
@@ -104,6 +104,7 @@ def __init__(
     coordinator_agent: Optional[ChatAgent] = None,
     task_agent: Optional[ChatAgent] = None,
     new_worker_agent: Optional[ChatAgent] = None,
+    default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
     graceful_shutdown_timeout: float = 15.0,
     share_memory: bool = False,
     use_structured_output_handler: bool = True,
