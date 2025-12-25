@@ -453,7 +453,7 @@ features:
 
 **Parameters:**
 
-- **query** (str): The search query string (`length ``>= 1` and `<= 100```).
+- **query** (str): The search query string (`length >= 1 and <= 100`).
 - **time_range** (`Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]`): Time frame filter for search results. (default: :obj:`"NoLimit"`)
 - **industry** (`Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]`): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
 - **return_main_text** (bool): Whether to include the main text of the webpage in results. (default: :obj:`True`)
