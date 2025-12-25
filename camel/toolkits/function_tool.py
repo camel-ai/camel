@@ -482,37 +482,80 @@ class FunctionTool:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        else:
-            # Pass the extracted arguments to the indicated function
+
+        # Call the function first
+        try:
+            result = self.func(*args, **kwargs)
+        except Exception as e:
+            parts = []
+            if args:
+                parts.append(f"args={args}")
+            if kwargs:
+                parts.append(f"kwargs={kwargs}")
+            args_str = ", ".join(parts) if parts else "no arguments"
+            raise ValueError(
+                f"Execution of function {self.func.__name__} failed with "
+                f"{args_str}. Error: {e}"
+            )
+
+        # Handle coroutine result (from async function or sync wrapper
+        # returning coroutine)
+        if inspect.iscoroutine(result):
+            # Check if there's already a running event loop
             try:
-                result = self.func(*args, **kwargs)
-                return result
-            except Exception as e:
-                parts = []
-                if args:
-                    parts.append(f"args={args}")
-                if kwargs:
-                    parts.append(f"kwargs={kwargs}")
-                args_str = ", ".join(parts) if parts else "no arguments"
-                raise ValueError(
-                    f"Execution of function {self.func.__name__} failed with "
-                    f"{args_str}. Error: {e}"
+                asyncio.get_running_loop()
+                has_running_loop = True
+            except RuntimeError:
+                has_running_loop = False
+
+            if has_running_loop:
+                # Already in an async context - warn and run in new thread
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously within an async context. Consider using "
+                    f"'await tool.async_call()' or 'await agent.astep()' for "
+                    f"better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
+                # Run in a new thread with its own event loop
+                future = _SYNC_TOOL_EXECUTOR.submit(asyncio.run, result)
+                return future.result()
+            else:
+                # No running loop - safe to use asyncio.run()
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously. Consider using 'await tool.async_call()' "
+                    f"or 'await agent.astep()' for better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return asyncio.run(result)
+
+        return result
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        if self.is_async:
+
+        # Check if the function itself (not unwrapped) is a coroutine function
+        if inspect.iscoroutinefunction(self.func):
             return await self.func(*args, **kwargs)
-        else:
-            # Run sync function in executor to avoid blocking event loop
-            # Use functools.partial to properly capture args/kwargs
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                _SYNC_TOOL_EXECUTOR,
-                functools.partial(self.func, *args, **kwargs),
-            )
+
+        # For sync functions (including sync wrappers around async functions),
+        # run in executor to avoid blocking
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            _SYNC_TOOL_EXECUTOR,
+            functools.partial(self.func, *args, **kwargs),
+        )
+
+        # If the sync wrapper returned a coroutine, await it
+        if inspect.iscoroutine(result):
+            return await result
+
+        return result
 
     @property
     def is_async(self) -> bool:
