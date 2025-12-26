@@ -40,7 +40,7 @@ Initializes the SearchToolkit.
 def search_serper(
     self,
     query: str,
-    page: int = 1,
+    page: int = 10,
     location: str = 'United States'
 ):
 ```
@@ -50,12 +50,13 @@ Use Serper.dev API to perform Google search.
 **Parameters:**
 
 - **query** (str): The search query.
-- **page** (int): The page number of results to retrieve. (default: :obj:`1`)
+- **page** (int): The page number of results to retrieve. (default: :obj:`10`)
 - **location** (str): The location for the search results. (default: :obj:`"United States"`)
 
 **Returns:**
 
-  Dict[str, Any]: The search result dictionary containing 'organic', 'peopleAlsoAsk', etc.
+  Dict[str, Any]: The search result dictionary containing 'organic',
+'peopleAlsoAsk', etc.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_wiki"></a>
 
@@ -452,7 +453,7 @@ features:
 
 **Parameters:**
 
-- **query** (str): The search query string (`length ``>= 1` and `<= 100```).
+- **query** (str): The search query string (`length >= 1 and <= 100`).
 - **time_range** (`Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]`): Time frame filter for search results. (default: :obj:`"NoLimit"`)
 - **industry** (`Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]`): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
 - **return_main_text** (bool): Whether to include the main text of the webpage in results. (default: :obj:`True`)
