@@ -389,7 +389,7 @@ class OpenAIModel(BaseModelBackend):
                 metadata=metadata,
                 tags=["CAMEL-AI", model_type_str],
             )
-        logger.info(f"metadata: {metadata}")
+            logger.info(f"metadata: {metadata}")
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
