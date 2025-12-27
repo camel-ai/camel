@@ -533,6 +533,7 @@ class ChatAgent(BaseAgent):
             effective_token_limit,
         )
         self._token_limit = effective_token_limit
+        self._summary_token_count = 0
 
         self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
