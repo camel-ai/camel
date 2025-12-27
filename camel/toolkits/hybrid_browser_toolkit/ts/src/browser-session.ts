@@ -442,7 +442,7 @@ export class HybridBrowserSession {
     try {
       //  Use _snapshotForAI() to properly update _lastAriaSnapshot
       const snapshotStart = Date.now();
-      const snapshotText = await (page as any)._snapshotForAI();
+      const snapshotText = (await (page as any)._snapshotForAI()).full;
       const snapshotTime = Date.now() - snapshotStart;
 
       // Extract refs from the snapshot text
@@ -559,7 +559,7 @@ export class HybridBrowserSession {
 
     try {
       //  Ensure we have the latest snapshot and mapping
-      await (page as any)._snapshotForAI();
+      (await (page as any)._snapshotForAI()).full;
 
       //  Use Playwright's aria-ref selector engine
       const selector = `aria-ref=${ref}`;
@@ -581,7 +581,7 @@ export class HybridBrowserSession {
       let snapshotBefore: string | null = null;
       let comboboxAriaLabel: string | null = null;
       if (shouldCheckDiff) {
-        snapshotBefore = await (page as any)._snapshotForAI();
+        snapshotBefore = (await (page as any)._snapshotForAI()).full;
         // Capture aria-label for combobox to find it again after click (ref may change)
         if (isCombobox) {
           comboboxAriaLabel = await element.getAttribute('aria-label');
@@ -673,7 +673,7 @@ export class HybridBrowserSession {
 
         if (shouldCheckDiff && snapshotBefore) {
           await page.waitForTimeout(300);
-          const snapshotAfter = await (page as any)._snapshotForAI();
+          const snapshotAfter = (await (page as any)._snapshotForAI()).full;
           let diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
 
           // For combobox, find the new ref based on aria-label and prepend to diffSnapshot
@@ -795,7 +795,7 @@ export class HybridBrowserSession {
   private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any>; diffSnapshot?: string }> {
     try {
       // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
+      (await (page as any)._snapshotForAI()).full;
 
       // Handle multiple inputs if provided
       if (inputs && inputs.length > 0) {
@@ -871,7 +871,7 @@ export class HybridBrowserSession {
         }
 
         // Get snapshot before action to record existing elements
-        const snapshotBefore = await (page as any)._snapshotForAI();
+        const snapshotBefore = (await (page as any)._snapshotForAI()).full;
         const existingRefs = new Set<string>();
         const refPattern = /\[ref=([^\]]+)\]/g;
         let match;
@@ -929,7 +929,7 @@ export class HybridBrowserSession {
               // If this element might show dropdown, wait and check for new elements
               if (shouldCheckDiff) {
                 await page.waitForTimeout(300);
-                const snapshotAfter = await (page as any)._snapshotForAI();
+                const snapshotAfter = (await (page as any)._snapshotForAI()).full;
                 const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
 
                 if (diffSnapshot && diffSnapshot.trim() !== '') {
@@ -982,7 +982,7 @@ export class HybridBrowserSession {
                 // If element might show dropdown, check for new elements
                 if (shouldCheckDiff) {
                   await page.waitForTimeout(300);
-                  const snapshotFinal = await (page as any)._snapshotForAI();
+                  const snapshotFinal = (await (page as any)._snapshotForAI()).full;
                   const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
 
                   if (diffSnapshot && diffSnapshot.trim() !== '') {
@@ -1000,7 +1000,7 @@ export class HybridBrowserSession {
             console.log(`Looking for new elements that appeared after action...`);
 
             // Get snapshot after action to find new elements
-            const snapshotAfter = await (page as any)._snapshotForAI();
+            const snapshotAfter = (await (page as any)._snapshotForAI()).full;
             const newRefs = new Set<string>();
             const afterRefPattern = /\[ref=([^\]]+)\]/g;
             let afterMatch;
@@ -1047,7 +1047,7 @@ export class HybridBrowserSession {
                       // If element might show dropdown, check for new elements
                       if (shouldCheckDiff) {
                         await page.waitForTimeout(300);
-                        const snapshotFinal = await (page as any)._snapshotForAI();
+                        const snapshotFinal = (await (page as any)._snapshotForAI()).full;
                         const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
 
                         if (diffSnapshot && diffSnapshot.trim() !== '') {
@@ -1077,7 +1077,7 @@ export class HybridBrowserSession {
           console.log(`Looking for new elements that appeared after clicking readonly element...`);
 
           // Get snapshot after action to find new elements
-          const snapshotAfter = await (page as any)._snapshotForAI();
+          const snapshotAfter = (await (page as any)._snapshotForAI()).full;
           const newRefs = new Set<string>();
           const afterRefPattern = /\[ref=([^\]]+)\]/g;
           let afterMatch;
@@ -1124,7 +1124,7 @@ export class HybridBrowserSession {
                     // If element might show dropdown, check for new elements
                     if (shouldCheckDiff) {
                       await page.waitForTimeout(300);
-                      const snapshotFinal = await (page as any)._snapshotForAI();
+                      const snapshotFinal = (await (page as any)._snapshotForAI()).full;
                       const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
 
                       if (diffSnapshot && diffSnapshot.trim() !== '') {
@@ -1158,7 +1158,7 @@ export class HybridBrowserSession {
   private async performSelect(page: Page, ref: string, value: string): Promise<{ success: boolean; error?: string }> {
     try {
       // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
+      (await (page as any)._snapshotForAI()).full;
 
       // Use Playwright's aria-ref selector
       const selector = `aria-ref=${ref}`;
@@ -1219,7 +1219,7 @@ export class HybridBrowserSession {
   private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
     try {
       // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
+      (await (page as any)._snapshotForAI()).full;
 
       // Get elements using Playwright's aria-ref selector
       const fromSelector = `aria-ref=${fromRef}`;
