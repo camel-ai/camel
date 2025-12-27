@@ -569,7 +569,6 @@ class ChatAgent(BaseAgent):
                 f"{summarize_threshold}% of the total token limit."
             )
         self.summarize_threshold = summarize_threshold
-        self._reset_summary_state()
 
         # Set up role name and role type
         self.role_name: str = (
@@ -626,7 +625,6 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        self._reset_summary_state()
         for terminator in self.response_terminators:
             terminator.reset()
 
