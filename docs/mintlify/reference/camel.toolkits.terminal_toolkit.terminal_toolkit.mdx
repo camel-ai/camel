@@ -82,15 +82,15 @@ def _setup_initial_environment(self):
 
 Set up an initial environment with Python 3.10.
 
-<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._adapt_command_for_environment"></a>
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._get_venv_path"></a>
 
-### _adapt_command_for_environment
+### _get_venv_path
 
 ```python
-def _adapt_command_for_environment(self, command: str):
+def _get_venv_path(self):
 ```
 
-Adapt command to use virtual environment if available.
+Get the virtual environment path if available.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._write_to_log"></a>
 
@@ -137,7 +137,6 @@ def _collect_output_until_idle(
     self,
     id: str,
     idle_duration: float = 0.5,
-    check_interval: float = 0.1,
     max_wait: float = 5.0
 ):
 ```
@@ -149,7 +148,6 @@ is reached.
 
 - **id** (str): The session ID.
 - **idle_duration** (float): How long the stream must be empty to be considered idle.(default: 0.5)
-- **check_interval** (float): The time to sleep between checks. (default: 0.1)
 - **max_wait** (float): The maximum total time to wait for the process to go idle. (default: 5.0)
 
 **Returns:**
