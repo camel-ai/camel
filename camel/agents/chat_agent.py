@@ -911,7 +911,7 @@ class ChatAgent(BaseAgent):
         r"""Get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None or num_tokens > self.token_limit:
+        if self.summarize_threshold is None:
             return openai_messages, num_tokens
 
         token_limit = self.token_limit
@@ -948,7 +948,7 @@ class ChatAgent(BaseAgent):
         r"""Async version: get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None or num_tokens > self.token_limit:
+        if self.summarize_threshold is None:
             return openai_messages, num_tokens
 
         token_limit = self.token_limit
