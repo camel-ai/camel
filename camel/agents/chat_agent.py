@@ -907,6 +907,80 @@ class ChatAgent(BaseAgent):
     def _reset_summary_state(self) -> None:
         self._summary_token_count = 0  # Total tokens in summary messages
 
+    def _get_context_with_summarization(
+        self,
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""Get context and trigger summarization if needed."""
+        openai_messages, num_tokens = self.memory.get_context()
+
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
+            return openai_messages, num_tokens
+
+        token_limit = self.token_limit
+        summary_token_count = self._summary_token_count
+
+        if summary_token_count > token_limit * self.summary_window_ratio:
+            logger.warning(
+                f"Summary tokens ({summary_token_count}) "
+                f"exceed limit, full compression."
+            )
+            summary = self.summarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            return self.memory.get_context()
+
+        threshold = self._calculate_next_summary_threshold()
+        if num_tokens > threshold:
+            logger.warning(
+                f"Token count ({num_tokens}) exceed threshold "
+                f"({threshold}). Triggering summarization."
+            )
+            summary = self.summarize(include_summaries=False)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=False
+            )
+            return self.memory.get_context()
+
+        return openai_messages, num_tokens
+
+    async def _get_context_with_summarization_async(
+        self,
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""Async version: get context and trigger summarization if needed."""
+        openai_messages, num_tokens = self.memory.get_context()
+
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
+            return openai_messages, num_tokens
+
+        token_limit = self.token_limit
+        summary_token_count = self._summary_token_count
+
+        if summary_token_count > token_limit * self.summary_window_ratio:
+            logger.warning(
+                f"Summary tokens ({summary_token_count}) "
+                f"exceed limit, full compression."
+            )
+            summary = await self.asummarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            return self.memory.get_context()
+
+        threshold = self._calculate_next_summary_threshold()
+        if num_tokens > threshold:
+            logger.warning(
+                f"Token count ({num_tokens}) exceed threshold "
+                f"({threshold}). Triggering summarization."
+            )
+            summary = await self.asummarize(include_summaries=False)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=False
+            )
+            return self.memory.get_context()
+
+        return openai_messages, num_tokens
+
     def _calculate_next_summary_threshold(self) -> int:
         r"""Calculate the next token threshold that should trigger
         summarization.
@@ -2733,46 +2807,9 @@ class ChatAgent(BaseAgent):
                         time.sleep(0.001)
 
             try:
-                openai_messages, num_tokens = self.memory.get_context()
-                if self.summarize_threshold is not None:
-                    threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_token_count
-                    token_limit = self.token_limit
-
-                    if num_tokens <= token_limit:
-                        if (
-                            summary_token_count
-                            > token_limit * self.summary_window_ratio
-                        ):
-                            logger.warning(
-                                f"Summary tokens ({summary_token_count}) "
-                                f"exceed limit, full compression."
-                            )
-                            # Summarize everything (including summaries)
-                            summary = self.summarize(include_summaries=True)
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=True,
-                            )
-                            # Re-fetch context after summarization
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
-                        elif num_tokens > threshold:
-                            logger.warning(
-                                f"Token count ({num_tokens}) exceed threshold "
-                                f"({threshold}). Triggering summarization."
-                            )
-                            # Only summarize non-summary content
-                            summary = self.summarize(include_summaries=False)
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=False,
-                            )
-                            # Re-fetch context after summarization
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
+                openai_messages, num_tokens = (
+                    self._get_context_with_summarization()
+                )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -2993,50 +3030,10 @@ class ChatAgent(BaseAgent):
                     loop = asyncio.get_event_loop()
                     await loop.run_in_executor(None, self.pause_event.wait)
             try:
-                openai_messages, num_tokens = self.memory.get_context()
-                if self.summarize_threshold is not None:
-                    threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_token_count
-                    token_limit = self.token_limit
-
-                    if num_tokens <= token_limit:
-                        if (
-                            summary_token_count
-                            > token_limit * self.summary_window_ratio
-                        ):
-                            logger.warning(
-                                f"Summary tokens ({summary_token_count}) "
-                                f"exceed limit, full compression."
-                            )
-                            # Summarize everything (including summaries)
-                            summary = await self.asummarize(
-                                include_summaries=True
-                            )
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=True,
-                            )
-                            # Re-fetch context after summarization
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
-                        elif num_tokens > threshold:
-                            logger.warning(
-                                f"Token count ({num_tokens}) exceed threshold "
-                                f"({threshold}). Triggering summarization."
-                            )
-                            # Only summarize non-summary content
-                            summary = await self.asummarize(
-                                include_summaries=False
-                            )
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=False,
-                            )
-                            # Re-fetch context after summarization
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
-                            )
+                (
+                    openai_messages,
+                    num_tokens,
+                ) = await self._get_context_with_summarization_async()
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -3954,7 +3951,9 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            openai_messages, num_tokens = (
+                self._get_context_with_summarization()
+            )
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
@@ -4807,7 +4806,10 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            (
+                openai_messages,
+                num_tokens,
+            ) = await self._get_context_with_summarization_async()
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
