@@ -975,11 +975,7 @@ class ChatAgent(BaseAgent):
             ):
                 existing_summaries.append(msg)
 
-        # Save the current summary token count before clearing memory
-        preserved_summary_token_count = self._summary_token_count
-
-        # Clear memory
-        self.clear_memory()
+        self.clear_memory(reset_summary_state=False)
 
         # Restore old summaries (for progressive compression)
         for old_summary in existing_summaries:
@@ -1024,17 +1020,14 @@ class ChatAgent(BaseAgent):
 
             if (
                 include_summaries
-            ):  # Full compression - set to new summary tokens
+            ):  # Full compression - reset and set to new summary tokens only
                 self._summary_token_count = summary_tokens
                 logger.info(
                     f"Full compression: Summary with {summary_tokens} tokens. "
                     f"Total summary tokens set to: {summary_tokens}"
                 )
-            else:  # Progressive compression - accumulate
-                # Restore preserved count and add new summary tokens
-                self._summary_token_count = (
-                    preserved_summary_token_count + summary_tokens
-                )
+            else:  # Progressive compression - accumulate on existing count
+                self._summary_token_count += summary_tokens
                 logger.info(
                     f"Progressive compression: New summary "
                     f"with {summary_tokens} tokens. "
@@ -2211,14 +2204,18 @@ class ChatAgent(BaseAgent):
             result["status"] = error_message
             return result
 
-    def clear_memory(self) -> None:
+    def clear_memory(self, reset_summary_state: bool = True):
         r"""Clear the agent's memory and reset to initial state.
 
-        Returns:
-            None
+        Args:
+            reset_summary_state (bool): Whether to reset the summary token
+                count. Set to False when preserving summary state during
+                summarization. Defaults to True for full memory clearing.
         """
         self.memory.clear()
-        self._reset_summary_state()
+
+        if reset_summary_state:
+            self._reset_summary_state()
 
         if self.system_message is not None:
             self.memory.write_record(
@@ -2259,7 +2256,6 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
-        self._reset_summary_state()
         self.clear_memory()
 
     def update_system_message(
