@@ -5267,6 +5267,27 @@ class Workforce(BaseNode):
 
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
+
+                            task_failed_event = TaskFailedEvent(
+                                task_id=returned_task.id,
+                                worker_id=returned_task.assigned_worker_id,
+                                error_message=(
+                                    f"⚠️ Task {returned_task.id} "
+                                    f"failed quality check "
+                                    f"(score: {score}). "
+                                    f"Issues: {issues}. "
+                                    f"Recovery: {recovery_action}"
+                                ),
+                                metadata={
+                                    'failure_count': returned_task.failure_count,  # noqa: E501
+                                    'task_content': returned_task.content,
+                                    'result_length': len(returned_task.result)
+                                    if returned_task.result
+                                    else 0,
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
                             returned_task.state = TaskState.FAILED
                             returned_task.result = (
                                 f"Quality insufficient (score: "
