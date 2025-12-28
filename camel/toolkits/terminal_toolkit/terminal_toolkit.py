@@ -600,7 +600,11 @@ class TerminalToolkit(BaseToolkit):
         return "".join(output_parts) + warning_message
 
     def shell_exec(
-        self, id: str, command: str, block: bool = True, timeout: int = 20
+        self,
+        id: str,
+        command: str,
+        block: bool = True,
+        timeout: float = 20,
     ) -> str:
         r"""Executes a shell command in blocking or non-blocking mode.
 
@@ -614,13 +618,13 @@ class TerminalToolkit(BaseToolkit):
                 most commands. If `False` (non-blocking mode), the function
                 starts the command in the background. Use this only for
                 interactive sessions or long-running tasks, or servers.
-            timeout (int, optional): The maximum time in seconds to wait for
-                the command to complete in blocking mode. Defaults to 20.
-                If the command does not complete within the timeout, it will
-                be restarted automatically as a non-blocking background
-                session. You can then use `shell_view(id)` to check output,
-                or `shell_kill_process(id)` to terminate it. This parameter is
-                ignored in non-blocking mode.
+            timeout (float, optional): The maximum time in seconds to
+                wait for the command to complete in blocking mode. If the
+                command does not complete within the timeout, it will be
+                restarted automatically as a non-blocking background session.
+                You can then use `shell_view(id)` to check output, or
+                `shell_kill_process(id)` to terminate it. This parameter is
+                ignored in non-blocking mode. (default: :obj:`20`)
 
         Returns:
             str: The output of the command execution, which varies by mode.
