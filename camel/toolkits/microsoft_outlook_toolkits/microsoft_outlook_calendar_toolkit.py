@@ -64,7 +64,7 @@ class OutlookCalendarToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
 
-        self.scopes = ["Calendars.ReadWrite"]
+        self.scopes = ["https://graph.microsoft.com/Calendars.ReadWrite"]
         token_path = (
             Path(refresh_token_file_path) if refresh_token_file_path else None
         )
@@ -270,15 +270,8 @@ class OutlookCalendarToolkit(BaseToolkit):
 
             # Build query parameters
             query_params = CalendarsRequestBuilder.CalendarsRequestBuilderGetQueryParameters(  # noqa: E501
-                top=top,
-                skip=skip,
+                top=top, skip=skip, orderby=order_by, filter=filter_query
             )
-
-            if order_by:
-                query_params.orderby = order_by
-
-            if filter_query:
-                query_params.filter = filter_query
 
             request_config = CalendarsRequestBuilder.CalendarsRequestBuilderGetRequestConfiguration(  # noqa: E501
                 query_parameters=query_params
@@ -748,14 +741,31 @@ class OutlookCalendarToolkit(BaseToolkit):
             result = await self.client.me.events.by_event_id(event_id).patch(
                 event
             )
-
+            # Build dict of updated parameters (only include non-None values)
+            updated_params = {
+                k: v
+                for k, v in {
+                    "subject": subject,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "timezone": timezone,
+                    "description": description,
+                    "locations": locations,
+                    "required_attendees": required_attendees,
+                    "optional_attendees": optional_attendees,
+                    "resource_attendees": resource_attendees,
+                    "is_online_meeting": is_online_meeting,
+                    "is_all_day": is_all_day,
+                    "importance": importance,
+                    "show_as": show_as,
+                }.items()
+                if v
+            }
             return {
                 "status": "success",
                 "message": "Calendar event updated successfully.",
-                "event_subject": result.subject,
                 "event_id": result.id,
-                "event_start": result.start.date_time,
-                "event_end": result.end.date_time,
+                "updated_fields": updated_params,
             }
 
         except Exception as e:
@@ -950,16 +960,9 @@ class OutlookCalendarToolkit(BaseToolkit):
             # Build query parameters
             query_params = (
                 EventsRequestBuilder.EventsRequestBuilderGetQueryParameters(
-                    top=top,
-                    skip=skip,
+                    top=top, skip=skip, orderby=order_by, filter=filter_query
                 )
             )
-
-            if order_by:
-                query_params.orderby = order_by
-
-            if filter_query:
-                query_params.filter = filter_query
 
             request_config = EventsRequestBuilder.EventsRequestBuilderGetRequestConfiguration(  # noqa: E501
                 query_parameters=query_params

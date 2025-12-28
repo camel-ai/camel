@@ -33,7 +33,7 @@ from camel.logger import get_logger
 from camel.utils import api_keys_required
 
 if TYPE_CHECKING:
-    from azure.identity.aio import AuthorizationCodeCredential
+    from azure.identity import AuthorizationCodeCredential
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -368,8 +368,10 @@ class MicrosoftAuthenticator:
         from http.server import HTTPServer
         from urllib.parse import urlparse
 
-        from azure.identity import TokenCachePersistenceOptions
-        from azure.identity.aio import AuthorizationCodeCredential
+        from azure.identity import (
+            AuthorizationCodeCredential,
+            TokenCachePersistenceOptions,
+        )
 
         if not self.client_id or not self.client_secret:
             raise ValueError("Client ID and secret must be set")
@@ -448,7 +450,7 @@ class MicrosoftAuthenticator:
         Raises:
             ValueError: If authentication fails through both methods.
         """
-        from azure.identity.aio import AuthorizationCodeCredential
+        from azure.identity import AuthorizationCodeCredential
 
         try:
             self.tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common")

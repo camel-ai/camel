@@ -670,7 +670,12 @@ class TestUpdateCalendarEvent:
         assert result['status'] == 'success'
         assert result['message'] == 'Calendar event updated successfully.'
         assert result['event_id'] == 'event_id'
-        assert result['event_subject'] == 'Updated Meeting'
+        assert 'updated_fields' in result
+        assert result['updated_fields']['subject'] == 'Updated Meeting'
+        assert result['updated_fields']['start_time'] == '2025-12-10T14:00:00'
+        assert result['updated_fields']['end_time'] == '2025-12-10T15:00:00'
+        assert result['updated_fields']['timezone'] == 'UTC'
+        assert result['updated_fields']['locations'] == ['New Room']
 
         # Verify event_id was used
         mock_graph_client.me.events.by_event_id.assert_called_with('event_id')
