@@ -59,6 +59,8 @@ from camel.societies.workforce.prompts import (
     TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
+    VALIDATION_PROMPT,
+    VALIDATION_RESPONSE_FORMAT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import (
@@ -75,6 +77,7 @@ from camel.societies.workforce.utils import (
     TaskAnalysisResult,
     TaskAssignment,
     TaskAssignResult,
+    ValidationResult,
     WorkerConf,
     check_if_running,
 )
@@ -231,6 +234,14 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        max_refinement_iterations (int, optional): Maximum number of
+            iterative refinement attempts for parallel task results. When
+            parallel subtasks produce duplicate content or don't meet
+            requirements, the workforce will automatically validate and
+            generate additional targeted subtasks to fill gaps. This
+            parameter limits the refinement loop to prevent excessive
+            iterations. Set to 0 to disable refinement validation.
+            (default: :obj:`2`)
         callbacks (Optional[List[WorkforceCallback]], optional): A list of
             callback handlers to observe and record workforce lifecycle events
             and metrics (e.g., task creation/assignment/start/completion/
@@ -320,6 +331,7 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        max_refinement_iterations: int = 2,
         mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
         callbacks: Optional[List[WorkforceCallback]] = None,
         failure_handling_config: Optional[
@@ -339,6 +351,7 @@ class Workforce(BaseNode):
         self.task_timeout_seconds = (
             task_timeout_seconds or TASK_TIMEOUT_SECONDS
         )
+        self.max_refinement_iterations = max_refinement_iterations
         self.mode = mode
         self._initial_mode = mode  # Store initial mode for reset()
         # Initialize failure handling configuration (supports dict input)
@@ -1621,6 +1634,147 @@ class Workforce(BaseNode):
             )
             return TaskAnalysisResult(**fallback_values)
 
+    def _validate_aggregated_result(
+        self, task: Task, aggregated_result: str
+    ) -> ValidationResult:
+        r"""Validate aggregated results from parallel subtasks.
+
+        This method uses the Task Planner Agent to:
+        1. Deduplicate content across parallel subtask results
+        2. Verify requirements are met (e.g., "5 unique papers")
+        3. Provide guidance for additional tasks if needed
+
+        Args:
+            task (Task): The parent task containing subtasks
+            aggregated_result (str): The concatenated results from all subtasks
+
+        Returns:
+            ValidationResult: Validation result with deduplication and
+                requirement checking
+        """
+        num_subtasks = len(task.subtasks) if task.subtasks else 0
+
+        subtask_ids = (
+            [sub.id for sub in task.subtasks] if task.subtasks else []
+        )
+        subtask_ids_str = ", ".join(subtask_ids) if subtask_ids else "None"
+
+        validation_prompt = str(
+            VALIDATION_PROMPT.format(
+                task_id=task.id,
+                task_content=task.content,
+                num_subtasks=num_subtasks,
+                subtask_ids=subtask_ids_str,
+                aggregated_result=aggregated_result,
+                response_format=VALIDATION_RESPONSE_FORMAT,
+            )
+        )
+
+        examples = [
+            {
+                "requirements_met": True,
+                "unique_count": 5,
+                "duplicate_count": 2,
+                "missing_count": 0,
+                "deduplicated_result": "Deduplicated content here...",
+                "reasoning": (
+                    "Found 5 unique papers. Task_1.3 and task_1.5 both "
+                    "returned 'Attention Is All You Need' (keeping "
+                    "task_1.3's result). Requirements fully met after "
+                    "deduplication."
+                ),
+                "additional_task_guidance": None,
+                "duplicate_subtask_ids": ["task_1.5"],
+            },
+            {
+                "requirements_met": False,
+                "unique_count": 3,
+                "duplicate_count": 4,
+                "missing_count": 2,
+                "deduplicated_result": "3 unique papers found...",
+                "reasoning": (
+                    "Only 3 unique papers found. Task_1.1 and task_1.2 "
+                    "both returned 'Paper A' (kept task_1.1). Task_1.4, "
+                    "task_1.5, task_1.6 all returned 'Paper B' (kept "
+                    "task_1.4). Need 2 more unique papers."
+                ),
+                "additional_task_guidance": (
+                    "Find ONE unique research paper on the topic, avoiding: "
+                    "Paper A, Paper B, Paper C. To ensure diversity across "
+                    "parallel retries, consider exploring different "
+                    "publication years, research methodologies, or "
+                    "application domains."
+                ),
+                "duplicate_subtask_ids": [
+                    "task_1.2",
+                    "task_1.5",
+                    "task_1.6",
+                ],
+            },
+            {
+                "requirements_met": True,
+                "unique_count": 5,
+                "duplicate_count": 0,
+                "missing_count": 0,
+                "deduplicated_result": "All 5 papers are distinct...",
+                "reasoning": (
+                    "Found 5 distinct papers with different titles. "
+                    "All papers are unique, no exact duplicates found. "
+                    "Requirements fully met."
+                ),
+                "additional_task_guidance": None,
+                "duplicate_subtask_ids": None,
+            },
+        ]
+
+        try:
+            if self.use_structured_output_handler:
+                enhanced_prompt = (
+                    self.structured_handler.generate_structured_prompt(
+                        base_prompt=validation_prompt,
+                        schema=ValidationResult,
+                        examples=examples,
+                    )
+                )
+                response = self.task_agent.step(enhanced_prompt)
+
+                result = self.structured_handler.parse_structured_response(
+                    response.msg.content if response.msg else "",
+                    schema=ValidationResult,
+                    fallback_values=self.structured_handler.create_fallback_response(
+                        ValidationResult, "fail to parse structured response"
+                    ).model_dump(),
+                )
+
+                if isinstance(result, ValidationResult):
+                    return result
+                elif isinstance(result, dict):
+                    return ValidationResult.model_validate(result)
+                else:
+                    fallback = (
+                        self.structured_handler.create_fallback_response(
+                            ValidationResult,
+                            "failed to create ValidationResult Instance",
+                        )
+                    )
+                    return ValidationResult.model_validate(fallback)
+            else:
+                response = self.task_agent.step(
+                    validation_prompt, response_format=ValidationResult
+                )
+                return response.msg.parsed
+
+        except Exception as e:
+            logger.warning(
+                f"Error during validation for task {task.id}: {e}, "
+                f"using fallback"
+            )
+            return ValidationResult.model_validate(
+                self.structured_handler.create_fallback_response(
+                    ValidationResult, str(e)
+                )
+            )
+
     async def _apply_recovery_strategy(
         self,
         task: Task,
@@ -1679,8 +1833,8 @@ class Workforce(BaseNode):
                 # Modify the task content and retry
                 if recovery_decision.modified_task_content:
                     task.content = recovery_decision.modified_task_content
-                    logger.info(f"Task {task.id} content modified for replan")
 
+                    logger.info(f"Task {task.id} content modified for replan")
                 # Repost the modified task
                 if task.id in self._assignees:
                     assignee_id = self._assignees[task.id]
@@ -1791,6 +1945,117 @@ class Workforce(BaseNode):
 
                 # For decompose, we return early with special handling
                 return True
+
+            elif strategy == RecoveryStrategy.REFINE:
+                logger.info(
+                    f"Task {task.id} will be refined with additional "
+                    f"targeted subtasks"
+                )
+
+                # Access ValidationResult object directly instead of dict
+                validation_result = None
+                if task.additional_info:
+                    validation_result = task.additional_info.get(
+                        'validation_result'
+                    )
+
+                # Extract values from ValidationResult, with safe defaults
+                if validation_result and isinstance(
+                    validation_result, ValidationResult
+                ):
+                    additional_guidance = (
+                        validation_result.additional_task_guidance
+                    )
+                    duplicate_ids = (
+                        validation_result.duplicate_subtask_ids or []
+                    )
+
+                if duplicate_ids:
+                    subtasks_to_retry = [
+                        sub for sub in task.subtasks if sub.id in duplicate_ids
+                    ]
+                    logger.info(
+                        f"{len(subtasks_to_retry)} duplicates to retry "
+                    )
+
+                refinement_iteration = (task.additional_info or {}).get(
+                    'refinement_iteration', 0
+                )
+
+                for subtask in subtasks_to_retry:
+                    subtask.result = None
+                    subtask.state = TaskState.OPEN
+                    subtask.failure_count = 0
+
+                    if not subtask.additional_info:
+                        subtask.additional_info = {}
+
+                    if 'base_content' not in subtask.additional_info:
+                        subtask.additional_info['base_content'] = (
+                            subtask.content
+                        )
+
+                    subtask.additional_info['refinement_subtask'] = True
+                    subtask.additional_info['refinement_iteration'] = (
+                        refinement_iteration + 1
+                    )
+
+                    if additional_guidance:
+                        subtask.additional_info['refinement_guidance'] = (
+                            additional_guidance
+                        )
+                        iteration_num = refinement_iteration + 1
+                        subtask.content = (
+                            f"{subtask.additional_info['base_content']}\n\n"
+                            f"IMPORTANT - REFINEMENT ITERATION "
+                            f"{iteration_num}:\n"
+                            f"{additional_guidance}\n\n"
+                            f"Your previous result was a duplicate. You MUST "
+                            f"find a completely DIFFERENT and UNIQUE item "
+                            f"this time."
+                        )
+
+                subtasks = subtasks_to_retry
+
+                if subtasks:
+                    if not task.additional_info:
+                        task.additional_info = {}
+                    task.additional_info['refinement_iteration'] = (
+                        refinement_iteration + 1
+                    )
+
+                    task.state = TaskState.OPEN
+
+                    self._pending_tasks.extendleft(reversed(subtasks))
+                    await self._post_ready_tasks()
+                    action_taken = (
+                        f"retrying {len(subtasks)} duplicate subtasks"
+                    )
+
+                    logger.info(
+                        f"Task {task.id} retrying {len(subtasks)} "
+                        f"duplicate subtasks: {[st.id for st in subtasks]}"
+                    )
+                    print(
+                        f"{Fore.CYAN}🔄 Retrying {len(subtasks)} duplicate "
+                        f"subtasks: {', '.join([st.id for st in subtasks])}"
+                        f"{Fore.RESET}"
+                    )
+
+                    if self.share_memory:
+                        logger.info(
+                            f"Syncing shared memory after task {task.id} "
+                            f"refinement"
+                        )
+                        self._sync_shared_memory()
+
+                    return True
+                else:
+                    logger.warning(
+                        f"No refinement subtasks generated for {task.id}"
+                    )
+                    task.state = TaskState.DONE
+                    action_taken = "marked complete with partial results"
 
             elif strategy == RecoveryStrategy.CREATE_WORKER:
                 assignee = await self._create_worker_node_for_task(task)
@@ -4752,13 +5017,94 @@ class Workforce(BaseNode):
                             f"{completed_subtask.result}"
                         )
 
-                # Set parent task state and result
-                parent.state = TaskState.DONE
-                parent.result = (
+                aggregated_result = (
                     "\n\n".join(successful_results)
                     if successful_results
                     else "All subtasks completed"
                 )
+
+                if len(parent.subtasks) > 1 and successful_results:
+                    logger.info(
+                        f"Validating aggregated results for parent task "
+                        f"{parent.id} with {len(parent.subtasks)} subtasks"
+                    )
+                    validation_result = self._validate_aggregated_result(
+                        parent, aggregated_result
+                    )
+
+                    logger.info(
+                        f"Validation result for {parent.id}: "
+                        f"requirements_met="
+                        f"{validation_result.requirements_met}, "
+                        f"unique_count={validation_result.unique_count}, "
+                        f"duplicate_count="
+                        f"{validation_result.duplicate_count}, "
+                        f"missing_count={validation_result.missing_count}"
+                    )
+                    parent.result = validation_result.deduplicated_result
+
+                    if not validation_result.requirements_met:
+                        if parent.additional_info is None:
+                            parent.additional_info = {}
+                        refinement_iteration = parent.additional_info.get(
+                            'refinement_iteration', 0
+                        )
+
+                        max_refinement_iterations = getattr(
+                            self, 'max_refinement_iterations', 2
+                        )
+
+                        if refinement_iteration < max_refinement_iterations:
+                            logger.info(
+                                f"Requirements not met for {parent.id}. "
+                                f"Triggering refinement "
+                                f"(iteration {refinement_iteration + 1}/"
+                                f"{max_refinement_iterations})"
+                            )
+
+                            # Store ValidationResult object directly to avoid
+                            # redundant dictionary conversions
+                            parent.additional_info['validation_result'] = (
+                                validation_result
+                            )
+
+                            parent.state = TaskState.FAILED
+                            parent.failure_count += 1
+
+                            refine_decision = TaskAnalysisResult(
+                                reasoning=validation_result.reasoning,
+                                recovery_strategy=RecoveryStrategy.REFINE,
+                                modified_task_content=None,
+                                issues=[
+                                    (
+                                        f"Missing "
+                                        f"{validation_result.missing_count} "
+                                        f"items to meet requirements"
+                                    )
+                                ],
+                            )
+
+                            await self._apply_recovery_strategy(
+                                parent, refine_decision
+                            )
+                            return
+                        else:
+                            logger.warning(
+                                f"Max refinement iterations "
+                                f"({max_refinement_iterations}) reached for "
+                                f"{parent.id}. Accepting partial results."
+                            )
+                            print(
+                                f"{Fore.YELLOW}⚠️  Task {parent.id} partially "
+                                f"complete: {validation_result.unique_count} "
+                                f"items found, "
+                                f"{validation_result.missing_count} missing"
+                                f"{Fore.RESET}"
+                            )
+                else:
+                    parent.result = aggregated_result
+
+                parent.state = TaskState.DONE
 
                 logger.debug(
                     f"All subtasks of {parent.id} are done. "
@@ -5532,6 +5878,7 @@ class Workforce(BaseNode):
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
+            max_refinement_iterations=self.max_refinement_iterations,
             task_timeout_seconds=self.task_timeout_seconds,
             mode=self.mode,
             failure_handling_config=self.failure_handling_config,

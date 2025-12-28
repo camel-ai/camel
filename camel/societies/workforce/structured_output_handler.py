@@ -22,6 +22,7 @@ from camel.societies.workforce.utils import (
     RecoveryStrategy,
     TaskAnalysisResult,
     TaskAssignResult,
+    ValidationResult,
     WorkerConf,
 )
 
@@ -391,6 +392,7 @@ Ensure the JSON is valid and properly formatted.
                     'decompose',
                     'create_worker',
                     'reassign',
+                    'refine',
                 ]
                 if strategy not in valid_strategies:
                     # Try to match partial
@@ -398,6 +400,18 @@ Ensure the JSON is valid and properly formatted.
                         if valid.startswith(strategy) or strategy in valid:
                             fixed_data['recovery_strategy'] = valid
                             break
+
+        elif schema_name == 'ValidationResult':
+            if 'deduplicated_result' in fixed_data:
+                if not isinstance(fixed_data['deduplicated_result'], str):
+                    try:
+                        fixed_data['deduplicated_result'] = json.dumps(
+                            fixed_data['deduplicated_result'], indent=2
+                        )
+                    except (TypeError, ValueError):
+                        fixed_data['deduplicated_result'] = str(
+                            fixed_data['deduplicated_result']
+                        )
 
         return fixed_data
 
@@ -427,6 +441,19 @@ Ensure the JSON is valid and properly formatted.
                 reasoning="Unable to parse response, defaulting to retry",
                 recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
+            )
+        elif schema_name == 'ValidationResult':
+            return ValidationResult(
+                requirements_met=False,
+                unique_count=0,
+                duplicate_count=0,
+                missing_count=0,
+                deduplicated_result="",
+                reasoning=(
+                    "Default validation result due to parsing error - "
+                    "failing safe"
+                ),
+                additional_task_guidance=None,
             )
         else:
             # Try to create with empty dict and let defaults handle it
@@ -500,6 +527,21 @@ Ensure the JSON is valid and properly formatted.
                 reasoning=f"Fallback decision due to: {error_message}",
                 recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
+            )
+
+        elif schema_name == 'ValidationResult':
+            # Return fallback validation result - fail-safe approach
+            return ValidationResult(
+                requirements_met=False,
+                unique_count=0,
+                duplicate_count=0,
+                missing_count=0,
+                deduplicated_result="",
+                reasoning=(
+                    f"Fallback validation result (failing safe): "
+                    f"{error_message}"
+                ),
+                additional_task_guidance=None,
             )
 
         else:
