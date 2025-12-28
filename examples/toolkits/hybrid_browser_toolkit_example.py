@@ -29,8 +29,8 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
+
 from dotenv import load_dotenv
-import os
 
 load_dotenv()  # Load environment variables from .env.test file
 
@@ -75,7 +75,7 @@ custom_tools = [
     "browser_switch_tab",
     "browser_enter",
     "browser_get_page_snapshot",
-    "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_get_som_screenshot",  # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -89,7 +89,7 @@ web_toolkit_custom = HybridBrowserToolkit(
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
     viewport_limit=True,
-    cdp_url="http://localhost:9223"
+    cdp_url="http://localhost:9223",
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
@@ -135,7 +135,9 @@ def save_agent_log(agent, task_prompt, response, log_dir="./agent_logs"):
         msg_dict = {
             'role': msg.role_name,
             'content': msg.content,
-            'role_type': str(msg.role_type) if hasattr(msg, 'role_type') else None,
+            'role_type': str(msg.role_type)
+            if hasattr(msg, 'role_type')
+            else None,
         }
 
         # Add function call info if available
@@ -144,7 +146,9 @@ def save_agent_log(agent, task_prompt, response, log_dir="./agent_logs"):
         if hasattr(msg, 'func_args') and msg.func_args:
             msg_dict['func_args'] = msg.func_args
         if hasattr(msg, 'func_result') and msg.func_result:
-            msg_dict['func_result'] = str(msg.func_result)[:500]  # Truncate long results
+            msg_dict['func_result'] = str(msg.func_result)[
+                :500
+            ]  # Truncate long results
 
         all_messages.append(msg_dict)
 
@@ -155,12 +159,14 @@ def save_agent_log(agent, task_prompt, response, log_dir="./agent_logs"):
         'token_usage': {
             'prompt_tokens': prompt_tokens,
             'completion_tokens': completion_tokens,
-            'total_tokens': total_tokens
+            'total_tokens': total_tokens,
         },
         'response_info': {
             'terminated': response.terminated,
             'num_tokens': response.info.get('num_tokens', 0),
-            'termination_reasons': response.info.get('termination_reasons', []),
+            'termination_reasons': response.info.get(
+                'termination_reasons', []
+            ),
             'id': response.info.get('id'),
         },
         'final_response': response.msgs[0].content if response.msgs else None,
@@ -169,10 +175,12 @@ def save_agent_log(agent, task_prompt, response, log_dir="./agent_logs"):
             {
                 'func_name': tc.func_name,
                 'args': tc.args,
-                'result': str(tc.result)[:500] if tc.result else None  # Truncate long results
+                'result': str(tc.result)[:500]
+                if tc.result
+                else None,  # Truncate long results
             }
             for tc in response.info.get('tool_calls', [])
-        ]
+        ],
     }
 
     # Save to file

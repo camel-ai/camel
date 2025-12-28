@@ -151,11 +151,19 @@ class SubtaskFunction:
                         record = recovery_history[i]
                         prompt_tokens = record.get('prompt_tokens', 0)
                         completion_tokens = record.get('completion_tokens', 0)
-                        total_tokens = record.get('tokens_used', prompt_tokens + completion_tokens)
+                        total_tokens = record.get(
+                            'tokens_used', prompt_tokens + completion_tokens
+                        )
 
-                        self.stats_tracker['token_details']['recovery_agent']['prompt'] += prompt_tokens
-                        self.stats_tracker['token_details']['recovery_agent']['completion'] += completion_tokens
-                        self.stats_tracker['token_details']['recovery_agent']['total'] += total_tokens
+                        self.stats_tracker['token_details']['recovery_agent'][
+                            'prompt'
+                        ] += prompt_tokens
+                        self.stats_tracker['token_details']['recovery_agent'][
+                            'completion'
+                        ] += completion_tokens
+                        self.stats_tracker['token_details']['recovery_agent'][
+                            'total'
+                        ] += total_tokens
                         self.stats_tracker['total_tokens'] += total_tokens
 
             print(f"\n{'─' * 80}")
@@ -195,28 +203,44 @@ class SubtaskFunction:
             }
 
             # Save replay actions to separate log file
-            if hasattr(self.replayer, 'replay_actions_log') and self.replayer.replay_actions_log:
+            if (
+                hasattr(self.replayer, 'replay_actions_log')
+                and self.replayer.replay_actions_log
+            ):
                 # Save to session log directory if available, otherwise to browser_log
                 if self.session_log_dir:
-                    replay_log_file = self.session_log_dir / f"subtask_{self.subtask_id}_replay_actions.json"
+                    replay_log_file = (
+                        self.session_log_dir
+                        / f"subtask_{self.subtask_id}_replay_actions.json"
+                    )
                 else:
                     replay_log_dir = Path("examples/toolkits/browser_log")
                     if not replay_log_dir.exists():
                         replay_log_dir = Path("browser_log")
-                    replay_log_file = replay_log_dir / f"subtask_replay_actions_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    replay_log_file = (
+                        replay_log_dir
+                        / f"subtask_replay_actions_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    )
 
                 replay_log_file.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(replay_log_file, 'w', encoding='utf-8') as f:
-                    json.dump({
-                        'subtask_id': self.subtask_id,
-                        'subtask_name': self.name,
-                        'variables_used': kwargs,
-                        'actions': self.replayer.replay_actions_log
-                    }, f, indent=2, ensure_ascii=False)
+                    json.dump(
+                        {
+                            'subtask_id': self.subtask_id,
+                            'subtask_name': self.name,
+                            'variables_used': kwargs,
+                            'actions': self.replayer.replay_actions_log,
+                        },
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
 
                 print(f"\n📝 Replay actions logged to: {replay_log_file}")
-                print(f"   Total replay actions: {len(self.replayer.replay_actions_log)}")
+                print(
+                    f"   Total replay actions: {len(self.replayer.replay_actions_log)}"
+                )
 
                 # Clear the log for next execution
                 self.replayer.replay_actions_log.clear()
@@ -311,7 +335,10 @@ class SubtaskAgent:
 
         # Session log directory for this run
         import datetime
-        self.session_timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        self.session_timestamp = datetime.datetime.now().strftime(
+            '%Y%m%d_%H%M%S'
+        )
         self.session_log_dir: Optional[Path] = None
 
         # Statistics tracking
@@ -322,7 +349,7 @@ class SubtaskAgent:
             'agent_recovery_calls': 0,
             'token_details': {
                 'main_agent': {'prompt': 0, 'completion': 0, 'total': 0},
-                'recovery_agent': {'prompt': 0, 'completion': 0, 'total': 0}
+                'recovery_agent': {'prompt': 0, 'completion': 0, 'total': 0},
             },
             'subtask_details': {},  # Track each subtask call
             'browser_tool_details': {},  # Track each browser tool call
@@ -339,11 +366,14 @@ class SubtaskAgent:
 
         # Create session log directory
         from pathlib import Path
+
         session_logs_root = Path("session_logs")
-        self.session_log_dir = session_logs_root / f"session_{self.session_timestamp}"
+        self.session_log_dir = (
+            session_logs_root / f"session_{self.session_timestamp}"
+        )
         self.session_log_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n📁 Session log directory: {self.session_log_dir}")
-        print(f"   All logs for this session will be saved here\n")
+        print("   All logs for this session will be saved here\n")
 
         # Import ActionReplayer
         # sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'camel' / 'toolkits' / 'hybrid_browser_toolkit'))
@@ -643,6 +673,7 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
 
         # Log the user task
         import datetime
+
         timestamp = datetime.datetime.now().isoformat()
 
         communication_entry = {
@@ -651,7 +682,7 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
             'user_task': user_task,
             'response': None,
             'tool_calls': [],  # Will store all tool calls made by agent
-            'tokens': {'prompt': 0, 'completion': 0, 'total': 0}
+            'tokens': {'prompt': 0, 'completion': 0, 'total': 0},
         }
 
         # Use astep like hybrid_browser_toolkit_example.py
@@ -670,7 +701,9 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                         if isinstance(tool_calls_info, list):
                             for tool_call in tool_calls_info:
                                 if isinstance(tool_call, dict):
-                                    communication_entry['tool_calls'].append(tool_call)
+                                    communication_entry['tool_calls'].append(
+                                        tool_call
+                                    )
 
         print("\n" + "=" * 80)
         print("AGENT EXECUTION COMPLETED")
@@ -689,7 +722,9 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                 prompt_tokens = 0
                 completion_tokens = 0
 
-                if hasattr(usage, 'prompt_tokens') and hasattr(usage, 'completion_tokens'):
+                if hasattr(usage, 'prompt_tokens') and hasattr(
+                    usage, 'completion_tokens'
+                ):
                     prompt_tokens = usage.prompt_tokens
                     completion_tokens = usage.completion_tokens
                 elif isinstance(usage, dict):
@@ -698,19 +733,25 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
 
                 if prompt_tokens > 0 or completion_tokens > 0:
                     total_tokens = prompt_tokens + completion_tokens
-                    self.stats['token_details']['main_agent']['prompt'] += prompt_tokens
-                    self.stats['token_details']['main_agent']['completion'] += completion_tokens
-                    self.stats['token_details']['main_agent']['total'] += total_tokens
+                    self.stats['token_details']['main_agent']['prompt'] += (
+                        prompt_tokens
+                    )
+                    self.stats['token_details']['main_agent'][
+                        'completion'
+                    ] += completion_tokens
+                    self.stats['token_details']['main_agent']['total'] += (
+                        total_tokens
+                    )
                     self.stats['total_tokens'] += total_tokens
 
                     # Update communication entry
                     communication_entry['tokens'] = {
                         'prompt': prompt_tokens,
                         'completion': completion_tokens,
-                        'total': total_tokens
+                        'total': total_tokens,
                     }
 
-                    print(f"\n📊 Tokens used in this agent call:")
+                    print("\n📊 Tokens used in this agent call:")
                     print(f"   • Prompt: {prompt_tokens}")
                     print(f"   • Completion: {completion_tokens}")
                     print(f"   • Total: {total_tokens}")
@@ -730,12 +771,11 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         Returns:
             List of browser action records from the log file that were initiated by the agent.
         """
-        import datetime
         from pathlib import Path
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("🔍 EXTRACTING AGENT BROWSER CALLS FROM LOG FILE")
-        print("="*80)
+        print("=" * 80)
 
         # Find the browser log file
         # Try multiple possible locations
@@ -762,9 +802,13 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
 
         # Get the most recent browser log file (contains ALL actions)
         all_log_files = sorted(
-            [f for f in browser_log_dir.glob("hybrid_browser_toolkit*.log") if not f.name.startswith('typescript')],
+            [
+                f
+                for f in browser_log_dir.glob("hybrid_browser_toolkit*.log")
+                if not f.name.startswith('typescript')
+            ],
             key=lambda p: p.stat().st_mtime,
-            reverse=True
+            reverse=True,
         )
 
         if not all_log_files:
@@ -813,20 +857,29 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         except Exception as e:
             print(f"⚠️  Error reading browser log: {e}")
             import traceback
+
             traceback.print_exc()
             return []
 
-        print(f"   Found {len(all_browser_actions)} total browser actions in log")
+        print(
+            f"   Found {len(all_browser_actions)} total browser actions in log"
+        )
 
         # Load all subtask replay action logs from session directory
         replay_log_files = []
         if self.session_log_dir and self.session_log_dir.exists():
-            replay_log_files = sorted(self.session_log_dir.glob("subtask_*_replay_actions.json"))
-            print(f"\n📂 Reading replay logs from session directory: {self.session_log_dir}")
+            replay_log_files = sorted(
+                self.session_log_dir.glob("subtask_*_replay_actions.json")
+            )
+            print(
+                f"\n📂 Reading replay logs from session directory: {self.session_log_dir}"
+            )
         else:
             # Fallback to browser_log directory
-            replay_log_files = sorted(browser_log_dir.glob("subtask_replay_actions_*.json"))
-            print(f"\n📂 Reading replay logs from browser_log directory")
+            replay_log_files = sorted(
+                browser_log_dir.glob("subtask_replay_actions_*.json")
+            )
+            print("\n📂 Reading replay logs from browser_log directory")
 
         print(f"   Found {len(replay_log_files)} subtask replay log files")
 
@@ -837,7 +890,9 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                     replay_data = json.load(f)
                     actions = replay_data.get('actions', [])
                     all_replay_actions.extend(actions)
-                    print(f"   • {replay_log_file.name}: {len(actions)} actions")
+                    print(
+                        f"   • {replay_log_file.name}: {len(actions)} actions"
+                    )
             except Exception as e:
                 print(f"   ⚠️  Error reading {replay_log_file.name}: {e}")
 
@@ -856,7 +911,9 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                 ts_seconds = timestamp[:19]  # Keep only YYYY-MM-DDTHH:MM:SS
                 replay_signatures.add((ts_seconds, action_name))
 
-        print(f"   Created {len(replay_signatures)} replay action signatures for filtering")
+        print(
+            f"   Created {len(replay_signatures)} replay action signatures for filtering"
+        )
 
         # Filter browser actions
         agent_initiated_actions = []
@@ -877,17 +934,21 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                 continue
 
             # This is an agent-initiated action
-            agent_initiated_actions.append({
-                'timestamp': action_timestamp,
-                'type': 'browser_tool_call',
-                'tool_name': f"browser_{action_name}",
-                'arguments': action.get('inputs', {}),
-                'result': action.get('outputs', {}),
-                'execution_time_ms': action.get('execution_time_ms', 0)
-            })
+            agent_initiated_actions.append(
+                {
+                    'timestamp': action_timestamp,
+                    'type': 'browser_tool_call',
+                    'tool_name': f"browser_{action_name}",
+                    'arguments': action.get('inputs', {}),
+                    'result': action.get('outputs', {}),
+                    'execution_time_ms': action.get('execution_time_ms', 0),
+                }
+            )
 
         print(f"\n   Agent-initiated actions: {len(agent_initiated_actions)}")
-        print(f"   Replay actions (filtered out): {len(all_browser_actions) - len(agent_initiated_actions)}")
+        print(
+            f"   Replay actions (filtered out): {len(all_browser_actions) - len(agent_initiated_actions)}"
+        )
 
         # Update statistics
         self.stats['browser_tool_calls'] = len(agent_initiated_actions)
@@ -935,13 +996,25 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
 
         print(f"\n💰 Total Tokens Used: {self.stats['total_tokens']}")
         print("   Main Agent:")
-        print(f"      • Prompt: {self.stats['token_details']['main_agent']['prompt']} tokens")
-        print(f"      • Completion: {self.stats['token_details']['main_agent']['completion']} tokens")
-        print(f"      • Total: {self.stats['token_details']['main_agent']['total']} tokens")
+        print(
+            f"      • Prompt: {self.stats['token_details']['main_agent']['prompt']} tokens"
+        )
+        print(
+            f"      • Completion: {self.stats['token_details']['main_agent']['completion']} tokens"
+        )
+        print(
+            f"      • Total: {self.stats['token_details']['main_agent']['total']} tokens"
+        )
         print("   Recovery Agent:")
-        print(f"      • Prompt: {self.stats['token_details']['recovery_agent']['prompt']} tokens")
-        print(f"      • Completion: {self.stats['token_details']['recovery_agent']['completion']} tokens")
-        print(f"      • Total: {self.stats['token_details']['recovery_agent']['total']} tokens")
+        print(
+            f"      • Prompt: {self.stats['token_details']['recovery_agent']['prompt']} tokens"
+        )
+        print(
+            f"      • Completion: {self.stats['token_details']['recovery_agent']['completion']} tokens"
+        )
+        print(
+            f"      • Total: {self.stats['token_details']['recovery_agent']['total']} tokens"
+        )
 
         print("\n" + "=" * 80)
 
@@ -957,35 +1030,58 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         for subtask_id, subtask_func in self.subtask_functions.items():
             if hasattr(subtask_func.replayer, 'recovery_history'):
                 for record in subtask_func.replayer.recovery_history:
-                    recovery_communications.append({
-                        'type': 'recovery_agent_call',
-                        'subtask_id': subtask_id,
-                        **record
-                    })
+                    recovery_communications.append(
+                        {
+                            'type': 'recovery_agent_call',
+                            'subtask_id': subtask_id,
+                            **record,
+                        }
+                    )
 
         # Merge browser tool calls from log into agent communication log
-        all_communications_list = self.agent_communication_log + browser_tool_calls_from_log
+        all_communications_list = (
+            self.agent_communication_log + browser_tool_calls_from_log
+        )
 
         # Sort all communications by timestamp
         sorted_communications = sorted(
-            all_communications_list,
-            key=lambda x: x.get('timestamp', '')
+            all_communications_list, key=lambda x: x.get('timestamp', '')
         )
 
         # Combine all communications
         all_communications = {
             'session_start': datetime.datetime.now().isoformat(),
-            'task_description': self.subtask_config.get('task_description', ''),
+            'task_description': self.subtask_config.get(
+                'task_description', ''
+            ),
             'communications': sorted_communications,  # All communications in chronological order
             'recovery_agent_communications': recovery_communications,
             'statistics': self.stats,
             'summary': {
                 'total_communications': len(sorted_communications),
-                'subtask_calls': len([c for c in sorted_communications if c.get('type') == 'subtask_call']),
-                'browser_tool_calls': len([c for c in sorted_communications if c.get('type') == 'browser_tool_call']),
-                'main_agent_calls': len([c for c in sorted_communications if c.get('type') == 'main_agent_call']),
-                'recovery_calls': len(recovery_communications)
-            }
+                'subtask_calls': len(
+                    [
+                        c
+                        for c in sorted_communications
+                        if c.get('type') == 'subtask_call'
+                    ]
+                ),
+                'browser_tool_calls': len(
+                    [
+                        c
+                        for c in sorted_communications
+                        if c.get('type') == 'browser_tool_call'
+                    ]
+                ),
+                'main_agent_calls': len(
+                    [
+                        c
+                        for c in sorted_communications
+                        if c.get('type') == 'main_agent_call'
+                    ]
+                ),
+                'recovery_calls': len(recovery_communications),
+            },
         }
 
         # Save to session directory if available
@@ -1051,11 +1147,21 @@ Each subtask execution generates a separate replay log:
             json.dump(all_communications, f, indent=2, ensure_ascii=False)
 
         print(f"\n📝 Agent communication log saved to: {log_path}")
-        print(f"   Total communications logged: {all_communications['summary']['total_communications']}")
-        print(f"   - Main agent calls: {all_communications['summary']['main_agent_calls']}")
-        print(f"   - Subtask calls: {all_communications['summary']['subtask_calls']}")
-        print(f"   - Browser tool calls: {all_communications['summary']['browser_tool_calls']}")
-        print(f"   - Recovery calls: {all_communications['summary']['recovery_calls']}")
+        print(
+            f"   Total communications logged: {all_communications['summary']['total_communications']}"
+        )
+        print(
+            f"   - Main agent calls: {all_communications['summary']['main_agent_calls']}"
+        )
+        print(
+            f"   - Subtask calls: {all_communications['summary']['subtask_calls']}"
+        )
+        print(
+            f"   - Browser tool calls: {all_communications['summary']['browser_tool_calls']}"
+        )
+        print(
+            f"   - Recovery calls: {all_communications['summary']['recovery_calls']}"
+        )
 
         # Copy browser log to session directory
         if self.session_log_dir:
@@ -1073,14 +1179,23 @@ Each subtask execution generates a separate replay log:
             if browser_log_dir:
                 # Get the most recent browser log
                 all_log_files = sorted(
-                    [f for f in browser_log_dir.glob("hybrid_browser_toolkit*.log") if not f.name.startswith('typescript')],
+                    [
+                        f
+                        for f in browser_log_dir.glob(
+                            "hybrid_browser_toolkit*.log"
+                        )
+                        if not f.name.startswith('typescript')
+                    ],
                     key=lambda p: p.stat().st_mtime,
-                    reverse=True
+                    reverse=True,
                 )
                 if all_log_files:
                     import shutil
+
                     browser_log_file = all_log_files[0]
-                    dest_file = self.session_log_dir / "complete_browser_log.log"
+                    dest_file = (
+                        self.session_log_dir / "complete_browser_log.log"
+                    )
                     shutil.copy2(browser_log_file, dest_file)
                     print(f"\n📋 Complete browser log copied to: {dest_file}")
                     print(f"   Source: {browser_log_file}")

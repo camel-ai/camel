@@ -9,7 +9,6 @@ Analyze browser log and subtask replay logs to:
 
 import json
 import re
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -159,7 +158,9 @@ def timing_matches(timing1: Dict, timing2: Dict) -> bool:
     return timing1 == timing2
 
 
-def get_latest_snapshot_before_action(main_actions: List[Dict], action_index: int) -> str:
+def get_latest_snapshot_before_action(
+    main_actions: List[Dict], action_index: int
+) -> str:
     """
     Get the most recent snapshot before a given action index.
 
@@ -205,7 +206,11 @@ def main():
     ]
 
     # Actions to exclude from timeline
-    excluded_actions = {'get_tab_info', 'get_page_snapshot', 'get_som_screenshot'}
+    excluded_actions = {
+        'get_tab_info',
+        'get_page_snapshot',
+        'get_som_screenshot',
+    }
 
     # Load main log
     main_actions = load_main_log(main_log_file)
@@ -236,7 +241,9 @@ def main():
                     timing_tuple = tuple(sorted(timing.items()))
                     all_subtask_timings.add(timing_tuple)
 
-    print(f"\n✓ Loaded {len(subtasks)} subtasks with {len(all_subtask_timings)} unique timings")
+    print(
+        f"\n✓ Loaded {len(subtasks)} subtasks with {len(all_subtask_timings)} unique timings"
+    )
 
     # Filter main log actions that are NOT in subtasks
     non_subtask_actions = []
@@ -309,7 +316,10 @@ def main():
             result = outputs.get('result', '')
             if isinstance(result, str):
                 # Check for failure patterns
-                if any(pattern in result.lower() for pattern in ['failed', 'error', 'not found']):
+                if any(
+                    pattern in result.lower()
+                    for pattern in ['failed', 'error', 'not found']
+                ):
                     # Exclude "executed successfully" which might contain "error" in context
                     if 'successfully' not in result.lower():
                         return True
@@ -353,7 +363,10 @@ def main():
             action_index_in_subtask = subtask_info.get('action_index', 0)
 
             # Only add subtask_replay entry for the first action of each subtask
-            if action_index_in_subtask == 0 and subtask_id not in already_added_subtasks:
+            if (
+                action_index_in_subtask == 0
+                and subtask_id not in already_added_subtasks
+            ):
                 # Extract aria label for the first action if it has args
                 inputs = action.get('inputs', {})
                 args = inputs.get('args', [])
@@ -361,23 +374,31 @@ def main():
 
                 if args:
                     # Get the most recent snapshot before this action
-                    snapshot_before = get_latest_snapshot_before_action(main_actions, action_index)
+                    snapshot_before = get_latest_snapshot_before_action(
+                        main_actions, action_index
+                    )
 
                     # Try to extract label from first ref argument
                     for arg in args:
                         if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                            element_label = extract_aria_label_from_snapshot(snapshot_before, arg)
+                            element_label = extract_aria_label_from_snapshot(
+                                snapshot_before, arg
+                            )
                             if element_label:
                                 break
 
-                timeline.append({
-                    'timestamp': timestamp,
-                    'action_type': 'subtask_replay',
-                    'subtask_id': subtask_id,
-                    'subtask_name': subtask_info['subtask_name'],
-                    'element_label': element_label,
-                    'variables_used': subtask_info.get('variables_used', {}),
-                })
+                timeline.append(
+                    {
+                        'timestamp': timestamp,
+                        'action_type': 'subtask_replay',
+                        'subtask_id': subtask_id,
+                        'subtask_name': subtask_info['subtask_name'],
+                        'element_label': element_label,
+                        'variables_used': subtask_info.get(
+                            'variables_used', {}
+                        ),
+                    }
+                )
 
                 already_added_subtasks.add(subtask_id)
 
@@ -390,22 +411,28 @@ def main():
             element_label = None
             if args:
                 # Get the most recent snapshot before this action
-                snapshot_before = get_latest_snapshot_before_action(main_actions, action_index)
+                snapshot_before = get_latest_snapshot_before_action(
+                    main_actions, action_index
+                )
 
                 # Try to extract label from first ref argument
                 for arg in args:
                     if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                        element_label = extract_aria_label_from_snapshot(snapshot_before, arg)
+                        element_label = extract_aria_label_from_snapshot(
+                            snapshot_before, arg
+                        )
                         if element_label:
                             break
 
-            timeline.append({
-                'timestamp': timestamp,
-                'action_type': 'individual_action',
-                'action': action_name,
-                'element_label': element_label,
-                'args': args,
-            })
+            timeline.append(
+                {
+                    'timestamp': timestamp,
+                    'action_type': 'individual_action',
+                    'action': action_name,
+                    'element_label': element_label,
+                    'args': args,
+                }
+            )
 
     # Save timeline
     timeline_file = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log/action_timeline.json"
@@ -420,11 +447,15 @@ def main():
     print("ANALYSIS SUMMARY")
     print("=" * 80)
     print(f"Total actions in main log: {len(main_actions)}")
-    print(f"Actions in subtasks: {len(main_actions) - len(non_subtask_actions)}")
+    print(
+        f"Actions in subtasks: {len(main_actions) - len(non_subtask_actions)}"
+    )
     print(f"Actions NOT in subtasks: {len(non_subtask_actions)}")
     print(f"Timeline entries: {len(timeline)}")
     print(f"  - Subtask replays: {len(already_added_subtasks)}")
-    print(f"  - Individual actions: {len(timeline) - len(already_added_subtasks)}")
+    print(
+        f"  - Individual actions: {len(timeline) - len(already_added_subtasks)}"
+    )
     print("\nOutput files:")
     print(f"  - Non-subtask actions: {output_file}")
     print(f"  - Timeline: {timeline_file}")

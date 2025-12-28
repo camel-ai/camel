@@ -81,7 +81,9 @@ class ActionReplayer:
         ] = []  # Track all recovery attempts
 
         # Replay action logging
-        self.replay_actions_log: List[Dict[str, Any]] = []  # Track actions executed during replay
+        self.replay_actions_log: List[
+            Dict[str, Any]
+        ] = []  # Track actions executed during replay
 
     def get_cdp_url(self) -> Optional[str]:
         """Get the CDP WebSocket URL."""
@@ -565,11 +567,14 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
         print(f"Agent response: {agent_msg}")
         if tokens_used > 0:
-            print(f"Tokens used in recovery: {tokens_used} (prompt: {prompt_tokens}, completion: {completion_tokens})")
+            print(
+                f"Tokens used in recovery: {tokens_used} (prompt: {prompt_tokens}, completion: {completion_tokens})"
+            )
         print("=" * 80)
 
         # Record this recovery attempt
         import datetime
+
         recovery_record = {
             'timestamp': datetime.datetime.now().isoformat(),
             'failed_action': failed_action,
@@ -864,12 +869,22 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             # Log this replay action for later filtering
             import datetime
-            self.replay_actions_log.append({
-                'timestamp': datetime.datetime.now().isoformat(),
-                'action': action_name,
-                'inputs': {'args': new_args, 'kwargs': inputs.get('kwargs', {})},
-                'result': result if isinstance(result, (dict, str, list, int, float, bool, type(None))) else str(result),
-            })
+
+            self.replay_actions_log.append(
+                {
+                    'timestamp': datetime.datetime.now().isoformat(),
+                    'action': action_name,
+                    'inputs': {
+                        'args': new_args,
+                        'kwargs': inputs.get('kwargs', {}),
+                    },
+                    'result': result
+                    if isinstance(
+                        result, (dict, str, list, int, float, bool, type(None))
+                    )
+                    else str(result),
+                }
+            )
 
             # Check if action failed
             action_failed = False
@@ -999,13 +1014,32 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
                             # Log this recovery retry action for later filtering
                             import datetime
-                            self.replay_actions_log.append({
-                                'timestamp': datetime.datetime.now().isoformat(),
-                                'action': action_name,
-                                'inputs': {'args': retry_args, 'kwargs': {}},
-                                'result': retry_result if isinstance(retry_result, (dict, str, list, int, float, bool, type(None))) else str(retry_result),
-                                'recovery_retry': True,  # Mark as recovery retry
-                            })
+
+                            self.replay_actions_log.append(
+                                {
+                                    'timestamp': datetime.datetime.now().isoformat(),
+                                    'action': action_name,
+                                    'inputs': {
+                                        'args': retry_args,
+                                        'kwargs': {},
+                                    },
+                                    'result': retry_result
+                                    if isinstance(
+                                        retry_result,
+                                        (
+                                            dict,
+                                            str,
+                                            list,
+                                            int,
+                                            float,
+                                            bool,
+                                            type(None),
+                                        ),
+                                    )
+                                    else str(retry_result),
+                                    'recovery_retry': True,  # Mark as recovery retry
+                                }
+                            )
 
                             return True
                 else:
@@ -1116,13 +1150,32 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
                             # Log this recovery retry action for later filtering
                             import datetime
-                            self.replay_actions_log.append({
-                                'timestamp': datetime.datetime.now().isoformat(),
-                                'action': action_name,
-                                'inputs': {'args': retry_args, 'kwargs': {}},
-                                'result': retry_result if isinstance(retry_result, (dict, str, list, int, float, bool, type(None))) else str(retry_result),
-                                'recovery_retry': True,  # Mark as recovery retry
-                            })
+
+                            self.replay_actions_log.append(
+                                {
+                                    'timestamp': datetime.datetime.now().isoformat(),
+                                    'action': action_name,
+                                    'inputs': {
+                                        'args': retry_args,
+                                        'kwargs': {},
+                                    },
+                                    'result': retry_result
+                                    if isinstance(
+                                        retry_result,
+                                        (
+                                            dict,
+                                            str,
+                                            list,
+                                            int,
+                                            float,
+                                            bool,
+                                            type(None),
+                                        ),
+                                    )
+                                    else str(retry_result),
+                                    'recovery_retry': True,  # Mark as recovery retry
+                                }
+                            )
 
                             return True
                     except Exception as retry_e:
