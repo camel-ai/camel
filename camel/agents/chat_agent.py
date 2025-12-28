@@ -985,6 +985,8 @@ class ChatAgent(BaseAgent):
             return openai_messages, num_tokens
 
         token_limit = self.token_limit
+        if num_tokens > token_limit:
+             return openai_messages, num_tokens
         summary_token_count = self._summary_token_count
 
         if summary_token_count > token_limit * self.summary_window_ratio:
