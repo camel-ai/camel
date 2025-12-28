@@ -942,15 +942,12 @@ class ChatAgent(BaseAgent):
         r"""Get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None:
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
             return openai_messages, num_tokens
 
-        token_limit = self.token_limit
-        if num_tokens > token_limit:
-             return openai_messages, num_tokens
         summary_token_count = self._summary_token_count
 
-        if summary_token_count > token_limit * self.summary_window_ratio:
+        if summary_token_count > self.token_limit * self.summary_window_ratio:
             logger.warning(
                 f"Summary tokens ({summary_token_count}) "
                 f"exceed limit, full compression."
@@ -981,15 +978,12 @@ class ChatAgent(BaseAgent):
         r"""Async version: get context and trigger summarization if needed."""
         openai_messages, num_tokens = self.memory.get_context()
 
-        if self.summarize_threshold is None:
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
             return openai_messages, num_tokens
 
-        token_limit = self.token_limit
-        if num_tokens > token_limit:
-             return openai_messages, num_tokens
         summary_token_count = self._summary_token_count
 
-        if summary_token_count > token_limit * self.summary_window_ratio:
+        if summary_token_count > self.token_limit * self.summary_window_ratio:
             logger.warning(
                 f"Summary tokens ({summary_token_count}) "
                 f"exceed limit, full compression."
