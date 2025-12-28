@@ -715,15 +715,45 @@ class TerminalToolkit(BaseToolkit):
                     exec_thread.join(timeout=timeout)
 
                     if exec_thread.is_alive():
-                        # Timeout occurred - switch to non-blocking mode
-                        # Note: The Docker exec continues running in the
-                        # container.
+                        # Timeout occurred - convert to tracked session
+                        # so agent can monitor or kill the process.
+                        # The exec_thread continues running in background and
+                        # will eventually write output to result_container.
+                        session_log_file = os.path.join(
+                            self.log_dir, f"session_{session_id}.log"
+                        )
+                        self._write_to_log(
+                            session_log_file,
+                            f"--- Blocking command timed out, converted to "
+                            f"session at {time.ctime()} ---\n> {command}\n",
+                        )
+
+                        with self._session_lock:
+                            self.shell_sessions[session_id] = {
+                                "id": session_id,
+                                "process": None,  # No socket for blocking exec
+                                "exec_id": exec_id,
+                                "exec_thread": exec_thread,  # Thread reference
+                                "result_container": result_container,  # Shared
+                                "output_stream": Queue(maxsize=10000),
+                                "command_history": [command],
+                                "running": True,
+                                "log_file": session_log_file,
+                                "backend": "docker",
+                                "timeout_converted": True,  # Mark as converted
+                            }
+
                         self._write_to_log(
                             self.blocking_log_file, log_entry + "\n"
                         )
                         return (
                             f"Command did not complete within {timeout} "
-                            f"seconds. Process continues in background."
+                            f"seconds. Process continues in background as "
+                            f"session '{session_id}'.\n\n"
+                            f"You can use:\n"
+                            f"  - shell_view('{session_id}') - get output\n"
+                            f"  - shell_kill_process('{session_id}') - "
+                            f"terminate"
                         )
 
                     if 'error' in result_container:
@@ -971,6 +1001,46 @@ class TerminalToolkit(BaseToolkit):
         if output:
             return "".join(output)
         else:
+            # For timeout-converted Docker sessions, check thread and output
+            if session.get("timeout_converted"):
+                exec_thread = session.get("exec_thread")
+                result_container = session.get("result_container", {})
+
+                # Check if the background thread has completed
+                if exec_thread and not exec_thread.is_alive():
+                    # Thread finished - get output from result_container
+                    with self._session_lock:
+                        if id in self.shell_sessions:
+                            self.shell_sessions[id]["running"] = False
+
+                    if 'output' in result_container:
+                        completed_output = result_container['output'].decode(
+                            'utf-8', errors='ignore'
+                        )
+                        # Write to log file
+                        self._write_to_log(
+                            session["log_file"], completed_output
+                        )
+                        return (
+                            f"{_to_plain(completed_output)}\n\n"
+                            f"--- SESSION COMPLETED ---"
+                        )
+                    elif 'error' in result_container:
+                        return (
+                            f"--- SESSION FAILED ---\n"
+                            f"Error: {result_container['error']}"
+                        )
+                    else:
+                        return "--- SESSION COMPLETED (no output) ---"
+                else:
+                    # Thread still running
+                    return (
+                        "[Process still running]\n"
+                        "Command is executing in background. "
+                        "Check again later for output.\n"
+                        "Use shell_kill_process() to terminate if needed."
+                    )
+
             # No new output - guide the agent
             return (
                 "[No new output]\n"
@@ -1015,8 +1085,30 @@ class TerminalToolkit(BaseToolkit):
                 except Exception:
                     pass
             else:  # docker
-                # Docker exec processes stop when the socket is closed.
-                session["process"].close()
+                # Check if this is a timeout-converted session (no socket)
+                if session.get("timeout_converted") and session.get("exec_id"):
+                    # Kill the process using Docker exec PID
+                    exec_id = session["exec_id"]
+                    try:
+                        exec_info = self.docker_api_client.exec_inspect(
+                            exec_id
+                        )
+                        pid = exec_info.get('Pid')
+                        if pid and exec_info.get('Running', False):
+                            # Kill the process inside the container
+                            kill_cmd = f'kill -9 {pid}'
+                            kill_exec = self.docker_api_client.exec_create(
+                                self.container.id, kill_cmd
+                            )
+                            self.docker_api_client.exec_start(kill_exec['Id'])
+                    except Exception as kill_err:
+                        logger.warning(
+                            f"[SESSION {id}] Failed to kill Docker exec "
+                            f"process: {kill_err}"
+                        )
+                elif session["process"] is not None:
+                    # Normal non-blocking session with socket
+                    session["process"].close()
             with self._session_lock:
                 if id in self.shell_sessions:
                     self.shell_sessions[id]["running"] = False
