@@ -31,7 +31,7 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit, RegisteredAgentToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit, manual_timeout
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -96,10 +96,12 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 
 __all__ = [
     'BaseToolkit',
+    'manual_timeout',
     'FunctionTool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
@@ -183,5 +185,6 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    "OutlookMailToolkit",
     'EarthScienceToolkit',
 ]
