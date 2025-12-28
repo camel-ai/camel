@@ -4016,12 +4016,22 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream) or inspect.isgenerator(response):
+            # Check for Stream, generator, or third-party wrappers
+            if (
+                isinstance(response, Stream)
+                or inspect.isgenerator(response)
+                or (
+                    hasattr(response, '__iter__')
+                    and hasattr(response, '__enter__')
+                    and not hasattr(response, 'get_final_completion')
+                    and not isinstance(response, ChatCompletion)
+                )
+            ):
                 (
                     stream_completed,
                     tool_calls_complete,
                 ) = yield from self._process_stream_chunks_with_accumulator(
-                    response,
+                    response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -4060,11 +4070,9 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__enter__') and hasattr(
-                response, '__exit__'
-            ):
+            elif hasattr(response, 'get_final_completion'):
                 # Handle structured output stream (ChatCompletionStreamManager)
-                with response as stream:
+                with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
                     for event in stream:
@@ -4153,7 +4161,9 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                model_response = self._handle_batch_response(
+                    response  # type: ignore[arg-type]
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -4871,11 +4881,16 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            # Note: Also check for async generators since some model backends
-            # (e.g., GeminiModel) wrap AsyncStream in async generators for
-            # additional processing
-            if isinstance(response, AsyncStream) or inspect.isasyncgen(
-                response
+            # Check for AsyncStream, async generator, or third-party wrappers
+            if (
+                isinstance(response, AsyncStream)
+                or inspect.isasyncgen(response)
+                or (
+                    hasattr(response, '__aiter__')
+                    and hasattr(response, '__aenter__')
+                    and not hasattr(response, 'get_final_completion')
+                    and not isinstance(response, ChatCompletion)
+                )
             ):
                 stream_completed = False
                 tool_calls_complete = False
@@ -4884,7 +4899,7 @@ class ChatAgent(BaseAgent):
                 async for (
                     item
                 ) in self._aprocess_stream_chunks_with_accumulator(
-                    response,
+                    response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -4931,12 +4946,10 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__aenter__') and hasattr(
-                response, '__aexit__'
-            ):
+            elif hasattr(response, 'get_final_completion'):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
-                async with response as stream:
+                async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
                     async for event in stream:
@@ -5027,7 +5040,9 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                model_response = self._handle_batch_response(
+                    response  # type: ignore[arg-type]
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
