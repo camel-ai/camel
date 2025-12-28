@@ -12,7 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import json
 import logging
+from datetime import datetime
+from pathlib import Path
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -26,6 +29,10 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load environment variables from .env.test file
 
 logging.getLogger('camel.agents').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
@@ -36,8 +43,8 @@ logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
 USER_DATA_DIR = "User_Data"
 
 model_backend = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_platform=ModelPlatformType.AZURE,
+    model_type=ModelType.GPT_4_1,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
@@ -67,7 +74,8 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
-    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_get_page_snapshot",
+    "browser_get_som_screenshot", # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -81,6 +89,7 @@ web_toolkit_custom = HybridBrowserToolkit(
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
     viewport_limit=True,
+    cdp_url="http://localhost:9223"
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
@@ -88,19 +97,93 @@ print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
-    max_iteration=10,
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant
-websites to get the news and write it in markdown.
+Using https://www.google.com/travel/flights/
+Book a journey with return option on same day from Edinburg to Manchester on 2025 December 29th and show me the lowest price option available.
 
-I mean you need to browse multiple websites. After visiting each website,
-return to the Google search results page and click on other websites.
-
-Use enter to confirm search or input.
-If you see a cookie page, click accept all.
+注意用enter来确认输入信息，填写日期的时候先点击日期输入框再在弹出框输入日期文本。最后要点击搜索按钮来确认搜索，并搜索到具体的航班信息
 """
+
+
+def save_agent_log(agent, task_prompt, response, log_dir="./agent_logs"):
+    """Save agent communications and token usage to a JSON file.
+
+    Args:
+        agent: The ChatAgent instance
+        task_prompt: The task prompt string
+        response: The ChatAgentResponse object
+        log_dir: Directory to save logs (default: ./agent_logs)
+    """
+    # Create log directory if it doesn't exist
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+    # Generate timestamp-based filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = Path(log_dir) / f"agent_log_{timestamp}.json"
+
+    # Extract token usage
+    usage = response.info.get('usage', {})
+    prompt_tokens = usage.get('prompt_tokens', 0) if usage else 0
+    completion_tokens = usage.get('completion_tokens', 0) if usage else 0
+    total_tokens = usage.get('total_tokens', 0) if usage else 0
+
+    # Extract all messages from agent's memory
+    all_messages = []
+    for msg in agent.memory.get_context():
+        msg_dict = {
+            'role': msg.role_name,
+            'content': msg.content,
+            'role_type': str(msg.role_type) if hasattr(msg, 'role_type') else None,
+        }
+
+        # Add function call info if available
+        if hasattr(msg, 'func_name') and msg.func_name:
+            msg_dict['func_name'] = msg.func_name
+        if hasattr(msg, 'func_args') and msg.func_args:
+            msg_dict['func_args'] = msg.func_args
+        if hasattr(msg, 'func_result') and msg.func_result:
+            msg_dict['func_result'] = str(msg.func_result)[:500]  # Truncate long results
+
+        all_messages.append(msg_dict)
+
+    # Create log data structure
+    log_data = {
+        'timestamp': datetime.now().isoformat(),
+        'task_prompt': task_prompt,
+        'token_usage': {
+            'prompt_tokens': prompt_tokens,
+            'completion_tokens': completion_tokens,
+            'total_tokens': total_tokens
+        },
+        'response_info': {
+            'terminated': response.terminated,
+            'num_tokens': response.info.get('num_tokens', 0),
+            'termination_reasons': response.info.get('termination_reasons', []),
+            'id': response.info.get('id'),
+        },
+        'final_response': response.msgs[0].content if response.msgs else None,
+        'all_communications': all_messages,
+        'tool_calls': [
+            {
+                'func_name': tc.func_name,
+                'args': tc.args,
+                'result': str(tc.result)[:500] if tc.result else None  # Truncate long results
+            }
+            for tc in response.info.get('tool_calls', [])
+        ]
+    }
+
+    # Save to file
+    with open(log_file, 'w', encoding='utf-8') as f:
+        json.dump(log_data, f, indent=2, ensure_ascii=False)
+
+    print(f"\n{'='*60}")
+    print(f"Agent log saved to: {log_file}")
+    print(f"{'='*60}")
+
+    return log_file
 
 
 async def main() -> None:
@@ -111,6 +194,21 @@ async def main() -> None:
         print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
         print("\nResponse from agent:")
         print(response.msgs[0].content if response.msgs else "<no response>")
+
+        # Extract and display token usage
+        usage = response.info.get('usage', {})
+        if usage:
+            print(f"\n{'='*60}")
+            print("Token Usage Summary:")
+            print(f"{'='*60}")
+            print(f"Prompt tokens:     {usage.get('prompt_tokens', 0):,}")
+            print(f"Completion tokens: {usage.get('completion_tokens', 0):,}")
+            print(f"Total tokens:      {usage.get('total_tokens', 0):,}")
+            print(f"{'='*60}")
+
+        # Save detailed log
+        log_file = save_agent_log(agent, TASK_PROMPT, response)
+
     finally:
         # Ensure browser is closed properly
         print("\nClosing browser...")

@@ -80,6 +80,9 @@ class ActionReplayer:
             Dict[str, Any]
         ] = []  # Track all recovery attempts
 
+        # Replay action logging
+        self.replay_actions_log: List[Dict[str, Any]] = []  # Track actions executed during replay
+
     def get_cdp_url(self) -> Optional[str]:
         """Get the CDP WebSocket URL."""
         try:
@@ -239,7 +242,6 @@ class ActionReplayer:
             'get_tab_info',
             'get_page_snapshot',
             'get_som_screenshot',
-            'browser_get_som_screenshot',
             'console_view',
             'get_page_links',
         }
@@ -860,6 +862,15 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             print("  ✓ Action executed successfully")
 
+            # Log this replay action for later filtering
+            import datetime
+            self.replay_actions_log.append({
+                'timestamp': datetime.datetime.now().isoformat(),
+                'action': action_name,
+                'inputs': {'args': new_args, 'kwargs': inputs.get('kwargs', {})},
+                'result': result if isinstance(result, (dict, str, list, int, float, bool, type(None))) else str(result),
+            })
+
             # Check if action failed
             action_failed = False
             error_message = ""
@@ -985,6 +996,17 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             self.action_history.append(
                                 {'action': action_name, 'label': target_label}
                             )
+
+                            # Log this recovery retry action for later filtering
+                            import datetime
+                            self.replay_actions_log.append({
+                                'timestamp': datetime.datetime.now().isoformat(),
+                                'action': action_name,
+                                'inputs': {'args': retry_args, 'kwargs': {}},
+                                'result': retry_result if isinstance(retry_result, (dict, str, list, int, float, bool, type(None))) else str(retry_result),
+                                'recovery_retry': True,  # Mark as recovery retry
+                            })
+
                             return True
                 else:
                     print("\n✗ Agent could not find suitable element")
@@ -1091,6 +1113,17 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             self.action_history.append(
                                 {'action': action_name, 'label': target_label}
                             )
+
+                            # Log this recovery retry action for later filtering
+                            import datetime
+                            self.replay_actions_log.append({
+                                'timestamp': datetime.datetime.now().isoformat(),
+                                'action': action_name,
+                                'inputs': {'args': retry_args, 'kwargs': {}},
+                                'result': retry_result if isinstance(retry_result, (dict, str, list, int, float, bool, type(None))) else str(retry_result),
+                                'recovery_retry': True,  # Mark as recovery retry
+                            })
+
                             return True
                     except Exception as retry_e:
                         print(f"  ✗ Retry also failed: {retry_e}")
