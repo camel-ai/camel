@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import TYPE_CHECKING, List, Literal, Optional
+import inspect
+from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypeVar
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -21,8 +22,40 @@ from camel.utils import AgentOpsMeta, Constants, with_timeout
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
 
+F = TypeVar('F', bound=Callable)
 
 logger = get_logger(__name__)
+
+
+def manual_timeout(func: F) -> F:
+    r"""Decorator to mark a function as having manual timeout handling.
+
+    Use this decorator on toolkit methods that manage their own timeout logic
+    internally but don't have a `timeout` parameter in their signature.
+    This prevents the automatic `with_timeout` wrapper from being applied
+    by `BaseToolkit`.
+
+    Note:
+        Methods with a `timeout` parameter in their signature are
+        automatically detected and skipped, so they don't need this
+        decorator.
+
+    Args:
+        func (F): The function to mark as having manual timeout handling.
+
+    Returns:
+        F: The same function with `_manual_timeout` attribute set to True.
+
+    Example:
+        >>> class MyToolkit(BaseToolkit):
+        ...     @manual_timeout
+        ...     def long_running_task(self, max_wait: int = 30):
+        ...         # This method manages timeout internally using max_wait
+        ...         # but doesn't use 'timeout' as the parameter name
+        ...         pass
+    """
+    func._manual_timeout = True  # type: ignore[attr-defined]
+    return func
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
@@ -49,8 +82,17 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         for attr_name, attr_value in cls.__dict__.items():
             if callable(attr_value) and not attr_name.startswith("__"):
                 # Skip methods that have manual timeout management
-                if not getattr(attr_value, '_manual_timeout', False):
-                    setattr(cls, attr_name, with_timeout(attr_value))
+                if getattr(attr_value, '_manual_timeout', False):
+                    continue
+                # Auto-detect: skip methods that have 'timeout' in signature
+                try:
+                    sig = inspect.signature(attr_value)
+                    if 'timeout' in sig.parameters:
+                        continue
+                except (ValueError, TypeError):
+                    # Some built-in functions don't have signatures
+                    pass
+                setattr(cls, attr_name, with_timeout(attr_value))
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
