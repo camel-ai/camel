@@ -715,8 +715,13 @@ class TerminalToolkit(BaseToolkit):
                     exec_thread.join(timeout=timeout)
 
                     if exec_thread.is_alive():
-                        # Timeout: switch to non-blocking mode
-                        raise subprocess.TimeoutExpired(command, timeout)
+                        # Timeout occurred but the exec is still running
+                        # in Docker.
+                        return (
+                            f"Command timed out after {timeout} "
+                            f"seconds. The command may still be running in "
+                            f"the Docker container."
+                        )
 
                     if 'error' in result_container:
                         raise result_container['error']
