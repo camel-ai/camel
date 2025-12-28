@@ -652,13 +652,12 @@ class ChatAgent(BaseAgent):
         if prompt_tokens == 0:
             return
 
-        # Total tokens = prompt + completion
         total_tokens = prompt_tokens + completion_tokens
-
-        # Update the context creator cache if it supports it
         context_creator = self.memory.get_context_creator()
         if hasattr(context_creator, 'set_cached_token_count'):
-            context_creator.set_cached_token_count(total_tokens, message_count)
+            context_creator.set_cached_token_count(
+                total_tokens, message_count + 1
+            )
 
     def _resolve_models(
         self,

@@ -62,8 +62,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
         Args:
             token_count (int): The total token count (prompt + completion)
                 from LLM response usage.
-            message_count (int): The number of messages when this count
-                was computed.
+            message_count (int): The number of messages including the
+                assistant response that will be added to memory.
         """
         self._cached_token_count = token_count
         self._cached_message_count = message_count
