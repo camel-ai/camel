@@ -4044,7 +4044,11 @@ class Workforce(BaseNode):
 
         self._children.append(new_node)
 
-        self._notify_worker_created(new_node, worker_type='SingleAgentWorker')
+        self._notify_worker_created(
+            new_node,
+            worker_type='SingleAgentWorker',
+            role=new_node_conf.role,
+        )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
         )
