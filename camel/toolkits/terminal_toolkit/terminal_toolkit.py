@@ -604,7 +604,7 @@ class TerminalToolkit(BaseToolkit):
         id: str,
         command: str,
         block: bool = True,
-        timeout: float = 20,
+        timeout: float = 20.0,
     ) -> str:
         r"""Executes a shell command in blocking or non-blocking mode.
 
@@ -715,12 +715,16 @@ class TerminalToolkit(BaseToolkit):
                     exec_thread.join(timeout=timeout)
 
                     if exec_thread.is_alive():
-                        # Timeout occurred but the exec is still running
-                        # in Docker.
+                        # Timeout occurred - switch to non-blocking mode
+                        # Note: The Docker exec continues running in the
+                        # container.
+                        self._write_to_log(
+                            self.blocking_log_file, log_entry + "\n"
+                        )
                         return (
-                            f"Command timed out after {timeout} "
-                            f"seconds. The command may still be running in "
-                            f"the Docker container."
+                            f"Command did not complete within {timeout} "
+                            f"seconds. Process continues in background as "
+                            f"session '{id}'."
                         )
 
                     if 'error' in result_container:
