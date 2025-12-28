@@ -723,8 +723,7 @@ class TerminalToolkit(BaseToolkit):
                         )
                         return (
                             f"Command did not complete within {timeout} "
-                            f"seconds. Process continues in background as "
-                            f"session '{id}'."
+                            f"seconds. Process continues in background."
                         )
 
                     if 'error' in result_container:
