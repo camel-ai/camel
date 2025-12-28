@@ -31,7 +31,7 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit, RegisteredAgentToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit, manual_timeout
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -101,6 +101,7 @@ from .earth_science_toolkit import EarthScienceToolkit
 
 __all__ = [
     'BaseToolkit',
+    'manual_timeout',
     'FunctionTool',
     'get_openai_function_schema',
     'get_openai_tool_schema',

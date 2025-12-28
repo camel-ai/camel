@@ -23,6 +23,7 @@ from queue import Empty, Full, Queue
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
+from camel.toolkits import manual_timeout
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.toolkits.terminal_toolkit.utils import (
@@ -192,10 +193,8 @@ class TerminalToolkit(BaseToolkit):
                     "provided when using Docker backend."
                 )
             try:
-                # APIClient is used for operations that need a timeout,
-                # like exec_start
                 self.docker_api_client = docker.APIClient(
-                    base_url='unix://var/run/docker.sock', timeout=self.timeout
+                    base_url='unix://var/run/docker.sock'
                 )
                 self.docker_client = docker.from_env()
                 try:
@@ -600,7 +599,9 @@ class TerminalToolkit(BaseToolkit):
         )
         return "".join(output_parts) + warning_message
 
-    def shell_exec(self, id: str, command: str, block: bool = True) -> str:
+    def shell_exec(
+        self, id: str, command: str, block: bool = True, timeout: int = 20
+    ) -> str:
         r"""Executes a shell command in blocking or non-blocking mode.
 
         Args:
@@ -610,9 +611,16 @@ class TerminalToolkit(BaseToolkit):
             block (bool, optional): Determines the execution mode. Defaults to
                 True. If `True` (blocking mode), the function waits for the
                 command to complete and returns the full output. Use this for
-                most commands . If `False` (non-blocking mode), the function
+                most commands. If `False` (non-blocking mode), the function
                 starts the command in the background. Use this only for
                 interactive sessions or long-running tasks, or servers.
+            timeout (int, optional): The maximum time in seconds to wait for
+                the command to complete in blocking mode. Defaults to 20.
+                If the command does not complete within the timeout, it will
+                be restarted automatically as a non-blocking background
+                session. You can then use `shell_view(id)` to check output,
+                or `shell_kill_process(id)` to terminate it. This parameter is
+                ignored in non-blocking mode.
 
         Returns:
             str: The output of the command execution, which varies by mode.
@@ -624,6 +632,8 @@ class TerminalToolkit(BaseToolkit):
                 `shell_write_to_process(id, "input")` to send input, and
                 `shell_kill_process(id)` to terminate.
         """
+        original_command = command
+
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
@@ -657,6 +667,7 @@ class TerminalToolkit(BaseToolkit):
                 f"{time.ctime()} ---\n> {command}\n"
             )
             output = ""
+
             try:
                 if not self.use_docker_backend:
                     # LOCAL BLOCKING
@@ -665,7 +676,7 @@ class TerminalToolkit(BaseToolkit):
                         capture_output=True,
                         text=True,
                         shell=True,
-                        timeout=self.timeout,
+                        timeout=timeout,
                         cwd=self.working_dir,
                         encoding="utf-8",
                     )
@@ -675,17 +686,40 @@ class TerminalToolkit(BaseToolkit):
                         f"\nSTDERR:\n{stderr}" if stderr else ""
                     )
                 else:
-                    # DOCKER BLOCKING
+                    # DOCKER BLOCKING with timeout
                     assert (
                         self.docker_workdir is not None
                     )  # Docker backend always has workdir
                     exec_instance = self.docker_api_client.exec_create(
                         self.container.id, command, workdir=self.docker_workdir
                     )
-                    exec_output = self.docker_api_client.exec_start(
-                        exec_instance['Id']
+                    exec_id = exec_instance['Id']
+
+                    # Use thread to implement timeout for docker exec
+                    result_container: Dict[str, Any] = {}
+
+                    def run_exec():
+                        try:
+                            result_container['output'] = (
+                                self.docker_api_client.exec_start(exec_id)
+                            )
+                        except Exception as e:
+                            result_container['error'] = e
+
+                    exec_thread = threading.Thread(target=run_exec)
+                    exec_thread.start()
+                    exec_thread.join(timeout=timeout)
+
+                    if exec_thread.is_alive():
+                        # Timeout: switch to non-blocking mode
+                        raise subprocess.TimeoutExpired(command, timeout)
+
+                    if 'error' in result_container:
+                        raise result_container['error']
+
+                    output = result_container['output'].decode(
+                        'utf-8', errors='ignore'
                     )
-                    output = exec_output.decode('utf-8', errors='ignore')
 
                 log_entry += f"--- Output ---\n{output}\n"
                 if output.strip():
@@ -693,22 +727,15 @@ class TerminalToolkit(BaseToolkit):
                 else:
                     return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
-                error_msg = (
-                    f"Error: Command timed out after {self.timeout} seconds."
+                # Timeout: switch to non-blocking mode
+                self._write_to_log(self.blocking_log_file, log_entry + "\n")
+                logger.warning(
+                    f"Command did not complete within {timeout} seconds. "
+                    f"Process continues in background as session '{id}'."
                 )
-                log_entry += f"--- Error ---\n{error_msg}\n"
-                return error_msg
+                return self.shell_exec(id, original_command, block=False)
             except Exception as e:
-                if (
-                    isinstance(e, (subprocess.TimeoutExpired, TimeoutError))
-                    or "timed out" in str(e).lower()
-                ):
-                    error_msg = (
-                        f"Error: Command timed out after "
-                        f"{self.timeout} seconds."
-                    )
-                else:
-                    error_msg = f"Error executing command: {e}"
+                error_msg = f"Error executing command: {e}"
                 log_entry += f"--- Error ---\n{error_msg}\n"
                 return error_msg
             finally:
@@ -1059,6 +1086,7 @@ class TerminalToolkit(BaseToolkit):
         self.cleanup()
         return False
 
+    @manual_timeout
     def cleanup(self):
         r"""Clean up all active sessions."""
         with self._session_lock:
@@ -1077,16 +1105,13 @@ class TerminalToolkit(BaseToolkit):
                         f"during cleanup: {e}"
                     )
 
-    cleanup._manual_timeout = True  # type: ignore[attr-defined]
-
+    @manual_timeout
     def __del__(self):
         r"""Fallback cleanup in destructor."""
         try:
             self.cleanup()
         except Exception:
             pass
-
-    __del__._manual_timeout = True  # type: ignore[attr-defined]
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
