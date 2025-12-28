@@ -17,6 +17,7 @@ import functools
 import inspect
 import logging
 import textwrap
+import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
@@ -36,6 +37,10 @@ logger = logging.getLogger(__name__)
 
 # Shared thread pool for running sync tools without blocking the event loop
 _SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
+
+# Persistent event loop to avoid httpx connection pool issues
+_PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
+_PERSISTENT_LOOP_LOCK = threading.Lock()
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -509,7 +514,7 @@ class FunctionTool:
                 has_running_loop = False
 
             if has_running_loop:
-                # Already in an async context - warn and run in new thread
+                # Already in an async context
                 warnings.warn(
                     f"Async tool '{self.func.__name__}' is being called "
                     f"synchronously within an async context. Consider using "
@@ -518,11 +523,12 @@ class FunctionTool:
                     RuntimeWarning,
                     stacklevel=2,
                 )
-                # Run in a new thread with its own event loop
-                future = _SYNC_TOOL_EXECUTOR.submit(asyncio.run, result)
+                # Must run in separate thread to avoid blocking current loop
+                future = _SYNC_TOOL_EXECUTOR.submit(
+                    self._run_async_in_persistent_loop, result
+                )
                 return future.result()
             else:
-                # No running loop - safe to use asyncio.run()
                 warnings.warn(
                     f"Async tool '{self.func.__name__}' is being called "
                     f"synchronously. Consider using 'await tool.async_call()' "
@@ -530,9 +536,30 @@ class FunctionTool:
                     RuntimeWarning,
                     stacklevel=2,
                 )
-                return asyncio.run(result)
+                return self._run_async_in_persistent_loop(result)
 
         return result
+
+    @staticmethod
+    def _run_async_in_persistent_loop(coro):
+        r"""Run coroutine in persistent loop to preserve httpx connections."""
+        global _PERSISTENT_LOOP
+        with _PERSISTENT_LOOP_LOCK:
+            need_new_loop = (
+                _PERSISTENT_LOOP is None
+                or _PERSISTENT_LOOP.is_closed()
+                or not _PERSISTENT_LOOP.is_running()
+            )
+            if need_new_loop:
+                _PERSISTENT_LOOP = asyncio.new_event_loop()
+                t = threading.Thread(
+                    target=_PERSISTENT_LOOP.run_forever, daemon=True
+                )
+                t.start()
+                while not _PERSISTENT_LOOP.is_running():
+                    pass  # Wait for loop to start
+        future = asyncio.run_coroutine_threadsafe(coro, _PERSISTENT_LOOP)
+        return future.result()
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
