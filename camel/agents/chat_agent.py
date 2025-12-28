@@ -1175,8 +1175,13 @@ class ChatAgent(BaseAgent):
                 - A boolean indicating whether truncation occurred
         """
         serialized = self._serialize_tool_result(result)
-        # Leave 10% room for system message, user input, and model response
-        max_tokens = int(self.token_limit * 0.9)
+        # Use summarize_threshold if set, otherwise default to 90%
+        threshold_ratio = (
+            min(0.9, self.summarize_threshold / 100)
+            if self.summarize_threshold is not None
+            else 0.9
+        )
+        max_tokens = int(self.token_limit * threshold_ratio)
         result_tokens = self._get_token_count(serialized)
 
         if result_tokens <= max_tokens:
