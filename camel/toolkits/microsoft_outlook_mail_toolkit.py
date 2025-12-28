@@ -826,7 +826,7 @@ class OutlookMailToolkit(BaseToolkit):
 
         return mail_message
 
-    def outlook_send_email(
+    async def outlook_send_email(
         self,
         to_email: List[str],
         subject: str,
@@ -896,7 +896,7 @@ class OutlookMailToolkit(BaseToolkit):
                 save_to_sent_items=save_to_sent_items,
             )
 
-            self.client.me.send_mail.post(request)
+            await self.client.me.send_mail.post(request)
 
             logger.info("Email sent successfully.")
             return {
@@ -909,7 +909,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.exception("Failed to send email")
             return {"error": f"Failed to send email: {e!s}"}
 
-    def outlook_create_draft_email(
+    async def outlook_create_draft_email(
         self,
         to_email: List[str],
         subject: str,
@@ -968,7 +968,7 @@ class OutlookMailToolkit(BaseToolkit):
                 reply_to=reply_to,
             )
 
-            result = self.client.me.messages.post(request_body)
+            result = await self.client.me.messages.post(request_body)
 
             logger.info("Draft email created successfully.")
             return {
@@ -983,7 +983,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_send_draft_email(self, draft_id: str) -> Dict[str, Any]:
+    async def outlook_send_draft_email(self, draft_id: str) -> Dict[str, Any]:
         """Sends a draft email via Microsoft Outlook.
 
         Args:
@@ -997,7 +997,7 @@ class OutlookMailToolkit(BaseToolkit):
                 email sending operation.
         """
         try:
-            self.client.me.messages.by_message_id(draft_id).send.post()
+            await self.client.me.messages.by_message_id(draft_id).send.post()
 
             logger.info(f"Draft email with ID {draft_id} sent successfully.")
             return {
@@ -1010,7 +1010,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_delete_email(self, message_id: str) -> Dict[str, Any]:
+    async def outlook_delete_email(self, message_id: str) -> Dict[str, Any]:
         """Deletes an email from Microsoft Outlook.
 
         Args:
@@ -1023,7 +1023,7 @@ class OutlookMailToolkit(BaseToolkit):
                 deletion operation.
         """
         try:
-            self.client.me.messages.by_message_id(message_id).delete()
+            await self.client.me.messages.by_message_id(message_id).delete()
             logger.info(f"Email with ID {message_id} deleted successfully.")
             return {
                 'status': 'success',
@@ -1035,7 +1035,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_move_message_to_folder(
+    async def outlook_move_message_to_folder(
         self, message_id: str, destination_folder_id: str
     ) -> Dict[str, Any]:
         """Moves an email to a specified folder in Microsoft Outlook.
@@ -1062,7 +1062,7 @@ class OutlookMailToolkit(BaseToolkit):
                 destination_id=destination_folder_id,
             )
             message = self.client.me.messages.by_message_id(message_id)
-            message.move.post(request_body)
+            await message.move.post(request_body)
 
             logger.info(
                 f"Email with ID {message_id} moved to folder "
@@ -1079,7 +1079,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_get_attachments(
+    async def outlook_get_attachments(
         self,
         message_id: str,
         metadata_only: bool = True,
@@ -1120,7 +1120,7 @@ class OutlookMailToolkit(BaseToolkit):
             if metadata_only:
                 request_config = self._build_attachment_query()
 
-            attachments_response = self._fetch_attachments(
+            attachments_response = await self._fetch_attachments(
                 message_id, request_config
             )
             if not attachments_response:
@@ -1180,7 +1180,7 @@ class OutlookMailToolkit(BaseToolkit):
             query_parameters=query_params
         )
 
-    def _fetch_attachments(
+    async def _fetch_attachments(
         self, message_id: str, request_config: Optional[Any] = None
     ):
         """Fetches attachments from the Microsoft Graph API.
@@ -1195,10 +1195,10 @@ class OutlookMailToolkit(BaseToolkit):
             Attachments response from the Graph API.
         """
         if not request_config:
-            return self.client.me.messages.by_message_id(
+            return await self.client.me.messages.by_message_id(
                 message_id
             ).attachments.get()
-        return self.client.me.messages.by_message_id(
+        return await self.client.me.messages.by_message_id(
             message_id
         ).attachments.get(request_configuration=request_config)
 
@@ -1334,7 +1334,7 @@ class OutlookMailToolkit(BaseToolkit):
             recipients.append({'address': email, 'name': name})
         return recipients
 
-    def _extract_message_details(
+    async def _extract_message_details(
         self,
         message: Any,
         return_html_content: bool = False,
@@ -1432,7 +1432,7 @@ class OutlookMailToolkit(BaseToolkit):
             if not include_attachments:
                 return details
 
-            attachments_info = self.outlook_get_attachments(
+            attachments_info = await self.outlook_get_attachments(
                 message_id=details['message_id'],
                 metadata_only=attachment_metadata_only,
                 include_inline_attachments=include_inline_attachments,
@@ -1446,7 +1446,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def outlook_get_message(
+    async def outlook_get_message(
         self,
         message_id: str,
         return_html_content: bool = False,
@@ -1491,14 +1491,16 @@ class OutlookMailToolkit(BaseToolkit):
                 is_read, is_draft, body_preview, and optionally attachments.
         """
         try:
-            message = self.client.me.messages.by_message_id(message_id).get()
+            message = await self.client.me.messages.by_message_id(
+                message_id
+            ).get()
 
             if not message:
                 error_msg = f"Message with ID {message_id} not found"
                 logger.error(error_msg)
                 return {"error": error_msg}
 
-            details = self._extract_message_details(
+            details = await self._extract_message_details(
                 message=message,
                 return_html_content=return_html_content,
                 include_attachments=include_attachments,
@@ -1518,7 +1520,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def _get_messages_from_folder(
+    async def _get_messages_from_folder(
         self,
         folder_id: str,
         request_config,
@@ -1533,7 +1535,7 @@ class OutlookMailToolkit(BaseToolkit):
             Messages response from the Graph API, or None if folder not found.
         """
         try:
-            messages = self.client.me.mail_folders.by_mail_folder_id(
+            messages = await self.client.me.mail_folders.by_mail_folder_id(
                 folder_id
             ).messages.get(request_configuration=request_config)
             return messages
@@ -1543,7 +1545,7 @@ class OutlookMailToolkit(BaseToolkit):
             )
             return None
 
-    def outlook_list_messages(
+    async def outlook_list_messages(
         self,
         folder_ids: Optional[List[str]] = None,
         filter_query: Optional[str] = None,
@@ -1625,13 +1627,13 @@ class OutlookMailToolkit(BaseToolkit):
             )
             if not folder_ids:
                 # Search entire mailbox in a single API call
-                messages_response = self.client.me.messages.get(
+                messages_response = await self.client.me.messages.get(
                     request_configuration=request_config
                 )
                 all_messages = []
                 if messages_response and messages_response.value:
                     for message in messages_response.value:
-                        details = self._extract_message_details(
+                        details = await self._extract_message_details(
                             message=message,
                             return_html_content=return_html_content,
                             include_attachments=include_attachment_metadata,
@@ -1656,7 +1658,7 @@ class OutlookMailToolkit(BaseToolkit):
             # Search specific folders (requires multiple API calls)
             all_messages = []
             for folder_id in folder_ids:
-                messages_response = self._get_messages_from_folder(
+                messages_response = await self._get_messages_from_folder(
                     folder_id=folder_id,
                     request_config=request_config,
                 )
@@ -1666,7 +1668,7 @@ class OutlookMailToolkit(BaseToolkit):
 
                 # Extract details from each message
                 for message in messages_response.value:
-                    details = self._extract_message_details(
+                    details = await self._extract_message_details(
                         message=message,
                         return_html_content=return_html_content,
                         include_attachments=include_attachment_metadata,
@@ -1695,7 +1697,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_reply_to_email(
+    async def outlook_reply_to_email(
         self,
         message_id: str,
         content: str,
@@ -1730,10 +1732,10 @@ class OutlookMailToolkit(BaseToolkit):
                 request_body_reply_all = ReplyAllPostRequestBody(
                     comment=content
                 )
-                message_request.reply_all.post(request_body_reply_all)
+                await message_request.reply_all.post(request_body_reply_all)
             else:
                 request_body = ReplyPostRequestBody(comment=content)
-                message_request.reply.post(request_body)
+                await message_request.reply.post(request_body)
 
             reply_type = "Reply All" if reply_all else "Reply"
             logger.info(
@@ -1753,7 +1755,7 @@ class OutlookMailToolkit(BaseToolkit):
             logger.error(error_msg)
             return {"error": error_msg}
 
-    def outlook_update_draft_message(
+    async def outlook_update_draft_message(
         self,
         message_id: str,
         subject: Optional[str] = None,
@@ -1827,7 +1829,7 @@ class OutlookMailToolkit(BaseToolkit):
             )
 
             # Update the message using PATCH
-            self.client.me.messages.by_message_id(message_id).patch(
+            await self.client.me.messages.by_message_id(message_id).patch(
                 mail_message
             )
 
