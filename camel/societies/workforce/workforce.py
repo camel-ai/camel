@@ -5258,6 +5258,9 @@ class Workforce(BaseNode):
                                     )
                                 )
 
+                            # Mark as failed for recovery
+                            returned_task.failure_count += 1
+
                             task_failed_event = TaskFailedEvent(
                                 task_id=returned_task.id,
                                 worker_id=returned_task.assigned_worker_id,
@@ -5278,9 +5281,6 @@ class Workforce(BaseNode):
                             )
                             for cb in self._callbacks:
                                 cb.log_task_failed(task_failed_event)
-
-                            # Mark as failed for recovery
-                            returned_task.failure_count += 1
                             returned_task.state = TaskState.FAILED
                             returned_task.result = (
                                 f"Quality insufficient (score: "
