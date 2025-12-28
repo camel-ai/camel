@@ -588,11 +588,19 @@ class Workforce(BaseNode):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         r"""Emit a worker-created event to all registered callbacks."""
+        if metadata is None:
+            _metadata: Dict[str, Any] = {
+                'description': worker_node.description
+            }
+        else:
+            _metadata = metadata.copy()
+            _metadata.setdefault("description", worker_node.description)
+
         event = WorkerCreatedEvent(
             worker_id=worker_node.node_id,
             worker_type=worker_type or type(worker_node).__name__,
             role=role or worker_node.description,
-            metadata=metadata,
+            metadata=_metadata,
         )
         for cb in self._callbacks:
             cb.log_worker_created(event)
@@ -4040,7 +4048,6 @@ class Workforce(BaseNode):
             new_node,
             worker_type='SingleAgentWorker',
             role=new_node_conf.role,
-            metadata={'description': new_node_conf.description},
         )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
