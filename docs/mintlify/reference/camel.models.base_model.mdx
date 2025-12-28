@@ -1,5 +1,141 @@
 <a id="camel.models.base_model"></a>
 
+<a id="camel.models.base_model._StreamLogger"></a>
+
+## _StreamLogger
+
+```python
+class _StreamLogger:
+```
+
+Base for stream logging wrappers.
+
+<a id="camel.models.base_model._StreamLogger.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, log_path: Optional[str], log_enabled: bool):
+```
+
+<a id="camel.models.base_model._StreamLogger._collect"></a>
+
+### _collect
+
+```python
+def _collect(self, chunk: ChatCompletionChunk):
+```
+
+<a id="camel.models.base_model._StreamLogger._log"></a>
+
+### _log
+
+```python
+def _log(self):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper"></a>
+
+## _SyncStreamWrapper
+
+```python
+class _SyncStreamWrapper(_StreamLogger):
+```
+
+Sync stream wrapper with logging.
+
+<a id="camel.models.base_model._SyncStreamWrapper.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    stream: Stream[ChatCompletionChunk],
+    log_path: Optional[str],
+    log_enabled: bool
+):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper.__next__"></a>
+
+### __next__
+
+```python
+def __next__(self):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(self, *_):
+```
+
+<a id="camel.models.base_model._SyncStreamWrapper.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+<a id="camel.models.base_model._AsyncStreamWrapper"></a>
+
+## _AsyncStreamWrapper
+
+```python
+class _AsyncStreamWrapper(_StreamLogger):
+```
+
+Async stream wrapper with logging.
+
+<a id="camel.models.base_model._AsyncStreamWrapper.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    stream: AsyncStream[ChatCompletionChunk],
+    log_path: Optional[str],
+    log_enabled: bool
+):
+```
+
+<a id="camel.models.base_model._AsyncStreamWrapper.__aiter__"></a>
+
+### __aiter__
+
+```python
+def __aiter__(self):
+```
+
+<a id="camel.models.base_model._AsyncStreamWrapper.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
 <a id="camel.models.base_model.ModelBackendMeta"></a>
 
 ## ModelBackendMeta
