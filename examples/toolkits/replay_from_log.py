@@ -543,30 +543,40 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         agent_msg = response.msgs[0].content.strip()
 
         # Extract token usage from recovery agent
+        prompt_tokens = 0
+        completion_tokens = 0
         tokens_used = 0
+
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
                 usage = response.info['usage']
                 if hasattr(usage, 'prompt_tokens') and hasattr(
                     usage, 'completion_tokens'
                 ):
-                    tokens_used = usage.prompt_tokens + usage.completion_tokens
+                    prompt_tokens = usage.prompt_tokens
+                    completion_tokens = usage.completion_tokens
+                    tokens_used = prompt_tokens + completion_tokens
                 elif isinstance(usage, dict):
-                    tokens_used = usage.get('prompt_tokens', 0) + usage.get(
-                        'completion_tokens', 0
-                    )
+                    prompt_tokens = usage.get('prompt_tokens', 0)
+                    completion_tokens = usage.get('completion_tokens', 0)
+                    tokens_used = prompt_tokens + completion_tokens
 
         print(f"Agent response: {agent_msg}")
         if tokens_used > 0:
-            print(f"Tokens used in recovery: {tokens_used}")
+            print(f"Tokens used in recovery: {tokens_used} (prompt: {prompt_tokens}, completion: {completion_tokens})")
         print("=" * 80)
 
         # Record this recovery attempt
+        import datetime
         recovery_record = {
+            'timestamp': datetime.datetime.now().isoformat(),
             'failed_action': failed_action,
             'target_label': target_label,
             'error_message': error_message,
+            'prompt': prompt,  # Full prompt sent to agent
             'agent_response': agent_msg,
+            'prompt_tokens': prompt_tokens,
+            'completion_tokens': completion_tokens,
             'tokens_used': tokens_used,
         }
 

@@ -142,11 +142,15 @@ class SubtaskFunction:
                 )
                 for i in range(recovery_calls_before, recovery_calls_after):
                     if i < len(recovery_history):
-                        tokens = recovery_history[i].get('tokens_used', 0)
-                        self.stats_tracker['token_details'][
-                            'recovery_agent'
-                        ] += tokens
-                        self.stats_tracker['total_tokens'] += tokens
+                        record = recovery_history[i]
+                        prompt_tokens = record.get('prompt_tokens', 0)
+                        completion_tokens = record.get('completion_tokens', 0)
+                        total_tokens = record.get('tokens_used', prompt_tokens + completion_tokens)
+
+                        self.stats_tracker['token_details']['recovery_agent']['prompt'] += prompt_tokens
+                        self.stats_tracker['token_details']['recovery_agent']['completion'] += completion_tokens
+                        self.stats_tracker['token_details']['recovery_agent']['total'] += total_tokens
+                        self.stats_tracker['total_tokens'] += total_tokens
 
             print(f"\n{'─' * 80}")
             print("✅ Subtask Execution Result:")
@@ -278,10 +282,16 @@ class SubtaskAgent:
             'subtask_calls': 0,
             'browser_tool_calls': 0,
             'agent_recovery_calls': 0,
-            'token_details': {'main_agent': 0, 'recovery_agent': 0},
+            'token_details': {
+                'main_agent': {'prompt': 0, 'completion': 0, 'total': 0},
+                'recovery_agent': {'prompt': 0, 'completion': 0, 'total': 0}
+            },
             'subtask_details': {},  # Track each subtask call
             'browser_tool_details': {},  # Track each browser tool call
         }
+
+        # Agent communication log
+        self.agent_communication_log = []
 
     async def initialize(self):
         """Initialize toolkit and agent."""
@@ -387,15 +397,79 @@ class SubtaskAgent:
         print("✓ Model created")
 
         # Get toolkit tools (similar to hybrid_browser_toolkit_example.py)
-        browser_tools = self.toolkit.get_tools()
-        print(f"✓ Got {len(browser_tools)} browser tools")
+        raw_browser_tools = self.toolkit.get_tools()
+        print(f"✓ Got {len(raw_browser_tools)} browser tools")
+
+        # Wrap browser tools to log their calls
+        browser_tools = []
+        for tool in raw_browser_tools:
+            # Get the actual function from FunctionTool
+            if hasattr(tool, 'func'):
+                actual_func = tool.func
+                tool_name = actual_func.__name__ if hasattr(actual_func, '__name__') else 'unknown'
+            else:
+                # If it's already a function, use it directly
+                actual_func = tool
+                tool_name = tool.__name__ if hasattr(tool, '__name__') else 'unknown'
+
+            # Create a logging wrapper
+            def create_logging_wrapper(func, name, agent_ref):
+                if asyncio.iscoroutinefunction(func):
+                    async def async_logged_func(*args, **kwargs):
+                        import datetime
+                        call_log = {
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'type': 'browser_tool_call',
+                            'tool_name': name,
+                            'arguments': {'args': args, 'kwargs': kwargs},
+                            'result': None
+                        }
+
+                        try:
+                            result = await func(*args, **kwargs)
+                            call_log['result'] = str(result)[:500]  # Truncate long results
+                            return result
+                        finally:
+                            if hasattr(agent_ref, 'agent_communication_log'):
+                                agent_ref.agent_communication_log.append(call_log)
+
+                    async_logged_func.__name__ = name
+                    async_logged_func.__doc__ = getattr(func, '__doc__', '')
+                    return async_logged_func
+                else:
+                    def sync_logged_func(*args, **kwargs):
+                        import datetime
+                        call_log = {
+                            'timestamp': datetime.datetime.now().isoformat(),
+                            'type': 'browser_tool_call',
+                            'tool_name': name,
+                            'arguments': {'args': args, 'kwargs': kwargs},
+                            'result': None
+                        }
+
+                        try:
+                            result = func(*args, **kwargs)
+                            call_log['result'] = str(result)[:500]  # Truncate long results
+                            return result
+                        finally:
+                            if hasattr(agent_ref, 'agent_communication_log'):
+                                agent_ref.agent_communication_log.append(call_log)
+
+                    sync_logged_func.__name__ = name
+                    sync_logged_func.__doc__ = getattr(func, '__doc__', '')
+                    return sync_logged_func
+
+            wrapped_func = create_logging_wrapper(actual_func, tool_name, self)
+            browser_tools.append(wrapped_func)
+
+        print(f"✓ Wrapped {len(browser_tools)} browser tools with logging")
 
         # Create subtask tool wrappers
         print("Creating subtask tool wrappers...")
         subtask_tools = []
 
         for subtask_id, subtask_func in self.subtask_functions.items():
-            # Create wrapper with proper signature
+            # Create wrapper with proper signature that logs calls
             if subtask_func.variables:
                 # Build parameter list for the function signature
                 param_list = []
@@ -410,7 +484,7 @@ class SubtaskAgent:
                 params_str = ", ".join(param_list)
                 params_doc = "\n".join(param_docs)
 
-                # Create function code dynamically
+                # Create function code dynamically with logging
                 func_code = f"""
 async def subtask_{subtask_func.subtask_id}({params_str}):
     \"\"\"
@@ -423,8 +497,27 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
         str: JSON result containing status, message, and page snapshot
     \"\"\"
     import json
+    import datetime
+
+    # Log the call
     kwargs = {{{", ".join([f"'{var}': {var}" for var in subtask_func.variables.keys()])}}}
+
+    call_log = {{
+        'timestamp': datetime.datetime.now().isoformat(),
+        'type': 'subtask_call',
+        'subtask_id': '{subtask_func.subtask_id}',
+        'subtask_name': '{subtask_func.name}',
+        'arguments': kwargs,
+        'result': None
+    }}
+
     result = await _sf.execute(**kwargs)
+    call_log['result'] = result
+
+    # Add to agent's communication log
+    if hasattr(_agent, 'agent_communication_log'):
+        _agent.agent_communication_log.append(call_log)
+
     return json.dumps(result, ensure_ascii=False)
 """
             else:
@@ -438,12 +531,30 @@ async def subtask_{subtask_func.subtask_id}():
         str: JSON result containing status, message, and page snapshot
     \"\"\"
     import json
+    import datetime
+
+    # Log the call
+    call_log = {{
+        'timestamp': datetime.datetime.now().isoformat(),
+        'type': 'subtask_call',
+        'subtask_id': '{subtask_func.subtask_id}',
+        'subtask_name': '{subtask_func.name}',
+        'arguments': {{}},
+        'result': None
+    }}
+
     result = await _sf.execute()
+    call_log['result'] = result
+
+    # Add to agent's communication log
+    if hasattr(_agent, 'agent_communication_log'):
+        _agent.agent_communication_log.append(call_log)
+
     return json.dumps(result, ensure_ascii=False)
 """
 
             # Execute the code to create the function
-            local_vars = {"_sf": subtask_func}
+            local_vars = {"_sf": subtask_func, "_agent": self}
             exec(func_code, local_vars)
             wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
 
@@ -524,9 +635,36 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         print("AGENT STARTING TO PROCESS TASK")
         print("=" * 80)
 
+        # Log the user task
+        import datetime
+        timestamp = datetime.datetime.now().isoformat()
+
+        communication_entry = {
+            'timestamp': timestamp,
+            'type': 'main_agent_call',
+            'user_task': user_task,
+            'response': None,
+            'tool_calls': [],  # Will store all tool calls made by agent
+            'tokens': {'prompt': 0, 'completion': 0, 'total': 0}
+        }
+
         # Use astep like hybrid_browser_toolkit_example.py
         print("\nSending task to agent...")
         response = await self.agent.astep(user_task)
+
+        # Log the response
+        if response.msgs:
+            for msg in response.msgs:
+                communication_entry['response'] = msg.content
+
+                # Extract tool calls from the message
+                if hasattr(msg, 'info') and msg.info:
+                    if 'tool_calls' in msg.info:
+                        tool_calls_info = msg.info['tool_calls']
+                        if isinstance(tool_calls_info, list):
+                            for tool_call in tool_calls_info:
+                                if isinstance(tool_call, dict):
+                                    communication_entry['tool_calls'].append(tool_call)
 
         print("\n" + "=" * 80)
         print("AGENT EXECUTION COMPLETED")
@@ -542,26 +680,37 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
                 usage = response.info['usage']
-                if hasattr(usage, 'prompt_tokens') and hasattr(
-                    usage, 'completion_tokens'
-                ):
-                    total_tokens = (
-                        usage.prompt_tokens + usage.completion_tokens
-                    )
-                    self.stats['token_details']['main_agent'] += total_tokens
-                    self.stats['total_tokens'] += total_tokens
-                    print(
-                        f"\n📊 Tokens used in this agent call: {total_tokens}"
-                    )
+                prompt_tokens = 0
+                completion_tokens = 0
+
+                if hasattr(usage, 'prompt_tokens') and hasattr(usage, 'completion_tokens'):
+                    prompt_tokens = usage.prompt_tokens
+                    completion_tokens = usage.completion_tokens
                 elif isinstance(usage, dict):
-                    total_tokens = usage.get('prompt_tokens', 0) + usage.get(
-                        'completion_tokens', 0
-                    )
-                    self.stats['token_details']['main_agent'] += total_tokens
+                    prompt_tokens = usage.get('prompt_tokens', 0)
+                    completion_tokens = usage.get('completion_tokens', 0)
+
+                if prompt_tokens > 0 or completion_tokens > 0:
+                    total_tokens = prompt_tokens + completion_tokens
+                    self.stats['token_details']['main_agent']['prompt'] += prompt_tokens
+                    self.stats['token_details']['main_agent']['completion'] += completion_tokens
+                    self.stats['token_details']['main_agent']['total'] += total_tokens
                     self.stats['total_tokens'] += total_tokens
-                    print(
-                        f"\n📊 Tokens used in this agent call: {total_tokens}"
-                    )
+
+                    # Update communication entry
+                    communication_entry['tokens'] = {
+                        'prompt': prompt_tokens,
+                        'completion': completion_tokens,
+                        'total': total_tokens
+                    }
+
+                    print(f"\n📊 Tokens used in this agent call:")
+                    print(f"   • Prompt: {prompt_tokens}")
+                    print(f"   • Completion: {completion_tokens}")
+                    print(f"   • Total: {total_tokens}")
+
+        # Save communication entry
+        self.agent_communication_log.append(communication_entry)
 
         # Count tool calls from the response
         # Browser tool calls are tracked through function calls in the response
@@ -627,14 +776,52 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         )
 
         print(f"\n💰 Total Tokens Used: {self.stats['total_tokens']}")
-        print(
-            f"   • Main Agent: {self.stats['token_details']['main_agent']} tokens"
-        )
-        print(
-            f"   • Recovery Agent: {self.stats['token_details']['recovery_agent']} tokens"
-        )
+        print("   Main Agent:")
+        print(f"      • Prompt: {self.stats['token_details']['main_agent']['prompt']} tokens")
+        print(f"      • Completion: {self.stats['token_details']['main_agent']['completion']} tokens")
+        print(f"      • Total: {self.stats['token_details']['main_agent']['total']} tokens")
+        print("   Recovery Agent:")
+        print(f"      • Prompt: {self.stats['token_details']['recovery_agent']['prompt']} tokens")
+        print(f"      • Completion: {self.stats['token_details']['recovery_agent']['completion']} tokens")
+        print(f"      • Total: {self.stats['token_details']['recovery_agent']['total']} tokens")
 
         print("\n" + "=" * 80)
+
+    def save_communication_log(self):
+        """Save all agent communications to a JSON file."""
+        import datetime
+
+        # Collect all recovery agent communications from replayers
+        recovery_communications = []
+        for subtask_id, subtask_func in self.subtask_functions.items():
+            if hasattr(subtask_func.replayer, 'recovery_history'):
+                for record in subtask_func.replayer.recovery_history:
+                    recovery_communications.append({
+                        'type': 'recovery_agent_call',
+                        'subtask_id': subtask_id,
+                        **record
+                    })
+
+        # Combine all communications
+        all_communications = {
+            'session_start': datetime.datetime.now().isoformat(),
+            'task_description': self.subtask_config.get('task_description', ''),
+            'main_agent_communications': self.agent_communication_log,
+            'recovery_agent_communications': recovery_communications,
+            'statistics': self.stats
+        }
+
+        # Save to file
+        log_filename = f"agent_communication_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        log_path = Path("camel_logs") / log_filename
+
+        # Create directory if it doesn't exist
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(log_path, 'w', encoding='utf-8') as f:
+            json.dump(all_communications, f, indent=2, ensure_ascii=False)
+
+        print(f"\n📝 Agent communication log saved to: {log_path}")
 
 
 async def main():
@@ -659,16 +846,18 @@ async def main():
 
         # Example task
         task = """
-        Please book a flight from Munich to Paris on January 15, 2026, returning on January 20, 2026.
-        Use the subtask functions when possible to fill in the locations and dates.
-        
-        Tell me the most cheap flight option after you searched result
+Show me the list of one-way flights today (February 17, 2024) from Chicago to Paris.
+
+If you find some task cannot be done by previous subtask, you need to do it by yourself， like click one way
         """
 
         await agent.run(task)
 
         # Print statistics
         agent.print_statistics()
+
+        # Save agent communication log
+        agent.save_communication_log()
 
     finally:
         # Cleanup (similar to hybrid_browser_toolkit_example.py)
