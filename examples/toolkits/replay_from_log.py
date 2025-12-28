@@ -20,9 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.request import urlopen
 
-
 from dotenv import load_dotenv
-import os
 
 load_dotenv()  # Load environment variables from .env.test file
 
@@ -31,9 +29,9 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -47,7 +45,7 @@ class ActionReplayer:
         subtask_config: Optional[str] = None,
         subtask_id: Optional[str] = None,
         variables: Optional[Dict[str, str]] = None,
-        use_agent_recovery: bool = True
+        use_agent_recovery: bool = True,
     ):
         """Initialize the replayer.
 
@@ -78,7 +76,9 @@ class ActionReplayer:
         self.use_agent_recovery = use_agent_recovery
         self.recovery_agent: Optional[ChatAgent] = None
         self.action_history: List[Dict[str, str]] = []
-        self.recovery_history: List[Dict[str, Any]] = []  # Track all recovery attempts
+        self.recovery_history: List[
+            Dict[str, Any]
+        ] = []  # Track all recovery attempts
 
     def get_cdp_url(self) -> Optional[str]:
         """Get the CDP WebSocket URL."""
@@ -89,7 +89,9 @@ class ActionReplayer:
                 data = json.loads(response.read().decode('utf-8'))
                 return data.get('webSocketDebuggerUrl')
         except Exception as e:
-            print(f"Error: Failed to get CDP URL from port {self.cdp_port}: {e}")
+            print(
+                f"Error: Failed to get CDP URL from port {self.cdp_port}: {e}"
+            )
             return None
 
     def load_subtask_config(self) -> None:
@@ -111,14 +113,16 @@ class ActionReplayer:
                     self.subtask_end_index = subtask['end_index']
                     print(f"✓ Found subtask '{subtask['name']}':")
                     print(f"  Description: {subtask['description']}")
-                    print(f"  Actions: {self.subtask_start_index} to {self.subtask_end_index}")
+                    print(
+                        f"  Actions: {self.subtask_start_index} to {self.subtask_end_index}"
+                    )
                     if 'notes' in subtask:
                         print(f"  Notes: {subtask['notes']}")
 
                     # Load variables
                     variables = subtask.get('variables', {})
                     if variables:
-                        print(f"  Variables:")
+                        print("  Variables:")
                         for var_name, var_config in variables.items():
                             # Use override if provided, otherwise use default
                             if var_name in self.variable_overrides:
@@ -133,12 +137,14 @@ class ActionReplayer:
                                 'value': value,
                                 'action_index': var_config['action_index'],
                                 'arg_position': var_config['arg_position'],
-                                'type': var_config['type']
+                                'type': var_config['type'],
                             }
 
                     return
 
-            print(f"Error: Subtask '{self.subtask_id}' not found in configuration")
+            print(
+                f"Error: Subtask '{self.subtask_id}' not found in configuration"
+            )
             print("Available subtasks:")
             for subtask in subtasks:
                 print(f"  - {subtask['id']}: {subtask['name']}")
@@ -301,7 +307,11 @@ class ActionReplayer:
             if text_match:
                 text_value = text_match.group(1).strip()
                 # Make sure it's not a ref or attribute marker
-                if text_value and not text_value.startswith('[') and text_value != ':':
+                if (
+                    text_value
+                    and not text_value.startswith('[')
+                    and text_value != ':'
+                ):
                     return text_value
 
         return None
@@ -332,7 +342,10 @@ class ActionReplayer:
         return None
 
     def find_ref_by_aria_label(
-        self, snapshot: str, aria_label: str, element_type: Optional[str] = None
+        self,
+        snapshot: str,
+        aria_label: str,
+        element_type: Optional[str] = None,
     ) -> Optional[str]:
         """Find ref in current snapshot by aria-label.
 
@@ -431,13 +444,12 @@ class ActionReplayer:
         # Create model
         model = ModelFactory.create(
             model_platform=ModelPlatformType.AZURE,
-            model_type=ModelType.GPT_4_1
+            model_type=ModelType.GPT_4_1,
         )
 
         # Create agent with toolkit
         self.recovery_agent = ChatAgent(
-            model=model,
-            tools=self.toolkit.get_tools() if self.toolkit else []
+            model=model, tools=self.toolkit.get_tools() if self.toolkit else []
         )
 
         print("✓ Recovery agent initialized")
@@ -448,7 +460,7 @@ class ActionReplayer:
         failed_action: str,
         target_label: str,
         current_snapshot: str,
-        error_message: str
+        error_message: str,
     ) -> Optional[str]:
         """Use ChatAgent to find the correct ref index from snapshot.
 
@@ -477,10 +489,14 @@ Description: {subtask['description']}
                     break
 
         # Build action history
-        history_text = "\n".join([
-            f"{i+1}. {act['action']} on element '{act['label']}'"
-            for i, act in enumerate(self.action_history[-5:])  # Last 5 actions
-        ])
+        history_text = "\n".join(
+            [
+                f"{i+1}. {act['action']} on element '{act['label']}'"
+                for i, act in enumerate(
+                    self.action_history[-5:]
+                )  # Last 5 actions
+            ]
+        )
 
         prompt = f"""
 {subtask_context}
@@ -531,10 +547,14 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
                 usage = response.info['usage']
-                if hasattr(usage, 'prompt_tokens') and hasattr(usage, 'completion_tokens'):
+                if hasattr(usage, 'prompt_tokens') and hasattr(
+                    usage, 'completion_tokens'
+                ):
                     tokens_used = usage.prompt_tokens + usage.completion_tokens
                 elif isinstance(usage, dict):
-                    tokens_used = usage.get('prompt_tokens', 0) + usage.get('completion_tokens', 0)
+                    tokens_used = usage.get('prompt_tokens', 0) + usage.get(
+                        'completion_tokens', 0
+                    )
 
         print(f"Agent response: {agent_msg}")
         if tokens_used > 0:
@@ -547,7 +567,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             'target_label': target_label,
             'error_message': error_message,
             'agent_response': agent_msg,
-            'tokens_used': tokens_used
+            'tokens_used': tokens_used,
         }
 
         # Parse the response
@@ -609,7 +629,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         await self.get_current_snapshot()
 
         # Get original snapshot BEFORE this action (from log)
-        original_snapshot = self.get_latest_snapshot_before_action(action_index)
+        original_snapshot = self.get_latest_snapshot_before_action(
+            action_index
+        )
 
         # Map old refs to new refs based on aria-label
         new_args = []
@@ -619,8 +641,13 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             # Check if this argument should be replaced by a variable
             replaced_by_variable = False
             for var_name, var_info in self.subtask_variables.items():
-                if var_info['action_index'] == action_index and var_info['arg_position'] == i:
-                    print(f"  → Replacing argument at position {i} with variable '{var_name}': {var_info['value']}")
+                if (
+                    var_info['action_index'] == action_index
+                    and var_info['arg_position'] == i
+                ):
+                    print(
+                        f"  → Replacing argument at position {i} with variable '{var_name}': {var_info['value']}"
+                    )
                     new_args.append(var_info['value'])
                     replaced_by_variable = True
                     break
@@ -636,7 +663,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 )
 
                 if aria_label:
-                    print(f"  → Mapping ref {arg} with aria-label: '{aria_label}'")
+                    print(
+                        f"  → Mapping ref {arg} with aria-label: '{aria_label}'"
+                    )
 
                     # Find new ref in current snapshot
                     new_ref = self.find_ref_by_aria_label(
@@ -647,10 +676,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                         print(f"  → Found new ref: {new_ref}")
                         new_args.append(new_ref)
                         # Record this action for history
-                        self.action_history.append({
-                            'action': action_name,
-                            'label': aria_label
-                        })
+                        self.action_history.append(
+                            {'action': action_name, 'label': aria_label}
+                        )
                     else:
                         print(
                             f"  ⚠ Warning: Could not find element with aria-label '{aria_label}' in current snapshot"
@@ -661,7 +689,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             element_not_found_info = {
                                 'action': action_name,
                                 'target_label': aria_label,
-                                'original_ref': arg
+                                'original_ref': arg,
                             }
 
                         print("  → Using original ref (may fail)")
@@ -686,14 +714,18 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 # Check if toolkit is already connected via CDP
                 # If toolkit has cdp_url, it means it's already connected to a browser
                 if hasattr(self.toolkit, 'cdp_url') and self.toolkit.cdp_url:
-                    print("  → Browser already connected via CDP, skipping open_browser")
+                    print(
+                        "  → Browser already connected via CDP, skipping open_browser"
+                    )
                     # If there's a URL, visit it
                     url = new_args[0] if new_args else None
                     if url:
                         result = await self.toolkit.browser_visit_page(url)
                     else:
                         # No URL, just return success since browser is already open
-                        result = {'result': 'Browser already connected via CDP'}
+                        result = {
+                            'result': 'Browser already connected via CDP'
+                        }
                 else:
                     # Normal case: toolkit not connected via CDP
                     url = new_args[0] if new_args else None
@@ -746,15 +778,21 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             elif action_name == 'visit_page':
                 if new_args:
-                    result = await self.toolkit.browser_visit_page(url=new_args[0])
+                    result = await self.toolkit.browser_visit_page(
+                        url=new_args[0]
+                    )
 
             elif action_name == 'switch_tab':
                 if new_args:
-                    result = await self.toolkit.browser_switch_tab(tab_id=new_args[0])
+                    result = await self.toolkit.browser_switch_tab(
+                        tab_id=new_args[0]
+                    )
 
             elif action_name == 'close_tab':
                 if new_args:
-                    result = await self.toolkit.browser_close_tab(tab_id=new_args[0])
+                    result = await self.toolkit.browser_close_tab(
+                        tab_id=new_args[0]
+                    )
 
             elif action_name == 'new_tab':
                 result = await self.toolkit.browser_new_tab()
@@ -772,7 +810,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 kwargs = inputs.get('kwargs', {})
                 cells = kwargs.get('cells', [])
                 if cells:
-                    result = await self.toolkit.browser_sheet_input(cells=cells)
+                    result = await self.toolkit.browser_sheet_input(
+                        cells=cells
+                    )
 
             elif action_name == 'browser_sheet_read':
                 result = await self.toolkit.browser_sheet_read()
@@ -794,17 +834,21 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             elif action_name == 'press_key':
                 if new_args:
-                    result = await self.toolkit.browser_press_key(keys=new_args)
+                    result = await self.toolkit.browser_press_key(
+                        keys=new_args
+                    )
 
             elif action_name == 'get_page_links':
                 if new_args:
-                    result = await self.toolkit.browser_get_page_links(ref=new_args)
+                    result = await self.toolkit.browser_get_page_links(
+                        ref=new_args
+                    )
 
             else:
                 print(f"  ⚠ Warning: Unknown action '{action_name}', skipping")
                 return False
 
-            print(f"  ✓ Action executed successfully")
+            print("  ✓ Action executed successfully")
 
             # Check if action failed
             action_failed = False
@@ -823,10 +867,15 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                     result_message = result.get('result', '')
 
                     # Check for various failure patterns
-                    if ('Element with ref' in result_message and 'not found' in result_message) or \
-                       ('failed' in result_message.lower()) or \
-                       ('error' in result_message.lower()) or \
-                       ('not found' in result_message.lower()):
+                    if (
+                        (
+                            'Element with ref' in result_message
+                            and 'not found' in result_message
+                        )
+                        or ('failed' in result_message.lower())
+                        or ('error' in result_message.lower())
+                        or ('not found' in result_message.lower())
+                    ):
                         action_failed = True
                         error_message = result_message
 
@@ -835,12 +884,18 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 # Try to get context for recovery
                 target_label = None
                 if element_not_found_info:
-                    target_label = element_not_found_info.get('target_label', '')
+                    target_label = element_not_found_info.get(
+                        'target_label', ''
+                    )
                 elif new_args and len(new_args) > 0:
                     # Try to extract label from the current snapshot for the ref
                     ref_arg = new_args[0]
-                    if isinstance(ref_arg, str) and re.match(r'^e\d+$', ref_arg):
-                        target_label = self.find_label_in_snapshot(self.current_snapshot, ref_arg)
+                    if isinstance(ref_arg, str) and re.match(
+                        r'^e\d+$', ref_arg
+                    ):
+                        target_label = self.find_label_in_snapshot(
+                            self.current_snapshot, ref_arg
+                        )
 
                 if not target_label:
                     target_label = f"Element for {action_name} action"
@@ -857,14 +912,16 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                     failed_action=action_name,
                     target_label=target_label,
                     current_snapshot=self.current_snapshot,
-                    error_message=error_message
+                    error_message=error_message,
                 )
 
                 if agent_ref == "SKIP":
                     print("\n✓ Action skipped as suggested by agent")
                     return True  # Consider it successful
                 elif agent_ref and agent_ref != "NONE":
-                    print(f"\n🔄 Retrying action with agent-suggested ref: {agent_ref}")
+                    print(
+                        f"\n🔄 Retrying action with agent-suggested ref: {agent_ref}"
+                    )
 
                     # Retry the action with the new ref
                     retry_args = new_args.copy()
@@ -880,7 +937,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                     retry_result = None
                     if action_name == 'click':
                         if retry_args:
-                            retry_result = await self.toolkit.browser_click(ref=retry_args[0])
+                            retry_result = await self.toolkit.browser_click(
+                                ref=retry_args[0]
+                            )
                     elif action_name == 'type':
                         if len(retry_args) >= 2:
                             retry_result = await self.toolkit.browser_type(
@@ -888,7 +947,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             )
                     elif action_name == 'hover':
                         if retry_args:
-                            retry_result = await self.toolkit.browser_hover(ref=retry_args[0])
+                            retry_result = await self.toolkit.browser_hover(
+                                ref=retry_args[0]
+                            )
                     elif action_name == 'select':
                         if len(retry_args) >= 2:
                             retry_result = await self.toolkit.browser_select(
@@ -898,18 +959,22 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                     if retry_result:
                         retry_result_str = str(retry_result)
                         # Check if retry also failed
-                        if ('Element with ref' in retry_result_str and 'not found' in retry_result_str) or \
-                           ('failed' in retry_result_str.lower()) or \
-                           ('error' in retry_result_str.lower()):
+                        if (
+                            (
+                                'Element with ref' in retry_result_str
+                                and 'not found' in retry_result_str
+                            )
+                            or ('failed' in retry_result_str.lower())
+                            or ('error' in retry_result_str.lower())
+                        ):
                             print("  ✗ Retry also failed")
                             return False
                         else:
                             print("  ✓ Retry successful!")
                             # Record successful action
-                            self.action_history.append({
-                                'action': action_name,
-                                'label': target_label
-                            })
+                            self.action_history.append(
+                                {'action': action_name, 'label': target_label}
+                            )
                             return True
                 else:
                     print("\n✗ Agent could not find suitable element")
@@ -924,6 +989,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         except Exception as e:
             print(f"  ✗ Error executing action: {e}")
             import traceback
+
             traceback.print_exc()
 
             # Try agent recovery for exceptions too
@@ -931,12 +997,18 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 # Try to get context for recovery
                 target_label = None
                 if element_not_found_info:
-                    target_label = element_not_found_info.get('target_label', '')
+                    target_label = element_not_found_info.get(
+                        'target_label', ''
+                    )
                 elif new_args and len(new_args) > 0:
                     # Try to extract label from the current snapshot for the ref
                     ref_arg = new_args[0]
-                    if isinstance(ref_arg, str) and re.match(r'^e\d+$', ref_arg):
-                        target_label = self.find_label_in_snapshot(self.current_snapshot, ref_arg)
+                    if isinstance(ref_arg, str) and re.match(
+                        r'^e\d+$', ref_arg
+                    ):
+                        target_label = self.find_label_in_snapshot(
+                            self.current_snapshot, ref_arg
+                        )
 
                 if not target_label:
                     target_label = f"Element for {action_name} action"
@@ -945,21 +1017,23 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 print("EXCEPTION DURING ACTION - TRIGGERING AGENT RECOVERY")
                 print("!" * 80)
                 print(f"Failed action: {action_name}")
-                print(f"Exception: {str(e)}")
+                print(f"Exception: {e!s}")
 
                 # Consult recovery agent
                 agent_ref = await self.agent_recovery(
                     failed_action=action_name,
                     target_label=target_label,
                     current_snapshot=self.current_snapshot,
-                    error_message=f"Exception: {str(e)}"
+                    error_message=f"Exception: {e!s}",
                 )
 
                 if agent_ref == "SKIP":
                     print("\n✓ Action skipped as suggested by agent")
                     return True  # Consider it successful
                 elif agent_ref and agent_ref != "NONE":
-                    print(f"\n🔄 Retrying action with agent-suggested ref: {agent_ref}")
+                    print(
+                        f"\n🔄 Retrying action with agent-suggested ref: {agent_ref}"
+                    )
 
                     # Retry the action with the new ref
                     retry_args = new_args.copy()
@@ -976,7 +1050,11 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                         retry_result = None
                         if action_name == 'click':
                             if retry_args:
-                                retry_result = await self.toolkit.browser_click(ref=retry_args[0])
+                                retry_result = (
+                                    await self.toolkit.browser_click(
+                                        ref=retry_args[0]
+                                    )
+                                )
                         elif action_name == 'type':
                             if len(retry_args) >= 2:
                                 retry_result = await self.toolkit.browser_type(
@@ -984,20 +1062,25 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                                 )
                         elif action_name == 'hover':
                             if retry_args:
-                                retry_result = await self.toolkit.browser_hover(ref=retry_args[0])
+                                retry_result = (
+                                    await self.toolkit.browser_hover(
+                                        ref=retry_args[0]
+                                    )
+                                )
                         elif action_name == 'select':
                             if len(retry_args) >= 2:
-                                retry_result = await self.toolkit.browser_select(
-                                    ref=retry_args[0], option=retry_args[1]
+                                retry_result = (
+                                    await self.toolkit.browser_select(
+                                        ref=retry_args[0], option=retry_args[1]
+                                    )
                                 )
 
                         if retry_result:
                             print("  ✓ Retry successful!")
                             # Record successful action
-                            self.action_history.append({
-                                'action': action_name,
-                                'label': target_label
-                            })
+                            self.action_history.append(
+                                {'action': action_name, 'label': target_label}
+                            )
                             return True
                     except Exception as retry_e:
                         print(f"  ✗ Retry also failed: {retry_e}")
@@ -1019,7 +1102,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             return True
 
         # Only replay actions within subtask range
-        return self.subtask_start_index <= action_index <= self.subtask_end_index
+        return (
+            self.subtask_start_index <= action_index <= self.subtask_end_index
+        )
 
     async def replay_subtask(self) -> Dict[str, Any]:
         """Replay a single subtask and return detailed results.
@@ -1041,7 +1126,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             self.load_subtask_config()
 
         print(f"\n🔧 Replaying subtask: {self.subtask_id}")
-        print(f"   Actions: {self.subtask_start_index} to {self.subtask_end_index}")
+        print(
+            f"   Actions: {self.subtask_start_index} to {self.subtask_end_index}"
+        )
 
         # Initialize recovery agent if needed
         if self.use_agent_recovery and not self.recovery_agent:
@@ -1062,20 +1149,24 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             # Skip read-only actions
             if not self.should_replay_action(action):
-                skipped_actions.append({
-                    'index': action_index,
-                    'action': action_name,
-                    'reason': 'read-only action'
-                })
+                skipped_actions.append(
+                    {
+                        'index': action_index,
+                        'action': action_name,
+                        'reason': 'read-only action',
+                    }
+                )
                 continue
 
             # Skip actions that failed in original log
             if self.is_failed_action(action):
-                skipped_actions.append({
-                    'index': action_index,
-                    'action': action_name,
-                    'reason': 'failed in original log'
-                })
+                skipped_actions.append(
+                    {
+                        'index': action_index,
+                        'action': action_name,
+                        'reason': 'failed in original log',
+                    }
+                )
                 continue
 
             # Replay action
@@ -1083,28 +1174,34 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             success = await self.replay_action(action, action_index)
 
             if success:
-                successful_actions.append({
-                    'index': action_index,
-                    'action': action_name
-                })
+                successful_actions.append(
+                    {'index': action_index, 'action': action_name}
+                )
             else:
-                failed_actions.append({
-                    'index': action_index,
-                    'action': action_name
-                })
+                failed_actions.append(
+                    {'index': action_index, 'action': action_name}
+                )
 
         # Build result
         all_successful = len(failed_actions) == 0
-        total_actions = len(successful_actions) + len(failed_actions) + len(skipped_actions)
+        total_actions = (
+            len(successful_actions)
+            + len(failed_actions)
+            + len(skipped_actions)
+        )
 
         result = {
-            'status': 'success' if all_successful else 'partial_success' if successful_actions else 'failed',
+            'status': 'success'
+            if all_successful
+            else 'partial_success'
+            if successful_actions
+            else 'failed',
             'message': f"Subtask completed: {len(successful_actions)}/{len(successful_actions) + len(failed_actions)} actions successful",
             'total_actions': total_actions,
             'successful_actions': successful_actions,
             'failed_actions': failed_actions,
             'skipped_actions': skipped_actions,
-            'all_successful': all_successful
+            'all_successful': all_successful,
         }
 
         print("\n" + "=" * 80)
@@ -1132,8 +1229,12 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             print("\n" + "=" * 80)
             print("SUBTASK REPLAY MODE")
             print("=" * 80)
-            print(f"Will replay actions {self.subtask_start_index} to {self.subtask_end_index}")
-            print(f"(All {len(self.actions)} actions loaded for snapshot access)")
+            print(
+                f"Will replay actions {self.subtask_start_index} to {self.subtask_end_index}"
+            )
+            print(
+                f"(All {len(self.actions)} actions loaded for snapshot access)"
+            )
             print()
         else:
             print("\n" + "=" * 80)
@@ -1175,7 +1276,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
             # Check if first action in range is already open_browser or visit_page
             for i in range(first_action_index, len(self.actions)):
-                if self.should_replay_in_subtask_mode(i) and self.should_replay_action(self.actions[i]):
+                if self.should_replay_in_subtask_mode(
+                    i
+                ) and self.should_replay_action(self.actions[i]):
                     first_action_name = self.actions[i].get('action', '')
                     if first_action_name in ['open_browser', 'visit_page']:
                         needs_browser_open = False
@@ -1186,7 +1289,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 print("\n" + "=" * 80)
                 print("INITIALIZATION")
                 print("=" * 80)
-                print("First action is not open_browser/visit_page, opening browser...")
+                print(
+                    "First action is not open_browser/visit_page, opening browser..."
+                )
                 await self.toolkit.browser_open()
                 print("✓ Browser opened and ready")
                 print()
@@ -1221,7 +1326,11 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                 if self.is_failed_action(action):
                     skipped_failed_count += 1
                     outputs = action.get('outputs', {})
-                    result = outputs.get('result', '') if isinstance(outputs, dict) else ''
+                    result = (
+                        outputs.get('result', '')
+                        if isinstance(outputs, dict)
+                        else ''
+                    )
                     print(
                         f"\n[{display_index}/{total_actions}] ⏭️  Skipping failed action: {action_name}"
                     )
@@ -1289,11 +1398,9 @@ Examples:
 
   # List available subtasks
   python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
-        """
+        """,
     )
-    parser.add_argument(
-        'log_file', help='Path to the log file to replay'
-    )
+    parser.add_argument('log_file', help='Path to the log file to replay')
     parser.add_argument(
         '--port',
         type=int,
@@ -1352,15 +1459,19 @@ Examples:
             print(f"{i}. {subtask['id']}")
             print(f"   Name: {subtask['name']}")
             print(f"   Description: {subtask['description']}")
-            print(f"   Actions: {subtask['start_index']}-{subtask['end_index']} ({subtask['end_index'] - subtask['start_index'] + 1} total)")
+            print(
+                f"   Actions: {subtask['start_index']}-{subtask['end_index']} ({subtask['end_index'] - subtask['start_index'] + 1} total)"
+            )
             if 'notes' in subtask:
                 print(f"   Notes: {subtask['notes']}")
 
             # Show variables if any
             if 'variables' in subtask:
-                print(f"   Variables:")
+                print("   Variables:")
                 for var_name, var_config in subtask['variables'].items():
-                    print(f"     {var_name}: {var_config['description']} (default: {var_config['default_value']})")
+                    print(
+                        f"     {var_name}: {var_config['description']} (default: {var_config['default_value']})"
+                    )
             print()
 
         sys.exit(0)
@@ -1370,7 +1481,9 @@ Examples:
     if args.var:
         for var_str in args.var:
             if '=' not in var_str:
-                print(f"Error: Invalid variable format '{var_str}'. Expected format: key=value")
+                print(
+                    f"Error: Invalid variable format '{var_str}'. Expected format: key=value"
+                )
                 sys.exit(1)
             key, value = var_str.split('=', 1)
             # Remove quotes if present
@@ -1384,7 +1497,7 @@ Examples:
         subtask_config=args.subtask_config,
         subtask_id=args.subtask_id,
         variables=variables,
-        use_agent_recovery=args.use_agent_recovery
+        use_agent_recovery=args.use_agent_recovery,
     )
     await replayer.replay_all()
 

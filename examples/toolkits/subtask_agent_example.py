@@ -16,7 +16,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 
@@ -28,7 +28,6 @@ project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -44,7 +43,7 @@ class SubtaskFunction:
         description: str,
         variables: Dict[str, Any],
         replayer: Any,
-        stats_tracker: Optional[Dict[str, Any]] = None
+        stats_tracker: Optional[Dict[str, Any]] = None,
     ):
         """Initialize subtask function.
 
@@ -80,10 +79,14 @@ class SubtaskFunction:
                 self.stats_tracker['subtask_details'][self.subtask_id] = {
                     'name': self.name,
                     'calls': 0,
-                    'variables_used': []
+                    'variables_used': [],
                 }
-            self.stats_tracker['subtask_details'][self.subtask_id]['calls'] += 1
-            self.stats_tracker['subtask_details'][self.subtask_id]['variables_used'].append(kwargs)
+            self.stats_tracker['subtask_details'][self.subtask_id][
+                'calls'
+            ] += 1
+            self.stats_tracker['subtask_details'][self.subtask_id][
+                'variables_used'
+            ].append(kwargs)
 
         print(f"\n{'🎯 ' + '='*78}")
         print(f"EXECUTING SUBTASK: {self.name}")
@@ -92,11 +95,11 @@ class SubtaskFunction:
         print(f"📝 Description: {self.description}")
 
         if kwargs:
-            print(f"🔧 Input Variables:")
+            print("🔧 Input Variables:")
             for key, value in kwargs.items():
                 print(f"   • {key} = {value}")
         else:
-            print(f"🔧 No input variables (fixed operation)")
+            print("🔧 No input variables (fixed operation)")
         print()
 
         # Set variables in replayer
@@ -105,76 +108,103 @@ class SubtaskFunction:
         self.replayer.load_subtask_config()
 
         # Debug: Check if agent recovery is enabled
-        print(f"🔍 Debug: use_agent_recovery = {self.replayer.use_agent_recovery}")
+        print(
+            f"🔍 Debug: use_agent_recovery = {self.replayer.use_agent_recovery}"
+        )
         print(f"🔍 Debug: recovery_agent = {self.replayer.recovery_agent}")
 
         # Track recovery calls before execution
-        recovery_calls_before = len(getattr(self.replayer, 'recovery_history', []))
+        recovery_calls_before = len(
+            getattr(self.replayer, 'recovery_history', [])
+        )
 
         # Execute replay
         try:
-            print(f"▶️  Starting subtask execution...")
+            print("▶️  Starting subtask execution...")
             print(f"{'─' * 80}\n")
 
             # Execute the subtask
             execution_result = await self.replayer.replay_subtask()
 
             # Track recovery calls after execution
-            recovery_calls_after = len(getattr(self.replayer, 'recovery_history', []))
+            recovery_calls_after = len(
+                getattr(self.replayer, 'recovery_history', [])
+            )
             recovery_calls_made = recovery_calls_after - recovery_calls_before
             if self.stats_tracker is not None and recovery_calls_made > 0:
-                self.stats_tracker['agent_recovery_calls'] += recovery_calls_made
+                self.stats_tracker['agent_recovery_calls'] += (
+                    recovery_calls_made
+                )
 
                 # Sum up tokens from new recovery calls
-                recovery_history = getattr(self.replayer, 'recovery_history', [])
+                recovery_history = getattr(
+                    self.replayer, 'recovery_history', []
+                )
                 for i in range(recovery_calls_before, recovery_calls_after):
                     if i < len(recovery_history):
                         tokens = recovery_history[i].get('tokens_used', 0)
-                        self.stats_tracker['token_details']['recovery_agent'] += tokens
+                        self.stats_tracker['token_details'][
+                            'recovery_agent'
+                        ] += tokens
                         self.stats_tracker['total_tokens'] += tokens
 
             print(f"\n{'─' * 80}")
-            print(f"✅ Subtask Execution Result:")
+            print("✅ Subtask Execution Result:")
             print(f"   Status: {execution_result['status']}")
-            print(f"   Successful actions: {len(execution_result['successful_actions'])}")
-            print(f"   Failed actions: {len(execution_result['failed_actions'])}")
-            print(f"   Skipped actions: {len(execution_result['skipped_actions'])}")
+            print(
+                f"   Successful actions: {len(execution_result['successful_actions'])}"
+            )
+            print(
+                f"   Failed actions: {len(execution_result['failed_actions'])}"
+            )
+            print(
+                f"   Skipped actions: {len(execution_result['skipped_actions'])}"
+            )
 
             # Get final snapshot
-            print(f"\n📸 Getting final page snapshot...")
-            final_snapshot = await self.replayer.toolkit.browser_get_page_snapshot()
-            snapshot_preview = final_snapshot[:200] + "..." if len(final_snapshot) > 200 else final_snapshot
+            print("\n📸 Getting final page snapshot...")
+            final_snapshot = (
+                await self.replayer.toolkit.browser_get_page_snapshot()
+            )
+            snapshot_preview = (
+                final_snapshot[:200] + "..."
+                if len(final_snapshot) > 200
+                else final_snapshot
+            )
             print(f"   Snapshot length: {len(final_snapshot)} chars")
             print(f"   Preview: {snapshot_preview}")
 
             result = {
-                'status': 'success' if execution_result['all_successful'] else 'partial_success',
+                'status': 'success'
+                if execution_result['all_successful']
+                else 'partial_success',
                 'message': f"Subtask '{self.name}' completed. {len(execution_result['successful_actions'])} successful, {len(execution_result['failed_actions'])} failed",
                 'snapshot': final_snapshot,
                 'variables_used': kwargs,
-                'execution_details': execution_result
+                'execution_details': execution_result,
             }
 
-            print(f"\n✅ SUBTASK COMPLETED SUCCESSFULLY")
+            print("\n✅ SUBTASK COMPLETED SUCCESSFULLY")
             print(f"{'='*80}\n")
 
             self.last_result = result
             return result
 
         except Exception as e:
-            print(f"\n❌ SUBTASK EXECUTION FAILED")
-            print(f"   Error: {str(e)}")
+            print("\n❌ SUBTASK EXECUTION FAILED")
+            print(f"   Error: {e!s}")
             print(f"{'='*80}\n")
 
             import traceback
+
             traceback.print_exc()
 
             result = {
                 'status': 'error',
-                'message': f"Subtask '{self.name}' failed: {str(e)}",
+                'message': f"Subtask '{self.name}' failed: {e!s}",
                 'snapshot': '',
                 'variables_used': kwargs,
-                'error': str(e)
+                'error': str(e),
             }
             self.last_result = result
             return result
@@ -186,17 +216,15 @@ class SubtaskFunction:
             OpenAI function schema
         """
         # Build parameters from variables
-        parameters = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        parameters = {"type": "object", "properties": {}, "required": []}
 
         if self.variables:
             for var_name, var_config in self.variables.items():
                 parameters["properties"][var_name] = {
-                    "type": "string" if var_config['type'] in ['string', 'date'] else "string",
-                    "description": var_config['description']
+                    "type": "string"
+                    if var_config['type'] in ['string', 'date']
+                    else "string",
+                    "description": var_config['description'],
                 }
                 parameters["required"].append(var_name)
 
@@ -208,7 +236,7 @@ class SubtaskFunction:
         return {
             "name": f"subtask_{self.subtask_id}",
             "description": description,
-            "parameters": parameters
+            "parameters": parameters,
         }
 
 
@@ -220,7 +248,7 @@ class SubtaskAgent:
         log_file: str,
         subtask_config_file: str,
         cdp_port: int = 9223,
-        use_agent_recovery: bool = True
+        use_agent_recovery: bool = True,
     ):
         """Initialize the SubtaskAgent.
 
@@ -250,12 +278,9 @@ class SubtaskAgent:
             'subtask_calls': 0,
             'browser_tool_calls': 0,
             'agent_recovery_calls': 0,
-            'token_details': {
-                'main_agent': 0,
-                'recovery_agent': 0
-            },
+            'token_details': {'main_agent': 0, 'recovery_agent': 0},
             'subtask_details': {},  # Track each subtask call
-            'browser_tool_details': {}  # Track each browser tool call
+            'browser_tool_details': {},  # Track each browser tool call
         }
 
     async def initialize(self):
@@ -266,17 +291,22 @@ class SubtaskAgent:
 
         # Import ActionReplayer
         # sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'camel' / 'toolkits' / 'hybrid_browser_toolkit'))
-        from replay_from_log import ActionReplayer
-
         # Connect to browser - get browser endpoint, not page endpoint
         from urllib.request import urlopen
+
+        from replay_from_log import ActionReplayer
+
         cdp_url = None
         try:
             # Use /json/version to get the browser-level WebSocket endpoint
-            with urlopen(f'http://localhost:{self.cdp_port}/json/version', timeout=5) as response:
+            with urlopen(
+                f'http://localhost:{self.cdp_port}/json/version', timeout=5
+            ) as response:
                 version_info = json.loads(response.read().decode('utf-8'))
                 cdp_url = version_info.get('webSocketDebuggerUrl')
-                print(f"✓ Connected to browser: {version_info.get('Browser', 'N/A')}")
+                print(
+                    f"✓ Connected to browser: {version_info.get('Browser', 'N/A')}"
+                )
                 print(f"   CDP endpoint: {cdp_url}")
         except Exception as e:
             print(f"Error connecting to browser: {e}")
@@ -319,7 +349,7 @@ class SubtaskAgent:
                 cdp_port=self.cdp_port,
                 subtask_config=self.subtask_config_file,
                 subtask_id=subtask_id,
-                use_agent_recovery=self.use_agent_recovery
+                use_agent_recovery=self.use_agent_recovery,
             )
             replayer.toolkit = self.toolkit
             replayer.actions = replayer.load_log_file()
@@ -331,7 +361,7 @@ class SubtaskAgent:
                 description=description,
                 variables=variables,
                 replayer=replayer,
-                stats_tracker=self.stats
+                stats_tracker=self.stats,
             )
 
             self.subtask_functions[subtask_id] = subtask_func
@@ -341,7 +371,7 @@ class SubtaskAgent:
                 print(f"  Variables: {list(variables.keys())}")
             else:
                 print(f"✓ Created function: {subtask_id}")
-                print(f"  No variables (fixed operation)")
+                print("  No variables (fixed operation)")
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)
@@ -351,7 +381,7 @@ class SubtaskAgent:
         model = ModelFactory.create(
             model_platform=ModelPlatformType.AZURE,
             model_type=ModelType.GPT_4_1,
-            model_config_dict={"temperature": 0.0}
+            model_config_dict={"temperature": 0.0},
         )
 
         print("✓ Model created")
@@ -372,7 +402,9 @@ class SubtaskAgent:
                 param_docs = []
                 for var_name, var_config in subtask_func.variables.items():
                     param_list.append(f"{var_name}: str")
-                    param_docs.append(f"    {var_name} (str): {var_config['description']}")
+                    param_docs.append(
+                        f"    {var_name} (str): {var_config['description']}"
+                    )
 
                 # Build function signature and docstring
                 params_str = ", ".join(param_list)
@@ -420,27 +452,31 @@ async def subtask_{subtask_func.subtask_id}():
 
         # Combine all tools
         all_tools = [*browser_tools, *subtask_tools]
-        print(f"✓ Total tools: {len(all_tools)} ({len(browser_tools)} browser + {len(subtask_tools)} subtask)")
+        print(
+            f"✓ Total tools: {len(all_tools)} ({len(browser_tools)} browser + {len(subtask_tools)} subtask)"
+        )
 
         # Create agent (similar to hybrid_browser_toolkit_example.py)
         print("Creating ChatAgent...")
-        self.agent = ChatAgent(
-            model=model,
-            tools=all_tools
-        )
+        self.agent = ChatAgent(model=model, tools=all_tools)
 
-        print(f"✓ Agent created successfully")
+        print("✓ Agent created successfully")
 
         return True
 
     def get_system_message(self) -> str:
         """Get the system message for the agent."""
-        subtask_list = "\n".join([
-            f"- subtask_{sid}: {sf.description}" + (
-                f" (variables: {list(sf.variables.keys())})" if sf.variables else " (no parameters)"
-            )
-            for sid, sf in self.subtask_functions.items()
-        ])
+        subtask_list = "\n".join(
+            [
+                f"- subtask_{sid}: {sf.description}"
+                + (
+                    f" (variables: {list(sf.variables.keys())})"
+                    if sf.variables
+                    else " (no parameters)"
+                )
+                for sid, sf in self.subtask_functions.items()
+            ]
+        )
         print("subtask_list", subtask_list)
 
         return f"""You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.
@@ -495,7 +531,7 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         print("\n" + "=" * 80)
         print("AGENT EXECUTION COMPLETED")
         print("=" * 80)
-        print(f"Response:")
+        print("Response:")
         if response.msgs:
             print(response.msgs[0].content)
         else:
@@ -506,31 +542,52 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
                 usage = response.info['usage']
-                if hasattr(usage, 'prompt_tokens') and hasattr(usage, 'completion_tokens'):
-                    total_tokens = usage.prompt_tokens + usage.completion_tokens
+                if hasattr(usage, 'prompt_tokens') and hasattr(
+                    usage, 'completion_tokens'
+                ):
+                    total_tokens = (
+                        usage.prompt_tokens + usage.completion_tokens
+                    )
                     self.stats['token_details']['main_agent'] += total_tokens
                     self.stats['total_tokens'] += total_tokens
-                    print(f"\n📊 Tokens used in this agent call: {total_tokens}")
+                    print(
+                        f"\n📊 Tokens used in this agent call: {total_tokens}"
+                    )
                 elif isinstance(usage, dict):
-                    total_tokens = usage.get('prompt_tokens', 0) + usage.get('completion_tokens', 0)
+                    total_tokens = usage.get('prompt_tokens', 0) + usage.get(
+                        'completion_tokens', 0
+                    )
                     self.stats['token_details']['main_agent'] += total_tokens
                     self.stats['total_tokens'] += total_tokens
-                    print(f"\n📊 Tokens used in this agent call: {total_tokens}")
+                    print(
+                        f"\n📊 Tokens used in this agent call: {total_tokens}"
+                    )
 
         # Count tool calls from the response
         # Browser tool calls are tracked through function calls in the response
         # We can look at the response info for tool_calls if available
-        if hasattr(response, 'info') and response.info and 'tool_calls' in response.info:
+        if (
+            hasattr(response, 'info')
+            and response.info
+            and 'tool_calls' in response.info
+        ):
             tool_calls = response.info['tool_calls']
             if isinstance(tool_calls, list):
                 for tool_call in tool_calls:
                     if isinstance(tool_call, dict) and 'function' in tool_call:
-                        func_name = tool_call['function'].get('name', 'unknown')
+                        func_name = tool_call['function'].get(
+                            'name', 'unknown'
+                        )
                         # Only count browser tools, not subtask functions
                         if func_name.startswith('browser_'):
                             self.stats['browser_tool_calls'] += 1
-                            if func_name not in self.stats['browser_tool_details']:
-                                self.stats['browser_tool_details'][func_name] = 0
+                            if (
+                                func_name
+                                not in self.stats['browser_tool_details']
+                            ):
+                                self.stats['browser_tool_details'][
+                                    func_name
+                                ] = 0
                             self.stats['browser_tool_details'][func_name] += 1
 
         return response
@@ -544,7 +601,9 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
         print(f"\n🎯 Subtask Calls: {self.stats['subtask_calls']}")
         if self.stats['subtask_details']:
             for subtask_id, details in self.stats['subtask_details'].items():
-                print(f"   • {details['name']} ({subtask_id}): {details['calls']} call(s)")
+                print(
+                    f"   • {details['name']} ({subtask_id}): {details['calls']} call(s)"
+                )
                 for i, vars_used in enumerate(details['variables_used'], 1):
                     if vars_used:
                         print(f"      Call {i}: {vars_used}")
@@ -556,14 +615,24 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
             for tool_name, count in self.stats['browser_tool_details'].items():
                 print(f"   • {tool_name}: {count} call(s)")
         elif self.stats['browser_tool_calls'] == 0:
-            print("   Note: Browser tool calls made by the agent are not tracked separately.")
-            print("   Tool calls within subtasks are included in subtask execution.")
+            print(
+                "   Note: Browser tool calls made by the agent are not tracked separately."
+            )
+            print(
+                "   Tool calls within subtasks are included in subtask execution."
+            )
 
-        print(f"\n🤖 Agent Recovery Calls: {self.stats['agent_recovery_calls']}")
+        print(
+            f"\n🤖 Agent Recovery Calls: {self.stats['agent_recovery_calls']}"
+        )
 
         print(f"\n💰 Total Tokens Used: {self.stats['total_tokens']}")
-        print(f"   • Main Agent: {self.stats['token_details']['main_agent']} tokens")
-        print(f"   • Recovery Agent: {self.stats['token_details']['recovery_agent']} tokens")
+        print(
+            f"   • Main Agent: {self.stats['token_details']['main_agent']} tokens"
+        )
+        print(
+            f"   • Recovery Agent: {self.stats['token_details']['recovery_agent']} tokens"
+        )
 
         print("\n" + "=" * 80)
 
@@ -578,7 +647,7 @@ async def main():
     agent = SubtaskAgent(
         log_file=log_file,
         subtask_config_file=subtask_config_file,
-        use_agent_recovery=True
+        use_agent_recovery=True,
     )
 
     try:
@@ -620,4 +689,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
