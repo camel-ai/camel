@@ -33,7 +33,12 @@ from camel.types import (
     ParsedChatCompletion,
     UnifiedModelType,
 )
-from camel.utils import BaseTokenCounter, Constants
+from camel.utils import (
+    BaseTokenCounter,
+    Constants,
+    get_current_agent_session_id,
+    update_langfuse_trace,
+)
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
@@ -319,6 +324,31 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             f.seek(0)
             json.dump(log_data, f, indent=4)
             f.truncate()
+
+    def _log_and_trace(self) -> None:
+        r"""Update Langfuse trace with session metadata.
+
+        This method updates the current Langfuse trace with agent session
+        information and model metadata. Called at the start of _run() and
+        _arun() methods before API execution.
+
+        The trace is only updated if an agent session ID is available,
+        preserving the conditional tracing behavior used by the majority
+        of backends.
+        """
+        agent_session_id = get_current_agent_session_id()
+        if not agent_session_id:
+            return
+        update_langfuse_trace(
+            session_id=agent_session_id,
+            metadata={
+                "source": "camel",
+                "agent_id": agent_session_id,
+                "agent_type": "camel_chat_agent",
+                "model_type": str(self.model_type),
+            },
+            tags=["CAMEL-AI", str(self.model_type)],
+        )
 
     @abstractmethod
     def _run(
