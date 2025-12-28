@@ -522,12 +522,18 @@ class ChatAgent(BaseAgent):
         self._tool_output_history: List[_ToolOutputHistoryEntry] = []
 
         # Set up memory
+        model_token_limit = self.model_backend.token_limit
         if token_limit is not None:
-            # User provided a token_limit, use it directly
-            effective_token_limit = token_limit
+            if token_limit > model_token_limit:
+                logger.warning(
+                    f"Provided token_limit ({token_limit}) exceeds model's "
+                    f"limit ({model_token_limit}). Using model's limit."
+                )
+                effective_token_limit = model_token_limit
+            else:
+                effective_token_limit = token_limit
         else:
-            # No user-provided token_limit, use model's default
-            effective_token_limit = self.model_backend.token_limit
+            effective_token_limit = model_token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
             effective_token_limit,
@@ -628,6 +634,31 @@ class ChatAgent(BaseAgent):
         self.init_messages()
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def _update_token_cache(
+        self,
+        usage_dict: Dict[str, Any],
+        message_count: int,
+    ) -> None:
+        r"""Update the token count cache from LLM response usage.
+
+        Args:
+            usage_dict (Dict[str, Any]): Usage dictionary from LLM response.
+            message_count (int): Number of messages sent to the LLM.
+        """
+        prompt_tokens = usage_dict.get("prompt_tokens", 0)
+        completion_tokens = usage_dict.get("completion_tokens", 0)
+
+        if prompt_tokens == 0:
+            return
+
+        # Total tokens = prompt + completion
+        total_tokens = prompt_tokens + completion_tokens
+
+        # Update the context creator cache if it supports it
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'set_cached_token_count'):
+            context_creator.set_cached_token_count(total_tokens, message_count)
 
     def _resolve_models(
         self,
@@ -2290,6 +2321,11 @@ class ChatAgent(BaseAgent):
         if reset_summary_state:
             self._reset_summary_state()
 
+        # Reset token cache when memory is cleared
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'clear_cache'):
+            context_creator.clear_cache()
+
         if self.system_message is not None:
             self.memory.write_record(
                 MemoryRecord(
@@ -2833,6 +2869,9 @@ class ChatAgent(BaseAgent):
                 step_token_usage, response.usage_dict
             )
 
+            # Update token cache from LLM response
+            self._update_token_cache(response.usage_dict, len(openai_messages))
+
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
@@ -3056,6 +3095,9 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+
+            # Update token cache from LLM response
+            self._update_token_cache(response.usage_dict, len(openai_messages))
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
