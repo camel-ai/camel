@@ -62,11 +62,15 @@ class UnifiedModelType(str):
 
     @property
     def token_limit(self) -> int:
-        r"""Returns the token limit for the model. Here we set the default
-        value as `999_999_999` if it's not provided from `model_config_dict`"""
+        r"""Returns the context window size for the model.
+
+        For unknown model types not defined in ModelType enum, this returns
+        a default value of 999_999_999 tokens.
+        """
         logging.warning(
-            "Invalid or missing `max_tokens` in `model_config_dict`. "
-            "Defaulting to 999_999_999 tokens."
+            "Unknown model '%s': context window size not defined. "
+            "Defaulting to 999_999_999.",
+            str(self),
         )
         return 999_999_999
 
