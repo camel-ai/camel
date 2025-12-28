@@ -1,0 +1,3030 @@
+<a id="camel.toolkits.earth_science_toolkit"></a>
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit"></a>
+
+## EarthScienceToolkit
+
+```python
+class EarthScienceToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for earth observation science.
+
+This class provides 104 basic methods for earth observation solutions:
+Index (12), Inversion (18), Perception (15), Analysis (10), Statistics
+(49).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ndvi"></a>
+
+### calculate_ndvi
+
+```python
+def calculate_ndvi(
+    self,
+    input_nir_path,
+    input_red_path,
+    output_path
+):
+```
+
+Calculate NDVI from NIR and Red band rasters.
+
+**Parameters:**
+
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_red_path** (str): Path to Red band raster file.
+- **output_path** (str): Relative output path, e.g. "question17/ndvi_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved NDVI file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_ndvi"></a>
+
+### calculate_batch_ndvi
+
+```python
+def calculate_batch_ndvi(
+    self,
+    input_nir_paths: list[str],
+    input_red_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate NDVI from multiple pairs of NIR/Red rasters.
+
+**Parameters:**
+
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_red_paths** (list[str]): Paths to Red band rasters.
+- **output_paths** (list[str]): Relative output paths.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ndwi"></a>
+
+### calculate_ndwi
+
+```python
+def calculate_ndwi(
+    self,
+    input_nir_path,
+    input_swir_path,
+    output_path
+):
+```
+
+Calculate NDWI from NIR and SWIR band rasters.
+
+**Parameters:**
+
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_swir_path** (str): Path to Short-Wave Infrared (SWIR) raster.
+- **output_path** (str): Relative output path, e.g. "question17/ndwi_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved NDWI file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_ndwi"></a>
+
+### calculate_batch_ndwi
+
+```python
+def calculate_batch_ndwi(
+    self,
+    input_nir_paths: list[str],
+    input_swir_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate NDWI from multiple pairs of NIR/SWIR rasters.
+
+**Parameters:**
+
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_swir_paths** (list[str]): Paths to SWIR band rasters.
+- **output_paths** (list[str]): Relative output paths.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ndbi"></a>
+
+### calculate_ndbi
+
+```python
+def calculate_ndbi(
+    self,
+    input_swir_path,
+    input_nir_path,
+    output_path
+):
+```
+
+Calculate NDBI from SWIR and NIR band rasters.
+
+**Parameters:**
+
+- **input_swir_path** (str): Path to Short-Wave Infrared (SWIR) raster.
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **output_path** (str): Relative output path, e.g. "question17/ndbi_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved NDBI file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_ndbi"></a>
+
+### calculate_batch_ndbi
+
+```python
+def calculate_batch_ndbi(
+    self,
+    input_swir_paths: list[str],
+    input_nir_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate NDBI from multiple pairs of SWIR/NIR rasters.
+
+**Parameters:**
+
+- **input_swir_paths** (list[str]): Paths to SWIR band rasters.
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **output_paths** (list[str]): Relative output paths.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_evi"></a>
+
+### calculate_evi
+
+```python
+def calculate_evi(
+    self,
+    input_nir_path,
+    input_red_path,
+    input_blue_path,
+    output_path,
+    G: float = 2.5,
+    C1: float = 6,
+    C2: float = 7.5,
+    L: float = 1
+):
+```
+
+Calculate EVI from NIR, Red, and Blue band rasters.
+
+**Parameters:**
+
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_red_path** (str): Path to Red band raster file.
+- **input_blue_path** (str): Path to Blue band raster file.
+- **output_path** (str): Relative output path, e.g. "question17/evi_2022-01-16.tif"
+- **G** (float, optional): Gain factor. Defaults to 2.5. (default: 2)
+- **C1** (float, optional): Coefficient 1. Defaults to 6. (default: 6)
+- **C2** (float, optional): Coefficient 2. Defaults to 7.5. (default: 7)
+- **L** (float, optional): Adjustment factor. Defaults to 1. (default: 1)
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_evi"></a>
+
+### calculate_batch_evi
+
+```python
+def calculate_batch_evi(
+    self,
+    input_nir_paths: list[str],
+    input_red_paths: list[str],
+    input_blue_paths: list[str],
+    output_paths: list[str],
+    G: float = 2.5,
+    C1: float = 6,
+    C2: float = 7.5,
+    L: float = 1
+):
+```
+
+Batch-calculate EVI from multiple sets of NIR/Red/Blue rasters.
+
+**Parameters:**
+
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_red_paths** (list[str]): Paths to Red band rasters.
+- **input_blue_paths** (list[str]): Paths to Blue band rasters.
+- **output_paths** (list[str]): Relative output paths. G, C1, C2, L (float, optional): EVI coefficients.
+
+**Returns:**
+
+  list[str]: Result messages from each `calculate_evi` call.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_nbr"></a>
+
+### calculate_nbr
+
+```python
+def calculate_nbr(
+    self,
+    input_nir_path,
+    input_swir_path,
+    output_path
+):
+```
+
+Calculate NBR from NIR and SWIR band rasters.
+
+**Parameters:**
+
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_swir_path** (str): Path to Short-Wave Infrared (SWIR) raster.
+- **output_path** (str): Relative output path, e.g. "question17/nbr_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved NBR file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_nbr"></a>
+
+### calculate_batch_nbr
+
+```python
+def calculate_batch_nbr(
+    self,
+    input_nir_paths: list[str],
+    input_swir_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate NBR from multiple pairs of NIR/SWIR rasters.
+
+**Parameters:**
+
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_swir_paths** (list[str]): Paths to SWIR band rasters.
+- **output_paths** (list[str]): Relative output paths.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_fvc"></a>
+
+### calculate_fvc
+
+```python
+def calculate_fvc(
+    self,
+    input_nir_path,
+    input_red_path,
+    output_path,
+    ndvi_min = 0.1,
+    ndvi_max = 0.9
+):
+```
+
+Calculate FVC from NIR and Red band rasters.
+
+**Parameters:**
+
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_red_path** (str): Path to Red band raster file.
+- **output_path** (str): Relative output path.
+- **ndvi_min** (float): Min NDVI for non-vegetated areas (default: 0.1). (default: 0.1)
+- **ndvi_max** (float): Max NDVI for fully vegetated areas (default: 0. 9).
+
+**Returns:**
+
+  str: Path to the saved FVC raster file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_fvc"></a>
+
+### calculate_batch_fvc
+
+```python
+def calculate_batch_fvc(
+    self,
+    input_nir_paths: list[str],
+    input_red_paths: list[str],
+    output_paths: list[str],
+    ndvi_min: float = 0.1,
+    ndvi_max: float = 0.9
+):
+```
+
+Batch-calculate FVC from multiple pairs of NIR/Red rasters.
+
+**Parameters:**
+
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_red_paths** (list[str]): Paths to Red band rasters.
+- **output_paths** (list[str]): Relative output paths.
+- **ndvi_min** (float, optional): Min NDVI for non-vegetated areas.
+- **ndvi_max** (float, optional): Max NDVI for fully vegetated areas.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_wri"></a>
+
+### calculate_wri
+
+```python
+def calculate_wri(
+    self,
+    input_green_path,
+    input_red_path,
+    input_nir_path,
+    input_swir_path,
+    output_path
+):
+```
+
+Calculate WRI from Green, Red, NIR, and SWIR band rasters.
+
+**Parameters:**
+
+- **input_green_path** (str): Path to Green band raster file.
+- **input_red_path** (str): Path to Red band raster file.
+- **input_nir_path** (str): Path to Near-Infrared (NIR) band raster.
+- **input_swir_path** (str): Path to Short-Wave Infrared (SWIR) raster.
+- **output_path** (str): Relative output path.
+
+**Returns:**
+
+  str: Path to the saved WRI raster file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_wri"></a>
+
+### calculate_batch_wri
+
+```python
+def calculate_batch_wri(
+    self,
+    input_green_paths: list[str],
+    input_red_paths: list[str],
+    input_nir_paths: list[str],
+    input_swir_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate WRI from multiple raster sets.
+
+**Parameters:**
+
+- **input_green_paths** (list[str]): Paths to Green band rasters.
+- **input_red_paths** (list[str]): Paths to Red band rasters.
+- **input_nir_paths** (list[str]): Paths to NIR band rasters.
+- **input_swir_paths** (list[str]): Paths to SWIR band rasters.
+- **output_paths** (list[str]): Relative output paths.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ndti"></a>
+
+### calculate_ndti
+
+```python
+def calculate_ndti(
+    self,
+    input_red_path,
+    input_green_path,
+    output_path
+):
+```
+
+Calculate NDTI from Red and Green band rasters.
+
+**Parameters:**
+
+- **input_red_path** (str): Path to Red band raster file.
+- **input_green_path** (str): Path to Green band raster file.
+- **output_path** (str): Relative output path.
+
+**Returns:**
+
+  str: Path to the saved NDTI file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_ndti"></a>
+
+### calculate_batch_ndti
+
+```python
+def calculate_batch_ndti(
+    self,
+    input_red_paths: list[str],
+    input_green_paths: list[str],
+    output_paths: list[str]
+):
+```
+
+Batch-calculate NDTI from multiple pairs of Red/Green rasters.
+
+**Parameters:**
+
+- **input_red_paths** (list[str]): Paths to Red band rasters.
+- **input_green_paths** (list[str]): Paths to Green band rasters.
+- **output_paths** (list[str]): Relative output paths (e.g., "question17/ndti_2022-01-16.tif").
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_frp"></a>
+
+### calculate_frp
+
+```python
+def calculate_frp(
+    self,
+    input_frp_path,
+    output_path,
+    fire_threshold = 0
+):
+```
+
+Calculate Fire Radiative Power (FRP) statistics from input raster
+files and save the result to a specified output path.
+
+**Parameters:**
+
+- **input_frp_path** (str): Path to the FRP raster file.
+- **output_path** (str): relative path for the output raster file, e.g. "question17/frp_2022-01-16.tif"
+- **fire_threshold** (float): Minimum FRP value to be considered as fire (default: 0).
+
+**Returns:**
+
+  str: Path to the saved fire mask file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_frp"></a>
+
+### calculate_batch_frp
+
+```python
+def calculate_batch_frp(
+    self,
+    input_frp_paths: list[str],
+    output_paths: list[str],
+    fire_threshold: float = 0
+):
+```
+
+Batch-calculate FRP fire masks from multiple raster files.
+
+**Parameters:**
+
+- **input_frp_paths** (list[str]): Paths to FRP raster files.
+- **output_paths** (list[str]): Relative output paths (e.g., "question17/frp_2022-01-16.tif").
+- **fire_threshold** (float, optional): Minimum FRP value to be considered as fire. Defaults to 0.
+
+**Returns:**
+
+  list[str]: A list of result messages (e.g., saved file paths).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ndsi"></a>
+
+### calculate_ndsi
+
+```python
+def calculate_ndsi(
+    self,
+    input_green_path: str,
+    input_swir_path: str,
+    output_path: str
+):
+```
+
+Calculate the Normalized Difference Snow Index (NDSI) from input
+raster files and save the result to a specified output path.
+
+NDSI = (Green - SWIR) / (Green + SWIR)
+
+**Parameters:**
+
+- **input_green_path** (str): Path to the Green band raster file.
+- **input_swir_path** (str): Path to the SWIR band raster file.
+- **output_path** (str): relative path for the output raster file, e.g. "question17/ndsi_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the output NDSI raster file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_batch_ndsi"></a>
+
+### calculate_batch_ndsi
+
+```python
+def calculate_batch_ndsi(
+    self,
+    green_file_list: list[str],
+    swir_file_list: list[str],
+    output_path_list: list[str]
+):
+```
+
+Calculate NDSI for multiple pairs of Green and SWIR band images.
+
+**Parameters:**
+
+- **green_file_list** (list[str]): List of paths to Green band raster files.
+- **swir_file_list** (list[str]): List of paths to SWIR band raster files.
+- **output_path_list** (list[str]): relative path for the output raster file, e.g. ["question17/ndsi_2022-01-16.tif", "question17/ ndsi_2022-01-16.tif"]
+
+**Returns:**
+
+  list[str]: List of paths to the output NDSI raster files.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_extreme_snow_loss_percentage_from_binary_map"></a>
+
+### calc_extreme_snow_loss_percentage_from_binary_map
+
+```python
+def calc_extreme_snow_loss_percentage_from_binary_map(self, binary_map_path: str):
+```
+
+Calculate the percentage of extreme snow and ice loss areas from a
+binary map.
+
+**Parameters:**
+
+- **binary_map_path** (str): Path to the binary raster image where pixels with value 1.0 represent extreme snow/ice loss areas.
+
+**Returns:**
+
+  float:
+The percentage of extreme snow/ice loss pixels relative to all
+valid pixels
+(range: 0.0-1.0).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.compute_tvdi"></a>
+
+### compute_tvdi
+
+```python
+def compute_tvdi(
+    self,
+    ndvi_path: str,
+    lst_path: str,
+    output_path: str
+):
+```
+
+Description:
+Compute the Temperature Vegetation Dryness Index (TVDI) based on
+NDVI and LST raster data.
+TVDI quantifies soil moisture conditions by analyzing the
+relationship between NDVI and LST
+through a trapezoidal space approach. The function fits linear
+regressions for LST maxima
+and minima per NDVI bin and normalizes per-pixel LST values
+accordingly.
+
+**Parameters:**
+
+- **ndvi_path** (str): Path to the NDVI GeoTIFF file (e.g., MODIS NDVI scaled by 0.0001).
+- **lst_path** (str): Path to the LST GeoTIFF file (e.g., MODIS LST scaled by 0.02).
+- **output_path** (str): Relative path to save the computed TVDI raster (e.g., "question17/tvdi_2022-01-16.tif").
+
+**Returns:**
+
+  str: Path to the saved TVDI GeoTIFF file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.band_ratio"></a>
+
+### band_ratio
+
+```python
+def band_ratio(
+    self,
+    sur_refl_b02_path: str,
+    sur_refl_b05_path: str,
+    sur_refl_b17_path: str,
+    sur_refl_b18_path: str,
+    sur_refl_b19_path: str,
+    output_path: str
+):
+```
+
+Description:
+Compute a Precipitable Water Vapor (PWV) image from MODIS surface
+reflectance bands
+using the band ratio method.
+This method interpolates atmospheric window reflectance between 0.
+865 µm and 1.240 µm,
+computes transmittance in water vapor absorption bands (0.905, 0.
+936, 0.940 µm),
+and derives PWV in centimeters.
+The output GeoTIFF contains four bands:
+1. PWV
+2. T17 (transmittance at 0.905 µm)
+3. T18 (transmittance at 0.936 µm)
+4. T19 (transmittance at 0.940 µm)
+
+**Parameters:**
+
+- **sur_refl_b02_path** (str): Path to MODIS surface reflectance band sur_refl_b02 (0.865 µm) GeoTIFF.
+- **sur_refl_b05_path** (str): Path to MODIS surface reflectance band sur_refl_b05 (1.240 µm) GeoTIFF.
+- **sur_refl_b17_path** (str): Path to MODIS surface reflectance band sur_refl_b17 (0.905 µm) GeoTIFF.
+- **sur_refl_b18_path** (str): Path to MODIS surface reflectance band sur_refl_b18 (0.936 µm) GeoTIFF.
+- **sur_refl_b19_path** (str): Path to MODIS surface reflectance band sur_refl_b19 (0.940 µm) GeoTIFF.
+- **output_path** (str): Relative output path for the PWV GeoTIFF, e.g. "question17/pwv_2022-01-16.tif".
+
+**Returns:**
+
+  str: Full path to the saved PWV GeoTIFF.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.lst_single_channel"></a>
+
+### lst_single_channel
+
+```python
+def lst_single_channel(
+    self,
+    bt_path: str,
+    red_path: str,
+    nir_path: str,
+    output_path: str
+):
+```
+
+Description:
+Estimate Land Surface Temperature (LST) using the Single-Channel
+method.
+This approach calculates LST from thermal brightness temperature
+and adjusts
+for surface emissivity estimated using NDVI derived from RED and
+NIR bands.
+It is suitable for single thermal band sensors such as Landsat 8
+TIRS.
+
+**Parameters:**
+
+- **bt_path** (str): Path to the Brightness Temperature GeoTIFF (Kelvin).
+- **red_path** (str): Path to the RED band GeoTIFF (e.g., Landsat 8 Band 4).
+- **nir_path** (str): Path to the NIR band GeoTIFF (e.g., Landsat 8 Band 5).
+- **output_path** (str): Relative path for the output LST GeoTIFF, e.g. "question17/lst_2022-01-16.tif".
+
+**Returns:**
+
+  str: Full path to the saved LST GeoTIFF.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.lst_multi_channel"></a>
+
+### lst_multi_channel
+
+```python
+def lst_multi_channel(
+    self,
+    band31_path: str,
+    band32_path: str,
+    output_path: str
+):
+```
+
+Description:
+Estimate Land Surface Temperature (LST) using the multi-channel
+algorithm.
+This method combines two thermal infrared bands (typically at ~11
+μm and ~12 μm)
+to reduce atmospheric effects and improve LST estimation accuracy.
+
+**Parameters:**
+
+- **band31_path** (str): Path to local GeoTIFF file for thermal band 31 (~11 μm).
+- **band32_path** (str): Path to local GeoTIFF file for thermal band 32 (~12 μm).
+- **output_path** (str): Relative path for the output LST GeoTIFF, e.g. "question17/lst_2022-01-16.tif".
+
+**Returns:**
+
+  str: Full path to the saved LST GeoTIFF.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.split_window"></a>
+
+### split_window
+
+```python
+def split_window(
+    self,
+    band31_path: str,
+    band32_path: str,
+    emissivity31_path: str,
+    emissivity32_path: str,
+    parameter: str,
+    output_path: str
+):
+```
+
+Description:
+Estimate **Land Surface Temperature (LST)** or **Precipitable
+Water Vapor (PWV)**
+using the split-window algorithm.
+The method leverages two thermal infrared bands (~11 μm and ~12 μm)
+and emissivity data to correct atmospheric effects and retrieve
+accurate surface or atmospheric Args.
+Only one parameter is computed based on the user-selected
+`parameter`.
+
+**Parameters:**
+
+- **band31_path** (str): Path to thermal band 31 GeoTIFF (~11 μm).
+- **band32_path** (str): Path to thermal band 32 GeoTIFF (~12 μm).
+- **emissivity31_path** (str): Path to emissivity band 31 GeoTIFF.
+- **emissivity32_path** (str): Path to emissivity band 32 GeoTIFF.
+- **parameter** (str): Specify either `"LST"` for Land Surface Temperature or `"PWV"` for Precipitable Water Vapor.
+- **output_path** (str): Relative path for the output raster file, e.g. `"question17/lst_2022-01-16.tif"`.
+
+**Returns:**
+
+  str: Full path to the saved GeoTIFF containing the selected
+parameter.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.temperature_emissivity_separation"></a>
+
+### temperature_emissivity_separation
+
+```python
+def temperature_emissivity_separation(
+    self,
+    tir_band_paths: list[str],
+    representative_band_index: int,
+    output_path: str
+):
+```
+
+Description:
+Estimate Land Surface Temperature (LST) using the Temperature
+Emissivity Separation (TES)
+algorithm with empirical emissivity estimation. Outputs a
+multi-band raster containing LST,
+emissivity, and emissivity variation (Δε).
+
+**Parameters:**
+
+- **tir_band_paths** (list[str]): List of paths to Thermal Infrared (TIR) GeoTIFFs (e.g., ASTER Bands 10-14).
+- **representative_band_index** (int): Index of the TIR band used as the reference brightness temperature (e.g., 3 for Band 13).
+- **output_path** (str): Relative path for saving the output raster file (e.g., "question17/lst_2022-01-16.tif").
+
+**Returns:**
+
+  str: Path to the saved GeoTIFF file containing:
+- Band 1: LST (K)
+- Band 2: Emissivity (ε)
+- Band 3: Emissivity variation (Δε)
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.modis_day_night_lst"></a>
+
+### modis_day_night_lst
+
+```python
+def modis_day_night_lst(
+    self,
+    BT_day_path: str,
+    BT_night_path: str,
+    Emis_day_path: str,
+    Emis_night_path: str,
+    output_path: str
+):
+```
+
+Description:
+Estimate Land Surface Temperature (LST) from MODIS Day and Night
+brightness temperatures
+using a single-channel correction algorithm. Performs resampling,
+scaling, and filtering
+of emissivity and brightness temperature bands to output a
+six-band GeoTIFF.
+
+**Parameters:**
+
+- **BT_day_path** (str): Path to local MODIS Brightness Temperature Day GeoTIFF.
+- **BT_night_path** (str): Path to local MODIS Brightness Temperature Night GeoTIFF.
+- **Emis_day_path** (str): Path to MODIS Emissivity Day GeoTIFF (scaled by 0.002, offset by 0.49).
+- **Emis_night_path** (str): Path to MODIS Emissivity Night GeoTIFF (scaled by 0.002, offset by 0.49).
+- **output_path** (str): Relative path for saving the output raster file (e.g., "question17/lst_2022-01-16.tif").
+
+**Returns:**
+
+  str: Path to the exported GeoTIFF with six bands:
+- Band 1: LST (Day)
+- Band 2: LST (Night)
+- Band 3: BT (Day)
+- Band 4: BT (Night)
+- Band 5: Emissivity (Day)
+- Band 6: Emissivity (Night)
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.ttm_lst"></a>
+
+### ttm_lst
+
+```python
+def ttm_lst(
+    self,
+    tir_band_paths: list[str],
+    output_path: str,
+    wavelengths: list[float] | None = None
+):
+```
+
+Estimate LST and emissivity using Three-Temperature Method.
+
+Reads three thermal infrared (TIR) bands, performs filtering,
+applies empirical atmospheric correction, and outputs a
+three-band GeoTIFF with LST and emissivity estimates.
+
+**Parameters:**
+
+- **tir_band_paths** (list[str]): Paths to three TIR band GeoTIFFs (e.g., ASTER B10, B11, B12).
+- **output_path** (str): Relative path to save the output raster.
+- **wavelengths** (list[float], optional): Central wavelengths (μm) for each band. Defaults to [8.3, 8.65, 9.1].
+
+**Returns:**
+
+  str: Path to exported GeoTIFF with LST (K) and emissivity bands.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_mean_lst_by_ndvi"></a>
+
+### calculate_mean_lst_by_ndvi
+
+```python
+def calculate_mean_lst_by_ndvi(
+    self,
+    red_paths: str | list[str],
+    nir_paths: str | list[str],
+    lst_paths: str | list[str],
+    ndvi_threshold: float,
+    mode: str = 'above'
+):
+```
+
+Calculate the average Land Surface Temperature (LST) across multiple
+images where NDVI is either above or below a given threshold.
+
+**Parameters:**
+
+- **red_paths** (str or list): Path(s) to red band image(s).
+- **nir_paths** (str or list): Path(s) to near-infrared (NIR) image(s).
+- **lst_paths** (str or list): Path(s) to land surface temperature (LST) image(s).
+- **ndvi_threshold** (float): Threshold value for NDVI.
+- **mode** (str): 'above' for NDVI >= threshold, 'below' for NDVI < threshold.
+
+**Returns:**
+
+  float: Mean of LST values over selected NDVI regions across all
+image sets. Returns np.nan if no valid pixels found.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_max_lst_by_ndvi"></a>
+
+### calculate_max_lst_by_ndvi
+
+```python
+def calculate_max_lst_by_ndvi(
+    self,
+    red_path,
+    nir_path,
+    lst_path,
+    ndvi_threshold,
+    mode = 'above'
+):
+```
+
+Calculate the maximum Land Surface Temperature (LST) in areas where
+NDVI is above or below a given threshold.
+
+**Parameters:**
+
+- **red_path** (str): Path to the red band image.
+- **nir_path** (str): Path to the near-infrared (NIR) band image.
+- **lst_path** (str): Path to the land surface temperature (LST) image.
+- **ndvi_threshold** (float): Threshold value for NDVI.
+- **mode** (str): 'above' to select NDVI >= threshold, 'below' for NDVI < threshold. Default is 'above'.
+
+**Returns:**
+
+  float: Maximum LST value over the selected NDVI region. Returns np.
+nan if no valid data.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_ATI"></a>
+
+### calculate_ATI
+
+```python
+def calculate_ATI(
+    self,
+    day_temp_path: str,
+    night_temp_path: str,
+    albedo_path: str,
+    output_path: str
+):
+```
+
+Description:
+Estimate Apparent Thermal Inertia (ATI) using the Thermal Inertia
+Method.
+ATI is computed as (1 - Albedo) / (Daytime BT - Nighttime BT) and
+serves as a proxy for
+land surface heat retention and thermal stability over diurnal
+cycles.
+The function aligns all raster layers to the daytime brightness
+temperature raster's resolution and extent before calculation.
+
+**Parameters:**
+
+- **day_temp_path** (str): Path to the daytime brightness temperature (BT) GeoTIFF.
+- **night_temp_path** (str): Path to the nighttime brightness temperature (BT) GeoTIFF.
+- **albedo_path** (str): Path to the surface albedo GeoTIFF.
+- **output_path** (str): Relative path to save the ATI raster, e.g. "question17/thermal_inertia_2022-01-16.tif".
+
+**Returns:**
+
+  str: Path to the saved Apparent Thermal Inertia GeoTIFF file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.dual_polarization_differential"></a>
+
+### dual_polarization_differential
+
+```python
+def dual_polarization_differential(
+    self,
+    pol1_path: str,
+    pol2_path: str,
+    parameter: str,
+    output_path: str,
+    a: float = 0.3,
+    b: float = 0.1,
+    input_unit: str = 'dB'
+):
+```
+
+Dual-Polarization Differential Method (DPDM) for microwave remote
+sensing parameter inversion.
+
+Supports soil moisture and vegetation index estimation with improved
+data handling and flexible Args.
+
+**Parameters:**
+
+- **pol1_path** (str): File path for the first polarization band GeoTIFF (e.g., VV).
+- **pol2_path** (str): File path for the second polarization band GeoTIFF (e.g., VH).
+- **parameter** (str): Parameter to invert, options: "soil_moisture" or "vegetation_index".
+- **output_path** (str): relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+- **a** (float, optional): Linear coefficient for soil moisture model. Default is 0.3.
+- **b** (float, optional): Intercept for soil moisture model. Default is 0.1.
+- **input_unit** (str, optional): Unit of input data, either "dB" or "linear". Default is "dB".
+
+**Returns:**
+
+  str: Path to the exported parameter GeoTIFF.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.dual_frequency_diff"></a>
+
+### dual_frequency_diff
+
+```python
+def dual_frequency_diff(
+    self,
+    band1_path: str,
+    band2_path: str,
+    parameter: str,
+    alpha: float,
+    beta: float,
+    output_path: str
+):
+```
+
+Dual-frequency Differential Method (DDM) for parameter inversion.
+
+Uses local raster data for parameter inversion via empirical linear
+models:
+
+- Soil Moisture (SM): param = alpha*(band1 - band2) + beta
+- Vegetation Index (VI): param = alpha*(band1 - band2) + beta
+- Leaf Area Index (LAI): param = alpha*(band1 - band2) + beta
+
+**Parameters:**
+
+- **band1_path** (str): File path for frequency 1 polarization band GeoTIFF.
+- **band2_path** (str): File path for frequency 2 polarization band GeoTIFF.
+- **parameter** (str): Parameter to invert. Options: 'SM', 'VI', 'LAI'. Default is 'SM'.
+- **alpha** (float, optional): Slope coefficient to override default.
+- **beta** (float, optional): Intercept coefficient to override default.
+- **output_path** (str): Relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved combined output GeoTIFF (difference and
+parameter).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.multi_freq_bt"></a>
+
+### multi_freq_bt
+
+```python
+def multi_freq_bt(
+    self,
+    bt_paths: list[str],
+    diff_pairs: list[list[int]],
+    parameter: str,
+    output_path: str
+):
+```
+
+Multi-frequency Brightness Temperature Method for inversion.
+
+Uses local raster data for parameter inversion.
+
+**Parameters:**
+
+- **bt_paths** (list[str]): List of local file paths for brightness temperature GeoTIFF bands (e.g., ["BT_10GHz.tif", "BT_19GHz.tif", "BT_37GHz.tif"]).
+- **diff_pairs** (list[list[int]]): List of index pairs from bt_paths for difference calculation (e.g., [[0,1],[1,2]]).
+- **parameter** (str): Parameter to invert. Options: 'SM', 'VWC', 'LAI'.
+- **output_path** (str): Relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved inverted parameter GeoTIFF.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.chang_single_param_inversion"></a>
+
+### chang_single_param_inversion
+
+```python
+def chang_single_param_inversion(
+    self,
+    bt_paths: list[str],
+    diff_pairs: list[list[int]],
+    parameter: str,
+    output_path: str
+):
+```
+
+Chang algorithm for single parameter inversion.
+
+Uses multi-frequency dual-polarized microwave brightness temperatures
+from local raster files.
+
+**Parameters:**
+
+- **bt_paths** (list[str]): List of local GeoTIFF file paths for brightness temperature bands (e.g., ["BT_10V.tif", "BT_10H.tif", "BT_19V.tif", "BT_19H.tif"]).
+- **diff_pairs** (list[list[int]]): List of index pairs for brightness temperature differences.
+- **parameter** (str): Parameter to invert (e.g., "SM", "VWC").
+- **output_path** (str): Relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+
+**Returns:**
+
+  str: File path to saved GeoTIFF with inverted parameter band.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.nasa_team_sea_ice_concentration"></a>
+
+### nasa_team_sea_ice_concentration
+
+```python
+def nasa_team_sea_ice_concentration(
+    self,
+    bt_paths: dict,
+    output_path: str,
+    nd_ice: float = 50.0,
+    nd_water: float = 0.0,
+    s1_ice: float = 20.0,
+    s1_water: float = 0.0
+):
+```
+
+Estimate Sea Ice Concentration using NASA Team Algorithm.
+
+Uses local passive microwave brightness temperature GeoTIFF files.
+
+**Parameters:**
+
+- **bt_paths** (dict): Dictionary of local GeoTIFF file paths for required brightness temperature bands, e.g., `{"19V": "BT_19V.tif", "19H": "BT_19H.tif", "37V": "BT_37V.tif", "37H": "BT_37H.tif"}`
+- **nd_ice** (float): ND value for ice reference. Default 50.0.
+- **nd_water** (float): ND value for water reference. Default 0.0.
+- **s1_ice** (float): S1 value for ice reference. Default 20.0.
+- **s1_water** (float): S1 value for water reference. Default 0.0.
+- **output_path** (str): Relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to saved GeoTIFF with sea ice concentration band.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.dual_polarization_ratio"></a>
+
+### dual_polarization_ratio
+
+```python
+def dual_polarization_ratio(
+    self,
+    bt_paths: dict,
+    parameter: str,
+    output_path: str,
+    coeffs: dict | None = None
+):
+```
+
+Estimate VWC or SM using Dual-Polarization Ratio Method (PRM).
+
+Uses local passive microwave brightness temperature GeoTIFF files.
+The polarization ratio is computed as: (V - H) / (V + H), where V
+and H are brightness temperatures of vertical and horizontal
+polarizations.
+
+Empirical models:
+- VWC = a_vwc * PR + b_vwc
+- SM  = a_sm * PR + b_sm
+
+**Parameters:**
+
+- **bt_paths** (dict): Dictionary of local GeoTIFF file paths for vertical and horizontal polarization bands, e.g. `{"V": "BT_V.tif", "H": "BT_H.tif"}`
+- **parameter** (str): Parameter to invert, either "VWC" or "SM".
+- **output_path** (str): Relative path for the output raster file, e.g. "question17/thermal_inertia_2022-01-16.tif"
+- **coeffs** (dict, optional): Empirical coefficients `{"VWC": {"a":float, "b":float}, "SM": {...}}`.
+
+**Returns:**
+
+  str: File path of the saved GeoTIFF containing the inverted
+parameter and PR band.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_water_turbidity_ntu"></a>
+
+### calculate_water_turbidity_ntu
+
+```python
+def calculate_water_turbidity_ntu(
+    self,
+    input_red_path: str,
+    output_path: str,
+    method: str = 'linear',
+    a: float = 1.0,
+    b: float = 0.0,
+    n: float = 1.0
+):
+```
+
+Calculate water turbidity in NTU from red band raster file.
+
+NTU = Nephelometric Turbidity Units. Saves result to output path.
+
+**Parameters:**
+
+- **input_red_path** (str): Path to the Red band raster file.
+- **output_path** (str): Relative path for the output raster file, e.g. "benchmark/data/question17/turbidity_2022-01-16.tif"
+- **method** (str): Calculation method - "linear" (a*Red+b), "power" (a*Red^n+b), or "log" (a*log(Red)+b).
+- **a** (float): Coefficient parameter, default 1.0.
+- **b** (float): Offset parameter, default 0.0.
+- **n** (float): Power parameter for power method, default 1.0.
+
+**Returns:**
+
+  str: Path to the output NTU raster file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.threshold_segmentation"></a>
+
+### threshold_segmentation
+
+```python
+def threshold_segmentation(
+    self,
+    input_image_path,
+    threshold,
+    output_path
+):
+```
+
+Perform threshold-based segmentation on a single-band raster image.
+
+Reads a raster image, converts it to a binary mask by applying a fixed
+threshold, and writes the resulting binary image to a new file. Pixel
+values greater than threshold are set to 255 (white), and values less
+than or equal to threshold are set to 0 (black).
+
+**Parameters:**
+
+- **input_image_path** (str): Path to the input raster image file (e.g., TIFF, PNG, JPG).
+- **threshold** (float or int): Pixel intensity threshold used to generate the binary mask.
+- **output_path** (str): Relative output path (under TEMP_DIR) where the result will be saved, e.g., "question17/threshold_segmentation_2022-01-16.tif".
+
+**Returns:**
+
+  str: Message indicating the file path where the result is saved.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.bbox_expansion"></a>
+
+### bbox_expansion
+
+```python
+def bbox_expansion(
+    self,
+    bboxes: list[list[float]],
+    radius: float,
+    gsd: float
+):
+```
+
+Expand bounding boxes by a given radius.
+
+**Parameters:**
+
+- **bboxes** (list[list[float]]): List of bounding boxes, each represented as [x1, y1, x2, y2].
+- **radius** (float): Expansion radius in the same unit as the GSD.
+- **gsd** (float): Ground Sampling Distance in the same unit as radius.
+
+**Returns:**
+
+  list[list[float]]: List of expanded bounding boxes, each
+represented as [x1, y1, x2, y2].
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_above_threshold"></a>
+
+### count_above_threshold
+
+```python
+def count_above_threshold(self, file_path: str, threshold: float):
+```
+
+Count pixels in an image whose values exceed the threshold.
+
+**Parameters:**
+
+- **file_path** (str): Path to the input image (GeoTIFF or raster format).
+- **threshold** (float): Threshold value for hotspot detection.
+
+**Returns:**
+
+  count (int):
+Number of pixels with values greater than the threshold.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_skeleton_contours"></a>
+
+### count_skeleton_contours
+
+```python
+def count_skeleton_contours(self, image_path):
+```
+
+Count external contours in a skeletonized binary image.
+
+Reads a binary image, applies erosion and skeletonization, then
+counts the number of external contours.
+
+**Parameters:**
+
+- **image_path** (str): Path to the input binary (black and white) image.
+
+**Returns:**
+
+  count (int):
+Number of external contours detected after skeletonization.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.bboxes2centroids"></a>
+
+### bboxes2centroids
+
+```python
+def bboxes2centroids(self, bboxes):
+```
+
+Convert bounding boxes to centroid coordinates.
+
+Converts from [x_min, y_min, x_max, y_max] format to (x, y) centroids.
+
+**Parameters:**
+
+- **bboxes** (list[list[float]]): A list of bounding boxes, each defined as [x_min, y_min, x_max, y_max].
+
+**Returns:**
+
+  centroids (list[tuple[float, float]]):
+A list of centroid coordinates, each in (x, y) format.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.centroid_distance_extremes"></a>
+
+### centroid_distance_extremes
+
+```python
+def centroid_distance_extremes(self, centroids):
+```
+
+Find closest and farthest centroid pairs.
+
+Computes pairwise distances between centroids and returns both the
+closest and farthest pairs with their indices and distances.
+
+**Parameters:**
+
+- **centroids** (list[tuple[float, float]] or np.ndarray): A list or NumPy array of centroid coordinates in (x, y) format.
+
+**Returns:**
+
+  result (dict):
+A dictionary containing:
+- 'min': (index1, index2, distance)
+Indices of the closest centroid pair and their distance.
+- 'max': (index1, index2, distance)
+Indices of the farthest centroid pair and their distance.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_bbox_area"></a>
+
+### calculate_bbox_area
+
+```python
+def calculate_bbox_area(self, bboxes, gsd = None):
+```
+
+Calculate the total area of bounding boxes in [x, y, w, h] format.
+
+**Parameters:**
+
+- **bboxes** (list[list[float]]): A list of bounding boxes, each defined as [x, y, w, h] where x,y is top-left corner and w,h are width and height.
+- **gsd** (float, optional): Ground sample distance (meters per pixel). If provided, result is in m². If None, result is in pixel². Default = None.
+
+**Returns:**
+
+  total_area (float): The total area of all bounding boxes, in m²
+if gsd is provided, otherwise in pixel².
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.compute_linear_trend"></a>
+
+### compute_linear_trend
+
+```python
+def compute_linear_trend(self, y: list, x: list | None = None):
+```
+
+Compute linear trend (slope and intercept) of a time series.
+
+Fits a line of the form y = a * x + b using least squares method.
+
+**Parameters:**
+
+- **y** (list): The dependent variable (time series data).
+- **x** (list): The independent variable (time indices). If not provided, uses np.arange(len(y)) as default.
+
+**Returns:**
+
+  tuple: (slope, intercept) where:
+- slope (float): The coefficient a representing the trend.
+> 0: upward, < 0: downward, ~0: no trend.
+- intercept (float): The y-intercept b of the fitted line.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.mann_kendall_test"></a>
+
+### mann_kendall_test
+
+```python
+def mann_kendall_test(self, x: list):
+```
+
+Description:
+Conduct the Mann-Kendall trend test on a time series to assess
+whether a statistically significant monotonic trend exists.
+The test is non-parametric and does not assume normality.
+Handles tied ranks with variance correction.
+
+**Parameters:**
+
+- **x** (list[float]): The input time series data as a list of floats or ints. Any missing values (NaN) should be removed beforehand.
+
+**Returns:**
+
+  trend (str):
+Type of detected trend:
+- "increasing" if a significant upward trend is found
+- "decreasing" if a significant downward trend is found
+- "no trend" if no significant trend is detected
+p_value (float):
+Two-tailed p-value of the test.
+z (float):
+Standard normal test statistic.
+tau (float):
+Kendall's Tau statistic (measure of rank correlation,
+range -1 to 1).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.sens_slope"></a>
+
+### sens_slope
+
+```python
+def sens_slope(self, x: list):
+```
+
+Description:
+Compute Sen's Slope estimator for a univariate time series.
+This robust non-parametric method calculates the median of
+all pairwise slopes between observations, providing an estimate
+of the overall monotonic trend magnitude.
+
+**Parameters:**
+
+- **x** (list[float]): The input time series data as a list of floats or ints. Must have at least two data points.
+
+**Returns:**
+
+  slope (float):
+The Sen's Slope estimate (median of all pairwise slopes).
+slopes (list[float]):
+List of all pairwise slopes, which can be used for
+further distributional or variability analysis.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.stl_decompose"></a>
+
+### stl_decompose
+
+```python
+def stl_decompose(
+    self,
+    x: list,
+    period: int,
+    robust: bool = True
+):
+```
+
+Apply STL decomposition to a univariate time series.
+
+Decomposes input data into three additive components: trend,
+seasonal, and residual using LOESS.
+
+**Parameters:**
+
+- **x** (list[float]): Input time series values.
+- **period** (int): Number of observations in one seasonal cycle.
+
+**Returns:**
+
+  dict: Dictionary with keys "trend", "seasonal", "resid", each
+containing list[float] of component values.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.detect_change_points"></a>
+
+### detect_change_points
+
+```python
+def detect_change_points(
+    self,
+    signal,
+    model = 'l2',
+    penalty = 10
+):
+```
+
+Description:
+Detect change points in a one-dimensional time series using the
+PELT algorithm from the ruptures library. This identifies indices
+where the statistical structure of the signal changes.
+
+**Parameters:**
+
+- **signal** (list[float]): Input time series data.
+- **model** (`str, default="l2"`): Segmentation cost model to use. - "l1": robust to outliers (absolute loss) - "l2": mean shift model (squared loss, default) - "rbf": kernel-based model for nonlinear changes - others supported by ruptures
+- **penalty** (float, default=10): Penalty value controlling sensitivity. Higher values detect fewer change points (more conservative).
+
+**Returns:**
+
+  change_points (list[int]):
+List of indices marking change points in the series.
+The final index of the signal is always included.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.autocorrelation_function"></a>
+
+### autocorrelation_function
+
+```python
+def autocorrelation_function(self, x: list, nlags: int = 20):
+```
+
+Compute the Autocorrelation Function (ACF) of a time series.
+
+The ACF describes correlation between the series and its lagged values,
+commonly used to detect seasonality or serial dependence.
+
+**Parameters:**
+
+- **x** (list[float]): Input time series data.
+- **nlags** (int, default=20): Number of lags to compute.
+
+**Returns:**
+
+  acf (list[float]): Autocorrelation values for lags 0 to nlags.
+acf[0] = 1.0 (self-correlation), acf[k] = correlation at lag k.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.detect_seasonality_acf"></a>
+
+### detect_seasonality_acf
+
+```python
+def detect_seasonality_acf(self, values: list, min_acf: float = 0.3):
+```
+
+Detect dominant seasonality in a time series using ACF.
+
+A peak in the ACF beyond lag=1 indicates potential periodicity.
+
+**Parameters:**
+
+- **values** (list[float]): Input time series data.
+- **min_acf** (float, default=0.3): ACF threshold to consider significant.
+
+**Returns:**
+
+  result (int | str): Dominant period (lag) if detected, or
+"Data is not cyclical" if no significant seasonality found.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.getis_ord_gi_star"></a>
+
+### getis_ord_gi_star
+
+```python
+def getis_ord_gi_star(
+    self,
+    image_path: str,
+    weight_matrix: list,
+    output_path: str
+):
+```
+
+Compute Getis-Ord Gi* statistic for local spatial autocorrelation.
+
+Positive Gi* values indicate hot spots (clusters of high values),
+negative values indicate cold spots (clusters of low values).
+
+**Parameters:**
+
+- **image_path** (str): Path to input single-band raster (GeoTIFF).
+- **weight_matrix** (list[list[float]]): 2D spatial weight kernel (e.g., 3x3 or 5x5). Sum of weights must not be zero.
+- **output_path** (str): Relative path to save the Gi* result GeoTIFF.
+
+**Returns:**
+
+  str: Path to saved GeoTIFF with Gi* statistics (float32 raster).
+Preserves georeference and projection from input if available.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.analyze_hotspot_direction"></a>
+
+### analyze_hotspot_direction
+
+```python
+def analyze_hotspot_direction(self, hotspot_map_path: str):
+```
+
+Analyze dominant direction of hotspot concentration.
+
+Computes the relative location of hotspot pixels (value=1) with
+respect to raster center and determines which cardinal direction
+contains the majority of hotspots.
+
+**Parameters:**
+
+- **hotspot_map_path** (str): Path to binary hotspot map GeoTIFF. Hotspot pixels should be value=1; others are ignored.
+
+**Returns:**
+
+  str: "north", "south", "east", "west" for dominant direction,
+or "no hotspots found" if no hotspot pixels exist.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_spikes_from_values"></a>
+
+### count_spikes_from_values
+
+```python
+def count_spikes_from_values(
+    self,
+    values,
+    spike_threshold = 0.1,
+    verbose = True
+):
+```
+
+Count the number of upward spikes in a sequence of numerical values.
+
+A spike is defined as a positive difference between consecutive valid
+values greater than the given threshold.
+
+**Parameters:**
+
+- **values** (list of float): Input sequence of values (can include None or NaN).
+- **spike_threshold** (float): Minimum positive change required to count as a spike.
+- **verbose** (bool): If True, logger.infos details for each detected spike.
+
+**Returns:**
+
+  int:
+Number of detected upward spikes.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.coefficient_of_variation"></a>
+
+### coefficient_of_variation
+
+```python
+def coefficient_of_variation(self, x: list, ddof: int = 1):
+```
+
+Description:
+Compute the Coefficient of Variation (CV) for a dataset.
+CV is defined as the ratio of the standard deviation to the mean:
+CV = std(x) / mean(x)
+
+**Parameters:**
+
+- **x** (list[float]): Input dataset values (numeric).
+- **ddof** (int, default=1): Delta Degrees of Freedom for standard deviation calculation: - ddof=0 → population standard deviation - ddof=1 → sample standard deviation (default)
+
+**Returns:**
+
+  cv (float):
+The computed Coefficient of Variation.
+Returns NaN if mean(x) == 0 to avoid division by zero.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.skewness"></a>
+
+### skewness
+
+```python
+def skewness(self, x: list, bias: bool = True):
+```
+
+Compute skewness of a dataset (distribution asymmetry).
+
+Positive skew = longer right tail, negative = longer left tail,
+zero = approximately symmetric.
+
+**Parameters:**
+
+- **x** (list[float]): Input dataset values (numeric).
+- **bias** (bool, default=True): If False, applies bias correction (Fisher-Pearson method) for unbiased estimator.
+
+**Returns:**
+
+  skew (float): Skewness value. Returns 0.0 if no variation.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.kurtosis"></a>
+
+### kurtosis
+
+```python
+def kurtosis(
+    self,
+    x: list,
+    bias: bool = True,
+    fisher: bool = True
+):
+```
+
+Compute kurtosis of a dataset (tailedness measure).
+
+Positive kurtosis = heavier tails than normal, negative = lighter.
+Zero kurtosis = similar tails to normal (when fisher=True).
+
+**Parameters:**
+
+- **x** (list[float]): Input dataset values (numeric).
+- **bias** (bool, default=True): If False, applies bias correction.
+- **fisher** (bool, default=True): If True, returns "excess kurtosis" (normal=0). If False, returns regular kurtosis (normal=3).
+
+**Returns:**
+
+  kurt (float): Kurtosis value. Returns 0.0 if no variation.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_mean"></a>
+
+### calc_single_image_mean
+
+```python
+def calc_single_image_mean(self, file_path: str, uint8: bool = False):
+```
+
+Compute mean value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  mean (float): Mean pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_mean"></a>
+
+### calc_batch_image_mean
+
+```python
+def calc_batch_image_mean(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute mean value of an batch of images.
+
+**Returns:**
+
+  mean (list(float)): Mean pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_std"></a>
+
+### calc_single_image_std
+
+```python
+def calc_single_image_std(self, file_path: str, uint8: bool = False):
+```
+
+Compute standard deviation value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  std (float): Standard deviation
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_std"></a>
+
+### calc_batch_image_std
+
+```python
+def calc_batch_image_std(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute standard deviation for a batch of images.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Standard deviation values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_median"></a>
+
+### calc_single_image_median
+
+```python
+def calc_single_image_median(self, file_path: str, uint8: bool = False):
+```
+
+Compute median value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  median (float): Median pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_median"></a>
+
+### calc_batch_image_median
+
+```python
+def calc_batch_image_median(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute median pixel value for a batch of images.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Median pixel values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_min"></a>
+
+### calc_single_image_min
+
+```python
+def calc_single_image_min(self, file_path: str, uint8: bool = False):
+```
+
+Compute min value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  min (float): Minimum pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_min"></a>
+
+### calc_batch_image_min
+
+```python
+def calc_batch_image_min(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute minimum pixel value for a batch of images.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Minimum pixel values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_max"></a>
+
+### calc_single_image_max
+
+```python
+def calc_single_image_max(self, file_path: str, uint8: bool = False):
+```
+
+Compute max value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  max (float): Maximum pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_max"></a>
+
+### calc_batch_image_max
+
+```python
+def calc_batch_image_max(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute maximum pixel value for a batch of images.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Maximum pixel values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_skewness"></a>
+
+### calc_single_image_skewness
+
+```python
+def calc_single_image_skewness(self, file_path: str, uint8: bool = False):
+```
+
+Compute skewness value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  skewness: Skewness of pixel value distribution
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_skewness"></a>
+
+### calc_batch_image_skewness
+
+```python
+def calc_batch_image_skewness(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute skewness of pixel distributions for a batch of images.
+
+Positive skew = longer right tail, negative = longer left tail,
+zero = symmetric distribution.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Skewness values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_kurtosis"></a>
+
+### calc_single_image_kurtosis
+
+```python
+def calc_single_image_kurtosis(self, file_path: str, uint8: bool = False):
+```
+
+Compute kurtosis value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+
+**Returns:**
+
+  kurtosis: Kurtosis of pixel value distribution (excess kurtosis)
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_kurtosis"></a>
+
+### calc_batch_image_kurtosis
+
+```python
+def calc_batch_image_kurtosis(self, file_list: list[str], uint8: bool = False):
+```
+
+Compute kurtosis of pixel distributions for a batch of images.
+
+Kurtosis measures "tailedness" relative to normal distribution.
+Normal = 3, higher = heavier tails, lower = lighter tails.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of input image file paths.
+- **uint8** (bool, optional): Whether to convert to uint8 first. Default = False.
+
+**Returns:**
+
+  list[float]: Kurtosis values, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_sum"></a>
+
+### calc_single_image_sum
+
+```python
+def calc_single_image_sum(self, file_path: str, uint8: bool = False):
+```
+
+Compute sum value of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+- **uint8** (bool): Whether to use uint8 format.
+
+**Returns:**
+
+  sum (float): Sum pixel value
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_sum"></a>
+
+### calc_batch_image_sum
+
+```python
+def calc_batch_image_sum(self, file_list: list[str], uint8: bool = False):
+```
+
+Description:
+Compute the sum of pixel values for a batch of images.
+
+**Returns:**
+
+  - sum (list[float]): List of pixel sum values, one for each image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_hotspot_percentage"></a>
+
+### calc_single_image_hotspot_percentage
+
+```python
+def calc_single_image_hotspot_percentage(
+    self,
+    file_path: str,
+    threshold: float,
+    uint8: bool = False
+):
+```
+
+Compute hotspot percentage of an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+- **threshold** (float): Threshold value for hotspot detection.
+- **uint8** (bool): Whether to use uint8 format.
+
+**Returns:**
+
+  percentage (float): Hotspot area percentage (0.0 to 1.0).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_hotspot_percentage"></a>
+
+### calc_batch_image_hotspot_percentage
+
+```python
+def calc_batch_image_hotspot_percentage(
+    self,
+    file_list: list[str],
+    threshold: float,
+    uint8: bool = False
+):
+```
+
+Description:
+Compute the hotspot percentage (fraction of pixels above a threshold)
+for a batch of images.
+
+**Returns:**
+
+  - percentage (list[float]): List of hotspot area percentages (0.0-1.0),
+one for each input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_hotspot_tif"></a>
+
+### calc_single_image_hotspot_tif
+
+```python
+def calc_single_image_hotspot_tif(
+    self,
+    file_path: str,
+    threshold: float,
+    output_path: str,
+    uint8: bool = False
+):
+```
+
+Create a binary map highlighting areas below the threshold and save
+as GeoTIFF.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+- **threshold** (float): Threshold value for detection.
+- **uint8** (bool): Whether to use uint8 format.
+- **output_path** (str, optional): relative path for the output raster file, e.g. "question17/hotspot_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved GeoTIFF image containing the binary map.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_hotspot_tif"></a>
+
+### calc_batch_image_hotspot_tif
+
+```python
+def calc_batch_image_hotspot_tif(
+    self,
+    file_list: list[str],
+    threshold: float,
+    output_path_list: list[str],
+    uint8: bool = False
+):
+```
+
+Description:
+Create binary hotspot maps for a batch of images, where pixels below
+a specified threshold are set to 1 (hotspot) and others set to 0.
+The output is saved as GeoTIFF files, preserving georeference metadata
+from the input images.
+
+**Returns:**
+
+  - list[str]: Paths to the saved GeoTIFF images containing the binary
+hotspot maps.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.difference"></a>
+
+### difference
+
+```python
+def difference(self, a: float, b: float):
+```
+
+Description:
+Compute the absolute difference between two numbers.
+
+**Returns:**
+
+  - diff (float): The absolute difference |a - b|.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.division"></a>
+
+### division
+
+```python
+def division(self, a: float, b: float):
+```
+
+Description:
+Perform division between two numbers.
+
+**Returns:**
+
+  - result (float): The result of b ÷ a. Returns +inf if a = 0.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.percentage_change"></a>
+
+### percentage_change
+
+```python
+def percentage_change(self, a: float, b: float):
+```
+
+Description:
+Calculate the percentage change between two numbers, useful for
+comparing relative growth or decline.
+
+**Returns:**
+
+  - percent (float): The percentage change, computed as
+((b - a) / a) * 100. Positive values indicate increase,
+negative values indicate decrease. Returns +inf if a = 0.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.kelvin_to_celsius"></a>
+
+### kelvin_to_celsius
+
+```python
+def kelvin_to_celsius(self, kelvin: float):
+```
+
+Description:
+Convert temperature from Kelvin to Celsius.
+
+**Returns:**
+
+  - celsius (float): Temperature in Celsius, computed as
+(Kelvin - 273.15).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.celsius_to_kelvin"></a>
+
+### celsius_to_kelvin
+
+```python
+def celsius_to_kelvin(self, celsius: float):
+```
+
+Description:
+Convert temperature from Celsius to Kelvin.
+
+**Parameters:**
+
+- **celsius** (float): Temperature in Celsius.
+
+**Returns:**
+
+  kelvin (float):
+Temperature in Kelvin, computed as:
+Kelvin = Celsius + 273.15
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.max_value_and_index"></a>
+
+### max_value_and_index
+
+```python
+def max_value_and_index(self, x: list):
+```
+
+Description:
+Find the maximum value in a list and return both the maximum value
+and its index.
+
+**Returns:**
+
+  - result (tuple[float, int]): A tuple containing:
+* max_value (float): The maximum value in the list.
+* max_index (int): The index of the maximum value.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.min_value_and_index"></a>
+
+### min_value_and_index
+
+```python
+def min_value_and_index(self, x: list):
+```
+
+Description:
+Find the minimum value in a list and return both the minimum value
+and its index.
+
+**Returns:**
+
+  - result (tuple[float, int]): A tuple containing:
+* min_value (float): The minimum value in the list.
+* min_index (int): The index of the minimum value.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.multiply"></a>
+
+### multiply
+
+```python
+def multiply(self, a, b):
+```
+
+Description:
+Multiply two numbers and return their product.
+
+**Parameters:**
+
+- **a** (float or int): First number.
+- **b** (float or int): Second number.
+
+**Returns:**
+
+  result (float or int):
+The product of a and b.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.ceil_number"></a>
+
+### ceil_number
+
+```python
+def ceil_number(self, n: float):
+```
+
+Description:
+Return the ceiling (rounded up integer) of a given number.
+
+**Parameters:**
+
+- **n** (float): A numeric value.
+
+**Returns:**
+
+  result (int):
+The smallest integer greater than or equal to n.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.get_list_object_via_indexes"></a>
+
+### get_list_object_via_indexes
+
+```python
+def get_list_object_via_indexes(self, input_list, indexes):
+```
+
+Description:
+Retrieve elements from a list using a list or tuple of indices.
+
+**Parameters:**
+
+- **input_list** (list): The source list from which elements will be extracted.
+- **indexes** (list[int] or tuple[int]): A sequence of indices specifying the positions of elements to retrieve.
+
+**Returns:**
+
+  result (list):
+A list of elements corresponding to the provided indices.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.mean"></a>
+
+### mean
+
+```python
+def mean(self, x: list):
+```
+
+Description:
+Compute the arithmetic mean (average) of a dataset.
+
+**Parameters:**
+
+- **x** (list[float]): Input data array.
+
+**Returns:**
+
+  mean_value (float):
+The arithmetic mean of the input values.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_threshold_ratio"></a>
+
+### calculate_threshold_ratio
+
+```python
+def calculate_threshold_ratio(
+    self,
+    image_paths: str | list[str],
+    threshold: float = 0.75,
+    band_index: int = 0
+):
+```
+
+Description:
+Calculate the average percentage of pixels above a given threshold
+for one or more images and a specified band.
+
+**Parameters:**
+
+- **image_paths** (str or list[str]): Path or list of image file paths.
+- **threshold** (float, optional): Threshold value. Default = 0.75.
+- **band_index** (int, optional): Band index to use (0-based). Default = 0 (first band).
+
+**Returns:**
+
+  percentage (float):
+Average percentage of pixels above the threshold across all
+images.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_single_image_fire_pixels"></a>
+
+### calc_single_image_fire_pixels
+
+```python
+def calc_single_image_fire_pixels(self, file_path: str, fire_threshold: float = 0):
+```
+
+Compute the number of fire pixels (MaxFRP > threshold) in an image.
+
+**Parameters:**
+
+- **file_path** (str): Path to input image.
+- **fire_threshold** (float): Minimum FRP value to be considered as fire (default: 0).
+
+**Returns:**
+
+  fire_pixels (int): Number of fire pixels
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_fire_pixels"></a>
+
+### calc_batch_fire_pixels
+
+```python
+def calc_batch_fire_pixels(self, file_list: list[str], fire_threshold: float = 0):
+```
+
+Description:
+Compute the number of fire pixels (FRP > threshold) for a batch of
+images.
+
+**Parameters:**
+
+- **file_list** (list[str]): Paths to input images.
+- **fire_threshold** (float, optional): Minimum FRP value to be considered as fire. Default = 0.
+
+**Returns:**
+
+  fire_pixels (list[int]):
+A list of fire pixel counts, one per input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.create_fire_increase_map"></a>
+
+### create_fire_increase_map
+
+```python
+def create_fire_increase_map(
+    self,
+    change_image_path: str,
+    output_path: str,
+    threshold: float = 20.0
+):
+```
+
+Description:
+Create a binary map highlighting areas where fire increase exceeds
+a specified threshold.
+
+**Parameters:**
+
+- **change_image_path** (str): Path to the fire change image.
+- **output_path** (str): Relative path for the output raster file (e.g., "question17/hotspot_2022-01-16.tif").
+- **threshold** (float, optional): Threshold value in MW. Default = 20.0.
+
+**Returns:**
+
+  result (str):
+Path to the saved GeoTIFF fire increase map.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.identify_fire_prone_areas"></a>
+
+### identify_fire_prone_areas
+
+```python
+def identify_fire_prone_areas(
+    self,
+    file_path: str,
+    output_path: str,
+    threshold_percentile: float = 75,
+    uint8: bool = False
+):
+```
+
+Description:
+Identify fire-prone areas from a hotspot map based on a given
+percentile threshold.
+
+**Parameters:**
+
+- **file_path** (str): Path to the input hotspot map file.
+- **output_path** (str): Relative path for the output raster file (e.g., "question17/hotspot_2022-01-16.tif").
+- **threshold_percentile** (float, optional): Percentile threshold for identifying fire-prone areas. Default = 75.
+- **uint8** (bool, optional): Whether to use uint8 format when reading the input. Default = False.
+
+**Returns:**
+
+  result (tuple[str, float]):
+A tuple containing:
+- Path to the saved GeoTIFF file with fire-prone areas.
+- Threshold value used for classification.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.get_percentile_value_from_image"></a>
+
+### get_percentile_value_from_image
+
+```python
+def get_percentile_value_from_image(self, image_path, percentile):
+```
+
+Description:
+Calculate the N-th percentile value of pixel values in a raster
+image, and return it as a native Python type matching the image's
+data type.
+
+**Parameters:**
+
+- **image_path** (str): Path to the input raster (.tif) file.
+- **percentile** (int or float): Percentile to calculate (range 1-100).
+
+**Returns:**
+
+  value (int or float):
+The pixel value corresponding to the specified percentile,
+cast to the appropriate native Python type (int for integer
+rasters, float for floating-point rasters).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.image_division_mean"></a>
+
+### image_division_mean
+
+```python
+def image_division_mean(
+    self,
+    image_path1,
+    image_path2 = None,
+    band1 = 1,
+    band2 = 2
+):
+```
+
+Description:
+Calculate the mean of pixel-wise division between two images
+or between two bands of the same image.
+
+**Parameters:**
+
+- **image_path1** (str): Path to the first image (or the only image if comparing two bands).
+- **image_path2** (str, optional): Path to the second image. If None, band1 and band2 of image_path1 will be used.
+- **band1** (int, optional): Band index for numerator when using a multi-band image. Default = 1.
+- **band2** (int, optional): Band index for denominator when using a multi-band image. Default = 2.
+
+**Returns:**
+
+  result (float):
+The mean of the valid pixel-wise division results.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_intersection_percentage"></a>
+
+### calculate_intersection_percentage
+
+```python
+def calculate_intersection_percentage(
+    self,
+    path1,
+    threshold1,
+    path2,
+    threshold2
+):
+```
+
+Description:
+Calculate the percentage of pixels that simultaneously satisfy
+threshold conditions in two raster images.
+
+**Parameters:**
+
+- **path1** (str): Path to the first raster image (e.g., NDVI).
+- **threshold1** (float): Threshold value for the first image (e.g., NDVI > 0.3).
+- **path2** (str): Path to the second raster image (e.g., TVDI).
+- **threshold2** (float): Threshold value for the second image (e.g., TVDI > 0.7).
+
+**Returns:**
+
+  percentage (float):
+Percentage of pixels that satisfy both conditions
+over the total valid pixels.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_mean_mean"></a>
+
+### calc_batch_image_mean_mean
+
+```python
+def calc_batch_image_mean_mean(self, file_list: list[str], uint8: bool = False):
+```
+
+Description:
+Compute the average of mean pixel values across a batch of images.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of image file paths.
+- **uint8** (bool, optional): Whether to convert images to uint8 format (0-255). Default = False.
+
+**Returns:**
+
+  mean_of_means (float):
+The average of the mean pixel values across all images.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_mean_max"></a>
+
+### calc_batch_image_mean_max
+
+```python
+def calc_batch_image_mean_max(self, file_list: list[str], uint8: bool = False):
+```
+
+Description:
+Compute the mean pixel values of a batch of images and return the
+maximum mean.
+
+**Parameters:**
+
+- **file_list** (list[str]): Paths to input images.
+- **uint8** (bool, optional): Whether to treat image as uint8 (0-255 normalization). Default = False.
+
+**Returns:**
+
+  max_mean (float):
+The maximum mean pixel value among all images.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_mean_max_min"></a>
+
+### calc_batch_image_mean_max_min
+
+```python
+def calc_batch_image_mean_max_min(self, file_list: list[str], uint8: bool = False):
+```
+
+Description:
+Compute the batch-wise statistics across multiple images,
+including:
+- Mean of mean values
+- Maximum of maximum values
+- Minimum of minimum values
+
+**Parameters:**
+
+- **file_list** (list[str]): List of image file paths.
+- **uint8** (bool, optional): Whether to convert the data to uint8 range (0-255). Default = False.
+
+**Returns:**
+
+  result (tuple[float, float, float]):
+A tuple containing:
+(mean of means, max of maxs, min of mins)
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_batch_image_mean_threshold"></a>
+
+### calc_batch_image_mean_threshold
+
+```python
+def calc_batch_image_mean_threshold(
+    self,
+    file_list: list[str],
+    threshold: float,
+    above: bool = True,
+    uint8: bool = False,
+    band_index: int = 0,
+    return_type: str = 'ratio'
+):
+```
+
+Description:
+Calculate the percentage or count of images whose mean pixel values
+(in a specified band) are above or below a given threshold.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of image file paths.
+- **threshold** (float): Threshold value for comparison.
+- **above** (bool, optional): If True, count images with mean > threshold; if False, mean < threshold. Default = True.
+- **uint8** (bool, optional): If True, rescale image data to 0-255 range. Default = False.
+- **band_index** (int, optional): Index of the band to read (0-based). Default = 0.
+- **return_type** (str, optional): - "ratio": return percentage (float, 0-100). - "count": return number of images (int). Default = "ratio".
+
+**Returns:**
+
+  float | int:
+Percentage (0-100) or count of images satisfying the condition.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_multi_band_threshold_ratio"></a>
+
+### calculate_multi_band_threshold_ratio
+
+```python
+def calculate_multi_band_threshold_ratio(self, image_path: str, band_conditions: list):
+```
+
+Description:
+Calculate the percentage of pixels that simultaneously satisfy
+multiple band threshold conditions.
+
+**Parameters:**
+
+- **image_path** (str): Path to the multi-band image file.
+- **band_conditions** (list[tuple[int, float, str]]): A list of conditions in the form (band_index, threshold_value, compare_type): - band_index (int): Zero-based band index. - threshold_value (float): Threshold to apply. - compare_type (str): "above" or "below".
+
+**Returns:**
+
+  float:
+Percentage of pixels satisfying all conditions (intersection).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_pixels_satisfying_conditions"></a>
+
+### count_pixels_satisfying_conditions
+
+```python
+def count_pixels_satisfying_conditions(self, image_path: str, band_conditions: list):
+```
+
+Description:
+Count the number of pixels that simultaneously satisfy multiple
+band threshold conditions.
+
+**Parameters:**
+
+- **image_path** (str): Path to the multi-band image file.
+- **band_conditions** (list[tuple[int, float, str]]): A list of conditions in the form (band_index, threshold_value, compare_type): - band_index (int): Zero-based band index. - threshold_value (float): Threshold to apply. - compare_type (str): "above" or "below".
+
+**Returns:**
+
+  int:
+Number of pixels satisfying all threshold conditions
+(intersection).
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_images_exceeding_threshold_ratio"></a>
+
+### count_images_exceeding_threshold_ratio
+
+```python
+def count_images_exceeding_threshold_ratio(
+    self,
+    image_paths: str | list[str],
+    value_threshold: float = 0.7,
+    ratio_threshold: float = 20.0,
+    mode: str = 'above',
+    verbose: bool = True
+):
+```
+
+Count how many images have a percentage of pixels above or below a
+threshold that exceeds a specified ratio.
+
+**Parameters:**
+
+- **image_paths** (str or list): Path(s) to image file(s).
+- **value_threshold** (float): Pixel value threshold (e.g., NDVI > 0.7).
+- **ratio_threshold** (float): Percentage threshold for comparison (e.g., 20.0 means 20%).
+- **mode** (str): - 'above': pixels > value_threshold - 'below': pixels < value_threshold Default is 'above'.
+- **verbose** (bool): If True, logger.infos detailed ratio results per image.
+
+**Returns:**
+
+  int: Number of images whose pixel ratio exceeds the
+ratio_threshold.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.average_ratio_exceeding_threshold"></a>
+
+### average_ratio_exceeding_threshold
+
+```python
+def average_ratio_exceeding_threshold(
+    self,
+    image_paths: str | list[str],
+    value_threshold: float = 0.7,
+    ratio_threshold: float = 20.0,
+    mode: str = 'above',
+    verbose: bool = True
+):
+```
+
+Calculate the average percentage of pixels exceeding a value threshold,
+considering only images where the ratio is greater than a specified
+ratio threshold.
+
+**Parameters:**
+
+- **image_paths** (str or list): Path(s) to image file(s).
+- **value_threshold** (float): Pixel value threshold (e.g., NDVI > 0.7).
+- **ratio_threshold** (float): Minimum percentage threshold for inclusion (e.g., 20.0 means 20%).
+- **mode** (str): - 'above': pixels > value_threshold - 'below': pixels < value_threshold Default is 'above'.
+- **verbose** (bool): If True, logger.infos detailed ratio results per image.
+
+**Returns:**
+
+  float:
+Average percentage of qualifying images.
+Returns 0.0 if no image meets the criteria.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.count_images_exceeding_mean_multiplier"></a>
+
+### count_images_exceeding_mean_multiplier
+
+```python
+def count_images_exceeding_mean_multiplier(
+    self,
+    image_paths: str | list[str],
+    mean_multiplier: float = 1.1,
+    mode: str = 'above',
+    verbose: bool = True
+):
+```
+
+Count how many images have a mean pixel value above or below
+a multiple of the overall mean pixel value across all images.
+
+**Parameters:**
+
+- **image_paths** (str or list): Path(s) to image file(s).
+- **mean_multiplier** (float): Multiplier applied to the overall mean (e.g., 1.1 means 110%).
+- **mode** (str): - 'above': count images with mean > mean_multiplier * overall_mean - 'below': count images with mean < mean_multiplier * overall_mean Default is 'above'.
+- **verbose** (bool): If True, logger.infos detailed mean and threshold comparisons per image.
+
+**Returns:**
+
+  int:
+Number of images satisfying the condition.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_band_mean_by_condition"></a>
+
+### calculate_band_mean_by_condition
+
+```python
+def calculate_band_mean_by_condition(
+    self,
+    image_path: str,
+    condition_band_index: int,
+    condition_threshold: float,
+    condition_mode: str = 'above',
+    target_band_index: int = 0
+):
+```
+
+Calculate the mean value of a target band over pixels where a
+condition band satisfies a threshold.
+
+**Parameters:**
+
+- **image_path** (str): Path to the multi-band raster image.
+- **condition_band_index** (int): Zero-based index of the band used for thresholding.
+- **condition_threshold** (float): Threshold value to apply on the condition band.
+- **condition_mode** (`str, default='above'`): - 'above': select pixels where condition_band >= threshold - 'below': select pixels where condition_band < threshold
+- **target_band_index** (int, default=0): Zero-based index of the band for which the mean is calculated.
+
+**Returns:**
+
+  float:
+Mean value of the target band over selected pixels.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calc_threshold_value_mean"></a>
+
+### calc_threshold_value_mean
+
+```python
+def calc_threshold_value_mean(
+    self,
+    path1: str | list[str],
+    path2: str | list[str],
+    threshold: float = 300.0
+):
+```
+
+Calculate the mean value of corresponding raster pixels in path2
+where the raster values in path1 exceed the given threshold.
+
+**Parameters:**
+
+- **path1** (Path or List[Path]): Path(s) to the first set of raster files (e.g., LST).
+- **path2** (Path or List[Path]): Path(s) to the second set of raster files (e.g., TVDI).
+- **threshold** (float): Threshold for values in path1 (e.g., LST in Kelvin).
+
+**Returns:**
+
+  float: Mean value of path2 pixels that meet the threshold
+condition in path1. Returns np.nan if no valid data is found.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_tif_average"></a>
+
+### calculate_tif_average
+
+```python
+def calculate_tif_average(
+    self,
+    file_list: list[str],
+    output_path: str,
+    uint8: bool = False
+):
+```
+
+Calculate average of multiple tif files and save result to same
+directory.
+
+**Parameters:**
+
+- **file_list** (list[str]): List of tif file paths.
+- **output_path** (str): relative path for the output raster file, e.g. "benchmark/data/question17/avg_result.tif"
+- **uint8** (bool): Convert to uint8 format, default False.
+
+**Returns:**
+
+  output_path (str): Full path of output file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_tif_difference"></a>
+
+### calculate_tif_difference
+
+```python
+def calculate_tif_difference(
+    self,
+    image_a_path: str,
+    image_b_path: str,
+    output_path: str,
+    uint8: bool = False
+):
+```
+
+Calculate difference between two tif files (image_b - image_a) and
+save result.
+
+**Parameters:**
+
+- **image_a_path** (str): Path to first image (will be subtracted from).
+- **image_b_path** (str): Path to second image (will subtract from).
+- **output_path** (str): relative path for the output raster file, e.g. "question17/difference_result.tif"
+- **uint8** (bool): Convert to uint8 format, default False.
+
+**Returns:**
+
+  output_path (str): Full path of output file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.subtract"></a>
+
+### subtract
+
+```python
+def subtract(
+    self,
+    img1_path: str,
+    img2_path: str,
+    output_path: str
+):
+```
+
+Subtract two images and save result.
+
+**Parameters:**
+
+- **img1_path** (str): Path to first image.
+- **img2_path** (str): Path to second image.
+- **output_path** (str): relative path for the output raster file, e.g. "question17/difference_result.tif"
+
+**Returns:**
+
+  str: Path to output file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.calculate_area"></a>
+
+### calculate_area
+
+```python
+def calculate_area(self, input_image_path, gsd):
+```
+
+Description:
+This function calculates the area of non-zero pixels in the input
+image and returns the result.
+
+**Parameters:**
+
+- **input_image_path** (str): Path to the input image file (TIFF, PNG, JPG, etc.).
+- **gsd** (float): Ground sample distance in meters per pixel, if None, the function will return the number of non-zero pixels.
+
+**Returns:**
+
+  area (int): The area of non-zero pixels in the input image.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.grayscale_to_colormap"></a>
+
+### grayscale_to_colormap
+
+```python
+def grayscale_to_colormap(
+    self,
+    image_path: str,
+    save_name: str,
+    cmap_name: str = 'viridis',
+    preserve_geo: bool = False
+):
+```
+
+Apply a colormap to a grayscale image and save as a color image.
+
+**Parameters:**
+
+- **image_path** (str): Path to input grayscale image (e.g. .tif).
+- **save_name** (str): Filename for save color image (.png, .jpg, or .tif).
+- **cmap_name** (str): Name of a matplotlib colormap, e.g. 'viridis', 'RdBu', etc.
+- **preserve_geo** (bool): If True, preserves georeferencing.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.get_filelist"></a>
+
+### get_filelist
+
+```python
+def get_filelist(self, dir_path: str):
+```
+
+Returns a list of files in the specified directory.
+
+**Parameters:**
+
+- **dir_path** (str): Path to the directory.
+
+**Returns:**
+
+  list: List of file names in the directory.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.radiometric_correction_sr"></a>
+
+### radiometric_correction_sr
+
+```python
+def radiometric_correction_sr(self, input_band_path, output_path):
+```
+
+Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
+
+**Parameters:**
+
+- **input_band_path** (str): Path to the input reflectance band file.
+- **output_path** (str): relative path for the output raster file, e.g. "question17/radiometric_correction_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved corrected reflectance file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.apply_cloud_mask"></a>
+
+### apply_cloud_mask
+
+```python
+def apply_cloud_mask(
+    self,
+    sr_band_path,
+    qa_pixel_path,
+    output_path
+):
+```
+
+Apply cloud/shadow mask to a single Landsat 8 surface reflectance band
+using QA_PIXEL band.
+
+**Parameters:**
+
+- **sr_band_path** (str): Path to surface reflectance band (e.g., SR_B3 or SR_B5).
+- **qa_pixel_path** (str): Path to QA_PIXEL band.
+- **output_path** (str): relative path for the output raster file, e.g. "question17/cloud_mask_2022-01-16.tif"
+
+**Returns:**
+
+  str: Path to the saved masked raster file.
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.read_image"></a>
+
+### read_image
+
+```python
+def read_image(self, file_path: str):
+```
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.read_image_uint8"></a>
+
+### read_image_uint8
+
+```python
+def read_image_uint8(self, file_path: str):
+```
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.get_geotransform"></a>
+
+### get_geotransform
+
+```python
+def get_geotransform(self, file_path):
+```
+
+<a id="camel.toolkits.earth_science_toolkit.EarthScienceToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

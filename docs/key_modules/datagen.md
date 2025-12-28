@@ -47,13 +47,14 @@ The main class that implements the CoT generation system with the following capa
   from camel.datagen import CoTDataGenerator
 
   # Initialize agents
-  generator_agent = ChatAgent("System message for generator")
-  verifier_agent = ChatAgent("System message for verifier")
+  generator_agent = ChatAgent("Generator agent for simple math computation.")
+  verifier_agent = ChatAgent("Verified agent for simple math computation.")
 
   # Define golden answers
+  question = "What's the answer of 1 + 2?"
+
   golden_answers = {
-      "question1": "answer1",
-      "question2": "answer2"
+      question: "3",
   }
 
   # Create generator
@@ -61,11 +62,11 @@ The main class that implements the CoT generation system with the following capa
       generator_agent=generator_agent,
       verifier_agent=verifier_agent,
       golden_answers=golden_answers,
-      search_limit=100
+      search_limit=3,
   )
 
   # Generate solution
-  solution = cot_generator.solve("question1")
+  solution = cot_generator.solve(question)
   ```
 </Card>
 
@@ -115,7 +116,6 @@ The main class that implements the CoT generation system with the following capa
       <li>Solutions with intermediate steps</li>
       <li>Golden answers used for verification</li>
       <li>Export timestamp</li>
-      <li>Solution scores and verification results</li>
     </ul>
   </Accordion>
 </AccordionGroup>

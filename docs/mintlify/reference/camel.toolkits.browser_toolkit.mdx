@@ -436,7 +436,7 @@ Initialize the BrowserToolkit instance.
 
 **Parameters:**
 
-- **headless** (bool): Whether to run the browser in headless mode.
+- **headless** (bool): Whether to run the browser in headless mode. When running inside a CAMEL runtime container, this is automatically set to True since containers typically don't have a display.
 - **cache_dir** (Union[str, None]): The directory to store cache files.
 - **channel** (`Literal["chrome", "msedge", "chromium"]`): The browser channel to use. Must be one of "chrome", "msedge", or "chromium".
 - **history_window** (int): The window size for storing the history of actions.
