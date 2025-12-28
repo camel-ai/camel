@@ -769,11 +769,11 @@ class TerminalToolkit(BaseToolkit):
                 else:
                     return "Command executed successfully (no output)."
             except subprocess.TimeoutExpired:
-                # Timeout: switch to non-blocking mode
+                # Timeout: restart as non-blocking mode
                 self._write_to_log(self.blocking_log_file, log_entry + "\n")
                 logger.warning(
                     f"Command did not complete within {timeout} seconds. "
-                    f"Process continues in background as session '{id}'."
+                    f"Restarting as non-blocking session '{id}'."
                 )
                 return self.shell_exec(id, original_command, block=False)
             except Exception as e:
