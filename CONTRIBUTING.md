@@ -318,7 +318,7 @@ uv pip install -e ".[all, dev, docs]"
 pre-commit install
 
 # Run camel's pre-commit before push
-pre-commit run
+pre-commit run --all-files
 
 # Exit the virtual environment
 deactivate

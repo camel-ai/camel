@@ -12,10 +12,10 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy
-        entry: uv run mypy --namespace-packages
+        entry: uv run mypy --namespace-packages -p camel -p test -p apps
         language: system
         types: [python]
-        pass_filenames: true
+        pass_filenames: false
         require_serial: true
         exclude: ^(docs/|examples/usecases/)  # Ignore files under docs and examples/usecases
 
