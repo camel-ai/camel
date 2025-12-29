@@ -345,30 +345,61 @@ class ActionReplayer:
                         return text
         return None
 
+    def extract_element_role_from_snapshot(
+        self, snapshot: str, ref: str
+    ) -> Optional[str]:
+        """Extract element role (type) for a given ref from snapshot.
+
+        Args:
+            snapshot: Snapshot text
+            ref: Reference ID (e.g., 'e149')
+
+        Returns:
+            Element role (e.g., 'button', 'gridcell', 'combobox') or None
+        """
+        lines = snapshot.split('\n')
+        for line in lines:
+            if f'[ref={ref}]' in line:
+                # Extract element role from the line
+                # Pattern: "- role_name" or "- role_name [ref=...]" or "- role_name "label" [ref=...]"
+                role_match = re.match(r'\s*-\s+(\w+)', line)
+                if role_match:
+                    return role_match.group(1)
+        return None
+
     def find_ref_by_aria_label(
         self,
         snapshot: str,
         aria_label: str,
         element_type: Optional[str] = None,
+        element_role: Optional[str] = None,
     ) -> Optional[str]:
-        """Find ref in current snapshot by aria-label.
+        """Find ref in current snapshot by aria-label using similarity matching.
 
-        Uses a two-step extraction algorithm similar to LogReplayModifierToolkit:
-        1. Extract ref and label separately from each line
-        2. Match the label against the search pattern
-        3. Prioritize exact matches over substring matches
+        Uses a similarity-based algorithm with role filtering:
+        1. Extract ref, label, and role separately from each line
+        2. Filter by element_role if specified (must match original role)
+        3. Calculate similarity percentage for each label
+        4. Return the ref with highest similarity (100% for exact match)
+
+        Similarity calculation:
+        - Exact match (case-insensitive): 100%
+        - Substring match: (len(aria_label) / len(label)) * 100
+        - No match: 0%
 
         Args:
             snapshot: Current snapshot text
             aria_label: Aria-label to search for (supports regex patterns)
-            element_type: Optional element type filter (e.g., 'combobox', 'button')
+            element_type: Optional element type filter (e.g., 'combobox', 'button') [DEPRECATED, use element_role]
+            element_role: Optional element role filter (e.g., 'button', 'gridcell', 'row') - must match original element role
 
         Returns:
             Ref ID (e.g., 'e149') or None if not found
         """
-        # Separate exact matches and substring matches
-        exact_matches = []
-        substring_matches = []
+        # Store candidates with their similarity scores
+        candidates = []  # List of (ref, similarity_score, label, role)
+
+        aria_label_lower = aria_label.lower()
 
         for line in snapshot.split('\n'):
             # Step 1: Extract ref and label separately
@@ -381,33 +412,74 @@ class ActionReplayer:
             ref = ref_match.group(1)
             label = label_match.group(1)
 
-            # Optional: Filter by element type
-            if element_type:
+            # Extract element role from line
+            role_match = re.match(r'\s*-\s+(\w+)', line)
+            current_role = role_match.group(1) if role_match else None
+
+            # Filter by element_role (PRIORITY: role matching for consistency)
+            if element_role:
+                if current_role != element_role:
+                    continue
+
+            # Optional: Filter by element type (DEPRECATED, kept for backward compatibility)
+            if element_type and not element_role:
                 # Check if line contains the element type
                 type_pattern = rf'^-\s+{element_type}\s+'
                 if not re.search(type_pattern, line):
                     continue
 
-            # Step 2: Check for exact match first (case-insensitive)
-            if aria_label.lower() == label.lower():
-                exact_matches.append(ref)
-                continue
+            label_lower = label.lower()
 
-            # Step 3: Check for substring/regex match
-            try:
-                # Try regex pattern matching (case-insensitive)
-                if re.search(aria_label, label, re.IGNORECASE):
-                    substring_matches.append(ref)
-            except re.error:
-                # If regex is invalid, fall back to exact substring match
-                if aria_label.lower() in label.lower():
-                    substring_matches.append(ref)
+            # Calculate similarity score
+            similarity = 0.0
 
-        # Prioritize exact matches over substring matches
-        if exact_matches:
-            return exact_matches[0]
-        elif substring_matches:
-            return substring_matches[0]
+            # Exact match: 100% similarity
+            if aria_label_lower == label_lower:
+                similarity = 100.0
+            # Substring match: calculate percentage based on length ratio
+            elif aria_label_lower in label_lower:
+                # Higher score if aria_label is a larger portion of the label
+                similarity = (len(aria_label) / len(label)) * 100
+            # Regex match (for backward compatibility)
+            else:
+                try:
+                    if re.search(aria_label, label, re.IGNORECASE):
+                        # Regex match but not substring - give it a lower score
+                        similarity = 50.0
+                except re.error:
+                    # Invalid regex, no match
+                    similarity = 0.0
+
+            # Only add candidates with non-zero similarity
+            if similarity > 0:
+                candidates.append((ref, similarity, label, current_role))
+
+        # Sort by similarity score (descending) and return the best match
+        if candidates:
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            best_ref, best_similarity, best_label, best_role = candidates[0]
+
+            # Debug output to show matching details
+            if best_similarity == 100.0:
+                if element_role:
+                    print(
+                        f"  → Exact match found: {best_ref} ({best_role}, 100% similarity)"
+                    )
+                else:
+                    print(f"  → Exact match found: {best_ref} (100% similarity)")
+            else:
+                if element_role:
+                    print(
+                        f"  → Best match: {best_ref} ({best_role}, {best_similarity:.1f}% similarity)"
+                    )
+                else:
+                    print(f"  → Best match: {best_ref} ({best_similarity:.1f}% similarity)")
+                print(f"     Target: '{aria_label}'")
+                print(
+                    f"     Found:  '{best_label[:100]}{'...' if len(best_label) > 100 else ''}'"
+                )
+
+            return best_ref
         else:
             return None
 
@@ -697,9 +769,16 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             f"  → Mapping ref {arg} with aria-label: '{aria_label}'"
                         )
 
-                    # Find new ref in current snapshot
+                    # Extract original element role for consistency checking
+                    original_role = self.extract_element_role_from_snapshot(
+                        original_snapshot, arg
+                    )
+                    if original_role:
+                        print(f"  → Original element role: {original_role}")
+
+                    # Find new ref in current snapshot with role filtering
                     new_ref = self.find_ref_by_aria_label(
-                        self.current_snapshot, aria_label
+                        self.current_snapshot, aria_label, element_role=original_role
                     )
 
                     if new_ref:

@@ -735,8 +735,9 @@ GUIDELINES:
 
 TASK DESCRIPTION:
 {self.subtask_config.get('task_description', 'Complete browser automation tasks')}
-
 Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!
+If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself, like clicking non-stop only filter in stops
+
 """
 
     async def run(self, user_task: str):
@@ -1351,8 +1352,7 @@ async def main():
 
         # Example task
         task = """
-Show me the list of one-way flights today (February 17, 2026) from Chicago to Paris.
-
+Search for one-way flights from New York to London on Jan. 26th 2026 and filter the results to show only non-stop flights.
         """
 
         await agent.run(task)
