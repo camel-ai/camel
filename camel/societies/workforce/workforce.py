@@ -51,6 +51,7 @@ from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelManager
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
+    ASSIGN_TASK_GROUPED_PROMPT,
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_RESPONSE_FORMAT,
@@ -58,6 +59,7 @@ from camel.societies.workforce.prompts import (
     STRATEGY_DESCRIPTIONS,
     TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
+    TASK_DECOMPOSE_GROUPED_PROMPT,
     TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
@@ -75,14 +77,17 @@ from camel.societies.workforce.utils import (
     TaskAnalysisResult,
     TaskAssignment,
     TaskAssignResult,
+    TaskGroupAssignResult,
     WorkerConf,
     check_if_running,
+    expand_group_to_task_dependencies,
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import (
     Task,
     TaskState,
     is_task_result_insufficient,
+    parse_response_grouped,
     validate_task_content,
 )
 from camel.toolkits import (
@@ -135,6 +140,9 @@ class WorkforceMode(Enum):
     r"""Workforce execution mode for different task processing strategies."""
 
     AUTO_DECOMPOSE = "auto_decompose"  # Automatic task decomposition mode
+    AUTO_DECOMPOSE_GROUPED = (
+        "auto_decompose_grouped"  # Auto-decompose with task groups
+    )
     PIPELINE = "pipeline"  # Predefined pipeline mode
 
 
@@ -243,11 +251,14 @@ class Workforce(BaseNode):
             implements :class:`WorkforceMetrics`, no default logger is added.
             (default: :obj:`None`)
         mode (WorkforceMode, optional): The execution mode for task
-            processing. AUTO_DECOMPOSE mode uses intelligent recovery
-            strategies (decompose, replan, etc.) when tasks fail.
-            PIPELINE mode uses simple retry logic and allows failed
-            tasks to continue the workflow, passing error information
-            to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+            processing.
+            - `AUTO_DECOMPOSE`: automatic task decomposition with per-task
+              assignment (original behavior).
+            - `AUTO_DECOMPOSE_GROUPED`: automatic decomposition with task
+              groups (coarse routing, reduced coordinator load).
+            - `PIPELINE`: predefined pipeline mode, simple retry, failed
+              tasks may still feed into dependents.
+            (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
         failure_handling_config (Optional[Union[FailureHandlingConfig, Dict]]):
             Configuration for customizing failure handling behavior. Can be
             a FailureHandlingConfig instance or a dict with the same fields.
@@ -1392,17 +1403,36 @@ class Workforce(BaseNode):
         if self.mode == WorkforceMode.PIPELINE:
             return []
 
-        decompose_prompt = str(
-            TASK_DECOMPOSE_PROMPT.format(
-                content=task.content,
-                child_nodes_info=self._get_child_nodes_info(),
-                additional_info=task.additional_info,
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            decompose_prompt = str(
+                TASK_DECOMPOSE_GROUPED_PROMPT.format(
+                    content=task.content,
+                    child_nodes_info=self._get_child_nodes_info(),
+                    additional_info=task.additional_info,
+                )
             )
-        )
+        elif self.mode == WorkforceMode.AUTO_DECOMPOSE:
+            decompose_prompt = str(
+                TASK_DECOMPOSE_PROMPT.format(
+                    content=task.content,
+                    child_nodes_info=self._get_child_nodes_info(),
+                    additional_info=task.additional_info,
+                )
+            )
         self.task_agent.reset()
-        result = task.decompose(
-            self.task_agent, decompose_prompt, stream_callback=stream_callback
-        )
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            result = task.decompose(
+                self.task_agent,
+                decompose_prompt,
+                task_parser=parse_response_grouped,
+                stream_callback=stream_callback,
+            )
+        else:
+            result = task.decompose(
+                self.task_agent,
+                decompose_prompt,
+                stream_callback=stream_callback,
+            )
 
         # Handle both streaming and non-streaming results
         if isinstance(result, Generator):
@@ -3517,21 +3547,45 @@ class Workforce(BaseNode):
         Returns:
             TaskAssignResult: Assignment result from coordinator.
         """
-        # format tasks information for the prompt
-        tasks_info = ""
-        for task in tasks:
-            tasks_info += f"Task ID: {task.id}\n"
-            tasks_info += f"Content: {task.content}\n"
-            if task.additional_info:
-                tasks_info += f"Additional Info: {task.additional_info}\n"
-            tasks_info += "---\n"
+        if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+            # format task groups information for the prompt
+            task_groups_info = ""
+            seen_task_groups = set()
+            for task in tasks:
+                if not task.group:
+                    continue
+                if task.group.id in seen_task_groups:
+                    continue
+                seen_task_groups.add(task.group.id)
+                task_groups_info += f"Task group ID: {task.group.id}\n"
+                task_groups_info += f"Summary: {task.group.content}\n"
+                # TODO: add additional info if available
+                task_groups_info += "---\n"
 
-        prompt = str(
-            ASSIGN_TASK_PROMPT.format(
-                tasks_info=tasks_info,
-                child_nodes_info=self._get_child_nodes_info(),
+            prompt = str(
+                ASSIGN_TASK_GROUPED_PROMPT.format(
+                    tasks_info=task_groups_info,
+                    child_nodes_info=self._get_child_nodes_info(),
+                )
             )
-        )
+            response_format = TaskGroupAssignResult
+        else:
+            # format tasks information for the prompt
+            tasks_info = ""
+            for task in tasks:
+                tasks_info += f"Task ID: {task.id}\n"
+                tasks_info += f"Content: {task.content}\n"
+                if task.additional_info:
+                    tasks_info += f"Additional Info: {task.additional_info}\n"
+                tasks_info += "---\n"
+
+            prompt = str(
+                ASSIGN_TASK_PROMPT.format(
+                    tasks_info=tasks_info,
+                    child_nodes_info=self._get_child_nodes_info(),
+                )
+            )
+            response_format = TaskAssignResult  # type: ignore[assignment]
 
         # add feedback if this is a retry
         if invalid_ids:
@@ -3547,21 +3601,45 @@ class Workforce(BaseNode):
         # Check if we should use structured handler
         if self.use_structured_output_handler:
             # Use structured handler for prompt-based extraction
+            if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                examples = [
+                    {
+                        "assignments": [
+                            {
+                                "task_group_id": "0.1",
+                                "assignee_id": "node_research_1",
+                                "dependencies": [],
+                            },
+                            {
+                                "task_group_id": "0.2",
+                                "assignee_id": "node_analysis_1",
+                                "dependencies": [["0.1", "ALL"]],
+                            },
+                            {
+                                "task_group_id": "0.3",
+                                "assignee_id": "node_compile_1",
+                                "dependencies": [["0.2", "ANY"]],
+                            },
+                        ]
+                    }
+                ]
+            else:
+                examples = [
+                    {
+                        "assignments": [
+                            {
+                                "task_id": "task_1",
+                                "assignee_id": "worker_123",
+                                "dependencies": [],
+                            }
+                        ]
+                    }
+                ]
             enhanced_prompt = (
                 self.structured_handler.generate_structured_prompt(
                     base_prompt=prompt,
-                    schema=TaskAssignResult,
-                    examples=[
-                        {
-                            "assignments": [
-                                {
-                                    "task_id": "task_1",
-                                    "assignee_id": "worker_123",
-                                    "dependencies": [],
-                                }
-                            ]
-                        }
-                    ],
+                    schema=response_format,
+                    examples=examples,
                 )
             )
 
@@ -3578,20 +3656,28 @@ class Workforce(BaseNode):
             # Parse with structured handler
             result = self.structured_handler.parse_structured_response(
                 response.msg.content,
-                schema=TaskAssignResult,
+                schema=response_format,
                 fallback_values={"assignments": []},
             )
-            # Ensure we return a TaskAssignResult instance
-            if isinstance(result, TaskAssignResult):
-                return result
+            # Ensure we return a proper instance
+            if isinstance(result, response_format):
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(tasks, result)
+                else:
+                    return result  # type: ignore[return-value]
             elif isinstance(result, dict):
-                return TaskAssignResult(**result)
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(
+                        tasks, TaskGroupAssignResult(**result)
+                    )
+                else:
+                    return TaskAssignResult(**result)
             else:
                 return TaskAssignResult(assignments=[])
         else:
             # Use existing native structured output code
             response = self.coordinator_agent.step(
-                prompt, response_format=TaskAssignResult
+                prompt, response_format=response_format
             )
 
             if response.msg is None or response.msg.content is None:
@@ -3603,7 +3689,12 @@ class Workforce(BaseNode):
 
             try:
                 result_dict = json.loads(response.msg.content, parse_int=str)
-                return TaskAssignResult(**result_dict)
+                if self.mode == WorkforceMode.AUTO_DECOMPOSE_GROUPED:
+                    return expand_group_to_task_dependencies(
+                        tasks, TaskGroupAssignResult(**result_dict)
+                    )
+                else:
+                    return TaskAssignResult(**result_dict)
             except json.JSONDecodeError as e:
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
