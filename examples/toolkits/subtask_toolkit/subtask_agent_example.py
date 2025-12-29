@@ -214,9 +214,9 @@ class SubtaskFunction:
                         / f"subtask_{self.subtask_id}_replay_actions.json"
                     )
                 else:
-                    replay_log_dir = Path("examples/toolkits/browser_log")
-                    if not replay_log_dir.exists():
-                        replay_log_dir = Path("browser_log")
+                    # Use browser_log hardcoded absolute path
+                    replay_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
+                    replay_log_dir.mkdir(parents=True, exist_ok=True)
                     replay_log_file = (
                         replay_log_dir
                         / f"subtask_replay_actions_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -338,6 +338,12 @@ class SubtaskAgent:
         )
         self.session_log_dir: Optional[Path] = None
 
+        # Base directory for session logs (hardcoded absolute path)
+        self.session_logs_root = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs")
+
+        # Store current user task (actual task being executed)
+        self.current_user_task = None
+
         # Statistics tracking
         self.stats = {
             'total_tokens': 0,
@@ -358,6 +364,9 @@ class SubtaskAgent:
         # Store system prompt and tool definitions for logging
         self.system_prompt = None
         self.tool_definitions = []
+
+        # Store current user task (actual task being executed)
+        self.current_user_task = None
 
     def _load_subtask_configs(self):
         """Load all subtask configuration files from the directory."""
@@ -405,11 +414,8 @@ class SubtaskAgent:
         print("=" * 80)
 
         # Create session log directory
-        from pathlib import Path
-
-        session_logs_root = Path("session_logs")
         self.session_log_dir = (
-            session_logs_root / f"session_{self.session_timestamp}"
+            self.session_logs_root / f"session_{self.session_timestamp}"
         )
         self.session_log_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n📁 Session log directory: {self.session_log_dir}")
@@ -461,11 +467,13 @@ class SubtaskAgent:
             # "browser_mouse_drag",
         ]
         # Initialize toolkit (single instance, shared by agent and replay)
+        browser_log_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
             stealth=True,
             browser_log_to_file=True,
+            log_dir=browser_log_dir,  # Set log directory to hardcoded path
             viewport_limit=False,
             cdp_url=cdp_url,
             default_start_url=None,
@@ -736,7 +744,8 @@ GUIDELINES:
 TASK DESCRIPTION:
 {self.subtask_config.get('task_description', 'Complete browser automation tasks')}
 Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!
-If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself, like clicking non-stop only filter in stops
+If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself
+
 
 """
 
@@ -746,6 +755,9 @@ If you find some subtask may not finished by reusing previous subtask, you need 
         Args:
             user_task: The task for the agent to complete
         """
+        # Store the current user task for logging
+        self.current_user_task = user_task
+
         print("\n" + "=" * 80)
         print("AGENT EXECUTION")
         print("=" * 80)
@@ -862,25 +874,12 @@ If you find some subtask may not finished by reusing previous subtask, you need 
         print("🔍 EXTRACTING AGENT BROWSER CALLS FROM LOG FILE")
         print("=" * 80)
 
-        # Find the browser log file
-        # Try multiple possible locations
-        possible_dirs = [
-            Path("browser_log"),  # Current directory
-            Path("examples/toolkits/browser_log"),  # From project root
-            Path(__file__).parent / "browser_log",  # Relative to this script
-        ]
+        # Find the browser log file - hardcoded absolute path
+        browser_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
 
-        browser_log_dir = None
-        for dir_path in possible_dirs:
-            if dir_path.exists() and dir_path.is_dir():
-                browser_log_dir = dir_path
-                break
-
-        if not browser_log_dir:
+        if not browser_log_dir.exists():
             print("⚠️  Warning: Browser log directory not found")
-            print("   Tried:")
-            for dir_path in possible_dirs:
-                print(f"     - {dir_path.absolute()}")
+            print(f"   Expected: {browser_log_dir}")
             return []
 
         print(f"✓ Browser log directory found: {browser_log_dir.absolute()}")
@@ -1134,11 +1133,14 @@ If you find some subtask may not finished by reusing previous subtask, you need 
         )
 
         # Combine all communications
+        # Use current user task if available, otherwise fall back to config task
+        task_desc = self.current_user_task or self.subtask_config.get(
+            'task_description', ''
+        )
+
         all_communications = {
             'session_start': datetime.datetime.now().isoformat(),
-            'task_description': self.subtask_config.get(
-                'task_description', ''
-            ),
+            'task_description': task_desc,
             'system_prompt': self.system_prompt,  # Add system prompt
             'tool_definitions': self.tool_definitions,  # Add tool definitions
             'communications': sorted_communications,  # All communications in chronological order
@@ -1175,59 +1177,6 @@ If you find some subtask may not finished by reusing previous subtask, you need 
         # Save to session directory if available
         if self.session_log_dir:
             log_path = self.session_log_dir / "agent_communication_log.json"
-
-            # Create README for session directory
-            readme_path = self.session_log_dir / "README.md"
-            with open(readme_path, 'w', encoding='utf-8') as f:
-                f.write(f"""# Session Log: {self.session_timestamp}
-
-This directory contains all logs for a single SubtaskAgent execution session.
-
-## Files
-
-### Main Logs
-
-- **agent_communication_log.json**: Complete communication log including:
-  - **System prompt**: The initial system message given to the agent
-  - **Tool definitions**: All available tools with their docstrings (browser tools + subtask functions)
-  - Main agent calls (user tasks and responses)
-  - Subtask function calls and results
-  - Browser tool calls (agent-initiated only)
-  - Recovery agent calls and responses
-  - Full statistics and token usage
-
-- **complete_browser_log.log**: Complete browser action log (all actions)
-  - Includes both agent-initiated and replay-initiated actions
-  - JSON format, one action per object (format: `}}\\n{{`)
-
-### Subtask Replay Logs
-
-Each subtask execution generates a separate replay log:
-
-- **subtask_<ID>_replay_actions.json**: Replay actions for a specific subtask
-  - Contains only actions executed during subtask replay
-  - Includes agent recovery retry actions (marked with `recovery_retry: true`)
-  - Used to filter agent-initiated actions from complete browser log
-
-## How Browser Tool Call Filtering Works
-
-1. **Complete browser log** contains ALL browser actions (agent + replay)
-2. **Subtask replay logs** contain ONLY replay-initiated actions
-3. **Agent communication log** filters out replay actions by comparing timestamps
-4. Result: Only agent-initiated browser tool calls in communication log
-
-## Task Description
-
-{self.subtask_config.get('task_description', 'N/A')}
-
-## Statistics Summary
-
-- Total tokens: {self.stats.get('total_tokens', 0)}
-- Subtask calls: {self.stats.get('subtask_calls', 0)}
-- Browser tool calls (agent-initiated): {self.stats.get('browser_tool_calls', 0)}
-- Agent recovery calls: {self.stats.get('agent_recovery_calls', 0)}
-""")
-
         else:
             log_filename = f"agent_communication_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             log_path = Path("camel_logs") / log_filename
@@ -1255,18 +1204,9 @@ Each subtask execution generates a separate replay log:
 
         # Copy browser log to session directory
         if self.session_log_dir:
-            browser_log_dir = None
-            possible_dirs = [
-                Path("browser_log"),
-                Path("examples/toolkits/browser_log"),
-                Path(__file__).parent / "browser_log",
-            ]
-            for dir_path in possible_dirs:
-                if dir_path.exists() and dir_path.is_dir():
-                    browser_log_dir = dir_path
-                    break
+            browser_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
 
-            if browser_log_dir:
+            if browser_log_dir.exists():
                 # Get the most recent browser log
                 all_log_files = sorted(
                     [
@@ -1352,7 +1292,7 @@ async def main():
 
         # Example task
         task = """
-Search for one-way flights from New York to London on Jan. 26th 2026 and filter the results to show only non-stop flights.
+Find the lowest fare from all eligible one-way flights for 1 adult from JFK to Heathrow on Jan. 22. 2026
         """
 
         await agent.run(task)
