@@ -389,6 +389,7 @@ def main():
 
                 timeline.append(
                     {
+                        'action_step': action_index,
                         'timestamp': timestamp,
                         'action_type': 'subtask_replay',
                         'subtask_id': subtask_id,
@@ -426,6 +427,7 @@ def main():
 
             timeline.append(
                 {
+                    'action_step': action_index,
                     'timestamp': timestamp,
                     'action_type': 'individual_action',
                     'action': action_name,
@@ -434,10 +436,33 @@ def main():
                 }
             )
 
-    # Save timeline
+    # Load task description from subtask config file
+    task_description = ''
+    # Try to find subtask config file based on main log file name
+    from pathlib import Path
+    main_log_path = Path(main_log_file)
+    # Look for corresponding subtask config file
+    # Format: hybrid_browser_toolkit_ws_TIMESTAMP_None.log -> hybrid_browser_toolkit_ws_TIMESTAMP_None_subtasks.json
+    base_name = main_log_path.stem  # Remove .log extension
+    if base_name.endswith('_None'):
+        config_file = main_log_path.parent / f"{base_name}_subtasks.json"
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+                    task_description = config_data.get('task_description', '')
+            except Exception as e:
+                print(f"⚠️  Warning: Could not read task description from config: {e}")
+
+    # Save timeline with task description
+    timeline_output = {
+        'task_description': task_description,
+        'timeline': timeline,
+    }
+
     timeline_file = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log/action_timeline.json"
     with open(timeline_file, 'w', encoding='utf-8') as f:
-        json.dump(timeline, f, indent=2, ensure_ascii=False)
+        json.dump(timeline_output, f, indent=2, ensure_ascii=False)
 
     print(f"✓ Generated timeline with {len(timeline)} entries")
     print(f"✓ Saved timeline to: {timeline_file}")

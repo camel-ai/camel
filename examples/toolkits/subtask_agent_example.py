@@ -306,27 +306,24 @@ class SubtaskAgent:
 
     def __init__(
         self,
-        log_file: str,
-        subtask_config_file: str,
+        subtask_config_dir: str,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
     ):
         """Initialize the SubtaskAgent.
 
         Args:
-            log_file: Path to the browser action log file
-            subtask_config_file: Path to subtask configuration JSON
+            subtask_config_dir: Path to directory containing subtask configuration JSON files
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
         """
-        self.log_file = log_file
-        self.subtask_config_file = subtask_config_file
+        self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
 
-        # Load subtask configuration
-        with open(subtask_config_file, 'r') as f:
-            self.subtask_config = json.load(f)
+        # Load all subtask configurations from directory
+        self.subtask_configs = []  # List of (log_file, config) tuples
+        self._load_subtask_configs()
 
         # Initialize components
         self.toolkit: Optional[HybridBrowserToolkit] = None
@@ -357,6 +354,49 @@ class SubtaskAgent:
 
         # Agent communication log
         self.agent_communication_log = []
+
+        # Store system prompt and tool definitions for logging
+        self.system_prompt = None
+        self.tool_definitions = []
+
+    def _load_subtask_configs(self):
+        """Load all subtask configuration files from the directory."""
+        if not self.subtask_config_dir.exists():
+            raise ValueError(f"Subtask config directory not found: {self.subtask_config_dir}")
+
+        if not self.subtask_config_dir.is_dir():
+            raise ValueError(f"Path is not a directory: {self.subtask_config_dir}")
+
+        # Find all JSON files in the directory
+        config_files = sorted(self.subtask_config_dir.glob("*.json"))
+
+        if not config_files:
+            raise ValueError(f"No JSON config files found in: {self.subtask_config_dir}")
+
+        print(f"Found {len(config_files)} subtask config file(s):")
+
+        for config_file in config_files:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+
+            log_file = config.get('log_file')
+            if not log_file:
+                print(f"  ⚠️  Skipping {config_file.name}: no 'log_file' field")
+                continue
+
+            subtasks = config.get('subtasks', [])
+            print(f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}")
+
+            self.subtask_configs.append((log_file, config))
+
+        if not self.subtask_configs:
+            raise ValueError("No valid subtask configs loaded")
+
+        print(f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)")
+
+        # For backwards compatibility, store first config as main config
+        # This allows existing code to use self.subtask_config
+        self.subtask_config = self.subtask_configs[0][1] if self.subtask_configs else {}
 
     async def initialize(self):
         """Initialize toolkit and agent."""
@@ -436,48 +476,68 @@ class SubtaskAgent:
         # await self.toolkit.browser_open()
         print("✓ Browser connected via CDP")
 
-        # Create subtask functions
+        # Create subtask functions from all configs
         print("\n" + "=" * 80)
         print("CREATING SUBTASK FUNCTIONS")
         print("=" * 80)
 
-        for subtask in self.subtask_config.get('subtasks', []):
-            subtask_id = subtask['id']
-            name = subtask['name']
-            description = subtask['description']
-            variables = subtask.get('variables', {})
+        # Iterate through all loaded configs
+        for log_file, config in self.subtask_configs:
+            config_name = config.get('metadata', {}).get('subtask_type', 'unknown')
+            print(f"\n📦 Processing config: {Path(log_file).name}")
+            print(f"   Type: {config_name}")
 
-            # Create replayer instance for this subtask
-            replayer = ActionReplayer(
-                log_file=self.log_file,
-                cdp_port=self.cdp_port,
-                subtask_config=self.subtask_config_file,
-                subtask_id=subtask_id,
-                use_agent_recovery=self.use_agent_recovery,
-            )
-            # Share the same toolkit to avoid WebSocket conflicts
-            replayer.toolkit = self.toolkit
-            replayer.actions = replayer.load_log_file()
+            # Save config to temp file for ActionReplayer
+            # (ActionReplayer expects a file path, not a dict)
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as temp_config:
+                json.dump(config, temp_config, indent=2, ensure_ascii=False)
+                temp_config_path = temp_config.name
 
-            # Create subtask function with stats tracker and session log dir
-            subtask_func = SubtaskFunction(
-                subtask_id=subtask_id,
-                name=name,
-                description=description,
-                variables=variables,
-                replayer=replayer,
-                stats_tracker=self.stats,
-                session_log_dir=self.session_log_dir,
-            )
+            for subtask in config.get('subtasks', []):
+                subtask_id = subtask['id']
+                name = subtask['name']
+                description = subtask['description']
+                variables = subtask.get('variables', {})
 
-            self.subtask_functions[subtask_id] = subtask_func
+                # Skip if subtask already exists (first config wins)
+                if subtask_id in self.subtask_functions:
+                    print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
+                    continue
 
-            if variables:
-                print(f"✓ Created function: {subtask_id}")
-                print(f"  Variables: {list(variables.keys())}")
-            else:
-                print(f"✓ Created function: {subtask_id}")
-                print("  No variables (fixed operation)")
+                # Create replayer instance for this subtask
+                replayer = ActionReplayer(
+                    log_file=log_file,
+                    cdp_port=self.cdp_port,
+                    subtask_config=temp_config_path,
+                    subtask_id=subtask_id,
+                    use_agent_recovery=self.use_agent_recovery,
+                )
+                # Share the same toolkit to avoid WebSocket conflicts
+                replayer.toolkit = self.toolkit
+                replayer.actions = replayer.load_log_file()
+
+                # Create subtask function with stats tracker and session log dir
+                subtask_func = SubtaskFunction(
+                    subtask_id=subtask_id,
+                    name=name,
+                    description=description,
+                    variables=variables,
+                    replayer=replayer,
+                    stats_tracker=self.stats,
+                    session_log_dir=self.session_log_dir,
+                )
+
+                self.subtask_functions[subtask_id] = subtask_func
+
+                if variables:
+                    print(f"  ✓ Created function: {subtask_id}")
+                    print(f"     Variables: {list(variables.keys())}")
+                else:
+                    print(f"  ✓ Created function: {subtask_id}")
+                    print("     No variables (fixed operation)")
+
+        print(f"\n✅ Total subtask functions created: {len(self.subtask_functions)}")
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)
@@ -608,6 +668,30 @@ async def subtask_{subtask_func.subtask_id}():
         self.agent = ChatAgent(model=model, tools=all_tools)
 
         print("✓ Agent created successfully")
+
+        # Store system prompt and tool definitions for logging
+        self.system_prompt = self.get_system_message()
+
+        # Collect tool definitions (name + docstring)
+        self.tool_definitions = []
+
+        # Browser tools
+        for tool in browser_tools:
+            tool_info = {
+                'type': 'browser_tool',
+                'name': tool.func.__name__ if hasattr(tool.func, '__name__') else str(tool),
+                'docstring': tool.func.__doc__ if hasattr(tool.func, '__doc__') else None,
+            }
+            self.tool_definitions.append(tool_info)
+
+        # Subtask tools
+        for tool in subtask_tools:
+            tool_info = {
+                'type': 'subtask_function',
+                'name': tool.__name__,
+                'docstring': tool.__doc__,
+            }
+            self.tool_definitions.append(tool_info)
 
         return True
 
@@ -1054,6 +1138,8 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
             'task_description': self.subtask_config.get(
                 'task_description', ''
             ),
+            'system_prompt': self.system_prompt,  # Add system prompt
+            'tool_definitions': self.tool_definitions,  # Add tool definitions
             'communications': sorted_communications,  # All communications in chronological order
             'recovery_agent_communications': recovery_communications,
             'statistics': self.stats,
@@ -1081,6 +1167,7 @@ Remember: Subtask functions are your first choice - they encapsulate complex mul
                     ]
                 ),
                 'recovery_calls': len(recovery_communications),
+                'total_tools': len(self.tool_definitions),
             },
         }
 
@@ -1100,6 +1187,8 @@ This directory contains all logs for a single SubtaskAgent execution session.
 ### Main Logs
 
 - **agent_communication_log.json**: Complete communication log including:
+  - **System prompt**: The initial system message given to the agent
+  - **Tool definitions**: All available tools with their docstrings (browser tools + subtask functions)
   - Main agent calls (user tasks and responses)
   - Subtask function calls and results
   - Browser tool calls (agent-initiated only)
@@ -1200,17 +1289,56 @@ Each subtask execution generates a separate replay log:
                     print(f"\n📋 Complete browser log copied to: {dest_file}")
                     print(f"   Source: {browser_log_file}")
 
+        # Auto-generate timeline analysis
+        self._generate_timeline_analysis()
+
+    def _generate_timeline_analysis(self):
+        """Auto-generate timeline analysis from session logs."""
+        if not self.session_log_dir or not self.session_log_dir.exists():
+            print("\n⚠️  Session directory not found, skipping timeline analysis")
+            return
+
+        print("\n" + "=" * 80)
+        print("📊 GENERATING TIMELINE ANALYSIS")
+        print("=" * 80)
+
+        # Import the analyze_session module
+        import sys
+        from pathlib import Path
+
+        # Add the toolkits directory to path if needed
+        toolkits_dir = Path(__file__).parent
+        if str(toolkits_dir) not in sys.path:
+            sys.path.insert(0, str(toolkits_dir))
+
+        try:
+            # Import the analyze_session module
+            from analyze_session import analyze_session
+
+            print(f"\n🔍 Analyzing session: {self.session_log_dir}")
+
+            # Run the analysis
+            analyze_session(str(self.session_log_dir))
+
+            print("\n✅ Timeline analysis completed successfully!")
+
+        except ImportError as e:
+            print(f"\n⚠️  Could not import analyze_session module: {e}")
+            print("   Make sure analyze_session.py is in the same directory as this script")
+        except Exception as e:
+            print(f"\n⚠️  Error during timeline analysis: {e}")
+            import traceback
+            traceback.print_exc()
+
 
 async def main():
     """Main entry point."""
-    # Configuration
-    log_file = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log/hybrid_browser_toolkit_ws_20251228_010752_None.log"
-    subtask_config_file = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log/hybrid_browser_toolkit_ws_20251228_010752_None_subtasks.json"
+    # Configuration - now using directory instead of individual files
+    subtask_config_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs"
 
     # Create agent
     agent = SubtaskAgent(
-        log_file=log_file,
-        subtask_config_file=subtask_config_file,
+        subtask_config_dir=subtask_config_dir,
         use_agent_recovery=True,
     )
 
@@ -1225,8 +1353,6 @@ async def main():
         task = """
 Show me the list of one-way flights today (February 17, 2026) from Chicago to Paris.
 
-If you find some task cannot be done by previous subtask, you need to do it by yourself， like click one way
-For setting the date, you cannot use the previous subtask replay, you need to do it by yourself
         """
 
         await agent.run(task)

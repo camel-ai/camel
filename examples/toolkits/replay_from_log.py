@@ -356,6 +356,7 @@ class ActionReplayer:
         Uses a two-step extraction algorithm similar to LogReplayModifierToolkit:
         1. Extract ref and label separately from each line
         2. Match the label against the search pattern
+        3. Prioritize exact matches over substring matches
 
         Args:
             snapshot: Current snapshot text
@@ -365,8 +366,9 @@ class ActionReplayer:
         Returns:
             Ref ID (e.g., 'e149') or None if not found
         """
-        # Find all matching elements using two-step extraction
-        matching_refs = []
+        # Separate exact matches and substring matches
+        exact_matches = []
+        substring_matches = []
 
         for line in snapshot.split('\n'):
             # Step 1: Extract ref and label separately
@@ -386,18 +388,28 @@ class ActionReplayer:
                 if not re.search(type_pattern, line):
                     continue
 
-            # Step 2: Match label against aria_label pattern
+            # Step 2: Check for exact match first (case-insensitive)
+            if aria_label.lower() == label.lower():
+                exact_matches.append(ref)
+                continue
+
+            # Step 3: Check for substring/regex match
             try:
                 # Try regex pattern matching (case-insensitive)
                 if re.search(aria_label, label, re.IGNORECASE):
-                    matching_refs.append(ref)
+                    substring_matches.append(ref)
             except re.error:
                 # If regex is invalid, fall back to exact substring match
                 if aria_label.lower() in label.lower():
-                    matching_refs.append(ref)
+                    substring_matches.append(ref)
 
-        # Return first match if any found
-        return matching_refs[0] if matching_refs else None
+        # Prioritize exact matches over substring matches
+        if exact_matches:
+            return exact_matches[0]
+        elif substring_matches:
+            return substring_matches[0]
+        else:
+            return None
 
     async def get_current_snapshot(self) -> str:
         """Get current page snapshot and cache it.
@@ -655,34 +667,35 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         element_not_found_info = None  # Track if we couldn't find an element
 
         for i, arg in enumerate(args):
-            # Check if this argument should be replaced by a variable
-            replaced_by_variable = False
-            for var_name, var_info in self.subtask_variables.items():
-                if (
-                    var_info['action_index'] == action_index
-                    and var_info['arg_position'] == i
-                ):
-                    print(
-                        f"  → Replacing argument at position {i} with variable '{var_name}': {var_info['value']}"
-                    )
-                    new_args.append(var_info['value'])
-                    replaced_by_variable = True
-                    break
-
-            if replaced_by_variable:
-                continue
-
             # Check if arg is a ref (e.g., 'e149' or 'e2214')
+            # If it's a ref, we should use aria-label replacement, not direct arg replacement
             if isinstance(arg, str) and re.match(r'^e\d+$', arg):
                 # Extract aria-label from original snapshot
                 aria_label = self.extract_aria_label_from_snapshot(
                     original_snapshot, arg
                 )
 
+                # Check if this aria-label should be replaced by a variable
+                # For click actions, variables can modify the element label to search for
+                label_replaced_by_variable = False
+                for var_name, var_info in self.subtask_variables.items():
+                    if (
+                        var_info['action_index'] == action_index
+                        and var_info['arg_position'] == i
+                    ):
+                        # Variable replaces the aria-label, not the ref itself
+                        print(
+                            f"  → Variable '{var_name}' replaces aria-label: '{aria_label}' → '{var_info['value']}'"
+                        )
+                        aria_label = var_info['value']
+                        label_replaced_by_variable = True
+                        break
+
                 if aria_label:
-                    print(
-                        f"  → Mapping ref {arg} with aria-label: '{aria_label}'"
-                    )
+                    if not label_replaced_by_variable:
+                        print(
+                            f"  → Mapping ref {arg} with aria-label: '{aria_label}'"
+                        )
 
                     # Find new ref in current snapshot
                     new_ref = self.find_ref_by_aria_label(
@@ -718,8 +731,24 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                     print("  → Using original ref (may fail)")
                     new_args.append(arg)
             else:
-                # Not a ref, keep as is
-                new_args.append(arg)
+                # Not a ref - this could be text, number, etc.
+                # Check if this argument should be replaced by a variable
+                replaced_by_variable = False
+                for var_name, var_info in self.subtask_variables.items():
+                    if (
+                        var_info['action_index'] == action_index
+                        and var_info['arg_position'] == i
+                    ):
+                        print(
+                            f"  → Replacing argument at position {i} with variable '{var_name}': {var_info['value']}"
+                        )
+                        new_args.append(var_info['value'])
+                        replaced_by_variable = True
+                        break
+
+                if not replaced_by_variable:
+                    # Keep original value
+                    new_args.append(arg)
 
         print(f"New args: {new_args}")
 
