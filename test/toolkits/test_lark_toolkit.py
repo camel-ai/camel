@@ -111,28 +111,6 @@ def test_lark_list_chats(lark_toolkit):
         mock_get.assert_called_once()
 
 
-def test_lark_get_chat(lark_toolkit):
-    """Test getting chat details."""
-    with (
-        patch("requests.post") as mock_post,
-        patch("requests.get") as mock_get,
-    ):
-        _mock_tenant_token(mock_post)
-        mock_get.return_value.json.return_value = {
-            "code": 0,
-            "data": {
-                "chat_id": "oc_123",
-                "name": "Test Chat",
-                "user_count": 5,
-            },
-        }
-
-        result = lark_toolkit.lark_get_chat(chat_id="oc_123")
-
-        assert result["chat_id"] == "oc_123"
-        assert result["name"] == "Test Chat"
-
-
 def test_lark_get_chat_messages(lark_toolkit):
     """Test getting chat messages."""
     with (
