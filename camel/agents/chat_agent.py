@@ -3709,26 +3709,31 @@ class ChatAgent(BaseAgent):
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
-        tool = self._internal_tools[func_name]
-        try:
-            raw_result = tool(**args)
-            if self.mask_tool_output:
-                with self._secure_result_store_lock:
-                    self._secure_result_store[tool_call_id] = raw_result
-                result = (
-                    "[The tool has been executed successfully, but the output"
-                    " from the tool is masked. You can move forward]"
-                )
-                mask_flag = True
-            else:
-                result = raw_result
-                mask_flag = False
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing tool '{func_name}': {e!s}"
+        tool = self._internal_tools.get(func_name)
+        mask_flag = False
+
+        if tool is None:
+            error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
-            mask_flag = False
-            logger.warning(f"{error_msg} with result: {result}")
+            logger.warning(error_msg)
+        else:
+            try:
+                raw_result = tool(**args)
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = raw_result
+                    result = (
+                        "[The tool has been executed successfully, but the "
+                        "output from the tool is masked. You can move forward]"
+                    )
+                    mask_flag = True
+                else:
+                    result = raw_result
+            except Exception as e:
+                # Capture the error message to prevent framework crash
+                error_msg = f"Error executing tool '{func_name}': {e!s}"
+                result = f"Tool execution failed: {error_msg}"
+                logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
             func_name,
@@ -3743,58 +3748,63 @@ class ChatAgent(BaseAgent):
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
+        import asyncio
+
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
-        tool = self._internal_tools[func_name]
-        import asyncio
+        tool = self._internal_tools.get(func_name)
+        mask_flag = False
 
-        try:
-            # Try different invocation paths in order of preference
-            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
-                # Case: FunctionTool wrapping an MCP tool
-                raw_result = await tool.func.async_call(**args)
-
-            elif hasattr(tool, 'async_call') and callable(tool.async_call):
-                # Case: tool itself has async_call
-                raw_result = await tool.async_call(**args)
-
-            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                tool.func
-            ):
-                # Case: tool wraps a direct async function
-                raw_result = await tool.func(**args)
-
-            elif asyncio.iscoroutinefunction(tool):
-                # Case: tool is itself a coroutine function
-                raw_result = await tool(**args)
-
-            else:
-                # Fallback: synchronous call
-                # Use functools.partial to properly capture args
-                loop = asyncio.get_running_loop()
-                raw_result = await loop.run_in_executor(
-                    None, functools.partial(tool, **args)
-                )
-
-            if self.mask_tool_output:
-                with self._secure_result_store_lock:
-                    self._secure_result_store[tool_call_id] = raw_result
-                result = (
-                    "[The tool has been executed successfully, but the output"
-                    " from the tool is masked. You can move forward]"
-                )
-                mask_flag = True
-            else:
-                result = raw_result
-                mask_flag = False
-
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing async tool '{func_name}': {e!s}"
+        if tool is None:
+            error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
-            mask_flag = False
-            logger.warning(f"{error_msg} with result: {result}")
+            logger.warning(error_msg)
+        else:
+            try:
+                # Try different invocation paths in order of preference
+                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                    # Case: FunctionTool wrapping an MCP tool
+                    raw_result = await tool.func.async_call(**args)
+
+                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                    # Case: tool itself has async_call
+                    raw_result = await tool.async_call(**args)
+
+                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                    tool.func
+                ):
+                    # Case: tool wraps a direct async function
+                    raw_result = await tool.func(**args)
+
+                elif asyncio.iscoroutinefunction(tool):
+                    # Case: tool is itself a coroutine function
+                    raw_result = await tool(**args)
+
+                else:
+                    # Fallback: synchronous call
+                    # Use functools.partial to properly capture args
+                    loop = asyncio.get_running_loop()
+                    raw_result = await loop.run_in_executor(
+                        None, functools.partial(tool, **args)
+                    )
+
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = raw_result
+                    result = (
+                        "[The tool has been executed successfully, but the "
+                        "output from the tool is masked. You can move forward]"
+                    )
+                    mask_flag = True
+                else:
+                    result = raw_result
+
+            except Exception as e:
+                # Capture the error message to prevent framework crash
+                error_msg = f"Error executing async tool '{func_name}': {e!s}"
+                result = f"Tool execution failed: {error_msg}"
+                logger.warning(f"{error_msg} with result: {result}")
         return self._record_tool_calling(
             func_name,
             args,
@@ -4656,10 +4666,32 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                logger.warning(
-                    f"Tool '{function_name}' not found in internal tools"
+                error_msg = (
+                    f"Tool '{function_name}' not found in registered tools"
                 )
-                return None
+                result = {"error": error_msg}
+                logger.warning(error_msg)
+
+                func_msg = FunctionCallingMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=function_name,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
+                )
+                self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                tool_record = ToolCallingRecord(
+                    tool_name=function_name,
+                    args=args,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                )
+                self._update_last_tool_call_state(tool_record)
+                return tool_record
 
         except Exception as e:
             logger.error(f"Error processing tool call: {e}")
@@ -4810,10 +4842,32 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                logger.warning(
-                    f"Tool '{function_name}' not found in internal tools"
+                error_msg = (
+                    f"Tool '{function_name}' not found in registered tools"
                 )
-                return None
+                result = {"error": error_msg}
+                logger.warning(error_msg)
+
+                func_msg = FunctionCallingMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=function_name,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
+                )
+                self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                tool_record = ToolCallingRecord(
+                    tool_name=function_name,
+                    args=args,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                )
+                self._update_last_tool_call_state(tool_record)
+                return tool_record
 
         except Exception as e:
             logger.error(f"Error processing async tool call: {e}")
