@@ -50,14 +50,13 @@ class TaskVerifier:
         )
 
     def verify_task(
-        self, task_description: str, final_snapshot: str, agent_response: str
+        self, task_description: str, agent_response: str
     ) -> Dict[str, Any]:
         """
         Verify if the task was completed successfully.
 
         Args:
             task_description: Original task description
-            final_snapshot: Final page snapshot
             agent_response: Agent's final response
 
         Returns:
@@ -75,14 +74,10 @@ class TaskVerifier:
 **AGENT'S FINAL RESPONSE:**
 {agent_response}
 
-**FINAL PAGE SNAPSHOT:**
-{final_snapshot[:5000]}  # First 5000 chars
-
 **YOUR TASK:**
 Analyze whether the task requirements were fully met. Consider:
-1. Did the agent complete all required actions?
-2. Is the final state what the task asked for?
-3. Are there any missing steps or errors?
+1. Did the agent complete all required actions? Do not be too strict!
+
 
 **OUTPUT FORMAT:**
 Return a JSON object with exactly this structure:
@@ -147,8 +142,30 @@ class WebVoyagerRunner:
         self.max_retries = max_retries
         self.verifier = TaskVerifier()
 
+        # Ensure subtask config directory exists
+        self._ensure_config_dir_exists()
+
         # Results tracking
         self.results: List[Dict[str, Any]] = []
+
+    def _ensure_config_dir_exists(self):
+        """
+        Ensure the subtask config directory exists.
+        Creates it if it doesn't exist.
+        """
+        config_path = Path(self.subtask_config_dir)
+
+        if not config_path.exists():
+            print(f"\n⚠️  Config directory not found: {config_path}")
+            print(f"📁 Creating directory: {config_path}")
+            config_path.mkdir(parents=True, exist_ok=True)
+            print(f"✓ Directory created successfully\n")
+        else:
+            # Check if it's actually a directory
+            if not config_path.is_dir():
+                raise ValueError(
+                    f"Subtask config path exists but is not a directory: {config_path}"
+                )
 
     def load_tasks(self) -> List[Dict[str, Any]]:
         """Load tasks from JSONL file."""
@@ -207,8 +224,8 @@ class WebVoyagerRunner:
             if previous_suggestions:
                 full_task += f"\n\n**IMPORTANT NOTES FROM PREVIOUS ATTEMPT:**\n{previous_suggestions}"
 
-            # Run task
-            await agent.run(full_task)
+            # Run task and get response
+            response = await agent.run(full_task)
 
             # Get results
             session_dir = agent.session_log_dir
@@ -216,7 +233,7 @@ class WebVoyagerRunner:
             # Save communication log
             agent.save_communication_log()
 
-            # Get final snapshot from agent
+            # Get final snapshot from agent BEFORE closing tabs
             final_snapshot = ""
             if agent.toolkit:
                 try:
@@ -225,11 +242,23 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Could not get final snapshot: {e}")
 
-            # Get agent's last response (from communication log)
+            # Close browser completely after each task
+            print("\n🧹 Closing browser...")
+            if agent.toolkit:
+                try:
+                    await agent.toolkit.browser_close()
+                    print("✓ Browser closed successfully")
+                except Exception as e:
+                    print(f"⚠️  Browser close failed: {e}")
+
+            # Get agent's response content
             agent_response = "Task completed."
-            if agent.agent_communication_log:
+            if response and response.msgs:
+                agent_response = response.msgs[0].content
+            elif agent.agent_communication_log:
+                # Fallback to communication log if response is empty
                 last_comm = agent.agent_communication_log[-1]
-                agent_response = last_comm.get('content', 'Task completed.')
+                agent_response = last_comm.get('response', 'Task completed.')
 
             # Verify task completion
             print(f"\n{'='*80}")
@@ -237,7 +266,7 @@ class WebVoyagerRunner:
             print(f"{'='*80}")
 
             verification = self.verifier.verify_task(
-                task_description, final_snapshot, agent_response
+                task_description, agent_response
             )
 
             print(f"\n✓ Verification complete:")
@@ -265,20 +294,54 @@ class WebVoyagerRunner:
                 try:
                     from analyze_subtask_candidate import analyze_with_agent
 
-                    analyze_with_agent(
+                    analysis_result = analyze_with_agent(
                         session_folder=str(session_dir),
                         subtask_configs_dir=self.subtask_config_dir,
                         auto_save=True,
                     )
-                    result['subtask_analysis'] = 'completed'
+
+                    # Record analysis results and token usage
+                    result['subtask_analysis'] = {
+                        'status': 'completed',
+                        'success': analysis_result.get('success', False),
+                        'reusable_subtasks_found': analysis_result.get('reusable_subtasks_found', 0),
+                        'token_usage': analysis_result.get('token_usage', {}),
+                        'report_path': analysis_result.get('report_path', ''),
+                    }
+
+                    # Print token summary
+                    token_usage = analysis_result.get('token_usage', {})
+                    if token_usage:
+                        print(f"\n📊 Subtask Analysis Token Usage:")
+                        print(f"  Input:  {token_usage.get('input_tokens', 0):,}")
+                        print(f"  Output: {token_usage.get('output_tokens', 0):,}")
+                        print(f"  Total:  {token_usage.get('total_tokens', 0):,}")
+
                 except Exception as e:
                     print(f"⚠️  Subtask analysis failed: {e}")
                     import traceback
 
                     traceback.print_exc()
-                    result['subtask_analysis'] = f'failed: {e}'
+                    result['subtask_analysis'] = {
+                        'status': 'failed',
+                        'error': str(e),
+                    }
 
             return result
+
+        except asyncio.TimeoutError as e:
+            print(f"⏱️  Task execution timeout: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+            return {
+                'task_id': task_id,
+                'attempt': attempt,
+                'success': False,
+                'error': f'TimeoutError: {e}',
+                'is_timeout': True,
+            }
 
         except Exception as e:
             print(f"❌ Task execution failed: {e}")
@@ -315,14 +378,33 @@ class WebVoyagerRunner:
                 print(f"\n✅ Task {task['id']} succeeded on attempt {attempt}!")
                 return result
 
+            # Check if it's a timeout error
+            is_timeout = result.get('is_timeout', False)
+
             # Get suggestions for next attempt
             suggestions = result.get('suggestions', '')
 
-            if attempt < self.max_retries + 1 and suggestions:
-                print(
-                    f"\n🔄 Task failed. Retrying with suggestions (attempt {attempt + 1}/{self.max_retries + 1})..."
-                )
-                attempt += 1
+            if attempt < self.max_retries + 1:
+                if is_timeout:
+                    # For timeout errors, wait 40s before retry
+                    print(
+                        f"\n⏱️  Task timed out. Waiting 40 seconds before retry (attempt {attempt + 1}/{self.max_retries + 1})..."
+                    )
+                    await asyncio.sleep(40)
+                    print("✓ Ready to retry")
+                    attempt += 1
+                elif suggestions:
+                    # For other failures with suggestions, retry immediately
+                    print(
+                        f"\n🔄 Task failed. Retrying with suggestions (attempt {attempt + 1}/{self.max_retries + 1})..."
+                    )
+                    attempt += 1
+                else:
+                    # No suggestions, stop retrying
+                    print(
+                        f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
+                    )
+                    return result
             else:
                 print(
                     f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
@@ -370,12 +452,18 @@ class WebVoyagerRunner:
             # Save intermediate results
             self.save_results()
 
+            # Wait 20 seconds before next task
+            if idx < len(tasks) + start_index - 1:  # Don't wait after last task
+                print("\n⏳ Waiting 20 seconds before next task...")
+                await asyncio.sleep(20)
+                print("✓ Ready for next task")
+
         # Final summary
         self.print_summary()
 
     def save_results(self):
         """Save results to JSON file."""
-        output_file = Path("webvoyager_results.json")
+        output_file = Path("webvoyager_results_1.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
         print(f"\n💾 Results saved to: {output_file}")
@@ -418,7 +506,7 @@ async def main():
     )
     parser.add_argument(
         "--config-dir",
-        default="/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs",
+        default="/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs2",
         help="Path to subtask configs directory",
     )
     parser.add_argument(
@@ -430,7 +518,7 @@ async def main():
     parser.add_argument(
         "--max-retries",
         type=int,
-        default=2,
+        default=4,
         help="Maximum retry attempts per task",
     )
 

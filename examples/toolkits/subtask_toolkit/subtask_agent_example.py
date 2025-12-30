@@ -28,6 +28,7 @@ project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 from camel.agents import ChatAgent
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -371,7 +372,13 @@ class SubtaskAgent:
     def _load_subtask_configs(self):
         """Load all subtask configuration files from the directory."""
         if not self.subtask_config_dir.exists():
-            raise ValueError(f"Subtask config directory not found: {self.subtask_config_dir}")
+            print(f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}")
+            print(f"📁 Creating directory...")
+            self.subtask_config_dir.mkdir(parents=True, exist_ok=True)
+            print(f"✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n")
+            # Set empty config for backwards compatibility
+            self.subtask_config = {}
+            return
 
         if not self.subtask_config_dir.is_dir():
             raise ValueError(f"Path is not a directory: {self.subtask_config_dir}")
@@ -380,7 +387,11 @@ class SubtaskAgent:
         config_files = sorted(self.subtask_config_dir.glob("*.json"))
 
         if not config_files:
-            raise ValueError(f"No JSON config files found in: {self.subtask_config_dir}")
+            print(f"\n📝 No subtask config files found in: {self.subtask_config_dir}")
+            print(f"   Agent will run without pre-existing subtasks (will create new ones as needed).\n")
+            # Set empty config for backwards compatibility
+            self.subtask_config = {}
+            return
 
         print(f"Found {len(config_files)} subtask config file(s):")
 
@@ -450,7 +461,6 @@ class SubtaskAgent:
 
         custom_tools = [
             "browser_open",
-            "browser_close",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
@@ -459,7 +469,7 @@ class SubtaskAgent:
             "browser_switch_tab",
             "browser_enter",
             "browser_get_page_snapshot",
-            "browser_get_som_screenshot",
+            # "browser_get_som_screenshot",
             # remove it to achieve faster operation
             # "browser_press_key",
             # "browser_console_view",
@@ -477,7 +487,7 @@ class SubtaskAgent:
             viewport_limit=False,
             cdp_url=cdp_url,
             default_start_url=None,
-            cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
+            # cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
         )
 
         # When connecting via CDP, browser is already open, no need to call browser_open()
@@ -671,14 +681,23 @@ async def subtask_{subtask_func.subtask_id}():
             f"✓ Total tools: {len(all_tools)} ({len(browser_tools)} browser + {len(subtask_tools)} subtask)"
         )
 
-        # Create agent (similar to hybrid_browser_toolkit_example.py)
-        print("Creating ChatAgent...")
-        self.agent = ChatAgent(model=model, tools=all_tools)
-
-        print("✓ Agent created successfully")
-
-        # Store system prompt and tool definitions for logging
+        # Get system prompt before creating agent
         self.system_prompt = self.get_system_message()
+
+        # Create agent with system message
+        print("Creating ChatAgent...")
+        system_message = BaseMessage.make_assistant_message(
+            role_name="Browser Automation Agent",
+            content=self.system_prompt
+        )
+
+        self.agent = ChatAgent(
+            model=model,
+            tools=all_tools,
+            system_message=system_message
+        )
+
+        print("✓ Agent created successfully with system prompt")
 
         # Collect tool definitions (name + docstring)
         self.tool_definitions = []
@@ -705,49 +724,85 @@ async def subtask_{subtask_func.subtask_id}():
 
     def get_system_message(self) -> str:
         """Get the system message for the agent."""
-        subtask_list = "\n".join(
-            [
-                f"- subtask_{sid}: {sf.description}"
-                + (
-                    f" (variables: {list(sf.variables.keys())})"
-                    if sf.variables
-                    else " (no parameters)"
-                )
-                for sid, sf in self.subtask_functions.items()
-            ]
-        )
-        print("subtask_list", subtask_list)
+        # Check if there are any subtask functions available
+        has_subtasks = bool(self.subtask_functions)
 
-        return f"""You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.
+        # Build prompt parts dynamically
+        prompt_parts = []
 
-AVAILABLE SUBTASK FUNCTIONS (PREFER THESE WHEN APPLICABLE):
-{subtask_list}
+        if has_subtasks:
+            # Generate subtask list
+            subtask_list = "\n".join(
+                [
+                    f"- subtask_{sid}: {sf.description}"
+                    + (
+                        f" (variables: {list(sf.variables.keys())})"
+                        if sf.variables
+                        else " (no parameters)"
+                    )
+                    for sid, sf in self.subtask_functions.items()
+                ]
+            )
+            print("subtask_list", subtask_list)
 
-GUIDELINES:
-1. **Prefer subtask functions** when they match your goal - they are tested and reliable
-2. Use low-level browser tools only when:
-   - No suitable subtask function exists
-   - You need fine-grained control
-   - The subtask function failed and you need to recover
+            # Agent with subtasks
+            prompt_parts.extend([
+                "You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.",
+                "",
+                "AVAILABLE SUBTASK FUNCTIONS (PREFER THESE WHEN APPLICABLE):",
+                subtask_list,
+                "",
+                "GUIDELINES:",
+                "1. **Prefer subtask functions** when they match your goal - they are tested and reliable",
+                "2. Use low-level browser tools only when:",
+                "   - No suitable subtask function exists",
+                "   - You need fine-grained control",
+                "   - The subtask function failed and you need to recover",
+                "",
+                "3. After executing a subtask function, you will receive:",
+                "   - Status (success/error)",
+                "   - Message describing the result",
+                "   - Current page snapshot",
+                "   - Variables that were used",
+                "",
+                "4. If a subtask fails, you can either:",
+                "   - Retry with different variables",
+                "   - Use low-level browser tools to fix the issue",
+                "   - Ask for clarification",
+                "",
+                "TASK DESCRIPTION:",
+                self.subtask_config.get('task_description', 'Complete browser automation tasks'),
+                "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
+                "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",
+                "",
+            ])
+        else:
+            # Agent without subtasks - simpler prompt
+            prompt_parts.extend([
+                "You are a browser automation agent with access to low-level browser tools.",
+                "",
+                "GUIDELINES:",
+                "1. Use the available browser tools to complete the task step by step",
+                "2. Always verify the current state of the page before taking actions",
+                "3. If an action fails, analyze the page state and adjust your approach",
+                "",
+                "TASK DESCRIPTION:",
+                self.subtask_config.get('task_description', 'Complete browser automation tasks'),
+                "",
+            ])
 
-3. After executing a subtask function, you will receive:
-   - Status (success/error)
-   - Message describing the result
-   - Current page snapshot
-   - Variables that were used
+        # Common guidelines (apply to both cases)
+        prompt_parts.extend([
+            """
+- All tasks are to be performed on Google Flights
+- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).
+- 填写起点和终点的时候不需要填写太详细，只填写城市即可
+- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.
 
-4. If a subtask fails, you can either:
-   - Retry with different variables
-   - Use low-level browser tools to fix the issue
-   - Ask for clarification
+            """
+        ])
 
-TASK DESCRIPTION:
-{self.subtask_config.get('task_description', 'Complete browser automation tasks')}
-Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!
-If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself
-
-
-"""
+        return "\n".join(prompt_parts)
 
     async def run(self, user_task: str):
         """Run the agent with a user task.
@@ -1275,7 +1330,7 @@ If you find some subtask may not finished by reusing previous subtask, you need 
 async def main():
     """Main entry point."""
     # Configuration - now using directory instead of individual files
-    subtask_config_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs"
+    subtask_config_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs2"
 
     # Create agent
     agent = SubtaskAgent(
