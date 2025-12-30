@@ -23,8 +23,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from camel.toolkits.zoominfo_toolkit import (
     ZoomInfoToolkit,
-    _get_zoominfo_token,
-    _make_zoominfo_request,
 )
 
 
@@ -39,7 +37,7 @@ def set_env_vars(monkeypatch):
 
 def test_toolkit_init():
     """Test toolkit initialization."""
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         assert toolkit is not None
@@ -47,7 +45,7 @@ def test_toolkit_init():
 
 def test_get_tools():
     """Test getting available tools."""
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         tools = toolkit.get_tools()
@@ -75,7 +73,7 @@ def test_search_companies(mock_request):
     mock_response.raise_for_status.return_value = None
     mock_request.return_value = mock_response
     
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         
@@ -113,7 +111,7 @@ def test_search_contacts(mock_request):
     mock_response.raise_for_status.return_value = None
     mock_request.return_value = mock_response
     
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         
@@ -158,7 +156,7 @@ def test_enrich_contact(mock_request):
     mock_response.raise_for_status.return_value = None
     mock_request.return_value = mock_response
     
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         
@@ -178,16 +176,14 @@ def test_get_access_token_password():
     mock_auth = MagicMock()
     mock_auth.user_name_pwd_authentication.return_value = "test_jwt_token"
     
-    # Clear global variables
-    import camel.toolkits.zoominfo_toolkit
-    camel.toolkits.zoominfo_toolkit._zoominfo_access_token = None
-    camel.toolkits.zoominfo_toolkit._zoominfo_token_expires_at = 0
-    
     # Mock the import to avoid ModuleNotFoundError
     with patch.dict('sys.modules', {'zi_api_auth_client': mock_auth}):
-        token = _get_zoominfo_token()
-        assert token == "test_jwt_token"
-        mock_auth.user_name_pwd_authentication.assert_called_once_with("test_user", "test_pass")
+        with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
+            mock_token.return_value = "test_jwt_token"
+            toolkit = ZoomInfoToolkit()
+            token = toolkit._get_zoominfo_token()
+            assert token == "test_jwt_token"
+            mock_auth.user_name_pwd_authentication.assert_called_once_with("test_user", "test_pass")
 
 
 def test_missing_credentials(monkeypatch):
@@ -195,10 +191,6 @@ def test_missing_credentials(monkeypatch):
     monkeypatch.delenv("ZOOMINFO_USERNAME", raising=False)
     
     with pytest.raises(ValueError, match="ZoomInfo credentials missing"):
-        # Clear the cached token first
-        import camel.toolkits.zoominfo_toolkit
-        camel.toolkits.zoominfo_toolkit._zoominfo_access_token = None
-        camel.toolkits.zoominfo_toolkit._zoominfo_token_expires_at = 0
         ZoomInfoToolkit()
 
 
@@ -207,11 +199,12 @@ def test_api_request_error(mock_request):
     """Test API request error handling."""
     mock_request.side_effect = Exception("ZoomInfo API request failed: Connection error")
     
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
+        toolkit = ZoomInfoToolkit()
         
         with pytest.raises(Exception, match="ZoomInfo API request failed"):
-            _make_zoominfo_request("POST", "/search/company", {"test": "data"})
+            toolkit._make_zoominfo_request("POST", "/search/company", {"test": "data"})
 
 
 @patch('camel.toolkits.zoominfo_toolkit.requests.request')
@@ -222,7 +215,7 @@ def test_search_companies_with_filters(mock_request):
     mock_response.raise_for_status.return_value = None
     mock_request.return_value = mock_response
     
-    with patch('camel.toolkits.zoominfo_toolkit._get_zoominfo_token') as mock_token:
+    with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
         mock_token.return_value = "test_token"
         toolkit = ZoomInfoToolkit()
         
@@ -246,3 +239,72 @@ def test_search_companies_with_filters(mock_request):
         assert call_args[1]["json"]["page"] == 2
         assert call_args[1]["json"]["sortBy"] == "employeeCount"
         assert call_args[1]["json"]["sortOrder"] == "desc"
+
+
+def test_thread_safety():
+    """Test that token management is thread-safe."""
+    import threading
+    import time
+    
+    def worker(toolkit, results, index):
+        """Worker function to test thread safety."""
+        for i in range(5):
+            token1 = toolkit._get_zoominfo_token()
+            token2 = toolkit._get_zoominfo_token()
+            results.append((index, i, token1, token2))
+            time.sleep(0.01)  # Small delay to encourage thread switching
+    
+    # Mock authentication to avoid actual API calls
+    mock_auth = MagicMock()
+    mock_auth.user_name_pwd_authentication.return_value = "test_jwt_token"
+    
+    with patch.dict('sys.modules', {'zi_api_auth_client': mock_auth}):
+        with patch.object(ZoomInfoToolkit, '_get_zoominfo_token') as mock_token:
+            mock_token.return_value = "test_jwt_token"
+            toolkit = ZoomInfoToolkit()
+            
+            results = []
+            threads = []
+            
+            # Create multiple threads
+            for i in range(3):
+                t = threading.Thread(target=worker, args=(toolkit, results, i))
+                threads.append(t)
+                t.start()
+            
+            # Wait for all threads to complete
+            for t in threads:
+                t.join()
+            
+            # Verify all tokens are the same (no race conditions)
+            all_tokens = [result[2] for result in results]
+            assert all(token == "test_jwt_token" for token in all_tokens), \
+                "Not all tokens are the same - possible race condition"
+            
+            # Verify the mock was called only once (no duplicate authentication)
+            assert mock_token.call_count == 1, \
+                "Authentication was called multiple times - possible race condition"
+
+
+def test_instance_isolation():
+    """Test that different instances have isolated token states."""
+    mock_auth = MagicMock()
+    mock_auth.user_name_pwd_authentication.return_value = "test_jwt_token"
+    
+    with patch.dict('sys.modules', {'zi_api_auth_client': mock_auth}):
+        # Create two different instances
+        toolkit1 = ZoomInfoToolkit()
+        toolkit2 = ZoomInfoToolkit()
+        
+        # Verify each instance has its own token
+        token1 = toolkit1._get_zoominfo_token()
+        token2 = toolkit2._get_zoominfo_token()
+        
+        assert token1 == token2 == "test_jwt_token", \
+            "Tokens should be the same but instances should be isolated"
+        
+        # Verify instances have separate state
+        assert toolkit1._access_token == toolkit2._access_token, \
+            "Instances should have separate token state"
+        assert toolkit1 is not toolkit2, \
+            "Instances should be different objects"

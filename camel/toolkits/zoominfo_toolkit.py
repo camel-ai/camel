@@ -17,39 +17,71 @@ import time
 import json
 import requests
 import logging
+import threading
 from typing import Any, Dict, List, Optional, Literal
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits import FunctionTool
 from camel.utils import MCPServer, api_keys_required, retry_on_error
 
-
-# Global variables for token management
-_zoominfo_access_token = None
-_zoominfo_token_expires_at = 0
-
 # Setup logger
 logger = logging.getLogger(__name__)
 
 
-def _get_zoominfo_token() -> str:
-    r"""Get or refresh ZoomInfo JWT token."""
-    global _zoominfo_access_token, _zoominfo_token_expires_at
+@MCPServer()
+class ZoomInfoToolkit(BaseToolkit):
+    r"""ZoomInfo API toolkit for B2B data intelligence and contact/company search."""
     
-    # Check if current token is still valid
-    if _zoominfo_access_token and time.time() < _zoominfo_token_expires_at:
-        return _zoominfo_access_token
+    def __init__(self, timeout: Optional[float] = None):
+        super().__init__(timeout=timeout)
+        # Instance variables for token management (thread-safe)
+        self._access_token: Optional[str] = None
+        self._token_expires_at: float = 0
+        self._lock = threading.Lock()
+        
+        # Validate credentials on initialization
+        self._get_zoominfo_token()
     
-    # Get credentials from environment
-    username = os.getenv("ZOOMINFO_USERNAME")
-    password = os.getenv("ZOOMINFO_PASSWORD")
-    client_id = os.getenv("ZOOMINFO_CLIENT_ID")
-    private_key = os.getenv("ZOOMINFO_PRIVATE_KEY")
+    def _get_zoominfo_token(self) -> str:
+        """Get or refresh ZoomInfo JWT token (thread-safe)."""
+        with self._lock:  # Ensure atomic operation
+            # Check if current token is still valid
+            if self._access_token and time.time() < self._token_expires_at:
+                return self._access_token
+            
+            # Get credentials from environment
+            username = os.getenv("ZOOMINFO_USERNAME")
+            password = os.getenv("ZOOMINFO_PASSWORD")
+            client_id = os.getenv("ZOOMINFO_CLIENT_ID")
+            private_key = os.getenv("ZOOMINFO_PRIVATE_KEY")
+            
+            if not username:
+                raise ValueError("ZoomInfo credentials missing. Please set ZOOMINFO_USERNAME environment variable.")
+            
+            # Try PKI authentication first if available
+            if client_id and private_key:
+                try:
+                    token = self._get_pki_token(client_id, private_key, username)
+                    self._access_token = token
+                    self._token_expires_at = time.time() + 3500
+                    return token
+                except (ImportError, Exception) as e:
+                    logger.warning(f"PKI authentication failed: {e}. Falling back to username/password.")
+            
+            # Fallback to username/password authentication
+            if not password:
+                raise ValueError("ZoomInfo credentials missing. Please set ZOOMINFO_PASSWORD environment variable.")
+            
+            try:
+                import zi_api_auth_client
+                token = zi_api_auth_client.user_name_pwd_authentication(username, password)
+                self._access_token = token
+                self._token_expires_at = time.time() + 3500
+                return token
+            except ImportError:
+                raise ValueError("ZoomInfo authentication requires 'zi_api_auth_client' package. Please install it with: pip install zi_api_auth_client")
     
-    if not username:
-        raise ValueError("ZoomInfo credentials missing. Please set ZOOMINFO_USERNAME environment variable.")
-    
-    # Try PKI authentication first if available
-    if client_id and private_key:
+    def _get_pki_token(self, client_id: str, private_key: str, username: str) -> str:
+        """Get PKI authentication token."""
         try:
             import jwt
             from cryptography.hazmat.primitives import hashes
@@ -80,82 +112,54 @@ def _get_zoominfo_token() -> str:
                 headers={"kid": client_id}
             )
             
-            _zoominfo_access_token = token
-            _zoominfo_token_expires_at = current_time + 3500  # Refresh 5 minutes before expiry
             return token
             
         except ImportError:
-            logger.warning("PKI authentication requires 'pyjwt' and 'cryptography' packages. Falling back to username/password.")
-        except Exception as e:
-            logger.warning(f"PKI authentication failed: {e}. Falling back to username/password.")
+            raise ValueError("PKI authentication requires 'pyjwt' and 'cryptography' packages.")
     
-    # Fallback to username/password authentication
-    if not password:
-        raise ValueError("ZoomInfo credentials missing. Please set ZOOMINFO_PASSWORD environment variable.")
-    
-    try:
-        import zi_api_auth_client
-        token = zi_api_auth_client.user_name_pwd_authentication(username, password)
-        _zoominfo_access_token = token
-        _zoominfo_token_expires_at = time.time() + 3500  # Refresh 5 minutes before expiry
-        return token
-    except ImportError:
-        raise ValueError("ZoomInfo authentication requires 'zi_api_auth_client' package. Please install it with: pip install zi_api_auth_client")
-
-
-def _make_zoominfo_request(
-    method: str,
-    endpoint: str,
-    headers: Optional[Dict[str, str]] = None,
-    json_data: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    r"""Make a request to ZoomInfo API with proper error handling."""
-    base_url = "https://api.zoominfo.com"
-    url = f"{base_url}{endpoint}"
-    
-    # Get authentication token
-    token = _get_zoominfo_token()
-    
-    # Prepare headers
-    request_headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
-    if headers:
-        request_headers.update(headers)
-    
-    try:
-        response = requests.request(
-            method=method,
-            url=url,
-            headers=request_headers,
-            json=json_data,
-            params=params,
-            timeout=30,
-        )
+    def _make_zoominfo_request(
+        self,
+        method: str,
+        endpoint: str,
+        headers: Optional[Dict[str, str]] = None,
+        json_data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Make a request to ZoomInfo API with proper error handling."""
+        base_url = "https://api.zoominfo.com"
+        url = f"{base_url}{endpoint}"
         
-        response.raise_for_status()
-        return response.json()
+        # Get authentication token
+        token = self._get_zoominfo_token()
         
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"ZoomInfo API request failed: {e}")
-
-
-@MCPServer()
-class ZoomInfoToolkit(BaseToolkit):
-    r"""ZoomInfo API toolkit for B2B data intelligence and contact/company search."""
-    
-    def __init__(self, timeout: Optional[float] = None):
-        super().__init__(timeout=timeout)
-        # Validate credentials on initialization
-        _get_zoominfo_token()
+        # Prepare headers
+        request_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        if headers:
+            request_headers.update(headers)
+        
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=request_headers,
+                json=json_data,
+                params=params,
+                timeout=30,
+            )
+            
+            response.raise_for_status()
+            return response.json()
+            
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"ZoomInfo API request failed: {e}")
     
     @api_keys_required([
         (None, "ZOOMINFO_USERNAME"),
         (None, "ZOOMINFO_PASSWORD"),
     ])
-    # Search for companies by various criteria
     def zoominfo_search_companies(
         self,
         company_name: str = "",
@@ -167,7 +171,7 @@ class ZoomInfoToolkit(BaseToolkit):
         sort_order: Literal["asc", "desc"] = "asc",
         **kwargs
     ) -> Dict[str, Any]:
-        r"""Search for companies using ZoomInfo API.
+        """Search for companies using ZoomInfo API.
         
         Args:
             company_name (str): Company name to search for
@@ -200,7 +204,7 @@ class ZoomInfoToolkit(BaseToolkit):
         # Add any additional parameters
         params.update(kwargs)
         
-        return _make_zoominfo_request(
+        return self._make_zoominfo_request(
             method="POST",
             endpoint="/search/company",
             json_data=params,
@@ -210,7 +214,6 @@ class ZoomInfoToolkit(BaseToolkit):
         (None, "ZOOMINFO_USERNAME"),
         (None, "ZOOMINFO_PASSWORD"),
     ])
-    # Search for contacts by company, title, and other criteria
     def zoominfo_search_contacts(
         self,
         company_name: str = "",
@@ -226,7 +229,7 @@ class ZoomInfoToolkit(BaseToolkit):
         sort_order: Literal["asc", "desc"] = "desc",
         **kwargs
     ) -> Dict[str, Any]:
-        r"""Search for contacts using ZoomInfo API.
+        """Search for contacts using ZoomInfo API.
         
         Args:
             company_name (str): Company name to search in
@@ -262,7 +265,7 @@ class ZoomInfoToolkit(BaseToolkit):
         # Add any additional parameters
         params.update(kwargs)
         
-        return _make_zoominfo_request(
+        return self._make_zoominfo_request(
             method="POST",
             endpoint="/search/contact",
             json_data=params,
@@ -272,14 +275,13 @@ class ZoomInfoToolkit(BaseToolkit):
         (None, "ZOOMINFO_USERNAME"),
         (None, "ZOOMINFO_PASSWORD"),
     ])
-    # Enrich contact information with additional data
     def zoominfo_enrich_contact(
         self,
         match_person_input: List[Dict[str, Any]],
         output_fields: List[str],
         **kwargs
     ) -> Dict[str, Any]:
-        r"""Enrich contact information using ZoomInfo API.
+        """Enrich contact information using ZoomInfo API.
         
         Args:
             match_person_input (List[Dict]): List of contact inputs to match
@@ -297,14 +299,14 @@ class ZoomInfoToolkit(BaseToolkit):
         # Add any additional parameters
         params.update(kwargs)
         
-        return _make_zoominfo_request(
+        return self._make_zoominfo_request(
             method="POST",
             endpoint="/enrich/contact",
             json_data=params,
         )
     
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns toolkit functions as tools."""
+        """Returns toolkit functions as tools."""
         return [
             FunctionTool(self.zoominfo_search_companies),
             FunctionTool(self.zoominfo_search_contacts),
