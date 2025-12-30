@@ -143,7 +143,9 @@ def load_subtask_log(log_file: str) -> Dict[str, Any]:
         return json.load(f)
 
 
-def get_latest_snapshot_before_action(main_actions: List[Dict], action_index: int) -> str:
+def get_latest_snapshot_before_action(
+    main_actions: List[Dict], action_index: int
+) -> str:
     """
     Get the most recent snapshot before a given action index.
 
@@ -186,12 +188,73 @@ def is_action_failed(action: Dict[str, Any]) -> bool:
         result = outputs.get('result', '')
         if isinstance(result, str):
             # Check for failure patterns
-            if any(pattern in result.lower() for pattern in ['failed', 'error', 'not found']):
+            if any(
+                pattern in result.lower()
+                for pattern in ['failed', 'error', 'not found']
+            ):
                 # Exclude "executed successfully" which might contain "error" in context
                 if 'successfully' not in result.lower():
                     return True
 
     return False
+
+
+def get_current_url_from_tab_info(
+    tab_info_action: Dict[str, Any],
+) -> Optional[str]:
+    """
+    Extract the current URL from a get_tab_info action.
+
+    Args:
+        tab_info_action: A get_tab_info action dict
+
+    Returns:
+        The URL of the current tab, or None if not found
+    """
+    if tab_info_action.get('action') != 'get_tab_info':
+        return None
+
+    outputs = tab_info_action.get('outputs', [])
+    if not isinstance(outputs, list):
+        return None
+
+    # Find the tab with is_current: true
+    for tab in outputs:
+        if isinstance(tab, dict) and tab.get('is_current'):
+            return tab.get('url')
+
+    return None
+
+
+def get_url_before_and_after_action(
+    main_actions: List[Dict], action_index: int
+) -> Dict[str, Optional[str]]:
+    """
+    Get the URL before and after a given action by looking at surrounding get_tab_info calls.
+
+    Args:
+        main_actions: List of all main log actions
+        action_index: Index of the current action (0-based)
+
+    Returns:
+        Dict with 'url_before' and 'url_after' keys
+    """
+    url_before = None
+    url_after = None
+
+    # Look backwards for the most recent get_tab_info before this action
+    for i in range(action_index - 1, -1, -1):
+        if main_actions[i].get('action') == 'get_tab_info':
+            url_before = get_current_url_from_tab_info(main_actions[i])
+            break
+
+    # Look forwards for the first get_tab_info after this action
+    for i in range(action_index + 1, len(main_actions)):
+        if main_actions[i].get('action') == 'get_tab_info':
+            url_after = get_current_url_from_tab_info(main_actions[i])
+            break
+
+    return {'url_before': url_before, 'url_after': url_after}
 
 
 def analyze_session(session_dir: str):
@@ -219,7 +282,11 @@ def analyze_session(session_dir: str):
         print("Warning: No subtask files found")
 
     # Actions to exclude from timeline
-    excluded_actions = {'get_tab_info', 'get_page_snapshot', 'get_som_screenshot'}
+    excluded_actions = {
+        'get_tab_info',
+        'get_page_snapshot',
+        'get_som_screenshot',
+    }
 
     # Load main log
     main_actions = load_main_log(str(main_log_file))
@@ -250,7 +317,9 @@ def analyze_session(session_dir: str):
                     timing_tuple = tuple(sorted(timing.items()))
                     all_subtask_timings.add(timing_tuple)
 
-    print(f"\n✓ Loaded {len(subtasks)} subtasks with {len(all_subtask_timings)} unique timings")
+    print(
+        f"\n✓ Loaded {len(subtasks)} subtasks with {len(all_subtask_timings)} unique timings"
+    )
 
     # Filter main log actions that are NOT in subtasks
     non_subtask_actions = []
@@ -355,7 +424,10 @@ def analyze_session(session_dir: str):
             action_index_in_subtask = subtask_info.get('action_index', 0)
 
             # Only add subtask_replay entry for the first action of each subtask
-            if action_index_in_subtask == 0 and subtask_id not in already_added_subtasks:
+            if (
+                action_index_in_subtask == 0
+                and subtask_id not in already_added_subtasks
+            ):
                 # Extract aria label for the first action if it has args
                 inputs = action.get('inputs', {})
                 args = inputs.get('args', [])
@@ -363,24 +435,39 @@ def analyze_session(session_dir: str):
 
                 if args:
                     # Get the most recent snapshot before this action
-                    snapshot_before = get_latest_snapshot_before_action(main_actions, action_index)
+                    snapshot_before = get_latest_snapshot_before_action(
+                        main_actions, action_index
+                    )
 
                     # Try to extract label from first ref argument
                     for arg in args:
                         if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                            element_label = extract_aria_label_from_snapshot(snapshot_before, arg)
+                            element_label = extract_aria_label_from_snapshot(
+                                snapshot_before, arg
+                            )
                             if element_label:
                                 break
 
-                timeline.append({
-                    'action_step': action_index,
-                    'timestamp': timestamp,
-                    'action_type': 'subtask_replay',
-                    'subtask_id': subtask_id,
-                    'subtask_name': subtask_info['subtask_name'],
-                    'element_label': element_label,
-                    'variables_used': subtask_info.get('variables_used', {}),
-                })
+                # Get URL before and after this action
+                url_info = get_url_before_and_after_action(
+                    main_actions, action_index
+                )
+
+                timeline.append(
+                    {
+                        'action_step': action_index,
+                        'timestamp': timestamp,
+                        'action_type': 'subtask_replay',
+                        'subtask_id': subtask_id,
+                        'subtask_name': subtask_info['subtask_name'],
+                        'element_label': element_label,
+                        'variables_used': subtask_info.get(
+                            'variables_used', {}
+                        ),
+                        'url_before': url_info['url_before'],
+                        'url_after': url_info['url_after'],
+                    }
+                )
 
                 already_added_subtasks.add(subtask_id)
 
@@ -393,23 +480,36 @@ def analyze_session(session_dir: str):
             element_label = None
             if args:
                 # Get the most recent snapshot before this action
-                snapshot_before = get_latest_snapshot_before_action(main_actions, action_index)
+                snapshot_before = get_latest_snapshot_before_action(
+                    main_actions, action_index
+                )
 
                 # Try to extract label from first ref argument
                 for arg in args:
                     if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                        element_label = extract_aria_label_from_snapshot(snapshot_before, arg)
+                        element_label = extract_aria_label_from_snapshot(
+                            snapshot_before, arg
+                        )
                         if element_label:
                             break
 
-            timeline.append({
-                'action_step': action_index,
-                'timestamp': timestamp,
-                'action_type': 'individual_action',
-                'action': action_name,
-                'element_label': element_label,
-                'args': args,
-            })
+            # Get URL before and after this action
+            url_info = get_url_before_and_after_action(
+                main_actions, action_index
+            )
+
+            timeline.append(
+                {
+                    'action_step': action_index,
+                    'timestamp': timestamp,
+                    'action_type': 'individual_action',
+                    'action': action_name,
+                    'element_label': element_label,
+                    'args': args,
+                    'url_before': url_info['url_before'],
+                    'url_after': url_info['url_after'],
+                }
+            )
 
     # Load task description from agent communication log if available
     task_description = ''
@@ -420,7 +520,9 @@ def analyze_session(session_dir: str):
                 agent_comm_data = json.load(f)
                 task_description = agent_comm_data.get('task_description', '')
         except Exception as e:
-            print(f"⚠️  Warning: Could not read task description from agent log: {e}")
+            print(
+                f"⚠️  Warning: Could not read task description from agent log: {e}"
+            )
 
     # Save timeline with task description
     timeline_output = {
@@ -440,11 +542,15 @@ def analyze_session(session_dir: str):
     print("ANALYSIS SUMMARY")
     print("=" * 80)
     print(f"Total actions in main log: {len(main_actions)}")
-    print(f"Actions in subtasks: {len(main_actions) - len(non_subtask_actions)}")
+    print(
+        f"Actions in subtasks: {len(main_actions) - len(non_subtask_actions)}"
+    )
     print(f"Actions NOT in subtasks: {len(non_subtask_actions)}")
     print(f"Timeline entries: {len(timeline)}")
     print(f"  - Subtask replays: {len(already_added_subtasks)}")
-    print(f"  - Individual actions: {len(timeline) - len(already_added_subtasks)}")
+    print(
+        f"  - Individual actions: {len(timeline) - len(already_added_subtasks)}"
+    )
     print("\nOutput files:")
     print(f"  - Non-subtask actions: {output_file}")
     print(f"  - Timeline: {timeline_file}")
@@ -456,7 +562,9 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python analyze_session.py <session_directory>")
         print("\nExample:")
-        print("  python analyze_session.py /path/to/session_logs/session_20251228_194306")
+        print(
+            "  python analyze_session.py /path/to/session_logs/session_20251228_194306"
+        )
         sys.exit(1)
 
     session_dir = sys.argv[1]

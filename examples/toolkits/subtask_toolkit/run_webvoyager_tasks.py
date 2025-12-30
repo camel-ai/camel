@@ -159,7 +159,7 @@ class WebVoyagerRunner:
             print(f"\n⚠️  Config directory not found: {config_path}")
             print(f"📁 Creating directory: {config_path}")
             config_path.mkdir(parents=True, exist_ok=True)
-            print(f"✓ Directory created successfully\n")
+            print("✓ Directory created successfully\n")
         else:
             # Check if it's actually a directory
             if not config_path.is_dir():
@@ -178,7 +178,10 @@ class WebVoyagerRunner:
         return tasks
 
     async def run_single_task(
-        self, task: Dict[str, Any], attempt: int = 1, previous_suggestions: str = ""
+        self,
+        task: Dict[str, Any],
+        attempt: int = 1,
+        previous_suggestions: str = "",
     ) -> Dict[str, Any]:
         """
         Run a single task with the subtask agent.
@@ -195,7 +198,9 @@ class WebVoyagerRunner:
         task_description = task.get('ques', '')
 
         print(f"\n{'='*80}")
-        print(f"RUNNING TASK: {task_id} (Attempt {attempt}/{self.max_retries + 1})")
+        print(
+            f"RUNNING TASK: {task_id} (Attempt {attempt}/{self.max_retries + 1})"
+        )
         print(f"{'='*80}")
         print(f"Task: {task_description}")
         if previous_suggestions:
@@ -237,7 +242,9 @@ class WebVoyagerRunner:
             final_snapshot = ""
             if agent.toolkit:
                 try:
-                    snapshot_result = await agent.toolkit.browser_get_page_snapshot()
+                    snapshot_result = (
+                        await agent.toolkit.browser_get_page_snapshot()
+                    )
                     final_snapshot = snapshot_result.get('snapshot', '')
                 except Exception as e:
                     print(f"⚠️  Could not get final snapshot: {e}")
@@ -269,7 +276,7 @@ class WebVoyagerRunner:
                 task_description, agent_response
             )
 
-            print(f"\n✓ Verification complete:")
+            print("\n✓ Verification complete:")
             print(f"  Success: {verification['success']}")
             print(f"  Reasoning: {verification['reasoning']}")
             if verification.get('suggestions'):
@@ -304,7 +311,9 @@ class WebVoyagerRunner:
                     result['subtask_analysis'] = {
                         'status': 'completed',
                         'success': analysis_result.get('success', False),
-                        'reusable_subtasks_found': analysis_result.get('reusable_subtasks_found', 0),
+                        'reusable_subtasks_found': analysis_result.get(
+                            'reusable_subtasks_found', 0
+                        ),
                         'token_usage': analysis_result.get('token_usage', {}),
                         'report_path': analysis_result.get('report_path', ''),
                     }
@@ -312,10 +321,16 @@ class WebVoyagerRunner:
                     # Print token summary
                     token_usage = analysis_result.get('token_usage', {})
                     if token_usage:
-                        print(f"\n📊 Subtask Analysis Token Usage:")
-                        print(f"  Input:  {token_usage.get('input_tokens', 0):,}")
-                        print(f"  Output: {token_usage.get('output_tokens', 0):,}")
-                        print(f"  Total:  {token_usage.get('total_tokens', 0):,}")
+                        print("\n📊 Subtask Analysis Token Usage:")
+                        print(
+                            f"  Input:  {token_usage.get('input_tokens', 0):,}"
+                        )
+                        print(
+                            f"  Output: {token_usage.get('output_tokens', 0):,}"
+                        )
+                        print(
+                            f"  Total:  {token_usage.get('total_tokens', 0):,}"
+                        )
 
                 except Exception as e:
                     print(f"⚠️  Subtask analysis failed: {e}")
@@ -366,16 +381,36 @@ class WebVoyagerRunner:
             task: Task dictionary
 
         Returns:
-            Final result dictionary
+            Final result dictionary with retry history
         """
         attempt = 1
         suggestions = ""
+        attempt_history = []  # Track all attempts
 
         while attempt <= self.max_retries + 1:
             result = await self.run_single_task(task, attempt, suggestions)
 
+            # Record this attempt in history
+            attempt_history.append(
+                {
+                    'attempt_number': attempt,
+                    'success': result.get('success', False),
+                    'reasoning': result.get('reasoning', ''),
+                    'suggestions': result.get('suggestions', ''),
+                    'error': result.get('error', ''),
+                    'session_dir': result.get('session_dir', ''),
+                    'is_timeout': result.get('is_timeout', False),
+                }
+            )
+
             if result.get('success'):
-                print(f"\n✅ Task {task['id']} succeeded on attempt {attempt}!")
+                print(
+                    f"\n✅ Task {task['id']} succeeded on attempt {attempt}!"
+                )
+                # Add retry metadata to final result
+                result['total_attempts'] = attempt
+                result['retry_count'] = attempt - 1
+                result['attempt_history'] = attempt_history
                 return result
 
             # Check if it's a timeout error
@@ -404,16 +439,26 @@ class WebVoyagerRunner:
                     print(
                         f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
                     )
+                    # Add retry metadata to final result
+                    result['total_attempts'] = attempt
+                    result['retry_count'] = attempt - 1
+                    result['attempt_history'] = attempt_history
                     return result
             else:
                 print(
                     f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
                 )
+                # Add retry metadata to final result
+                result['total_attempts'] = attempt
+                result['retry_count'] = attempt - 1
+                result['attempt_history'] = attempt_history
                 return result
 
         return result
 
-    async def run_all_tasks(self, start_index: int = 0, max_tasks: Optional[int] = None):
+    async def run_all_tasks(
+        self, start_index: int = 0, max_tasks: Optional[int] = None
+    ):
         """
         Run all tasks from the JSONL file.
 
@@ -424,7 +469,7 @@ class WebVoyagerRunner:
         tasks = self.load_tasks()
 
         print(f"\n{'='*80}")
-        print(f"WEBVOYAGER TASK RUNNER")
+        print("WEBVOYAGER TASK RUNNER")
         print(f"{'='*80}")
         print(f"Total tasks: {len(tasks)}")
         print(f"Start index: {start_index}")
@@ -453,7 +498,9 @@ class WebVoyagerRunner:
             self.save_results()
 
             # Wait 20 seconds before next task
-            if idx < len(tasks) + start_index - 1:  # Don't wait after last task
+            if (
+                idx < len(tasks) + start_index - 1
+            ):  # Don't wait after last task
                 print("\n⏳ Waiting 20 seconds before next task...")
                 await asyncio.sleep(20)
                 print("✓ Ready for next task")
@@ -482,13 +529,45 @@ class WebVoyagerRunner:
         print(f"Succeeded: {succeeded} ({succeeded/total*100:.1f}%)")
         print(f"Failed: {failed} ({failed/total*100:.1f}%)")
 
+        # Retry statistics
+        total_retries = sum(r.get('retry_count', 0) for r in self.results)
+        tasks_with_retries = sum(
+            1 for r in self.results if r.get('retry_count', 0) > 0
+        )
+        succeeded_after_retry = sum(
+            1
+            for r in self.results
+            if r.get('success') and r.get('retry_count', 0) > 0
+        )
+
+        print("\n📊 Retry Statistics:")
+        print(f"Total retries across all tasks: {total_retries}")
+        print(f"Tasks that needed retries: {tasks_with_retries}/{total}")
+        print(
+            f"Tasks succeeded after retry: {succeeded_after_retry}/{tasks_with_retries if tasks_with_retries > 0 else 0}"
+        )
+
         # Show failed tasks
         if failed > 0:
-            print(f"\nFailed tasks:")
+            print("\n❌ Failed tasks:")
             for r in self.results:
                 if not r.get('success'):
+                    retry_info = (
+                        f" (after {r.get('retry_count', 0)} retries)"
+                        if r.get('retry_count', 0) > 0
+                        else ""
+                    )
                     print(
-                        f"  - {r['task_id']}: {r.get('error') or r.get('reasoning')}"
+                        f"  - {r['task_id']}{retry_info}: {r.get('error') or r.get('reasoning')}"
+                    )
+
+        # Show successful tasks that needed retries
+        if succeeded_after_retry > 0:
+            print("\n✅ Tasks succeeded after retry:")
+            for r in self.results:
+                if r.get('success') and r.get('retry_count', 0) > 0:
+                    print(
+                        f"  - {r['task_id']}: succeeded on attempt {r.get('total_attempts', 1)}"
                     )
 
 

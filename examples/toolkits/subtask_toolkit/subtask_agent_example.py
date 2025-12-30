@@ -216,7 +216,9 @@ class SubtaskFunction:
                     )
                 else:
                     # Use browser_log hardcoded absolute path
-                    replay_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
+                    replay_log_dir = Path(
+                        "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
+                    )
                     replay_log_dir.mkdir(parents=True, exist_ok=True)
                     replay_log_file = (
                         replay_log_dir
@@ -340,7 +342,9 @@ class SubtaskAgent:
         self.session_log_dir: Optional[Path] = None
 
         # Base directory for session logs (hardcoded absolute path)
-        self.session_logs_root = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs")
+        self.session_logs_root = Path(
+            "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs"
+        )
 
         # Store current user task (actual task being executed)
         self.current_user_task = None
@@ -372,23 +376,33 @@ class SubtaskAgent:
     def _load_subtask_configs(self):
         """Load all subtask configuration files from the directory."""
         if not self.subtask_config_dir.exists():
-            print(f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}")
-            print(f"📁 Creating directory...")
+            print(
+                f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}"
+            )
+            print("📁 Creating directory...")
             self.subtask_config_dir.mkdir(parents=True, exist_ok=True)
-            print(f"✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n")
+            print(
+                "✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n"
+            )
             # Set empty config for backwards compatibility
             self.subtask_config = {}
             return
 
         if not self.subtask_config_dir.is_dir():
-            raise ValueError(f"Path is not a directory: {self.subtask_config_dir}")
+            raise ValueError(
+                f"Path is not a directory: {self.subtask_config_dir}"
+            )
 
         # Find all JSON files in the directory
         config_files = sorted(self.subtask_config_dir.glob("*.json"))
 
         if not config_files:
-            print(f"\n📝 No subtask config files found in: {self.subtask_config_dir}")
-            print(f"   Agent will run without pre-existing subtasks (will create new ones as needed).\n")
+            print(
+                f"\n📝 No subtask config files found in: {self.subtask_config_dir}"
+            )
+            print(
+                "   Agent will run without pre-existing subtasks (will create new ones as needed).\n"
+            )
             # Set empty config for backwards compatibility
             self.subtask_config = {}
             return
@@ -405,18 +419,24 @@ class SubtaskAgent:
                 continue
 
             subtasks = config.get('subtasks', [])
-            print(f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}")
+            print(
+                f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}"
+            )
 
             self.subtask_configs.append((log_file, config))
 
         if not self.subtask_configs:
             raise ValueError("No valid subtask configs loaded")
 
-        print(f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)")
+        print(
+            f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)"
+        )
 
         # For backwards compatibility, store first config as main config
         # This allows existing code to use self.subtask_config
-        self.subtask_config = self.subtask_configs[0][1] if self.subtask_configs else {}
+        self.subtask_config = (
+            self.subtask_configs[0][1] if self.subtask_configs else {}
+        )
 
     async def initialize(self):
         """Initialize toolkit and agent."""
@@ -501,14 +521,19 @@ class SubtaskAgent:
 
         # Iterate through all loaded configs
         for log_file, config in self.subtask_configs:
-            config_name = config.get('metadata', {}).get('subtask_type', 'unknown')
+            config_name = config.get('metadata', {}).get(
+                'subtask_type', 'unknown'
+            )
             print(f"\n📦 Processing config: {Path(log_file).name}")
             print(f"   Type: {config_name}")
 
             # Save config to temp file for ActionReplayer
             # (ActionReplayer expects a file path, not a dict)
             import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as temp_config:
+
+            with tempfile.NamedTemporaryFile(
+                mode='w', suffix='.json', delete=False, encoding='utf-8'
+            ) as temp_config:
                 json.dump(config, temp_config, indent=2, ensure_ascii=False)
                 temp_config_path = temp_config.name
 
@@ -533,7 +558,22 @@ class SubtaskAgent:
                 )
                 # Share the same toolkit to avoid WebSocket conflicts
                 replayer.toolkit = self.toolkit
-                replayer.actions = replayer.load_log_file()
+
+                # Check if subtask has embedded actions
+                subtask_has_actions = bool(subtask.get('actions', []))
+
+                if subtask_has_actions:
+                    # Initialize with empty list - will be populated by load_subtask_config()
+                    replayer.actions = []
+                    print(
+                        f"  ℹ️  Subtask {subtask_id} has embedded actions, skipping log file load"
+                    )
+                else:
+                    # Load from log file for backward compatibility
+                    replayer.actions = replayer.load_log_file()
+                    print(
+                        f"  ℹ️  Subtask {subtask_id} loading actions from log file"
+                    )
 
                 # Create subtask function with stats tracker and session log dir
                 subtask_func = SubtaskFunction(
@@ -555,7 +595,9 @@ class SubtaskAgent:
                     print(f"  ✓ Created function: {subtask_id}")
                     print("     No variables (fixed operation)")
 
-        print(f"\n✅ Total subtask functions created: {len(self.subtask_functions)}")
+        print(
+            f"\n✅ Total subtask functions created: {len(self.subtask_functions)}"
+        )
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)
@@ -565,7 +607,10 @@ class SubtaskAgent:
         model = ModelFactory.create(
             model_platform=ModelPlatformType.AZURE,
             model_type=ModelType.GPT_4_1,
-            model_config_dict={"temperature": 0.0},
+            model_config_dict={
+                "temperature": 0.0,
+                "parallel_tool_calls": False,
+            },
         )
 
         print("✓ Model created")
@@ -687,14 +732,11 @@ async def subtask_{subtask_func.subtask_id}():
         # Create agent with system message
         print("Creating ChatAgent...")
         system_message = BaseMessage.make_assistant_message(
-            role_name="Browser Automation Agent",
-            content=self.system_prompt
+            role_name="Browser Automation Agent", content=self.system_prompt
         )
 
         self.agent = ChatAgent(
-            model=model,
-            tools=all_tools,
-            system_message=system_message
+            model=model, tools=all_tools, system_message=system_message
         )
 
         print("✓ Agent created successfully with system prompt")
@@ -706,8 +748,12 @@ async def subtask_{subtask_func.subtask_id}():
         for tool in browser_tools:
             tool_info = {
                 'type': 'browser_tool',
-                'name': tool.func.__name__ if hasattr(tool.func, '__name__') else str(tool),
-                'docstring': tool.func.__doc__ if hasattr(tool.func, '__doc__') else None,
+                'name': tool.func.__name__
+                if hasattr(tool.func, '__name__')
+                else str(tool),
+                'docstring': tool.func.__doc__
+                if hasattr(tool.func, '__doc__')
+                else None,
             }
             self.tool_definitions.append(tool_info)
 
@@ -746,61 +792,76 @@ async def subtask_{subtask_func.subtask_id}():
             print("subtask_list", subtask_list)
 
             # Agent with subtasks
-            prompt_parts.extend([
-                "You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.",
-                "",
-                "AVAILABLE SUBTASK FUNCTIONS (PREFER THESE WHEN APPLICABLE):",
-                subtask_list,
-                "",
-                "GUIDELINES:",
-                "1. **Prefer subtask functions** when they match your goal - they are tested and reliable",
-                "2. Use low-level browser tools only when:",
-                "   - No suitable subtask function exists",
-                "   - You need fine-grained control",
-                "   - The subtask function failed and you need to recover",
-                "",
-                "3. After executing a subtask function, you will receive:",
-                "   - Status (success/error)",
-                "   - Message describing the result",
-                "   - Current page snapshot",
-                "   - Variables that were used",
-                "",
-                "4. If a subtask fails, you can either:",
-                "   - Retry with different variables",
-                "   - Use low-level browser tools to fix the issue",
-                "   - Ask for clarification",
-                "",
-                "TASK DESCRIPTION:",
-                self.subtask_config.get('task_description', 'Complete browser automation tasks'),
-                "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
-                "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",
-                "",
-            ])
+            prompt_parts.extend(
+                [
+                    "You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.",
+                    "",
+                    "AVAILABLE SUBTASK FUNCTIONS (PREFER THESE WHEN APPLICABLE):",
+                    subtask_list,
+                    "",
+                    "GUIDELINES:",
+                    "1. **Prefer subtask functions** when they match your goal - they are tested and reliable",
+                    "2. **IMPORTANT: Only call subtasks that match the current page URL**",
+                    "   - Each subtask has an 'Execution page' specified in its description",
+                    "   - Before calling a subtask, verify you are on the correct page using browser_get_page_snapshot",
+                    "   - Do not call subtasks designed for different pages (e.g., don't call a subtask for Google Flights when on Google Search)",
+                    "3. Use low-level browser tools only when:",
+                    "   - No suitable subtask function exists",
+                    "   - You need fine-grained control",
+                    "   - The subtask function failed and you need to recover",
+                    "",
+                    "4. After executing a subtask function, you will receive:",
+                    "   - Status (success/error)",
+                    "   - Message describing the result",
+                    "   - Current page snapshot",
+                    "   - Variables that were used",
+                    "",
+                    "5. If a subtask fails, you can either:",
+                    "   - Retry with different variables",
+                    "   - Use low-level browser tools to fix the issue",
+                    "   - Ask for clarification",
+                    "",
+                    "TASK DESCRIPTION:",
+                    self.subtask_config.get(
+                        'task_description', 'Complete browser automation tasks'
+                    ),
+                    "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
+                    "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",
+                    "",
+                ]
+            )
         else:
             # Agent without subtasks - simpler prompt
-            prompt_parts.extend([
-                "You are a browser automation agent with access to low-level browser tools.",
-                "",
-                "GUIDELINES:",
-                "1. Use the available browser tools to complete the task step by step",
-                "2. Always verify the current state of the page before taking actions",
-                "3. If an action fails, analyze the page state and adjust your approach",
-                "",
-                "TASK DESCRIPTION:",
-                self.subtask_config.get('task_description', 'Complete browser automation tasks'),
-                "",
-            ])
+            prompt_parts.extend(
+                [
+                    "You are a browser automation agent with access to low-level browser tools.",
+                    "",
+                    "GUIDELINES:",
+                    "1. Use the available browser tools to complete the task step by step",
+                    "2. Always verify the current state of the page before taking actions",
+                    "3. If an action fails, analyze the page state and adjust your approach",
+                    "",
+                    "TASK DESCRIPTION:",
+                    self.subtask_config.get(
+                        'task_description', 'Complete browser automation tasks'
+                    ),
+                    "",
+                ]
+            )
 
         # Common guidelines (apply to both cases)
-        prompt_parts.extend([
-            """
+        prompt_parts.extend(
+            [
+                """
 - All tasks are to be performed on Google Flights
 - When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).
 - 填写起点和终点的时候不需要填写太详细，只填写城市即可
+- 填写日期的流程是，先点击日期输入框，再分别type输入departure和return的日期到日期框，然后敲击enter确认日期输入，再敲击enter退出日期选择框，再敲击enter进行搜索
 - If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.
 
             """
-        ])
+            ]
+        )
 
         return "\n".join(prompt_parts)
 
@@ -930,7 +991,9 @@ async def subtask_{subtask_func.subtask_id}():
         print("=" * 80)
 
         # Find the browser log file - hardcoded absolute path
-        browser_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
+        browser_log_dir = Path(
+            "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
+        )
 
         if not browser_log_dir.exists():
             print("⚠️  Warning: Browser log directory not found")
@@ -1259,7 +1322,9 @@ async def subtask_{subtask_func.subtask_id}():
 
         # Copy browser log to session directory
         if self.session_log_dir:
-            browser_log_dir = Path("/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log")
+            browser_log_dir = Path(
+                "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
+            )
 
             if browser_log_dir.exists():
                 # Get the most recent browser log
@@ -1291,7 +1356,9 @@ async def subtask_{subtask_func.subtask_id}():
     def _generate_timeline_analysis(self):
         """Auto-generate timeline analysis from session logs."""
         if not self.session_log_dir or not self.session_log_dir.exists():
-            print("\n⚠️  Session directory not found, skipping timeline analysis")
+            print(
+                "\n⚠️  Session directory not found, skipping timeline analysis"
+            )
             return
 
         print("\n" + "=" * 80)
@@ -1320,10 +1387,13 @@ async def subtask_{subtask_func.subtask_id}():
 
         except ImportError as e:
             print(f"\n⚠️  Could not import analyze_session module: {e}")
-            print("   Make sure analyze_session.py is in the same directory as this script")
+            print(
+                "   Make sure analyze_session.py is in the same directory as this script"
+            )
         except Exception as e:
             print(f"\n⚠️  Error during timeline analysis: {e}")
             import traceback
+
             traceback.print_exc()
 
 
@@ -1347,7 +1417,7 @@ async def main():
 
         # Example task
         task = """
-Find the lowest fare from all eligible one-way flights for 1 adult from JFK to Heathrow on Jan. 22. 2026
+        Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.
         """
 
         await agent.run(task)

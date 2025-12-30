@@ -14,17 +14,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Import the extraction function and subtask manager
+from extract_individual_actions import extract_consecutive_individual_actions
+from subtask_manager import SubtaskManager
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-# Import the extraction function and subtask manager
-from extract_individual_actions import extract_consecutive_individual_actions
-from subtask_manager import SubtaskManager
 
-
-def load_all_existing_subtasks(subtask_configs_dir: str) -> List[Dict[str, Any]]:
+def load_all_existing_subtasks(
+    subtask_configs_dir: str,
+) -> List[Dict[str, Any]]:
     """
     Load all existing subtasks from the subtask_configs directory.
 
@@ -81,18 +83,24 @@ def create_analysis_prompt(
     has_existing_subtasks = bool(existing_subtasks)
 
     if has_existing_subtasks:
-        existing_subtasks_summary = "\n**EXISTING SUBTASKS SUMMARY (for duplicate checking):**\n"
+        existing_subtasks_summary = (
+            "\n**EXISTING SUBTASKS SUMMARY (for duplicate checking):**\n"
+        )
         for idx, subtask in enumerate(existing_subtasks, 1):
             name = subtask.get('name', 'Unknown')
             description = subtask.get('description', 'No description')
-            existing_subtasks_summary += f"{idx}. **{name}**\n   - {description}\n"
+            existing_subtasks_summary += (
+                f"{idx}. **{name}**\n   - {description}\n"
+            )
     else:
         existing_subtasks_summary = ""
 
     # Format action groups
     action_groups_str = ""
     for idx, group in enumerate(action_groups, 1):
-        action_groups_str += f"\n\n=== Action Group {idx} ({len(group)} actions) ===\n"
+        action_groups_str += (
+            f"\n\n=== Action Group {idx} ({len(group)} actions) ===\n"
+        )
         for action in group:
             action_groups_str += f"""
 Action Step: {action.get('action_step')}
@@ -112,78 +120,81 @@ Args: {action.get('args')}
 
     # Add existing subtasks summary if available
     if has_existing_subtasks:
-        prompt_parts.extend([
-            existing_subtasks_summary,
-            "❗ Check if functionality already exists above before creating new subtasks.",
-            "",
-        ])
+        prompt_parts.extend(
+            [
+                existing_subtasks_summary,
+                "❗ Check if functionality already exists above before creating new subtasks.",
+                "",
+            ]
+        )
 
-    prompt_parts.extend([
-        "**ACTION GROUPS TO ANALYZE:**",
-        action_groups_str,
-        "",
-        "**🎯 GUIDELINES:**",
-        "",
-        "1. **Proper granularity** - Don't wrap entire task as one subtask, break into atomic pieces:",
-        "   - ✅ Enter departure (2-4 actions)",
-        "   - ✅ Enter destination (2-4 actions)",
-        "   - ✅ Set dates (2-5 actions, keep related dates together)",
-        "   - ❌ Enter departure + destination + dates + search (too large)",
-        "",
-        "2. **Date handling:**",
-        "   - Round-trip dates: ONE subtask with 2 variables (departure_date, return_date)",
-        "   - One-way date: ONE subtask with 1 variable (departure_date)",
-        "   - Round-trip vs One-way are DIFFERENT subtasks",
-        "",
-        "3. **Include confirmation** - If typing is followed by Enter, include both",
-        "",
-        "4. **Browser initialization** - Opening browser and navigating to a URL CAN be a subtask:",
-        "   - ✅ Open browser + visit specific page (e.g., Google Flights)",
-        "   - Variable can be the target URL or page type",
-        "   - Useful for starting different workflows on different sites",
-        "",
-        "5. **Identify variables** - For each variable, specify:",
-        "   - Which action_step it appears in",
-        "   - A clear description of what it represents",
-        ""
-        ,
-        "**📋 OUTPUT FORMAT:**",
-        "",
-        "For reusable subtask:",
-        "```json",
-        "{{",
-        "  \"can_be_subtask\": true,",
-        "  \"subtasks\": [",
-        "    {{",
-        "      \"name\": \"Enter Departure Location\",",
-        "      \"description\": \"Enter and select departure city for flight search\",",
-        "      \"start_index\": 15,",
-        "      \"end_index\": 19,",
-        "      \"variables\": {{",
-        "        \"departure_city\": {{",
-        "          \"action_index\": 17,",
-        "          \"description\": \"Name of the departure city (e.g., 'New York', 'London')\"",
-        "        }}",
-        "      }}",
-        "    }}",
-        "  ],",
-        "  \"reasoning\": \"Reusable pattern for entering any departure city\"",
-        "}}",
-        "```",
-        "",
-        "For non-reusable:",
-        "```json",
-        "{{",
-        "  \"can_be_subtask\": false,",
-        "  \"reasoning\": \"Only 1 action, too simple\"",
-        "}}",
-        "```",
-        "",
-        "**IMPORTANT:**",
-        "- Return ONLY valid JSON objects, one per group",
-        "- For variables, you only need: action_index and description",
-        "- Do NOT provide: arg_position, type, default_value (auto-generated)",
-    ])
+    prompt_parts.extend(
+        [
+            "**ACTION GROUPS TO ANALYZE:**",
+            action_groups_str,
+            "",
+            "**🎯 GUIDELINES:**",
+            "",
+            "1. **Proper granularity** - Don't wrap entire task as one subtask, break into atomic pieces:",
+            "   - ✅ Enter departure (2-4 actions)",
+            "   - ✅ Enter destination (2-4 actions)",
+            "   - ✅ Set dates (2-5 actions, keep related dates together)",
+            "   - ❌ Enter departure + destination + dates + search (too large)",
+            "",
+            "2. **Date handling:**",
+            "   - Round-trip dates: ONE subtask with 2 variables (departure_date, return_date)",
+            "   - One-way date: ONE subtask with 1 variable (departure_date)",
+            "   - Round-trip vs One-way are DIFFERENT subtasks",
+            "",
+            "3. **Include confirmation** - If typing is followed by Enter, include both",
+            "",
+            "4. **Browser initialization** - Opening browser and navigating to a URL CAN be a subtask:",
+            "   - ✅ Open browser + visit specific page (e.g., Google Flights)",
+            "   - Variable can be the target URL or page type",
+            "   - Useful for starting different workflows on different sites",
+            "",
+            "5. **Identify variables** - For each variable, specify:",
+            "   - Which action_step it appears in",
+            "   - A clear description of what it represents",
+            "",
+            "**📋 OUTPUT FORMAT:**",
+            "",
+            "For reusable subtask:",
+            "```json",
+            "{{",
+            "  \"can_be_subtask\": true,",
+            "  \"subtasks\": [",
+            "    {{",
+            "      \"name\": \"Enter Departure Location\",",
+            "      \"description\": \"Enter and select departure city for flight search\",",
+            "      \"start_index\": 15,",
+            "      \"end_index\": 19,",
+            "      \"variables\": {{",
+            "        \"departure_city\": {{",
+            "          \"action_index\": 17,",
+            "          \"description\": \"Name of the departure city (e.g., 'New York', 'London')\"",
+            "        }}",
+            "      }}",
+            "    }}",
+            "  ],",
+            "  \"reasoning\": \"Reusable pattern for entering any departure city\"",
+            "}}",
+            "```",
+            "",
+            "For non-reusable:",
+            "```json",
+            "{{",
+            "  \"can_be_subtask\": false,",
+            "  \"reasoning\": \"Only 1 action, too simple\"",
+            "}}",
+            "```",
+            "",
+            "**IMPORTANT:**",
+            "- Return ONLY valid JSON objects, one per group",
+            "- For variables, you only need: action_index and description",
+            "- Do NOT provide: arg_position, type, default_value (auto-generated)",
+        ]
+    )
 
     prompt = "\n".join(prompt_parts)
     return prompt
@@ -250,9 +261,33 @@ def infer_variable_type(value: str) -> str:
     return 'string'
 
 
+def clean_url_for_display(url: str) -> str:
+    """
+    清理 URL，只保留域名和路径部分，去掉查询字符串
+
+    Args:
+        url: 完整的 URL
+
+    Returns:
+        清理后的 URL（不包含查询参数）
+
+    Examples:
+        >>> clean_url_for_display("https://www.google.com/travel/flights?tfs=abc&tfu=xyz")
+        "https://www.google.com/travel/flights"
+        >>> clean_url_for_display("https://example.com/")
+        "https://example.com/"
+    """
+    if not url:
+        return ""
+
+    # 分割 URL，只保留 ? 之前的部分
+    if '?' in url:
+        return url.split('?')[0]
+    return url
+
+
 def enrich_subtask_definitions(
-    agent_results: List[Dict],
-    action_groups: List[List[Dict]]
+    agent_results: List[Dict], action_groups: List[List[Dict]]
 ) -> List[Dict]:
     """
     将 agent 的简化返回扩充为完整的 subtask 定义
@@ -285,15 +320,36 @@ def enrich_subtask_definitions(
             actions = []
             for step in range(start_index, end_index + 1):
                 if step in action_map:
-                    actions.append(action_map[step])
+                    # Copy action and preserve url_before/url_after if present
+                    action_copy = action_map[step].copy()
+                    actions.append(action_copy)
+
+            # Calculate subtask-level URL changes
+            url_start = None
+            url_end = None
+            if actions:
+                # Get url_before from the first action
+                url_start = actions[0].get('url_before')
+                # Get url_after from the last action
+                url_end = actions[-1].get('url_after')
+
+            # Enhance description with execution page info
+            enhanced_description = subtask['description']
+            if url_start:
+                clean_url = clean_url_for_display(url_start)
+                enhanced_description = (
+                    f"{enhanced_description}. Execution page: {clean_url}"
+                )
 
             enriched_subtask = {
                 'name': subtask['name'],
-                'description': subtask['description'],
+                'description': enhanced_description,
                 'start_index': start_index,
                 'end_index': end_index,
-                'actions': actions,  # 从 timeline 中提取的 actions
-                'variables': {}
+                'actions': actions,  # 从 timeline 中提取的 actions (包含 url_before/url_after)
+                'variables': {},
+                'url_start': url_start,  # Subtask 整体的起始 URL
+                'url_end': url_end,  # Subtask 整体的结束 URL
             }
 
             # 扩充每个变量
@@ -312,14 +368,16 @@ def enrich_subtask_definitions(
                     var_type = infer_variable_type(default_value)
 
                     # 使用 agent 提供的 description
-                    var_description = var_info.get('description', f'{var_name} parameter')
+                    var_description = var_info.get(
+                        'description', f'{var_name} parameter'
+                    )
 
                     enriched_subtask['variables'][var_name] = {
                         'action_index': action_index,
                         'arg_position': arg_position,
                         'type': var_type,
                         'default_value': default_value,
-                        'description': var_description
+                        'description': var_description,
                     }
 
             enriched_subtasks.append(enriched_subtask)
@@ -343,7 +401,9 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
     # Look for ```json blocks first
     import re
 
-    json_blocks = re.findall(r'```json\s*(.*?)\s*```', response_text, re.DOTALL)
+    json_blocks = re.findall(
+        r'```json\s*(.*?)\s*```', response_text, re.DOTALL
+    )
 
     if json_blocks:
         for block in json_blocks:
@@ -362,7 +422,9 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
                 results.append(parsed)
         except json.JSONDecodeError:
             # Try to find JSON objects in the text
-            json_objects = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text)
+            json_objects = re.findall(
+                r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text
+            )
             for obj_str in json_objects:
                 try:
                     parsed = json.loads(obj_str)
@@ -398,11 +460,17 @@ def analyze_with_agent(
     action_groups = extract_consecutive_individual_actions(session_folder)
 
     if not action_groups:
-        print("No consecutive individual_action groups found (need 2+ consecutive actions)")
+        print(
+            "No consecutive individual_action groups found (need 2+ consecutive actions)"
+        )
         return {
             'success': False,
             'message': 'No consecutive individual_action groups found',
-            'token_usage': {'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0}
+            'token_usage': {
+                'input_tokens': 0,
+                'output_tokens': 0,
+                'total_tokens': 0,
+            },
         }
 
     print(f"✓ Found {len(action_groups)} group(s) of consecutive actions\n")
@@ -412,7 +480,9 @@ def analyze_with_agent(
     timeline_path = Path(session_folder) / "action_timeline.json"
     with open(timeline_path, 'r', encoding='utf-8') as f:
         timeline_data = json.load(f)
-        task_description = timeline_data.get('task_description', 'No description available')
+        task_description = timeline_data.get(
+            'task_description', 'No description available'
+        )
 
     print(f"Task: {task_description}\n")
 
@@ -440,13 +510,17 @@ def analyze_with_agent(
 
     # Step 5: Create analysis prompt
     print("Step 5: Creating analysis prompt...")
-    prompt = create_analysis_prompt(task_description, action_groups, existing_subtasks)
+    prompt = create_analysis_prompt(
+        task_description, action_groups, existing_subtasks
+    )
     print(f"✓ Prompt created ({len(prompt)} characters)\n")
 
     # Step 6: Get agent response
     print("Step 6: Analyzing with ChatAgent...")
     print("-" * 80)
-    response = agent.step(BaseMessage.make_user_message(role_name="User", content=prompt))
+    response = agent.step(
+        BaseMessage.make_user_message(role_name="User", content=prompt)
+    )
     print("-" * 80)
 
     # Get token usage from response
@@ -455,8 +529,8 @@ def analyze_with_agent(
     output_tokens = token_usage.get('completion_tokens', 0)
     total_tokens = token_usage.get('total_tokens', 0)
 
-    print(f"\n✓ Analysis complete")
-    print(f"  Token usage:")
+    print("\n✓ Analysis complete")
+    print("  Token usage:")
     print(f"    Input tokens:  {input_tokens:,}")
     print(f"    Output tokens: {output_tokens:,}")
     print(f"    Total tokens:  {total_tokens:,}\n")
@@ -495,7 +569,9 @@ def analyze_with_agent(
                     print(f"  Name: {subtask.get('name')}")
                     print(f"  Description: {subtask.get('description')}")
                     if subtask.get('variables'):
-                        print(f"  Variables: {', '.join(subtask['variables'].keys())}")
+                        print(
+                            f"  Variables: {', '.join(subtask['variables'].keys())}"
+                        )
 
         # Step 8: Save new subtasks if auto_save is enabled
         if auto_save and reusable_count > 0:
@@ -510,20 +586,26 @@ def analyze_with_agent(
             # Enrich subtasks: 将 agent 的简化返回扩充为完整定义
             print("Enriching subtask definitions...")
             new_subtasks = enrich_subtask_definitions(results, action_groups)
-            print(f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields")
+            print(
+                f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields"
+            )
 
             # Add new subtasks to a new config file
             new_file = manager.add_new_subtasks(
                 new_subtasks=new_subtasks,
                 session_folder=session_folder,
-                task_description=task_description
+                task_description=task_description,
             )
 
-            print(f"\n✓ Successfully saved to: {subtask_configs_dir}/{new_file}")
+            print(
+                f"\n✓ Successfully saved to: {subtask_configs_dir}/{new_file}"
+            )
 
         elif not auto_save and reusable_count > 0:
             print(f"\n{'='*80}")
-            print("NOTE: Auto-save is disabled. Use auto_save=True to save results.")
+            print(
+                "NOTE: Auto-save is disabled. Use auto_save=True to save results."
+            )
             print(f"{'='*80}")
 
         # Save analysis report to session folder
@@ -563,7 +645,9 @@ def analyze_with_agent(
 
     else:
         # No results parsed
-        print(f"\n⚠️  Warning: Could not parse any structured results from agent response")
+        print(
+            "\n⚠️  Warning: Could not parse any structured results from agent response"
+        )
 
         # Still save the raw response
         analysis_report = {
@@ -601,16 +685,23 @@ def analyze_with_agent(
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python analyze_subtask_candidate.py <session_folder_path> [subtask_configs_dir]")
+        print(
+            "Usage: python analyze_subtask_candidate.py <session_folder_path> [subtask_configs_dir]"
+        )
         print("\nExample:")
-        print("  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455")
+        print(
+            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455"
+        )
         print("\nOptional:")
-        print("  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs")
+        print(
+            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
+        )
         sys.exit(1)
 
     session_folder = sys.argv[1]
     subtask_configs_dir = (
-        sys.argv[2] if len(sys.argv) > 2
+        sys.argv[2]
+        if len(sys.argv) > 2
         else "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs"
     )
 

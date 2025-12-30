@@ -85,6 +85,9 @@ class ActionReplayer:
             Dict[str, Any]
         ] = []  # Track actions executed during replay
 
+        # Mapping for config-based loading (action_step to array index)
+        self._action_step_to_index: Dict[int, int] = {}
+
     def get_cdp_url(self) -> Optional[str]:
         """Get the CDP WebSocket URL."""
         try:
@@ -113,7 +116,8 @@ class ActionReplayer:
         if self.subtask_id:
             subtasks = self.subtask_config.get('subtasks', [])
             for subtask in subtasks:
-                if subtask['id'] == self.subtask_id:
+                # Support both string and integer comparison for id
+                if str(subtask['id']) == str(self.subtask_id):
                     self.subtask_start_index = subtask['start_index']
                     self.subtask_end_index = subtask['end_index']
                     print(f"✓ Found subtask '{subtask['name']}':")
@@ -123,6 +127,57 @@ class ActionReplayer:
                     )
                     if 'notes' in subtask:
                         print(f"  Notes: {subtask['notes']}")
+
+                    # Check if subtask has detailed actions embedded
+                    subtask_actions = subtask.get('actions', [])
+                    if subtask_actions:
+                        print(
+                            f"  ✓ Found {len(subtask_actions)} actions in subtask config (using embedded actions instead of log file)"
+                        )
+
+                        # Build a mapping from action_step to array index
+                        action_step_to_index = {}
+                        for idx, action in enumerate(subtask_actions):
+                            action_step = action.get('action_step')
+                            if action_step is not None:
+                                action_step_to_index[action_step] = idx
+
+                        # Convert subtask config action format to replay action format
+                        # Subtask config format: {"action": "click", "args": ["e123"], ...}
+                        # Replay format: {"action": "click", "inputs": {"args": ["e123"], "kwargs": {}}, ...}
+                        converted_actions = []
+                        for action in subtask_actions:
+                            converted_action = {
+                                'action': action.get('action', ''),
+                                'inputs': {
+                                    'args': action.get('args', []),
+                                    'kwargs': {},
+                                },
+                                'outputs': {},  # Outputs will be generated during replay
+                                'timestamp': action.get('timestamp', ''),
+                                # Preserve other fields that might be useful
+                                'action_step': action.get('action_step'),
+                                'element_label': action.get('element_label'),
+                            }
+                            converted_actions.append(converted_action)
+
+                        # Replace self.actions with the converted actions from config
+                        self.actions = converted_actions
+                        print(
+                            f"  ✓ Loaded {len(self.actions)} actions from subtask config"
+                        )
+
+                        # IMPORTANT: When loading from config, we need to adjust start/end indices
+                        # because the actions array only contains the subtask actions (not the full log)
+                        # We'll set start_index=0 and end_index=len(actions)-1 to replay all loaded actions
+                        self.subtask_start_index = 0
+                        self.subtask_end_index = len(converted_actions) - 1
+                        print(
+                            f"  ✓ Adjusted subtask range to [0, {self.subtask_end_index}] for config-based loading"
+                        )
+
+                        # Store the mapping for later use when adjusting variable action_index
+                        self._action_step_to_index = action_step_to_index
 
                     # Load variables
                     variables = subtask.get('variables', {})
@@ -137,10 +192,29 @@ class ActionReplayer:
                                 value = var_config['default_value']
                                 print(f"    {var_name}: {value} (default)")
 
+                            # Adjust action_index if we loaded from config
+                            original_action_index = var_config['action_index']
+                            adjusted_action_index = original_action_index
+
+                            if hasattr(self, '_action_step_to_index'):
+                                # Config-based loading: convert action_step to array index
+                                if (
+                                    original_action_index
+                                    in self._action_step_to_index
+                                ):
+                                    adjusted_action_index = (
+                                        self._action_step_to_index[
+                                            original_action_index
+                                        ]
+                                    )
+                                    print(
+                                        f"    {var_name}: action_index adjusted from {original_action_index} (step) to {adjusted_action_index} (index)"
+                                    )
+
                             # Store the variable with its configuration
                             self.subtask_variables[var_name] = {
                                 'value': value,
-                                'action_index': var_config['action_index'],
+                                'action_index': adjusted_action_index,
                                 'arg_position': var_config['arg_position'],
                                 'type': var_config['type'],
                             }
@@ -466,14 +540,18 @@ class ActionReplayer:
                         f"  → Exact match found: {best_ref} ({best_role}, 100% similarity)"
                     )
                 else:
-                    print(f"  → Exact match found: {best_ref} (100% similarity)")
+                    print(
+                        f"  → Exact match found: {best_ref} (100% similarity)"
+                    )
             else:
                 if element_role:
                     print(
                         f"  → Best match: {best_ref} ({best_role}, {best_similarity:.1f}% similarity)"
                     )
                 else:
-                    print(f"  → Best match: {best_ref} ({best_similarity:.1f}% similarity)")
+                    print(
+                        f"  → Best match: {best_ref} ({best_similarity:.1f}% similarity)"
+                    )
                 print(f"     Target: '{aria_label}'")
                 print(
                     f"     Found:  '{best_label[:100]}{'...' if len(best_label) > 100 else ''}'"
@@ -742,10 +820,29 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             # Check if arg is a ref (e.g., 'e149' or 'e2214')
             # If it's a ref, we should use aria-label replacement, not direct arg replacement
             if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                # Extract aria-label from original snapshot
-                aria_label = self.extract_aria_label_from_snapshot(
-                    original_snapshot, arg
-                )
+                # Try to get aria-label from action's element_label field first (for config-based loading)
+                # Note: element_label typically corresponds to the first ref (args[0]) in actions like click/type
+                aria_label = None
+                if (
+                    i == 0
+                    and 'element_label' in action
+                    and action['element_label']
+                ):
+                    # Use element_label only for the first ref argument
+                    aria_label = action['element_label']
+                    print(
+                        f"  → Using element_label from action: '{aria_label}'"
+                    )
+
+                # If not available, extract from original snapshot (for log-based loading)
+                if not aria_label:
+                    aria_label = self.extract_aria_label_from_snapshot(
+                        original_snapshot, arg
+                    )
+                    if aria_label:
+                        print(
+                            f"  → Extracted aria-label from snapshot: '{aria_label}'"
+                        )
 
                 # Check if this aria-label should be replaced by a variable
                 # For click actions, variables can modify the element label to search for
@@ -778,7 +875,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
 
                     # Find new ref in current snapshot with role filtering
                     new_ref = self.find_ref_by_aria_label(
-                        self.current_snapshot, aria_label, element_role=original_role
+                        self.current_snapshot,
+                        aria_label,
+                        element_role=original_role,
                     )
 
                     if new_ref:
@@ -804,10 +903,26 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                         print("  → Using original ref (may fail)")
                         new_args.append(arg)
                 else:
+                    # No aria-label found - give context-specific warning
+                    if (
+                        hasattr(self, '_action_step_to_index')
+                        and self._action_step_to_index
+                    ):
+                        # Config-based loading: element_label might be missing for this action
+                        print(
+                            f"  ⚠ Warning: No element_label in action config and no snapshot available for ref {arg}"
+                        )
+                        print(
+                            "  → This typically happens for actions like 'enter' that don't target specific elements"
+                        )
+                    else:
+                        # Log-based loading: snapshot should exist but aria-label not found
+                        print(
+                            f"  ⚠ Warning: Could not extract aria-label for ref {arg} from original snapshot"
+                        )
                     print(
-                        f"  ⚠ Warning: Could not extract aria-label for ref {arg} from original snapshot"
+                        "  → Using original ref (may fail if page structure changed)"
                     )
-                    print("  → Using original ref (may fail)")
                     new_args.append(arg)
             else:
                 # Not a ref - this could be text, number, etc.
@@ -1425,8 +1540,13 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         if self.subtask_config_file:
             self.load_subtask_config()
 
-        # Load log file
-        self.actions = self.load_log_file()
+        # Load log file only if actions weren't loaded from config
+        if not self.actions:
+            self.actions = self.load_log_file()
+        else:
+            print(
+                f"✓ Using {len(self.actions)} actions from subtask config (skipping log file load)"
+            )
 
         # Display mode
         if self.subtask_id:
