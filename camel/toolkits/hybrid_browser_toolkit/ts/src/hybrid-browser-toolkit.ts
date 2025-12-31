@@ -218,6 +218,9 @@ export class HybridBrowserToolkit {
       result.timing.snapshot_time_ms = snapshotResult.timing.snapshot_time_ms;
       result.timing.coordinate_enrichment_time_ms = snapshotResult.timing.coordinate_enrichment_time_ms;
 
+      // Add snapshot to result for logging purposes (won't be shown to agent)
+      (result as any).snapshot = snapshotResult.snapshot;
+
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
