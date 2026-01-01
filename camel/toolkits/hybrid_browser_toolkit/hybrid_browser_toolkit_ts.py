@@ -667,10 +667,28 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.click(ref)
 
+            # Try to close print preview if it opened (e.g., from clicking
+            # preview buttons). This is a best-effort attempt and won't fail
+            # if no print preview is open.
+            print_preview_result = (
+                await ws_wrapper.close_print_preview_if_open()
+            )
+
             tab_info = await ws_wrapper.get_tab_info()
 
+            # Build base result message
+            result_message = result.get("result", "")
+
+            # Append print preview info if detected
+            if print_preview_result.get("detected", False):
+                result_message += f" {print_preview_result.get('message', '')}"
+                logger.info(
+                    f"Print preview detected and closed after click: "
+                    f"{print_preview_result.get('message', '')}"
+                )
+
             response = {
-                "result": result.get("result", ""),
+                "result": result_message,
                 "snapshot": result.get("snapshot", ""),
                 "tabs": tab_info,
                 "current_tab": next(

@@ -498,6 +498,10 @@ export class HybridBrowserToolkit {
     return await this.session.getTabInfo();
   }
 
+  async closePrintPreviewIfOpen(): Promise<{ detected: boolean; message: string }> {
+    return await this.session.closePrintPreviewIfOpen();
+  }
+
   async getConsoleView(): Promise<any> {
     const currentLogs = await this.session.getCurrentLogs();
     // Format logs

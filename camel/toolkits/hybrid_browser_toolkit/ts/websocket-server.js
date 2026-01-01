@@ -222,6 +222,10 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.getTabInfo();
 
+      case 'close_print_preview':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.closePrintPreviewIfOpen();
+
       case 'console_view':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.getConsoleView();

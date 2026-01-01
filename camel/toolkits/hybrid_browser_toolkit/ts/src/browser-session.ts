@@ -1857,13 +1857,70 @@ export class HybridBrowserSession {
     }
   }
 
+  /**
+   * Try to close print preview dialog if it's open.
+   * This is useful when clicking preview buttons that trigger browser print dialogs.
+   *
+   * @returns A message indicating whether a print preview was detected and closed
+   */
+  async closePrintPreviewIfOpen(): Promise<{ detected: boolean; message: string }> {
+    try {
+      const page = await this.getCurrentPage();
+
+      // Check if a print preview might be open by checking for print-specific URL patterns
+      const url = page.url();
+
+      // Chrome print preview uses chrome:// URLs or about:blank with print context
+      if (url.startsWith('chrome://') || url.startsWith('about:blank')) {
+        console.log('[HybridBrowserSession] Potential print preview detected, attempting to close...');
+
+        // Try to close the print preview by pressing Escape
+        await page.keyboard.press('Escape');
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        console.log('[HybridBrowserSession] Print preview closed');
+        return {
+          detected: true,
+          message: 'Print preview dialog detected and closed'
+        };
+      }
+
+      return {
+        detected: false,
+        message: 'No print preview detected'
+      };
+    } catch (error) {
+      // Return error info but don't throw
+      console.debug(`[HybridBrowserSession] Error while trying to close print preview: ${error}`);
+      return {
+        detected: false,
+        message: `Error checking for print preview: ${error}`
+      };
+    }
+  }
+
   async getTabInfo(): Promise<TabInfo[]> {
     const tabInfo: TabInfo[] = [];
 
     for (const [tabId, page] of this.pages) {
       if (!page.isClosed()) {
         try {
-          const title = await page.title();
+          // Add timeout for page.title() to handle cases like print dialogs
+          // that may block the API call
+          const titlePromise = page.title();
+          const timeoutPromise = new Promise<string>((_, reject) =>
+            setTimeout(() => reject(new Error('title() timeout')), 3000)
+          );
+
+          let title: string;
+          try {
+            title = await Promise.race([titlePromise, timeoutPromise]);
+          } catch (titleError) {
+            // If title() times out (e.g., due to print dialog), use a fallback
+            console.warn(`Failed to get title for tab ${tabId}: ${titleError}. Using fallback.`);
+            title = 'Loading...';
+          }
+
           const url = page.url();
 
           tabInfo.push({
@@ -1874,6 +1931,7 @@ export class HybridBrowserSession {
           });
         } catch (error) {
           // Skip tabs that can't be accessed
+          console.warn(`Failed to get info for tab ${tabId}: ${error}`);
         }
       }
     }

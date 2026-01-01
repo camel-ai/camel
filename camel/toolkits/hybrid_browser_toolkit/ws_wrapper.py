@@ -940,6 +940,31 @@ class WebSocketBrowserWrapper:
         # Fallback if wrapped in an object
         return response.get('tabs', [])
 
+    async def close_print_preview_if_open(self) -> Dict[str, Any]:
+        """Try to close print preview dialog if it's open.
+
+        This is a best-effort attempt to close print dialogs that may
+        appear when clicking preview buttons. It will not raise errors
+        if the operation fails.
+
+        Returns:
+            Dict[str, Any]: A dictionary with:
+                - "detected" (bool): Whether a print preview was detected
+                - "message" (str): Description of what happened
+        """
+        try:
+            response = await self._send_command('close_print_preview', {})
+            return response
+        except Exception as e:
+            logger.debug(
+                f"Error while trying to close print preview: {e}. "
+                "This is expected if no print preview was open."
+            )
+            return {
+                "detected": False,
+                "message": f"Error checking for print preview: {e}",
+            }
+
     @action_logger
     async def console_view(self) -> List[Dict[str, Any]]:
         """Get current page console view"""
