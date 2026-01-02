@@ -1,8 +1,24 @@
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ruff: noqa: E501
 """
-Analyze consecutive individual_action entries to determine if they can form reusable subtasks.
+Analyze consecutive individual_action entries to determine if they can
+form reusable subtasks.
 
-This script uses CAMEL ChatAgent to analyze extracted individual_action groups and determine
-if they can be composed into one or more reusable subtasks based on existing subtask patterns.
+This script uses CAMEL ChatAgent to analyze extracted individual_action
+groups and determine if they can be composed into one or more reusable
+subtasks based on existing subtask patterns.
 """
 
 import json
@@ -11,12 +27,12 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
-
-load_dotenv()
-
-# Import the subtask manager and utils
 from subtask_manager import SubtaskManager
 from utils import create_chat_agent
+
+from camel.messages import BaseMessage
+
+load_dotenv()
 
 
 def extract_consecutive_individual_actions(timeline_path: str):
@@ -115,7 +131,7 @@ def create_analysis_prompt(
         The formatted prompt string
     """
     # Format existing subtasks - Full JSON
-    existing_subtasks_str = json.dumps(existing_subtasks, indent=2)
+    json.dumps(existing_subtasks, indent=2)
 
     # Format existing subtasks - Summary list for easy comparison
     existing_subtasks_summary = ""
@@ -251,10 +267,10 @@ def determine_arg_position(action: Dict) -> int:
     action_type = action.get('action', '')
 
     if action_type == 'type':
-        # type(element_ref, text) 的 text 参数
+        # type(element_ref, text) - return index for text parameter
         return 1
     else:
-        # click, select 等都是通过元素标签定位
+        # click, select, etc. use element_label for positioning
         return 0
 
 
@@ -269,15 +285,15 @@ def extract_default_value(action: Dict, arg_position: int) -> str:
 
     action_type = action.get('action', '')
 
-    # 对于某些动作，即使 arg_position=0，也应该从 args 提取而不是 element_label
-    # 这些动作的参数是 URL 或其他值，不是元素引用
+    # For some actions, even if arg_position=0, extract from args instead of element_label
+    # These actions have URL or other values as parameters, not element references
     args_based_actions = ['visit_page', 'open_browser']
 
     if arg_position == 0 and action_type not in args_based_actions:
-        # 元素参数：使用 element_label
+        # Element parameter: use element_label
         return action.get('element_label', '')
     else:
-        # 内容参数或 URL 参数：使用 args[arg_position]
+        # Content or URL parameter: use args[arg_position]
         args = action.get('args', [])
         if len(args) > arg_position:
             return args[arg_position]
@@ -291,15 +307,15 @@ def infer_variable_type(value: str) -> str:
 
     import re
 
-    # 日期格式检测
+    # Date format detection
     if re.match(r'\w+ \d{1,2}, \d{4}', str(value)):
         return 'date'
 
-    # 数字检测
+    # Number detection
     if str(value).isdigit():
         return 'number'
 
-    # 默认字符串
+    # Default to string
     return 'string'
 
 
@@ -322,7 +338,7 @@ def clean_url_for_display(url: str) -> str:
     if not url:
         return ""
 
-    # 分割 URL，只保留 ? 之前的部分
+    # Split URL, keep only the part before '?'
     if '?' in url:
         return url.split('?')[0]
     return url
@@ -332,7 +348,7 @@ def enrich_subtask_definitions(
     agent_results: List[Dict], action_groups: List[List[Dict]]
 ) -> List[Dict]:
     """
-    Expand the agent’s simplified output into a complete subtask definition.
+    Expand the agent's simplified output into a complete subtask definition.
 
     Args:
         agent_results: Simplified results returned by the agent
@@ -350,7 +366,7 @@ def enrich_subtask_definitions(
         for action in group:
             action_map[action['action_step']] = action
 
-    # 处理每个 agent 返回的 subtask
+    # Process each subtask returned by agent
     for result in agent_results:
         if not result.get('can_be_subtask'):
             continue
@@ -359,7 +375,7 @@ def enrich_subtask_definitions(
             start_index = subtask['start_index']
             end_index = subtask['end_index']
 
-            # 从 action_map 中提取 start_index 到 end_index 之间的 actions
+            # Extract actions between start_index and end_index from action_map
             actions = []
             for step in range(start_index, end_index + 1):
                 if step in action_map:
@@ -475,7 +491,7 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
 
 def analyze_with_agent(
     session_folder: str,
-    subtask_configs_dir: str = None,
+    subtask_configs_dir: str | None = None,
     auto_save: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -617,7 +633,7 @@ def analyze_with_agent(
             manager = SubtaskManager(subtask_configs_dir)
             manager.load_all_subtasks()
 
-            # Enrich subtasks: 将 agent 的简化返回扩充为完整定义
+            # Enrich subtasks: expand agent's simplified output to full definition
             print("Enriching subtask definitions...")
             new_subtasks = enrich_subtask_definitions(results, action_groups)
             print(

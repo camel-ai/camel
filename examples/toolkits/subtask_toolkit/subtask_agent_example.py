@@ -1,3 +1,17 @@
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ruff: noqa: E501, E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -20,22 +34,12 @@ from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# Add project root to path
+# Add project root to path first (before camel imports)
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
-# Define default directories using relative paths
-DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
-DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
-DEFAULT_SUBTASK_CONFIGS_DIR = script_dir.parent / "subtask_configs"
-
-# Import utils
 from utils import (
-    create_chat_agent,
-    create_gpt4_model,
     extract_token_usage,
     get_timestamp_filename,
     get_timestamp_iso,
@@ -44,6 +48,13 @@ from utils import (
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+
+# Define default directories using relative paths
+DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
+DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
+DEFAULT_SUBTASK_CONFIGS_DIR = script_dir.parent / "subtask_configs"
+
+load_dotenv()
 
 
 class SubtaskFunction:
@@ -88,7 +99,6 @@ class SubtaskFunction:
         Returns:
             Execution result with status and snapshot
         """
-        from pathlib import Path
 
         # Track subtask call
         if self.stats_tracker is not None:
@@ -569,13 +579,13 @@ class SubtaskAgent:
                     # Initialize with empty list - will be populated by load_subtask_config()
                     replayer.actions = []
                     print(
-                        f"  ℹ️  Subtask {subtask_id} has embedded actions, skipping log file load"
+                        f"  [Info] Subtask {subtask_id} has embedded actions, skipping log file load"
                     )
                 else:
                     # Load from log file for backward compatibility
                     replayer.actions = replayer.load_log_file()
                     print(
-                        f"  ℹ️  Subtask {subtask_id} loading actions from log file"
+                        f"  [Info] Subtask {subtask_id} loading actions from log file"
                     )
 
                 # Create subtask function with stats tracker and session log dir
@@ -978,7 +988,6 @@ async def subtask_{subtask_func.subtask_id}():
         Returns:
             List of browser action records from the log file that were initiated by the agent.
         """
-        from pathlib import Path
 
         print("\n" + "=" * 80)
         print("🔍 EXTRACTING AGENT BROWSER CALLS FROM LOG FILE")
@@ -1286,7 +1295,9 @@ async def subtask_{subtask_func.subtask_id}():
         if self.session_log_dir:
             log_path = self.session_log_dir / "agent_communication_log.json"
         else:
-            log_filename = f"agent_communication_log_{get_timestamp_filename()}.json"
+            log_filename = (
+                f"agent_communication_log_{get_timestamp_filename()}.json"
+            )
             log_path = Path("camel_logs") / log_filename
             log_path.parent.mkdir(parents=True, exist_ok=True)
 

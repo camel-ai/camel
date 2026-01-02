@@ -1,3 +1,17 @@
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ruff: noqa: E501, E402
 #!/usr/bin/env python3
 """
 Run WebVoyager tasks with subtask agent and analyze results.
@@ -18,12 +32,15 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# Import the subtask agent and utils
+# Add path first
 sys.path.insert(0, str(Path(__file__).parent))
+
 from subtask_agent_example import SubtaskAgent
 from utils import create_chat_agent
+
+from camel.messages import BaseMessage
+
+load_dotenv()
 
 
 class TaskVerifier:
@@ -226,13 +243,12 @@ class WebVoyagerRunner:
             agent.save_communication_log()
 
             # Get final snapshot from agent BEFORE closing tabs
-            final_snapshot = ""
             if agent.toolkit:
                 try:
                     snapshot_result = (
                         await agent.toolkit.browser_get_page_snapshot()
                     )
-                    final_snapshot = snapshot_result.get('snapshot', '')
+                    snapshot_result.get('snapshot', '')
                 except Exception as e:
                     print(f"⚠️  Could not get final snapshot: {e}")
 
@@ -565,7 +581,9 @@ async def main():
     # Calculate default paths using relative path
     script_dir = Path(__file__).resolve().parent
     default_config_dir = str(script_dir.parent / "subtask_configs")
-    default_jsonl = str(Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl")
+    default_jsonl = str(
+        Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl"
+    )
 
     parser = argparse.ArgumentParser(
         description="Run WebVoyager tasks with subtask agent"
