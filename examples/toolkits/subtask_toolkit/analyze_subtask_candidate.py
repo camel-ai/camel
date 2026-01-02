@@ -28,7 +28,7 @@ def load_all_existing_subtasks(
     subtask_configs_dir: str,
 ) -> List[Dict[str, Any]]:
     """
-    Load all existing subtasks from the subtask_configs directory.
+    Load all existing subtasks from the subtask_configs_demo directory.
 
     Args:
         subtask_configs_dir: Path to the directory containing subtask config JSON files
@@ -202,12 +202,13 @@ Args: {action.get('args')}
 
 def determine_arg_position(action: Dict) -> int:
     """
-    根据 action type 自动判断 arg_position
+    Automatically determine arg_position based on the action type.
 
-    规则：
-    - type 类 action: arg_position = 1 (内容参数)
-    - 其他类 action: arg_position = 0 (元素参数)
+    Rules:
+        - Type-style actions: arg_position = 1 (content argument)
+        - Other action types: arg_position = 0 (element argument)
     """
+
     action_type = action.get('action', '')
 
     if action_type == 'type':
@@ -220,12 +221,13 @@ def determine_arg_position(action: Dict) -> int:
 
 def extract_default_value(action: Dict, arg_position: int) -> str:
     """
-    从 action 数据中提取 default_value
+    Extract default_value from action data.
 
-    arg_position 对应 args 数组的索引：
-    - arg_position = 0: args[0] 或 element_label (对于元素引用)
-    - arg_position = 1: args[1] (对于 type action 的文本参数)
+    The arg_position corresponds to the index in the args array:
+        - arg_position = 0: args[0] or element_label (for element references)
+        - arg_position = 1: args[1] (for text parameters in type actions)
     """
+
     action_type = action.get('action', '')
 
     # 对于某些动作，即使 arg_position=0，也应该从 args 提取而不是 element_label
@@ -245,8 +247,9 @@ def extract_default_value(action: Dict, arg_position: int) -> str:
 
 def infer_variable_type(value: str) -> str:
     """
-    从值推断类型
+    Infer the type from a value.
     """
+
     import re
 
     # 日期格式检测
@@ -263,16 +266,16 @@ def infer_variable_type(value: str) -> str:
 
 def clean_url_for_display(url: str) -> str:
     """
-    清理 URL，只保留域名和路径部分，去掉查询字符串
+    Clean a URL by keeping only the domain and path, removing the query string.
 
     Args:
-        url: 完整的 URL
+        url: The full URL
 
     Returns:
-        清理后的 URL（不包含查询参数）
+        The cleaned URL (without query parameters)
 
     Examples:
-        >>> clean_url_for_display("https://www.google.com/travel/flights?tfs=abc&tfu=xyz")
+    >>> clean_url_for_display("https://www.google.com/travel/flights?tfs=abc&tfu=xyz")
         "https://www.google.com/travel/flights"
         >>> clean_url_for_display("https://example.com/")
         "https://example.com/"
@@ -290,18 +293,19 @@ def enrich_subtask_definitions(
     agent_results: List[Dict], action_groups: List[List[Dict]]
 ) -> List[Dict]:
     """
-    将 agent 的简化返回扩充为完整的 subtask 定义
+    Expand the agent’s simplified output into a complete subtask definition.
 
     Args:
-        agent_results: Agent 返回的简化结果
-        action_groups: 原始 action groups（用于查找 action 详情）
+        agent_results: Simplified results returned by the agent
+        action_groups: Original action groups (used to look up action details)
 
     Returns:
-        完整的 subtask 定义列表
+        A list of complete subtask definitions
     """
+
     enriched_subtasks = []
 
-    # 创建 action_step -> action 的映射
+    # action_step -> action Mapping
     action_map = {}
     for group in action_groups:
         for action in group:
@@ -346,28 +350,23 @@ def enrich_subtask_definitions(
                 'description': enhanced_description,
                 'start_index': start_index,
                 'end_index': end_index,
-                'actions': actions,  # 从 timeline 中提取的 actions (包含 url_before/url_after)
+                'actions': actions,
                 'variables': {},
-                'url_start': url_start,  # Subtask 整体的起始 URL
-                'url_end': url_end,  # Subtask 整体的结束 URL
+                'url_start': url_start,
+                'url_end': url_end,
             }
 
-            # 扩充每个变量
             for var_name, var_info in subtask.get('variables', {}).items():
                 action_index = var_info['action_index']
                 action = action_map.get(action_index)
 
                 if action:
-                    # 自动判断 arg_position
                     arg_position = determine_arg_position(action)
 
-                    # 自动提取 default_value
                     default_value = extract_default_value(action, arg_position)
 
-                    # 自动推断 type
                     var_type = infer_variable_type(default_value)
 
-                    # 使用 agent 提供的 description
                     var_description = var_info.get(
                         'description', f'{var_name} parameter'
                     )
@@ -437,7 +436,7 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
 
 def analyze_with_agent(
     session_folder: str,
-    subtask_configs_dir: str = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs",
+    subtask_configs_dir: str = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs_demo",
     auto_save: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -694,7 +693,7 @@ def main():
         )
         print("\nOptional:")
         print(
-            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
+            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs_demo"
         )
         sys.exit(1)
 
@@ -702,7 +701,7 @@ def main():
     subtask_configs_dir = (
         sys.argv[2]
         if len(sys.argv) > 2
-        else "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs"
+        else "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs_demo"
     )
 
     analyze_with_agent(session_folder, subtask_configs_dir)

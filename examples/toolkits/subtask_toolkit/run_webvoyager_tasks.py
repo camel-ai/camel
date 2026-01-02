@@ -585,7 +585,7 @@ async def main():
     )
     parser.add_argument(
         "--config-dir",
-        default="/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs2",
+        default="/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs",
         help="Path to subtask configs directory",
     )
     parser.add_argument(

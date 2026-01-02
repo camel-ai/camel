@@ -10,7 +10,7 @@ This module provides centralized management for:
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 
 class SubtaskManager:
@@ -86,6 +86,7 @@ class SubtaskManager:
             if isinstance(current_id, str):
                 # Try to extract leading number
                 import re
+
                 match = re.match(r'^(\d+)', current_id)
                 if match:
                     num_id = int(match.group(1))
@@ -130,6 +131,7 @@ class SubtaskManager:
             if backup and file_path.exists():
                 backup_path = file_path.with_suffix('.json.backup')
                 import shutil
+
                 shutil.copy2(file_path, backup_path)
                 print(f"✓ Backed up to {backup_path.name}")
 
@@ -139,8 +141,9 @@ class SubtaskManager:
             # Remove internal fields
             cleaned_subtasks = []
             for subtask in subtasks:
-                cleaned = {k: v for k, v in subtask.items()
-                          if not k.startswith('_')}
+                cleaned = {
+                    k: v for k, v in subtask.items() if not k.startswith('_')
+                }
                 cleaned_subtasks.append(cleaned)
 
             # Update config
@@ -148,7 +151,9 @@ class SubtaskManager:
 
             # Update metadata
             if 'metadata' in config_data:
-                config_data['metadata']['total_subtasks'] = len(cleaned_subtasks)
+                config_data['metadata']['total_subtasks'] = len(
+                    cleaned_subtasks
+                )
 
             # Save to file
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -160,7 +165,7 @@ class SubtaskManager:
         self,
         new_subtasks: List[Dict[str, Any]],
         session_folder: str,
-        task_description: str
+        task_description: str,
     ) -> str:
         """
         Add new subtasks to a new config file.
@@ -189,6 +194,7 @@ class SubtaskManager:
         existing_numbers = []
         for file_name in self.config_dir.glob("*_subtasks.json"):
             import re
+
             match = re.match(r'^(\d+)_subtasks\.json$', file_name.name)
             if match:
                 existing_numbers.append(int(match.group(1)))
@@ -208,20 +214,22 @@ class SubtaskManager:
         # Clean internal fields from subtasks before saving
         cleaned_subtasks = []
         for subtask in new_subtasks:
-            cleaned = {k: v for k, v in subtask.items()
-                      if not k.startswith('_')}
+            cleaned = {
+                k: v for k, v in subtask.items() if not k.startswith('_')
+            }
             cleaned_subtasks.append(cleaned)
 
         # Create config structure
         config_data = {
-            "log_file": log_file or f"{session_folder}/complete_browser_log.log",
+            "log_file": log_file
+            or f"{session_folder}/complete_browser_log.log",
             "task_description": task_description,
             "subtasks": cleaned_subtasks,
             "metadata": {
                 "total_subtasks": len(cleaned_subtasks),
                 "created_from": "subtask_candidate_analyzer",
-                "source_session": session_folder
-            }
+                "source_session": session_folder,
+            },
         }
 
         # Save to file
@@ -250,9 +258,13 @@ class SubtaskManager:
                 for file_name, subtasks in self.file_subtasks.items()
             },
             "id_range": {
-                "min": min((s.get('id', 0) for s in self.all_subtasks), default=0),
-                "max": max((s.get('id', 0) for s in self.all_subtasks), default=0),
-            }
+                "min": min(
+                    (s.get('id', 0) for s in self.all_subtasks), default=0
+                ),
+                "max": max(
+                    (s.get('id', 0) for s in self.all_subtasks), default=0
+                ),
+            },
         }
 
 
@@ -273,7 +285,9 @@ def renumber_existing_subtasks(config_dir: str, backup: bool = True) -> None:
     # Load all subtasks
     print("Loading existing subtasks...")
     all_subtasks = manager.load_all_subtasks()
-    print(f"✓ Loaded {len(all_subtasks)} subtasks from {len(manager.file_configs)} files\n")
+    print(
+        f"✓ Loaded {len(all_subtasks)} subtasks from {len(manager.file_configs)} files\n"
+    )
 
     # Show current IDs
     print("Current subtask IDs:")
@@ -308,8 +322,10 @@ def renumber_existing_subtasks(config_dir: str, backup: bool = True) -> None:
     print(f"{'='*80}")
     print(f"Total files: {summary['total_files']}")
     print(f"Total subtasks: {summary['total_subtasks']}")
-    print(f"ID range: {summary['id_range']['min']} - {summary['id_range']['max']}")
-    print(f"\n✓ All subtasks renumbered successfully!")
+    print(
+        f"ID range: {summary['id_range']['min']} - {summary['id_range']['max']}"
+    )
+    print("\n✓ All subtasks renumbered successfully!")
 
 
 if __name__ == "__main__":
@@ -318,7 +334,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python subtask_manager.py <config_dir>")
         print("\nExample:")
-        print("  python subtask_manager.py /path/to/subtask_configs")
+        print("  python subtask_manager.py /path/to/subtask_configs_demo")
         sys.exit(1)
 
     config_dir = sys.argv[1]

@@ -855,8 +855,8 @@ async def subtask_{subtask_func.subtask_id}():
                 """
 - All tasks are to be performed on Google Flights
 - When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).
-- 填写起点和终点的时候不需要填写太详细，只填写城市即可
-- 填写日期的流程是，先点击日期输入框，再分别type输入departure和return的日期到日期框，然后敲击enter确认日期输入，再敲击enter退出日期选择框，再敲击enter进行搜索
+- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.
+- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input, press Enter again to exit the date selection field, and then press Enter once more to initiate the search.
 - If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.
 
             """
@@ -1400,7 +1400,7 @@ async def subtask_{subtask_func.subtask_id}():
 async def main():
     """Main entry point."""
     # Configuration - now using directory instead of individual files
-    subtask_config_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs2"
+    subtask_config_dir = "/examples/toolkits/subtask_configs"
 
     # Create agent
     agent = SubtaskAgent(
