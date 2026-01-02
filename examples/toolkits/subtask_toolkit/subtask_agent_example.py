@@ -32,11 +32,18 @@ DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
 DEFAULT_SUBTASK_CONFIGS_DIR = script_dir.parent / "subtask_configs"
 
+# Import utils
+from utils import (
+    create_chat_agent,
+    create_gpt4_model,
+    extract_token_usage,
+    get_timestamp_filename,
+    get_timestamp_iso,
+)
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
-from camel.types import ModelPlatformType, ModelType
 
 
 class SubtaskFunction:
@@ -81,7 +88,6 @@ class SubtaskFunction:
         Returns:
             Execution result with status and snapshot
         """
-        import datetime
         from pathlib import Path
 
         # Track subtask call
@@ -225,7 +231,7 @@ class SubtaskFunction:
                     replay_log_dir.mkdir(parents=True, exist_ok=True)
                     replay_log_file = (
                         replay_log_dir
-                        / f"subtask_replay_actions_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                        / f"subtask_replay_actions_{get_timestamp_filename()}.json"
                     )
 
                 replay_log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -337,11 +343,7 @@ class SubtaskAgent:
         self.subtask_functions: Dict[str, SubtaskFunction] = {}
 
         # Session log directory for this run
-        import datetime
-
-        self.session_timestamp = datetime.datetime.now().strftime(
-            '%Y%m%d_%H%M%S'
-        )
+        self.session_timestamp = get_timestamp_filename()
         self.session_log_dir: Optional[Path] = None
 
         # Base directory for session logs
@@ -605,6 +607,10 @@ class SubtaskAgent:
         print("CREATING CHAT AGENT")
         print("=" * 80)
 
+        # Create model with parallel_tool_calls disabled
+        from camel.models import ModelFactory
+        from camel.types import ModelPlatformType, ModelType
+
         model = ModelFactory.create(
             model_platform=ModelPlatformType.AZURE,
             model_type=ModelType.GPT_4_1,
@@ -657,13 +663,12 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
         str: JSON result containing status, message, and page snapshot
     \"\"\"
     import json
-    import datetime
 
     # Log the call
     kwargs = {{{", ".join([f"'{var}': {var}" for var in subtask_func.variables.keys()])}}}
 
     call_log = {{
-        'timestamp': datetime.datetime.now().isoformat(),
+        'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
         'subtask_id': '{subtask_func.subtask_id}',
         'subtask_name': '{subtask_func.name}',
@@ -691,11 +696,10 @@ async def subtask_{subtask_func.subtask_id}():
         str: JSON result containing status, message, and page snapshot
     \"\"\"
     import json
-    import datetime
 
     # Log the call
     call_log = {{
-        'timestamp': datetime.datetime.now().isoformat(),
+        'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
         'subtask_id': '{subtask_func.subtask_id}',
         'subtask_name': '{subtask_func.name}',
@@ -886,9 +890,7 @@ async def subtask_{subtask_func.subtask_id}():
         print("=" * 80)
 
         # Log the user task
-        import datetime
-
-        timestamp = datetime.datetime.now().isoformat()
+        timestamp = get_timestamp_iso()
 
         communication_entry = {
             'timestamp': timestamp,
@@ -932,21 +934,12 @@ async def subtask_{subtask_func.subtask_id}():
         # Extract token usage from agent response
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
-                usage = response.info['usage']
-                prompt_tokens = 0
-                completion_tokens = 0
+                token_usage = extract_token_usage(response.info['usage'])
+                prompt_tokens = token_usage['prompt']
+                completion_tokens = token_usage['completion']
+                total_tokens = token_usage['total']
 
-                if hasattr(usage, 'prompt_tokens') and hasattr(
-                    usage, 'completion_tokens'
-                ):
-                    prompt_tokens = usage.prompt_tokens
-                    completion_tokens = usage.completion_tokens
-                elif isinstance(usage, dict):
-                    prompt_tokens = usage.get('prompt_tokens', 0)
-                    completion_tokens = usage.get('completion_tokens', 0)
-
-                if prompt_tokens > 0 or completion_tokens > 0:
-                    total_tokens = prompt_tokens + completion_tokens
+                if total_tokens > 0:
                     self.stats['token_details']['main_agent']['prompt'] += (
                         prompt_tokens
                     )
@@ -1221,8 +1214,6 @@ async def subtask_{subtask_func.subtask_id}():
 
     def save_communication_log(self):
         """Save all agent communications to a JSON file."""
-        import datetime
-
         # Extract browser tool calls from browser log file
         browser_tool_calls_from_log = self._extract_agent_browser_calls()
 
@@ -1256,7 +1247,7 @@ async def subtask_{subtask_func.subtask_id}():
         )
 
         all_communications = {
-            'session_start': datetime.datetime.now().isoformat(),
+            'session_start': get_timestamp_iso(),
             'task_description': task_desc,
             'system_prompt': self.system_prompt,  # Add system prompt
             'tool_definitions': self.tool_definitions,  # Add tool definitions
@@ -1295,7 +1286,7 @@ async def subtask_{subtask_func.subtask_id}():
         if self.session_log_dir:
             log_path = self.session_log_dir / "agent_communication_log.json"
         else:
-            log_filename = f"agent_communication_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            log_filename = f"agent_communication_log_{get_timestamp_filename()}.json"
             log_path = Path("camel_logs") / log_filename
             log_path.parent.mkdir(parents=True, exist_ok=True)
 

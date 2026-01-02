@@ -29,10 +29,13 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from camel.agents import ChatAgent
-from camel.models import ModelFactory
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
-from camel.types import ModelPlatformType, ModelType
+
+# Import utils from subtask_toolkit
+sys.path.insert(0, str(script_dir))
+from utils import create_gpt4_model, extract_token_usage, get_timestamp_iso
+
+from camel.agents import ChatAgent
 
 
 class ActionReplayer:
@@ -608,10 +611,7 @@ class ActionReplayer:
         print("=" * 80)
 
         # Create model
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.AZURE,
-            model_type=ModelType.GPT_4_1,
-        )
+        model = create_gpt4_model()
 
         # Create agent with toolkit
         self.recovery_agent = ChatAgent(
@@ -709,23 +709,14 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         agent_msg = response.msgs[0].content.strip()
 
         # Extract token usage from recovery agent
-        prompt_tokens = 0
-        completion_tokens = 0
-        tokens_used = 0
-
+        token_usage = {'prompt': 0, 'completion': 0, 'total': 0}
         if hasattr(response, 'info') and response.info:
             if 'usage' in response.info:
-                usage = response.info['usage']
-                if hasattr(usage, 'prompt_tokens') and hasattr(
-                    usage, 'completion_tokens'
-                ):
-                    prompt_tokens = usage.prompt_tokens
-                    completion_tokens = usage.completion_tokens
-                    tokens_used = prompt_tokens + completion_tokens
-                elif isinstance(usage, dict):
-                    prompt_tokens = usage.get('prompt_tokens', 0)
-                    completion_tokens = usage.get('completion_tokens', 0)
-                    tokens_used = prompt_tokens + completion_tokens
+                token_usage = extract_token_usage(response.info['usage'])
+
+        prompt_tokens = token_usage['prompt']
+        completion_tokens = token_usage['completion']
+        tokens_used = token_usage['total']
 
         print(f"Agent response: {agent_msg}")
         if tokens_used > 0:
@@ -735,10 +726,8 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         print("=" * 80)
 
         # Record this recovery attempt
-        import datetime
-
         recovery_record = {
-            'timestamp': datetime.datetime.now().isoformat(),
+            'timestamp': get_timestamp_iso(),
             'failed_action': failed_action,
             'target_label': target_label,
             'error_message': error_message,
@@ -1091,11 +1080,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             print("  ✓ Action executed successfully")
 
             # Log this replay action for later filtering
-            import datetime
-
             self.replay_actions_log.append(
                 {
-                    'timestamp': datetime.datetime.now().isoformat(),
+                    'timestamp': get_timestamp_iso(),
                     'action': action_name,
                     'inputs': {
                         'args': new_args,
@@ -1236,11 +1223,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             )
 
                             # Log this recovery retry action for later filtering
-                            import datetime
-
                             self.replay_actions_log.append(
                                 {
-                                    'timestamp': datetime.datetime.now().isoformat(),
+                                    'timestamp': get_timestamp_iso(),
                                     'action': action_name,
                                     'inputs': {
                                         'args': retry_args,
@@ -1372,11 +1357,9 @@ Your response should be a single line with just the ref, SKIP, or NONE.
                             )
 
                             # Log this recovery retry action for later filtering
-                            import datetime
-
                             self.replay_actions_log.append(
                                 {
-                                    'timestamp': datetime.datetime.now().isoformat(),
+                                    'timestamp': get_timestamp_iso(),
                                     'action': action_name,
                                     'inputs': {
                                         'args': retry_args,

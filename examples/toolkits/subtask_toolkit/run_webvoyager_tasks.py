@@ -20,14 +20,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from camel.agents import ChatAgent
-from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-# Import the subtask agent
+# Import the subtask agent and utils
 sys.path.insert(0, str(Path(__file__).parent))
 from subtask_agent_example import SubtaskAgent
+from utils import create_chat_agent
 
 
 class TaskVerifier:
@@ -35,18 +31,9 @@ class TaskVerifier:
 
     def __init__(self):
         """Initialize the verifier agent."""
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.AZURE,
-            model_type=ModelType.GPT_4_1,
-            model_config_dict={"temperature": 0.0},
-        )
-
-        self.agent = ChatAgent(
-            system_message=BaseMessage.make_assistant_message(
-                role_name="Task Verifier",
-                content="You are an expert at verifying if browser automation task results meet the specified requirements.",
-            ),
-            model=model,
+        self.agent = create_chat_agent(
+            role_name="Task Verifier",
+            system_content="You are an expert at verifying if browser automation task results meet the specified requirements.",
         )
 
     def verify_task(

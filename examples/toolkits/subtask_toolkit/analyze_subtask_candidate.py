@@ -14,13 +14,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Import the subtask manager
+# Import the subtask manager and utils
 from subtask_manager import SubtaskManager
-
-from camel.agents import ChatAgent
-from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from utils import create_chat_agent
 
 
 def extract_consecutive_individual_actions(timeline_path: str):
@@ -540,18 +536,9 @@ def analyze_with_agent(
 
     # Step 4: Create ChatAgent
     print("Step 4: Initializing ChatAgent...")
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type=ModelType.GPT_4_1,
-        model_config_dict={"temperature": 0.0},
-    )
-
-    agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Subtask Analyzer",
-            content="You are an expert at analyzing browser automation workflows and identifying reusable subtask patterns.",
-        ),
-        model=model,
+    agent = create_chat_agent(
+        role_name="Subtask Analyzer",
+        system_content="You are an expert at analyzing browser automation workflows and identifying reusable subtask patterns.",
     )
     print("✓ ChatAgent initialized\n")
 
