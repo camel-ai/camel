@@ -27,6 +27,11 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
+# Define default directories using relative paths
+DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
+DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
+DEFAULT_SUBTASK_CONFIGS_DIR = script_dir.parent / "subtask_configs"
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -215,10 +220,8 @@ class SubtaskFunction:
                         / f"subtask_{self.subtask_id}_replay_actions.json"
                     )
                 else:
-                    # Use browser_log hardcoded absolute path
-                    replay_log_dir = Path(
-                        "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
-                    )
+                    # Use browser_log default path
+                    replay_log_dir = DEFAULT_BROWSER_LOG_DIR
                     replay_log_dir.mkdir(parents=True, exist_ok=True)
                     replay_log_file = (
                         replay_log_dir
@@ -341,10 +344,8 @@ class SubtaskAgent:
         )
         self.session_log_dir: Optional[Path] = None
 
-        # Base directory for session logs (hardcoded absolute path)
-        self.session_logs_root = Path(
-            "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs"
-        )
+        # Base directory for session logs
+        self.session_logs_root = DEFAULT_SESSION_LOGS_DIR
 
         # Store current user task (actual task being executed)
         self.current_user_task = None
@@ -497,7 +498,7 @@ class SubtaskAgent:
             # "browser_mouse_drag",
         ]
         # Initialize toolkit (single instance, shared by agent and replay)
-        browser_log_dir = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
+        browser_log_dir = str(DEFAULT_BROWSER_LOG_DIR)
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
@@ -990,10 +991,8 @@ async def subtask_{subtask_func.subtask_id}():
         print("🔍 EXTRACTING AGENT BROWSER CALLS FROM LOG FILE")
         print("=" * 80)
 
-        # Find the browser log file - hardcoded absolute path
-        browser_log_dir = Path(
-            "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
-        )
+        # Find the browser log file
+        browser_log_dir = DEFAULT_BROWSER_LOG_DIR
 
         if not browser_log_dir.exists():
             print("⚠️  Warning: Browser log directory not found")
@@ -1322,9 +1321,7 @@ async def subtask_{subtask_func.subtask_id}():
 
         # Copy browser log to session directory
         if self.session_log_dir:
-            browser_log_dir = Path(
-                "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/browser_log"
-            )
+            browser_log_dir = DEFAULT_BROWSER_LOG_DIR
 
             if browser_log_dir.exists():
                 # Get the most recent browser log
@@ -1400,7 +1397,7 @@ async def subtask_{subtask_func.subtask_id}():
 async def main():
     """Main entry point."""
     # Configuration - now using directory instead of individual files
-    subtask_config_dir = "/examples/toolkits/subtask_configs"
+    subtask_config_dir = str(DEFAULT_SUBTASK_CONFIGS_DIR)
 
     # Create agent
     agent = SubtaskAgent(

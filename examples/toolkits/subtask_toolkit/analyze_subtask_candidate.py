@@ -14,8 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Import the extraction function and subtask manager
-from extract_individual_actions import extract_consecutive_individual_actions
+# Import the subtask manager
 from subtask_manager import SubtaskManager
 
 from camel.agents import ChatAgent
@@ -24,11 +23,55 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 
+def extract_consecutive_individual_actions(timeline_path: str):
+    """
+    Extract consecutive individual_action entries from action_timeline.json.
+
+    Args:
+        timeline_path: Path to the session log folder containing action_timeline.json
+
+    Returns:
+        List of consecutive individual_action groups (each group is a list of actions)
+    """
+    # Construct path to action_timeline.json
+    session_folder = Path(timeline_path)
+    json_file = session_folder / "action_timeline.json"
+
+    if not json_file.exists():
+        print(f"Error: File not found: {json_file}")
+        return []
+
+    # Load the JSON file
+    with open(json_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    timeline = data.get('timeline', [])
+
+    # Find consecutive individual_action groups
+    consecutive_groups = []
+    current_group = []
+
+    for entry in timeline:
+        if entry.get('action_type') == 'individual_action':
+            current_group.append(entry)
+        else:
+            # If we have a group of 2 or more, save it
+            if len(current_group) >= 2:
+                consecutive_groups.append(current_group)
+            current_group = []
+
+    # Don't forget the last group
+    if len(current_group) >= 2:
+        consecutive_groups.append(current_group)
+
+    return consecutive_groups
+
+
 def load_all_existing_subtasks(
     subtask_configs_dir: str,
 ) -> List[Dict[str, Any]]:
     """
-    Load all existing subtasks from the subtask_configs_demo directory.
+    Load all existing subtasks from the subtask_configs directory.
 
     Args:
         subtask_configs_dir: Path to the directory containing subtask config JSON files
@@ -436,7 +479,7 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
 
 def analyze_with_agent(
     session_folder: str,
-    subtask_configs_dir: str = "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs_demo",
+    subtask_configs_dir: str = None,
     auto_save: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -450,6 +493,11 @@ def analyze_with_agent(
     Returns:
         Dictionary containing analysis results and token usage
     """
+    # Set default subtask_configs_dir using relative path
+    if subtask_configs_dir is None:
+        script_dir = Path(__file__).resolve().parent
+        subtask_configs_dir = str(script_dir.parent / "subtask_configs")
+
     print(f"\n{'='*80}")
     print("SUBTASK CANDIDATE ANALYZER")
     print(f"{'='*80}\n")
@@ -693,16 +741,14 @@ def main():
         )
         print("\nOptional:")
         print(
-            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs_demo"
+            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
         )
         sys.exit(1)
 
     session_folder = sys.argv[1]
-    subtask_configs_dir = (
-        sys.argv[2]
-        if len(sys.argv) > 2
-        else "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs_demo"
-    )
+
+    # Use command line argument if provided, otherwise use default (None -> handled in function)
+    subtask_configs_dir = sys.argv[2] if len(sys.argv) > 2 else None
 
     analyze_with_agent(session_folder, subtask_configs_dir)
 

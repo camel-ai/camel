@@ -575,17 +575,22 @@ async def main():
     """Main entry point."""
     import argparse
 
+    # Calculate default paths using relative path
+    script_dir = Path(__file__).resolve().parent
+    default_config_dir = str(script_dir.parent / "subtask_configs")
+    default_jsonl = str(Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl")
+
     parser = argparse.ArgumentParser(
         description="Run WebVoyager tasks with subtask agent"
     )
     parser.add_argument(
         "--jsonl",
-        default="/Users/puzhen/Downloads/WebVoyager_data_08312025_updated.jsonl",
+        default=default_jsonl,
         help="Path to WebVoyager JSONL file",
     )
     parser.add_argument(
         "--config-dir",
-        default="/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/subtask_configs",
+        default=default_config_dir,
         help="Path to subtask configs directory",
     )
     parser.add_argument(

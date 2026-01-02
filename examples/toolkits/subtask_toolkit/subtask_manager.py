@@ -334,7 +334,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python subtask_manager.py <config_dir>")
         print("\nExample:")
-        print("  python subtask_manager.py /path/to/subtask_configs_demo")
+        print("  python subtask_manager.py /path/to/subtask_configs")
         sys.exit(1)
 
     config_dir = sys.argv[1]
