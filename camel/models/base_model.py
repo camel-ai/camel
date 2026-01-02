@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
 import os
 import re
@@ -49,6 +49,126 @@ else:
     from camel.utils import observe
 
     logger = camel_get_logger('base_model')
+
+
+class _StreamLogger:
+    r"""Base for stream logging wrappers."""
+
+    def __init__(self, log_path: Optional[str], log_enabled: bool):
+        self._log_path = log_path
+        self._log_enabled = log_enabled
+        self._id = self._model = self._content = ""
+        self._finish_reason: Optional[str] = None
+        self._usage: Optional[Dict[str, Any]] = None
+        self._logged = False
+
+    def _collect(self, chunk: ChatCompletionChunk) -> None:
+        self._id = self._id or getattr(chunk, 'id', '')
+        self._model = self._model or getattr(chunk, 'model', '')
+        if chunk.usage:
+            u = chunk.usage
+            self._usage = (
+                u.model_dump() if hasattr(u, 'model_dump') else u.dict()
+            )
+        if chunk.choices:
+            choice = chunk.choices[0]
+            if choice.delta and choice.delta.content:
+                self._content += choice.delta.content
+            if choice.finish_reason:
+                self._finish_reason = choice.finish_reason
+
+    def _log(self) -> None:
+        if self._logged or not self._log_enabled or not self._log_path:
+            return
+        self._logged = True
+        import json
+        from datetime import datetime
+
+        try:
+            with open(self._log_path, "r+") as f:
+                data = json.load(f)
+                data["response_timestamp"] = datetime.now().isoformat()
+                data["response"] = {
+                    "id": self._id,
+                    "model": self._model,
+                    "content": self._content,
+                    "finish_reason": self._finish_reason,
+                    "usage": self._usage,
+                    "streaming": True,
+                }
+                f.seek(0)
+                json.dump(data, f, indent=4)
+                f.truncate()
+        except Exception:
+            pass
+
+
+class _SyncStreamWrapper(_StreamLogger):
+    r"""Sync stream wrapper with logging."""
+
+    def __init__(
+        self,
+        stream: Stream[ChatCompletionChunk],
+        log_path: Optional[str],
+        log_enabled: bool,
+    ):
+        super().__init__(log_path, log_enabled)
+        self._stream = stream
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> ChatCompletionChunk:
+        try:
+            chunk = next(self._stream)
+            self._collect(chunk)
+            return chunk
+        except StopIteration:
+            self._log()
+            raise
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def __del__(self):
+        self._log()
+
+
+class _AsyncStreamWrapper(_StreamLogger):
+    r"""Async stream wrapper with logging."""
+
+    def __init__(
+        self,
+        stream: AsyncStream[ChatCompletionChunk],
+        log_path: Optional[str],
+        log_enabled: bool,
+    ):
+        super().__init__(log_path, log_enabled)
+        self._stream = stream
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> ChatCompletionChunk:
+        try:
+            chunk = await self._stream.__anext__()
+            self._collect(chunk)
+            return chunk
+        except StopAsyncIteration:
+            self._log()
+            raise
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        return False
+
+    def __del__(self):
+        self._log()
 
 
 class ModelBackendMeta(abc.ABCMeta):
@@ -428,10 +548,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         result = self._run(messages, response_format, tools)
         logger.info("Result: %s", result)
 
-        # Log the response if logging is enabled
+        # For streaming responses, wrap with logging; otherwise log immediately
+        if isinstance(result, Stream):
+            return _SyncStreamWrapper(  # type: ignore[return-value]
+                result, log_path, self._log_enabled
+            )
         if log_path:
             self._log_response(log_path, result)
-
         return result
 
     @observe()
@@ -480,10 +603,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         result = await self._arun(messages, response_format, tools)
         logger.info("Result: %s", result)
 
-        # Log the response if logging is enabled
+        # For streaming responses, wrap with logging; otherwise log immediately
+        if isinstance(result, AsyncStream):
+            return _AsyncStreamWrapper(  # type: ignore[return-value]
+                result, log_path, self._log_enabled
+            )
         if log_path:
             self._log_response(log_path, result)
-
         return result
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:

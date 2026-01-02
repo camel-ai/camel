@@ -322,6 +322,21 @@ def reset(self):
 
 Resets the :obj:`ChatAgent` to its initial state.
 
+<a id="camel.agents.chat_agent.ChatAgent._update_token_cache"></a>
+
+### _update_token_cache
+
+```python
+def _update_token_cache(self, usage_dict: Dict[str, Any], message_count: int):
+```
+
+Update the token count cache from LLM response usage.
+
+**Parameters:**
+
+- **usage_dict** (Dict[str, Any]): Usage dictionary from LLM response.
+- **message_count** (int): Number of messages sent to the LLM.
+
 <a id="camel.agents.chat_agent.ChatAgent._resolve_models"></a>
 
 ### _resolve_models
@@ -474,39 +489,6 @@ def _get_full_tool_schemas(self):
 Returns a list of tool schemas of all tools, including internal
 and external tools.
 
-<a id="camel.agents.chat_agent.ChatAgent._is_token_limit_error"></a>
-
-### _is_token_limit_error
-
-```python
-def _is_token_limit_error(error: Exception):
-```
-
-Return True when the exception message indicates a token limit.
-
-<a id="camel.agents.chat_agent.ChatAgent._is_tool_related_record"></a>
-
-### _is_tool_related_record
-
-```python
-def _is_tool_related_record(record: MemoryRecord):
-```
-
-Determine whether the given memory record
-belongs to a tool call.
-
-<a id="camel.agents.chat_agent.ChatAgent._find_indices_to_remove_for_last_tool_pair"></a>
-
-### _find_indices_to_remove_for_last_tool_pair
-
-```python
-def _find_indices_to_remove_for_last_tool_pair(self, recent_records: List[ContextRecord]):
-```
-
-**Returns:**
-
-  List[int]: Indices to remove (may be non-contiguous).
-
 <a id="camel.agents.chat_agent.ChatAgent._serialize_tool_args"></a>
 
 ### _serialize_tool_args
@@ -541,14 +523,6 @@ def _update_last_tool_call_state(self, record: Optional[ToolCallingRecord]):
 
 Track the most recent tool call and its identifying signature.
 
-<a id="camel.agents.chat_agent.ChatAgent._format_tool_limit_notice"></a>
-
-### _format_tool_limit_notice
-
-```python
-def _format_tool_limit_notice(self):
-```
-
 <a id="camel.agents.chat_agent.ChatAgent._append_user_messages_section"></a>
 
 ### _append_user_messages_section
@@ -564,6 +538,16 @@ def _append_user_messages_section(summary_content: str, user_messages: List[str]
 ```python
 def _reset_summary_state(self):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._get_context_with_summarization"></a>
+
+### _get_context_with_summarization
+
+```python
+def _get_context_with_summarization(self):
+```
+
+Get context and trigger summarization if needed.
 
 <a id="camel.agents.chat_agent.ChatAgent._calculate_next_summary_threshold"></a>
 
@@ -959,12 +943,14 @@ regular messages.
 ### clear_memory
 
 ```python
-def clear_memory(self):
+def clear_memory(self, reset_summary_state: bool = True):
 ```
 
-**Returns:**
+Clear the agent's memory and reset to initial state.
 
-  None
+**Parameters:**
+
+- **reset_summary_state** (bool): Whether to reset the summary token count. Set to False when preserving summary state during summarization. Defaults to True for full memory clearing.
 
 <a id="camel.agents.chat_agent.ChatAgent._generate_system_message_for_output_language"></a>
 
@@ -1286,7 +1272,6 @@ Log final messages or warnings about multiple responses.
 def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
-    num_tokens: int,
     current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
     tool_schemas: Optional[List[Dict[str, Any]]] = None,
