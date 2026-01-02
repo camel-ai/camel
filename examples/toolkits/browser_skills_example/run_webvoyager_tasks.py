@@ -245,10 +245,9 @@ class WebVoyagerRunner:
             # Get final snapshot from agent BEFORE closing tabs
             if agent.toolkit:
                 try:
-                    snapshot_result = (
-                        await agent.toolkit.browser_get_page_snapshot()
-                    )
-                    snapshot_result.get('snapshot', '')
+                    _snapshot = await agent.toolkit.browser_get_page_snapshot()
+                    # _snapshot is a string, can be stored if needed in the future
+                    # For now, just capture it to ensure the browser state is recorded
                 except Exception as e:
                     print(f"⚠️  Could not get final snapshot: {e}")
 
@@ -525,6 +524,12 @@ class WebVoyagerRunner:
         print(f"{'='*80}")
 
         total = len(self.results)
+
+        # Guard against empty results to avoid ZeroDivisionError
+        if total == 0:
+            print("No tasks were executed.")
+            return
+
         succeeded = sum(1 for r in self.results if r.get('success'))
         failed = total - succeeded
 
@@ -580,7 +585,7 @@ async def main():
 
     # Calculate default paths using relative path
     script_dir = Path(__file__).resolve().parent
-    default_config_dir = str(script_dir.parent / "subtask_configs")
+    default_config_dir = str(script_dir / "subtask_configs")
     default_jsonl = str(
         Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl"
     )

@@ -565,7 +565,7 @@ class WebSocketBrowserWrapper:
                     else 0,
                 }
 
-                # Special handling for get_som_screenshot: include snapshot in log
+                # include snapshot in log
                 if action_name == 'get_som_screenshot' and hasattr(
                     outputs, '_snapshot_for_logging'
                 ):
@@ -794,7 +794,8 @@ class WebSocketBrowserWrapper:
         end_time = time.time()
         logger.info(f"Screenshot completed in {end_time - start_time:.2f}s")
 
-        # Create ToolResult without snapshot (snapshot will be logged separately)
+        # Create ToolResult without snapshot
+        # snapshot will be logged separately
         result = ToolResult(text=response['text'], images=response['images'])
 
         # Store snapshot in result for logging, but it won't be passed to agent

@@ -508,7 +508,7 @@ def analyze_with_agent(
     # Set default subtask_configs_dir using relative path
     if subtask_configs_dir is None:
         script_dir = Path(__file__).resolve().parent
-        subtask_configs_dir = str(script_dir.parent / "subtask_configs")
+        subtask_configs_dir = str(script_dir / "subtask_configs")
 
     print(f"\n{'='*80}")
     print("SUBTASK CANDIDATE ANALYZER")

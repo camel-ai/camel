@@ -52,7 +52,7 @@ from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
 # Define default directories using relative paths
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
-DEFAULT_SUBTASK_CONFIGS_DIR = script_dir.parent / "subtask_configs"
+DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
 
 load_dotenv()
 
