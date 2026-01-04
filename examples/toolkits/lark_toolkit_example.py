@@ -17,8 +17,8 @@ from camel.toolkits import LarkToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Initialize the LarkToolkit
-# (auto-authenticates using cached tokens or browser)
 # Requires LARK_APP_ID and LARK_APP_SECRET environment variables
+# Set use_feishu=True if using Feishu (China) instead of Lark (International)
 toolkit = LarkToolkit()
 
 # Create the model
@@ -29,66 +29,42 @@ model = ModelFactory.create(
 
 # Create a ChatAgent with the Lark toolkit tools
 agent = ChatAgent(
-    system_message="You are a Lark document assistant.",
+    system_message="You are a Lark messaging assistant.",
     model=model,
     tools=toolkit.get_tools(),
 )
 
-# Example 1: Document operations
+# Example: Chat and message operations
 print("=" * 60)
-print("Example 1: Document Operations")
-print("=" * 60)
-
-response = agent.step(
-    "Get my root folder, create a document called 'Weekly Status Report', "
-    "add a heading 'Team Status Update', and show me the final content."
-)
-print(f"Agent response: {response.msgs[0].content}")
-
-# Example 2: Messaging operations
-print("\n" + "=" * 60)
-print("Example 2: Messaging Operations")
+print("Lark Toolkit Example: Chat and Message Operations")
 print("=" * 60)
 
 response = agent.step(
-    "List my available chats, then send a message saying 'Hello from CAMEL!' "
-    "to the first group chat you find."
+    "List all chats I belong to, get the recent messages from the first chat, "
+    "and if there are any images or files, download one of them."
 )
 print(f"Agent response: {response.msgs[0].content}")
 
 """
 ==========================================================================
-Example 1 output:
+Example output:
 
-I've completed all the tasks. Here's a summary:
-
-1. **Root Folder**: Retrieved your root folder token.
-
-2. **Document Created**: Created a new document called "Weekly Status Report"
-   - Document URL: https://xxx.larksuite.com/docx/xxx
-
-3. **Heading Added**: Added the heading "Team Status Update" to the document.
-
-4. **Final Content**: The document now contains:
-   - Title: Weekly Status Report
-   - Heading: Team Status Update
-
-You can access your new document using the link above.
-
-==========================================================================
-Example 2 output:
-
-I've completed the messaging tasks:
+I've completed the Lark messaging tasks. Here's a summary:
 
 1. **Listed Chats**: Found 3 chats you belong to:
-   - "Engineering Team" (group)
-   - "Project Alpha" (group)
-   - "John Doe" (p2p)
+   - "Engineering Team" (group) - Chat ID: oc_xxx
+   - "Project Alpha" (group) - Chat ID: oc_yyy
+   - "John Doe" (p2p) - Chat ID: oc_zzz
 
-2. **Message Sent**: Successfully sent "Hello from CAMEL!"
-   to "Engineering Team"
+2. **Retrieved Messages**: Got recent messages from "Engineering Team":
+   - Found 15 messages in the chat
+   - Messages include text discussions and file attachments
+
+3. **Downloaded Resource**: Found and downloaded an image:
    - Message ID: om_xxx
-   - Chat ID: oc_xxx
+   - File Key: img_v2_xxx
+   - Content Type: image/png
+   - Saved to: ./workspace/lark_file/img_v2_xxx
 
 ==========================================================================
 """
