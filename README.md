@@ -524,11 +524,6 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 | Name | Description |
 |:---|:---|
 | **[Eigent](https://www.eigent.ai/)** | The World First Multi-agent Workforce |
-| **[EigentBot](https://bot.eigent.ai/)** | One EigentBot,
-Every Code Answer |
-| **[Matrix](https://matrix.eigent.ai/)** | Social Media Simulation |
-| **[AI Geometric](https://www.linkedin.com/posts/aigeometric_ai-interviewpreparation-careerdevelopment-activity-7261428422516555776-MtaK/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAChHluEB9xRwkjiJ6VSAzqM2Y-U4NI2sKGY)** | AI-powered interview copilot |
-| **[Log10](https://github.com/log10-io/log10/blob/main/src/log10/agents/camel.py)** | AI accuracy, delivered |
 
 
 ## 🗓️ Events
