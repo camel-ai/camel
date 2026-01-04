@@ -332,7 +332,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         information and model metadata. Called at the start of _run() and
         _arun() methods before API execution.
         """
-        agent_session_id = get_current_agent_session_id() or "no-session-id"
+        agent_session_id = get_current_agent_session_id()
         update_langfuse_trace(
             session_id=agent_session_id,
             metadata={
