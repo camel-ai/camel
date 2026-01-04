@@ -525,7 +525,8 @@ pip install camel-ai
 
 这是一个如何引用我们工作的示例：
 ```
-We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
 
 ## 许可协议
 
