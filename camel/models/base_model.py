@@ -331,14 +331,8 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         This method updates the current Langfuse trace with agent session
         information and model metadata. Called at the start of _run() and
         _arun() methods before API execution.
-
-        The trace is only updated if an agent session ID is available,
-        preserving the conditional tracing behavior used by the majority
-        of backends.
         """
-        agent_session_id = get_current_agent_session_id()
-        if not agent_session_id:
-            return
+        agent_session_id = get_current_agent_session_id() or "no-session-id"
         update_langfuse_trace(
             session_id=agent_session_id,
             metadata={
