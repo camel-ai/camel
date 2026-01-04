@@ -1,5 +1,28 @@
 <a id="camel.toolkits.base"></a>
 
+<a id="camel.toolkits.base.manual_timeout"></a>
+
+## manual_timeout
+
+```python
+def manual_timeout(func: F):
+```
+
+Decorator to mark a function as having manual timeout handling.
+
+Use this decorator on toolkit methods that manage their own timeout logic
+internally but don't have a `timeout` parameter in their signature.
+This prevents the automatic `with_timeout` wrapper from being applied
+by `BaseToolkit`.
+
+**Parameters:**
+
+- **func** (F): The function to mark as having manual timeout handling.
+
+**Returns:**
+
+  F: The same function with `_manual_timeout` attribute set to True.
+
 <a id="camel.toolkits.base.BaseToolkit"></a>
 
 ## BaseToolkit
