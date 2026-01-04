@@ -35,9 +35,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
-    get_current_agent_session_id,
     update_current_observation,
-    update_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -277,19 +275,7 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -352,19 +338,7 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools

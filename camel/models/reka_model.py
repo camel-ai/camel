@@ -25,9 +25,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
-    get_current_agent_session_id,
     update_current_observation,
-    update_langfuse_trace,
 )
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
@@ -240,19 +238,7 @@ class RekaModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -310,19 +296,7 @@ class RekaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 

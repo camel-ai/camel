@@ -35,9 +35,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -269,24 +267,6 @@ class OpenAIModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
-
-    def _log_and_trace(self) -> None:
-        r"""Update Langfuse trace with session metadata and log it."""
-        agent_session_id = get_current_agent_session_id() or "no-session-id"
-        model_type_str = str(self.model_type)
-        metadata = {
-            "source": "camel",
-            "agent_id": agent_session_id,
-            "agent_type": "camel_chat_agent",
-            "model_type": model_type_str,
-        }
-        metadata = {k: str(v) for k, v in metadata.items()}
-        update_langfuse_trace(
-            session_id=agent_session_id,
-            metadata=metadata,
-            tags=["CAMEL-AI", model_type_str],
-        )
-        logger.info(f"metadata: {metadata}")
 
     @observe()
     def _run(

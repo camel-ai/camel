@@ -34,9 +34,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_trace,
 )
 
 AzureADTokenProvider = Callable[[], str]
@@ -275,18 +273,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -333,18 +320,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
