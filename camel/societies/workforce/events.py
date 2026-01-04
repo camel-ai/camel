@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class WorkforceEventBase(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
     event_type: Literal[
+        "log",
         "task_decomposed",
         "task_created",
         "task_assigned",
@@ -37,6 +38,25 @@ class WorkforceEventBase(BaseModel):
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+
+class LogEvent(WorkforceEventBase):
+    event_type: Literal["log"] = "log"
+    message: str
+    level: Literal["debug", "info", "warning", "error", "critical"]
+    color: (
+        Literal[
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "cyan",
+            "magenta",
+            "gray",
+            "black",
+        ]
+        | None
+    ) = None
 
 
 class WorkerCreatedEvent(WorkforceEventBase):
@@ -109,6 +129,7 @@ class QueueStatusEvent(WorkforceEventBase):
 
 
 WorkforceEvent = Union[
+    LogEvent,
     TaskDecomposedEvent,
     TaskCreatedEvent,
     TaskAssignedEvent,

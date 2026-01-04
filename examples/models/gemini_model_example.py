@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
 from camel.agents import ChatAgent
@@ -69,25 +69,33 @@ You can open this file in any modern web browser to play. It features:
 '''
 
 
-# Example of using the gemini-2.5-pro model
-model_2_5_pro_pre = ModelFactory.create(
+# Example of using the gemini-3-flash model
+model_3_flash = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_5_PRO,
+    model_type=ModelType.GEMINI_3_FLASH,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
-camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_5_pro_pre)
-response_pro = camel_agent_pro.step(user_msg)
-print(response_pro.msgs[0].content)
+camel_agent_flash = ChatAgent(system_message=sys_msg, model=model_3_flash)
+user_msg = """
+Explain how Generative AI works in short language.
+"""
+response_flash = camel_agent_flash.step(user_msg)
+print(response_flash.msgs[0].content)
 
 '''
 ===============================================================================
-Hello and a big hi to the entire CAMEL AI community!
+Generative AI works in three simple steps:
 
-It's fantastic to acknowledge your dedication to
-the important and fascinating study of autonomous and communicative agents.
-Open-source collaboration is the engine of innovation,
-and your work is pushing the boundaries of what's possible in AI.
+1.  **Training:** It "reads" or "looks at" massive amounts of existing data
+(like books, code, or images) to learn patterns, styles, and structures.
+2.  **Prediction:** When you give it a prompt, it doesn't "think"—it
+calculates probability. It predicts what word, pixel, or note should come next
+based on the patterns it learned.
+3.  **Creation:** By repeating these predictions millions of times per second,
+it generates entirely new content that looks or sounds like it was made by a
+human.
 
-Keep up the brilliant research and community building
+**In short:** It is a super-powered version of **autocomplete** that uses math
+to guess the most likely next piece of information.
 ===============================================================================
 '''

@@ -82,15 +82,15 @@ def _setup_initial_environment(self):
 
 Set up an initial environment with Python 3.10.
 
-<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._adapt_command_for_environment"></a>
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._get_venv_path"></a>
 
-### _adapt_command_for_environment
+### _get_venv_path
 
 ```python
-def _adapt_command_for_environment(self, command: str):
+def _get_venv_path(self):
 ```
 
-Adapt command to use virtual environment if available.
+Get the virtual environment path if available.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit._write_to_log"></a>
 
@@ -137,7 +137,6 @@ def _collect_output_until_idle(
     self,
     id: str,
     idle_duration: float = 0.5,
-    check_interval: float = 0.1,
     max_wait: float = 5.0
 ):
 ```
@@ -149,7 +148,6 @@ is reached.
 
 - **id** (str): The session ID.
 - **idle_duration** (float): How long the stream must be empty to be considered idle.(default: 0.5)
-- **check_interval** (float): The time to sleep between checks. (default: 0.1)
 - **max_wait** (float): The maximum total time to wait for the process to go idle. (default: 5.0)
 
 **Returns:**
@@ -166,7 +164,8 @@ def shell_exec(
     self,
     id: str,
     command: str,
-    block: bool = True
+    block: bool = True,
+    timeout: float = 20.0
 ):
 ```
 
@@ -176,7 +175,8 @@ Executes a shell command in blocking or non-blocking mode.
 
 - **id** (str): A unique identifier for the command's session. This ID is used to interact with non-blocking processes.
 - **command** (str): The shell command to execute.
-- **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands . If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
+- **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands. If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
+- **timeout** (float, optional): The maximum time in seconds to wait for the command to complete in blocking mode. If the command does not complete within the timeout, it will be restarted automatically as a non-blocking background session. You can then use `shell_view(id)` to check output, or `shell_kill_process(id)` to terminate it. This parameter is ignored in non-blocking mode. (default: :obj:`20`)
 
 **Returns:**
 

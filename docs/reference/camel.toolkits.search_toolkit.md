@@ -32,6 +32,32 @@ Initializes the SearchToolkit.
 - **timeout** (float): Timeout for API requests in seconds. (default: :obj:`None`)
 - **exclude_domains** (Optional[List[str]]): List of domains to exclude from search results. Currently only supported by the `search_google` function. (default: :obj:`None`)
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_serper"></a>
+
+### search_serper
+
+```python
+def search_serper(
+    self,
+    query: str,
+    page: int = 10,
+    location: str = 'United States'
+):
+```
+
+Use Serper.dev API to perform Google search.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **page** (int): The page number of results to retrieve. (default: :obj:`10`)
+- **location** (str): The location for the search results. (default: :obj:`"United States"`)
+
+**Returns:**
+
+  Dict[str, Any]: The search result dictionary containing 'organic',
+'peopleAlsoAsk', etc.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_wiki"></a>
 
 ### search_wiki
@@ -427,7 +453,7 @@ features:
 
 **Parameters:**
 
-- **query** (str): The search query string (`length ``>= 1` and `<= 100```).
+- **query** (str): The search query string (`length >= 1 and <= 100`).
 - **time_range** (`Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]`): Time frame filter for search results. (default: :obj:`"NoLimit"`)
 - **industry** (`Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]`): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
 - **return_main_text** (bool): Whether to include the main text of the webpage in results. (default: :obj:`True`)
@@ -472,6 +498,57 @@ Perform a web search using the metaso.cn API.
 
   Dict[str, Any]: Search results or error information.
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_serpapi"></a>
+
+### search_serpapi
+
+```python
+def search_serpapi(
+    self,
+    query: str,
+    engine: str = 'google',
+    location: str = 'Austin,Texas',
+    google_domain: str = 'google.com',
+    gl: str = 'us',
+    search_lang: str = 'en',
+    device: str = 'desktop',
+    number_of_result_pages: int = 1,
+    safe: str = 'off',
+    filter: int = 0,
+    custom_params: Optional[Dict[str, Any]] = None
+):
+```
+
+Use SerpApi search engine to search information for the given query.
+
+SerpApi provides real-time search engine results from multiple search engines
+including Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and more.
+
+**Parameters:**
+
+- **query** (str): The search query string.
+- **engine** (str): Search engine to use. Supported engines include: 'google', 'bing', 'yahoo', 'duckduckgo', 'baidu', 'yandex', 'youtube', 'ebay', 'amazon', etc. (default: :obj:`"google"`)
+- **location** (str): Location for localized search results. Can be a city, state, country, or coordinates. (default: :obj:`"Austin,Texas"`)
+- **google_domain** (str): Google domain to use (e.g., 'google.com', 'google.co.uk'). Only applicable for Google engine. (default: :obj:`"google.com"`)
+- **gl** (str): Country code for localized results (e.g., 'us', 'uk', 'ca'). Only applicable for Google engine. (default: :obj:`"us"`)
+- **search_lang** (str): Language code for results (e.g., 'en', 'es', 'fr'). Only applicable for Google engine. (default: :obj:`"en"`)
+- **device** (str): Device type: 'desktop', 'tablet', or 'mobile'. (default: :obj:`"desktop"`)
+- **number_of_result_pages** (int): Number of organic results to return. Adjust based on task needs. (default: :obj:`1`)
+- **safe** (str): Safe search level: 'off', 'medium', 'high', 'active'. (default: :obj:`"off"`)
+- **filter** (int): Filter results: 0 (no filter), 1 (filter similar results). (default: :obj:`0`)
+- **custom_params** (Optional[Dict[str, Any]]): Additional custom parameters to pass to SerpApi. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing search results:
+- 'results': List of organic search results, each containing:
+- 'title': The title of the search result
+- 'link': The URL of the search result
+- 'snippet': The description snippet
+- 'keywords': Highlighted keywords in the snippet
+- 'source': The source of the result
+- 'error: Error if any
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
 ### get_tools
@@ -484,3 +561,13 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects
 representing the functions in the toolkit.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+
+### tavily_search
+
+```python
+def tavily_search(self, *args, **kwargs):
+```
+
+Deprecated: Use search_tavily instead for consistency with other search methods.

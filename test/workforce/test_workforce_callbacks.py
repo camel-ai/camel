@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict
 
 import pytest
@@ -20,6 +20,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -43,6 +44,9 @@ class _NonMetricsCallback(WorkforceCallback):
 
     def __init__(self) -> None:
         self.events: list[WorkforceEvent] = []
+
+    def log_message(self, event: LogEvent) -> None:
+        pass
 
     # Task events
     def log_task_created(self, event: TaskCreatedEvent) -> None:
@@ -84,6 +88,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
         self.dump_to_json_called = False
         self.get_ascii_tree_called = False
         self.get_kpis_called = False
+
+    def log_message(self, event: LogEvent) -> None:
+        pass
 
     # WorkforceMetrics interface
     def reset_task_data(self) -> None:

@@ -258,6 +258,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **memory** (AgentMemory, optional): The agent memory for managing chat messages. If `None`, a :obj:`ChatHistoryMemory` will be used. (default: :obj:`None`)
 - **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
 - **summarize_threshold** (int, optional): The percentage of the context window that triggers summarization. If `None`, will trigger summarization when the context window is full. (default: :obj:`None`)
+- **token_limit** (int, optional): The maximum number of tokens allowed for the context window. If `None`, uses the model's default token limit. This can be used to restrict the context size below the model's maximum capacity. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agent. (default: :obj:`None`)
 - **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]], optional): List of toolkit instances that inherit from :obj:`RegisteredAgentToolkit`. The agent will register itself with these toolkits, allowing them to access the agent instance. Note: This does NOT add the toolkit's tools to the agent. To use tools from these toolkits, pass them explicitly via the `tools` parameter. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
 - **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
@@ -320,6 +321,21 @@ def reset(self):
 ```
 
 Resets the :obj:`ChatAgent` to its initial state.
+
+<a id="camel.agents.chat_agent.ChatAgent._update_token_cache"></a>
+
+### _update_token_cache
+
+```python
+def _update_token_cache(self, usage_dict: Dict[str, Any], message_count: int):
+```
+
+Update the token count cache from LLM response usage.
+
+**Parameters:**
+
+- **usage_dict** (Dict[str, Any]): Usage dictionary from LLM response.
+- **message_count** (int): Number of messages sent to the LLM.
 
 <a id="camel.agents.chat_agent.ChatAgent._resolve_models"></a>
 
@@ -385,6 +401,16 @@ def tool_dict(self):
 ```
 
 Returns a dictionary of internal tools.
+
+<a id="camel.agents.chat_agent.ChatAgent.token_limit"></a>
+
+### token_limit
+
+```python
+def token_limit(self):
+```
+
+Returns the token limit for the agent's context window.
 
 <a id="camel.agents.chat_agent.ChatAgent.output_language"></a>
 
@@ -463,39 +489,6 @@ def _get_full_tool_schemas(self):
 Returns a list of tool schemas of all tools, including internal
 and external tools.
 
-<a id="camel.agents.chat_agent.ChatAgent._is_token_limit_error"></a>
-
-### _is_token_limit_error
-
-```python
-def _is_token_limit_error(error: Exception):
-```
-
-Return True when the exception message indicates a token limit.
-
-<a id="camel.agents.chat_agent.ChatAgent._is_tool_related_record"></a>
-
-### _is_tool_related_record
-
-```python
-def _is_tool_related_record(record: MemoryRecord):
-```
-
-Determine whether the given memory record
-belongs to a tool call.
-
-<a id="camel.agents.chat_agent.ChatAgent._find_indices_to_remove_for_last_tool_pair"></a>
-
-### _find_indices_to_remove_for_last_tool_pair
-
-```python
-def _find_indices_to_remove_for_last_tool_pair(self, recent_records: List[ContextRecord]):
-```
-
-**Returns:**
-
-  List[int]: Indices to remove (may be non-contiguous).
-
 <a id="camel.agents.chat_agent.ChatAgent._serialize_tool_args"></a>
 
 ### _serialize_tool_args
@@ -530,14 +523,6 @@ def _update_last_tool_call_state(self, record: Optional[ToolCallingRecord]):
 
 Track the most recent tool call and its identifying signature.
 
-<a id="camel.agents.chat_agent.ChatAgent._format_tool_limit_notice"></a>
-
-### _format_tool_limit_notice
-
-```python
-def _format_tool_limit_notice(self):
-```
-
 <a id="camel.agents.chat_agent.ChatAgent._append_user_messages_section"></a>
 
 ### _append_user_messages_section
@@ -553,6 +538,16 @@ def _append_user_messages_section(summary_content: str, user_messages: List[str]
 ```python
 def _reset_summary_state(self):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._get_context_with_summarization"></a>
+
+### _get_context_with_summarization
+
+```python
+def _get_context_with_summarization(self):
+```
+
+Get context and trigger summarization if needed.
 
 <a id="camel.agents.chat_agent.ChatAgent._calculate_next_summary_threshold"></a>
 
@@ -616,6 +611,27 @@ Add a list of tools to the agent.
 ```python
 def _serialize_tool_result(self, result: Any):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._truncate_tool_result"></a>
+
+### _truncate_tool_result
+
+```python
+def _truncate_tool_result(self, func_name: str, result: Any):
+```
+
+Truncate tool result if it exceeds the maximum token limit.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function called.
+- **result** (Any): The result returned by the tool execution.
+
+**Returns:**
+
+  Tuple[Any, bool]: A tuple containing:
+- The (possibly truncated) result
+- A boolean indicating whether truncation occurred
 
 <a id="camel.agents.chat_agent.ChatAgent._clean_snapshot_line"></a>
 
@@ -927,12 +943,14 @@ regular messages.
 ### clear_memory
 
 ```python
-def clear_memory(self):
+def clear_memory(self, reset_summary_state: bool = True):
 ```
 
-**Returns:**
+Clear the agent's memory and reset to initial state.
 
-  None
+**Parameters:**
+
+- **reset_summary_state** (bool): Whether to reset the summary token count. Set to False when preserving summary state during summarization. Defaults to True for full memory clearing.
 
 <a id="camel.agents.chat_agent.ChatAgent._generate_system_message_for_output_language"></a>
 
@@ -1254,7 +1272,6 @@ Log final messages or warnings about multiple responses.
 def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
-    num_tokens: int,
     current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
     tool_schemas: Optional[List[Dict[str, Any]]] = None,

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
+
+from colorama import Fore
 
 from .events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -33,6 +37,31 @@ class WorkforceCallback(ABC):
 
     Implementations should persist or stream events as appropriate.
     """
+
+    __COLOR_MAP: typing.ClassVar = {
+        "yellow": Fore.YELLOW,
+        "red": Fore.RED,
+        "green": Fore.GREEN,
+        "blue": Fore.BLUE,
+        "cyan": Fore.CYAN,
+        "magenta": Fore.MAGENTA,
+        "gray": Fore.LIGHTBLACK_EX,
+        "black": Fore.BLACK,
+    }
+
+    def _get_color_message(self, event: LogEvent) -> str:
+        r"""Gets a colored message for a log event."""
+        if event.color is None or event.color not in self.__COLOR_MAP:
+            return event.message
+        color = self.__COLOR_MAP.get(event.color)
+        return f"{color}{event.message}{Fore.RESET}"
+
+    @abstractmethod
+    def log_message(
+        self,
+        event: LogEvent,
+    ) -> None:
+        pass
 
     @abstractmethod
     def log_task_created(

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aihubmix_config import AIHUBMIX_API_PARAMS, AihubMixConfig
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
 from .amd_config import AMD_API_PARAMS, AMDConfig
@@ -22,6 +22,10 @@ from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
 from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from .function_gemma_config import (
+    FUNCTION_GEMMA_API_PARAMS,
+    FunctionGemmaConfig,
+)
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
@@ -136,4 +140,6 @@ __all__ = [
     'QIANFAN_API_PARAMS',
     'CrynuxConfig',
     'CRYNUX_API_PARAMS',
+    'FunctionGemmaConfig',
+    'FUNCTION_GEMMA_API_PARAMS',
 ]
