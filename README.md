@@ -555,26 +555,6 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 <br>
 
-## Community & Contact
-For more information please contact camel-ai@eigent.ai
-
-- **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
-
-- **Discord:** Get real-time support, chat with the community, and stay updated. [Join us](https://discord.camel-ai.org/)
-
-- **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
-
-- **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
-
-- **WeChat Community:** Scan the QR code below to join our WeChat community.
-
-  <div align="center">
-    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
-  </div>
-
-
-<br>
-
 ## Acknowledgment
 
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
@@ -603,6 +583,26 @@ Here is an example of how to cite our work:
 We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
 ```
 
+## Community & Contact
+
+For more information please contact camel-ai@eigent.ai
+
+- **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
+
+- **Discord:** Get real-time support, chat with the community, and stay updated. [Join us](https://discord.camel-ai.org/)
+
+- **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
+
+- **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
+
+- **WeChat Community:** Scan the QR code below to join our WeChat community.
+
+  <div align="center">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
+  </div>
+
+
+<br>
 
 ## License
 

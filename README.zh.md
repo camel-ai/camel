@@ -482,23 +482,6 @@ pip install camel-ai
 
 <br>
 
-## 社区与联系方式
-
-如需更多信息，请联系：[camel-ai@eigent.ai](mailto:camel-ai@eigent.ai)
-
-* **GitHub Issues：** 报告 bug、提交功能请求以及跟踪开发进度。[提交 Issue](https://github.com/camel-ai/camel/issues)
-* **Discord：** 获取实时支持，与社区交流，并保持最新动态。[加入我们](https://discord.camel-ai.org/)
-* **X（Twitter）：** 获取更新、AI 见解和重要公告。[关注我们](https://x.com/CamelAIOrg)
-* **大使项目（Ambassador Project）：** 推广 CAMEL-AI、举办活动并贡献内容。[了解更多](https://www.camel-ai.org/community)
-* **微信社区：** 扫描下方二维码加入我们的微信社区。
-
-  <div align="center">
-    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
-  </div>
-
-
-<br>
-
 ## 致谢
 
 特别感谢 [Nomic AI](https://home.nomic.ai/) 为我们提供了其数据集探索工具（Atlas）的扩展访问权限。
@@ -527,6 +510,23 @@ pip install camel-ai
 ```
 We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
 ```
+
+## 社区与联系方式
+
+如需更多信息，请联系：[camel-ai@eigent.ai](mailto:camel-ai@eigent.ai)
+
+* **GitHub Issues：** 报告 bug、提交功能请求以及跟踪开发进度。[提交 Issue](https://github.com/camel-ai/camel/issues)
+* **Discord：** 获取实时支持，与社区交流，并保持最新动态。[加入我们](https://discord.camel-ai.org/)
+* **X（Twitter）：** 获取更新、AI 见解和重要公告。[关注我们](https://x.com/CamelAIOrg)
+* **大使项目（Ambassador Project）：** 推广 CAMEL-AI、举办活动并贡献内容。[了解更多](https://www.camel-ai.org/community)
+* **微信社区：** 扫描下方二维码加入我们的微信社区。
+
+  <div align="center">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
+  </div>
+
+
+<br>
 
 ## 许可协议
 
