@@ -558,26 +558,6 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 
 <br>
 
-## コミュニティ & コンタクト
-詳細については camel-ai@eigent.ai までお問い合わせください
-
-- **GitHubイシュー：** バグを報告し、機能をリクエストし、開発を追跡します。[イシューを提出](https://github.com/camel-ai/camel/issues)
-
-- **Discord：** リアルタイムサポートを受け、コミュニティとチャットし、最新情報を入手します。[参加する](https://discord.camel-ai.org/)
-
-- **X (Twitter)：** 更新、AIの洞察、重要な発表をフォローします。[フォローする](https://x.com/CamelAIOrg)
-
-- **アンバサダープロジェクト：** CAMEL-AIを擁護し、イベントを主催し、コンテンツを貢献します。[詳細を見る](https://www.camel-ai.org/community)
-
-- **WeChatコミュニティ：** 下のQRコードをスキャンしてWeChatコミュニティに参加してください。
-
-  <div align="center">
-    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
-  </div>
-
-
-<br>
-
 ## 謝辞
 
 データセット探索ツール（Atlas）への拡張アクセスを提供してくださった[Nomic AI](https://home.nomic.ai/)に特別な感謝を申し上げます。
@@ -590,6 +570,10 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 - `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 - `Self-Instruct`：*Yizhong Wang et al.*から：[SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560)。[[例](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## ライセンス
+
+ソースコードはApache 2.0でライセンスされています。
 
 ## 引用
 ```
@@ -606,10 +590,24 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
 ```
 
+## コミュニティ & コンタクト
 
-## ライセンス
+詳細については camel-ai@eigent.ai までお問い合わせください
 
-ソースコードはApache 2.0でライセンスされています。
+- **GitHubイシュー：** バグを報告し、機能をリクエストし、開発を追跡します。[イシューを提出](https://github.com/camel-ai/camel/issues)
+
+- **Discord：** リアルタイムサポートを受け、コミュニティとチャットし、最新情報を入手します。[参加する](https://discord.camel-ai.org/)
+
+- **X (Twitter)：** 更新、AIの洞察、重要な発表をフォローします。[フォローする](https://x.com/CamelAIOrg)
+
+- **アンバサダープロジェクト：** CAMEL-AIを擁護し、イベントを主催し、コンテンツを貢献します。[詳細を見る](https://www.camel-ai.org/community)
+
+- **WeChatコミュニティ：** 下のQRコードをスキャンしてWeChatコミュニティに参加してください。
+
+  <div align="center">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
+  </div>
+
 
 <br>
 
