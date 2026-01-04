@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
@@ -35,9 +35,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
-    get_current_agent_session_id,
     update_current_observation,
-    update_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -277,19 +275,7 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -352,19 +338,7 @@ class MistralModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools

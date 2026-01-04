@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 import re
@@ -29,9 +29,7 @@ from camel.types import ChatCompletion, CompletionUsage, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    get_current_agent_session_id,
     update_current_observation,
-    update_langfuse_trace,
 )
 
 # conditional observe import based on environment variables
@@ -822,18 +820,7 @@ class FunctionGemmaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
@@ -876,18 +863,7 @@ class FunctionGemmaModel(BaseModelBackend):
             model_parameters=self.model_config_dict,
         )
 
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         prompt = self._format_messages(messages, tools)
         logger.debug(f"FunctionGemma prompt:\n{prompt}")
