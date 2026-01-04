@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import platform
@@ -357,9 +357,22 @@ def setup_initial_env_with_venv(
     r"""Set up initial environment using standard venv."""
     try:
         # Create virtual environment with system Python
-        venv.create(
-            env_path, with_pip=True, system_site_packages=False, symlinks=False
-        )
+        try:
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=True,
+            )
+        except Exception:
+            # Fallback to symlinks=False if symlinks=True fails
+            # (e.g., on some Windows configurations)
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=False,
+            )
 
         # Get pip path
         if platform.system() == 'Windows':
@@ -526,8 +539,11 @@ def clone_current_environment(
                 update_callback(
                     "Falling back to standard venv for cloning environment\n"
                 )
-
-            venv.create(env_path, with_pip=True, symlinks=False)
+            try:
+                venv.create(env_path, with_pip=True, symlinks=True)
+            except Exception:
+                # Fallback to symlinks=False if symlinks=True fails
+                venv.create(env_path, with_pip=True, symlinks=False)
 
             # Get python/pip path
             if platform.system() == 'Windows':
