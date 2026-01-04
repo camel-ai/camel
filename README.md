@@ -568,6 +568,12 @@ We implemented amazing research ideas from other works for you to build, compare
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
+## License
+
+The source code is licensed under Apache 2.0.
+
+<br>
+
 ## Citation
 ```
 @inproceedings{li2023camel,
@@ -601,12 +607,6 @@ For more information please contact camel-ai@eigent.ai
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## License
-
-The source code is licensed under Apache 2.0.
 
 <br>
 

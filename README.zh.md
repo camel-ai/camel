@@ -495,6 +495,11 @@ pip install camel-ai
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
+## 许可协议
+
+该源码遵循 Apache 2.0 许可证。
+
+<br>
 
 ## 引用
 ```
@@ -525,12 +530,6 @@ We use the CAMEL framework \cite{li2023camel} to develop the agents used in our 
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## 许可协议
-
-该源码遵循 Apache 2.0 许可证。
 
 <br>
 

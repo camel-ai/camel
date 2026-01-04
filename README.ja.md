@@ -571,6 +571,12 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 
 - `Self-Instruct`：*Yizhong Wang et al.*から：[SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560)。[[例](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
+## ライセンス
+
+ソースコードはApache 2.0でライセンスされています。
+
+<br>
+
 ## 引用
 ```
 @inproceedings{li2023camel,
@@ -604,12 +610,6 @@ We use the CAMEL framework \cite{li2023camel} to develop the agents used in our 
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## ライセンス
-
-ソースコードはApache 2.0でライセンスされています。
 
 <br>
 
