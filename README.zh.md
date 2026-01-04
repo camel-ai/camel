@@ -499,16 +499,6 @@ pip install camel-ai
 
 <br>
 
-## 引用
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
 ## 致谢
 
 特别感谢 [Nomic AI](https://home.nomic.ai/) 为我们提供了其数据集探索工具（Atlas）的扩展访问权限。
@@ -522,6 +512,21 @@ pip install camel-ai
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
+
+## 引用
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+这是一个如何引用我们工作的示例：
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
 
 ## 许可协议
 
