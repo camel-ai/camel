@@ -572,8 +572,6 @@ We implemented amazing research ideas from other works for you to build, compare
 
 The source code is licensed under Apache 2.0.
 
-<br>
-
 ## Citation
 ```
 @inproceedings{li2023camel,

@@ -499,8 +499,6 @@ pip install camel-ai
 
 该源码遵循 Apache 2.0 许可证。
 
-<br>
-
 ## 引用
 ```
 @inproceedings{li2023camel,
