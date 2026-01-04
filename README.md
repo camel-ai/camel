@@ -575,17 +575,8 @@ For more information please contact camel-ai@eigent.ai
 
 <br>
 
-## Citation
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
 ## Acknowledgment
+
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the initial logo of our project.
@@ -596,6 +587,21 @@ We implemented amazing research ideas from other works for you to build, compare
 - `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## Citation
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+Here is an example of how to cite our work:
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
 
 
 ## License

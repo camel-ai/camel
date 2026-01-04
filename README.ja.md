@@ -578,17 +578,8 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 
 <br>
 
-## 引用
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
 ## 謝辞
+
 データセット探索ツール（Atlas）への拡張アクセスを提供してくださった[Nomic AI](https://home.nomic.ai/)に特別な感謝を申し上げます。
 
 また、プロジェクトの初期ロゴをデザインしてくださったHaya Hammoud氏にも感謝いたします。
@@ -599,6 +590,21 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 - `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 - `Self-Instruct`：*Yizhong Wang et al.*から：[SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560)。[[例](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## 引用
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+以下は、私たちの研究を引用する方法の一例です：
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
 
 
 ## ライセンス
