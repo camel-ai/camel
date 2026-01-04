@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import inspect
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypeVar
 
 from camel.logger import get_logger
@@ -114,6 +115,55 @@ class BaseToolkit(metaclass=AgentOpsMeta):
                 the MCP server in.
         """
         self.mcp.run(mode)
+
+    def to_skill(
+        self,
+        path: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        instructions: Optional[str] = None,
+    ) -> Path:
+        r"""Export this toolkit instance as a Claude Agent Skill.
+
+        Generates a skill directory containing SKILL.md and executable Python
+        scripts for each tool. The skill follows the Claude Agent Skills
+        specification and includes automatic state management.
+
+        Args:
+            path (str): The directory path where the skill will be created.
+                The skill folder will be created inside this path.
+            name (Optional[str]): The skill name (lowercase letters, numbers,
+                and hyphens only, max 64 chars). If not provided, derived
+                from the toolkit class name.
+            description (Optional[str]): The skill description (max 1024
+                chars). If not provided, extracted from the toolkit's
+                docstring.
+            instructions (Optional[str]): Custom instructions for the skill.
+                If not provided, auto-generated from tool docstrings.
+
+        Returns:
+            Path: The path to the created skill directory.
+
+        Example:
+            >>> from camel.toolkits import MathToolkit
+            >>> toolkit = MathToolkit()
+            >>> skill_path = toolkit.to_skill(
+            ...     path="./skills",
+            ...     name="math",
+            ...     description="Perform mathematical operations",
+            ... )
+            >>> print(skill_path)
+            PosixPath('skills/math')
+        """
+        from camel.toolkits.skill_generator import SkillGenerator
+
+        generator = SkillGenerator(self)
+        return generator.generate(
+            path=path,
+            name=name,
+            description=description,
+            instructions=instructions,
+        )
 
 
 class RegisteredAgentToolkit:
