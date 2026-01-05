@@ -689,7 +689,16 @@ class TerminalToolkit(BaseToolkit):
                     try:
                         stdout, _ = proc.communicate(timeout=timeout)
                         output = stdout or ""
-                    except subprocess.TimeoutExpired:
+                    except subprocess.TimeoutExpired as e:
+                        if e.stdout:
+                            partial_output = (
+                                e.stdout.decode("utf-8", errors="ignore")
+                                if isinstance(e.stdout, bytes)
+                                else e.stdout
+                            )
+                        else:
+                            partial_output = ""
+
                         session_log_file = os.path.join(
                             self.log_dir, f"session_{session_id}.log"
                         )
@@ -699,11 +708,16 @@ class TerminalToolkit(BaseToolkit):
                             f"session at {time.ctime()} ---\n> {command}\n",
                         )
 
+                        # Pre-populate output queue with partial output
+                        output_queue: Queue = Queue(maxsize=10000)
+                        if partial_output:
+                            output_queue.put(partial_output)
+
                         with self._session_lock:
                             self.shell_sessions[session_id] = {
                                 "id": session_id,
                                 "process": proc,
-                                "output_stream": Queue(maxsize=10000),
+                                "output_stream": output_queue,
                                 "command_history": [command],
                                 "running": True,
                                 "log_file": session_log_file,
