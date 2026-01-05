@@ -4402,21 +4402,71 @@ class ChatAgent(BaseAgent):
             bool: True if any tool call is complete, False otherwise.
         """
 
+        def _new_tool_call_entry() -> Dict[str, Any]:
+            return {
+                'id': '',
+                'type': 'function',
+                'function': {'name': '', 'arguments': ''},
+                'extra_content': None,
+                'complete': False,
+            }
+
+        def _make_unique_key(base_key: Any) -> Any:
+            if base_key not in accumulated_tool_calls:
+                return base_key
+            suffix = 1
+            while f"{base_key}:{suffix}" in accumulated_tool_calls:
+                suffix += 1
+            return f"{base_key}:{suffix}"
+
         for delta_tool_call in tool_call_deltas:
-            index = delta_tool_call.index
+            index = getattr(delta_tool_call, 'index', None)
             tool_call_id = getattr(delta_tool_call, 'id', None)
+            entry_key = index if index is not None else tool_call_id
+            if entry_key is None:
+                for candidate_key, candidate_entry in (
+                    accumulated_tool_calls.items()
+                ):
+                    if (
+                        isinstance(candidate_entry, dict)
+                        and not candidate_entry.get('complete', False)
+                    ):
+                        entry_key = candidate_key
+                        break
+                if entry_key is None:
+                    entry_key = 'tool_call'
 
             # Initialize tool call entry if not exists
-            if index not in accumulated_tool_calls:
-                accumulated_tool_calls[index] = {
-                    'id': '',
-                    'type': 'function',
-                    'function': {'name': '', 'arguments': ''},
-                    'extra_content': None,
-                    'complete': False,
-                }
+            if entry_key not in accumulated_tool_calls:
+                accumulated_tool_calls[entry_key] = _new_tool_call_entry()
 
-            tool_call_entry = accumulated_tool_calls[index]
+            tool_call_entry = accumulated_tool_calls[entry_key]
+            existing_id = tool_call_entry.get('id')
+            has_new_payload = False
+            if (
+                hasattr(delta_tool_call, 'function')
+                and delta_tool_call.function
+            ):
+                if (
+                    delta_tool_call.function.name
+                    or delta_tool_call.function.arguments
+                ):
+                    has_new_payload = True
+
+            id_changed = (
+                tool_call_id is not None
+                and existing_id
+                and tool_call_id != existing_id
+            )
+            if id_changed or (tool_call_entry.get('complete') and has_new_payload):
+                # Start a new tool call entry when a new ID appears or
+                # when a complete call is followed by new payload.
+                moved_key = _make_unique_key(
+                    f"{entry_key}:{existing_id or 'prev'}"
+                )
+                accumulated_tool_calls[moved_key] = tool_call_entry
+                accumulated_tool_calls[entry_key] = _new_tool_call_entry()
+                tool_call_entry = accumulated_tool_calls[entry_key]
 
             # Accumulate tool call data
             if tool_call_id:
