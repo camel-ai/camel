@@ -4424,13 +4424,13 @@ class ChatAgent(BaseAgent):
             tool_call_id = getattr(delta_tool_call, 'id', None)
             entry_key = index if index is not None else tool_call_id
             if entry_key is None:
-                for candidate_key, candidate_entry in (
-                    accumulated_tool_calls.items()
-                ):
-                    if (
-                        isinstance(candidate_entry, dict)
-                        and not candidate_entry.get('complete', False)
-                    ):
+                for (
+                    candidate_key,
+                    candidate_entry,
+                ) in accumulated_tool_calls.items():
+                    if isinstance(
+                        candidate_entry, dict
+                    ) and not candidate_entry.get('complete', False):
                         entry_key = candidate_key
                         break
                 if entry_key is None:
@@ -4458,7 +4458,9 @@ class ChatAgent(BaseAgent):
                 and existing_id
                 and tool_call_id != existing_id
             )
-            if id_changed or (tool_call_entry.get('complete') and has_new_payload):
+            if id_changed or (
+                tool_call_entry.get('complete') and has_new_payload
+            ):
                 # Start a new tool call entry when a new ID appears or
                 # when a complete call is followed by new payload.
                 moved_key = _make_unique_key(
