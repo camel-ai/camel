@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
+import inspect
 import os
 import re
 from abc import ABC, abstractmethod
@@ -573,7 +574,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, Stream):
+        if isinstance(result, Stream) or inspect.isgenerator(result):
             return _SyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )
@@ -628,7 +629,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, AsyncStream):
+        if isinstance(result, AsyncStream) or inspect.isasyncgen(result):
             return _AsyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )
