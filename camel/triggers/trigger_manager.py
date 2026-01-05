@@ -32,7 +32,7 @@ class CallbackHandlerType(Enum):
     """Enum defining types of callback handlers for trigger events"""
 
     WORKFORCE = "workforce"
-    CHATAGENT = "chatagent"
+    CHAT_AGENT = "chat_agent"
     NONE = "none"
 
 
