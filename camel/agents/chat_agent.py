@@ -4462,7 +4462,7 @@ class ChatAgent(BaseAgent):
                 # Start a new tool call entry when a new ID appears or
                 # when a complete call is followed by new payload.
                 moved_key = _make_unique_key(
-                    f"{entry_key}:{existing_id or 'prev'}"
+                    f"{entry_key}:{existing_id or 'no-id'}"
                 )
                 accumulated_tool_calls[moved_key] = tool_call_entry
                 accumulated_tool_calls[entry_key] = _new_tool_call_entry()
