@@ -2784,6 +2784,11 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
+        # Set agent_id in thread-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+
         # Set Langfuse session_id using agent_id for trace grouping
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -2978,6 +2983,10 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
+        # Set agent_id in thread-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3015,6 +3024,10 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
+        # Set agent_id in thread-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3232,10 +3245,15 @@ class ChatAgent(BaseAgent):
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
             self.record_message(output_messages[0])
+        elif len(output_messages) == 0:
+            logger.warning(
+                "No messages returned in `step()`. The model returned an "
+                "empty response."
+            )
         else:
             logger.warning(
-                "Multiple messages returned in `step()`. Record "
-                "selected message manually using `record_message()`."
+                f"{len(output_messages)} messages returned in `step()`. "
+                "Record selected message manually using `record_message()`."
             )
 
     @observe()

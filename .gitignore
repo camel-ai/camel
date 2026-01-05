@@ -442,6 +442,8 @@ benchmark/gaia/results.jsonl
 camel/toolkits/hybrid_browser_toolkit/ts/dist/
 camel/toolkits/hybrid_browser_toolkit/ts/node_modules/
 camel/toolkits/hybrid_browser_toolkit/ts/User_Data/
+camel_logs_run_1
+playwright_traces
 
 # npm/yarn logs
 npm-debug.log*

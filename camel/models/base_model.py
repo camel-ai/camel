@@ -399,6 +399,8 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         import json
         from datetime import datetime
 
+        from camel.utils.agent_context import get_current_agent_id
+
         os.makedirs(self._log_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
@@ -407,6 +409,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         log_entry = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
+            "agent_id": get_current_agent_id(),
             "request": {"messages": messages},
         }
 
