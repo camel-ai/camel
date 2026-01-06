@@ -535,42 +535,12 @@ class GeminiModel(OpenAICompatibleModel):
 
         return result
 
-    def _is_empty_response(self, response: ChatCompletion) -> bool:
-        r"""Check if the response is empty (no content and no tool calls).
-
-        Gemini sometimes returns empty responses with finish_reason="stop"
-        but no actual content or tool calls. This method detects such cases.
-
-        Args:
-            response: The chat completion response to check.
-
-        Returns:
-            True if the response is empty, False otherwise.
-        """
-        if not response.choices:
-            return True
-
-        choice = response.choices[0]
-        has_content = (
-            choice.message.content is not None
-            and choice.message.content.strip() != ""
-        )
-        has_tool_calls = bool(choice.message.tool_calls)
-
-        return not has_content and not has_tool_calls
-
     def _request_chat_completion(
         self,
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         import copy
-        import logging
-        import time
-
-        logger = logging.getLogger(__name__)
-        max_empty_retries = 3
-        retry_delay = 1.0  # seconds
 
         request_config = copy.deepcopy(self.model_config_dict)
         # Remove strict and anyOf from each tool's function parameters since
@@ -613,37 +583,13 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        # Retry loop for empty responses
-        for attempt in range(max_empty_retries + 1):
-            response = self._client.chat.completions.create(
-                messages=messages,
-                model=self.model_type,
-                **request_config,
-            )
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
-            # For streaming responses, return immediately (can't check content)
-            if isinstance(response, Stream):
-                return self._preserve_thought_signatures(response)  # type: ignore[return-value]
-
-            # Check if response has content
-            if not self._is_empty_response(response):
-                return self._preserve_thought_signatures(response)  # type: ignore[return-value]
-
-            # Empty response - retry if attempts remain
-            if attempt < max_empty_retries:
-                logger.warning(
-                    f"Gemini returned empty response (attempt {attempt + 1}/"
-                    f"{max_empty_retries + 1}), retrying..."
-                )
-                time.sleep(retry_delay * (attempt + 1))  # Exponential backoff
-            else:
-                logger.error(
-                    f"Gemini returned empty response after "
-                    f"{max_empty_retries + 1} attempts. This may indicate a "
-                    "content filtering issue or context length problem."
-                )
-
-        # Return the last response even if empty
+        # Preserve thought signatures from the response for future requests
         return self._preserve_thought_signatures(response)  # type: ignore[return-value]
 
     async def _arequest_chat_completion(
@@ -651,13 +597,7 @@ class GeminiModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        import asyncio
         import copy
-        import logging
-
-        logger = logging.getLogger(__name__)
-        max_empty_retries = 3
-        retry_delay = 1.0  # seconds
 
         request_config = copy.deepcopy(self.model_config_dict)
         # Remove strict and anyOf from each tool's function parameters since
@@ -700,37 +640,11 @@ class GeminiModel(OpenAICompatibleModel):
 
             request_config["tools"] = tools
 
-        # Retry loop for empty responses
-        for attempt in range(max_empty_retries + 1):
-            response = await self._async_client.chat.completions.create(
-                messages=messages,
-                model=self.model_type,
-                **request_config,
-            )
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
-            # For streaming responses, return immediately (can't check content)
-            if isinstance(response, AsyncStream):
-                return self._preserve_thought_signatures(response)  # type: ignore[return-value]
-
-            # Check if response has content
-            if not self._is_empty_response(response):
-                return self._preserve_thought_signatures(response)  # type: ignore[return-value]
-
-            # Empty response - retry if attempts remain
-            if attempt < max_empty_retries:
-                logger.warning(
-                    f"Gemini returned empty response (attempt {attempt + 1}/"
-                    f"{max_empty_retries + 1}), retrying..."
-                )
-                await asyncio.sleep(
-                    retry_delay * (attempt + 1)
-                )  # Exponential backoff
-            else:
-                logger.error(
-                    f"Gemini returned empty response after "
-                    f"{max_empty_retries + 1} attempts. This may indicate a "
-                    "content filtering issue or context length problem."
-                )
-
-        # Return the last response even if empty
+        # Preserve thought signatures from the response for future requests
         return self._preserve_thought_signatures(response)  # type: ignore[return-value]
