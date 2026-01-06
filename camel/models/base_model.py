@@ -403,15 +403,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         agent_id = get_current_agent_id()
 
-        # Parse agent_id to create subdirectory structure
-        # Format: task_1_gemini_3_pro_run1 -> task_1/
-        log_subdir = self._log_dir
-        if agent_id and agent_id.startswith("task_"):
-            parts = agent_id.split("_")
-            if len(parts) >= 2:
-                base_task_id = "_".join(parts[:2])  # e.g., "task_1"
-                log_subdir = os.path.join(self._log_dir, base_task_id)
-
+        log_subdir = (
+            os.path.join(self._log_dir, agent_id) if agent_id else self._log_dir
+        )
         os.makedirs(log_subdir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
