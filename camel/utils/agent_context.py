@@ -11,25 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-r"""Async-safe agent context management.
-
-This module provides a simple way to track the current agent ID
-across the call stack without passing it explicitly.
-
-Uses contextvars.ContextVar instead of threading.local() to ensure
-correct behavior in asyncio environments where multiple coroutines
-may run concurrently on the same thread.
-"""
-
 from contextvars import ContextVar
 from typing import Optional
 
-# ContextVar is async-safe and maintains separate values for each
-# asyncio task/coroutine, unlike threading.local() which shares
-# state across all coroutines on the same thread.
-_agent_id_var: ContextVar[Optional[str]] = ContextVar(
-    'agent_id', default=None
-)
+_agent_id_var: ContextVar[Optional[str]] = ContextVar('agent_id', default=None)
 
 
 def set_current_agent_id(agent_id: str) -> None:

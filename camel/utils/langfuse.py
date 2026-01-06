@@ -19,8 +19,7 @@ from camel.logger import get_logger
 from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
-# Context-local storage for agent session IDs
-# Uses ContextVar instead of threading.local() for async-safety
+
 _agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
     'agent_session_id', default=None
 )

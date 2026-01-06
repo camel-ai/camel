@@ -404,7 +404,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         agent_id = get_current_agent_id()
 
         log_subdir = (
-            os.path.join(self._log_dir, agent_id) if agent_id else self._log_dir
+            os.path.join(self._log_dir, agent_id)
+            if agent_id
+            else self._log_dir
         )
         os.makedirs(log_subdir, exist_ok=True)
 
