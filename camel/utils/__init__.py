@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .agent_context import get_current_agent_id, set_current_agent_id
 from .commons import (
     AgentOpsMeta,
     BatchProcessor,
@@ -44,7 +45,6 @@ from .commons import (
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
-from .agent_context import get_current_agent_id, set_current_agent_id
 from .langfuse import (
     configure_langfuse,
     get_current_agent_session_id,

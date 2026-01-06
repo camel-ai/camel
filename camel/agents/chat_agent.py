@@ -410,7 +410,10 @@ class ChatAgent(BaseAgent):
             directly return the request instead of processing it.
             (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
-            :obj:`ResponseTerminator` bind to one chat agent.
+            :obj:`ResponseTerminator` to check if task is complete. When set,
+            the agent will keep prompting the model until a terminator signals
+            completion. Note: You must define the termination signal (e.g.,
+            a keyword) in your system prompt so the model knows what to output.
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
@@ -2946,18 +2949,14 @@ class ChatAgent(BaseAgent):
                     )
                     break
 
-                # Add a continuation prompt to memory
+                # Add a continuation prompt to memory as a user message
                 continue_message = BaseMessage(
                     role_name="user",
                     role_type=RoleType.USER,
-                    content=(
-                        "You haven't completed the task yet. Please continue "
-                        "working on it. Remember to output the completion "
-                        "signal when you have finished all tasks."
-                    ),
+                    content="Please continue.",
                     meta_dict={},
                 )
-                self.record_message(continue_message)
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
                 continue
 
             # No terminators configured, use original behavior
@@ -3225,18 +3224,14 @@ class ChatAgent(BaseAgent):
                     )
                     break
 
-                # Add a continuation prompt to memory
+                # Add a continuation prompt to memory as a user message
                 continue_message = BaseMessage(
                     role_name="user",
                     role_type=RoleType.USER,
-                    content=(
-                        "You haven't completed the task yet. Please continue "
-                        "working on it. Remember to output the completion "
-                        "signal when you have finished all tasks."
-                    ),
+                    content="Please continue.",
                     meta_dict={},
                 )
-                self.record_message(continue_message)
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
                 continue
 
             # No terminators configured, use original behavior
