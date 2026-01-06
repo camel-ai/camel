@@ -87,6 +87,7 @@ def configure_langfuse(
     if not enabled:
         _langfuse_configured = False
         logger.info("Langfuse tracing disabled for CAMEL models")
+        return
 
     logger.debug(
         f"Configuring Langfuse - enabled: {enabled}, "

@@ -2784,7 +2784,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
-        # Set agent_id in thread-local storage for logging
+        # Set agent_id in context-local storage for logging
         from camel.utils.agent_context import set_current_agent_id
 
         set_current_agent_id(self.agent_id)
@@ -3024,7 +3024,7 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
-        # Set agent_id in thread-local storage for logging
+        # Set agent_id in context-local storage for logging
         from camel.utils.agent_context import set_current_agent_id
 
         set_current_agent_id(self.agent_id)
@@ -3065,7 +3065,7 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
-        # Set agent_id in thread-local storage for logging
+        # Set agent_id in context-local storage for logging
         from camel.utils.agent_context import set_current_agent_id
 
         set_current_agent_id(self.agent_id)

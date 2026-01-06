@@ -44,6 +44,7 @@ from .commons import (
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
+from .agent_context import get_current_agent_id, set_current_agent_id
 from .langfuse import (
     configure_langfuse,
     get_current_agent_session_id,
@@ -113,4 +114,6 @@ __all__ = [
     "observe",
     "update_current_observation",
     "get_langfuse_status",
+    "get_current_agent_id",
+    "set_current_agent_id",
 ]
