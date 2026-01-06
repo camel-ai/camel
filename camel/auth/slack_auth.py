@@ -164,7 +164,7 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
         """
         # Slack tokens don't have automatic refresh mechanism
         # Would need to implement OAuth2 flow for proper token refresh
-        logger.info("Slack tokens do not support automatic refresh")
+        logger.warning("Slack tokens do not support automatic refresh")
         return False
 
     def verify_signature(
@@ -180,10 +180,12 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
             bool: True if signature is valid, False otherwise
         """
         if not self.signing_secret:
-            logger.warning(
-                "No Slack signing secret configured, skipping verification"
+            logger.warning("No Slack signing secret configured")
+            raise AuthenticationError(
+                "No Slack signing secret configured",
+                provider_name=self.provider_name,
+                auth_type=self.auth_type,
             )
-            return True
 
         try:
             # Get required headers (case-insensitive lookup)
@@ -219,6 +221,9 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
             logger.error(f"Error verifying Slack webhook signature: {e}")
             return False
 
+    # ================================================================
+    # WebhookAuth methods
+    # ================================================================
     def verify_webhook_request(self, request: Any, raw_body: bytes) -> bool:
         """Verify the webhook request signature (compatibility method).
 
