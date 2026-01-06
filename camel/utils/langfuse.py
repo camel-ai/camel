@@ -12,15 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import threading
+from contextvars import ContextVar
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
-# Thread-local storage for agent session IDs
-_local = threading.local()
+# Context-local storage for agent session IDs
+# Uses ContextVar instead of threading.local() for async-safety
+_agent_session_id_var: ContextVar[Optional[str]] = ContextVar(
+    'agent_session_id', default=None
+)
 
 # Global flag to track if Langfuse has been configured
 _langfuse_configured = False
@@ -118,23 +121,28 @@ def is_langfuse_available() -> bool:
 
 
 def set_current_agent_session_id(session_id: str) -> None:
-    r"""Set the session ID for the current agent in thread-local storage.
+    r"""Set the session ID for the current agent in context-local storage.
+
+    This is safe to use in both sync and async contexts.
+    In async contexts, each coroutine maintains its own value.
 
     Args:
         session_id(str): The session ID to set for the current agent.
     """
-
-    _local.agent_session_id = session_id
+    _agent_session_id_var.set(session_id)
 
 
 def get_current_agent_session_id() -> Optional[str]:
-    r"""Get the session ID for the current agent from thread-local storage.
+    r"""Get the session ID for the current agent from context-local storage.
+
+    This is safe to use in both sync and async contexts.
+    In async contexts, returns the value for the current coroutine.
 
     Returns:
         Optional[str]: The session ID for the current agent.
     """
     if is_langfuse_available():
-        return getattr(_local, 'agent_session_id', None)
+        return _agent_session_id_var.get()
     return None
 
 

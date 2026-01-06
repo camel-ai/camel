@@ -2920,6 +2920,47 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content=(
+                        "You haven't completed the task yet. Please continue "
+                        "working on it. Remember to output the completion "
+                        "signal when you have finished all tasks."
+                    ),
+                    meta_dict={},
+                )
+                self.record_message(continue_message)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         self._format_response_if_needed(response, response_format)
@@ -3158,6 +3199,47 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content=(
+                        "You haven't completed the task yet. Please continue "
+                        "working on it. Remember to output the completion "
+                        "signal when you have finished all tasks."
+                    ),
+                    meta_dict={},
+                )
+                self.record_message(continue_message)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         await self._aformat_response_if_needed(response, response_format)

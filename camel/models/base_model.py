@@ -401,15 +401,26 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         from camel.utils.agent_context import get_current_agent_id
 
-        os.makedirs(self._log_dir, exist_ok=True)
+        agent_id = get_current_agent_id()
+
+        # Parse agent_id to create subdirectory structure
+        # Format: task_1_gemini_3_pro_run1 -> task_1/
+        log_subdir = self._log_dir
+        if agent_id and agent_id.startswith("task_"):
+            parts = agent_id.split("_")
+            if len(parts) >= 2:
+                base_task_id = "_".join(parts[:2])  # e.g., "task_1"
+                log_subdir = os.path.join(self._log_dir, base_task_id)
+
+        os.makedirs(log_subdir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        log_file_path = os.path.join(self._log_dir, f"conv_{timestamp}.json")
+        log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
         log_entry = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
-            "agent_id": get_current_agent_id(),
+            "agent_id": agent_id,
             "request": {"messages": messages},
         }
 

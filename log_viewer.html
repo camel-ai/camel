@@ -1035,7 +1035,10 @@
         // Build agent traces from logs
         function buildAgentTraces(logs) {
             const traces = {};
+            // Use a Set to track tool call IDs we've already added (avoid duplicates)
+            const seenToolCallIds = new Set();
 
+            // First pass: collect all tool calls from responses only
             for (const log of logs) {
                 const agentId = log.agent_id || 'unknown';
                 if (!traces[agentId]) {
@@ -1050,19 +1053,27 @@
 
                 traces[agentId].calls.push(log);
 
-                // Extract tool calls from response
+                // Extract tool calls from response ONLY (not from request messages)
                 const toolCalls = log.response?.choices?.[0]?.message?.tool_calls || [];
                 for (const tc of toolCalls) {
+                    const tcId = tc.id;
+                    // Skip if we've already seen this tool call ID
+                    if (seenToolCallIds.has(tcId)) continue;
+                    seenToolCallIds.add(tcId);
+
                     traces[agentId].toolCalls.push({
                         timestamp: log.request_timestamp,
                         tool: tc.function?.name || 'unknown',
                         args: tc.function?.arguments || '{}',
-                        id: tc.id,
+                        id: tcId,
                         status: 'pending'
                     });
                 }
+            }
 
-                // Check tool responses in request messages
+            // Second pass: match tool results from request messages
+            // Tool results appear in SUBSEQUENT logs' request.messages
+            for (const log of logs) {
                 const messages = log.request?.messages || [];
                 for (const msg of messages) {
                     if (msg.role === 'tool') {
@@ -1073,7 +1084,6 @@
                         const isError = content.toLowerCase().includes('error') ||
                                        content.toLowerCase().includes('timeout') ||
                                        content.toLowerCase().includes('failed') ||
-                                       content.toLowerCase().includes('not found') ||
                                        content.toLowerCase().includes('exception');
 
                         // Find matching tool call and update status
@@ -1731,6 +1741,14 @@ ${escapeHtml(msg.content)}
 
                 // Build agent traces
                 agentTraces = buildAgentTraces(allLogs);
+
+                // Debug: log summary
+                let totalTC = 0;
+                for (const [agentId, trace] of Object.entries(agentTraces)) {
+                    totalTC += trace.toolCalls.length;
+                    console.log(`Agent ${agentId}: ${trace.toolCalls.length} tool calls`);
+                }
+                console.log(`Total: ${Object.keys(agentTraces).length} agents, ${totalTC} tool calls`);
 
                 renderStats(stats);
                 filteredLogs = [...allLogs];
