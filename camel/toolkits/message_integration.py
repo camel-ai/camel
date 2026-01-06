@@ -170,6 +170,11 @@ class ToolkitMessageIntegration:
         for tool in original_tools:
             method_name = tool.func.__name__
             enhanced_func = self._add_messaging_to_tool(tool.func)
+            # Preserve toolkit binding so cloned agents can detect/clone toolkits.
+            enhanced_func = self._create_bound_method_wrapper(
+                enhanced_func,
+                toolkit,
+            )
             enhanced_methods[method_name] = enhanced_func
             setattr(toolkit, method_name, enhanced_func)
         original_get_tools_method = toolkit.get_tools
