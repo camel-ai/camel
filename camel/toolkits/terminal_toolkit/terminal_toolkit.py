@@ -621,10 +621,11 @@ class TerminalToolkit(BaseToolkit):
             timeout (float, optional): The maximum time in seconds to
                 wait for the command to complete in blocking mode. If the
                 command does not complete within the timeout, it will be
-                restarted automatically as a non-blocking background session.
-                You can then use `shell_view(id)` to check output, or
-                `shell_kill_process(id)` to terminate it. This parameter is
-                ignored in non-blocking mode. (default: :obj:`20`)
+                converted to a tracked background session (process keeps
+                running without restart). You can then use `shell_view(id)`
+                to check output, or `shell_kill_process(id)` to terminate it.
+                This parameter is ignored in non-blocking mode.
+                (default: :obj:`20`)
 
         Returns:
             str: The output of the command execution, which varies by mode.
@@ -636,8 +637,6 @@ class TerminalToolkit(BaseToolkit):
                 `shell_write_to_process(id, "input")` to send input, and
                 `shell_kill_process(id)` to terminate.
         """
-        original_command = command
-
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
@@ -674,21 +673,73 @@ class TerminalToolkit(BaseToolkit):
 
             try:
                 if not self.use_docker_backend:
-                    # LOCAL BLOCKING
-                    result = subprocess.run(
+                    env_vars = os.environ.copy()
+                    env_vars["PYTHONUNBUFFERED"] = "1"
+                    proc = subprocess.Popen(
                         command,
-                        capture_output=True,
-                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        stdin=subprocess.PIPE,
                         shell=True,
-                        timeout=timeout,
+                        text=True,
                         cwd=self.working_dir,
                         encoding="utf-8",
+                        env=env_vars,
                     )
-                    stdout = result.stdout or ""
-                    stderr = result.stderr or ""
-                    output = stdout + (
-                        f"\nSTDERR:\n{stderr}" if stderr else ""
-                    )
+                    try:
+                        stdout, _ = proc.communicate(timeout=timeout)
+                        output = stdout or ""
+                    except subprocess.TimeoutExpired as e:
+                        if e.stdout:
+                            partial_output = (
+                                e.stdout.decode("utf-8", errors="ignore")
+                                if isinstance(e.stdout, bytes)
+                                else e.stdout
+                            )
+                        else:
+                            partial_output = ""
+
+                        session_log_file = os.path.join(
+                            self.log_dir, f"session_{session_id}.log"
+                        )
+                        self._write_to_log(
+                            session_log_file,
+                            f"--- Blocking command timed out, converted to "
+                            f"session at {time.ctime()} ---\n> {command}\n",
+                        )
+
+                        # Pre-populate output queue with partial output
+                        output_queue: Queue = Queue(maxsize=10000)
+                        if partial_output:
+                            output_queue.put(partial_output)
+
+                        with self._session_lock:
+                            self.shell_sessions[session_id] = {
+                                "id": session_id,
+                                "process": proc,
+                                "output_stream": output_queue,
+                                "command_history": [command],
+                                "running": True,
+                                "log_file": session_log_file,
+                                "backend": "local",
+                                "timeout_converted": True,
+                            }
+
+                        # Start reader thread to capture ongoing output
+                        self._start_output_reader_thread(session_id)
+
+                        self._write_to_log(
+                            self.blocking_log_file, log_entry + "\n"
+                        )
+                        return (
+                            f"Command did not complete within {timeout} "
+                            f"seconds. Process continues in background as "
+                            f"session '{session_id}'.\n\n"
+                            f"You can use:\n"
+                            f"  - shell_view('{session_id}') - get output\n"
+                            f"  - shell_kill_process('{session_id}') - "
+                            f"terminate"
+                        )
                 else:
                     # DOCKER BLOCKING with timeout
                     assert (
@@ -768,14 +819,6 @@ class TerminalToolkit(BaseToolkit):
                     return _to_plain(output)
                 else:
                     return "Command executed successfully (no output)."
-            except subprocess.TimeoutExpired:
-                # Timeout: restart as non-blocking mode
-                self._write_to_log(self.blocking_log_file, log_entry + "\n")
-                logger.warning(
-                    f"Command did not complete within {timeout} seconds. "
-                    f"Restarting as non-blocking session '{id}'."
-                )
-                return self.shell_exec(id, original_command, block=False)
             except Exception as e:
                 error_msg = f"Error executing command: {e}"
                 log_entry += f"--- Error ---\n{error_msg}\n"
@@ -1002,7 +1045,10 @@ class TerminalToolkit(BaseToolkit):
             return "".join(output)
         else:
             # For timeout-converted Docker sessions, check thread and output
-            if session.get("timeout_converted"):
+            if (
+                session.get("timeout_converted")
+                and session.get("backend") == "docker"
+            ):
                 exec_thread = session.get("exec_thread")
                 result_container = session.get("result_container", {})
 
@@ -1051,6 +1097,7 @@ class TerminalToolkit(BaseToolkit):
                 "too frequently)"
             )
 
+    @manual_timeout
     def shell_kill_process(self, id: str) -> str:
         r"""This function forcibly terminates a running non-blocking process.
 
