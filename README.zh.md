@@ -482,6 +482,38 @@ pip install camel-ai
 
 <br>
 
+## 致谢
+
+特别感谢 [Nomic AI](https://home.nomic.ai/) 为我们提供了其数据集探索工具（Atlas）的扩展访问权限。
+
+我们还要感谢 Haya Hammoud 设计了我们项目的初始徽标。
+
+我们实现了来自其他研究工作的优秀创意，供您构建、比较和定制智能体。如果您使用了其中的任何模块，请务必引用原始作品：
+- `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+
+- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
+
+- `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## 许可协议
+
+该源码遵循 Apache 2.0 许可证。
+
+## 引用
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+这是一个如何引用我们工作的示例：
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
+
 ## 社区与联系方式
 
 如需更多信息，请联系：[camel-ai@eigent.ai](mailto:camel-ai@eigent.ai)
@@ -496,36 +528,6 @@ pip install camel-ai
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## 引用
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
-## 致谢
-
-特别感谢 [Nomic AI](https://home.nomic.ai/) 为我们提供了其数据集探索工具（Atlas）的扩展访问权限。
-
-我们还要感谢 Haya Hammoud 设计了我们项目的初始徽标。
-
-我们实现了来自其他研究工作的优秀创意，供您构建、比较和定制智能体。如果您使用了其中的任何模块，请务必引用原始作品：
-- `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
-
-- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
-
-- `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
-
-
-## 许可协议
-
-该源码遵循 Apache 2.0 许可证。
 
 <br>
 

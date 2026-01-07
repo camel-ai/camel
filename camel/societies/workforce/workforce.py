@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
+from camel.models import BaseModelBackend, ModelManager
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
@@ -91,7 +91,6 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
 from .events import (
@@ -201,6 +200,11 @@ class Workforce(BaseNode):
             handle failed tasks. If None, workers will be created with default
             settings including SearchToolkit, CodeExecutionToolkit, and
             ThinkingToolkit. (default: :obj:`None`)
+        default_model (Optional[Union[BaseModelBackend, ModelManager]],
+            optional): Model backend or manager to use when creating default
+            coordinator, task, or dynamic worker agents. If None, agents
+            will be created using ModelPlatformType.DEFAULT and
+            ModelType.DEFAULT settings. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -311,6 +315,7 @@ class Workforce(BaseNode):
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
+        default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
@@ -327,6 +332,7 @@ class Workforce(BaseNode):
         ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
+        self.default_model = default_model
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
@@ -391,7 +397,10 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+            self.coordinator_agent = ChatAgent(
+                coord_agent_sys_msg,
+                model=self.default_model,
+            )
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -450,6 +459,7 @@ class Workforce(BaseNode):
             )
             self.task_agent = ChatAgent(
                 task_sys_msg,
+                model=self.default_model,
             )
         else:
             logger.info(
@@ -578,11 +588,19 @@ class Workforce(BaseNode):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         r"""Emit a worker-created event to all registered callbacks."""
+        if metadata is None:
+            _metadata: Dict[str, Any] = {
+                'description': worker_node.description
+            }
+        else:
+            _metadata = metadata.copy()
+            _metadata.setdefault("description", worker_node.description)
+
         event = WorkerCreatedEvent(
             worker_id=worker_node.node_id,
             worker_type=worker_type or type(worker_node).__name__,
             role=role or worker_node.description,
-            metadata=metadata,
+            metadata=_metadata,
         )
         for cb in self._callbacks:
             cb.log_worker_created(event)
@@ -4030,7 +4048,6 @@ class Workforce(BaseNode):
             new_node,
             worker_type='SingleAgentWorker',
             role=new_node_conf.role,
-            metadata={'description': new_node_conf.description},
         )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -4058,15 +4075,9 @@ class Workforce(BaseNode):
                 *ThinkingToolkit().get_tools(),
             ]
 
-            model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-                model_config_dict={"temperature": 0},
-            )
-
             return ChatAgent(
                 system_message=worker_sys_msg,
-                model=model,
+                model=self.default_model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
             )
@@ -4313,6 +4324,9 @@ class Workforce(BaseNode):
                             task_failed_event = TaskFailedEvent(
                                 task_id=task.id,
                                 worker_id=task.assigned_worker_id or "unknown",
+                                parent_task_id=task.parent.id
+                                if task.parent
+                                else None,
                                 error_message=task.result,
                                 metadata={
                                     'failure_reason': 'dependency_failure',
@@ -4388,6 +4402,7 @@ class Workforce(BaseNode):
         task_failed_event = TaskFailedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             error_message=detailed_error,
             metadata={
                 'failure_count': task.failure_count,
@@ -4658,6 +4673,7 @@ class Workforce(BaseNode):
         task_completed_event = TaskCompletedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
@@ -5256,6 +5272,30 @@ class Workforce(BaseNode):
 
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
+
+                            task_failed_event = TaskFailedEvent(
+                                task_id=returned_task.id,
+                                worker_id=returned_task.assigned_worker_id,
+                                parent_task_id=returned_task.parent.id
+                                if returned_task.parent
+                                else None,
+                                error_message=(
+                                    f"⚠️ Task {returned_task.id} "
+                                    f"failed quality check "
+                                    f"(score: {score}). "
+                                    f"Issues: {issues}. "
+                                    f"Recovery: {recovery_action}"
+                                ),
+                                metadata={
+                                    'failure_count': returned_task.failure_count,  # noqa: E501
+                                    'task_content': returned_task.content,
+                                    'result_length': len(returned_task.result)
+                                    if returned_task.result
+                                    else 0,
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
                             returned_task.state = TaskState.FAILED
                             returned_task.result = (
                                 f"Quality insufficient (score: "
@@ -5496,6 +5536,7 @@ class Workforce(BaseNode):
             new_worker_agent=self.new_worker_agent.clone(with_memory)
             if self.new_worker_agent
             else None,
+            default_model=self.default_model,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
