@@ -104,6 +104,7 @@ class TaskCompletedEvent(WorkforceEventBase):
     event_type: Literal["task_completed"] = "task_completed"
     task_id: str
     worker_id: str
+    parent_task_id: Optional[str] = None
     result_summary: Optional[str] = None
     processing_time_seconds: Optional[float] = None
     token_usage: Optional[Dict[str, int]] = None
@@ -112,6 +113,7 @@ class TaskCompletedEvent(WorkforceEventBase):
 class TaskFailedEvent(WorkforceEventBase):
     event_type: Literal["task_failed"] = "task_failed"
     task_id: str
+    parent_task_id: Optional[str] = None
     error_message: str
     worker_id: Optional[str] = None
 
