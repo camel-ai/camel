@@ -26,8 +26,9 @@ import asyncio
 from camel.logger import get_logger
 from camel.societies.workforce.workforce import Workforce
 from camel.triggers.base_trigger import TriggerEvent
+from camel.triggers.handlers.workforce_handler import WorkforceHandler
 from camel.triggers.schedule_trigger import DayOfWeek, ScheduleTrigger
-from camel.triggers.trigger_manager import CallbackHandlerType, TriggerManager
+from camel.triggers.trigger_manager import TriggerManager
 
 logger = get_logger(__name__)
 
@@ -58,7 +59,7 @@ async def main():
     # Setup
     workforce = Workforce("Scheduled Tasks")
     trigger_manager = TriggerManager(
-        handler_type=CallbackHandlerType.WORKFORCE, workforce=workforce
+        handler=WorkforceHandler(workforce=workforce)
     )
 
     # Health check every 2 minutes (for demo - normally would be longer)

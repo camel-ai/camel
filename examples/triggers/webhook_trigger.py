@@ -25,7 +25,8 @@ import asyncio
 from camel.logger import get_logger
 from camel.societies.workforce.workforce import Workforce
 from camel.triggers.base_trigger import TriggerEvent
-from camel.triggers.trigger_manager import CallbackHandlerType, TriggerManager
+from camel.triggers.handlers.workforce_handler import WorkforceHandler
+from camel.triggers.trigger_manager import TriggerManager
 from camel.triggers.webhook_trigger import WebhookTrigger
 
 logger = get_logger(__name__)
@@ -45,9 +46,8 @@ async def main():
     """Run a simple webhook trigger."""
     # Setup
     workforce = Workforce("Webhook Workforce")
-    trigger_manager = TriggerManager(
-        handler_type=CallbackHandlerType.WORKFORCE, workforce=workforce
-    )
+    handler = WorkforceHandler(workforce=workforce)
+    trigger_manager = TriggerManager(handler=handler)
 
     # Create webhook trigger
     webhook = WebhookTrigger(

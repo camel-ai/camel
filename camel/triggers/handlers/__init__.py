@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.triggers.handlers.callback_handler import CallbackHandler
 from camel.triggers.handlers.chat_agent_handler import ChatAgentHandler
+from camel.triggers.handlers.composite_handler import CompositeHandler
 from camel.triggers.handlers.trigger_event_handler import TriggerEventHandler
 from camel.triggers.handlers.workforce_handler import WorkforceHandler
 
@@ -21,4 +22,5 @@ __all__ = [
     "WorkforceHandler",
     "ChatAgentHandler",
     "CallbackHandler",
+    "CompositeHandler",
 ]

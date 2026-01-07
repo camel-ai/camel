@@ -24,7 +24,8 @@ from typing import Any, Dict
 from camel.auth import SlackAuth
 from camel.logger import get_logger
 from camel.triggers.base_trigger import TriggerEvent
-from camel.triggers.trigger_manager import CallbackHandlerType, TriggerManager
+from camel.triggers.handlers.chat_agent_handler import ChatAgentHandler
+from camel.triggers.trigger_manager import TriggerManager
 from camel.triggers.webhook_trigger import (
     HttpMethod,
     WebhookConfig,
@@ -120,9 +121,7 @@ async def main():
     slack_trigger.add_callback(event_handler.handle_event)
 
     # Trigger Manager
-    trigger_manager = TriggerManager(
-        handler_type=CallbackHandlerType.CHAT_AGENT
-    )
+    trigger_manager = TriggerManager(handler=ChatAgentHandler())
 
     try:
         # Initialize and activate the trigger
