@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
 from camel.agents.chat_agent import ChatAgent
@@ -129,8 +129,8 @@ Assistant: Here are your two most recent emails (newest first):
    Date: Tue, 22 Nov 2024 07:07:16 -0600
    Subject: Get an exclusive experience in Dubai
    Size: 87,767 bytes
-   Snippet: "WELCOME TO THE FAMILY HOUSE - A truly 
-   interactive experience... Join raffle on app to 
+   Snippet: "WELCOME TO THE FAMILY HOUSE - A truly
+   interactive experience... Join raffle on app to
    win an exclusive opportunity for you and 10 friends..."
 
 2) From: "Service Provider" <noreply@service-provider.com>
@@ -142,7 +142,7 @@ Assistant: Here are your two most recent emails (newest first):
     our Terms of Service... You can review the new terms here..."
 
 Would you like me to open/read either message in full, reply,
-archive/move, or delete one of them? If so, tell me which 
+archive/move, or delete one of them? If so, tell me which
 email (by number or ID) and the action.
 
 Sending test email...
