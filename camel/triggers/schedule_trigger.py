@@ -14,7 +14,7 @@
 import asyncio
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -28,12 +28,15 @@ try:
 except ImportError:
     HAS_CRONITER = False
 
+from camel.logger import get_logger
 from camel.triggers.base_trigger import (
     BaseTrigger,
     TriggerEvent,
     TriggerState,
     TriggerType,
 )
+
+logger = get_logger(__name__)
 
 
 class ScheduleType(Enum):
@@ -254,18 +257,23 @@ class ScheduleTrigger(BaseTrigger):
             If cron parsing fails, defaults to next minute as fallback.
         """
         try:
+            now = datetime.now()
+
             if HAS_CRONITER:
-                cron = croniter(self.cron_expression, datetime.now())
+                cron = croniter(self.cron_expression, now)
                 self.next_run_at = cron.get_next(datetime)
             else:
                 # Basic fallback for common patterns
                 self._calculate_next_run_basic()
         except Exception:
-            # Fallback: calculate next run in 1 minute if cron parsing fails
-            self.next_run_at = datetime.now().replace(second=0, microsecond=0)
-            self.next_run_at = self.next_run_at.replace(
-                minute=self.next_run_at.minute + 1
+            logger.warning(
+                "Failed to parse cron expression '%s'. Falling back to "
+                "next minute calculation.",
+                self.cron_expression,
             )
+            # Fallback: calculate next run in 1 minute if cron parsing fails
+            base_time = now.replace(second=0, microsecond=0)
+            self.next_run_at = base_time + timedelta(minutes=1)
 
     def _calculate_next_run_basic(self) -> None:
         """Basic cron calculation without croniter dependency.
@@ -294,22 +302,20 @@ class ScheduleTrigger(BaseTrigger):
             interval = int(minute[2:])
             next_minute = ((now.minute // interval) + 1) * interval
             if next_minute >= 60:
-                self.next_run_at = now.replace(
-                    hour=now.hour + 1,
-                    minute=next_minute - 60,
-                    second=0,
-                    microsecond=0,
+                # Use timedelta to properly handle hour and day rollovers
+                # e.g. 23:58 with interval 5 -> 0:00, 0:05 ... next day
+                base_time = now.replace(minute=0, second=0, microsecond=0)
+                self.next_run_at = base_time + timedelta(
+                    hours=1, minutes=next_minute - 60
                 )
             else:
                 self.next_run_at = now.replace(
                     minute=next_minute, second=0, microsecond=0
                 )
         else:
-            # Default: next minute
-            self.next_run_at = now.replace(second=0, microsecond=0)
-            self.next_run_at = self.next_run_at.replace(
-                minute=self.next_run_at.minute + 1
-            )
+            # Default: next minute - use timedelta to handle rollovers
+            base_time = now.replace(second=0, microsecond=0)
+            self.next_run_at = base_time + timedelta(minutes=1)
 
     async def activate(self) -> bool:
         """Activate the schedule trigger and start the scheduler thread.
