@@ -12,10 +12,20 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
+import inspect
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from openai.lib.streaming.chat import (
@@ -113,7 +123,10 @@ class _SyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: Stream[ChatCompletionChunk],
+        stream: Union[
+            Stream[ChatCompletionChunk],
+            Generator[ChatCompletionChunk, None, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
@@ -147,7 +160,10 @@ class _AsyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
@@ -573,7 +589,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, Stream):
+        if isinstance(result, Stream) or inspect.isgenerator(result):
             return _SyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )
@@ -628,7 +644,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, AsyncStream):
+        if isinstance(result, AsyncStream) or inspect.isasyncgen(result):
             return _AsyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )
