@@ -16,7 +16,16 @@ import inspect
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from openai.lib.streaming.chat import (
@@ -114,7 +123,10 @@ class _SyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: Stream[ChatCompletionChunk],
+        stream: Union[
+            Stream[ChatCompletionChunk],
+            Generator[ChatCompletionChunk, None, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
@@ -148,7 +160,10 @@ class _AsyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
