@@ -121,7 +121,7 @@ async def main():
 
     # Trigger Manager
     trigger_manager = TriggerManager(
-        handler_type=CallbackHandlerType.CHATAGENT
+        handler_type=CallbackHandlerType.CHAT_AGENT
     )
 
     try:

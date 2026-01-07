@@ -113,10 +113,10 @@ def test_trigger_manager_initialization_with_chat_agent():
     )
     chat_agent = ChatAgent(system_message="Test assistant", model=model)
     manager = TriggerManager(
-        handler_type=CallbackHandlerType.CHATAGENT, chat_agent=chat_agent
+        handler_type=CallbackHandlerType.CHAT_AGENT, chat_agent=chat_agent
     )
 
-    assert manager.handler_type == CallbackHandlerType.CHATAGENT
+    assert manager.handler_type == CallbackHandlerType.CHAT_AGENT
     assert manager.chat_agent is chat_agent
     assert manager.workforce is None
 
@@ -156,9 +156,9 @@ def test_trigger_manager_default_workforce_creation():
 
 
 def test_trigger_manager_default_chat_agent_creation():
-    """Test that default ChatAgent is created when handler type is CHATAGENT
+    """Test that default ChatAgent is created when handler type is CHAT_AGENT
     but no chat_agent provided"""
-    manager = TriggerManager(handler_type=CallbackHandlerType.CHATAGENT)
+    manager = TriggerManager(handler_type=CallbackHandlerType.CHAT_AGENT)
 
     assert manager.chat_agent is not None
     assert isinstance(manager.chat_agent, ChatAgent)
@@ -238,7 +238,7 @@ def test_set_default_task():
 
 def test_set_default_prompt():
     """Test setting default prompt for ChatAgent processing"""
-    manager = TriggerManager(handler_type=CallbackHandlerType.CHATAGENT)
+    manager = TriggerManager(handler_type=CallbackHandlerType.CHAT_AGENT)
     prompt = "Process this trigger event carefully"
 
     manager.set_default_prompt(prompt)
@@ -350,14 +350,16 @@ async def test_handle_trigger_event_with_chat_agent():
     )
     chat_agent = ChatAgent(system_message="Test assistant", model=model)
     manager = TriggerManager(
-        handler_type=CallbackHandlerType.CHATAGENT, chat_agent=chat_agent
+        handler_type=CallbackHandlerType.CHAT_AGENT, chat_agent=chat_agent
     )
 
-    # Mock the chat_agent step method
+    # Mock the chat_agent astep method
     mock_response = MagicMock()
     mock_response.msg.content = "Processed response"
 
-    with patch.object(chat_agent, 'step', return_value=mock_response):
+    with patch.object(
+        chat_agent, 'astep', new_callable=AsyncMock, return_value=mock_response
+    ):
         event = TriggerEvent(
             trigger_id="test_trigger",
             trigger_type=TriggerType.CUSTOM,
@@ -515,7 +517,7 @@ async def test_handle_trigger_event_with_default_prompt():
     default_prompt = "Custom prompt template"
 
     manager = TriggerManager(
-        handler_type=CallbackHandlerType.CHATAGENT,
+        handler_type=CallbackHandlerType.CHAT_AGENT,
         chat_agent=chat_agent,
         default_prompt=default_prompt,
     )
@@ -524,7 +526,7 @@ async def test_handle_trigger_event_with_default_prompt():
     mock_response.msg.content = "Processed response"
 
     with patch.object(
-        chat_agent, 'step', return_value=mock_response
+        chat_agent, 'astep', new_callable=AsyncMock, return_value=mock_response
     ) as mock_step:
         event = TriggerEvent(
             trigger_id="test_trigger",
@@ -534,6 +536,9 @@ async def test_handle_trigger_event_with_default_prompt():
         )
 
         await manager._handle_trigger_event(event)
+
+        # Verify the astep method was called
+        mock_step.assert_called_once()
 
         # Verify the prompt included the default prompt template
         call_args = mock_step.call_args[0][0]

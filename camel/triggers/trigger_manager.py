@@ -43,14 +43,14 @@ class TriggerManager:
     Args:
         handler_type (Optional[CallbackHandlerType]): Type of callback
             handler to use for processing trigger events. Can be
-            WORKFORCE, CHATAGENT, or NONE. (default: :obj:`NONE`)
+            WORKFORCE, CHAT_AGENT, or NONE. (default: :obj:`NONE`)
         workforce (Optional[Workforce]): Workforce instance for processing
             trigger events when handler_type is WORKFORCE. If None and
             handler_type is WORKFORCE, a default Workforce will be
             created. (default: :obj:`None`)
         chat_agent (Optional[ChatAgent]): ChatAgent instance for
-            processing trigger events when handler_type is CHATAGENT. If
-            None and handler_type is CHATAGENT, a default ChatAgent will
+            processing trigger events when handler_type is CHAT_AGENT. If
+            None and handler_type is CHAT_AGENT, a default ChatAgent will
             be created. (default: :obj:`None`)
         database_adapter (Optional[DatabaseAdapter]): Database adapter for
             persisting trigger execution records and event logs.
@@ -107,7 +107,7 @@ class TriggerManager:
             if self.chat_agent is not None:
                 raise ValueError(
                     "Handler type is NONE but chat_agent instance was "
-                    "provided. Either set handler_type to CHATAGENT or "
+                    "provided. Either set handler_type to CHAT_AGENT or "
                     "remove chat_agent parameter."
                 )
 
@@ -118,7 +118,7 @@ class TriggerManager:
                 # Create default workforce with basic configuration
                 self.workforce = Workforce("Default Trigger Workforce")
                 logger.info("Created default Workforce for trigger handling")
-        elif self.handler_type == CallbackHandlerType.CHATAGENT:
+        elif self.handler_type == CallbackHandlerType.CHAT_AGENT:
             if self.chat_agent is None:
                 # Create default ChatAgent with basic configuration
                 model = ModelFactory.create(
@@ -151,7 +151,7 @@ class TriggerManager:
             trigger.workforce = self.workforce
             trigger.add_callback(self._handle_trigger_event)
         elif (
-            self.handler_type == CallbackHandlerType.CHATAGENT
+            self.handler_type == CallbackHandlerType.CHAT_AGENT
             and self.chat_agent
         ):
             trigger.add_callback(self._handle_trigger_event)
@@ -234,7 +234,7 @@ class TriggerManager:
                 self.workforce.stop_gracefully()
 
             elif (
-                self.handler_type == CallbackHandlerType.CHATAGENT
+                self.handler_type == CallbackHandlerType.CHAT_AGENT
                 and self.chat_agent
             ):
                 # Combine default prompt with event payload
@@ -251,7 +251,7 @@ class TriggerManager:
                     )
 
                 # Process with ChatAgent
-                response = self.chat_agent.step(prompt)
+                response = await self.chat_agent.astep(prompt)
                 result = response.msg.content
 
             # Save execution record

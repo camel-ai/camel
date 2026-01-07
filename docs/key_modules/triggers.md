@@ -78,7 +78,7 @@ from camel.agents import ChatAgent
 # Create agent and manager
 agent = ChatAgent(system_message="You are a helpful assistant.")
 manager = TriggerManager(
-    handler_type=CallbackHandlerType.CHATAGENT,
+    handler_type=CallbackHandlerType.CHAT_AGENT,
     chat_agent=agent,
     default_prompt="Process this event: {event_payload}"
 )
@@ -187,7 +187,7 @@ trigger = ScheduleTrigger.create_daily_trigger(
 )
 
 manager = TriggerManager(
-    handler_type=CallbackHandlerType.CHATAGENT,
+    handler_type=CallbackHandlerType.CHAT_AGENT,
     chat_agent=agent,
     default_prompt="Generate today's summary report."
 )
