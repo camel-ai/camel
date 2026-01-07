@@ -51,7 +51,7 @@ Sync stream wrapper with logging.
 ```python
 def __init__(
     self,
-    stream: Stream[ChatCompletionChunk],
+    stream: Union[Stream[ChatCompletionChunk], Generator[ChatCompletionChunk, None, None]],
     log_path: Optional[str],
     log_enabled: bool
 ):
@@ -114,7 +114,7 @@ Async stream wrapper with logging.
 ```python
 def __init__(
     self,
-    stream: AsyncStream[ChatCompletionChunk],
+    stream: Union[AsyncStream[ChatCompletionChunk], AsyncGenerator[ChatCompletionChunk, None]],
     log_path: Optional[str],
     log_enabled: bool
 ):

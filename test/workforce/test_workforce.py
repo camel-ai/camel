@@ -230,6 +230,7 @@ async def test_multiple_timeout_points():
     mock_task.additional_info = {}
     mock_task.result = "Mock task failed"
     mock_task.assigned_worker_id = "test_worker_id"
+    mock_task.parent = None
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
