@@ -419,9 +419,14 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         agent_id = get_current_agent_id()
 
+        # Remove _context_summarizer suffix to keep all logs in one directory
+        log_agent_id = agent_id
+        if agent_id and agent_id.endswith("_context_summarizer"):
+            log_agent_id = agent_id[: -len("_context_summarizer")]
+
         log_subdir = (
-            os.path.join(self._log_dir, agent_id)
-            if agent_id
+            os.path.join(self._log_dir, log_agent_id)
+            if log_agent_id
             else self._log_dir
         )
         os.makedirs(log_subdir, exist_ok=True)
