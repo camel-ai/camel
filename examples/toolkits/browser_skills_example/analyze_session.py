@@ -279,9 +279,9 @@ def analyze_session(session_dir: str):
         print(f"Error: Session directory not found: {session_dir}")
         return
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"ANALYZING SESSION: {session_path.name}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     # Find files
     main_log_file = session_path / "complete_browser_log.log"
@@ -301,6 +301,27 @@ def analyze_session(session_dir: str):
         'get_page_snapshot',
         'get_som_screenshot',
     }
+
+    # Load task description from agent communication log if available
+    task_description = ''
+    website = ''
+    start_url = ''
+    toolkit_session_id: Optional[str] = None
+    task_start: Optional[str] = None
+    agent_comm_log_file = session_path / "agent_communication_log.json"
+    if agent_comm_log_file.exists():
+        try:
+            with open(agent_comm_log_file, 'r', encoding='utf-8') as f:
+                agent_comm_data = json.load(f)
+                task_description = agent_comm_data.get('task_description', '')
+                website = agent_comm_data.get('website', '') or ''
+                start_url = agent_comm_data.get('start_url', '') or ''
+                toolkit_session_id = agent_comm_data.get('toolkit_session_id')
+                task_start = agent_comm_data.get('task_start')
+        except Exception as e:
+            print(
+                f"⚠️  Warning: Could not read task description from agent log: {e}"
+            )
 
     # Load main log
     main_actions = load_main_log(str(main_log_file))
@@ -525,22 +546,13 @@ def analyze_session(session_dir: str):
                 }
             )
 
-    # Load task description from agent communication log if available
-    task_description = ''
-    agent_comm_log_file = session_path / "agent_communication_log.json"
-    if agent_comm_log_file.exists():
-        try:
-            with open(agent_comm_log_file, 'r', encoding='utf-8') as f:
-                agent_comm_data = json.load(f)
-                task_description = agent_comm_data.get('task_description', '')
-        except Exception as e:
-            print(
-                f"⚠️  Warning: Could not read task description from agent log: {e}"
-            )
-
     # Save timeline with task description
     timeline_output = {
         'task_description': task_description,
+        'website': website,
+        'start_url': start_url,
+        'toolkit_session_id': toolkit_session_id,
+        'task_start': task_start,
         'timeline': timeline,
     }
 

@@ -211,10 +211,22 @@ class WebVoyagerRunner:
             print(f"\n💡 Previous suggestions:\n{previous_suggestions}")
         print()
 
-        # Create agent
+        website = (task.get('web_name') or '').strip()
+        if not website:
+            return {
+                'task_id': task_id,
+                'attempt': attempt,
+                'success': False,
+                'error': 'Missing required field: web_name',
+            }
+
+        start_url = (task.get('web') or '').strip() or None
+
         agent = SubtaskAgent(
             subtask_config_dir=self.subtask_config_dir,
             use_agent_recovery=True,
+            website=website,
+            start_url=start_url,
         )
 
         try:

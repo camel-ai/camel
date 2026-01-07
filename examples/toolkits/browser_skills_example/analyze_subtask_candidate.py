@@ -542,8 +542,11 @@ def analyze_with_agent(
         task_description = timeline_data.get(
             'task_description', 'No description available'
         )
+        website = timeline_data.get('website', '') or ''
 
     print(f"Task: {task_description}\n")
+    if website:
+        print(f"Website: {website}\n")
 
     # Step 3: Load existing subtasks
     print("Step 3: Loading existing subtasks...")
@@ -645,6 +648,7 @@ def analyze_with_agent(
                 new_subtasks=new_subtasks,
                 session_folder=session_folder,
                 task_description=task_description,
+                website=website,
             )
 
             print(

@@ -28,7 +28,10 @@ The agent is instructed to prefer reusable subtask functions when available.
 
 import asyncio
 import json
+import shutil
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -39,7 +42,11 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
+from urllib.parse import urlparse
+from urllib.request import urlopen
+
 from utils import (
+    create_default_model,
     extract_token_usage,
     get_timestamp_filename,
     get_timestamp_iso,
@@ -55,6 +62,130 @@ DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
 DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
 
 load_dotenv()
+
+WEBSITE_GUIDELINES: Dict[str, str] = {
+    "allrecipes": "\n".join(
+        [
+            "- Target site: Allrecipes",
+            "- Use the site search to find the recipe/page relevant to the task",
+            "- Prefer opening the actual recipe page before extracting information",
+            "- If asked about reviews: scroll to the Reviews section and identify the latest review (most recent date/time)",
+            "- When multiple similar recipes exist, choose the one that best matches the exact recipe title requested",
+        ]
+    ),
+    "google flights": "\n".join(
+        [
+            "- Target site: Google Flights",
+            "- Enter origin/destination with city-level specificity, then press Enter to confirm",
+            "- For dates: click the date input first, type dates, press Enter to confirm and exit date picker",
+            "- If a Search button is visible, ensure required fields are filled and then click Search",
+        ]
+    ),
+    "amazon": "\n".join(
+        [
+            "- Target site: Amazon",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Prefer the site's search box over external search",
+            "- Use filters (department, price, rating, Prime) when applicable",
+        ]
+    ),
+    "apple": "\n".join(
+        [
+            "- Target site: Apple",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use site navigation/menus to reach the relevant product/support page",
+            "- Prefer official product specs pages when extracting details",
+        ]
+    ),
+    "arxiv": "\n".join(
+        [
+            "- Target site: ArXiv",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use ArXiv search and filter/sort when needed (date, relevance)",
+            "- Open the paper abstract page before extracting title/authors/links",
+        ]
+    ),
+    "bbc news": "\n".join(
+        [
+            "- Target site: BBC News",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use site search or section navigation to locate the article",
+            "- Open the specific article page before extracting details",
+        ]
+    ),
+    "booking": "\n".join(
+        [
+            "- Target site: Booking.com",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Fill required fields carefully (destination, dates, guests)",
+            "- Use filters/sorting to find the best match",
+        ]
+    ),
+    "cambridge dictionary": "\n".join(
+        [
+            "- Target site: Cambridge Dictionary",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use the dictionary search box to find the word/phrase",
+            "- Extract the relevant sense/definition matching the question context",
+        ]
+    ),
+    "coursera": "\n".join(
+        [
+            "- Target site: Coursera",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use the site search and filters (level, language, duration) when helpful",
+            "- Open the course page before extracting details (instructor, syllabus, ratings)",
+        ]
+    ),
+    "espn": "\n".join(
+        [
+            "- Target site: ESPN",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use site navigation/search to locate the relevant sport/team/game",
+            "- Prefer official boxscore or recap pages for factual details",
+        ]
+    ),
+    "github": "\n".join(
+        [
+            "- Target site: GitHub",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use repository search/issues/pulls tabs as appropriate",
+            "- Open the specific file/issue/PR page before extracting details",
+        ]
+    ),
+    "google map": "\n".join(
+        [
+            "- Target site: Google Maps",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use the search box to find places and then open the place details panel",
+            "- Confirm address/hours/ratings from the place details panel",
+        ]
+    ),
+    "google search": "\n".join(
+        [
+            "- Target site: Google Search",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Refine the query if results are not relevant",
+            "- Open the most relevant result in a new tab before extracting details",
+        ]
+    ),
+    "huggingface": "\n".join(
+        [
+            "- Target site: Hugging Face",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Use the search box and filters (models, datasets, spaces) as needed",
+            "- Open the specific model/dataset page before extracting details",
+        ]
+    ),
+    "wolfram alpha": "\n".join(
+        [
+            "- Target site: Wolfram Alpha",
+            "- Start by calling browser_get_page_snapshot to see where you are",
+            "- Enter the query precisely and run it",
+            "- Extract the relevant result pod(s) matching the question",
+        ]
+    ),
+}
 
 
 class SubtaskFunction:
@@ -116,9 +247,9 @@ class SubtaskFunction:
                 'variables_used'
             ].append(kwargs)
 
-        print(f"\n{'🎯 ' + '='*78}")
+        print(f"\n{'🎯 ' + '=' * 78}")
         print(f"EXECUTING SUBTASK: {self.name}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"📋 Subtask ID: {self.subtask_id}")
         print(f"📝 Description: {self.description}")
 
@@ -268,7 +399,7 @@ class SubtaskFunction:
                 self.replayer.replay_actions_log.clear()
 
             print("\n✅ SUBTASK COMPLETED SUCCESSFULLY")
-            print(f"{'='*80}\n")
+            print(f"{'=' * 80}\n")
 
             self.last_result = result
             return result
@@ -276,7 +407,7 @@ class SubtaskFunction:
         except Exception as e:
             print("\n❌ SUBTASK EXECUTION FAILED")
             print(f"   Error: {e!s}")
-            print(f"{'='*80}\n")
+            print(f"{'=' * 80}\n")
 
             import traceback
 
@@ -304,9 +435,7 @@ class SubtaskFunction:
         if self.variables:
             for var_name, var_config in self.variables.items():
                 parameters["properties"][var_name] = {
-                    "type": "string"
-                    if var_config['type'] in ['string', 'date']
-                    else "string",
+                    "type": "string",
                     "description": var_config['description'],
                 }
                 parameters["required"].append(var_name)
@@ -329,6 +458,9 @@ class SubtaskAgent:
     def __init__(
         self,
         subtask_config_dir: str,
+        *,
+        website: str,
+        start_url: str | None = None,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
     ):
@@ -338,10 +470,18 @@ class SubtaskAgent:
             subtask_config_dir: Path to directory containing subtask configuration JSON files
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
+            website: Website name (e.g., "Allrecipes", "Google Flights")
+            start_url: Optional URL to navigate to before executing tasks
         """
         self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
+        self.website = website.strip()
+        if not self.website:
+            raise ValueError(
+                "website is required (non-empty). Pass `website=` (or `--web-name`)."
+            )
+        self.start_url = start_url.strip() if start_url else None
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
@@ -354,6 +494,7 @@ class SubtaskAgent:
 
         # Session log directory for this run
         self.session_timestamp = get_timestamp_filename()
+        self.toolkit_session_id = f"{self.session_timestamp}_{uuid.uuid4().hex[:8]}"
         self.session_log_dir: Optional[Path] = None
 
         # Base directory for session logs
@@ -361,6 +502,7 @@ class SubtaskAgent:
 
         # Store current user task (actual task being executed)
         self.current_user_task = None
+        self.task_start_iso: Optional[str] = None
 
         # Statistics tracking
         self.stats = {
@@ -383,9 +525,6 @@ class SubtaskAgent:
         self.system_prompt = None
         self.tool_definitions = []
 
-        # Store current user task (actual task being executed)
-        self.current_user_task = None
-
     def _load_subtask_configs(self):
         """Load all subtask configuration files from the directory."""
         if not self.subtask_config_dir.exists():
@@ -406,8 +545,8 @@ class SubtaskAgent:
                 f"Path is not a directory: {self.subtask_config_dir}"
             )
 
-        # Find all JSON files in the directory
-        config_files = sorted(self.subtask_config_dir.glob("*.json"))
+        # Find all subtask config files in the directory
+        config_files = sorted(self.subtask_config_dir.glob("*_subtasks.json"))
 
         if not config_files:
             print(
@@ -426,14 +565,29 @@ class SubtaskAgent:
             with open(config_file, 'r', encoding='utf-8') as f:
                 config = json.load(f)
 
-            log_file = config.get('log_file')
-            if not log_file:
-                print(f"  ⚠️  Skipping {config_file.name}: no 'log_file' field")
+            subtasks = config.get('subtasks', [])
+            if not isinstance(subtasks, list) or not subtasks:
+                print(
+                    f"  ⚠️  Skipping {config_file.name}: missing/empty 'subtasks'"
+                )
                 continue
 
-            subtasks = config.get('subtasks', [])
+            log_file = config.get('log_file')
+            if not log_file:
+                # Allow configs that embed actions directly in subtasks
+                has_embedded_actions = any(
+                    bool(st.get('actions'))
+                    for st in subtasks
+                    if isinstance(st, dict)
+                )
+                if not has_embedded_actions:
+                    print(
+                        f"  ⚠️  Skipping {config_file.name}: no 'log_file' and no embedded 'actions'"
+                    )
+                    continue
+
             print(
-                f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}"
+                f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name if log_file else '<embedded actions>'}"
             )
 
             self.subtask_configs.append((log_file, config))
@@ -451,6 +605,67 @@ class SubtaskAgent:
             self.subtask_configs[0][1] if self.subtask_configs else {}
         )
 
+    async def close(self) -> None:
+        """Cleanup toolkit resources for this run.
+
+        In CDP mode, this disconnects the toolkit without closing the browser.
+        """
+        if not self.toolkit:
+            return
+
+        try:
+            await self.toolkit.disconnect_websocket()
+        except AttributeError:
+            print(
+                "⚠️  Python Toolkit does not have disconnect_websocket method"
+            )
+        except Exception as e:
+            print(f"⚠️  Toolkit cleanup failed: {e}")
+        finally:
+            self.toolkit = None
+
+    def _get_website_guidelines(self) -> str:
+        """Return website-specific browsing guidelines (match-or-fail)."""
+        website = self.website.lower()
+        try:
+            return WEBSITE_GUIDELINES[website]
+        except KeyError as e:
+            known = ", ".join(sorted(WEBSITE_GUIDELINES))
+            raise ValueError(
+                f"Unsupported website: {self.website!r}. Add it to WEBSITE_GUIDELINES. Known: {known}"
+            ) from e
+
+    async def _pre_navigate_if_needed(self) -> None:
+        """Optionally navigate to start_url to keep tasks website-agnostic."""
+        if not self.toolkit or not self.start_url:
+            return
+
+        try:
+            tabs = await self.toolkit.browser_get_tab_info()
+            current_url = None
+            if isinstance(tabs, list):
+                for tab in tabs:
+                    if isinstance(tab, dict) and tab.get("is_current"):
+                        current_url = tab.get("url")
+                        break
+
+            if (not current_url) or current_url == "about:blank":
+                print(
+                    f"\n🌐 Pre-navigate: current URL is blank, visiting {self.start_url}"
+                )
+                await self.toolkit.browser_visit_page(self.start_url)
+                return
+
+            cur = urlparse(current_url)
+            tgt = urlparse(self.start_url)
+            if cur.netloc and tgt.netloc and cur.netloc != tgt.netloc:
+                print(
+                    f"\n🌐 Pre-navigate: switching domain {cur.netloc} → {tgt.netloc}"
+                )
+                await self.toolkit.browser_visit_page(self.start_url)
+        except Exception as e:
+            print(f"⚠️  Pre-navigation failed: {e}")
+
     async def initialize(self):
         """Initialize toolkit and agent."""
         print("=" * 80)
@@ -465,10 +680,13 @@ class SubtaskAgent:
         print(f"\n📁 Session log directory: {self.session_log_dir}")
         print("   All logs for this session will be saved here\n")
 
+        # Use a per-session browser log dir to avoid mixing logs across runs.
+        browser_log_dir = self.session_log_dir / "browser_log"
+        browser_log_dir.mkdir(parents=True, exist_ok=True)
+
         # Import ActionReplayer
         # sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'camel' / 'toolkits' / 'hybrid_browser_toolkit'))
         # Connect to browser - get browser endpoint, not page endpoint
-        from urllib.request import urlopen
 
         from replay_from_log import ActionReplayer
 
@@ -500,6 +718,7 @@ class SubtaskAgent:
             "browser_click",
             "browser_type",
             "browser_switch_tab",
+            "browser_get_tab_info",
             "browser_enter",
             "browser_get_page_snapshot",
             # "browser_get_som_screenshot",
@@ -510,14 +729,15 @@ class SubtaskAgent:
             # "browser_mouse_drag",
         ]
         # Initialize toolkit (single instance, shared by agent and replay)
-        browser_log_dir = str(DEFAULT_BROWSER_LOG_DIR)
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
             stealth=True,
             browser_log_to_file=True,
-            log_dir=browser_log_dir,  # Set log directory to hardcoded path
+            log_dir=str(browser_log_dir),
             viewport_limit=False,
+            session_id=self.toolkit_session_id,
+            connect_over_cdp=True,
             cdp_url=cdp_url,
             default_start_url=None,
             # cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
@@ -537,13 +757,13 @@ class SubtaskAgent:
             config_name = config.get('metadata', {}).get(
                 'subtask_type', 'unknown'
             )
-            print(f"\n📦 Processing config: {Path(log_file).name}")
+            print(
+                f"\n📦 Processing config: {Path(log_file).name if log_file else '<embedded actions>'}"
+            )
             print(f"   Type: {config_name}")
 
             # Save config to temp file for ActionReplayer
             # (ActionReplayer expects a file path, not a dict)
-            import tempfile
-
             with tempfile.NamedTemporaryFile(
                 mode='w', suffix='.json', delete=False, encoding='utf-8'
             ) as temp_config:
@@ -560,6 +780,10 @@ class SubtaskAgent:
                 if subtask_id in self.subtask_functions:
                     print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
                     continue
+
+                if not log_file:
+                    print(f"  ⚠️  Subtask {subtask_id} has no log file")
+                    raise ValueError(f"Subtask {subtask_id} has no log file")
 
                 # Create replayer instance for this subtask
                 replayer = ActionReplayer(
@@ -617,18 +841,7 @@ class SubtaskAgent:
         print("CREATING CHAT AGENT")
         print("=" * 80)
 
-        # Create model with parallel_tool_calls disabled
-        from camel.models import ModelFactory
-        from camel.types import ModelPlatformType, ModelType
-
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.AZURE,
-            model_type=ModelType.GPT_4_1,
-            model_config_dict={
-                "temperature": 0.0,
-                "parallel_tool_calls": False,
-            },
-        )
+        model = create_default_model()
 
         print("✓ Model created")
 
@@ -728,7 +941,11 @@ async def subtask_{subtask_func.subtask_id}():
 """
 
             # Execute the code to create the function
-            local_vars = {"_sf": subtask_func, "_agent": self}
+            local_vars = {
+                "_sf": subtask_func,
+                "_agent": self,
+                "get_timestamp_iso": get_timestamp_iso,
+            }
             exec(func_code, local_vars)
             wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
 
@@ -750,9 +967,7 @@ async def subtask_{subtask_func.subtask_id}():
             role_name="Browser Automation Agent", content=self.system_prompt
         )
 
-        self.agent = ChatAgent(
-            model=model, tools=all_tools, system_message=system_message
-        )
+        self.agent = ChatAgent(model=model, tools=all_tools, system_message=system_message)
 
         print("✓ Agent created successfully with system prompt")
 
@@ -791,6 +1006,35 @@ async def subtask_{subtask_func.subtask_id}():
         # Build prompt parts dynamically
         prompt_parts = []
 
+        # Base prompt (always)
+        prompt_parts.extend(
+            [
+                "You are a browser automation agent.",
+                "",
+                "MANDATORY RULES:",
+                "1. You MUST use browser tools to complete the task. Do not answer from memory.",
+                "2. Your FIRST action MUST be calling browser_get_page_snapshot.",
+                "3. If you are not on the target website, navigate there using browser_visit_page.",
+                "4. After key actions (navigation/click/type), call browser_get_page_snapshot to verify state.",
+                "",
+            ]
+        )
+
+        if self.website:
+            prompt_parts.append(f"WEBSITE NAME: {self.website}")
+        if self.start_url:
+            prompt_parts.append(f"START URL: {self.start_url}")
+        if self.website or self.start_url:
+            prompt_parts.append("")
+
+        prompt_parts.extend(
+            [
+                "WEBSITE-SPECIFIC GUIDELINES:",
+                self._get_website_guidelines(),
+                "",
+            ]
+        )
+
         if has_subtasks:
             # Generate subtask list
             subtask_list = "\n".join(
@@ -804,13 +1048,9 @@ async def subtask_{subtask_func.subtask_id}():
                     for sid, sf in self.subtask_functions.items()
                 ]
             )
-            print("subtask_list", subtask_list)
-
             # Agent with subtasks
             prompt_parts.extend(
                 [
-                    "You are a browser automation agent with access to both high-level subtask functions and low-level browser tools.",
-                    "",
                     "AVAILABLE SUBTASK FUNCTIONS (PREFER THESE WHEN APPLICABLE):",
                     subtask_list,
                     "",
@@ -836,10 +1076,6 @@ async def subtask_{subtask_func.subtask_id}():
                     "   - Use low-level browser tools to fix the issue",
                     "   - Ask for clarification",
                     "",
-                    "TASK DESCRIPTION:",
-                    self.subtask_config.get(
-                        'task_description', 'Complete browser automation tasks'
-                    ),
                     "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
                     "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",
                     "",
@@ -849,34 +1085,13 @@ async def subtask_{subtask_func.subtask_id}():
             # Agent without subtasks - simpler prompt
             prompt_parts.extend(
                 [
-                    "You are a browser automation agent with access to low-level browser tools.",
-                    "",
                     "GUIDELINES:",
                     "1. Use the available browser tools to complete the task step by step",
                     "2. Always verify the current state of the page before taking actions",
                     "3. If an action fails, analyze the page state and adjust your approach",
                     "",
-                    "TASK DESCRIPTION:",
-                    self.subtask_config.get(
-                        'task_description', 'Complete browser automation tasks'
-                    ),
-                    "",
                 ]
             )
-
-        # Common guidelines (apply to both cases)
-        prompt_parts.extend(
-            [
-                """
-- All tasks are to be performed on Google Flights
-- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).
-- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.
-- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input, press Enter again to exit the date selection field, and then press Enter once more to initiate the search.
-- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.
-
-            """
-            ]
-        )
 
         return "\n".join(prompt_parts)
 
@@ -888,6 +1103,7 @@ async def subtask_{subtask_func.subtask_id}():
         """
         # Store the current user task for logging
         self.current_user_task = user_task
+        self.task_start_iso = get_timestamp_iso()
 
         print("\n" + "=" * 80)
         print("AGENT EXECUTION")
@@ -900,7 +1116,7 @@ async def subtask_{subtask_func.subtask_id}():
         print("=" * 80)
 
         # Log the user task
-        timestamp = get_timestamp_iso()
+        timestamp = self.task_start_iso
 
         communication_entry = {
             'timestamp': timestamp,
@@ -911,9 +1127,13 @@ async def subtask_{subtask_func.subtask_id}():
             'tokens': {'prompt': 0, 'completion': 0, 'total': 0},
         }
 
+        await self._pre_navigate_if_needed()
+
         # Use astep like hybrid_browser_toolkit_example.py
         print("\nSending task to agent...")
-        response = await self.agent.astep(user_task)
+        task_with_context = f"{user_task}\n\nTARGET WEBSITE:\n- web_name: {self.website}\n- web: {self.start_url or ''}\n"
+
+        response = await self.agent.astep(task_with_context)
 
         # Log the response
         if response.msgs:
@@ -995,6 +1215,10 @@ async def subtask_{subtask_func.subtask_id}():
 
         # Find the browser log file
         browser_log_dir = DEFAULT_BROWSER_LOG_DIR
+        if self.session_log_dir:
+            session_browser_log_dir = self.session_log_dir / "browser_log"
+            if session_browser_log_dir.exists():
+                browser_log_dir = session_browser_log_dir
 
         if not browser_log_dir.exists():
             print("⚠️  Warning: Browser log directory not found")
@@ -1052,7 +1276,7 @@ async def subtask_{subtask_func.subtask_id}():
                         action = json.loads(json_str)
                         all_browser_actions.append(action)
                     except json.JSONDecodeError as e:
-                        print(f"⚠️  Failed to parse JSON object {i+1}: {e}")
+                        print(f"⚠️  Failed to parse JSON object {i + 1}: {e}")
                         # Show first 100 chars for debugging
                         print(f"   Content preview: {json_str[:100]}")
                         continue
@@ -1067,6 +1291,15 @@ async def subtask_{subtask_func.subtask_id}():
         print(
             f"   Found {len(all_browser_actions)} total browser actions in log"
         )
+        if self.toolkit_session_id:
+            all_browser_actions = [
+                a
+                for a in all_browser_actions
+                if a.get('session_id') == self.toolkit_session_id
+            ]
+            print(
+                f"   Filtered to {len(all_browser_actions)} actions for session_id={self.toolkit_session_id}"
+            )
 
         # Load all subtask replay action logs from session directory
         replay_log_files = []
@@ -1257,7 +1490,11 @@ async def subtask_{subtask_func.subtask_id}():
 
         all_communications = {
             'session_start': get_timestamp_iso(),
+            'task_start': self.task_start_iso,
             'task_description': task_desc,
+            'website': self.website,
+            'start_url': self.start_url,
+            'toolkit_session_id': self.toolkit_session_id,
             'system_prompt': self.system_prompt,  # Add system prompt
             'tool_definitions': self.tool_definitions,  # Add tool definitions
             'communications': sorted_communications,  # All communications in chronological order
@@ -1323,7 +1560,9 @@ async def subtask_{subtask_func.subtask_id}():
 
         # Copy browser log to session directory
         if self.session_log_dir:
-            browser_log_dir = DEFAULT_BROWSER_LOG_DIR
+            browser_log_dir = self.session_log_dir / "browser_log"
+            if not browser_log_dir.exists():
+                browser_log_dir = DEFAULT_BROWSER_LOG_DIR
 
             if browser_log_dir.exists():
                 # Get the most recent browser log
@@ -1339,8 +1578,6 @@ async def subtask_{subtask_func.subtask_id}():
                     reverse=True,
                 )
                 if all_log_files:
-                    import shutil
-
                     browser_log_file = all_log_files[0]
                     dest_file = (
                         self.session_log_dir / "complete_browser_log.log"
@@ -1363,10 +1600,6 @@ async def subtask_{subtask_func.subtask_id}():
         print("\n" + "=" * 80)
         print("📊 GENERATING TIMELINE ANALYSIS")
         print("=" * 80)
-
-        # Import the analyze_session module
-        import sys
-        from pathlib import Path
 
         # Add the toolkits directory to path if needed
         toolkits_dir = Path(__file__).parent
@@ -1403,6 +1636,7 @@ async def main():
 
     # Create agent
     agent = SubtaskAgent(
+        website="google flights",
         subtask_config_dir=subtask_config_dir,
         use_agent_recovery=True,
     )
@@ -1428,13 +1662,13 @@ async def main():
         agent.save_communication_log()
 
     finally:
-        # Cleanup (similar to hybrid_browser_toolkit_example.py)
+        # Cleanup: stop Node/WebSocket wrapper to avoid hanging executor threads
         if agent.toolkit:
             print("\n" + "=" * 80)
             print("CLEANUP")
             print("=" * 80)
-            print("Closing browser...")
-            # Note: browser is already managed by CDP, no need to close
+            print("Disconnecting browser toolkit...")
+            await agent.close()
             print("✓ Cleanup completed")
 
 

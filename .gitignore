@@ -430,6 +430,10 @@ temp_files/
 benchmark/gaia/Dataset
 benchmark/gaia/results.jsonl
 
+# Examples
+examples/toolkits/session_logs/**
+context_files
+
 # Secret files for docker
 .container/.env
 
@@ -442,6 +446,7 @@ benchmark/gaia/results.jsonl
 camel/toolkits/hybrid_browser_toolkit/ts/dist/
 camel/toolkits/hybrid_browser_toolkit/ts/node_modules/
 camel/toolkits/hybrid_browser_toolkit/ts/User_Data/
+camel/toolkits/hybrid_browser_toolkit/ts/.playwright_installed
 
 # npm/yarn logs
 npm-debug.log*

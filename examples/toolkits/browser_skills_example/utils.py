@@ -11,37 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501
 """Common utility functions for subtask toolkit."""
 
 import datetime
 import json
 from typing import Any, Dict, List, Optional
 
+from modeling import create_default_model
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 
 
 # === Model & Agent Creation ===
-def create_gpt4_model(temperature: float = 0.0):
-    """
-    Create standard GPT-4 model.
-
-    Args:
-        temperature: Model temperature (default: 0.0)
-
-    Returns:
-        Configured GPT-4 model
-    """
-    return ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type=ModelType.GPT_4_1,
-        model_config_dict={"temperature": temperature},
-    )
-
-
 def create_chat_agent(
     role_name: str,
     system_content: str,
@@ -61,7 +43,7 @@ def create_chat_agent(
         Configured ChatAgent
     """
     if model is None:
-        model = create_gpt4_model()
+        model = create_default_model()
 
     system_message = BaseMessage.make_assistant_message(
         role_name=role_name, content=system_content

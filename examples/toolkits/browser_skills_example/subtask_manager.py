@@ -180,6 +180,7 @@ class SubtaskManager:
         new_subtasks: List[Dict[str, Any]],
         session_folder: str,
         task_description: str,
+        website: str | None = None,
     ) -> str:
         """
         Add new subtasks to a new config file.
@@ -243,6 +244,7 @@ class SubtaskManager:
                 "total_subtasks": len(cleaned_subtasks),
                 "created_from": "subtask_candidate_analyzer",
                 "source_session": session_folder,
+                "subtask_type": website or "",
             },
         }
 

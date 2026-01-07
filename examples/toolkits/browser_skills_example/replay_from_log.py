@@ -42,7 +42,7 @@ project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(script_dir))
 
-from utils import create_gpt4_model, extract_token_usage, get_timestamp_iso
+from utils import create_default_model, extract_token_usage, get_timestamp_iso
 
 from camel.agents import ChatAgent
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
@@ -618,20 +618,13 @@ class ActionReplayer:
         if not self.use_agent_recovery or self.recovery_agent is not None:
             return
 
-        print("\n" + "=" * 80)
-        print("INITIALIZING RECOVERY AGENT")
-        print("=" * 80)
-
         # Create model
-        model = create_gpt4_model()
+        model = create_default_model()
 
         # Create agent with toolkit
         self.recovery_agent = ChatAgent(
             model=model, tools=self.toolkit.get_tools() if self.toolkit else []
         )
-
-        print("✓ Recovery agent initialized")
-        print()
 
     async def agent_recovery(
         self,
@@ -669,7 +662,7 @@ Description: {subtask['description']}
         # Build action history
         history_text = "\n".join(
             [
-                f"{i+1}. {act['action']} on element '{act['label']}'"
+                f"{i + 1}. {act['action']} on element '{act['label']}'"
                 for i, act in enumerate(
                     self.action_history[-5:]
                 )  # Last 5 actions
@@ -801,7 +794,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         inputs = action.get('inputs', {})
         args = inputs.get('args', [])
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Replaying action: {action_name}")
         print(f"Original args: {args}")
 
