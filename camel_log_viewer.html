@@ -1173,7 +1173,7 @@
             for (const [model, data] of sortedModels) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><span class="model-badge ${getModelBadgeClass(model)}">${model}</span></td>
+                    <td><span class="model-badge ${getModelBadgeClass(model)}">${escapeHtml(model)}</span></td>
                     <td>${formatNumber(data.calls)}</td>
                     <td>${formatNumber(data.inputTokens)}</td>
                     <td>${formatNumber(data.outputTokens)}</td>
@@ -1225,7 +1225,7 @@
 
             callsChart.innerHTML = sortedByCalls.map(([model, data]) => `
                 <div class="bar-item">
-                    <div class="bar-label">${model}</div>
+                    <div class="bar-label">${escapeHtml(model)}</div>
                     <div class="bar-track">
                         <div class="bar-fill ${getBarClass(model)}" style="width: ${(data.calls / maxCalls * 100)}%"></div>
                         <span class="bar-value">${formatNumber(data.calls)}</span>
@@ -1235,7 +1235,7 @@
 
             costChart.innerHTML = sortedByCost.map(([model, data]) => `
                 <div class="bar-item">
-                    <div class="bar-label">${model}</div>
+                    <div class="bar-label">${escapeHtml(model)}</div>
                     <div class="bar-track">
                         <div class="bar-fill ${getBarClass(model)}" style="width: ${(data.totalCost / maxCost * 100)}%"></div>
                         <span class="bar-value">${formatCurrency(data.totalCost)}</span>
@@ -1396,11 +1396,11 @@
                 });
 
                 html += `
-                    <div class="agent-card" data-agent="${agentId}">
+                    <div class="agent-card" data-agent="${escapeHtml(agentId)}">
                         <div class="agent-header">
                             <div>
-                                <span class="model-badge ${getModelBadgeClass(trace.model)}">${trace.model}</span>
-                                <span class="agent-id">${agentId}</span>
+                                <span class="model-badge ${getModelBadgeClass(trace.model)}">${escapeHtml(trace.model || '')}</span>
+                                <span class="agent-id">${escapeHtml(agentId)}</span>
                             </div>
                             <div class="agent-stats">
                                 <span class="agent-stat calls">🔧 ${filteredToolCalls.length} calls</span>
@@ -1412,19 +1412,21 @@
                             </div>
                         </div>
                         <div class="trace-timeline" style="display: none;">
-                            ${sortedToolCalls.map(tc => `
-                                <div class="trace-item ${tc.status}">
-                                    <div class="trace-time">${tc.timestamp ? new Date(tc.timestamp).toLocaleTimeString() : ''}</div>
+                            ${sortedToolCalls.map(tc => {
+                                const safeStatus = (tc.status || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                                return `
+                                <div class="trace-item ${safeStatus}">
+                                    <div class="trace-time">${tc.timestamp ? escapeHtml(new Date(tc.timestamp).toLocaleTimeString()) : ''}</div>
                                     <div class="trace-content">
                                         <div class="trace-tool">
-                                            ${tc.tool}
-                                            <span class="status-badge ${tc.status}">${tc.status.toUpperCase()}</span>
+                                            ${escapeHtml(tc.tool || '')}
+                                            <span class="status-badge ${safeStatus}">${escapeHtml((tc.status || '').toUpperCase())}</span>
                                         </div>
                                         <div class="trace-args">${escapeHtml(tc.args.substring(0, 200))}${tc.args.length > 200 ? '...' : ''}</div>
-                                        ${tc.result ? `<div class="trace-result ${tc.status === 'error' ? 'error' : ''}">${escapeHtml(tc.result)}</div>` : ''}
+                                        ${tc.result ? `<div class="trace-result ${safeStatus === 'error' ? 'error' : ''}">${escapeHtml(tc.result)}</div>` : ''}
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </div>
                 `;
@@ -1521,15 +1523,15 @@
                 return `
                     <div class="log-item" data-index="${startIdx + idx}">
                         <div class="log-header">
-                            <span class="model-badge ${getModelBadgeClass(log.model)}">${log.model}</span>
-                            <span class="log-time">${timestamp}</span>
+                            <span class="model-badge ${getModelBadgeClass(log.model)}">${escapeHtml(log.model || '')}</span>
+                            <span class="log-time">${escapeHtml(timestamp)}</span>
                         </div>
                         <div class="log-tokens">
                             <span class="token-info input">⬆️ ${formatNumber(usage.prompt_tokens || 0)}</span>
                             <span class="token-info output">⬇️ ${formatNumber(usage.completion_tokens || 0)}</span>
                             <span class="token-info" style="color: #f472b6;">💰 ${formatCurrency(cost.total)}</span>
                         </div>
-                        <p style="margin-top: 10px; color: #94a3b8; font-size: 0.85rem;">${preview}</p>
+                        <p style="margin-top: 10px; color: #94a3b8; font-size: 0.85rem;">${escapeHtml(preview)}</p>
                     </div>
                 `;
             }).join('');
@@ -1606,12 +1608,12 @@
                 <div class="detail-section">
                     <div class="detail-section-title">ℹ️ Metadata</div>
                     <div class="message-box">
-<strong>Model:</strong> ${log.model}
-<strong>Agent ID:</strong> ${log.agent_id || 'N/A'}
-<strong>File:</strong> ${log._filename}
-<strong>Request Time:</strong> ${log.request_timestamp}
-<strong>Response Time:</strong> ${log.response_timestamp}
-<strong>Response ID:</strong> ${log.response?.id || 'N/A'}
+<strong>Model:</strong> ${escapeHtml(log.model || '')}
+<strong>Agent ID:</strong> ${escapeHtml(log.agent_id || 'N/A')}
+<strong>File:</strong> ${escapeHtml(log._filename || '')}
+<strong>Request Time:</strong> ${escapeHtml(log.request_timestamp || '')}
+<strong>Response Time:</strong> ${escapeHtml(log.response_timestamp || '')}
+<strong>Response ID:</strong> ${escapeHtml(log.response?.id || 'N/A')}
                     </div>
                 </div>
 
@@ -1619,7 +1621,7 @@
                     <div class="detail-section-title">📝 Request Messages</div>
                     ${messages.filter(msg => msg.content && msg.content.trim()).map((msg, i) => `
                         <div class="message-box" style="margin-bottom: 10px;">
-                            <strong style="color: ${msg.role === 'user' ? '#60a5fa' : msg.role === 'tool' ? '#fbbf24' : '#34d399'};">[${msg.role}]</strong>
+                            <strong style="color: ${msg.role === 'user' ? '#60a5fa' : msg.role === 'tool' ? '#fbbf24' : '#34d399'};">[${escapeHtml(msg.role || '')}]</strong>
 ${escapeHtml(msg.content)}
                         </div>
                     `).join('')}
