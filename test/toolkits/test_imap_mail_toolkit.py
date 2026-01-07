@@ -142,9 +142,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
                     "INBOX", readonly=True
                 )
                 mock_imap.search.assert_called_once()
-                mock_imap.fetch.assert_called_once_with(
-                    b"1", "(BODY.PEEK[])"
-                )
+                mock_imap.fetch.assert_called_once_with(b"1", "(BODY.PEEK[])")
 
     @patch.object(IMAPMailToolkit, '_get_imap_connection')
     def test_fetch_emails_with_filters(self, mock_get_imap):
@@ -242,9 +240,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
                 mock_imap.select.assert_called_once_with(
                     "INBOX", readonly=True
                 )
-                mock_imap.fetch.assert_called_once_with(
-                    "123", "(BODY.PEEK[])"
-                )
+                mock_imap.fetch.assert_called_once_with("123", "(BODY.PEEK[])")
 
     @patch.object(IMAPMailToolkit, '_get_imap_connection')
     def test_get_email_by_id_fetch_failure(self, mock_get_imap):

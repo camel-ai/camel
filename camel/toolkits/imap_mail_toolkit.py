@@ -234,9 +234,7 @@ class IMAPMailToolkit(BaseToolkit):
     def _ensure_imap_ok(self, status: str, action: str) -> None:
         r"""Ensure IMAP status is OK, otherwise raise a ConnectionError."""
         if status != IMAP_RETURN_STATUS.OK.value:
-            raise ConnectionError(
-                f"IMAP {action} failed with status {status}"
-            )
+            raise ConnectionError(f"IMAP {action} failed with status {status}")
 
     def fetch_emails(
         self,
@@ -295,9 +293,7 @@ class IMAPMailToolkit(BaseToolkit):
             emails: List[Dict[str, Any]] = []
             for email_id in email_ids:
                 try:
-                    status, msg_data = imap.fetch(
-                        email_id, "(BODY.PEEK[])"
-                    )
+                    status, msg_data = imap.fetch(email_id, "(BODY.PEEK[])")
                     if (
                         status == IMAP_RETURN_STATUS.OK.value
                         and msg_data
