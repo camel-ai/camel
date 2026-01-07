@@ -11,17 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from .base import (
-    AuthenticationError,
-    AuthenticationProvider,
-    AuthenticationType,
-)
-from .slack_auth import SlackAuth
+from camel.triggers.handlers.callback_handler import CallbackHandler
+from camel.triggers.handlers.chat_agent_handler import ChatAgentHandler
+from camel.triggers.handlers.trigger_event_handler import TriggerEventHandler
+from camel.triggers.handlers.workforce_handler import WorkforceHandler
 
 __all__ = [
-    'AuthenticationProvider',
-    'AuthenticationType',
-    'AuthenticationError',
-    'SlackAuth',
+    "TriggerEventHandler",
+    "WorkforceHandler",
+    "ChatAgentHandler",
+    "CallbackHandler",
 ]
