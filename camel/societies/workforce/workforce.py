@@ -4324,6 +4324,9 @@ class Workforce(BaseNode):
                             task_failed_event = TaskFailedEvent(
                                 task_id=task.id,
                                 worker_id=task.assigned_worker_id or "unknown",
+                                parent_task_id=task.parent.id
+                                if task.parent
+                                else None,
                                 error_message=task.result,
                                 metadata={
                                     'failure_reason': 'dependency_failure',
@@ -4399,6 +4402,7 @@ class Workforce(BaseNode):
         task_failed_event = TaskFailedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             error_message=detailed_error,
             metadata={
                 'failure_count': task.failure_count,
@@ -4669,6 +4673,7 @@ class Workforce(BaseNode):
         task_completed_event = TaskCompletedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
@@ -5271,6 +5276,9 @@ class Workforce(BaseNode):
                             task_failed_event = TaskFailedEvent(
                                 task_id=returned_task.id,
                                 worker_id=returned_task.assigned_worker_id,
+                                parent_task_id=returned_task.parent.id
+                                if returned_task.parent
+                                else None,
                                 error_message=(
                                     f"⚠️ Task {returned_task.id} "
                                     f"failed quality check "
