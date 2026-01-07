@@ -78,6 +78,12 @@ class PrintCallback(WorkforceCallback):
             f"worker={event.worker_id}"
         )
 
+    def log_task_updated(self, event: TaskStartedEvent) -> None:
+        print(
+            f"[PrintCallback] task_updated: task={event.task_id}, "
+            f"worker={event.worker_id}"
+        )
+
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
         print(
             f"[PrintCallback] task_completed: task={event.task_id}, "

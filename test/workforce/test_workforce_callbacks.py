@@ -27,6 +27,7 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
     WorkforceEvent,
@@ -59,6 +60,9 @@ class _NonMetricsCallback(WorkforceCallback):
         self.events.append(event)
 
     def log_task_started(self, event: TaskStartedEvent) -> None:
+        self.events.append(event)
+
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
         self.events.append(event)
 
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
@@ -119,6 +123,9 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
         self.events.append(event)
 
     def log_task_started(self, event: TaskStartedEvent) -> None:
+        self.events.append(event)
+
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
         self.events.append(event)
 
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
