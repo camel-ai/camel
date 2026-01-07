@@ -1,6 +1,5 @@
-<a id="camel.toolkits.imap_toolkit"></a>
+<a id="camel.toolkits.imap_mail_toolkit"></a>
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit"></a>
 
 ## IMAPMailToolkit
 
@@ -12,7 +11,7 @@ A toolkit for IMAP email operations.
 
 This toolkit provides comprehensive email functionality including fetching emails with filtering options, retrieving specific emails by ID, sending emails via SMTP, replying to emails, moving emails to folders, and deleting emails. The toolkit implements connection pooling with automatic idle timeout to prevent resource leaks when used by LLM agents.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.__init__"></a>
+<a id="camel.toolkits.imap__mail_toolkit.IMAPMailToolkit.__init__"></a>
 
 ### **init**
 
@@ -43,7 +42,7 @@ Initialize the IMAP Mail Toolkit.
 - **timeout** (Optional[float]): The timeout for the toolkit operations. Defaults to `None`.
 - **connection_idle_timeout** (float): Maximum idle time (in seconds) before auto-closing connections. Defaults to `300.0` (5 minutes).
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.fetch_emails"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.fetch_emails"></a>
 
 ### fetch_emails
 
@@ -72,7 +71,7 @@ Fetch emails from a folder with optional filtering.
 
 List[Dict]: List of email dictionaries with metadata including id, subject, from, to, date, size, and body.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.get_email_by_id"></a>
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.get_email_by_id"></a>
 
 ### get_email_by_id
 
@@ -95,7 +94,7 @@ Retrieve a specific email by ID with full metadata.
 
 Dict: Email dictionary with complete metadata including id, subject, from, to, cc, bcc, date, message_id, reply_to, in_reply_to, references, priority, size, and body.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.send_email"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.send_email"></a>
 
 ### send_email
 
@@ -126,7 +125,7 @@ Send an email via SMTP.
 
 str: Success message indicating the email was sent successfully.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.reply_to_email"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.reply_to_email"></a>
 
 ### reply_to_email
 
@@ -153,7 +152,7 @@ Send a reply to an existing email.
 
 str: Success message indicating the reply was sent successfully.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.move_email_to_folder"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.move_email_to_folder"></a>
 
 ### move_email_to_folder
 
@@ -178,7 +177,7 @@ Move an email to a different folder.
 
 str: Success message indicating the email was moved successfully.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.delete_email"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.delete_email"></a>
 
 ### delete_email
 
@@ -203,7 +202,7 @@ Delete an email.
 
 str: Success message indicating the email was deleted or moved to trash.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.close"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.close"></a>
 
 ### close
 
@@ -215,7 +214,7 @@ Close all open connections.
 
 This method should be called when the toolkit is no longer needed to properly clean up network connections.
 
-<a id="camel.toolkits.imap_toolkit.IMAPMailToolkit.get_tools"></a>
+<a id="docs/reference/camel.toolkits.imap_mali_toolkit.md.get_tools"></a>
 
 ### get_tools
 

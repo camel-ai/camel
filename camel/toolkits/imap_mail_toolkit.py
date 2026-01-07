@@ -231,6 +231,13 @@ class IMAPMailToolkit(BaseToolkit):
             logger.error("Failed to connect to SMTP server: %s", e)
             raise
 
+    def _ensure_imap_ok(self, status: str, action: str) -> None:
+        r"""Ensure IMAP status is OK, otherwise raise a ConnectionError."""
+        if status != IMAP_RETURN_STATUS.OK.value:
+            raise ConnectionError(
+                f"IMAP {action} failed with status {status}"
+            )
+
     def fetch_emails(
         self,
         folder: Literal["INBOX"] = "INBOX",
@@ -258,7 +265,7 @@ class IMAPMailToolkit(BaseToolkit):
         """
         try:
             imap = self._get_imap_connection()
-            imap.select(folder)
+            imap.select(folder, readonly=True)
 
             # Build search criteria
             search_criteria = []
@@ -288,7 +295,9 @@ class IMAPMailToolkit(BaseToolkit):
             emails: List[Dict[str, Any]] = []
             for email_id in email_ids:
                 try:
-                    status, msg_data = imap.fetch(email_id, "(RFC822)")
+                    status, msg_data = imap.fetch(
+                        email_id, "(BODY.PEEK[])"
+                    )
                     if (
                         status == IMAP_RETURN_STATUS.OK.value
                         and msg_data
@@ -372,9 +381,9 @@ class IMAPMailToolkit(BaseToolkit):
         """
         try:
             imap = self._get_imap_connection()
-            imap.select(folder)
+            imap.select(folder, readonly=True)
 
-            status, msg_data = imap.fetch(email_id, "(RFC822)")
+            status, msg_data = imap.fetch(email_id, "(BODY.PEEK[])")
             if status != IMAP_RETURN_STATUS.OK.value:
                 raise ConnectionError(f"Failed to fetch email {email_id}")
 
@@ -440,6 +449,7 @@ class IMAPMailToolkit(BaseToolkit):
             bcc_recipients (List[str], optional): List of BCC
                 recipient email addresses
             html_body (str, optional): HTML version of email body
+            extra_headers (Dict[str, str], optional): Additional email headers
 
         Returns:
             str: Success message
@@ -563,14 +573,18 @@ class IMAPMailToolkit(BaseToolkit):
             imap = self._get_imap_connection()
 
             # Select source folder
-            imap.select(source_folder)
+            status, _ = imap.select(source_folder)
+            self._ensure_imap_ok(status, "select source folder")
 
             # Copy email to target folder
-            imap.copy(email_id, target_folder)
+            status, _ = imap.copy(email_id, target_folder)
+            self._ensure_imap_ok(status, "copy email")
 
             # Mark email as deleted in source folder
-            imap.store(email_id, '+FLAGS', '\\Deleted')
-            imap.expunge()
+            status, _ = imap.store(email_id, '+FLAGS', '\\Deleted')
+            self._ensure_imap_ok(status, "mark email as deleted")
+            status, _ = imap.expunge()
+            self._ensure_imap_ok(status, "expunge deleted email")
 
             logger.info(
                 "Successfully moved email %s from %s to %s",
@@ -607,24 +621,32 @@ class IMAPMailToolkit(BaseToolkit):
         """
         try:
             imap = self._get_imap_connection()
-            imap.select(folder)
+            status, _ = imap.select(folder)
+            self._ensure_imap_ok(status, "select folder")
 
             if permanent:
                 # Permanently delete
-                imap.store(email_id, '+FLAGS', '\\Deleted')
-                imap.expunge()
+                status, _ = imap.store(email_id, '+FLAGS', '\\Deleted')
+                self._ensure_imap_ok(status, "mark email as deleted")
+                status, _ = imap.expunge()
+                self._ensure_imap_ok(status, "expunge deleted email")
                 action = "permanently deleted"
             else:
                 # Move to trash (soft delete)
                 try:
-                    imap.copy(email_id, "Trash")
-                    imap.store(email_id, '+FLAGS', '\\Deleted')
-                    imap.expunge()
+                    status, _ = imap.copy(email_id, "Trash")
+                    self._ensure_imap_ok(status, "copy email to trash")
+                    status, _ = imap.store(email_id, '+FLAGS', '\\Deleted')
+                    self._ensure_imap_ok(status, "mark email as deleted")
+                    status, _ = imap.expunge()
+                    self._ensure_imap_ok(status, "expunge deleted email")
                     action = "moved to trash"
-                except imaplib.IMAP4.error:
+                except (imaplib.IMAP4.error, ConnectionError):
                     # If Trash folder doesn't exist, just mark as deleted
-                    imap.store(email_id, '+FLAGS', '\\Deleted')
-                    imap.expunge()
+                    status, _ = imap.store(email_id, '+FLAGS', '\\Deleted')
+                    self._ensure_imap_ok(status, "mark email as deleted")
+                    status, _ = imap.expunge()
+                    self._ensure_imap_ok(status, "expunge deleted email")
                     action = "marked as deleted"
 
             logger.info("Successfully %s email %s", action, email_id)
