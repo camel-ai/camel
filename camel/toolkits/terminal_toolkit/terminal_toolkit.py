@@ -19,6 +19,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from queue import Empty, Full, Queue
 from typing import Any, Dict, List, Optional
 
@@ -1050,36 +1051,6 @@ class TerminalToolkit(BaseToolkit):
                 "  - For long tasks: Check again later (don't poll "
                 "too frequently)"
             )
-    
-    def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
-        """
-        This function waits for a specified duration for a non-blocking process to produce
-        more output or terminate.
-
-        Args:
-            id (str): The unique session ID of the non-blocking process. This session ID
-                        must have been created previously using shell_exec() with block=False.
-            wait_seconds (float): The maximum number of seconds to wait.
-
-        Returns:
-            str: All output collected during the wait period.
-        """
-        if id not in self.shell_sessions:
-            return f"Error: No session found with ID '{id}'."
-
-        session = self.shell_sessions[id]
-        if not session["running"]:
-             return "Session is no longer running. Use shell_view to get final output."
-
-        output_collected = []
-        end_time = time.time() + wait_seconds
-        while time.time() < end_time and session["running"]:
-            new_output = self.shell_view(id)
-            if new_output:
-                output_collected.append(new_output)
-            time.sleep(0.2)
-
-        return "".join(output_collected)
 
     def shell_kill_process(self, id: str) -> str:
         r"""This function forcibly terminates a running non-blocking process.
@@ -1209,57 +1180,93 @@ class TerminalToolkit(BaseToolkit):
                     # Send input to the existing session
                     return self.shell_write_to_process(id, user_input)
             except EOFError:
-                return f"User input interrupted for session '{id}'."    
-    
+                return f"User input interrupted for session '{id}'."
+
     def shell_write_content_to_file(self, content: str, file_path: str) -> str:
-        """
-        This function writes the specified content to a file at the given path.
-        
+        r"""Writes the specified content to a file at the given path.
+
         Args:
             content (str): The content to write to the file.
-            file_path (str): The path to the file where the content should be written.
+            file_path (str): The path to the file where the content should
+                be written.
+
         Returns:
             str: A confirmation message indicating success or an error message.
         """
         if self.safe_mode and self.working_dir:
-            abs_file_path = os.path.abspath(file_path)
-            if not abs_file_path.startswith(self.working_dir):
-                return "Error: Cannot write to a file outside of the working directory in safe mode."
-        
-        log_entry = f"--- Writing content to file at {time.ctime()} ---\n> {file_path}\n"
+            # Resolve to absolute path and normalize to prevent path traversal
+            abs_file_path = os.path.normpath(os.path.abspath(file_path))
+            working_dir_normalized = os.path.normpath(self.working_dir)
+            # Use os.path.commonpath for secure path containment check
+            try:
+                common = os.path.commonpath(
+                    [abs_file_path, working_dir_normalized]
+                )
+                if common != working_dir_normalized:
+                    return (
+                        "Error: Cannot write to a file outside of the "
+                        "working directory in safe mode."
+                    )
+            except ValueError:
+                # Paths are on different drives (Windows) or invalid
+                return (
+                    "Error: Cannot write to a file outside of the "
+                    "working directory in safe mode."
+                )
+
+        log_entry = (
+            f"--- Writing content to file at {time.ctime()} ---\n"
+            f"> {file_path}\n"
+        )
         if self.use_docker_backend:
             try:
                 # Write content to a temporary file on the host inside log_dir
-                temp_host_path = os.path.join(self.log_dir, f"temp_{uuid.uuid4().hex}.txt")
+                temp_file_name = f"temp_{uuid.uuid4().hex}.txt"
+                temp_host_path = os.path.join(self.log_dir, temp_file_name)
                 with open(temp_host_path, "w", encoding="utf-8") as f:
                     f.write(content)
                 # Copy the temporary file into the Docker container
                 dest_path_in_container = file_path
-                result = subprocess.run([
-                                'docker', 'cp', temp_host_path, f"{self.docker_container_name}:{dest_path_in_container}"
-                                    ], check=True, capture_output=True, text=True)
-                
+                container_dest = (
+                    f"{self.container.name}:{dest_path_in_container}"
+                )
+                subprocess.run(
+                    ['docker', 'cp', temp_host_path, container_dest],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+
                 log_entry += f"\n-------- \n{content}\n--------\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
                 os.remove(temp_host_path)  # Clean up the temporary file
-                return f"Content successfully written to '{file_path}' in Docker container."
+                return (
+                    f"Content successfully written to '{file_path}' "
+                    f"in Docker container."
+                )
             except subprocess.CalledProcessError as e:
                 log_entry += f"--- Error ---\n{e.stderr}\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
-                return f"Error writing to file '{file_path}' in Docker container: {e.stderr}"
+                return (
+                    f"Error writing to file '{file_path}' "
+                    f"in Docker container: {e.stderr}"
+                )
             except Exception as e:
                 log_entry += f"--- Error ---\n{e}\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
-                return f"Error writing to file '{file_path}' in Docker container: {e}"
+                return (
+                    f"Error writing to file '{file_path}' "
+                    f"in Docker container: {e}"
+                )
 
         else:
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(content)
-                
+
                 log_entry += f"\n-------- \n{content}\n--------\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
@@ -1269,7 +1276,7 @@ class TerminalToolkit(BaseToolkit):
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
                 return f"Error writing to file '{file_path}': {e}"
-    
+
     def __enter__(self):
         r"""Context manager entry."""
         return self
@@ -1317,7 +1324,6 @@ class TerminalToolkit(BaseToolkit):
         return [
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
-            FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_content_to_file),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
