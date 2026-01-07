@@ -107,6 +107,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
 
         # Mock search results
         mock_imap.search.return_value = ("OK", [b"1"])
@@ -137,9 +138,13 @@ class TestIMAPMailToolkit(unittest.TestCase):
                 self.assertEqual(len(result), 1)
                 self.assertEqual(result[0]["subject"], "Test Subject")
                 self.assertEqual(result[0]["from"], "test@example.com")
-                mock_imap.select.assert_called_once_with("INBOX")
+                mock_imap.select.assert_called_once_with(
+                    "INBOX", readonly=True
+                )
                 mock_imap.search.assert_called_once()
-                mock_imap.fetch.assert_called_once()
+                mock_imap.fetch.assert_called_once_with(
+                    b"1", "(BODY.PEEK[])"
+                )
 
     @patch.object(IMAPMailToolkit, '_get_imap_connection')
     def test_fetch_emails_with_filters(self, mock_get_imap):
@@ -147,6 +152,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
         mock_imap.search.return_value = ("OK", [b"1 2 3"])
         mock_imap.fetch.return_value = ("OK", [(b"1", b"raw_email_data")])
 
@@ -172,6 +178,9 @@ class TestIMAPMailToolkit(unittest.TestCase):
 
                 # Assertions
                 self.assertIsInstance(result, list)
+                mock_imap.select.assert_called_once_with(
+                    "INBOX", readonly=True
+                )
                 # Check that search was called with proper criteria
                 search_call = mock_imap.search.call_args[0]
                 search_string = search_call[1]
@@ -185,6 +194,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
         mock_imap.search.return_value = ("NO", [b"Error"])
 
         # Call method and expect exception
@@ -197,6 +207,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
         mock_imap.fetch.return_value = ("OK", [(b"1", b"raw_email_data")])
 
         # Mock email message
@@ -228,8 +239,12 @@ class TestIMAPMailToolkit(unittest.TestCase):
                 self.assertEqual(result["id"], "123")
                 self.assertEqual(result["subject"], "Test Subject")
                 self.assertEqual(result["from"], "test@example.com")
-                mock_imap.select.assert_called_once_with("INBOX")
-                mock_imap.fetch.assert_called_once_with("123", "(RFC822)")
+                mock_imap.select.assert_called_once_with(
+                    "INBOX", readonly=True
+                )
+                mock_imap.fetch.assert_called_once_with(
+                    "123", "(BODY.PEEK[])"
+                )
 
     @patch.object(IMAPMailToolkit, '_get_imap_connection')
     def test_get_email_by_id_fetch_failure(self, mock_get_imap):
@@ -237,6 +252,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
         mock_imap.fetch.return_value = ("NO", [b"Error"])
 
         # Call method and expect exception
@@ -340,6 +356,10 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
+        mock_imap.copy.return_value = ("OK", [b""])
+        mock_imap.store.return_value = ("OK", [b""])
+        mock_imap.expunge.return_value = ("OK", [b""])
 
         # Call method
         result = self.toolkit.move_email_to_folder(
@@ -371,6 +391,10 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
+        mock_imap.copy.return_value = ("OK", [b""])
+        mock_imap.store.return_value = ("OK", [b""])
+        mock_imap.expunge.return_value = ("OK", [b""])
 
         # Call method
         result = self.toolkit.delete_email("123", permanent=False)
@@ -379,6 +403,7 @@ class TestIMAPMailToolkit(unittest.TestCase):
         self.assertIn("Email 123 moved to trash", result)
         mock_imap.select.assert_called_once_with("INBOX")
         mock_imap.store.assert_called_once_with("123", '+FLAGS', '\\Deleted')
+        mock_imap.expunge.assert_called_once()
 
     @patch.object(IMAPMailToolkit, '_get_imap_connection')
     def test_delete_email_permanent(self, mock_get_imap):
@@ -386,6 +411,9 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Setup mock
         mock_imap = MagicMock()
         mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
+        mock_imap.store.return_value = ("OK", [b""])
+        mock_imap.expunge.return_value = ("OK", [b""])
 
         # Call method
         result = self.toolkit.delete_email("123", permanent=True)
@@ -393,6 +421,26 @@ class TestIMAPMailToolkit(unittest.TestCase):
         # Assertions
         self.assertIn("Email 123 permanently deleted", result)
         mock_imap.select.assert_called_once_with("INBOX")
+        mock_imap.store.assert_called_once_with("123", '+FLAGS', '\\Deleted')
+        mock_imap.expunge.assert_called_once()
+
+    @patch.object(IMAPMailToolkit, '_get_imap_connection')
+    def test_delete_email_copy_failure_fallback(self, mock_get_imap):
+        r"""Test soft delete fallback when trash copy fails."""
+        # Setup mock
+        mock_imap = MagicMock()
+        mock_get_imap.return_value = mock_imap
+        mock_imap.select.return_value = ("OK", [b""])
+        mock_imap.copy.return_value = ("NO", [b"Error"])
+        mock_imap.store.return_value = ("OK", [b""])
+        mock_imap.expunge.return_value = ("OK", [b""])
+
+        # Call method
+        result = self.toolkit.delete_email("123", permanent=False)
+
+        # Assertions
+        self.assertIn("Email 123 marked as deleted", result)
+        mock_imap.copy.assert_called_once_with("123", "Trash")
         mock_imap.store.assert_called_once_with("123", '+FLAGS', '\\Deleted')
         mock_imap.expunge.assert_called_once()
 
