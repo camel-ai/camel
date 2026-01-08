@@ -1564,6 +1564,18 @@ class Workforce(BaseNode):
         # Generate available strategies text based on config
         available_strategies = self._get_available_strategies_text()
 
+        # Generate strategy options for response format (None means all
+        # enabled)
+        config_strategies = self.failure_handling_config.enabled_strategies
+        strategies = (
+            list(RecoveryStrategy)
+            if config_strategies is None
+            else config_strategies
+        )
+        response_format = response_format.format(
+            strategy_options="|".join(s.value for s in strategies)
+        )
+
         # Format the unified analysis prompt
         analysis_prompt = str(
             TASK_ANALYSIS_PROMPT.format(
