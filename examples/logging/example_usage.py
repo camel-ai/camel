@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 r"""
-Example usage of PromptLogger and HTML log viewer.
+Example usage of PromptLogger with real CAMEL ChatAgent interactions.
 
 This script demonstrates how to integrate PromptLogger with CAMEL agents
-to automatically log and visualize agent-LLM interactions.
+to automatically log and visualize real agent-LLM interactions.
 
 Usage:
     python example_usage.py
@@ -12,241 +12,254 @@ After running, convert the log to HTML:
     python llm_log_to_html.py example_agent_log.log
 """
 
+import os
+import subprocess
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
 from prompt_logger import PromptLogger
 
+# Load environment variables
+load_dotenv()
 
-def example_basic_logging():
-    r"""Example 1: Basic prompt logging."""
-    print("=" * 60)
-    print("Example 1: Basic Prompt Logging")
-    print("=" * 60)
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).parent
 
-    # Initialize logger
-    logger = PromptLogger("example_agent_log.log")
+# Global logger instance
+prompt_logger = None
 
-    # Simulate a conversation
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a helpful AI assistant specialized in "
-            "solving coding problems.",
-        },
-        {
-            "role": "user",
-            "content": "Write a Python function to calculate Fibonacci numbers.",
-        },
-    ]
 
-    # Log the prompt
-    prompt_num = logger.log_prompt(
-        messages, model_info="gpt-4", iteration=1
-    )
-    print(f"✅ Logged prompt #{prompt_num}")
+def setup_prompt_logging():
+    r"""Set up automatic prompt logging by monkey-patching ChatAgent.
 
-    # Simulate assistant response
-    messages.append(
-        {
-            "role": "assistant",
-            "content": "Here's a Python function to calculate Fibonacci "
-            "numbers:\n\ndef fibonacci(n):\n    if n <= 1:\n        "
-            "return n\n    return fibonacci(n-1) + fibonacci(n-2)",
-        }
-    )
+    This function patches ChatAgent's _get_model_response method to
+    automatically log all LLM interactions to the PromptLogger.
+    """
+    global prompt_logger
 
-    # Log the updated conversation
-    prompt_num = logger.log_prompt(
-        messages, model_info="gpt-4", iteration=2
-    )
-    print(f"✅ Logged prompt #{prompt_num}")
+    # Store the original method
+    original_get_model_response = ChatAgent._get_model_response
 
-    # Get stats
-    stats = logger.get_stats()
-    print(f"\n📊 Logging Statistics:")
-    print(f"   Total prompts: {stats['total_prompts']}")
-    print(f"   Log file: {stats['log_file']}")
-    print(f"   File exists: {stats['file_exists']}")
+    def logged_get_model_response(
+        self,
+        openai_messages,
+        num_tokens,
+        current_iteration=0,
+        response_format=None,
+        tool_schemas=None,
+        prev_num_openai_messages=0,
+    ):
+        r"""Wrapper that logs prompts before calling the original method."""
+        # Log the prompt if logger is available
+        if prompt_logger:
+            model_info = f"{self.model_backend.model_type}"
+            prompt_logger.log_prompt(
+                openai_messages,
+                model_info=model_info,
+                iteration=current_iteration,
+            )
+
+        # Call the original method
+        return original_get_model_response(
+            self,
+            openai_messages,
+            num_tokens,
+            current_iteration,
+            response_format,
+            tool_schemas,
+            prev_num_openai_messages,
+        )
+
+    # Apply the patch
+    ChatAgent._get_model_response = logged_get_model_response
+    print("✅ ChatAgent patched for automatic prompt logging\n")
+
+
+def example_simple_conversation():
+    r"""Example 1: Simple conversation with real ChatAgent."""
+    global prompt_logger
+
+    print("=" * 70)
+    print("Example 1: Simple Conversation with Real Agent")
+    print("=" * 70)
     print()
 
+    # Initialize logger
+    log_path = SCRIPT_DIR / "example_simple_conversation.log"
+    prompt_logger = PromptLogger(str(log_path))
 
-def example_with_tool_calls():
-    r"""Example 2: Logging with tool calls."""
-    print("=" * 60)
-    print("Example 2: Logging with Tool Calls")
-    print("=" * 60)
+    # Create a ChatAgent
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful AI assistant specialized in Python programming.",
+    )
 
-    logger = PromptLogger("example_with_tools.log")
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type="gpt-5.1",
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        url=os.getenv("AZURE_OPENAI_BASE_URL"),
+        api_version=os.getenv("AZURE_API_VERSION"),
+        model_config_dict=ChatGPTConfig(temperature=0.7).as_dict(),
+    )
 
-    # Conversation with tool usage
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant with "
-         "access to tools."},
-        {
-            "role": "user",
-            "content": "What's the weather like in San Francisco?",
-        },
-        {
-            "role": "assistant",
-            "content": None,
-            "tool_calls": [
-                {
-                    "id": "call_abc123",
-                    "type": "function",
-                    "function": {
-                        "name": "get_weather",
-                        "arguments": '{"location": "San Francisco, CA"}',
-                    },
-                }
-            ],
-        },
-        {
-            "role": "tool",
-            "tool_call_id": "call_abc123",
-            "content": '{"temperature": 65, "condition": "sunny"}',
-        },
-        {
-            "role": "assistant",
-            "content": "The weather in San Francisco is currently sunny "
-            "with a temperature of 65°F.",
-        },
-    ]
+    agent = ChatAgent(
+        system_message=sys_msg,
+        model=model,
+    )
 
-    prompt_num = logger.log_prompt(messages, model_info="gpt-4", iteration=1)
-    print(f"✅ Logged conversation with tool calls (prompt #{prompt_num})")
+    print("🤖 Agent created. Asking a question...\n")
+
+    # User question
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="Write a simple Python function to check if a number is prime.",
+    )
+
+    # Get response (this will be automatically logged)
+    response = agent.step(user_msg)
+
+    print(f"👤 User: {user_msg.content}\n")
+    print(f"🤖 Assistant: {response.msg.content}\n")
+
+    # Get stats
+    stats = prompt_logger.get_stats()
+    print(f"📊 Logged {stats['total_prompts']} prompts to {stats['log_file']}")
     print()
 
 
 def example_multi_turn_conversation():
-    r"""Example 3: Multi-turn conversation logging."""
-    print("=" * 60)
+    r"""Example 3: Multi-turn conversation with real agent."""
+    global prompt_logger
+
+    print("=" * 70)
     print("Example 3: Multi-turn Conversation")
-    print("=" * 60)
+    print("=" * 70)
+    print()
 
-    logger = PromptLogger("example_multi_turn.log")
+    # Initialize logger
+    log_path = SCRIPT_DIR / "example_multi_turn.log"
+    prompt_logger = PromptLogger(str(log_path))
 
-    # Initial messages
-    messages = [
-        {"role": "system", "content": "You are a helpful coding assistant."}
-    ]
+    # Create agent
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful coding tutor.",
+    )
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type="gpt-5.1",
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        url=os.getenv("AZURE_OPENAI_BASE_URL"),
+        api_version=os.getenv("AZURE_API_VERSION"),
+        model_config_dict=ChatGPTConfig(temperature=0.7).as_dict(),
+    )
+
+    agent = ChatAgent(
+        system_message=sys_msg,
+        model=model,
+    )
+
+    print("🤖 Starting multi-turn conversation...\n")
 
     # Turn 1
-    messages.append({"role": "user", "content": "How do I read a file in "
-                     "Python?"})
-    logger.log_prompt(messages, model_info="gpt-4", iteration=1)
-
-    messages.append(
-        {
-            "role": "assistant",
-            "content": "You can use the `open()` function with a context "
-            "manager:\n```python\nwith open('file.txt', 'r') as f:\n    "
-            "content = f.read()\n```",
-        }
+    user_msg1 = BaseMessage.make_user_message(
+        role_name="User",
+        content="How do I read a file in Python?",
     )
-    logger.log_prompt(messages, model_info="gpt-4", iteration=2)
+    response1 = agent.step(user_msg1)
+    print(f"👤 User: {user_msg1.content}")
+    print(f"🤖 Assistant: {response1.msg.content}\n")
 
     # Turn 2
-    messages.append(
-        {"role": "user", "content": "What if the file doesn't exist?"}
+    user_msg2 = BaseMessage.make_user_message(
+        role_name="User",
+        content="What if the file doesn't exist? How do I handle that?",
     )
-    logger.log_prompt(messages, model_info="gpt-4", iteration=3)
+    response2 = agent.step(user_msg2)
+    print(f"👤 User: {user_msg2.content}")
+    print(f"🤖 Assistant: {response2.msg.content}\n")
 
-    messages.append(
-        {
-            "role": "assistant",
-            "content": "You should use a try-except block to handle "
-            "FileNotFoundError:\n```python\ntry:\n    with "
-            "open('file.txt', 'r') as f:\n        content = f.read()\nexcept "
-            "FileNotFoundError:\n    print('File not found')\n```",
-        }
+    # Turn 3
+    user_msg3 = BaseMessage.make_user_message(
+        role_name="User",
+        content="Can you show me a complete example with error handling?",
     )
-    logger.log_prompt(messages, model_info="gpt-4", iteration=4)
+    response3 = agent.step(user_msg3)
+    print(f"👤 User: {user_msg3.content}")
+    print(f"🤖 Assistant: {response3.msg.content}\n")
 
-    stats = logger.get_stats()
-    print(f"✅ Logged {stats['total_prompts']} prompts from multi-turn "
-          f"conversation")
-    print()
-
-
-def example_integration_with_camel_agent():
-    r"""Example 4: Integration pattern with CAMEL ChatAgent."""
-    print("=" * 60)
-    print("Example 4: Integration Pattern with CAMEL Agent")
-    print("=" * 60)
-    print()
-    print("To integrate with CAMEL ChatAgent, you can monkey-patch the "
-          "_get_model_response method:")
-    print()
-    print(
-        """
-```python
-from camel.agents import ChatAgent
-from camel.messages import BaseMessage
-from prompt_logger import PromptLogger
-
-# Initialize logger
-logger = PromptLogger("agent_conversation.log")
-
-# Store original method
-original_get_response = ChatAgent._get_model_response
-
-# Create patched method
-def logged_get_response(self, messages, **kwargs):
-    # Log before sending to model
-    openai_messages = [msg.to_openai_message() for msg in messages]
-    logger.log_prompt(
-        openai_messages,
-        model_info=str(self.model_config.model_type),
-        iteration=logger.prompt_counter
-    )
-
-    # Call original method
-    return original_get_response(self, messages, **kwargs)
-
-# Apply patch
-ChatAgent._get_model_response = logged_get_response
-
-# Now use the agent normally
-agent = ChatAgent(
-    system_message=BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant."
-    )
-)
-
-# All interactions will be automatically logged
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="Hello!"
-)
-response = agent.step(user_msg)
-
-# Convert to HTML after execution:
-# python llm_log_to_html.py agent_conversation.log
-```
-    """
-    )
+    # Get stats
+    stats = prompt_logger.get_stats()
+    print(f"📊 Logged {stats['total_prompts']} prompts from multi-turn conversation")
+    print(f"   Log file: {stats['log_file']}")
     print()
 
 
 def main():
-    r"""Run all examples."""
-    print("\n🎯 PromptLogger Examples\n")
+    r"""Run all examples with real ChatAgent interactions."""
+    print("\n" + "=" * 70)
+    print("🎯 PromptLogger Examples with Real CAMEL ChatAgent")
+    print("=" * 70)
+    print()
 
-    example_basic_logging()
-    example_with_tool_calls()
-    example_multi_turn_conversation()
-    example_integration_with_camel_agent()
+    # Set up logging
+    setup_prompt_logging()
 
-    print("=" * 60)
+    # Run examples
+    try:
+        example_simple_conversation()
+        example_multi_turn_conversation()
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+
+    print("=" * 70)
     print("✅ All examples completed!")
-    print("=" * 60)
+    print("=" * 70)
     print()
     print("📝 Log files created:")
-    print("   - example_agent_log.log")
-    print("   - example_with_tools.log")
+    print("   - example_simple_conversation.log")
     print("   - example_multi_turn.log")
     print()
-    print("🎨 Convert to HTML with:")
-    print("   python llm_log_to_html.py <log_file>")
+
+    # Automatically convert logs to HTML
+    print("🎨 Converting logs to HTML...")
+    print()
+
+    log_files = [
+        SCRIPT_DIR / "example_simple_conversation.log",
+        SCRIPT_DIR / "example_multi_turn.log",
+    ]
+
+    converter_script = SCRIPT_DIR / "llm_log_to_html.py"
+
+    for log_file in log_files:
+        if log_file.exists():
+            try:
+                print(f"Converting {log_file.name}...")
+                result = subprocess.run(
+                    ["python3", str(converter_script), str(log_file)],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                print(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Error converting {log_file.name}: {e}")
+                print(e.stderr)
+
+    print()
+    print("🎉 All done! HTML viewer files generated in:")
+    print(f"   {SCRIPT_DIR}")
     print()
 
 
