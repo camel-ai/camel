@@ -6,10 +6,10 @@ This script demonstrates how to integrate PromptLogger with CAMEL agents
 to automatically log and visualize real agent-LLM interactions.
 
 Usage:
-    python example_usage.py
+    python example_llm_log_to_html.py
 
-After running, convert the log to HTML:
-    python llm_log_to_html.py example_agent_log.log
+The script will automatically convert logs to HTML using the llm_log_to_html
+module from camel.logging.
 """
 
 import os
@@ -20,10 +20,10 @@ from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.logging.prompt_logger import PromptLogger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
-from prompt_logger import PromptLogger
 
 # Load environment variables
 load_dotenv()
@@ -240,14 +240,12 @@ def main():
         SCRIPT_DIR / "example_multi_turn.log",
     ]
 
-    converter_script = SCRIPT_DIR / "llm_log_to_html.py"
-
     for log_file in log_files:
         if log_file.exists():
             try:
                 print(f"Converting {log_file.name}...")
                 result = subprocess.run(
-                    ["python3", str(converter_script), str(log_file)],
+                    ["python3", "-m", "camel.logging.llm_log_to_html", str(log_file)],
                     capture_output=True,
                     text=True,
                     check=True
