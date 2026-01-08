@@ -410,7 +410,10 @@ class ChatAgent(BaseAgent):
             directly return the request instead of processing it.
             (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
-            :obj:`ResponseTerminator` bind to one chat agent.
+            :obj:`ResponseTerminator` to check if task is complete. When set,
+            the agent will keep prompting the model until a terminator signals
+            completion. Note: You must define the termination signal (e.g.,
+            a keyword) in your system prompt so the model knows what to output.
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
@@ -2792,6 +2795,11 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+
         # Set Langfuse session_id using agent_id for trace grouping
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -2923,6 +2931,43 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory as a user message
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content="Please continue.",
+                    meta_dict={},
+                )
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         self._format_response_if_needed(response, response_format)
@@ -2986,6 +3031,10 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3023,6 +3072,10 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3153,6 +3206,43 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory as a user message
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content="Please continue.",
+                    meta_dict={},
+                )
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         await self._aformat_response_if_needed(response, response_format)
@@ -3240,10 +3330,15 @@ class ChatAgent(BaseAgent):
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
             self.record_message(output_messages[0])
+        elif len(output_messages) == 0:
+            logger.warning(
+                "No messages returned in `step()`. The model returned an "
+                "empty response."
+            )
         else:
             logger.warning(
-                "Multiple messages returned in `step()`. Record "
-                "selected message manually using `record_message()`."
+                f"{len(output_messages)} messages returned in `step()`. "
+                "Record selected message manually using `record_message()`."
             )
 
     @observe()

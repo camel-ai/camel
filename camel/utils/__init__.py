@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .agent_context import get_current_agent_id, set_current_agent_id
 from .commons import (
     AgentOpsMeta,
     BatchProcessor,
@@ -113,4 +114,6 @@ __all__ = [
     "observe",
     "update_current_observation",
     "get_langfuse_status",
+    "get_current_agent_id",
+    "set_current_agent_id",
 ]
