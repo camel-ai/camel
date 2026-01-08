@@ -359,21 +359,21 @@ If the task quality is insufficient, select the best recovery strategy from the 
 )
 
 FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
-{
+{{
   "reasoning": "explanation (1-2 sentences)",
-  "recovery_strategy": "retry|replan|decompose|create_worker",
+  "recovery_strategy": "{strategy_options}",
   "modified_task_content": "new content if replan, else null",
   "issues": ["error1", "error2"]
-}"""
+}}"""
 
 QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
-{
+{{
   "quality_score": 0-100,
   "reasoning": "explanation (1-2 sentences)",
   "issues": ["issue1", "issue2"],
-  "recovery_strategy": "retry|reassign|replan|decompose or null",
+  "recovery_strategy": "{strategy_options} or null",
   "modified_task_content": "new content if replan, else null"
-}"""
+}}"""
 
 # Strategy descriptions for dynamic prompt generation
 STRATEGY_DESCRIPTIONS = {
