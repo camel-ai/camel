@@ -448,10 +448,12 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
-        stream_accumulate (bool, optional): When True, partial streaming
-            updates return accumulated content (current behavior). When False,
-            partial updates return only the incremental delta. (default:
-            :obj:`True`)
+        stream_accumulate (Optional[bool], optional): When True, partial
+            streaming updates return accumulated content. When False, partial
+            updates return only the incremental delta (recommended).
+            If None, defaults to False with a deprecation warning for users
+            who previously relied on the old default (True).
+            (default: :obj:`None`, which behaves as :obj:`False`)
         summary_window_ratio (float, optional): Maximum fraction of the total
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
@@ -501,7 +503,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
-        stream_accumulate: bool = True,
+        stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
@@ -615,7 +617,13 @@ class ChatAgent(BaseAgent):
         self.step_timeout = step_timeout
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
-        self.stream_accumulate = stream_accumulate
+
+        # Store whether user explicitly set stream_accumulate
+        # Warning will be issued only when streaming is actually used
+        self._stream_accumulate_explicit = stream_accumulate is not None
+        self.stream_accumulate = (
+            stream_accumulate if stream_accumulate is not None else False
+        )
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
@@ -4020,6 +4028,28 @@ class ChatAgent(BaseAgent):
         # Conservative estimate: ~3 chars per token
         return len(content) // 3
 
+    def _warn_stream_accumulate_deprecation(self) -> None:
+        r"""Issue deprecation warning for stream_accumulate default change.
+
+        Only warns once per agent instance, and only if the user didn't
+        explicitly set stream_accumulate.
+        """
+        if not self._stream_accumulate_explicit:
+            import warnings
+
+            warnings.warn(
+                "The default value of 'stream_accumulate' has changed from "
+                "True to False. In streaming mode, each chunk now returns "
+                "only the incremental delta instead of accumulated content. "
+                "To suppress this warning, explicitly set "
+                "stream_accumulate=False (recommended) or stream_accumulate="
+                "True if you need the old behavior.",
+                DeprecationWarning,
+                stacklevel=5,
+            )
+            # Only warn once per agent instance
+            self._stream_accumulate_explicit = True
+
     def _stream_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -4027,6 +4057,8 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Internal method to handle streaming responses with tool calls."""
+
+        self._warn_stream_accumulate_deprecation()
 
         tool_call_records: List[ToolCallingRecord] = []
         accumulated_tool_calls: Dict[str, Any] = {}
@@ -4346,12 +4378,20 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+                        # In delta mode, final response content should be empty
+                        # since all content was already yielded incrementally
+                        display_content = (
+                            final_content if self.stream_accumulate else ""
+                        )
+                        display_reasoning = (
+                            final_reasoning if self.stream_accumulate else None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=final_content,
-                            reasoning_content=final_reasoning,
+                            content=display_content,
+                            reasoning_content=display_reasoning,
                         )
 
                         if response_format:
@@ -4402,13 +4442,52 @@ class ChatAgent(BaseAgent):
             bool: True if any tool call is complete, False otherwise.
         """
 
+        index_map_key = '_index_to_key_map'
+        if index_map_key not in accumulated_tool_calls:
+            accumulated_tool_calls[index_map_key] = {}
+        index_map = accumulated_tool_calls[index_map_key]
+
         for delta_tool_call in tool_call_deltas:
-            index = delta_tool_call.index
+            index = getattr(delta_tool_call, 'index', None)
             tool_call_id = getattr(delta_tool_call, 'id', None)
 
+            # Determine entry key
+            if index is not None:
+                index_str = str(index)
+                if tool_call_id:
+                    # New ID provided: check if it differs from current mapping
+                    current_key = index_map.get(index_str)
+                    if current_key is None:
+                        # First time seeing this index, use tool_call_id as key
+                        entry_key = tool_call_id
+                    elif current_key in accumulated_tool_calls:
+                        existing_id = accumulated_tool_calls[current_key].get(
+                            'id'
+                        )
+                        if existing_id and existing_id != tool_call_id:
+                            # ID changed: use new ID as key
+                            entry_key = tool_call_id
+                        else:
+                            # No existing ID or same ID: keep current key
+                            entry_key = current_key
+                    else:
+                        entry_key = current_key
+                    # Update mapping
+                    index_map[index_str] = entry_key
+                else:
+                    # No ID in this chunk: use existing mapping or index as
+                    # string
+                    entry_key = index_map.get(index_str, index_str)
+                    if index_str not in index_map:
+                        index_map[index_str] = entry_key
+            elif tool_call_id is not None:
+                entry_key = tool_call_id
+            else:
+                entry_key = '0'  # Default fallback as string
+
             # Initialize tool call entry if not exists
-            if index not in accumulated_tool_calls:
-                accumulated_tool_calls[index] = {
+            if entry_key not in accumulated_tool_calls:
+                accumulated_tool_calls[entry_key] = {
                     'id': '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
@@ -4416,7 +4495,7 @@ class ChatAgent(BaseAgent):
                     'complete': False,
                 }
 
-            tool_call_entry = accumulated_tool_calls[index]
+            tool_call_entry = accumulated_tool_calls[entry_key]
 
             # Accumulate tool call data
             if tool_call_id:
@@ -4448,6 +4527,9 @@ class ChatAgent(BaseAgent):
         # Check if any tool calls are complete
         any_complete = False
         for _index, tool_call_entry in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _index == '_index_to_key_map':
+                continue
             if (
                 tool_call_entry['id']
                 and tool_call_entry['function']['name']
@@ -4475,6 +4557,9 @@ class ChatAgent(BaseAgent):
 
         tool_calls_to_execute = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _tool_call_index == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 tool_calls_to_execute.append(tool_call_data)
 
@@ -4936,6 +5021,8 @@ class ChatAgent(BaseAgent):
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Async method to handle streaming responses with tool calls."""
 
+        self._warn_stream_accumulate_deprecation()
+
         tool_call_records: List[ToolCallingRecord] = []
         accumulated_tool_calls: Dict[str, Any] = {}
         step_token_usage = self._create_token_usage_tracker()
@@ -5310,12 +5397,20 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+                        # In delta mode, final response content should be empty
+                        # since all content was already yielded incrementally
+                        display_content = (
+                            final_content if self.stream_accumulate else ""
+                        )
+                        display_reasoning = (
+                            final_reasoning if self.stream_accumulate else None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=final_content,
-                            reasoning_content=final_reasoning,
+                            content=display_content,
+                            reasoning_content=display_reasoning,
                         )
 
                         if response_format:
@@ -5363,6 +5458,9 @@ class ChatAgent(BaseAgent):
         # statuses immediately
         tool_tasks = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _tool_call_index == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 function_name = tool_call_data['function']['name']
                 try:
