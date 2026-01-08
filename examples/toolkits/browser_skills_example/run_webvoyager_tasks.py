@@ -36,7 +36,14 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).parent))
 
 from subtask_agent_example import SubtaskAgent
-from utils import create_chat_agent
+from utils import (
+    compute_session_summary,
+    count_subtasks_in_dir,
+    create_chat_agent,
+    get_timestamp_iso,
+    resolve_website_skills_dir,
+    update_cumulative_subtask_stats,
+)
 
 from camel.messages import BaseMessage
 
@@ -131,7 +138,13 @@ class WebVoyagerRunner:
         self,
         jsonl_file: str,
         subtask_config_dir: str,
+        skills_root: str = "",
+        website_filter: str = "",
         max_retries: int = 2,
+        run_summary_out: str = "",
+        results_out: str = "",
+        step_timeout: float | None = 180.0,
+        tool_execution_timeout: float | None = 180.0,
     ):
         """
         Initialize the runner.
@@ -143,7 +156,17 @@ class WebVoyagerRunner:
         """
         self.jsonl_file = Path(jsonl_file)
         self.subtask_config_dir = subtask_config_dir
+        self.skills_root = (
+            Path(skills_root).expanduser() if skills_root else None
+        )
+        self.website_filter = website_filter.strip()
         self.max_retries = max_retries
+        self.run_summary_out = (
+            run_summary_out.strip() or "webvoyager_run_summary.json"
+        )
+        self.results_out = results_out.strip() or "webvoyager_results_1.json"
+        self.step_timeout = step_timeout
+        self.tool_execution_timeout = tool_execution_timeout
         self.verifier = TaskVerifier()
 
         # Ensure subtask config directory exists
@@ -151,25 +174,34 @@ class WebVoyagerRunner:
 
         # Results tracking
         self.results: List[Dict[str, Any]] = []
+        self.aggregate: Dict[str, Any] = {
+            "generated_at": get_timestamp_iso(),
+            "websites": {},
+        }
 
     def _ensure_config_dir_exists(self):
         """
-        Ensure the subtask config directory exists.
+        Ensure the subtask config directory (or skills root) exists.
         Creates it if it doesn't exist.
         """
-        config_path = Path(self.subtask_config_dir)
+        base_path = self.skills_root or Path(self.subtask_config_dir)
 
-        if not config_path.exists():
-            print(f"\n⚠️  Config directory not found: {config_path}")
-            print(f"📁 Creating directory: {config_path}")
-            config_path.mkdir(parents=True, exist_ok=True)
+        if not base_path.exists():
+            print(f"\n⚠️  Skills directory not found: {base_path}")
+            print(f"📁 Creating directory: {base_path}")
+            base_path.mkdir(parents=True, exist_ok=True)
             print("✓ Directory created successfully\n")
-        else:
-            # Check if it's actually a directory
-            if not config_path.is_dir():
-                raise ValueError(
-                    f"Subtask config path exists but is not a directory: {config_path}"
-                )
+        elif not base_path.is_dir():
+            raise ValueError(
+                f"Skills path exists but is not a directory: {base_path}"
+            )
+
+    def _resolve_skills_dir_for_task(self, website: str) -> Path:
+        if self.skills_root is None:
+            skills_dir = Path(self.subtask_config_dir)
+            skills_dir.mkdir(parents=True, exist_ok=True)
+            return skills_dir
+        return resolve_website_skills_dir(self.skills_root, website)
 
     def load_tasks(self) -> List[Dict[str, Any]]:
         """Load tasks from JSONL file."""
@@ -201,11 +233,11 @@ class WebVoyagerRunner:
         task_id = task.get('id', 'unknown')
         task_description = task.get('ques', '')
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(
             f"RUNNING TASK: {task_id} (Attempt {attempt}/{self.max_retries + 1})"
         )
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Task: {task_description}")
         if previous_suggestions:
             print(f"\n💡 Previous suggestions:\n{previous_suggestions}")
@@ -222,11 +254,16 @@ class WebVoyagerRunner:
 
         start_url = (task.get('web') or '').strip() or None
 
+        skills_dir = self._resolve_skills_dir_for_task(website)
+        subtasks_before = count_subtasks_in_dir(skills_dir)
+
         agent = SubtaskAgent(
-            subtask_config_dir=self.subtask_config_dir,
+            subtask_config_dir=str(skills_dir),
             use_agent_recovery=True,
             website=website,
             start_url=start_url,
+            step_timeout=self.step_timeout,
+            tool_execution_timeout=self.tool_execution_timeout,
         )
 
         try:
@@ -254,6 +291,30 @@ class WebVoyagerRunner:
             # Save communication log
             agent.save_communication_log()
 
+            # Write a first-pass summary (before subtask extraction), if possible
+            summary_path = None
+            if session_dir:
+                summary_path = session_dir / "summary.json"
+                summary = compute_session_summary(
+                    session_dir=session_dir,
+                    skills_dir=skills_dir,
+                    task_id=str(task_id),
+                )
+                summary["website"] = website
+                summary["start_url"] = start_url
+                summary["attempt"] = attempt
+                summary["subtasks_available_before"] = subtasks_before
+                summary["subtasks_available_after"] = count_subtasks_in_dir(
+                    skills_dir
+                )
+                summary["phase"] = "post_run_pre_extract"
+                summary["generated_at"] = get_timestamp_iso()
+
+                summary_path.write_text(
+                    json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+
             # Get final snapshot from agent BEFORE closing tabs
             if agent.toolkit:
                 try:
@@ -272,6 +333,31 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Browser close failed: {e}")
 
+            # Extract subtasks BEFORE verification/retry/next task so skills can
+            # accumulate monotonically during a run.
+            subtask_analysis = None
+            if session_dir:
+                print(f"\n{'=' * 80}")
+                print("🔎 EXTRACTING SUBTASKS (SKILLS)")
+                print(f"{'=' * 80}")
+                try:
+                    from analyze_subtask_candidate import analyze_with_agent
+
+                    subtask_analysis = analyze_with_agent(
+                        session_folder=str(session_dir),
+                        subtask_configs_dir=str(skills_dir),
+                        auto_save=True,
+                    )
+                except Exception as e:
+                    print(f"⚠️  Subtask extraction failed: {e}")
+                    import traceback
+
+                    traceback.print_exc()
+                    subtask_analysis = {
+                        "status": "failed",
+                        "error": str(e),
+                    }
+
             # Get agent's response content
             agent_response = "Task completed."
             if response and response.msgs:
@@ -282,9 +368,9 @@ class WebVoyagerRunner:
                 agent_response = last_comm.get('response', 'Task completed.')
 
             # Verify task completion
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print("🔍 VERIFYING TASK COMPLETION")
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
 
             verification = self.verifier.verify_task(
                 task_description, agent_response
@@ -299,62 +385,129 @@ class WebVoyagerRunner:
             result = {
                 'task_id': task_id,
                 'task_description': task_description,
+                'website': website,
+                'skills_dir': str(skills_dir),
                 'attempt': attempt,
                 'success': verification['success'],
                 'reasoning': verification['reasoning'],
                 'suggestions': verification.get('suggestions', ''),
                 'session_dir': str(session_dir) if session_dir else None,
+                'summary_path': str(summary_path) if summary_path else None,
+                'subtask_analysis': subtask_analysis,
             }
 
-            # If successful, analyze for subtask candidates
-            if verification['success'] and session_dir:
-                print(f"\n{'='*80}")
-                print("🔎 ANALYZING FOR SUBTASK CANDIDATES")
-                print(f"{'='*80}")
+            # Update summary after verification/analysis
+            if session_dir:
+                summary_path = (
+                    Path(result["summary_path"])
+                    if result.get("summary_path")
+                    else (session_dir / "summary.json")
+                )
+                summary = compute_session_summary(
+                    session_dir=session_dir,
+                    skills_dir=skills_dir,
+                    task_id=str(task_id),
+                )
+                summary["website"] = website
+                summary["start_url"] = start_url
+                summary["attempt"] = attempt
+                summary["verification"] = verification
+                summary["subtask_analysis"] = result.get("subtask_analysis")
+                summary["subtasks_available_before"] = subtasks_before
+                summary["subtasks_available_after"] = count_subtasks_in_dir(
+                    skills_dir
+                )
+                summary["phase"] = "final"
+                summary["generated_at"] = get_timestamp_iso()
 
+                summary_path.write_text(
+                    json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                result["summary_path"] = str(summary_path)
+
+                # Update per-website cumulative subtask success stats
                 try:
-                    from analyze_subtask_candidate import analyze_with_agent
+                    update_cumulative_subtask_stats(
+                        stats_path=(skills_dir / "subtask_stats.json"),
+                        website=website,
+                        session_subtask_stats=summary.get("subtask_stats", []),
+                    )
+                except Exception:
+                    pass
 
-                    analysis_result = analyze_with_agent(
-                        session_folder=str(session_dir),
-                        subtask_configs_dir=self.subtask_config_dir,
-                        auto_save=True,
+                # Update in-memory aggregate for this run
+                website_bucket = self.aggregate["websites"].setdefault(
+                    website,
+                    {
+                        "tasks": 0,
+                        "attempts": 0,
+                        "reuse_ratio_actions": [],
+                        "reuse_ratio_calls": [],
+                        "subtasks": {},
+                    },
+                )
+                website_bucket["attempts"] += 1
+                if verification.get("success"):
+                    website_bucket["tasks"] += 1
+
+                reuse = (
+                    summary.get("reuse", {})
+                    if isinstance(summary, dict)
+                    else {}
+                )
+                if reuse.get("reuse_ratio_actions") is not None:
+                    website_bucket["reuse_ratio_actions"].append(
+                        reuse.get("reuse_ratio_actions")
+                    )
+                if reuse.get("reuse_ratio_calls") is not None:
+                    website_bucket["reuse_ratio_calls"].append(
+                        reuse.get("reuse_ratio_calls")
                     )
 
-                    # Record analysis results and token usage
-                    result['subtask_analysis'] = {
-                        'status': 'completed',
-                        'success': analysis_result.get('success', False),
-                        'reusable_subtasks_found': analysis_result.get(
-                            'reusable_subtasks_found', 0
-                        ),
-                        'token_usage': analysis_result.get('token_usage', {}),
-                        'report_path': analysis_result.get('report_path', ''),
-                    }
-
-                    # Print token summary
-                    token_usage = analysis_result.get('token_usage', {})
-                    if token_usage:
-                        print("\n📊 Subtask Analysis Token Usage:")
-                        print(
-                            f"  Input:  {token_usage.get('input_tokens', 0):,}"
+                for s in summary.get("subtask_stats", []) or []:
+                    if not isinstance(s, dict):
+                        continue
+                    subtask_id = str(s.get("subtask_id", "unknown"))
+                    st = website_bucket["subtasks"].setdefault(
+                        subtask_id,
+                        {
+                            "subtask_id": subtask_id,
+                            "subtask_name": s.get("subtask_name", ""),
+                            "calls_total": 0,
+                            "success": 0,
+                            "partial_success": 0,
+                            "error": 0,
+                            "other": 0,
+                        },
+                    )
+                    st["subtask_name"] = s.get(
+                        "subtask_name", st.get("subtask_name", "")
+                    )
+                    for key in (
+                        "calls_total",
+                        "success",
+                        "partial_success",
+                        "error",
+                        "other",
+                    ):
+                        st[key] = int(st.get(key, 0) or 0) + int(
+                            s.get(key, 0) or 0
                         )
-                        print(
-                            f"  Output: {token_usage.get('output_tokens', 0):,}"
-                        )
-                        print(
-                            f"  Total:  {token_usage.get('total_tokens', 0):,}"
-                        )
 
-                except Exception as e:
-                    print(f"⚠️  Subtask analysis failed: {e}")
-                    import traceback
-
-                    traceback.print_exc()
-                    result['subtask_analysis'] = {
-                        'status': 'failed',
-                        'error': str(e),
-                    }
+                for st in website_bucket["subtasks"].values():
+                    calls_total = int(st.get("calls_total", 0) or 0)
+                    if calls_total:
+                        st["success_rate"] = (
+                            int(st.get("success", 0) or 0) / calls_total
+                        )
+                        st["failure_rate"] = (
+                            int(st.get("partial_success", 0) or 0)
+                            + int(st.get("error", 0) or 0)
+                        ) / calls_total
+                    else:
+                        st["success_rate"] = 0.0
+                        st["failure_rate"] = 0.0
 
             return result
 
@@ -482,13 +635,30 @@ class WebVoyagerRunner:
         """
         tasks = self.load_tasks()
 
-        print(f"\n{'='*80}")
+        if self.website_filter:
+
+            def _norm(s: str) -> str:
+                return " ".join((s or "").strip().lower().split())
+
+            target = _norm(self.website_filter)
+            tasks = [
+                t for t in tasks if _norm(t.get("web_name", "")) == target
+            ]
+
+        print(f"\n{'=' * 80}")
         print("WEBVOYAGER TASK RUNNER")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Total tasks: {len(tasks)}")
         print(f"Start index: {start_index}")
         print(f"Max tasks: {max_tasks or 'all'}")
         print(f"Max retries per task: {self.max_retries}")
+        if self.website_filter:
+            print(f"Website filter: {self.website_filter}")
+        if self.skills_root:
+            print(f"Skills root: {self.skills_root}")
+        else:
+            print(f"Skills dir: {self.subtask_config_dir}")
+        print(f"Run summary out: {self.run_summary_out}")
         print()
 
         # Slice tasks
@@ -501,15 +671,16 @@ class WebVoyagerRunner:
 
         # Run each task
         for idx, task in enumerate(tasks, start=start_index):
-            print(f"\n{'#'*80}")
+            print(f"\n{'#' * 80}")
             print(f"TASK {idx + 1}/{len(tasks) + start_index}: {task['id']}")
-            print(f"{'#'*80}")
+            print(f"{'#' * 80}")
 
             result = await self.run_task_with_retries(task)
             self.results.append(result)
 
             # Save intermediate results
             self.save_results()
+            self.save_run_summary()
 
             # Wait 20 seconds before next task
             if (
@@ -524,16 +695,49 @@ class WebVoyagerRunner:
 
     def save_results(self):
         """Save results to JSON file."""
-        output_file = Path("webvoyager_results_1.json")
+        output_file = Path(self.results_out)
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
         print(f"\n💾 Results saved to: {output_file}")
 
+    def save_run_summary(self):
+        """Save a concise run summary to JSON."""
+        output_file = Path(self.run_summary_out)
+        summary = {
+            "generated_at": get_timestamp_iso(),
+            "jsonl_file": str(self.jsonl_file),
+            "skills_root": str(self.skills_root) if self.skills_root else None,
+            "skills_dir": None
+            if self.skills_root
+            else str(self.subtask_config_dir),
+            "website_filter": self.website_filter or None,
+            "aggregate": self.aggregate,
+            "tasks": [],
+        }
+
+        for task_result in self.results:
+            summary["tasks"].append(
+                {
+                    "task_id": task_result.get("task_id"),
+                    "website": task_result.get("website"),
+                    "attempt": task_result.get("attempt"),
+                    "success": task_result.get("success"),
+                    "session_dir": task_result.get("session_dir"),
+                    "summary_path": task_result.get("summary_path"),
+                    "reasoning": task_result.get("reasoning"),
+                }
+            )
+
+        output_file.write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
     def print_summary(self):
         """Print summary of results."""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("SUMMARY")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         total = len(self.results)
 
@@ -546,8 +750,8 @@ class WebVoyagerRunner:
         failed = total - succeeded
 
         print(f"Total tasks: {total}")
-        print(f"Succeeded: {succeeded} ({succeeded/total*100:.1f}%)")
-        print(f"Failed: {failed} ({failed/total*100:.1f}%)")
+        print(f"Succeeded: {succeeded} ({succeeded / total * 100:.1f}%)")
+        print(f"Failed: {failed} ({failed / total * 100:.1f}%)")
 
         # Retry statistics
         total_retries = sum(r.get('retry_count', 0) for r in self.results)
@@ -598,8 +802,15 @@ async def main():
     # Calculate default paths using relative path
     script_dir = Path(__file__).resolve().parent
     default_config_dir = str(script_dir / "subtask_configs")
+    default_jsonl_candidates = [
+        script_dir / "WebVoyager_data.jsonl",
+        Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl",
+    ]
     default_jsonl = str(
-        Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl"
+        next(
+            (p for p in default_jsonl_candidates if p.exists()),
+            default_jsonl_candidates[0],
+        )
     )
 
     parser = argparse.ArgumentParser(
@@ -616,6 +827,16 @@ async def main():
         help="Path to subtask configs directory",
     )
     parser.add_argument(
+        "--skills-root",
+        default="",
+        help="Root directory for per-website skills (overrides --config-dir).",
+    )
+    parser.add_argument(
+        "--website-filter",
+        default="",
+        help="Run only tasks whose web_name matches exactly (case-insensitive).",
+    )
+    parser.add_argument(
         "--start", type=int, default=0, help="Start from task index"
     )
     parser.add_argument(
@@ -627,13 +848,43 @@ async def main():
         default=4,
         help="Maximum retry attempts per task",
     )
+    parser.add_argument(
+        "--step-timeout",
+        type=float,
+        default=360.0,
+        help="ChatAgent step timeout in seconds (0 disables). Default: 180.",
+    )
+    parser.add_argument(
+        "--tool-timeout",
+        type=float,
+        default=360.0,
+        help="Per-tool execution timeout in seconds (0 disables). Default: 180.",
+    )
+    parser.add_argument(
+        "--run-summary-out",
+        default="",
+        help="Write a concise run summary JSON to this path.",
+    )
+    parser.add_argument(
+        "--results-out",
+        default="",
+        help="Write the raw per-attempt results JSON to this path.",
+    )
 
     args = parser.parse_args()
 
     runner = WebVoyagerRunner(
         jsonl_file=args.jsonl,
         subtask_config_dir=args.config_dir,
+        skills_root=args.skills_root,
+        website_filter=args.website_filter,
         max_retries=args.max_retries,
+        run_summary_out=args.run_summary_out,
+        results_out=args.results_out,
+        step_timeout=None if args.step_timeout <= 0 else args.step_timeout,
+        tool_execution_timeout=None
+        if args.tool_timeout <= 0
+        else args.tool_timeout,
     )
 
     await runner.run_all_tasks(

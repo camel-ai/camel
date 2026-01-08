@@ -98,8 +98,8 @@ def load_all_existing_subtasks(
         print(f"Warning: Subtask configs directory not found: {configs_path}")
         return []
 
-    # Load all JSON files in the directory
-    for json_file in sorted(configs_path.glob("*.json")):
+    # Load only subtask config files in the directory
+    for json_file in sorted(configs_path.glob("*_subtasks.json")):
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)

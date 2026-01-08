@@ -55,6 +55,7 @@ from utils import (
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+from camel.utils.constants import Constants
 
 # Define default directories using relative paths
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
@@ -463,6 +464,8 @@ class SubtaskAgent:
         start_url: str | None = None,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
+        step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
+        tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
     ):
         """Initialize the SubtaskAgent.
 
@@ -472,6 +475,8 @@ class SubtaskAgent:
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
             start_url: Optional URL to navigate to before executing tasks
+            step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
+            tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
         """
         self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
@@ -482,6 +487,8 @@ class SubtaskAgent:
                 "website is required (non-empty). Pass `website=` (or `--web-name`)."
             )
         self.start_url = start_url.strip() if start_url else None
+        self.step_timeout = step_timeout
+        self.tool_execution_timeout = tool_execution_timeout
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
@@ -967,7 +974,13 @@ async def subtask_{subtask_func.subtask_id}():
             role_name="Browser Automation Agent", content=self.system_prompt
         )
 
-        self.agent = ChatAgent(model=model, tools=all_tools, system_message=system_message)
+        self.agent = ChatAgent(
+            model=model,
+            tools=all_tools,
+            system_message=system_message,
+            step_timeout=self.step_timeout,
+            tool_execution_timeout=self.tool_execution_timeout,
+        )
 
         print("✓ Agent created successfully with system prompt")
 

@@ -432,6 +432,9 @@ benchmark/gaia/results.jsonl
 
 # Examples
 examples/toolkits/session_logs/**
+examples/toolkits/browser_skills_example/runs
+examples/toolkits/browser_skills_example/skills_store
+examples/toolkits/browser_skills_example/WebVoyager_data.jsonl
 context_files
 
 # Secret files for docker
