@@ -415,14 +415,29 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         import json
         from datetime import datetime
 
-        os.makedirs(self._log_dir, exist_ok=True)
+        from camel.utils.agent_context import get_current_agent_id
+
+        agent_id = get_current_agent_id()
+
+        # Remove _context_summarizer suffix to keep all logs in one directory
+        log_agent_id = agent_id
+        if agent_id and agent_id.endswith("_context_summarizer"):
+            log_agent_id = agent_id[: -len("_context_summarizer")]
+
+        log_subdir = (
+            os.path.join(self._log_dir, log_agent_id)
+            if log_agent_id
+            else self._log_dir
+        )
+        os.makedirs(log_subdir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        log_file_path = os.path.join(self._log_dir, f"conv_{timestamp}.json")
+        log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
         log_entry = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
+            "agent_id": agent_id,
             "request": {"messages": messages},
         }
 
