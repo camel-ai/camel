@@ -4507,8 +4507,9 @@ class Workforce(BaseNode):
                 return self.failure_handling_config.halt_on_max_retries
 
             # Clean up tracking before recovery
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            # Note: task.id is guaranteed to be in _assignees since we
+            # already checked original_assignee is not None above
+            await self._channel.archive_task(task.id)
             self._cleanup_task_tracking(task.id)
 
             # Apply the single strategy with preserved assignee
@@ -4570,8 +4571,7 @@ class Workforce(BaseNode):
             return self.failure_handling_config.halt_on_max_retries
 
         # Clean up tracking before attempting recovery
-        if task.id in self._assignees:
-            await self._channel.archive_task(task.id)
+        await self._channel.archive_task(task.id)
         self._cleanup_task_tracking(task.id)
 
         # Apply recovery strategy with preserved assignee
@@ -5338,10 +5338,7 @@ class Workforce(BaseNode):
                                 continue
 
                             # Clean up tracking before attempting recovery
-                            if returned_task.id in self._assignees:
-                                await self._channel.archive_task(
-                                    returned_task.id
-                                )
+                            await self._channel.archive_task(returned_task.id)
                             self._cleanup_task_tracking(returned_task.id)
 
                             # Apply LLM-recommended recovery strategy with
