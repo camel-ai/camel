@@ -20,7 +20,7 @@ line tool and save the credentials first.
 - **bucket_name** (str): The name of the bucket.
 - **create_if_not_exists** (bool, optional): Whether to create the bucket if it does not exist. Defaults to True.
 - **anonymous** (bool, optional): Whether to use anonymous access. Defaults to False.
-- **References**: 
+- **References**:
 - **https**: //cloud.google.com/storage
 - **https**: //cloud.google.com/docs/authentication/api-keys
 
