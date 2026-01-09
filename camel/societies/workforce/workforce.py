@@ -1637,6 +1637,7 @@ class Workforce(BaseNode):
         self,
         task: Task,
         recovery_decision: TaskAnalysisResult,
+        original_assignee: str,
     ) -> bool:
         r"""Apply the recovery strategy from a task analysis result.
 
@@ -1647,6 +1648,8 @@ class Workforce(BaseNode):
             task (Task): The task that needs recovery
             recovery_decision (TaskAnalysisResult): The analysis result with
                 recovery strategy
+            original_assignee (str): The original worker ID that was assigned
+                to this task before cleanup.
 
         Returns:
             bool: True if workforce should halt (e.g., decompose needs
@@ -1660,32 +1663,12 @@ class Workforce(BaseNode):
         try:
             if strategy == RecoveryStrategy.RETRY:
                 # Simply retry the task by reposting it to the same worker
-                # Check both _assignees dict and task.assigned_worker_id
-                assignee_id = (
-                    self._assignees.get(task.id) or task.assigned_worker_id
+                await self._post_task(task, original_assignee)
+                action_taken = f"retried with same worker {original_assignee}"
+                logger.info(
+                    f"Task {task.id} retrying with same worker "
+                    f"{original_assignee}"
                 )
-
-                if assignee_id:
-                    # Retry with the same worker - no coordinator call needed
-                    await self._post_task(task, assignee_id)
-                    action_taken = f"retried with same worker {assignee_id}"
-                    logger.info(
-                        f"Task {task.id} retrying with same worker "
-                        f"{assignee_id} (no coordinator call)"
-                    )
-                else:
-                    # No previous assignment exists - find a new assignee
-                    logger.info(
-                        f"Task {task.id} has no previous assignee, "
-                        f"calling coordinator"
-                    )
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"retried with new worker {assignment.assignee_id}"
-                    )
 
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
@@ -1693,27 +1676,15 @@ class Workforce(BaseNode):
                     task.content = recovery_decision.modified_task_content
                     logger.info(f"Task {task.id} content modified for replan")
 
-                # Repost the modified task
-                if task.id in self._assignees:
-                    assignee_id = self._assignees[task.id]
-                    await self._post_task(task, assignee_id)
-                    action_taken = (
-                        f"replanned and retried with worker {assignee_id}"
-                    )
-                else:
-                    # Find a new assignee for the replanned task
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"replanned and assigned to "
-                        f"worker {assignment.assignee_id}"
-                    )
+                # Repost the modified task to the same worker
+                await self._post_task(task, original_assignee)
+                action_taken = (
+                    f"replanned and retried with worker {original_assignee}"
+                )
 
             elif strategy == RecoveryStrategy.REASSIGN:
                 # Reassign to a different worker
-                old_worker = task.assigned_worker_id
+                old_worker = original_assignee
                 logger.info(
                     f"Task {task.id} will be reassigned from worker "
                     f"{old_worker}"
@@ -4524,15 +4495,26 @@ class Workforce(BaseNode):
                 recovery_strategy=single_strategy,
             )
 
+            # Preserve assignee before cleanup
+            original_assignee = self._assignees.get(task.id)
+            if original_assignee is None:
+                logger.error(
+                    f"Task {task.id}: No assignee found in _assignees. "
+                    f"This indicates a bug in the task assignment chain."
+                )
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                return self.failure_handling_config.halt_on_max_retries
+
             # Clean up tracking before recovery
             if task.id in self._assignees:
                 await self._channel.archive_task(task.id)
             self._cleanup_task_tracking(task.id)
 
-            # Apply the single strategy
+            # Apply the single strategy with preserved assignee
             try:
                 is_decompose = await self._apply_recovery_strategy(
-                    task, recovery_decision
+                    task, recovery_decision, original_assignee
                 )
                 if is_decompose:
                     self._completed_tasks.append(task)
@@ -4576,15 +4558,26 @@ class Workforce(BaseNode):
             f"{recovery_decision.reasoning}"
         )
 
+        # Preserve assignee before cleanup
+        original_assignee = self._assignees.get(task.id)
+        if original_assignee is None:
+            logger.error(
+                f"Task {task.id}: No assignee found in _assignees. "
+                f"This indicates a bug in the task assignment chain."
+            )
+            task.state = TaskState.FAILED
+            self._completed_tasks.append(task)
+            return self.failure_handling_config.halt_on_max_retries
+
         # Clean up tracking before attempting recovery
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
         self._cleanup_task_tracking(task.id)
 
-        # Apply recovery strategy
+        # Apply recovery strategy with preserved assignee
         try:
             is_decompose = await self._apply_recovery_strategy(
-                task, recovery_decision
+                task, recovery_decision, original_assignee
             )
 
             # For decompose, we handle it specially
@@ -5329,6 +5322,21 @@ class Workforce(BaseNode):
                                         config_strategies[0]
                                     )
 
+                            # Preserve assignee before cleanup - in normal
+                            # flow, a task must be assigned before it can fail
+                            original_assignee = self._assignees.get(
+                                returned_task.id
+                            )
+                            if original_assignee is None:
+                                logger.error(
+                                    f"Task {returned_task.id}: No assignee "
+                                    f"found in _assignees. This indicates a "
+                                    f"bug in the task assignment chain."
+                                )
+                                returned_task.state = TaskState.FAILED
+                                self._completed_tasks.append(returned_task)
+                                continue
+
                             # Clean up tracking before attempting recovery
                             if returned_task.id in self._assignees:
                                 await self._channel.archive_task(
@@ -5336,11 +5344,14 @@ class Workforce(BaseNode):
                                 )
                             self._cleanup_task_tracking(returned_task.id)
 
-                            # Apply LLM-recommended recovery strategy
+                            # Apply LLM-recommended recovery strategy with
+                            # preserved assignee
                             try:
                                 is_decompose = (
                                     await self._apply_recovery_strategy(
-                                        returned_task, quality_eval
+                                        returned_task,
+                                        quality_eval,
+                                        original_assignee,
                                     )
                                 )
 
