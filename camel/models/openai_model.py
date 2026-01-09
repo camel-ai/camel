@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
@@ -35,9 +35,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_trace,
 )
 
 logger = get_logger(__name__)
@@ -299,26 +297,7 @@ class OpenAIModel(BaseModelBackend):
                 or `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        model_type_str = str(self.model_type)
-        if not agent_session_id:
-            agent_session_id = "no-session-id"
-        metadata = {
-            "source": "camel",
-            "agent_id": agent_session_id,
-            "agent_type": "camel_chat_agent",
-            "model_type": model_type_str,
-        }
-        metadata = {k: str(v) for k, v in metadata.items()}
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata=metadata,
-                tags=["CAMEL-AI", model_type_str],
-            )
-        logger.info(f"metadata: {metadata}")
+        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -371,25 +350,7 @@ class OpenAIModel(BaseModelBackend):
                 `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        model_type_str = str(self.model_type)
-        if not agent_session_id:
-            agent_session_id = "no-session-id"
-            metadata = {
-                "source": "camel",
-                "agent_id": agent_session_id,
-                "agent_type": "camel_chat_agent",
-                "model_type": model_type_str,
-            }
-            metadata = {k: str(v) for k, v in metadata.items()}
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata=metadata,
-                tags=["CAMEL-AI", model_type_str],
-            )
-        logger.info(f"metadata: {metadata}")
+        self._log_and_trace()
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(

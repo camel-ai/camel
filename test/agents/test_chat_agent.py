@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
 from copy import deepcopy
@@ -736,7 +736,9 @@ def test_chat_agent_stream_output(step_call_count=3):
         model_config_dict=stream_model_config.as_dict(),
     )
     model.run = MagicMock(return_value=model_backend_rsp_base)
-    stream_assistant = ChatAgent(system_msg, model=model)
+    stream_assistant = ChatAgent(
+        system_msg, model=model, stream_accumulate=False
+    )
     stream_assistant.reset()
     for i in range(step_call_count):
         stream_assistant_response = stream_assistant.step(user_msg)
@@ -768,7 +770,7 @@ def test_chat_agent_stream_accumulate_mode_accumulated():
         "total_tokens": 0,
     }
 
-    agent = ChatAgent()
+    agent = ChatAgent(stream_accumulate=True)
     accumulator = StreamContentAccumulator()
     outputs = []
     for c in chunks:
@@ -786,7 +788,7 @@ def test_chat_agent_stream_accumulate_mode_accumulated():
 
 @pytest.mark.model_backend
 def test_chat_agent_stream_accumulate_mode_delta():
-    """Verify delta streaming behavior (stream_accumulate=False)."""
+    """Verify delta streaming behavior (stream_accumulate=False, default)."""
     chunks = ["Hello", " ", "world"]
     step_usage = {
         "completion_tokens": 0,
@@ -1471,7 +1473,9 @@ async def test_chat_agent_async_stream_with_async_generator():
         model_config_dict={"stream": True},
     )
 
-    agent = ChatAgent(system_message=system_msg, model=model)
+    agent = ChatAgent(
+        system_message=system_msg, model=model, stream_accumulate=True
+    )
 
     # Create mock streaming chunks
     chunks = [
@@ -1609,6 +1613,7 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
         system_message=system_msg,
         model=model,
         tools=[FunctionTool(test_add)],
+        stream_accumulate=False,
     )
 
     # Create mock streaming chunks with tool calls

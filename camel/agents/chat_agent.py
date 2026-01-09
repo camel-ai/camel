@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -70,7 +70,6 @@ from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
-    ContextRecord,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
@@ -105,16 +104,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
-
-TOKEN_LIMIT_ERROR_MARKERS = (
-    "context_length_exceeded",
-    "prompt is too long",
-    "exceeded your current quota",
-    "tokens must be reduced",
-    "context length",
-    "token count",
-    "context limit",
-)
+from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -397,6 +387,10 @@ class ChatAgent(BaseAgent):
             window that triggers summarization. If `None`, will trigger
             summarization when the context window is full.
             (default: :obj:`None`)
+        token_limit (int, optional): The maximum number of tokens allowed for
+            the context window. If `None`, uses the model's default token
+            limit. This can be used to restrict the context size below the
+            model's maximum capacity. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
@@ -416,7 +410,10 @@ class ChatAgent(BaseAgent):
             directly return the request instead of processing it.
             (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
-            :obj:`ResponseTerminator` bind to one chat agent.
+            :obj:`ResponseTerminator` to check if task is complete. When set,
+            the agent will keep prompting the model until a terminator signals
+            completion. Note: You must define the termination signal (e.g.,
+            a keyword) in your system prompt so the model knows what to output.
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
@@ -454,10 +451,12 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
-        stream_accumulate (bool, optional): When True, partial streaming
-            updates return accumulated content (current behavior). When False,
-            partial updates return only the incremental delta. (default:
-            :obj:`True`)
+        stream_accumulate (Optional[bool], optional): When True, partial
+            streaming updates return accumulated content. When False, partial
+            updates return only the incremental delta (recommended).
+            If None, defaults to False with a deprecation warning for users
+            who previously relied on the old default (True).
+            (default: :obj:`None`, which behaves as :obj:`False`)
         summary_window_ratio (float, optional): Maximum fraction of the total
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
@@ -507,7 +506,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
-        stream_accumulate: bool = True,
+        stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
         if isinstance(model, ModelManager):
@@ -528,10 +527,16 @@ class ChatAgent(BaseAgent):
         self._tool_output_history: List[_ToolOutputHistoryEntry] = []
 
         # Set up memory
+        if token_limit is not None:
+            effective_token_limit = token_limit
+        else:
+            effective_token_limit = self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            self.model_backend.token_limit,
+            effective_token_limit,
         )
+        self._token_limit = effective_token_limit
+        self._summary_token_count = 0
 
         self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
@@ -568,7 +573,6 @@ class ChatAgent(BaseAgent):
                 f"{summarize_threshold}% of the total token limit."
             )
         self.summarize_threshold = summarize_threshold
-        self._reset_summary_state()
 
         # Set up role name and role type
         self.role_name: str = (
@@ -616,19 +620,47 @@ class ChatAgent(BaseAgent):
         self.step_timeout = step_timeout
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
-        self.stream_accumulate = stream_accumulate
+
+        # Store whether user explicitly set stream_accumulate
+        # Warning will be issued only when streaming is actually used
+        self._stream_accumulate_explicit = stream_accumulate is not None
+        self.stream_accumulate = (
+            stream_accumulate if stream_accumulate is not None else False
+        )
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
-        self._last_token_limit_tool_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        self._reset_summary_state()
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def _update_token_cache(
+        self,
+        usage_dict: Dict[str, Any],
+        message_count: int,
+    ) -> None:
+        r"""Update the token count cache from LLM response usage.
+
+        Args:
+            usage_dict (Dict[str, Any]): Usage dictionary from LLM response.
+            message_count (int): Number of messages sent to the LLM.
+        """
+        prompt_tokens = usage_dict.get("prompt_tokens", 0)
+        completion_tokens = usage_dict.get("completion_tokens", 0)
+
+        if prompt_tokens == 0:
+            return
+
+        total_tokens = prompt_tokens + completion_tokens
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'set_cached_token_count'):
+            context_creator.set_cached_token_count(
+                total_tokens, message_count + 1
+            )
 
     def _resolve_models(
         self,
@@ -775,6 +807,11 @@ class ChatAgent(BaseAgent):
         return self._internal_tools
 
     @property
+    def token_limit(self) -> int:
+        r"""Returns the token limit for the agent's context window."""
+        return self._token_limit
+
+    @property
     def output_language(self) -> Optional[str]:
         r"""Returns the output language for the agent."""
         return self._output_language
@@ -834,122 +871,6 @@ class ChatAgent(BaseAgent):
         ]
 
     @staticmethod
-    def _is_token_limit_error(error: Exception) -> bool:
-        r"""Return True when the exception message indicates a token limit."""
-        error_message = str(error).lower()
-        return any(
-            marker in error_message for marker in TOKEN_LIMIT_ERROR_MARKERS
-        )
-
-    @staticmethod
-    def _is_tool_related_record(record: MemoryRecord) -> bool:
-        r"""Determine whether the given memory record
-        belongs to a tool call."""
-        if record.role_at_backend in {
-            OpenAIBackendRole.TOOL,
-            OpenAIBackendRole.FUNCTION,
-        }:
-            return True
-
-        if (
-            record.role_at_backend == OpenAIBackendRole.ASSISTANT
-            and isinstance(record.message, FunctionCallingMessage)
-        ):
-            return True
-
-        return False
-
-    def _find_indices_to_remove_for_last_tool_pair(
-        self, recent_records: List[ContextRecord]
-    ) -> List[int]:
-        """Find indices of records that should be removed to clean up the most
-        recent incomplete tool interaction pair.
-
-        This method identifies tool call/result pairs by tool_call_id and
-        returns the exact indices to remove, allowing non-contiguous deletions.
-
-        Logic:
-        - If the last record is a tool result (TOOL/FUNCTION) with a
-          tool_call_id, find the matching assistant call anywhere in history
-          and return both indices.
-        - If the last record is an assistant tool call without a result yet,
-          return just that index.
-        - For normal messages (non tool-related): remove just the last one.
-        - Fallback: If no tool_call_id is available, use heuristic (last 2 if
-          tool-related, otherwise last 1).
-
-        Returns:
-            List[int]: Indices to remove (may be non-contiguous).
-        """
-        if not recent_records:
-            return []
-
-        last_idx = len(recent_records) - 1
-        last_record = recent_records[last_idx].memory_record
-
-        # Case A: Last is an ASSISTANT tool call with no result yet
-        if (
-            last_record.role_at_backend == OpenAIBackendRole.ASSISTANT
-            and isinstance(last_record.message, FunctionCallingMessage)
-            and last_record.message.result is None
-        ):
-            return [last_idx]
-
-        # Case B: Last is TOOL/FUNCTION result, try id-based pairing
-        if last_record.role_at_backend in {
-            OpenAIBackendRole.TOOL,
-            OpenAIBackendRole.FUNCTION,
-        }:
-            tool_id = None
-            if isinstance(last_record.message, FunctionCallingMessage):
-                tool_id = last_record.message.tool_call_id
-
-            if tool_id:
-                for idx in range(len(recent_records) - 2, -1, -1):
-                    rec = recent_records[idx].memory_record
-                    if rec.role_at_backend != OpenAIBackendRole.ASSISTANT:
-                        continue
-
-                    # Check if this assistant message contains the tool_call_id
-                    matched = False
-
-                    # Case 1: FunctionCallingMessage (single tool call)
-                    if isinstance(rec.message, FunctionCallingMessage):
-                        if rec.message.tool_call_id == tool_id:
-                            matched = True
-
-                    # Case 2: BaseMessage with multiple tool_calls in meta_dict
-                    elif (
-                        hasattr(rec.message, "meta_dict")
-                        and rec.message.meta_dict
-                    ):
-                        tool_calls_list = rec.message.meta_dict.get(
-                            "tool_calls", []
-                        )
-                        if isinstance(tool_calls_list, list):
-                            for tc in tool_calls_list:
-                                if (
-                                    isinstance(tc, dict)
-                                    and tc.get("id") == tool_id
-                                ):
-                                    matched = True
-                                    break
-
-                    if matched:
-                        # Return both assistant call and tool result indices
-                        return [idx, last_idx]
-
-            # Fallback: no tool_call_id, use heuristic
-            if self._is_tool_related_record(last_record):
-                # Remove last 2 (assume they are paired)
-                return [last_idx - 1, last_idx] if last_idx > 0 else [last_idx]
-            else:
-                return [last_idx]
-
-        # Default: non tool-related tail => remove last one
-        return [last_idx]
-
-    @staticmethod
     def _serialize_tool_args(args: Dict[str, Any]) -> str:
         try:
             return json.dumps(args, ensure_ascii=False, sort_keys=True)
@@ -991,39 +912,6 @@ class ChatAgent(BaseAgent):
             signature = None
         self._last_tool_call_signature = signature
 
-    def _format_tool_limit_notice(self) -> Optional[str]:
-        record = self._last_tool_call_record
-        description = self._describe_tool_call(record)
-        if description is None:
-            return None
-        notice_lines = [
-            "[Tool Call Causing Token Limit]",
-            description,
-        ]
-
-        if record is not None:
-            result = record.result
-            if isinstance(result, bytes):
-                result_repr = result.decode(errors="replace")
-            elif isinstance(result, str):
-                result_repr = result
-            else:
-                try:
-                    result_repr = json.dumps(
-                        result, ensure_ascii=False, sort_keys=True
-                    )
-                except (TypeError, ValueError):
-                    result_repr = str(result)
-
-            result_length = len(result_repr)
-            notice_lines.append(f"Tool result length: {result_length}")
-            if self.model_backend.token_limit != 999999999:
-                notice_lines.append(
-                    f"Token limit: {self.model_backend.token_limit}"
-                )
-
-        return "\n".join(notice_lines)
-
     @staticmethod
     def _append_user_messages_section(
         summary_content: str, user_messages: List[str]
@@ -1051,21 +939,104 @@ class ChatAgent(BaseAgent):
     def _reset_summary_state(self) -> None:
         self._summary_token_count = 0  # Total tokens in summary messages
 
+    def _get_context_with_summarization(
+        self,
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""Get context and trigger summarization if needed."""
+        openai_messages, num_tokens = self.memory.get_context()
+
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
+            return openai_messages, num_tokens
+
+        summary_token_count = self._summary_token_count
+
+        if summary_token_count > self.token_limit * self.summary_window_ratio:
+            logger.warning(
+                f"Summary tokens ({summary_token_count}) "
+                f"exceed limit, full compression."
+            )
+            summary = self.summarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            return self.memory.get_context()
+
+        threshold = self._calculate_next_summary_threshold()
+        if num_tokens > threshold:
+            logger.warning(
+                f"Token count ({num_tokens}) exceed threshold "
+                f"({threshold}). Triggering summarization."
+            )
+            summary = self.summarize(include_summaries=False)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=False
+            )
+            return self.memory.get_context()
+
+        return openai_messages, num_tokens
+
+    async def _get_context_with_summarization_async(
+        self,
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""Async version: get context and trigger summarization if needed."""
+        openai_messages, num_tokens = self.memory.get_context()
+
+        if self.summarize_threshold is None or num_tokens > self.token_limit:
+            return openai_messages, num_tokens
+
+        summary_token_count = self._summary_token_count
+
+        if summary_token_count > self.token_limit * self.summary_window_ratio:
+            logger.warning(
+                f"Summary tokens ({summary_token_count}) "
+                f"exceed limit, full compression."
+            )
+            summary = await self.asummarize(include_summaries=True)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=True
+            )
+            return self.memory.get_context()
+
+        threshold = self._calculate_next_summary_threshold()
+        if num_tokens > threshold:
+            logger.warning(
+                f"Token count ({num_tokens}) exceed threshold "
+                f"({threshold}). Triggering summarization."
+            )
+            summary = await self.asummarize(include_summaries=False)
+            self._update_memory_with_summary(
+                summary.get("summary", ""), include_summaries=False
+            )
+            return self.memory.get_context()
+
+        return openai_messages, num_tokens
+
     def _calculate_next_summary_threshold(self) -> int:
         r"""Calculate the next token threshold that should trigger
         summarization.
 
         The threshold calculation follows a progressive strategy:
-        - First time: token_limit * (summarize_threshold / 100)
-        - Subsequent times: (limit - summary_token) / 2 + summary_token
+        - First time (or after full compression):
+          token_limit * (summarize_threshold / 100)
+        - After progressive compression:
+          (token_limit - summary_tokens) * (summarize_threshold / 100)
+          + summary_tokens
 
-        This ensures that as summaries accumulate, the threshold adapts
-        to maintain a reasonable balance between context and summaries.
+        This ensures that as summaries accumulate through progressive
+        compression, the threshold adapts to maintain a reasonable balance
+        between context and summaries. After full compression, the threshold
+        resets to the initial value to prevent frequent re-summarization.
 
         Returns:
             int: The token count threshold for next summarization.
         """
-        token_limit = self.model_backend.token_limit
+        if self.summarize_threshold is None:
+            raise ValueError(
+                "Cannot calculate summary threshold when "
+                "summarize_threshold is None"
+            )
+
+        token_limit = self.token_limit
         summary_token_count = self._summary_token_count
 
         # First summarization: use the percentage threshold
@@ -1094,17 +1065,21 @@ class ChatAgent(BaseAgent):
         summary_content: str = summary
 
         existing_summaries = []
-        if not include_summaries:
-            messages, _ = self.memory.get_context()
-            for msg in messages:
-                content = msg.get('content', '')
-                if isinstance(content, str) and content.startswith(
-                    '[CONTEXT_SUMMARY]'
-                ):
-                    existing_summaries.append(msg)
+        last_user_message: Optional[str] = None
+        messages, _ = self.memory.get_context()
+        for msg in messages:
+            content = msg.get('content', '')
+            role = msg.get('role', '')
+            if role == 'user' and isinstance(content, str) and content:
+                last_user_message = content
+            if (
+                not include_summaries
+                and isinstance(content, str)
+                and content.startswith('[CONTEXT_SUMMARY]')
+            ):
+                existing_summaries.append(msg)
 
-        # Clear memory
-        self.clear_memory()
+        self.clear_memory(reset_summary_state=False)
 
         # Restore old summaries (for progressive compression)
         for old_summary in existing_summaries:
@@ -1121,16 +1096,24 @@ class ChatAgent(BaseAgent):
             role_name="assistant", content=summary_content
         )
         self.update_memory(new_summary_msg, OpenAIBackendRole.ASSISTANT)
-        input_message = BaseMessage.make_assistant_message(
-            role_name="assistant",
-            content=(
-                "Please continue the conversation from "
-                "where we left it off without asking the user any further "
-                "questions. Continue with the last task that you were "
-                "asked to work on."
-            ),
-        )
-        self.update_memory(input_message, OpenAIBackendRole.ASSISTANT)
+
+        # Restore last user message to maintain conversation structure
+        # The summary already contains all user messages, but we keep the
+        # latest one so the model knows what to respond to
+        if last_user_message:
+            # Avoid duplicate prefix - check if already prefixed
+            context_prefix = (
+                "Based on the previous CONTEXT_SUMMARY, "
+                "continue with my current message: "
+            )
+            if not last_user_message.startswith(context_prefix):
+                last_user_message = f"{context_prefix}{last_user_message}"
+            user_msg = BaseMessage.make_user_message(
+                role_name="user",
+                content=last_user_message,
+            )
+            self.update_memory(user_msg, OpenAIBackendRole.USER)
+
         # Update token count
         try:
             summary_tokens = (
@@ -1139,13 +1122,15 @@ class ChatAgent(BaseAgent):
                 )
             )
 
-            if include_summaries:  # Full compression - reset count
+            if (
+                include_summaries
+            ):  # Full compression - reset and set to new summary tokens only
                 self._summary_token_count = summary_tokens
                 logger.info(
                     f"Full compression: Summary with {summary_tokens} tokens. "
-                    f"Total summary tokens reset to: {summary_tokens}"
+                    f"Total summary tokens set to: {summary_tokens}"
                 )
-            else:  # Progressive compression - accumulate
+            else:  # Progressive compression - accumulate on existing count
                 self._summary_token_count += summary_tokens
                 logger.info(
                     f"Progressive compression: New summary "
@@ -1177,6 +1162,50 @@ class ChatAgent(BaseAgent):
             return json.dumps(result, ensure_ascii=False)
         except (TypeError, ValueError):
             return str(result)
+
+    def _truncate_tool_result(
+        self, func_name: str, result: Any
+    ) -> Tuple[Any, bool]:
+        r"""Truncate tool result if it exceeds the maximum token limit.
+
+        Args:
+            func_name (str): The name of the tool function called.
+            result (Any): The result returned by the tool execution.
+
+        Returns:
+            Tuple[Any, bool]: A tuple containing:
+                - The (possibly truncated) result
+                - A boolean indicating whether truncation occurred
+        """
+        serialized = self._serialize_tool_result(result)
+        # Use summarize_threshold if set, otherwise default to 90%
+        threshold_ratio = (
+            min(0.9, self.summarize_threshold / 100)
+            if self.summarize_threshold is not None
+            else 0.9
+        )
+        max_tokens = int(self.token_limit * threshold_ratio)
+        result_tokens = self._get_token_count(serialized)
+
+        if result_tokens <= max_tokens:
+            return result, False
+
+        # Reserve ~100 tokens for notice, use char-based truncation directly
+        target_tokens = max(max_tokens - 100, 100)
+        truncated = serialized[: target_tokens * 3]
+
+        notice = (
+            f"\n\n[TRUNCATED] Tool '{func_name}' output truncated "
+            f"({result_tokens} > {max_tokens} tokens). "
+            f"Tool executed successfully."
+        )
+
+        logger.warning(
+            f"Tool '{func_name}' result truncated: "
+            f"{result_tokens} -> ~{target_tokens} tokens"
+        )
+
+        return notice + truncated, True
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
@@ -1702,6 +1731,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    token_limit=self.token_limit,
                     summarize_threshold=None,
                 )
             else:
@@ -1781,8 +1811,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
@@ -1984,6 +2024,8 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    token_limit=self.token_limit,
+                    summarize_threshold=None,
                 )
             else:
                 self._context_summary_agent.reset()
@@ -2127,6 +2169,7 @@ class ChatAgent(BaseAgent):
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
+                    token_limit=self.token_limit,
                     summarize_threshold=None,
                 )
             else:
@@ -2215,8 +2258,18 @@ class ChatAgent(BaseAgent):
             # convert structured output to custom markdown if present
             if structured_output:
                 # convert structured output to custom markdown
+                # exclude operation_mode and target_workflow_filename
+                # if present (used for workflow save logic, not persisted)
+                exclude_fields = []
+                if hasattr(structured_output, 'operation_mode'):
+                    exclude_fields.append('operation_mode')
+                if hasattr(structured_output, 'target_workflow_filename'):
+                    exclude_fields.append('target_workflow_filename')
+
                 summary_content = context_util.structured_output_to_markdown(
-                    structured_data=structured_output, metadata=metadata
+                    structured_data=structured_output,
+                    metadata=metadata,
+                    exclude_fields=exclude_fields if exclude_fields else None,
                 )
             if add_user_messages:
                 summary_content = self._append_user_messages_section(
@@ -2260,13 +2313,23 @@ class ChatAgent(BaseAgent):
             result["status"] = error_message
             return result
 
-    def clear_memory(self) -> None:
+    def clear_memory(self, reset_summary_state: bool = True):
         r"""Clear the agent's memory and reset to initial state.
 
-        Returns:
-            None
+        Args:
+            reset_summary_state (bool): Whether to reset the summary token
+                count. Set to False when preserving summary state during
+                summarization. Defaults to True for full memory clearing.
         """
         self.memory.clear()
+
+        if reset_summary_state:
+            self._reset_summary_state()
+
+        # Reset token cache when memory is cleared
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'clear_cache'):
+            context_creator.clear_cache()
 
         if self.system_message is not None:
             self.memory.write_record(
@@ -2307,7 +2370,6 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
-        self._reset_summary_state()
         self.clear_memory()
 
     def update_system_message(
@@ -2635,7 +2697,6 @@ class ChatAgent(BaseAgent):
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
                 openai_messages=[openai_message],
-                num_tokens=0,
                 response_format=response_format,
                 tool_schemas=[],
                 prev_num_openai_messages=0,
@@ -2667,7 +2728,6 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
                 openai_messages=[openai_message],
-                num_tokens=0,
                 response_format=response_format,
                 tool_schemas=[],
                 prev_num_openai_messages=0,
@@ -2735,6 +2795,11 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
+
         # Set Langfuse session_id using agent_id for trace grouping
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -2787,122 +2852,24 @@ class ChatAgent(BaseAgent):
                         time.sleep(0.001)
 
             try:
-                openai_messages, num_tokens = self.memory.get_context()
-                if self.summarize_threshold is not None:
-                    threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_token_count
-                    token_limit = self.model_backend.token_limit
-
-                    if num_tokens <= token_limit:
-                        if (
-                            summary_token_count
-                            > token_limit * self.summary_window_ratio
-                        ):
-                            logger.info(
-                                f"Summary tokens ({summary_token_count}) "
-                                f"exceed limit, full compression."
-                            )
-                            # Summarize everything (including summaries)
-                            summary = self.summarize(include_summaries=True)
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=True,
-                            )
-                        elif num_tokens > threshold:
-                            logger.info(
-                                f"Token count ({num_tokens}) exceed threshold "
-                                f"({threshold}). Triggering summarization."
-                            )
-                            # Only summarize non-summary content
-                            summary = self.summarize(include_summaries=False)
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=False,
-                            )
+                openai_messages, num_tokens = (
+                    self._get_context_with_summarization()
+                )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend with token limit error handling
-            try:
-                response = self._get_model_response(
-                    openai_messages,
-                    num_tokens=num_tokens,
-                    current_iteration=iteration_count,
-                    response_format=response_format,
-                    tool_schemas=[]
-                    if disable_tools
-                    else self._get_full_tool_schemas(),
-                    prev_num_openai_messages=prev_num_openai_messages,
-                )
-            except Exception as exc:
-                logger.exception("Model error: %s", exc)
-
-                if self._is_token_limit_error(exc):
-                    tool_signature = self._last_tool_call_signature
-                    if (
-                        tool_signature is not None
-                        and tool_signature
-                        == self._last_token_limit_tool_signature
-                    ):
-                        description = self._describe_tool_call(
-                            self._last_tool_call_record
-                        )
-                        repeated_msg = (
-                            "Context exceeded again by the same tool call."
-                        )
-                        if description:
-                            repeated_msg += f" {description}"
-                        raise RuntimeError(repeated_msg) from exc
-
-                    user_message_count = sum(
-                        1
-                        for msg in openai_messages
-                        if getattr(msg, "role", None) == "user"
-                    )
-                    if (
-                        user_message_count == 1
-                        and getattr(openai_messages[-1], "role", None)
-                        == "user"
-                    ):
-                        raise RuntimeError(
-                            "The provided user input alone exceeds the "
-                            "context window. Please shorten the input."
-                        ) from exc
-
-                    logger.warning(
-                        "Token limit exceeded error detected. "
-                        "Summarizing context."
-                    )
-
-                    recent_records: List[ContextRecord]
-                    try:
-                        recent_records = self.memory.retrieve()
-                    except Exception:  # pragma: no cover - defensive guard
-                        recent_records = []
-
-                    indices_to_remove = (
-                        self._find_indices_to_remove_for_last_tool_pair(
-                            recent_records
-                        )
-                    )
-                    self.memory.remove_records_by_indices(indices_to_remove)
-
-                    summary = self.summarize(include_summaries=False)
-                    tool_notice = self._format_tool_limit_notice()
-                    summary_messages = summary.get("summary", "")
-
-                    if tool_notice:
-                        summary_messages += "\n\n" + tool_notice
-
-                    self._update_memory_with_summary(
-                        summary_messages, include_summaries=False
-                    )
-                    self._last_token_limit_tool_signature = tool_signature
-                    return self._step_impl(input_message, response_format)
-
-                raise
+            # Get response from model backend
+            response = self._get_model_response(
+                openai_messages,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
+            )
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
@@ -2911,6 +2878,9 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+
+            # Update token cache from LLM response
+            self._update_token_cache(response.usage_dict, len(openai_messages))
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
@@ -2961,6 +2931,43 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory as a user message
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content="Please continue.",
+                    meta_dict={},
+                )
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         self._format_response_if_needed(response, response_format)
@@ -3024,6 +3031,10 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3061,6 +3072,10 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
+        # Set agent_id in context-local storage for logging
+        from camel.utils.agent_context import set_current_agent_id
+
+        set_current_agent_id(self.agent_id)
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -3108,128 +3123,25 @@ class ChatAgent(BaseAgent):
                     loop = asyncio.get_event_loop()
                     await loop.run_in_executor(None, self.pause_event.wait)
             try:
-                openai_messages, num_tokens = self.memory.get_context()
-                if self.summarize_threshold is not None:
-                    threshold = self._calculate_next_summary_threshold()
-                    summary_token_count = self._summary_token_count
-                    token_limit = self.model_backend.token_limit
-
-                    if num_tokens <= token_limit:
-                        if (
-                            summary_token_count
-                            > token_limit * self.summary_window_ratio
-                        ):
-                            logger.info(
-                                f"Summary tokens ({summary_token_count}) "
-                                f"exceed limit, full compression."
-                            )
-                            # Summarize everything (including summaries)
-                            summary = await self.asummarize(
-                                include_summaries=True
-                            )
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=True,
-                            )
-                        elif num_tokens > threshold:
-                            logger.info(
-                                f"Token count ({num_tokens}) exceed threshold "
-                                "({threshold}). Triggering summarization."
-                            )
-                            # Only summarize non-summary content
-                            summary = await self.asummarize(
-                                include_summaries=False
-                            )
-                            self._update_memory_with_summary(
-                                summary.get("summary", ""),
-                                include_summaries=False,
-                            )
+                (
+                    openai_messages,
+                    num_tokens,
+                ) = await self._get_context_with_summarization_async()
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend with token limit error handling
-            try:
-                response = await self._aget_model_response(
-                    openai_messages,
-                    num_tokens=num_tokens,
-                    current_iteration=iteration_count,
-                    response_format=response_format,
-                    tool_schemas=[]
-                    if disable_tools
-                    else self._get_full_tool_schemas(),
-                    prev_num_openai_messages=prev_num_openai_messages,
-                )
-            except Exception as exc:
-                logger.exception("Model error: %s", exc)
-
-                if self._is_token_limit_error(exc):
-                    tool_signature = self._last_tool_call_signature
-                    if (
-                        tool_signature is not None
-                        and tool_signature
-                        == self._last_token_limit_tool_signature
-                    ):
-                        description = self._describe_tool_call(
-                            self._last_tool_call_record
-                        )
-                        repeated_msg = (
-                            "Context exceeded again by the same tool call."
-                        )
-                        if description:
-                            repeated_msg += f" {description}"
-                        raise RuntimeError(repeated_msg) from exc
-
-                    user_message_count = sum(
-                        1
-                        for msg in openai_messages
-                        if getattr(msg, "role", None) == "user"
-                    )
-                    if (
-                        user_message_count == 1
-                        and getattr(openai_messages[-1], "role", None)
-                        == "user"
-                    ):
-                        raise RuntimeError(
-                            "The provided user input alone exceeds the"
-                            "context window. Please shorten the input."
-                        ) from exc
-
-                    logger.warning(
-                        "Token limit exceeded error detected. "
-                        "Summarizing context."
-                    )
-
-                    recent_records: List[ContextRecord]
-                    try:
-                        recent_records = self.memory.retrieve()
-                    except Exception:  # pragma: no cover - defensive guard
-                        recent_records = []
-
-                    indices_to_remove = (
-                        self._find_indices_to_remove_for_last_tool_pair(
-                            recent_records
-                        )
-                    )
-                    self.memory.remove_records_by_indices(indices_to_remove)
-
-                    summary = await self.asummarize()
-
-                    tool_notice = self._format_tool_limit_notice()
-                    summary_messages = summary.get("summary", "")
-
-                    if tool_notice:
-                        summary_messages += "\n\n" + tool_notice
-                    self._update_memory_with_summary(
-                        summary_messages, include_summaries=False
-                    )
-                    self._last_token_limit_tool_signature = tool_signature
-                    return await self._astep_non_streaming_task(
-                        input_message, response_format
-                    )
-
-                raise
+            # Get response from model backend
+            response = await self._aget_model_response(
+                openai_messages,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
+            )
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
@@ -3238,6 +3150,9 @@ class ChatAgent(BaseAgent):
             self._update_token_usage_tracker(
                 step_token_usage, response.usage_dict
             )
+
+            # Update token cache from LLM response
+            self._update_token_cache(response.usage_dict, len(openai_messages))
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
@@ -3291,6 +3206,43 @@ class ChatAgent(BaseAgent):
                 # If we're still here, continue the loop
                 continue
 
+            # No tool calls - check if we should terminate based on terminators
+            if self.response_terminators:
+                # Check terminators to see if task is complete
+                termination_results = [
+                    terminator.is_terminated(response.output_messages)
+                    for terminator in self.response_terminators
+                ]
+                should_terminate = any(
+                    terminated for terminated, _ in termination_results
+                )
+
+                if should_terminate:
+                    # Task is complete, exit the loop
+                    break
+
+                # Task not complete - prompt the model to continue
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
+                    logger.warning(
+                        f"Max iteration {self.max_iteration} reached without "
+                        "termination signal"
+                    )
+                    break
+
+                # Add a continuation prompt to memory as a user message
+                continue_message = BaseMessage(
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    content="Please continue.",
+                    meta_dict={},
+                )
+                self.update_memory(continue_message, OpenAIBackendRole.USER)
+                continue
+
+            # No terminators configured, use original behavior
             break
 
         await self._aformat_response_if_needed(response, response_format)
@@ -3306,8 +3258,6 @@ class ChatAgent(BaseAgent):
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
             self.memory.clean_tool_calls()
-
-        self._last_token_limit_user_signature = None
 
         return self._convert_to_chatagent_response(
             response,
@@ -3336,9 +3286,11 @@ class ChatAgent(BaseAgent):
             tracker (Dict[str, int]): The token usage tracker to update.
             usage_dict (Dict[str, int]): The usage dictionary with new values.
         """
-        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens", 0)
-        tracker["completion_tokens"] += usage_dict.get("completion_tokens", 0)
-        tracker["total_tokens"] += usage_dict.get("total_tokens", 0)
+        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens") or 0
+        tracker["completion_tokens"] += (
+            usage_dict.get("completion_tokens") or 0
+        )
+        tracker["total_tokens"] += usage_dict.get("total_tokens") or 0
 
     def _convert_to_chatagent_response(
         self,
@@ -3378,17 +3330,21 @@ class ChatAgent(BaseAgent):
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
             self.record_message(output_messages[0])
+        elif len(output_messages) == 0:
+            logger.warning(
+                "No messages returned in `step()`. The model returned an "
+                "empty response."
+            )
         else:
             logger.warning(
-                "Multiple messages returned in `step()`. Record "
-                "selected message manually using `record_message()`."
+                f"{len(output_messages)} messages returned in `step()`. "
+                "Record selected message manually using `record_message()`."
             )
 
     @observe()
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        num_tokens: int,
         current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
@@ -3405,8 +3361,6 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
-                if self._is_token_limit_error(e):
-                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3453,7 +3407,6 @@ class ChatAgent(BaseAgent):
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        num_tokens: int,
         current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
@@ -3470,8 +3423,6 @@ class ChatAgent(BaseAgent):
                 if response:
                     break
             except RateLimitError as e:
-                if self._is_token_limit_error(e):
-                    raise
                 last_error = e
                 if attempt < self.retry_attempts - 1:
                     delay = min(self.retry_delay * (2**attempt), 60.0)
@@ -3853,26 +3804,31 @@ class ChatAgent(BaseAgent):
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
-        tool = self._internal_tools[func_name]
-        try:
-            raw_result = tool(**args)
-            if self.mask_tool_output:
-                with self._secure_result_store_lock:
-                    self._secure_result_store[tool_call_id] = raw_result
-                result = (
-                    "[The tool has been executed successfully, but the output"
-                    " from the tool is masked. You can move forward]"
-                )
-                mask_flag = True
-            else:
-                result = raw_result
-                mask_flag = False
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing tool '{func_name}': {e!s}"
+        tool = self._internal_tools.get(func_name)
+        mask_flag = False
+
+        if tool is None:
+            error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
-            mask_flag = False
-            logger.warning(f"{error_msg} with result: {result}")
+            logger.warning(error_msg)
+        else:
+            try:
+                raw_result = tool(**args)
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = raw_result
+                    result = (
+                        "[The tool has been executed successfully, but the "
+                        "output from the tool is masked. You can move forward]"
+                    )
+                    mask_flag = True
+                else:
+                    result = raw_result
+            except Exception as e:
+                # Capture the error message to prevent framework crash
+                error_msg = f"Error executing tool '{func_name}': {e!s}"
+                result = f"Tool execution failed: {error_msg}"
+                logger.warning(f"{error_msg} with result: {result}")
 
         return self._record_tool_calling(
             func_name,
@@ -3887,50 +3843,69 @@ class ChatAgent(BaseAgent):
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
+        import asyncio
+
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
-        tool = self._internal_tools[func_name]
-        import asyncio
+        tool = self._internal_tools.get(func_name)
+        mask_flag = False
 
-        try:
-            # Try different invocation paths in order of preference
-            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
-                # Case: FunctionTool wrapping an MCP tool
-                result = await tool.func.async_call(**args)
-
-            elif hasattr(tool, 'async_call') and callable(tool.async_call):
-                # Case: tool itself has async_call
-                result = await tool.async_call(**args)
-
-            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                tool.func
-            ):
-                # Case: tool wraps a direct async function
-                result = await tool.func(**args)
-
-            elif asyncio.iscoroutinefunction(tool):
-                # Case: tool is itself a coroutine function
-                result = await tool(**args)
-
-            else:
-                # Fallback: synchronous call
-                # Use functools.partial to properly capture args
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(
-                    None, functools.partial(tool, **args)
-                )
-
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing async tool '{func_name}': {e!s}"
+        if tool is None:
+            error_msg = f"Tool '{func_name}' not found in registered tools"
             result = f"Tool execution failed: {error_msg}"
             logger.warning(error_msg)
+        else:
+            try:
+                # Try different invocation paths in order of preference
+                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                    # Case: FunctionTool wrapping an MCP tool
+                    raw_result = await tool.func.async_call(**args)
+
+                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                    # Case: tool itself has async_call
+                    raw_result = await tool.async_call(**args)
+
+                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                    tool.func
+                ):
+                    # Case: tool wraps a direct async function
+                    raw_result = await tool.func(**args)
+
+                elif asyncio.iscoroutinefunction(tool):
+                    # Case: tool is itself a coroutine function
+                    raw_result = await tool(**args)
+
+                else:
+                    # Fallback: synchronous call
+                    # Use functools.partial to properly capture args
+                    loop = asyncio.get_running_loop()
+                    raw_result = await loop.run_in_executor(
+                        None, functools.partial(tool, **args)
+                    )
+
+                if self.mask_tool_output:
+                    with self._secure_result_store_lock:
+                        self._secure_result_store[tool_call_id] = raw_result
+                    result = (
+                        "[The tool has been executed successfully, but the "
+                        "output from the tool is masked. You can move forward]"
+                    )
+                    mask_flag = True
+                else:
+                    result = raw_result
+
+            except Exception as e:
+                # Capture the error message to prevent framework crash
+                error_msg = f"Error executing async tool '{func_name}': {e!s}"
+                result = f"Tool execution failed: {error_msg}"
+                logger.warning(f"{error_msg} with result: {result}")
         return self._record_tool_calling(
             func_name,
             args,
             result,
             tool_call_id,
+            mask_output=mask_flag,
             extra_content=tool_call_request.extra_content,
         )
 
@@ -3962,6 +3937,13 @@ class ChatAgent(BaseAgent):
             ToolCallingRecord: A struct containing information about
             this tool call.
         """
+        # Truncate tool result if it exceeds the maximum token limit
+        # This prevents single tool calls from exceeding context window
+        truncated_result, was_truncated = self._truncate_tool_result(
+            func_name, result
+        )
+        result_for_memory = truncated_result if was_truncated else result
+
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -3978,7 +3960,7 @@ class ChatAgent(BaseAgent):
             meta_dict=None,
             content="",
             func_name=func_name,
-            result=result,
+            result=result_for_memory,
             tool_call_id=tool_call_id,
             mask_output=mask_output,
             extra_content=extra_content,
@@ -4008,7 +3990,7 @@ class ChatAgent(BaseAgent):
 
         # Register tool output for snapshot cleaning if enabled
         if self._enable_snapshot_clean and not mask_output and func_records:
-            serialized_result = self._serialize_tool_result(result)
+            serialized_result = self._serialize_tool_result(result_for_memory)
             self._register_tool_output_for_cache(
                 func_name,
                 tool_call_id,
@@ -4016,14 +3998,74 @@ class ChatAgent(BaseAgent):
                 cast(List[MemoryRecord], func_records),
             )
 
+        if isinstance(result, ToolResult) and result.images:
+            try:
+                import base64
+                import io
+
+                try:
+                    from PIL import Image
+                except ImportError:
+                    logger.warning(
+                        f"Tool '{func_name}' returned images but PIL "
+                        "is not installed. Install with: pip install "
+                        "Pillow. Skipping visual context injection."
+                    )
+                    # Continue without injecting images
+                    result = (
+                        result.text if hasattr(result, 'text') else str(result)
+                    )
+                else:
+                    logger.info(
+                        f"Tool '{func_name}' returned ToolResult with "
+                        f"{len(result.images)} image(s), injecting into "
+                        "context"
+                    )
+
+                    # Convert base64 images to PIL Image objects
+                    pil_images: List[Union[Image.Image, str]] = []
+                    for img_data in result.images:
+                        if img_data.startswith('data:image/'):
+                            # Extract base64 data
+                            base64_str = img_data.split(',', 1)[1]
+                            img_bytes = base64.b64decode(base64_str)
+                            pil_img = Image.open(io.BytesIO(img_bytes))
+                            pil_images.append(pil_img)
+
+                    if pil_images:
+                        # Create a user message with the image(s)
+                        visual_msg = BaseMessage.make_user_message(
+                            role_name="Tool",
+                            content=f"[Visual output from {func_name}]",
+                            image_list=pil_images,
+                        )
+
+                        # Inject into conversation context with slight
+                        # timestamp increment
+                        self.update_memory(
+                            visual_msg,
+                            OpenAIBackendRole.USER,
+                            timestamp=base_timestamp + 2e-6,
+                            return_records=False,
+                        )
+                        logger.info(
+                            f"Successfully injected {len(pil_images)} "
+                            "image(s) into agent context"
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Failed to inject visual content from {func_name}: {e}"
+                )
+
         # Record information about this tool call
+        # Note: tool_record contains the original result for the caller,
+        # while result_for_memory (possibly truncated) is stored in memory
         tool_record = ToolCallingRecord(
             tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
         )
-
         self._update_last_tool_call_state(tool_record)
         return tool_record
 
@@ -4057,7 +4099,9 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            openai_messages, num_tokens = (
+                self._get_context_with_summarization()
+            )
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
@@ -4070,9 +4114,36 @@ class ChatAgent(BaseAgent):
     def _get_token_count(self, content: str) -> int:
         r"""Get token count for content with fallback."""
         if hasattr(self.model_backend, 'token_counter'):
-            return len(self.model_backend.token_counter.encode(content))
-        else:
-            return len(content.split())
+            try:
+                return len(self.model_backend.token_counter.encode(content))
+            except BaseException as e:
+                logger.debug(
+                    f"Token counting failed, using char fallback: {e}"
+                )
+        # Conservative estimate: ~3 chars per token
+        return len(content) // 3
+
+    def _warn_stream_accumulate_deprecation(self) -> None:
+        r"""Issue deprecation warning for stream_accumulate default change.
+
+        Only warns once per agent instance, and only if the user didn't
+        explicitly set stream_accumulate.
+        """
+        if not self._stream_accumulate_explicit:
+            import warnings
+
+            warnings.warn(
+                "The default value of 'stream_accumulate' has changed from "
+                "True to False. In streaming mode, each chunk now returns "
+                "only the incremental delta instead of accumulated content. "
+                "To suppress this warning, explicitly set "
+                "stream_accumulate=False (recommended) or stream_accumulate="
+                "True if you need the old behavior.",
+                DeprecationWarning,
+                stacklevel=5,
+            )
+            # Only warn once per agent instance
+            self._stream_accumulate_explicit = True
 
     def _stream_response(
         self,
@@ -4081,6 +4152,8 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Internal method to handle streaming responses with tool calls."""
+
+        self._warn_stream_accumulate_deprecation()
 
         tool_call_records: List[ToolCallingRecord] = []
         accumulated_tool_calls: Dict[str, Any] = {}
@@ -4116,12 +4189,22 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            if isinstance(response, Stream) or inspect.isgenerator(response):
+            # Check for Stream, generator, or third-party wrappers
+            if (
+                isinstance(response, Stream)
+                or inspect.isgenerator(response)
+                or (
+                    hasattr(response, '__iter__')
+                    and hasattr(response, '__enter__')
+                    and not hasattr(response, 'get_final_completion')
+                    and not isinstance(response, ChatCompletion)
+                )
+            ):
                 (
                     stream_completed,
                     tool_calls_complete,
                 ) = yield from self._process_stream_chunks_with_accumulator(
-                    response,
+                    response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -4160,11 +4243,9 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__enter__') and hasattr(
-                response, '__exit__'
-            ):
+            elif hasattr(response, 'get_final_completion'):
                 # Handle structured output stream (ChatCompletionStreamManager)
-                with response as stream:
+                with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
                     for event in stream:
@@ -4253,7 +4334,9 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                model_response = self._handle_batch_response(
+                    response  # type: ignore[arg-type]
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -4390,12 +4473,20 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+                        # In delta mode, final response content should be empty
+                        # since all content was already yielded incrementally
+                        display_content = (
+                            final_content if self.stream_accumulate else ""
+                        )
+                        display_reasoning = (
+                            final_reasoning if self.stream_accumulate else None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=final_content,
-                            reasoning_content=final_reasoning,
+                            content=display_content,
+                            reasoning_content=display_reasoning,
                         )
 
                         if response_format:
@@ -4446,13 +4537,52 @@ class ChatAgent(BaseAgent):
             bool: True if any tool call is complete, False otherwise.
         """
 
+        index_map_key = '_index_to_key_map'
+        if index_map_key not in accumulated_tool_calls:
+            accumulated_tool_calls[index_map_key] = {}
+        index_map = accumulated_tool_calls[index_map_key]
+
         for delta_tool_call in tool_call_deltas:
-            index = delta_tool_call.index
+            index = getattr(delta_tool_call, 'index', None)
             tool_call_id = getattr(delta_tool_call, 'id', None)
 
+            # Determine entry key
+            if index is not None:
+                index_str = str(index)
+                if tool_call_id:
+                    # New ID provided: check if it differs from current mapping
+                    current_key = index_map.get(index_str)
+                    if current_key is None:
+                        # First time seeing this index, use tool_call_id as key
+                        entry_key = tool_call_id
+                    elif current_key in accumulated_tool_calls:
+                        existing_id = accumulated_tool_calls[current_key].get(
+                            'id'
+                        )
+                        if existing_id and existing_id != tool_call_id:
+                            # ID changed: use new ID as key
+                            entry_key = tool_call_id
+                        else:
+                            # No existing ID or same ID: keep current key
+                            entry_key = current_key
+                    else:
+                        entry_key = current_key
+                    # Update mapping
+                    index_map[index_str] = entry_key
+                else:
+                    # No ID in this chunk: use existing mapping or index as
+                    # string
+                    entry_key = index_map.get(index_str, index_str)
+                    if index_str not in index_map:
+                        index_map[index_str] = entry_key
+            elif tool_call_id is not None:
+                entry_key = tool_call_id
+            else:
+                entry_key = '0'  # Default fallback as string
+
             # Initialize tool call entry if not exists
-            if index not in accumulated_tool_calls:
-                accumulated_tool_calls[index] = {
+            if entry_key not in accumulated_tool_calls:
+                accumulated_tool_calls[entry_key] = {
                     'id': '',
                     'type': 'function',
                     'function': {'name': '', 'arguments': ''},
@@ -4460,7 +4590,7 @@ class ChatAgent(BaseAgent):
                     'complete': False,
                 }
 
-            tool_call_entry = accumulated_tool_calls[index]
+            tool_call_entry = accumulated_tool_calls[entry_key]
 
             # Accumulate tool call data
             if tool_call_id:
@@ -4492,6 +4622,9 @@ class ChatAgent(BaseAgent):
         # Check if any tool calls are complete
         any_complete = False
         for _index, tool_call_entry in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _index == '_index_to_key_map':
+                continue
             if (
                 tool_call_entry['id']
                 and tool_call_entry['function']['name']
@@ -4519,6 +4652,9 @@ class ChatAgent(BaseAgent):
 
         tool_calls_to_execute = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _tool_call_index == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 tool_calls_to_execute.append(tool_call_data)
 
@@ -4598,6 +4734,27 @@ class ChatAgent(BaseAgent):
                 tool = self._internal_tools[function_name]
                 try:
                     result = tool(**args)
+
+                    # Handle mask_tool_output
+                    if self.mask_tool_output:
+                        with self._secure_result_store_lock:
+                            self._secure_result_store[tool_call_id] = result
+                        result = (
+                            "[The tool has been executed successfully, but the"
+                            " output from the tool is masked. You can move"
+                            " forward]"
+                        )
+
+                    # Truncate tool result if it exceeds the maximum token
+                    # limit. This prevents single tool calls from exceeding
+                    # context window
+                    truncated_result, was_truncated = (
+                        self._truncate_tool_result(function_name, result)
+                    )
+                    result_for_memory = (
+                        truncated_result if was_truncated else result
+                    )
+
                     # First, create and record the assistant message with tool
                     # call
                     assist_msg = FunctionCallingMessage(
@@ -4618,8 +4775,9 @@ class ChatAgent(BaseAgent):
                         meta_dict=None,
                         content="",
                         func_name=function_name,
-                        result=result,
+                        result=result_for_memory,
                         tool_call_id=tool_call_id,
+                        mask_output=self.mask_tool_output,
                         extra_content=extra_content,
                     )
 
@@ -4655,7 +4813,7 @@ class ChatAgent(BaseAgent):
                         f"Error executing tool '{function_name}': {e!s}"
                     )
                     result = {"error": error_msg}
-                    logger.warning(error_msg)
+                    logger.warning(f"{error_msg} with result: {result}")
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -4680,10 +4838,32 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                logger.warning(
-                    f"Tool '{function_name}' not found in internal tools"
+                error_msg = (
+                    f"Tool '{function_name}' not found in registered tools"
                 )
-                return None
+                result = {"error": error_msg}
+                logger.warning(error_msg)
+
+                func_msg = FunctionCallingMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=function_name,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
+                )
+                self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                tool_record = ToolCallingRecord(
+                    tool_name=function_name,
+                    args=args,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                )
+                self._update_last_tool_call_state(tool_record)
+                return tool_record
 
         except Exception as e:
             logger.error(f"Error processing tool call: {e}")
@@ -4752,6 +4932,26 @@ class ChatAgent(BaseAgent):
                             None, functools.partial(tool, **args)
                         )
 
+                    # Handle mask_tool_output
+                    if self.mask_tool_output:
+                        with self._secure_result_store_lock:
+                            self._secure_result_store[tool_call_id] = result
+                        result = (
+                            "[The tool has been executed successfully, but the"
+                            " output from the tool is masked. You can move"
+                            " forward]"
+                        )
+
+                    # Truncate tool result if it exceeds the maximum token
+                    # limit. This prevents single tool calls from exceeding
+                    # context window
+                    truncated_result, was_truncated = (
+                        self._truncate_tool_result(function_name, result)
+                    )
+                    result_for_memory = (
+                        truncated_result if was_truncated else result
+                    )
+
                     # Create the tool response message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
@@ -4759,8 +4959,9 @@ class ChatAgent(BaseAgent):
                         meta_dict=None,
                         content="",
                         func_name=function_name,
-                        result=result,
+                        result=result_for_memory,
                         tool_call_id=tool_call_id,
+                        mask_output=self.mask_tool_output,
                         extra_content=extra_content,
                     )
                     func_ts = time.time_ns() / 1_000_000_000
@@ -4784,7 +4985,7 @@ class ChatAgent(BaseAgent):
                         f"Error executing async tool '{function_name}': {e!s}"
                     )
                     result = {"error": error_msg}
-                    logger.warning(error_msg)
+                    logger.warning(f"{error_msg} with result: {result}")
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -4813,10 +5014,32 @@ class ChatAgent(BaseAgent):
                     self._update_last_tool_call_state(tool_record)
                     return tool_record
             else:
-                logger.warning(
-                    f"Tool '{function_name}' not found in internal tools"
+                error_msg = (
+                    f"Tool '{function_name}' not found in registered tools"
                 )
-                return None
+                result = {"error": error_msg}
+                logger.warning(error_msg)
+
+                func_msg = FunctionCallingMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=function_name,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                    extra_content=extra_content,
+                )
+                self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                tool_record = ToolCallingRecord(
+                    tool_name=function_name,
+                    args=args,
+                    result=result,
+                    tool_call_id=tool_call_id,
+                )
+                self._update_last_tool_call_state(tool_record)
+                return tool_record
 
         except Exception as e:
             logger.error(f"Error processing async tool call: {e}")
@@ -4862,7 +5085,10 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            (
+                openai_messages,
+                num_tokens,
+            ) = await self._get_context_with_summarization_async()
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
@@ -4889,6 +5115,8 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Async method to handle streaming responses with tool calls."""
+
+        self._warn_stream_accumulate_deprecation()
 
         tool_call_records: List[ToolCallingRecord] = []
         accumulated_tool_calls: Dict[str, Any] = {}
@@ -4925,11 +5153,16 @@ class ChatAgent(BaseAgent):
                 return
 
             # Handle streaming response
-            # Note: Also check for async generators since some model backends
-            # (e.g., GeminiModel) wrap AsyncStream in async generators for
-            # additional processing
-            if isinstance(response, AsyncStream) or inspect.isasyncgen(
-                response
+            # Check for AsyncStream, async generator, or third-party wrappers
+            if (
+                isinstance(response, AsyncStream)
+                or inspect.isasyncgen(response)
+                or (
+                    hasattr(response, '__aiter__')
+                    and hasattr(response, '__aenter__')
+                    and not hasattr(response, 'get_final_completion')
+                    and not isinstance(response, ChatCompletion)
+                )
             ):
                 stream_completed = False
                 tool_calls_complete = False
@@ -4938,7 +5171,7 @@ class ChatAgent(BaseAgent):
                 async for (
                     item
                 ) in self._aprocess_stream_chunks_with_accumulator(
-                    response,
+                    response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
@@ -4985,12 +5218,10 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, '__aenter__') and hasattr(
-                response, '__aexit__'
-            ):
+            elif hasattr(response, 'get_final_completion'):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
-                async with response as stream:
+                async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
                     async for event in stream:
@@ -5081,7 +5312,9 @@ class ChatAgent(BaseAgent):
                         return
             else:
                 # Handle non-streaming response (fallback)
-                model_response = self._handle_batch_response(response)
+                model_response = self._handle_batch_response(
+                    response  # type: ignore[arg-type]
+                )
                 yield self._convert_to_chatagent_response(
                     model_response,
                     tool_call_records,
@@ -5259,12 +5492,20 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
+                        # In delta mode, final response content should be empty
+                        # since all content was already yielded incrementally
+                        display_content = (
+                            final_content if self.stream_accumulate else ""
+                        )
+                        display_reasoning = (
+                            final_reasoning if self.stream_accumulate else None
+                        )
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=final_content,
-                            reasoning_content=final_reasoning,
+                            content=display_content,
+                            reasoning_content=display_reasoning,
                         )
 
                         if response_format:
@@ -5312,6 +5553,9 @@ class ChatAgent(BaseAgent):
         # statuses immediately
         tool_tasks = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if _tool_call_index == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 function_name = tool_call_data['function']['name']
                 try:

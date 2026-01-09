@@ -66,8 +66,10 @@ Returns the model name for TikToken.
 def token_limit(self):
 ```
 
-Returns the token limit for the model. Here we set the default
-value as `999_999_999` if it's not provided from `model_config_dict`
+Returns the context window size for the model.
+
+For unknown model types not defined in ModelType enum, this returns
+a default value of 999_999_999 tokens.
 
 <a id="camel.types.unified_model_type.UnifiedModelType.is_openai"></a>
 

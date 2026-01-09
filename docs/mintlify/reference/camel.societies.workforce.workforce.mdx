@@ -72,7 +72,7 @@ capabilities
 - **children** (Optional[List[BaseNode]], optional): List of child nodes under this node. Each child node can be a worker node or another workforce node. (default: :obj:`None`)
 - **coordinator_agent** (Optional[ChatAgent], optional): A custom coordinator agent instance for task assignment and worker creation. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message and functionality. If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
 - **task_agent** (Optional[ChatAgent], optional): A custom task planning agent instance for task decomposition and composition. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message. If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
-- **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
+- **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`) default_model (Optional[Union[BaseModelBackend, ModelManager]], optional): Model backend or manager to use when creating default coordinator, task, or dynamic worker agents. If None, agents will be created using ModelPlatformType.DEFAULT and ModelType.DEFAULT settings. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **task_timeout_seconds** (Optional[float], optional): The timeout in seconds for waiting for tasks to be returned by workers. If None, uses the global TASK_TIMEOUT_SECONDS value (600.0 seconds). Increase this value for tasks that require more processing time. (default: :obj:`None`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
@@ -81,6 +81,7 @@ capabilities
 - **a**: class:`ValueError` is raised. If none of the provided callbacks implement :class:`WorkforceMetrics`, a built-in :class:`WorkforceLogger` (implements both callback and metrics) is added automatically. If at least one provided callback
 - **implements**: class:`WorkforceMetrics`, no default logger is added. (default: :obj:`None`)
 - **mode** (WorkforceMode, optional): The execution mode for task processing. AUTO_DECOMPOSE mode uses intelligent recovery strategies (decompose, replan, etc.) when tasks fail. PIPELINE mode uses simple retry logic and allows failed tasks to continue the workflow, passing error information to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+- **failure_handling_config** (Optional[Union[FailureHandlingConfig, Dict]]): Configuration for customizing failure handling behavior. Can be a FailureHandlingConfig instance or a dict with the same fields. Allows fine-grained control over which recovery strategies are enabled, maximum retry attempts, and whether to halt on max retries. The `enabled_strategies` field accepts both enum values and string lists like `["retry", "replan"]`. If None, uses default configuration with all strategies enabled. (default: :obj:`None`)
 
 **Note:**
 
@@ -103,12 +104,14 @@ def __init__(
     coordinator_agent: Optional[ChatAgent] = None,
     task_agent: Optional[ChatAgent] = None,
     new_worker_agent: Optional[ChatAgent] = None,
+    default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
     graceful_shutdown_timeout: float = 15.0,
     share_memory: bool = False,
     use_structured_output_handler: bool = True,
     task_timeout_seconds: Optional[float] = None,
     mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
-    callbacks: Optional[List[WorkforceCallback]] = None
+    callbacks: Optional[List[WorkforceCallback]] = None,
+    failure_handling_config: Optional[Union[FailureHandlingConfig, Dict[str, Any]]] = None
 ):
 ```
 
@@ -546,6 +549,18 @@ relationship between the task and its subtasks.
   Union[List[Task], Generator[List[Task], None, None]]:
 The subtasks or generator of subtasks. Returns empty list for
 PIPELINE mode.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_available_strategies_text"></a>
+
+### _get_available_strategies_text
+
+```python
+def _get_available_strategies_text(self):
+```
+
+**Returns:**
+
+  str: Formatted text describing available strategies for the prompt.
 
 <a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
 

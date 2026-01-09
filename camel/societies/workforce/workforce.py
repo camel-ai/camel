@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -44,18 +44,18 @@ if TYPE_CHECKING:
     from camel.responses import ChatAgentResponse
     from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
-from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
+from camel.models import BaseModelBackend, ModelManager
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_RESPONSE_FORMAT,
     QUALITY_EVALUATION_RESPONSE_FORMAT,
+    STRATEGY_DESCRIPTIONS,
     TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
@@ -69,6 +69,7 @@ from camel.societies.workforce.structured_output_handler import (
 )
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    FailureHandlingConfig,
     PipelineTaskBuilder,
     RecoveryStrategy,
     TaskAnalysisResult,
@@ -90,11 +91,11 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
 from .events import (
     AllTasksCompletedEvent,
+    LogEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -199,6 +200,11 @@ class Workforce(BaseNode):
             handle failed tasks. If None, workers will be created with default
             settings including SearchToolkit, CodeExecutionToolkit, and
             ThinkingToolkit. (default: :obj:`None`)
+        default_model (Optional[Union[BaseModelBackend, ModelManager]],
+            optional): Model backend or manager to use when creating default
+            coordinator, task, or dynamic worker agents. If None, agents
+            will be created using ModelPlatformType.DEFAULT and
+            ModelType.DEFAULT settings. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -242,6 +248,15 @@ class Workforce(BaseNode):
             PIPELINE mode uses simple retry logic and allows failed
             tasks to continue the workflow, passing error information
             to dependent tasks. (default: :obj:`WorkforceMode.AUTO_DECOMPOSE`)
+        failure_handling_config (Optional[Union[FailureHandlingConfig, Dict]]):
+            Configuration for customizing failure handling behavior. Can be
+            a FailureHandlingConfig instance or a dict with the same fields.
+            Allows fine-grained control over which recovery strategies are
+            enabled, maximum retry attempts, and whether to halt on max
+            retries. The `enabled_strategies` field accepts both enum values
+            and string lists like `["retry", "replan"]`. If None, uses
+            default configuration with all strategies enabled.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -264,6 +279,16 @@ class Workforce(BaseNode):
         ...     "Research Team",
         ...     coordinator_agent=coordinator_agent,
         ...     task_agent=task_agent,
+        ... )
+        >>>
+        >>> # Workforce with failure handling config as dict (simple)
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     failure_handling_config={
+        ...         "max_retries": 5,
+        ...         "enabled_strategies": ["retry", "replan"],
+        ...         "halt_on_max_retries": False,
+        ...     },
         ... )
         >>>
         >>> # Process a task
@@ -290,12 +315,16 @@ class Workforce(BaseNode):
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
+        default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
         mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
         callbacks: Optional[List[WorkforceCallback]] = None,
+        failure_handling_config: Optional[
+            Union[FailureHandlingConfig, Dict[str, Any]]
+        ] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -303,6 +332,7 @@ class Workforce(BaseNode):
         ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
+        self.default_model = default_model
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
@@ -311,6 +341,15 @@ class Workforce(BaseNode):
         )
         self.mode = mode
         self._initial_mode = mode  # Store initial mode for reset()
+        # Initialize failure handling configuration (supports dict input)
+        if failure_handling_config is None:
+            self.failure_handling_config = FailureHandlingConfig()
+        elif isinstance(failure_handling_config, dict):
+            self.failure_handling_config = FailureHandlingConfig(
+                **failure_handling_config
+            )
+        else:
+            self.failure_handling_config = failure_handling_config
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self._task: Optional[Task] = None
@@ -358,7 +397,10 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+            self.coordinator_agent = ChatAgent(
+                coord_agent_sys_msg,
+                model=self.default_model,
+            )
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -417,6 +459,7 @@ class Workforce(BaseNode):
             )
             self.task_agent = ChatAgent(
                 task_sys_msg,
+                model=self.default_model,
             )
         else:
             logger.info(
@@ -545,11 +588,19 @@ class Workforce(BaseNode):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         r"""Emit a worker-created event to all registered callbacks."""
+        if metadata is None:
+            _metadata: Dict[str, Any] = {
+                'description': worker_node.description
+            }
+        else:
+            _metadata = metadata.copy()
+            _metadata.setdefault("description", worker_node.description)
+
         event = WorkerCreatedEvent(
             worker_id=worker_node.node_id,
             worker_type=worker_type or type(worker_node).__name__,
             role=role or worker_node.description,
-            metadata=metadata,
+            metadata=_metadata,
         )
         for cb in self._callbacks:
             cb.log_worker_created(event)
@@ -1376,6 +1427,42 @@ class Workforce(BaseNode):
                 self._update_dependencies_for_decomposition(task, subtasks)
             return subtasks
 
+    def _get_available_strategies_text(self) -> str:
+        r"""Generate the available strategies text for the analysis prompt.
+
+        This method generates a dynamic list of enabled recovery strategies
+        based on the failure_handling_config.
+
+        Returns:
+            str: Formatted text describing available strategies for the prompt.
+        """
+        all_strategies = list(RecoveryStrategy)
+
+        # Filter by enabled strategies in config
+        config_strategies = self.failure_handling_config.enabled_strategies
+        enabled_strategies = []
+        for strategy in all_strategies:
+            # None means all enabled, otherwise check if in list
+            if config_strategies is None or strategy in config_strategies:
+                enabled_strategies.append(strategy)
+
+        if not enabled_strategies:
+            raise ValueError(
+                "_get_available_strategies_text called with no enabled "
+                "strategies. Callers should check enabled_strategies != [] "
+                "before calling this method."
+            )
+
+        # Build the strategies text
+        strategies_text_parts = ["**Available Strategies (ENABLED):**\n"]
+        for i, strategy in enumerate(enabled_strategies, 1):
+            description = STRATEGY_DESCRIPTIONS.get(
+                strategy.value, f"**{strategy.value}**"
+            )
+            strategies_text_parts.append(f"{i}. {description}\n")
+
+        return "\n".join(strategies_text_parts)
+
     def _analyze_task(
         self,
         task: Task,
@@ -1474,6 +1561,21 @@ class Workforce(BaseNode):
                 },
             ]
 
+        # Generate available strategies text based on config
+        available_strategies = self._get_available_strategies_text()
+
+        # Generate strategy options for response format (None means all
+        # enabled)
+        config_strategies = self.failure_handling_config.enabled_strategies
+        strategies = (
+            list(RecoveryStrategy)
+            if config_strategies is None
+            else config_strategies
+        )
+        response_format = response_format.format(
+            strategy_options="|".join(s.value for s in strategies)
+        )
+
         # Format the unified analysis prompt
         analysis_prompt = str(
             TASK_ANALYSIS_PROMPT.format(
@@ -1486,6 +1588,7 @@ class Workforce(BaseNode):
                 issue_type=issue_type,
                 issue_specific_analysis=issue_analysis,
                 response_format=response_format,
+                available_strategies=available_strategies,
             )
         )
 
@@ -3040,24 +3143,16 @@ class Workforce(BaseNode):
             result)."""
             if isinstance(child, SingleAgentWorker):
                 try:
-                    from camel.utils.context_utils import (
-                        ContextUtility,
-                        WorkflowSummary,
-                    )
+                    from camel.utils.context_utils import ContextUtility
 
                     # TWO-PASS APPROACH FOR ROLE-BASED SAVING:
-                    # Pass 1: Generate summary to get agent_title
+                    # Use WorkflowMemoryManager which has access to
+                    # _loaded_workflow_paths for operation_mode support
                     workflow_manager = child._get_workflow_manager()
-                    summary_prompt = (
-                        workflow_manager._prepare_workflow_prompt()
-                    )
 
-                    # generate summary without saving
-                    # use conversation accumulator if available
+                    # Pass 1: Generate summary using manager (has loaded paths)
                     gen_result = (
-                        await child.worker.generate_workflow_summary_async(
-                            summary_prompt=summary_prompt,
-                            response_format=WorkflowSummary,
+                        await workflow_manager.generate_workflow_summary_async(
                             conversation_accumulator=(
                                 child._conversation_accumulator
                             ),
@@ -3090,6 +3185,8 @@ class Workforce(BaseNode):
                     )
 
                     # save with correct context and accumulator
+                    # save_workflow_content_async handles operation_mode
+                    # branching
                     result = (
                         await workflow_manager.save_workflow_content_async(
                             workflow_summary=workflow_summary,
@@ -3813,10 +3910,17 @@ class Workforce(BaseNode):
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
-            print(
-                f"{Fore.RED}Failed to post task {task.id} to {assignee_id}: "
-                f"{e}{Fore.RESET}"
-            )
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message=(
+                            f"Failed to post task {task.id} to {assignee_id}: "
+                            f"{e}"
+                        ),
+                        level="error",
+                        color="red",
+                    )
+                )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -3943,7 +4047,12 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=f"{new_node} created.", level="info", color="cyan"
+                )
+            )
 
         self._children.append(new_node)
 
@@ -3951,7 +4060,6 @@ class Workforce(BaseNode):
             new_node,
             worker_type='SingleAgentWorker',
             role=new_node_conf.role,
-            metadata={'description': new_node_conf.description},
         )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -3979,15 +4087,9 @@ class Workforce(BaseNode):
                 *ThinkingToolkit().get_tools(),
             ]
 
-            model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-                model_config_dict={"temperature": 0},
-            )
-
             return ChatAgent(
                 system_message=worker_sys_msg,
-                model=model,
+                model=self.default_model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
             )
@@ -4203,7 +4305,7 @@ class Workforce(BaseNode):
                             if (
                                 failed_task
                                 and failed_task.failure_count
-                                < MAX_TASK_RETRIES
+                                < self.failure_handling_config.max_retries
                             ):
                                 failed_tasks_with_retry_potential.append(
                                     dep_id
@@ -4234,6 +4336,9 @@ class Workforce(BaseNode):
                             task_failed_event = TaskFailedEvent(
                                 task_id=task.id,
                                 worker_id=task.assigned_worker_id or "unknown",
+                                parent_task_id=task.parent.id
+                                if task.parent
+                                else None,
                                 error_message=task.result,
                                 metadata={
                                     'failure_reason': 'dependency_failure',
@@ -4255,7 +4360,8 @@ class Workforce(BaseNode):
                                 f"Task {task.id} waiting: dependencies "
                                 f"{failed_tasks_with_retry_potential} "
                                 f"failed but may be retried "
-                                f"(attempt < {MAX_TASK_RETRIES})"
+                                f"(attempt < "
+                                f"{self.failure_handling_config.max_retries})"
                             )
                 # else: Not all dependencies completed yet, skip this task
 
@@ -4279,6 +4385,9 @@ class Workforce(BaseNode):
         """
         task.failure_count += 1
 
+        # Use configurable max retries from failure_handling_config
+        max_retries = self.failure_handling_config.max_retries
+
         # Determine detailed failure information
         failure_reason = task.result or "Unknown error"
         worker_id = task.assigned_worker_id or "unknown"
@@ -4286,18 +4395,26 @@ class Workforce(BaseNode):
 
         logger.error(
             f"Task {task.id} failed (attempt "
-            f"{task.failure_count}/{MAX_TASK_RETRIES}): {detailed_error}"
+            f"{task.failure_count}/{max_retries}): {detailed_error}"
         )
 
-        print(
-            f"{Fore.RED}❌ Task {task.id} failed "
-            f"(attempt {task.failure_count}/{MAX_TASK_RETRIES}): "
-            f"{failure_reason}{Fore.RESET}"
-        )
+        for cb in self._callbacks:
+            cb.log_message(
+                LogEvent(
+                    message=(
+                        f"❌ Task {task.id} failed "
+                        f"(attempt {task.failure_count}/{max_retries}): "
+                        f"{failure_reason}"
+                    ),
+                    level="error",
+                    color="red",
+                )
+            )
 
         task_failed_event = TaskFailedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             error_message=detailed_error,
             metadata={
                 'failure_count': task.failure_count,
@@ -4309,42 +4426,49 @@ class Workforce(BaseNode):
             cb.log_task_failed(task_failed_event)
 
         # Check for immediate halt conditions after max retries.
-        if task.failure_count >= MAX_TASK_RETRIES:
-            # Intent: handle max retry failures differently per mode.
+        if task.failure_count >= max_retries:
+            # Intent: handle max retry failures differently per mode and
+            # config.
             # Pipeline mode continues to allow downstream recovery.
-            # Auto-decompose mode halts to avoid cascading errors.
+            # halt_on_max_retries=False also allows workflow to continue.
+            # Auto-decompose mode with halt_on_max_retries=True halts.
 
             if self.mode == WorkforceMode.PIPELINE:
                 # PIPELINE: Mark as failed but continue workflow
                 # Intent: Failed tasks pass error info to downstream tasks
                 logger.warning(
-                    f"Task {task.id} failed after {MAX_TASK_RETRIES} retries "
+                    f"Task {task.id} failed after {max_retries} retries "
                     f"in PIPELINE mode. Marking as failed and allowing the "
                     f"workflow to continue. Error: {failure_reason}"
                 )
-                task.state = TaskState.FAILED
-                self._cleanup_task_tracking(task.id)
-                self._completed_tasks.append(task)
-                if task.id in self._assignees:
-                    await self._channel.archive_task(task.id)
+                await self._mark_task_permanently_failed(task)
 
                 # Resume workflow: Check if downstream tasks can now proceed
                 # (they'll receive this failed task's error message)
                 await self._post_ready_tasks()
                 return False  # Don't halt workforce
 
-            # AUTO_DECOMPOSE: Halt immediately on max retries
+            # Check if halt_on_max_retries is disabled in config
+            if not self.failure_handling_config.halt_on_max_retries:
+                # Similar to PIPELINE mode: mark as failed but continue
+                logger.warning(
+                    f"Task {task.id} failed after {max_retries} retries. "
+                    f"halt_on_max_retries=False, allowing workflow to "
+                    f"continue. Error: {failure_reason}"
+                )
+                await self._mark_task_permanently_failed(task)
+                await self._post_ready_tasks()
+                return False  # Don't halt workforce
+
+            # AUTO_DECOMPOSE with halt_on_max_retries=True: Halt immediately
             # Intent: Stop execution to prevent cascading failures
             logger.error(
                 f"Task {task.id} has exceeded maximum retry attempts "
-                f"({MAX_TASK_RETRIES}). Final failure reason: "
+                f"({max_retries}). Final failure reason: "
                 f"{detailed_error}. "
                 f"Task content: '{task.content}'"
             )
-            self._cleanup_task_tracking(task.id)
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            await self._mark_task_permanently_failed(task)
             return True  # Halt workforce
 
         if len(self._pending_tasks) > MAX_PENDING_TASKS_LIMIT:
@@ -4353,22 +4477,18 @@ class Workforce(BaseNode):
                 f"{MAX_PENDING_TASKS_LIMIT}). Halting to prevent task "
                 f"explosion. Last failed task: {task.id}"
             )
-            self._cleanup_task_tracking(task.id)
-            self._completed_tasks.append(task)
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            await self._mark_task_permanently_failed(task)
             return True
 
-        # Recovery strategies differ by mode.
+        # Recovery strategies differ by mode and configuration.
         # Pipeline mode retries quickly without additional analysis.
-        # Auto-decompose mode analyzes the failure to choose a recovery plan.
 
         if self.mode == WorkforceMode.PIPELINE:
             # PIPELINE: Simple retry logic (no LLM analysis needed)
             # Intent: Fast recovery for predefined workflows
             logger.info(
                 f"Task {task.id} failed in PIPELINE mode. Will retry "
-                f"(attempt {task.failure_count}/{MAX_TASK_RETRIES})"
+                f"(attempt {task.failure_count}/{max_retries})"
             )
             # Reset task to pending and retry with same configuration
             task.state = TaskState.OPEN
@@ -4376,17 +4496,80 @@ class Workforce(BaseNode):
             await self._post_ready_tasks()
             return False
 
-        # AUTO_DECOMPOSE: Intelligent failure analysis and recovery
+        # Check if no recovery strategies are enabled (empty list)
+        if self.failure_handling_config.enabled_strategies == []:
+            logger.info(
+                f"Task {task.id} failed. enabled_strategies=[], no recovery "
+                f"will be attempted. Marking as failed."
+            )
+            await self._mark_task_permanently_failed(task)
+            await self._post_ready_tasks()
+            return False
+
+        # Check if only one strategy is enabled (skip LLM analysis)
+        enabled = self.failure_handling_config.enabled_strategies
+        if enabled is not None and len(enabled) == 1:
+            single_strategy = enabled[0]
+
+            logger.info(
+                f"Task {task.id} failed. Only {single_strategy.value} "
+                f"enabled, using it directly without LLM analysis "
+                f"(attempt {task.failure_count}/{max_retries})"
+            )
+
+            # Create a minimal TaskAnalysisResult for the single strategy
+            recovery_decision = TaskAnalysisResult(
+                reasoning=f"Single strategy {single_strategy.value} enabled, "
+                f"applying directly without LLM analysis",
+                recovery_strategy=single_strategy,
+            )
+
+            # Clean up tracking before recovery
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
+            self._cleanup_task_tracking(task.id)
+
+            # Apply the single strategy
+            try:
+                is_decompose = await self._apply_recovery_strategy(
+                    task, recovery_decision
+                )
+                if is_decompose:
+                    self._completed_tasks.append(task)
+                await self._post_ready_tasks()
+                return False
+            except Exception as e:
+                logger.error(
+                    f"Single strategy {single_strategy.value} failed for "
+                    f"task {task.id}: {e}",
+                    exc_info=True,
+                )
+                # If strategy fails, mark task as failed
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                if self.failure_handling_config.halt_on_max_retries:
+                    return True
+                await self._post_ready_tasks()
+                return False
+
+        # AUTO_DECOMPOSE with multiple enabled strategies: Intelligent failure
+        # analysis and recovery
         # Intent: Use LLM analysis to choose an optimal recovery strategy.
         recovery_decision = self._analyze_task(
             task, for_failure=True, error_message=detailed_error
         )
 
-        strategy_str = (
-            recovery_decision.recovery_strategy.value
-            if recovery_decision.recovery_strategy
-            else "none"
-        )
+        # Fallback to first enabled strategy if no strategy recommended
+        if recovery_decision.recovery_strategy is None:
+            config_strategies = self.failure_handling_config.enabled_strategies
+            # config_strategies is None means all enabled, use RETRY as default
+            # otherwise use the first enabled strategy from user's config
+            if config_strategies is None:
+                recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
+            else:
+                recovery_decision.recovery_strategy = config_strategies[0]
+
+        strategy_str = recovery_decision.recovery_strategy.value
         logger.info(
             f"Task {task.id} failure "
             f"analysis: {strategy_str} - "
@@ -4416,7 +4599,7 @@ class Workforce(BaseNode):
                 exc_info=True,
             )
             # If max retries reached, halt the workforce
-            if task.failure_count >= MAX_TASK_RETRIES:
+            if task.failure_count >= max_retries:
                 self._completed_tasks.append(task)
                 return True
             self._completed_tasks.append(task)
@@ -4438,6 +4621,21 @@ class Workforce(BaseNode):
         # Check if any pending tasks are now ready to execute
         await self._post_ready_tasks()
         return False
+
+    async def _mark_task_permanently_failed(self, task: Task) -> None:
+        r"""Mark a task as permanently failed and clean up tracking.
+
+        This is a helper method to avoid code duplication when marking tasks
+        as failed in various failure handling scenarios.
+
+        Args:
+            task (Task): The task to mark as permanently failed.
+        """
+        task.state = TaskState.FAILED
+        self._cleanup_task_tracking(task.id)
+        self._completed_tasks.append(task)
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
 
     async def _handle_completed_task(self, task: Task) -> None:
         worker_id = task.assigned_worker_id or "unknown"
@@ -4487,6 +4685,7 @@ class Workforce(BaseNode):
         task_completed_event = TaskCompletedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
@@ -4505,10 +4704,17 @@ class Workforce(BaseNode):
                 tasks_list.pop(i)
                 self._pending_tasks = deque(tasks_list)
                 found_and_removed = True
-                print(
-                    f"{Fore.GREEN}✅ Task {task.id} completed and removed "
-                    f"from queue.{Fore.RESET}"
-                )
+                for cb in self._callbacks:
+                    cb.log_message(
+                        LogEvent(
+                            message=(
+                                f"✅ Task {task.id} completed and removed "
+                                f"from queue."
+                            ),
+                            level="info",
+                            color="green",
+                        )
+                    )
                 break
 
         if not found_and_removed:
@@ -4641,7 +4847,14 @@ class Workforce(BaseNode):
             cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
         ]
         if len(metrics_cb) == 0:
-            print("Logger not initialized. Cannot dump logs.")
+            for cb in self._callbacks:
+                cb.log_message(
+                    LogEvent(
+                        message="Logger not initialized. Cannot dump logs.",
+                        level="warning",
+                        color="yellow",
+                    )
+                )
             return
         metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
@@ -4936,25 +5149,42 @@ class Workforce(BaseNode):
 
                             # Do not halt if we have main tasks in queue
                             if len(self.get_main_task_queue()) > 0:
-                                print(
-                                    f"{Fore.RED}Task {returned_task.id} has "
-                                    f"failed for {MAX_TASK_RETRIES} times "
-                                    f"after insufficient results, skipping "
-                                    f"that task. Final error: "
-                                    f"{returned_task.result or 'Unknown err'}"
-                                    f"{Fore.RESET}"
-                                )
+                                cfg = self.failure_handling_config
+                                max_r = cfg.max_retries
+                                err = returned_task.result or 'Unknown err'
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            message=(
+                                                f"Task {returned_task.id} has "
+                                                f"failed for {max_r} times "
+                                                f"after insufficient results, "
+                                                f"skipping that task. "
+                                                f"Final error: {err}"
+                                            ),
+                                            level="error",
+                                            color="red",
+                                        )
+                                    )
                                 self._skip_requested = True
                                 continue
 
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times after "
-                                f"insufficient results, halting the "
-                                f"workforce. Final error: "
-                                f"{returned_task.result or 'Unknown error'}"
-                                f"{Fore.RESET}"
-                            )
+                            max_r = self.failure_handling_config.max_retries
+                            err = returned_task.result or 'Unknown error'
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} has "
+                                            f"failed for {max_r} times "
+                                            f"after insufficient results, "
+                                            f"halting the workforce. "
+                                            f"Final error: {err}"
+                                        ),
+                                        level="error",
+                                        color="red",
+                                    )
+                                )
                             await self._graceful_shutdown(returned_task)
                             break
                         except Exception as e:
@@ -4965,6 +5195,29 @@ class Workforce(BaseNode):
                             )
                             continue
                     else:
+                        # Skip quality evaluation if no recovery
+                        # strategies enabled
+                        # (no point analyzing if we can't do anything about it)
+                        if (
+                            self.failure_handling_config.enabled_strategies
+                            == []
+                        ):
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} "
+                                            f"completed (quality check "
+                                            f"skipped - no recovery "
+                                            f"strategies)."
+                                        ),
+                                        level="info",
+                                        color="cyan",
+                                    )
+                                )
+                            await self._handle_completed_task(returned_task)
+                            continue
+
                         quality_eval = self._analyze_task(
                             returned_task, for_failure=False
                         )
@@ -4978,41 +5231,103 @@ class Workforce(BaseNode):
                             )
 
                             # Check retry limit before attempting recovery
-                            if returned_task.failure_count >= 2:
-                                print(
-                                    f"{Fore.YELLOW}Task {returned_task.id} "
-                                    f"completed with low quality score: "
-                                    f"{quality_eval.quality_score} "
-                                    f"(retry limit reached){Fore.RESET}"
-                                )
+                            # Use max_retries - 1 to allow at least one retry
+                            quality_retry_limit = max(
+                                1, self.failure_handling_config.max_retries - 1
+                            )
+                            if (
+                                returned_task.failure_count
+                                >= quality_retry_limit
+                            ):
+                                score = quality_eval.quality_score
+                                for cb in self._callbacks:
+                                    cb.log_message(
+                                        LogEvent(
+                                            message=(
+                                                f"Task {returned_task.id} "
+                                                f"completed with low quality "
+                                                f"score: {score} "
+                                                f"(retry limit reached)"
+                                            ),
+                                            level="warning",
+                                            color="yellow",
+                                        )
+                                    )
                                 await self._handle_completed_task(
                                     returned_task
                                 )
                                 continue
 
-                            # Print visual feedback for quality-failed tasks
+                            # Log visual feedback for quality-failed tasks
                             # with recovery strategy
                             recovery_action = (
                                 quality_eval.recovery_strategy.value
                                 if quality_eval.recovery_strategy
                                 else ""
                             )
-                            print(
-                                f"{Fore.YELLOW}⚠️ Task {returned_task.id} "
-                                f"failed quality check (score: "
-                                f"{quality_eval.quality_score}). "
-                                f"Issues: {', '.join(quality_eval.issues)}. "
-                                f"Recovery: {recovery_action}{Fore.RESET}"
-                            )
+                            score = quality_eval.quality_score
+                            issues = ', '.join(quality_eval.issues)
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"⚠️ Task {returned_task.id} "
+                                            f"failed quality check "
+                                            f"(score: {score}). "
+                                            f"Issues: {issues}. "
+                                            f"Recovery: {recovery_action}"
+                                        ),
+                                        level="warning",
+                                        color="yellow",
+                                    )
+                                )
 
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
+
+                            task_failed_event = TaskFailedEvent(
+                                task_id=returned_task.id,
+                                worker_id=returned_task.assigned_worker_id,
+                                parent_task_id=returned_task.parent.id
+                                if returned_task.parent
+                                else None,
+                                error_message=(
+                                    f"⚠️ Task {returned_task.id} "
+                                    f"failed quality check "
+                                    f"(score: {score}). "
+                                    f"Issues: {issues}. "
+                                    f"Recovery: {recovery_action}"
+                                ),
+                                metadata={
+                                    'failure_count': returned_task.failure_count,  # noqa: E501
+                                    'task_content': returned_task.content,
+                                    'result_length': len(returned_task.result)
+                                    if returned_task.result
+                                    else 0,
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
                             returned_task.state = TaskState.FAILED
                             returned_task.result = (
                                 f"Quality insufficient (score: "
                                 f"{quality_eval.quality_score}). "
                                 f"Issues: {', '.join(quality_eval.issues)}"
                             )
+
+                            # Fallback to first enabled strategy if none
+                            # recommended
+                            if quality_eval.recovery_strategy is None:
+                                config = self.failure_handling_config
+                                config_strategies = config.enabled_strategies
+                                if config_strategies is None:
+                                    quality_eval.recovery_strategy = (
+                                        RecoveryStrategy.RETRY
+                                    )
+                                else:
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
 
                             # Clean up tracking before attempting recovery
                             if returned_task.id in self._assignees:
@@ -5041,11 +5356,19 @@ class Workforce(BaseNode):
                                 )
                                 continue
                         else:
-                            print(
-                                f"{Fore.CYAN}Task {returned_task.id} "
-                                f"completed successfully (quality score: "
-                                f"{quality_eval.quality_score}).{Fore.RESET}"
-                            )
+                            score = quality_eval.quality_score
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} "
+                                            f"completed successfully "
+                                            f"(quality score: {score})."
+                                        ),
+                                        level="info",
+                                        color="cyan",
+                                    )
+                                )
                             await self._handle_completed_task(returned_task)
                 elif returned_task.state == TaskState.FAILED:
                     try:
@@ -5055,23 +5378,39 @@ class Workforce(BaseNode):
 
                         # Do not halt if we have main tasks in queue
                         if len(self.get_main_task_queue()) > 0:
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for {MAX_TASK_RETRIES} times, "
-                                f"skipping that task. Final error: "
-                                f"{returned_task.result or 'Unknown error'}"
-                                f"{Fore.RESET}"
-                            )
+                            max_r = self.failure_handling_config.max_retries
+                            err = returned_task.result or 'Unknown error'
+                            for cb in self._callbacks:
+                                cb.log_message(
+                                    LogEvent(
+                                        message=(
+                                            f"Task {returned_task.id} has "
+                                            f"failed for {max_r} times, "
+                                            f"skipping that task. "
+                                            f"Final error: {err}"
+                                        ),
+                                        level="error",
+                                        color="red",
+                                    )
+                                )
                             self._skip_requested = True
                             continue
 
-                        print(
-                            f"{Fore.RED}Task {returned_task.id} has failed "
-                            f"for {MAX_TASK_RETRIES} times, halting "
-                            f"the workforce. Final error: "
-                            f"{returned_task.result or 'Unknown error'}"
-                            f"{Fore.RESET}"
-                        )
+                        max_r = self.failure_handling_config.max_retries
+                        err = returned_task.result or 'Unknown error'
+                        for cb in self._callbacks:
+                            cb.log_message(
+                                LogEvent(
+                                    message=(
+                                        f"Task {returned_task.id} has "
+                                        f"failed for {max_r} times, "
+                                        f"halting the workforce. "
+                                        f"Final error: {err}"
+                                    ),
+                                    level="error",
+                                    color="red",
+                                )
+                            )
                         # Graceful shutdown instead of immediate break
                         await self._graceful_shutdown(returned_task)
                         break
@@ -5209,11 +5548,13 @@ class Workforce(BaseNode):
             new_worker_agent=self.new_worker_agent.clone(with_memory)
             if self.new_worker_agent
             else None,
+            default_model=self.default_model,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
             task_timeout_seconds=self.task_timeout_seconds,
             mode=self.mode,
+            failure_handling_config=self.failure_handling_config,
         )
 
         for child in self._children:
