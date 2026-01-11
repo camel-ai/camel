@@ -387,6 +387,10 @@ class OpenAIModel(BaseModelBackend):
 
         if tools:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
@@ -407,6 +411,10 @@ class OpenAIModel(BaseModelBackend):
 
         if tools:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
@@ -432,6 +440,10 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
@@ -457,6 +469,10 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
@@ -485,6 +501,10 @@ class OpenAIModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
@@ -515,6 +535,10 @@ class OpenAIModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
 
         request_config = self._sanitize_config(request_config)
 
