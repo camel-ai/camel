@@ -18,7 +18,8 @@ import threading
 import time
 import uuid
 import shlex
-import select
+import tarfile
+import io
 from queue import Queue, Empty
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -71,6 +72,7 @@ class TerminalToolkit(BaseToolkit):
         working_directory: Optional[str] = None,
         use_docker_backend: bool = False,
         docker_container_name: Optional[str] = None,
+        docker_base_url: Optional[str] = None,
         session_logs_dir: Optional[str] = None,
         safe_mode: bool = True,
         need_terminal: bool = False,
@@ -102,16 +104,22 @@ class TerminalToolkit(BaseToolkit):
                     "docker_container_name must be provided when using Docker backend."
                 )
             try:
+                # Use provided base_url or default to local unix socket
+                base_url = docker_base_url or 'unix://var/run/docker.sock'
                 # APIClient is used for operations that need a timeout, like exec_start
-                self.docker_api_client = docker.APIClient(base_url='unix://var/run/docker.sock', timeout=self.timeout)
+                self.docker_api_client = docker.APIClient(base_url=base_url, timeout=self.timeout)
                 # The standard client is for higher-level, convenient operations
-                self.docker_client = docker.from_env()
+                self.docker_client = docker.DockerClient(base_url=base_url)
                 self.container = self.docker_client.containers.get(docker_container_name)
-                print(f"Successfully attached to Docker container '{docker_container_name}'.")
+                # Check connection
+                self.docker_client.ping()
+                print(f"Successfully attached to Docker container '{docker_container_name}' at {base_url}.")
             except NotFound:
                 raise RuntimeError(f"Docker container '{docker_container_name}' not found.")
             except APIError as e:
-                raise RuntimeError(f"Failed to connect to Docker daemon: {e}")
+                raise RuntimeError(f"Failed to connect to Docker daemon or container: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Unexpected error initializing Docker backend: {e}")
 
     def _sanitize_command(self, command: str) -> tuple[bool, str]:
         """A simple command sanitizer for the local backend."""
@@ -357,6 +365,10 @@ class TerminalToolkit(BaseToolkit):
                 error_msg = f"Error: Command timed out after {self.timeout} seconds."
                 log_entry += f"--- Error ---\n{error_msg}\n"
                 return error_msg
+            except APIError as e:
+                error_msg = f"Docker API Error: {e}"
+                log_entry += f"--- Error ---\n{error_msg}\n"
+                return error_msg
             except Exception as e:
                 if "Read timed out" in str(e):
                      error_msg = f"Error: Command timed out after {self.timeout} seconds."
@@ -463,6 +475,8 @@ class TerminalToolkit(BaseToolkit):
             
             return output
 
+        except APIError as e:
+            return f"Docker API Error writing to session '{id}': {e}"
         except Exception as e:
             return f"Error writing to session '{id}': {e}"
 
@@ -612,8 +626,17 @@ class TerminalToolkit(BaseToolkit):
         except EOFError:
             user_input = ""
 
-        # This function will now wait and return the output
-        return self.shell_write_to_process(id, user_input)
+    def _copy_to_container(self, content: str, dest_path: str):
+        """Helper method to copy content to a Docker container."""
+        tar_stream = io.BytesIO()
+        with tarfile.open(fileobj=tar_stream, mode='w') as tar:
+            content_bytes = content.encode('utf-8')
+            tar_info = tarfile.TarInfo(name=os.path.basename(dest_path))
+            tar_info.size = len(content_bytes)
+            tar.addfile(tar_info, io.BytesIO(content_bytes))
+        
+        tar_stream.seek(0)
+        self.container.put_archive(os.path.dirname(dest_path), tar_stream)
 
     def shell_write_content_to_file(self, content: str, file_path: str) -> str:
         """
@@ -633,26 +656,17 @@ class TerminalToolkit(BaseToolkit):
         log_entry = f"--- Writing content to file at {time.ctime()} ---\n> {file_path}\n"
         if self.use_docker_backend:
             try:
-                # Write content to a temporary file on the host inside log_dir
-                temp_host_path = os.path.join(self.log_dir, f"temp_{uuid.uuid4().hex}.txt")
-                with open(temp_host_path, "w", encoding="utf-8") as f:
-                    f.write(content)
-                # Copy the temporary file into the Docker container
-                dest_path_in_container = file_path
-                result = subprocess.run([
-                                'docker', 'cp', temp_host_path, f"{self.docker_container_name}:{dest_path_in_container}"
-                                    ], check=True, capture_output=True, text=True)
+                self._copy_to_container(content, file_path)
                 
                 log_entry += f"\n-------- \n{content}\n--------\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
-                os.remove(temp_host_path)  # Clean up the temporary file
                 return f"Content successfully written to '{file_path}' in Docker container."
-            except subprocess.CalledProcessError as e:
-                log_entry += f"--- Error ---\n{e.stderr}\n"
+            except APIError as e:
+                log_entry += f"--- Error ---\n{e}\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
                     f.write(log_entry + "\n")
-                return f"Error writing to file '{file_path}' in Docker container: {e.stderr}"
+                return f"Error writing to file '{file_path}' in Docker container: {e}"
             except Exception as e:
                 log_entry += f"--- Error ---\n{e}\n"
                 with open(self.blocking_log_file, "a", encoding="utf-8") as f:
