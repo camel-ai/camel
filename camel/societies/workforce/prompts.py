@@ -321,6 +321,7 @@ First, assess whether the task was completed successfully and meets quality stan
 - Focus on analyzing the error cause
 
 **For Quality Issues (task completed but needs evaluation):**
+CRITICAL: EVALUATE OBJECTIVELY WITHOUT ASSUMPTIONS, Judge whether the task was executed properly
 Evaluate the task result based on these criteria:
 1. **Completeness**: Does the result fully address all task requirements?
 2. **Accuracy**: Is the result correct and well-structured?
