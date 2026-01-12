@@ -11,7 +11,7 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def main() -> None:
-    r"""Run τ² retail benchmark with GPT-4.1-mini agent / GPT-4.1 user."""
+    r"""Run τ² airline benchmark with GPT-4.1-mini agent / GPT-4.1 user."""
     load_dotenv(dotenv_path=".env", override=True)
 
     agent_model = ModelFactory.create(
@@ -20,11 +20,11 @@ def main() -> None:
         model_config_dict={"temperature": 0.0},
     )
     agent = ChatAgent(
-        system_message="You are an expert retail support agent.",
+        system_message="You are a customer service agent.",
         model=agent_model,
     )
 
-    results_dir = Path("results/tau2_retail_gpt41mini")
+    results_dir = Path("results/tau2_airline_gpt41mini")
     benchmark = Tau2BenchBenchmark(
         domain="retail",
         user_model=ModelType.GPT_4_1,
@@ -39,6 +39,7 @@ def main() -> None:
         max_steps=60,
         max_errors=5,
         max_concurrency=8,
+        seed=300,
     )
     metrics = benchmark.evaluate()
     print("Results:", metrics)

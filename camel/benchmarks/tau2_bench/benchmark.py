@@ -30,6 +30,7 @@ from tau2.metrics.agent_metrics import compute_metrics
 from tau2.orchestrator.orchestrator import Orchestrator
 from tau2.registry import registry
 from tau2.run import get_info, get_tasks
+from tau2.agent.llm_agent import AGENT_INSTRUCTION, SYSTEM_PROMPT
 from tau2.user.user_simulator import (
     SYSTEM_PROMPT as USER_SYSTEM_PROMPT,
 )
@@ -77,6 +78,7 @@ class Tau2BenchBenchmark(BaseBenchmark):
             ModelPlatformType | str
         ) = ModelPlatformType.OPENAI,
         user_model_config: Optional[Dict] = None,
+        task_set_name: Optional[str] = None,
     ):
         super().__init__(
             name="tau2_bench",
@@ -85,6 +87,7 @@ class Tau2BenchBenchmark(BaseBenchmark):
             processes=processes,
         )
         self.domain = domain
+        self.task_set_name: Optional[str] = task_set_name
         self._tasks_by_split: Dict[str, List[Task]] = {}
         self._tau2_results: Optional[Results] = None
         self._last_results_path: Optional[Path] = None
@@ -124,10 +127,25 @@ class Tau2BenchBenchmark(BaseBenchmark):
         }
         return self
 
+    def set_task_set_name(self, task_set_name: Optional[str]) -> None:
+        r"""Override the task set used for loading tasks.
+
+        Args:
+            task_set_name: Name registered in τ²'s registry. ``None`` means
+                defaulting to the benchmark domain (current behavior).
+        """
+        if task_set_name == self.task_set_name:
+            return
+        self.task_set_name = task_set_name
+        self._tasks_by_split.clear()
+
+    def _resolve_task_set(self) -> str:
+        return self.task_set_name or self.domain
+
     def _ensure_tasks(self, split_name: str) -> List[Task]:
         if split_name not in self._tasks_by_split:
             self._tasks_by_split[split_name] = get_tasks(
-                task_set_name=self.domain,
+                task_set_name=self._resolve_task_set(),
                 task_split_name=split_name,
             )
         return self._tasks_by_split[split_name]
@@ -139,12 +157,13 @@ class Tau2BenchBenchmark(BaseBenchmark):
         randomize: bool = False,
         subset: Optional[int] = None,
         task_split_name: str = "base",
+        task_set_name: Optional[str] = None,
         task_ids: Optional[List[str]] = None,
         num_trials: int = 1,
         num_tasks: Optional[int] = None,
         max_steps: int = 100,
         max_errors: int = 10,
-        seed: Optional[int] = 10,
+        seed: Optional[int] = 300,
         enforce_communication_protocol: bool = False,
         evaluation_type: str = "all",
         save_to: Optional[str] = None,
@@ -154,6 +173,9 @@ class Tau2BenchBenchmark(BaseBenchmark):
         max_concurrency: int = 1,
     ) -> "Tau2BenchBenchmark":
         del on  # present for BaseBenchmark compatibility
+
+        if task_set_name is not None:
+            self.set_task_set_name(task_set_name)
 
         tasks = self._ensure_tasks(task_split_name)
         selected_tasks = self._select_tasks(
@@ -313,14 +335,16 @@ class Tau2BenchBenchmark(BaseBenchmark):
         except Exception:
             user_tools = []
 
-        agent_clone = self._clone_agent_with_policy(
+        agent_clone, agent_system_prompt = self._clone_agent_with_policy(
             base_agent=base_agent,
             policy_text=environment.get_policy(),
         )
         agent_adapter = CamelTau2Agent(
             chat_agent=agent_clone,
             tool_schemas=assistant_tools,
+            system_prompt=agent_system_prompt,
         )
+        self._ensure_agent_model_config(agent_clone, bool(assistant_tools))
         user_adapter = self._build_user_adapter(
             scenario=task.user_scenario,
             user_tools=user_tools,
@@ -365,6 +389,8 @@ class Tau2BenchBenchmark(BaseBenchmark):
             scenario=scenario,
             has_tools=bool(user_tools),
         )
+        if model_config.get("tool_choice") is None and user_tools:
+            model_config["tool_choice"] = "auto"
         user_model = ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
@@ -395,20 +421,39 @@ class Tau2BenchBenchmark(BaseBenchmark):
         self,
         base_agent: ChatAgent,
         policy_text: str,
-    ) -> ChatAgent:
+    ) -> tuple[ChatAgent, str]:
+        r"""Clone agent with policy and return both clone and system prompt.
+
+        Returns:
+            Tuple of (cloned ChatAgent, system prompt string)
+        """
         agent_clone = base_agent.clone(with_memory=False)
-        base_system = getattr(agent_clone, "system_message", None)
-        base_content = base_system.content if base_system else ""
         policy_body = policy_text.strip()
-        combined = f"{base_content}\n\n" f"<policy>\n{policy_body}\n</policy>"
+        combined = SYSTEM_PROMPT.format(
+            domain_policy=policy_body, agent_instruction=AGENT_INSTRUCTION
+        )
+        system_prompt = combined.strip()
         system_message = BaseMessage.make_assistant_message(
             role_name="System",
-            content=combined.strip(),
+            content=system_prompt,
         )
         agent_clone._system_message = system_message  # type: ignore[attr-defined]
         agent_clone._original_system_message = system_message  # type: ignore[attr-defined]
         agent_clone.reset()
-        return agent_clone
+        return agent_clone, system_prompt
+
+    def _ensure_agent_model_config(
+        self, agent: ChatAgent, has_tools: bool
+    ) -> None:
+        backend = getattr(agent, "model_backend", None)
+        if backend is None:
+            return
+        config = dict(getattr(backend, "model_config_dict", {}))
+        if config.get("temperature") is None:
+            config["temperature"] = 0.0
+        if has_tools and config.get("tool_choice") is None:
+            config["tool_choice"] = "auto"
+        backend.model_config_dict = config
 
     def _infer_model_name(self, agent: ChatAgent) -> str:
         backend = getattr(agent, "model_backend", None)

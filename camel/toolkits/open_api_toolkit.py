@@ -29,6 +29,15 @@ class OpenAPIToolkit:
     defined in the OpenAPI specification, allowing users to make HTTP requests
     to the API endpoints.
     """
+    def __init__(self):
+        self._session_id: Optional[str] = None
+        self._override_server_url: Optional[str] = None
+
+    def set_session_id(self, session_id: str):
+        self._session_id = session_id
+
+    def set_override_server_url(self, url: str):
+        self._override_server_url = url
 
     def parse_openapi_file(
         self, openapi_spec_path: str
@@ -168,8 +177,8 @@ class OpenAPIToolkit:
                                 'name'
                             ]
 
-                        if 'type' not in properties[param_name]:
-                            properties[param_name]['type'] = 'Any'
+                        # if 'type' not in properties[param_name]:
+                        #     properties[param_name]['type'] = 'Any'
 
                 # Process requestBody if present
                 if 'requestBody' in op:
@@ -258,6 +267,9 @@ class OpenAPIToolkit:
                 headers = {}
                 params = {}
                 cookies = {}
+
+                if self._session_id:
+                    headers["X-Session-ID"] = self._session_id
 
                 # Security definition of operation overrides any declared
                 # top-level security.
@@ -404,10 +416,14 @@ class OpenAPIToolkit:
                 for the API requests.
         """
         # Check server information
-        servers = openapi_spec.get('servers', [])
-        if not servers:
-            raise ValueError("No server information found in OpenAPI spec.")
-        base_url = servers[0].get('url')  # Use the first server URL
+        # Use override URL if set, otherwise use servers from spec
+        if self._override_server_url:
+            base_url = self._override_server_url
+        else:
+            servers = openapi_spec.get('servers', [])
+            if not servers:
+                raise ValueError("No server information found in OpenAPI spec.")
+            base_url = servers[0].get('url')  # Use the first server URL
 
         # Security requirement objects for all methods
         openapi_security = openapi_spec.get('security', {})

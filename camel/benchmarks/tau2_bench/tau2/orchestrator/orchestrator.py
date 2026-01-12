@@ -427,6 +427,9 @@ class Orchestrator:
         # Wrap up the simulation
         duration = time.perf_counter() - start
         messages = self.get_trajectory()
+        agent_usage = self._get_token_usage_summary(self.agent)
+        user_usage = self._get_token_usage_summary(self.user)
+
         simulation_run = SimulationRun(
             id=str(uuid.uuid4()),
             task_id=self.task.id,
@@ -435,8 +438,10 @@ class Orchestrator:
             duration=duration,
             termination_reason=self.termination_reason.value,
             reward_info=None,
-            user_cost=None,
-            agent_cost=None,
+            user_cost=self._extract_total_tokens(user_usage),
+            agent_cost=self._extract_total_tokens(agent_usage),
+            agent_token_usage=agent_usage,
+            user_token_usage=user_usage,
             messages=messages,
             seed=self.seed,
         )
@@ -528,6 +533,30 @@ class Orchestrator:
             self.check_communication_error()
         self.step_count += 1
         self.environment.sync_tools()
+
+    @staticmethod
+    def _get_token_usage_summary(participant) -> Optional[dict[str, int]]:
+        getter = getattr(participant, "get_token_usage", None)
+        if callable(getter):
+            usage = getter()
+            if usage:
+                return usage
+        return None
+
+    @staticmethod
+    def _extract_total_tokens(
+        usage: Optional[dict[str, int]]
+    ) -> Optional[float]:
+        if not usage:
+            return None
+        total = usage.get("total_tokens")
+        if total is not None:
+            return float(total)
+        prompt = usage.get("prompt_tokens")
+        completion = usage.get("completion_tokens")
+        if prompt is None and completion is None:
+            return None
+        return float((prompt or 0) + (completion or 0))
 
     def get_trajectory(self) -> list[Message]:
         """

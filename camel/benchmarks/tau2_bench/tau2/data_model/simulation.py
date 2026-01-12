@@ -345,6 +345,14 @@ class SimulationRun(BaseModel):
     user_cost: Optional[float] = Field(
         description="The cost of the user.", default=None
     )
+    agent_token_usage: Optional[dict[str, int]] = Field(
+        description="Token usage stats for the agent (prompt/completion/total).",
+        default=None,
+    )
+    user_token_usage: Optional[dict[str, int]] = Field(
+        description="Token usage stats for the user (prompt/completion/total).",
+        default=None,
+    )
     reward_info: Optional[RewardInfo] = Field(
         description="The reward received by the agent.", default=None
     )
