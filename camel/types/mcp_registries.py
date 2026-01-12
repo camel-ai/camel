@@ -24,6 +24,7 @@ class MCPRegistryType(Enum):
 
     SMITHERY = auto()
     ACI = auto()
+    OPEN = auto()
     CUSTOM = auto()
 
 
@@ -103,8 +104,17 @@ class SmitheryRegistryConfig(BaseMCPRegistryConfig):
 
         Returns:
             Dict[str, Any]: The complete configuration for the registry.
+
+        Raises:
+            ValueError: If API key is not provided.
         """
         api_key = self.api_key or os.environ.get("SMITHERY_API_KEY")
+
+        if not api_key:
+            raise ValueError(
+                "Smithery API key is required. Please provide it via "
+                "api_key parameter or SMITHERY_API_KEY environment variable."
+            )
 
         args = [
             "-y",
@@ -117,9 +127,26 @@ class SmitheryRegistryConfig(BaseMCPRegistryConfig):
             self.profile,
         ]
 
-        cmd_config = self._prepare_command_args("npx", args)  # type: ignore[arg-type]
+        cmd_config = self._prepare_command_args("npx", args)
 
         return {"mcpServers": {"toolbox": cmd_config}}
+
+
+class OpenRegistryConfig(BaseMCPRegistryConfig):
+    r"""Configuration for Open registry."""
+
+    type: MCPRegistryType = MCPRegistryType.OPEN
+
+    def get_config(self) -> Dict[str, Any]:
+        r"""Generate configuration for Open registry.
+
+        Returns:
+            Dict[str, Any]: The complete configuration for the registry.
+        """
+        args = ["mcp-mcp"]
+        cmd_config = self._prepare_command_args("uvx", args)
+
+        return {"mcpServers": {"mcp-mcp": cmd_config}}
 
 
 class ACIRegistryConfig(BaseMCPRegistryConfig):
@@ -135,8 +162,17 @@ class ACIRegistryConfig(BaseMCPRegistryConfig):
 
         Returns:
             Dict[str, Any]: The complete configuration for the registry.
+
+        Raises:
+            ValueError: If API key is not provided.
         """
         api_key = self.api_key or os.environ.get("ACI_API_KEY")
+
+        if not api_key:
+            raise ValueError(
+                "ACI API key is required. Please provide it via "
+                "api_key parameter or ACI_API_KEY environment variable."
+            )
 
         args = [
             "aci-mcp",
