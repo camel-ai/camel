@@ -98,6 +98,7 @@ from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
+from .microsoft_outlook_toolkits import OutlookCalendarToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -187,4 +188,5 @@ __all__ = [
     'MinimaxMCPToolkit',
     "OutlookMailToolkit",
     'EarthScienceToolkit',
+    "OutlookCalendarToolkit",
 ]
