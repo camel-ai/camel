@@ -148,6 +148,10 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
     OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
+    # AtlasCloud models
+    ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
+    ATLASCLOUD_GLM_4_7 = "zai-org/glm-4.7"
+
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
     LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
@@ -563,6 +567,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_groq,
                 self.is_cerebras,
                 self.is_openrouter,
+                self.is_atlascloud,
                 self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
@@ -774,6 +779,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+        }
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this type of models is served by AtlasCloud."""
+        return self in {
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GLM_4_7,
         }
 
     @property
@@ -1329,6 +1342,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CEREBRAS_GPT_OSS_120B,
             ModelType.CEREBRAS_LLAMA_3_3_70B,
             ModelType.CEREBRAS_QWEN_3_32B,
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GLM_4_7,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
             ModelType.PPIO_DEEPSEEK_V3_TURBO,
             ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
@@ -1793,6 +1808,7 @@ class ModelPlatformType(Enum):
     NEBIUS = "nebius"
     COMETAPI = "cometapi"
     OPENROUTER = "openrouter"
+    ATLASCLOUD = "atlascloud"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     LMSTUDIO = "lmstudio"
@@ -1866,6 +1882,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this platform is atlascloud."""
+        return self is ModelPlatformType.ATLASCLOUD
 
     @property
     def is_lmstudio(self) -> bool:
