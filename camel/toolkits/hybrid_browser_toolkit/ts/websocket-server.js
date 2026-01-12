@@ -86,6 +86,12 @@ class WebSocketBrowserServer {
         // Extract base URL and port for validation
         const baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
 
+        // Validate CDP URL to prevent SSRF - only allow localhost
+        const parsed = new URL(baseUrl);
+        if (!['localhost', '127.0.0.1'].includes(parsed.hostname)) {
+          throw new Error('CDP URL must use localhost or 127.0.0.1');
+        }
+
         try {
           // Test if Chrome debug port is accessible and get page URL
           const response = await fetch(`${baseUrl}/json`);
