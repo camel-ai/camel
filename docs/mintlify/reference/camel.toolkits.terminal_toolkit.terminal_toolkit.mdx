@@ -176,7 +176,7 @@ Executes a shell command in blocking or non-blocking mode.
 - **id** (str): A unique identifier for the command's session. This ID is used to interact with non-blocking processes.
 - **command** (str): The shell command to execute.
 - **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands. If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
-- **timeout** (float, optional): The maximum time in seconds to wait for the command to complete in blocking mode. If the command does not complete within the timeout, it will be restarted automatically as a non-blocking background session. You can then use `shell_view(id)` to check output, or `shell_kill_process(id)` to terminate it. This parameter is ignored in non-blocking mode. (default: :obj:`20`)
+- **timeout** (float, optional): The maximum time in seconds to wait for the command to complete in blocking mode. If the command does not complete within the timeout, it will be converted to a tracked background session (process keeps running without restart). You can then use `shell_view(id)` to check output, or `shell_kill_process(id)` to terminate it. This parameter is ignored in non-blocking mode. (default: :obj:`20`)
 
 **Returns:**
 
