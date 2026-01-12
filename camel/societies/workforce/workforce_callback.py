@@ -27,6 +27,7 @@ from .events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
@@ -80,6 +81,10 @@ class WorkforceCallback(ABC):
 
     @abstractmethod
     def log_task_started(self, event: TaskStartedEvent) -> None:
+        pass
+
+    @abstractmethod
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
         pass
 
     @abstractmethod
