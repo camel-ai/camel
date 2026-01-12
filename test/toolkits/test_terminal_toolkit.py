@@ -96,3 +96,65 @@ def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
     # For non-blocking mode, sessions should be created immediately
     assert session1 in terminal_toolkit.shell_sessions
     assert session2 in terminal_toolkit.shell_sessions
+
+
+def test_shell_write_content_to_file_basic(temp_dir, request):
+    """Test basic file writing functionality."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=False)
+    request.addfinalizer(toolkit.cleanup)
+
+    test_content = "Hello, World!"
+    test_file = temp_dir / "test_write.txt"
+
+    result = toolkit.shell_write_content_to_file(test_content, str(test_file))
+    assert "successfully" in result.lower()
+    assert test_file.exists()
+    assert test_file.read_text() == test_content
+
+
+def test_shell_write_content_to_file_with_subdirectory(temp_dir, request):
+    """Test file writing with automatic parent directory creation."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=False)
+    request.addfinalizer(toolkit.cleanup)
+
+    test_content = "Nested content"
+    # Create a path with non-existent subdirectory
+    test_file = temp_dir / "subdir" / "nested" / "test.txt"
+
+    result = toolkit.shell_write_content_to_file(test_content, str(test_file))
+    assert "successfully" in result.lower()
+    assert test_file.exists()
+    assert test_file.read_text() == test_content
+
+
+def test_shell_write_content_to_file_safe_mode_relative_path(
+    temp_dir, request
+):
+    """Test safe mode with relative paths resolves correctly."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    request.addfinalizer(toolkit.cleanup)
+
+    test_content = "Safe mode content"
+    # Use a relative path - should be resolved relative to working_dir
+    result = toolkit.shell_write_content_to_file(test_content, "relative.txt")
+    assert "successfully" in result.lower()
+    # File should be created inside working_dir
+    expected_file = temp_dir / "relative.txt"
+    assert expected_file.exists()
+    assert expected_file.read_text() == test_content
+
+
+def test_shell_write_content_to_file_safe_mode_blocks_path_traversal(
+    temp_dir, request
+):
+    """Test that safe mode blocks path traversal attempts."""
+    toolkit = TerminalToolkit(working_directory=str(temp_dir), safe_mode=True)
+    request.addfinalizer(toolkit.cleanup)
+
+    test_content = "Malicious content"
+    # Attempt path traversal
+    result = toolkit.shell_write_content_to_file(
+        test_content, "../outside_working_dir.txt"
+    )
+    assert "error" in result.lower()
+    assert "outside" in result.lower() or "working directory" in result.lower()
