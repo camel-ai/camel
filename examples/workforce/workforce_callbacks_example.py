@@ -34,6 +34,7 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
@@ -78,7 +79,7 @@ class PrintCallback(WorkforceCallback):
             f"worker={event.worker_id}"
         )
 
-    def log_task_updated(self, event: TaskUpdateEvent) -> None:
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
         print(
             f"[PrintCallback] task_updated: task={event.task_id}, "
             f"worker={event.worker_id}"
