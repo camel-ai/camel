@@ -1235,15 +1235,23 @@ class TerminalToolkit(BaseToolkit):
         Args:
             content (str): The content to write to the file.
             file_path (str): The path to the file where the content should
-                be written.
+                be written. Can be absolute or relative to working_dir.
 
         Returns:
             str: A confirmation message indicating success or an error message.
         """
-        if self.safe_mode and self.working_dir:
-            # Resolve to absolute path and normalize to prevent path traversal
-            abs_file_path = os.path.normpath(os.path.abspath(file_path))
-            working_dir_normalized = os.path.normpath(self.working_dir)
+        if self.safe_mode and self.working_dir and not self.use_docker_backend:
+            # Resolve relative paths relative to working_dir, not CWD
+            if os.path.isabs(file_path):
+                abs_file_path = os.path.normpath(file_path)
+            else:
+                abs_file_path = os.path.normpath(
+                    os.path.join(self.working_dir, file_path)
+                )
+            working_dir_normalized = os.path.normpath(
+                os.path.abspath(self.working_dir)
+            )
+            abs_file_path = os.path.abspath(abs_file_path)
             # Use os.path.commonpath for secure path containment check
             try:
                 common = os.path.commonpath(
@@ -1260,6 +1268,8 @@ class TerminalToolkit(BaseToolkit):
                     "Error: Cannot write to a file outside of the "
                     "working directory in safe mode."
                 )
+            # Use the resolved absolute path for local writes
+            file_path = abs_file_path
 
         log_entry = (
             f"--- Writing content to file at {time.ctime()} ---\n"
@@ -1267,6 +1277,16 @@ class TerminalToolkit(BaseToolkit):
         )
         if self.use_docker_backend:
             try:
+                # Ensure parent directory exists in container
+                parent_dir = os.path.dirname(file_path)
+                if parent_dir:
+                    quoted_dir = shlex.quote(parent_dir)
+                    mkdir_cmd = f'sh -c "mkdir -p {quoted_dir}"'
+                    mkdir_exec = self.docker_api_client.exec_create(
+                        self.container.id, mkdir_cmd
+                    )
+                    self.docker_api_client.exec_start(mkdir_exec['Id'])
+
                 # Write content to a temporary file on the host inside log_dir
                 temp_file_name = f"temp_{uuid.uuid4().hex}.txt"
                 temp_host_path = os.path.join(self.log_dir, temp_file_name)
@@ -1311,6 +1331,11 @@ class TerminalToolkit(BaseToolkit):
 
         else:
             try:
+                # Ensure parent directory exists
+                parent_dir = os.path.dirname(file_path)
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(content)
 
