@@ -193,7 +193,7 @@ def test_lark_get_message_resource(tmp_path, mock_env_vars):
         assert result["content_type"] == "image/png"
         assert result["path"]
         assert result["size"] == len(b"binary-content")
-        assert (tmp_path / "lark_file" / "file_abc").exists()
+        assert (tmp_path / "lark_file" / "file_abc.png").exists()
 
 
 def test_lark_get_message_resource_key(lark_toolkit):

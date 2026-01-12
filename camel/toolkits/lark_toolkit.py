@@ -316,13 +316,21 @@ class LarkToolkit(BaseToolkit):
                 }
 
             content = response.content or b""
+            content_type = response.headers.get("Content-Type") or ""
+            media_type = content_type.split(";", 1)[0].strip()
+            extension = ""
+            if "/" in media_type:
+                extension = media_type.rsplit("/", 1)[1].strip().lower()
+            filename = file_key
+            if extension and not os.path.splitext(file_key)[1]:
+                filename = f"{file_key}.{extension}"
             target_dir = os.path.join(self.working_dir, "lark_file")
             os.makedirs(target_dir, exist_ok=True)
-            file_path = os.path.join(target_dir, file_key)
+            file_path = os.path.join(target_dir, filename)
             with open(file_path, "wb") as f:
                 f.write(content)
             return {
-                "content_type": response.headers.get("Content-Type"),
+                "content_type": content_type,
                 "path": file_path,
                 "size": len(content),
             }
