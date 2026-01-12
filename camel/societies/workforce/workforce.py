@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
+from camel.models import BaseModelBackend, ModelManager
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
@@ -91,7 +91,6 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
 from .events import (
@@ -201,6 +200,11 @@ class Workforce(BaseNode):
             handle failed tasks. If None, workers will be created with default
             settings including SearchToolkit, CodeExecutionToolkit, and
             ThinkingToolkit. (default: :obj:`None`)
+        default_model (Optional[Union[BaseModelBackend, ModelManager]],
+            optional): Model backend or manager to use when creating default
+            coordinator, task, or dynamic worker agents. If None, agents
+            will be created using ModelPlatformType.DEFAULT and
+            ModelType.DEFAULT settings. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -311,6 +315,7 @@ class Workforce(BaseNode):
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
         new_worker_agent: Optional[ChatAgent] = None,
+        default_model: Optional[Union[BaseModelBackend, ModelManager]] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
@@ -327,6 +332,7 @@ class Workforce(BaseNode):
         ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
+        self.default_model = default_model
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
@@ -391,7 +397,10 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+            self.coordinator_agent = ChatAgent(
+                coord_agent_sys_msg,
+                model=self.default_model,
+            )
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -450,6 +459,7 @@ class Workforce(BaseNode):
             )
             self.task_agent = ChatAgent(
                 task_sys_msg,
+                model=self.default_model,
             )
         else:
             logger.info(
@@ -578,11 +588,19 @@ class Workforce(BaseNode):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         r"""Emit a worker-created event to all registered callbacks."""
+        if metadata is None:
+            _metadata: Dict[str, Any] = {
+                'description': worker_node.description
+            }
+        else:
+            _metadata = metadata.copy()
+            _metadata.setdefault("description", worker_node.description)
+
         event = WorkerCreatedEvent(
             worker_id=worker_node.node_id,
             worker_type=worker_type or type(worker_node).__name__,
             role=role or worker_node.description,
-            metadata=metadata,
+            metadata=_metadata,
         )
         for cb in self._callbacks:
             cb.log_worker_created(event)
@@ -1546,6 +1564,18 @@ class Workforce(BaseNode):
         # Generate available strategies text based on config
         available_strategies = self._get_available_strategies_text()
 
+        # Generate strategy options for response format (None means all
+        # enabled)
+        config_strategies = self.failure_handling_config.enabled_strategies
+        strategies = (
+            list(RecoveryStrategy)
+            if config_strategies is None
+            else config_strategies
+        )
+        response_format = response_format.format(
+            strategy_options="|".join(s.value for s in strategies)
+        )
+
         # Format the unified analysis prompt
         analysis_prompt = str(
             TASK_ANALYSIS_PROMPT.format(
@@ -1607,6 +1637,7 @@ class Workforce(BaseNode):
         self,
         task: Task,
         recovery_decision: TaskAnalysisResult,
+        original_assignee: str,
     ) -> bool:
         r"""Apply the recovery strategy from a task analysis result.
 
@@ -1617,6 +1648,8 @@ class Workforce(BaseNode):
             task (Task): The task that needs recovery
             recovery_decision (TaskAnalysisResult): The analysis result with
                 recovery strategy
+            original_assignee (str): The original worker ID that was assigned
+                to this task before cleanup.
 
         Returns:
             bool: True if workforce should halt (e.g., decompose needs
@@ -1630,32 +1663,12 @@ class Workforce(BaseNode):
         try:
             if strategy == RecoveryStrategy.RETRY:
                 # Simply retry the task by reposting it to the same worker
-                # Check both _assignees dict and task.assigned_worker_id
-                assignee_id = (
-                    self._assignees.get(task.id) or task.assigned_worker_id
+                await self._post_task(task, original_assignee)
+                action_taken = f"retried with same worker {original_assignee}"
+                logger.info(
+                    f"Task {task.id} retrying with same worker "
+                    f"{original_assignee}"
                 )
-
-                if assignee_id:
-                    # Retry with the same worker - no coordinator call needed
-                    await self._post_task(task, assignee_id)
-                    action_taken = f"retried with same worker {assignee_id}"
-                    logger.info(
-                        f"Task {task.id} retrying with same worker "
-                        f"{assignee_id} (no coordinator call)"
-                    )
-                else:
-                    # No previous assignment exists - find a new assignee
-                    logger.info(
-                        f"Task {task.id} has no previous assignee, "
-                        f"calling coordinator"
-                    )
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"retried with new worker {assignment.assignee_id}"
-                    )
 
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
@@ -1663,27 +1676,15 @@ class Workforce(BaseNode):
                     task.content = recovery_decision.modified_task_content
                     logger.info(f"Task {task.id} content modified for replan")
 
-                # Repost the modified task
-                if task.id in self._assignees:
-                    assignee_id = self._assignees[task.id]
-                    await self._post_task(task, assignee_id)
-                    action_taken = (
-                        f"replanned and retried with worker {assignee_id}"
-                    )
-                else:
-                    # Find a new assignee for the replanned task
-                    batch_result = await self._find_assignee([task])
-                    assignment = batch_result.assignments[0]
-                    self._assignees[task.id] = assignment.assignee_id
-                    await self._post_task(task, assignment.assignee_id)
-                    action_taken = (
-                        f"replanned and assigned to "
-                        f"worker {assignment.assignee_id}"
-                    )
+                # Repost the modified task to the same worker
+                await self._post_task(task, original_assignee)
+                action_taken = (
+                    f"replanned and retried with worker {original_assignee}"
+                )
 
             elif strategy == RecoveryStrategy.REASSIGN:
                 # Reassign to a different worker
-                old_worker = task.assigned_worker_id
+                old_worker = original_assignee
                 logger.info(
                     f"Task {task.id} will be reassigned from worker "
                     f"{old_worker}"
@@ -4030,7 +4031,6 @@ class Workforce(BaseNode):
             new_node,
             worker_type='SingleAgentWorker',
             role=new_node_conf.role,
-            metadata={'description': new_node_conf.description},
         )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -4058,15 +4058,9 @@ class Workforce(BaseNode):
                 *ThinkingToolkit().get_tools(),
             ]
 
-            model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-                model_config_dict={"temperature": 0},
-            )
-
             return ChatAgent(
                 system_message=worker_sys_msg,
-                model=model,
+                model=self.default_model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
             )
@@ -4313,6 +4307,9 @@ class Workforce(BaseNode):
                             task_failed_event = TaskFailedEvent(
                                 task_id=task.id,
                                 worker_id=task.assigned_worker_id or "unknown",
+                                parent_task_id=task.parent.id
+                                if task.parent
+                                else None,
                                 error_message=task.result,
                                 metadata={
                                     'failure_reason': 'dependency_failure',
@@ -4388,6 +4385,7 @@ class Workforce(BaseNode):
         task_failed_event = TaskFailedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             error_message=detailed_error,
             metadata={
                 'failure_count': task.failure_count,
@@ -4497,15 +4495,27 @@ class Workforce(BaseNode):
                 recovery_strategy=single_strategy,
             )
 
+            # Preserve assignee before cleanup
+            original_assignee = self._assignees.get(task.id)
+            if original_assignee is None:
+                logger.error(
+                    f"Task {task.id}: No assignee found in _assignees. "
+                    f"This indicates a bug in the task assignment chain."
+                )
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                return self.failure_handling_config.halt_on_max_retries
+
             # Clean up tracking before recovery
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
+            # Note: task.id is guaranteed to be in _assignees since we
+            # already checked original_assignee is not None above
+            await self._channel.archive_task(task.id)
             self._cleanup_task_tracking(task.id)
 
-            # Apply the single strategy
+            # Apply the single strategy with preserved assignee
             try:
                 is_decompose = await self._apply_recovery_strategy(
-                    task, recovery_decision
+                    task, recovery_decision, original_assignee
                 )
                 if is_decompose:
                     self._completed_tasks.append(task)
@@ -4549,15 +4559,25 @@ class Workforce(BaseNode):
             f"{recovery_decision.reasoning}"
         )
 
+        # Preserve assignee before cleanup
+        original_assignee = self._assignees.get(task.id)
+        if original_assignee is None:
+            logger.error(
+                f"Task {task.id}: No assignee found in _assignees. "
+                f"This indicates a bug in the task assignment chain."
+            )
+            task.state = TaskState.FAILED
+            self._completed_tasks.append(task)
+            return self.failure_handling_config.halt_on_max_retries
+
         # Clean up tracking before attempting recovery
-        if task.id in self._assignees:
-            await self._channel.archive_task(task.id)
+        await self._channel.archive_task(task.id)
         self._cleanup_task_tracking(task.id)
 
-        # Apply recovery strategy
+        # Apply recovery strategy with preserved assignee
         try:
             is_decompose = await self._apply_recovery_strategy(
-                task, recovery_decision
+                task, recovery_decision, original_assignee
             )
 
             # For decompose, we handle it specially
@@ -4658,6 +4678,7 @@ class Workforce(BaseNode):
         task_completed_event = TaskCompletedEvent(
             task_id=task.id,
             worker_id=worker_id,
+            parent_task_id=task.parent.id if task.parent else None,
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
@@ -5256,6 +5277,30 @@ class Workforce(BaseNode):
 
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
+
+                            task_failed_event = TaskFailedEvent(
+                                task_id=returned_task.id,
+                                worker_id=returned_task.assigned_worker_id,
+                                parent_task_id=returned_task.parent.id
+                                if returned_task.parent
+                                else None,
+                                error_message=(
+                                    f"⚠️ Task {returned_task.id} "
+                                    f"failed quality check "
+                                    f"(score: {score}). "
+                                    f"Issues: {issues}. "
+                                    f"Recovery: {recovery_action}"
+                                ),
+                                metadata={
+                                    'failure_count': returned_task.failure_count,  # noqa: E501
+                                    'task_content': returned_task.content,
+                                    'result_length': len(returned_task.result)
+                                    if returned_task.result
+                                    else 0,
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
                             returned_task.state = TaskState.FAILED
                             returned_task.result = (
                                 f"Quality insufficient (score: "
@@ -5277,18 +5322,33 @@ class Workforce(BaseNode):
                                         config_strategies[0]
                                     )
 
-                            # Clean up tracking before attempting recovery
-                            if returned_task.id in self._assignees:
-                                await self._channel.archive_task(
-                                    returned_task.id
+                            # Preserve assignee before cleanup - in normal
+                            # flow, a task must be assigned before it can fail
+                            original_assignee = self._assignees.get(
+                                returned_task.id
+                            )
+                            if original_assignee is None:
+                                logger.error(
+                                    f"Task {returned_task.id}: No assignee "
+                                    f"found in _assignees. This indicates a "
+                                    f"bug in the task assignment chain."
                                 )
+                                returned_task.state = TaskState.FAILED
+                                self._completed_tasks.append(returned_task)
+                                continue
+
+                            # Clean up tracking before attempting recovery
+                            await self._channel.archive_task(returned_task.id)
                             self._cleanup_task_tracking(returned_task.id)
 
-                            # Apply LLM-recommended recovery strategy
+                            # Apply LLM-recommended recovery strategy with
+                            # preserved assignee
                             try:
                                 is_decompose = (
                                     await self._apply_recovery_strategy(
-                                        returned_task, quality_eval
+                                        returned_task,
+                                        quality_eval,
+                                        original_assignee,
                                     )
                                 )
 
@@ -5496,6 +5556,7 @@ class Workforce(BaseNode):
             new_worker_agent=self.new_worker_agent.clone(with_memory)
             if self.new_worker_agent
             else None,
+            default_model=self.default_model,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import platform
@@ -18,12 +18,22 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import venv
 from typing import Optional, Set, Tuple
 
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Pre-compiled regex patterns for command safety checks
+_CMD_PATTERN = re.compile(
+    r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)', re.IGNORECASE
+)
+_QUOTED_STRING_PATTERN = re.compile(r'''["'][^"']*["']''')
+# Match cd command with optional quoted or unquoted path
+# Handles: cd path, cd "path with spaces", cd 'path with spaces'
+_CD_PATTERN = re.compile(r'\bcd\s+(["\'][^"\']*["\']|[^\s;|&]+)')
 
 
 def check_command_safety(
@@ -97,13 +107,12 @@ def check_command_safety(
     ]
 
     # Remove quoted strings to avoid false positives
-    clean_command = re.sub(r'''["'][^"']*["']''', ' ', command)
+    clean_command = _QUOTED_STRING_PATTERN.sub(' ', command)
 
     # If whitelist mode, check ALL commands against the whitelist
     if allowed_commands is not None:
         # Extract all command words (at start or after operators)
-        cmd_pattern = r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)'
-        found_commands = re.findall(cmd_pattern, clean_command, re.IGNORECASE)
+        found_commands = _CMD_PATTERN.findall(clean_command)
         for cmd in found_commands:
             if cmd.lower() not in allowed_commands:
                 return (
@@ -148,16 +157,28 @@ def sanitize_command(
     if not is_safe:
         return False, reason
 
-    # Additional check for Docker backend: prevent cd outside working directory
+    # Additional check for local backend: prevent cd outside working directory
     if not use_docker_backend and working_dir and 'cd ' in command:
         # Extract cd commands and check their targets
-        cd_pattern = r'\bcd\s+([^\s;|&]+)'
-        for match in re.finditer(cd_pattern, command):
+        # Normalize working_dir to ensure consistent comparison
+        normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
+        for match in _CD_PATTERN.finditer(command):
             target_path = match.group(1).strip('\'"')
-            target_dir = os.path.abspath(
-                os.path.join(working_dir, target_path)
+            target_dir = os.path.normpath(
+                os.path.abspath(os.path.join(working_dir, target_path))
             )
-            if not target_dir.startswith(working_dir):
+            # Use os.path.commonpath for safe path comparison
+            try:
+                common = os.path.commonpath(
+                    [normalized_working_dir, target_dir]
+                )
+                if common != normalized_working_dir:
+                    return (
+                        False,
+                        "Cannot 'cd' outside of the working directory.",
+                    )
+            except ValueError:
+                # Different drives on Windows or other path issues
                 return False, "Cannot 'cd' outside of the working directory."
 
     return True, command
@@ -198,7 +219,10 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
         os_type = platform.system()
 
         # Install uv using the official installer script
-        if os_type in ['darwin', 'linux'] or os_type.startswith('linux'):
+        if os_type.lower() in [
+            'darwin',
+            'linux',
+        ] or os_type.lower().startswith('linux'):
             # Use curl to download and execute the installer
             install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
             result = subprocess.run(
@@ -226,7 +250,7 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
                     )
                 return True, uv_executable
 
-        elif os_type == 'Windows':
+        elif os_type.lower() == 'windows':
             # Use PowerShell to install uv on Windows
             install_cmd = (
                 "powershell -ExecutionPolicy Bypass -c "
@@ -293,8 +317,6 @@ def setup_initial_env_with_uv(
             "pip",
             "setuptools",
             "wheel",
-            "pyautogui",
-            "plotly",
         ]
         subprocess.run(
             [
@@ -335,9 +357,22 @@ def setup_initial_env_with_venv(
     r"""Set up initial environment using standard venv."""
     try:
         # Create virtual environment with system Python
-        venv.create(
-            env_path, with_pip=True, system_site_packages=False, symlinks=False
-        )
+        try:
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=True,
+            )
+        except Exception:
+            # Fallback to symlinks=False if symlinks=True fails
+            # (e.g., on some Windows configurations)
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=False,
+            )
 
         # Get pip path
         if platform.system() == 'Windows':
@@ -350,8 +385,6 @@ def setup_initial_env_with_venv(
             "pip",
             "setuptools",
             "wheel",
-            "pyautogui",
-            "plotly",
         ]
         subprocess.run(
             [pip_path, "install", "--upgrade", *essential_packages],
@@ -382,7 +415,20 @@ def setup_initial_env_with_venv(
 def clone_current_environment(
     env_path: str, working_dir: str, update_callback=None
 ) -> bool:
-    r"""Create a new Python virtual environment, optionally using uv."""
+    r"""Clone the current Python environment to a new virtual environment.
+
+    This function creates a new virtual environment with the same Python
+    version as the current environment and installs all packages from
+    the current environment.
+
+    Args:
+        env_path: Path where the new environment will be created.
+        working_dir: Working directory for subprocess commands.
+        update_callback: Optional callback for status updates.
+
+    Returns:
+        True if the environment was created successfully, False otherwise.
+    """
     try:
         if os.path.exists(env_path):
             if update_callback:
@@ -391,17 +437,37 @@ def clone_current_environment(
 
         if update_callback:
             update_callback(
-                f"Creating new Python environment at: {env_path}\n"
+                f"Cloning current Python environment to: {env_path}\n"
             )
+
+        # Get current Python version
+        current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+        # Get list of installed packages in current environment
+        if update_callback:
+            update_callback("Collecting installed packages...\n")
+
+        freeze_result = subprocess.run(
+            [sys.executable, "-m", "pip", "freeze"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if freeze_result.returncode != 0:
+            if update_callback:
+                update_callback(
+                    "Warning: Failed to get installed packages, "
+                    "creating empty environment\n"
+                )
+            installed_packages = ""
+        else:
+            installed_packages = freeze_result.stdout.strip()
 
         # Try to use uv if available
         success, uv_path = ensure_uv_available(update_callback)
-        if success and uv_path:
-            # Get current Python version
-            current_version = (
-                f"{sys.version_info.major}.{sys.version_info.minor}"
-            )
 
+        if success and uv_path:
+            # Create venv with uv
             subprocess.run(
                 [uv_path, "venv", "--python", current_version, env_path],
                 check=True,
@@ -416,7 +482,7 @@ def clone_current_environment(
             else:
                 python_path = os.path.join(env_path, "bin", "python")
 
-            # Install pip and setuptools using uv
+            # Install pip, setuptools, wheel first
             subprocess.run(
                 [
                     uv_path,
@@ -434,10 +500,38 @@ def clone_current_environment(
                 timeout=300,
             )
 
-            if update_callback:
-                update_callback(
-                    "[UV] Cloned Python environment created successfully!\n"
+            # Install cloned packages if any
+            if installed_packages:
+                if update_callback:
+                    update_callback("Installing cloned packages with uv...\n")
+                # Write requirements to temp file (auto-deleted)
+                fd, requirements_file = tempfile.mkstemp(
+                    suffix=".txt", prefix="requirements_", dir=working_dir
                 )
+                try:
+                    with os.fdopen(fd, "w") as f:
+                        f.write(installed_packages)
+                    subprocess.run(
+                        [
+                            uv_path,
+                            "pip",
+                            "install",
+                            "--python",
+                            python_path,
+                            "-r",
+                            requirements_file,
+                        ],
+                        check=True,
+                        capture_output=True,
+                        cwd=working_dir,
+                        timeout=600,
+                    )
+                finally:
+                    if os.path.exists(requirements_file):
+                        os.remove(requirements_file)
+
+            if update_callback:
+                update_callback("[UV] Environment cloned successfully!\n")
             return True
         else:
             # Fallback to standard venv
@@ -445,49 +539,82 @@ def clone_current_environment(
                 update_callback(
                     "Falling back to standard venv for cloning environment\n"
                 )
+            try:
+                venv.create(env_path, with_pip=True, symlinks=True)
+            except Exception:
+                # Fallback to symlinks=False if symlinks=True fails
+                venv.create(env_path, with_pip=True, symlinks=False)
 
-            venv.create(env_path, with_pip=True, symlinks=False)
-
-            # Ensure pip is properly available
+            # Get python/pip path
             if platform.system() == 'Windows':
                 python_path = os.path.join(env_path, "Scripts", "python.exe")
             else:
                 python_path = os.path.join(env_path, "bin", "python")
 
-            if os.path.exists(python_path):
-                subprocess.run(
-                    [python_path, "-m", "pip", "install", "--upgrade", "pip"],
-                    check=True,
-                    capture_output=True,
-                    cwd=working_dir,
-                    timeout=60,
-                )
-                if update_callback:
-                    update_callback(
-                        "New Python environment created successfully with pip!"
-                    )
-            else:
+            if not os.path.exists(python_path):
                 if update_callback:
                     update_callback(
                         f"Warning: Python executable not found at "
-                        f"{python_path}"
+                        f"{python_path}\n"
                     )
+                return False
+
+            # Upgrade pip
+            subprocess.run(
+                [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+                check=True,
+                capture_output=True,
+                cwd=working_dir,
+                timeout=60,
+            )
+
+            # Install cloned packages if any
+            if installed_packages:
+                if update_callback:
+                    update_callback("Installing cloned packages with pip...\n")
+                # Write requirements to temp file (auto-deleted)
+                fd, requirements_file = tempfile.mkstemp(
+                    suffix=".txt", prefix="requirements_", dir=working_dir
+                )
+                try:
+                    with os.fdopen(fd, "w") as f:
+                        f.write(installed_packages)
+                    subprocess.run(
+                        [
+                            python_path,
+                            "-m",
+                            "pip",
+                            "install",
+                            "-r",
+                            requirements_file,
+                        ],
+                        check=True,
+                        capture_output=True,
+                        cwd=working_dir,
+                        timeout=600,
+                    )
+                finally:
+                    if os.path.exists(requirements_file):
+                        os.remove(requirements_file)
+
+            if update_callback:
+                update_callback("Environment cloned successfully!\n")
             return True
 
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode() if e.stderr else str(e)
         if update_callback:
-            update_callback(f"Failed to create environment: {error_msg}\n")
-        logger.error(f"Failed to create environment: {error_msg}")
+            update_callback(f"Failed to clone environment: {error_msg}\n")
+        logger.error(f"Failed to clone environment: {error_msg}")
         return False
     except subprocess.TimeoutExpired:
         if update_callback:
-            update_callback("Environment creation timed out\n")
+            update_callback("Environment cloning timed out\n")
         return False
     except Exception as e:
         if update_callback:
-            update_callback(f"Failed to create environment: {e!s}\n")
-        logger.error(f"Failed to create environment: {e}")
+            update_callback(f"Failed to clone environment: {e!s}\n")
+        logger.error(f"Failed to clone environment: {e}")
         return False
 
 

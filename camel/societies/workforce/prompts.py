@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.prompts import TextPrompt
 
 # ruff: noqa: E501
@@ -321,6 +321,7 @@ First, assess whether the task was completed successfully and meets quality stan
 - Focus on analyzing the error cause
 
 **For Quality Issues (task completed but needs evaluation):**
+CRITICAL: EVALUATE OBJECTIVELY WITHOUT ASSUMPTIONS, Judge whether the task was executed properly
 Evaluate the task result based on these criteria:
 1. **Completeness**: Does the result fully address all task requirements?
 2. **Accuracy**: Is the result correct and well-structured?
@@ -359,21 +360,21 @@ If the task quality is insufficient, select the best recovery strategy from the 
 )
 
 FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
-{
+{{
   "reasoning": "explanation (1-2 sentences)",
-  "recovery_strategy": "retry|replan|decompose|create_worker",
+  "recovery_strategy": "{strategy_options}",
   "modified_task_content": "new content if replan, else null",
   "issues": ["error1", "error2"]
-}"""
+}}"""
 
 QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
-{
+{{
   "quality_score": 0-100,
   "reasoning": "explanation (1-2 sentences)",
   "issues": ["issue1", "issue2"],
-  "recovery_strategy": "retry|reassign|replan|decompose or null",
+  "recovery_strategy": "{strategy_options} or null",
   "modified_task_content": "new content if replan, else null"
-}"""
+}}"""
 
 # Strategy descriptions for dynamic prompt generation
 STRATEGY_DESCRIPTIONS = {

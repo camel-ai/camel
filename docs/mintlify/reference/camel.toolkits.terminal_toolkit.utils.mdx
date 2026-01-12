@@ -108,7 +108,21 @@ Set up initial environment using standard venv.
 def clone_current_environment(env_path: str, working_dir: str, update_callback = None):
 ```
 
-Create a new Python virtual environment, optionally using uv.
+Clone the current Python environment to a new virtual environment.
+
+This function creates a new virtual environment with the same Python
+version as the current environment and installs all packages from
+the current environment.
+
+**Parameters:**
+
+- **env_path**: Path where the new environment will be created.
+- **working_dir**: Working directory for subprocess commands.
+- **update_callback**: Optional callback for status updates.
+
+**Returns:**
+
+  True if the environment was created successfully, False otherwise.
 
 <a id="camel.toolkits.terminal_toolkit.utils.check_nodejs_availability"></a>
 
