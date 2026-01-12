@@ -1329,8 +1329,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CEREBRAS_GPT_OSS_120B,
             ModelType.CEREBRAS_LLAMA_3_3_70B,
             ModelType.CEREBRAS_QWEN_3_32B,
-            ModelType.DEEPSEEK_CHAT,
-            ModelType.DEEPSEEK_REASONER,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
             ModelType.PPIO_DEEPSEEK_V3_TURBO,
             ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
@@ -1373,6 +1371,8 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 100_000
         elif self in {
+            ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
             ModelType.GPT_4_TURBO,

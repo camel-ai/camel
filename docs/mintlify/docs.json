@@ -631,6 +631,7 @@
           {
             "group": "Utilities",
             "pages": [
+              "reference/camel.utils.agent_context",
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
               "reference/camel.utils.context_utils",
