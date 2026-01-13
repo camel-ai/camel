@@ -64,9 +64,17 @@ response = agent.step(
 )
 print(f"Response: {response.msgs[0].content}\n")
 
-# Example 4: Direct toolkit usage (without agent)
+# Example 4: Send a message to chat
 print("=" * 60)
-print("Example 4: Direct toolkit usage")
+print("Example 4: Send a message to chat")
+print("=" * 60)
+
+response = agent.step("Say hi to my first chat ")
+print(f"Response: {response.msgs[0].content}\n")
+
+# Example 5: Direct toolkit usage (without agent)
+print("=" * 60)
+print("Example 5: Direct toolkit usage")
 print("=" * 60)
 
 # List chats directly
