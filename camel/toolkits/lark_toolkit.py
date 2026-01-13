@@ -373,11 +373,11 @@ class LarkToolkit(BaseToolkit):
             receive_id (str): The recipient identifier.
             text (str): The text message content.
             receive_id_type (str): The recipient ID type. Options:
-                - "open_id" (default)
+                - "open_id"
                 - "user_id"
                 - "union_id"
                 - "email"
-                - "chat_id"
+                - "chat_id" (default)
 
         Returns:
             Dict[str, object]: A dictionary containing:
