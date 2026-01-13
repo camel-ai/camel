@@ -356,6 +356,73 @@ class LarkToolkit(BaseToolkit):
             logger.error(f"Error getting chat messages: {e}")
             return {"error": f"Error getting chat messages: {e!s}"}
 
+    def lark_send_message(
+        self,
+        receive_id: str,
+        text: str,
+        receive_id_type: Literal[
+            "open_id", "user_id", "union_id", "email", "chat_id"
+        ] = "chat_id",
+    ) -> Dict[str, object]:
+        r"""Sends a message to a user or chat. If send message to
+        a chat, use lark_list_chats to get chat_id first, if send
+        message to a user, need user provide open_id, user_id,
+        union_id or email.
+
+        Args:
+            receive_id (str): The recipient identifier.
+            text (str): The text message content.
+            receive_id_type (str): The recipient ID type. Options:
+                - "open_id" (default)
+                - "user_id"
+                - "union_id"
+                - "email"
+                - "chat_id"
+            uuid (Optional[str]): Unique request ID for de-duplication.
+
+        Returns:
+            Dict[str, object]: A dictionary containing:
+                - message_id: The sent message ID
+                - chat_id: The chat ID the message belongs to
+                - msg_type: Message type (text)
+        """
+        # NOTE: Currently supports plain text messages only.
+        try:
+            url = f"{self._domain}/open-apis/im/v1/messages"
+            headers = self._get_tenant_http_headers()
+            params = {"receive_id_type": receive_id_type}
+            payload = {
+                "receive_id": receive_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": text}),
+            }
+
+            response = requests.post(
+                url, headers=headers, params=params, json=payload, timeout=30
+            )
+            result = response.json()
+
+            if result.get("code") != 0:
+                logger.error(
+                    f"Failed to send message: {result.get('code')} - "
+                    f"{result.get('msg')}"
+                )
+                return {
+                    "error": f"Failed to send message: {result.get('msg')}",
+                    "code": result.get("code"),
+                }
+
+            data = result.get("data", {}) or {}
+            return {
+                "message_id": data.get("message_id"),
+                "chat_id": data.get("chat_id"),
+                "msg_type": data.get("msg_type"),
+            }
+
+        except Exception as e:
+            logger.error(f"Error sending message: {e}")
+            return {"error": f"Error sending message: {e!s}"}
+
     def lark_get_message_resource(
         self,
         message_id: str,
@@ -507,6 +574,7 @@ class LarkToolkit(BaseToolkit):
         return [
             FunctionTool(self.lark_list_chats),
             FunctionTool(self.lark_get_chat_messages),
+            FunctionTool(self.lark_send_message),
             FunctionTool(self.lark_get_message_resource),
             FunctionTool(self.lark_get_message_resource_key),
         ]
