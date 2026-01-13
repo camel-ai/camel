@@ -214,12 +214,9 @@ class LarkToolkit(BaseToolkit):
 
         Returns:
             Dict[str, object]: A dictionary containing:
-                - code: Error code, 0 indicates success
-                - msg: Error description
-                - data: Response payload including:
-                    - items: list_chat[]
-                    - has_more: Whether there are more chats to fetch
-                    - page_token: Token to fetch the next page
+                - chats: List of chat objects with chat_id and name
+                - has_more: Whether there are more chats to fetch
+                - page_token: Token to fetch the next page
         """
         try:
             url = f"{self._domain}/open-apis/im/v1/chats"
@@ -302,12 +299,15 @@ class LarkToolkit(BaseToolkit):
 
         Returns:
             Dict[str, object]: A dictionary containing:
-                - code: Error code, 0 indicates success
-                - msg: Error description
-                - data: Response payload including:
-                    - items: message[]
-                    - has_more: Whether there are more messages to fetch
-                    - page_token: Token to fetch the next page
+                - messages: List of processed message objects with fields:
+                    - message_id: Message identifier
+                    - msg_type: Message type (text, image, file, etc.)
+                    - text: Extracted message text content
+                    - time: Human-readable timestamp (UTC)
+                    - sender_id: Sender's user ID
+                    - sender_type: Type of sender
+                - has_more: Whether there are more messages to fetch
+                - page_token: Token to fetch the next page
         """
         try:
             url = f"{self._domain}/open-apis/im/v1/messages"
