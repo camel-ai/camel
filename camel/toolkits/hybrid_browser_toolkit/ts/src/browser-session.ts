@@ -1466,19 +1466,17 @@ export class HybridBrowserSession {
    * Wait for DOM to stop changing for a specified duration
    */
   private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
-    const startTime = Date.now();
-    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
-    let lastChangeTime = Date.now();
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const stabilityThreshold = browserConfig.domStabilityThreshold; // Consider stable if no changes for configured duration
 
     try {
       // Monitor DOM changes
       await page.evaluate(() => {
-        let changeCount = 0;
         (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
 
         const observer = new MutationObserver(() => {
           (window as any).__domStabilityCheck.changeCount++;
-          (window as any).__domStabilityCheck.lastChange = Date.now();
+          (window as any).__domStabilityCheck.lastChange = Date.now();  
         });
 
         observer.observe(document.body, {
@@ -1511,24 +1509,58 @@ export class HybridBrowserSession {
     }
   }
 
-  private async waitForPageStability(page: Page): Promise<{ domContentLoadedTime: number; networkIdleTime: number }> {
-    let domContentLoadedTime = 0;
-    let networkIdleTime = 0;
-
+  private async waitForPageStability(page: Page): Promise<{
+    domContentLoadedTime: number;
+    networkIdleTime: number;
+    domStabilityTime: number;
+  }> {
     try {
-      const domStart = Date.now();
       const browserConfig = this.configLoader.getBrowserConfig();
-      await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
-      domContentLoadedTime = Date.now() - domStart;
 
-      const networkStart = Date.now();
-      await page.waitForLoadState(browserConfig.networkIdleState as any, { timeout: browserConfig.networkIdleTimeout });
-      networkIdleTime = Date.now() - networkStart;
+      const maxTimeout = Math.max(
+        browserConfig.domContentLoadedTimeout,
+        browserConfig.networkIdleTimeout,
+        browserConfig.domStabilityTimeout
+      );
+
+      const domContentLoadedPromise = (async () => {
+        const start = Date.now();
+        await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
+            timeout: browserConfig.domContentLoadedTimeout
+          });
+
+        return Date.now() - start;
+
+      })();
+
+      const networkIdlePromise = (async () => {
+        const start = Date.now();
+        await page.waitForLoadState(browserConfig.networkIdleState as any, {
+            timeout: browserConfig.networkIdleTimeout
+          });
+
+        return Date.now() - start;
+      })();
+      const domStabilityPromise = (async () => {
+        const start = Date.now();
+        await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
+
+        return Date.now() - start;
+      })();
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('max timeout')), maxTimeout)
+      );
+
+      const [domContentLoadedTime, networkIdleTime, domStabilityTime] = await Promise.race([
+        Promise.all([domContentLoadedPromise, networkIdlePromise, domStabilityPromise]),
+        timeoutPromise
+      ]);
+
+      return { domContentLoadedTime, networkIdleTime, domStabilityTime };
     } catch (error) {
-      // Continue even if stability wait fails
+      return { domContentLoadedTime: 0, networkIdleTime: 0, domStabilityTime: 0 };
     }
-
-    return { domContentLoadedTime, networkIdleTime };
   }
 
   async visitPage(url: string): Promise<ActionResult & { newTabId?: string }> {
@@ -1820,7 +1852,7 @@ export class HybridBrowserSession {
 
         try {
           const browserConfig = this.configLoader.getBrowserConfig();
-          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
+          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.domContentLoadedTimeout });
           stabilityResult.domContentLoadedTime = Date.now() - stabilityStart;
         } catch (error) {
         }

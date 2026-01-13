@@ -69,6 +69,8 @@ export interface BrowserToolkitConfig {
   networkIdleTimeout?: number;
   screenshotTimeout?: number;
   pageStabilityTimeout?: number;
+  domStabilityThreshold?: number;
+  domStabilityTimeout?: number;
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
