@@ -378,7 +378,6 @@ class LarkToolkit(BaseToolkit):
                 - "union_id"
                 - "email"
                 - "chat_id"
-            uuid (Optional[str]): Unique request ID for de-duplication.
 
         Returns:
             Dict[str, object]: A dictionary containing:
