@@ -106,8 +106,9 @@ def test_lark_list_chats(lark_toolkit):
 
         result = lark_toolkit.lark_list_chats()
 
-        assert result["code"] == 0
-        assert len(result["data"]["items"]) == 1
+        assert len(result["chats"]) == 1
+        assert result["chats"][0]["chat_id"] == "oc_1"
+        assert result["chats"][0]["name"] == "Team"
         mock_get.assert_called_once()
 
 
@@ -128,9 +129,9 @@ def test_lark_get_chat_messages(lark_toolkit):
 
         result = lark_toolkit.lark_get_chat_messages(container_id="oc_123")
 
-        assert result["code"] == 0
-        assert len(result["data"]["items"]) == 1
-        assert result["data"]["has_more"] is False
+        assert len(result["messages"]) == 1
+        assert result["messages"][0]["message_id"] == "msg_1"
+        assert result["has_more"] is False
 
 
 def test_lark_get_chat_messages_time_filters(lark_toolkit):
@@ -157,8 +158,8 @@ def test_lark_get_chat_messages_time_filters(lark_toolkit):
             sort_type="ByCreateTimeAsc",
         )
 
-        assert len(result["data"]["items"]) == 1
-        assert result["data"]["has_more"] is True
+        assert len(result["messages"]) == 1
+        assert result["has_more"] is True
 
         call_args = mock_get.call_args
         params = call_args[1]["params"]
@@ -206,7 +207,9 @@ def test_lark_get_message_resource_key(lark_toolkit):
         mock_get.return_value.json.return_value = {
             "code": 0,
             "data": {
-                "body": {"content": ("{\"image_key\":\"img_v3_02tb_abc\"}")}
+                "items": [
+                    {"body": {"content": '{"image_key":"img_v3_02tb_abc"}'}}
+                ]
             },
         }
 

@@ -15,7 +15,8 @@
 import json
 import os
 import time
-from typing import Dict, List, Literal, Optional, Union
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import requests
 
@@ -118,6 +119,78 @@ class LarkToolkit(BaseToolkit):
             f"Failed to get tenant access token: {result.get('msg')}"
         )
 
+    def _convert_timestamp(self, ts: Any) -> str:
+        r"""Convert millisecond timestamp to readable datetime string.
+
+        Args:
+            ts: Timestamp value (can be string or int, in milliseconds).
+
+        Returns:
+            str: ISO format datetime string, or original value if conversion
+                fails.
+        """
+        try:
+            ts_int = int(ts)
+            # Convert milliseconds to seconds
+            dt = datetime.fromtimestamp(ts_int / 1000, tz=timezone.utc)
+            return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+        except (ValueError, TypeError, OSError):
+            return str(ts)
+
+    def _process_message_items(
+        self, items: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        r"""Process message items to agent-friendly format.
+
+        Args:
+            items: List of message items from API response.
+
+        Returns:
+            List[Dict[str, Any]]: Simplified items with only essential fields.
+        """
+        processed = []
+        for item in items:
+            # Parse message content
+            text = ""
+            body = item.get("body", {})
+            content = body.get("content", "")
+            if content:
+                try:
+                    content_obj = json.loads(content)
+                    if "text" in content_obj:
+                        text = content_obj["text"]
+                    elif "template" in content_obj:
+                        # System message: render template
+                        tpl = content_obj["template"]
+                        for key in ["from_user", "to_chatters"]:
+                            val = content_obj.get(key, [])
+                            if val:
+                                tpl = tpl.replace(
+                                    "{" + key + "}", ", ".join(val)
+                                )
+                            else:
+                                tpl = tpl.replace("{" + key + "}", "")
+                        text = tpl.strip()
+                    elif "image_key" in content_obj:
+                        text = f"[Image: {content_obj['image_key']}]"
+                    elif "file_key" in content_obj:
+                        text = f"[File: {content_obj['file_key']}]"
+                except (json.JSONDecodeError, TypeError):
+                    text = content
+
+            # Build simplified message
+            sender = item.get("sender", {})
+            msg = {
+                "message_id": item.get("message_id"),
+                "msg_type": item.get("msg_type"),
+                "text": text,
+                "time": self._convert_timestamp(item.get("create_time", "")),
+                "sender_id": sender.get("id") or None,
+                "sender_type": sender.get("sender_type") or None,
+            }
+            processed.append(msg)
+        return processed
+
     def lark_list_chats(
         self,
         sort_type: Literal["ByCreateTimeAsc", "ByActiveTimeDesc"] = (
@@ -174,7 +247,18 @@ class LarkToolkit(BaseToolkit):
                     "code": result.get("code"),
                 }
 
-            return result
+            # Simplify chat items
+            data = result.get("data", {})
+            items = data.get("items", [])
+            simplified = [
+                {"chat_id": c.get("chat_id"), "name": c.get("name", "")}
+                for c in items
+            ]
+            return {
+                "chats": simplified,
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token", ""),
+            }
 
         except Exception as e:
             logger.error(f"Error listing chats: {e}")
@@ -259,7 +343,14 @@ class LarkToolkit(BaseToolkit):
                     "code": result.get("code"),
                 }
 
-            return result
+            # Process and simplify messages
+            data = result.get("data", {})
+            items = data.get("items", [])
+            return {
+                "messages": self._process_message_items(items),
+                "has_more": data.get("has_more", False),
+                "page_token": data.get("page_token", ""),
+            }
 
         except Exception as e:
             logger.error(f"Error getting chat messages: {e}")
@@ -370,7 +461,12 @@ class LarkToolkit(BaseToolkit):
                 }
 
             data = result.get("data", {}) or {}
-            body = data.get("body", {}) or {}
+            items = data.get("items", []) or []
+            if not items:
+                return {"error": "No message found."}
+            # Get the first message item
+            item = items[0]
+            body = item.get("body", {}) or {}
             content = body.get("content", "")
             if not content:
                 return {"error": "Message content is empty."}

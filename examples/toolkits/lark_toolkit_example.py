@@ -34,37 +34,41 @@ agent = ChatAgent(
     tools=toolkit.get_tools(),
 )
 
-# Example: Chat and message operations
+# Example 1: List all chats
 print("=" * 60)
-print("Lark Toolkit Example: Chat and Message Operations")
+print("Example 1: List all chats the bot belongs to")
+print("=" * 60)
+
+response = agent.step("List all chats I belong to.")
+print(f"Response: {response.msgs[0].content}\n")
+
+# Example 2: Get messages from a specific chat
+print("=" * 60)
+print("Example 2: Get recent messages from a chat")
 print("=" * 60)
 
 response = agent.step(
-    "List all chats I belong to, get the recent messages from the first chat, "
-    "and if there are any images or files, download one of them."
+    "Get the 5 most recent messages from the first chat, "
+    "sorted by newest first."
 )
-print(f"Agent response: {response.msgs[0].content}")
+print(f"Response: {response.msgs[0].content}\n")
 
-"""
-==========================================================================
-Example output:
+# Example 3: Download a resource from a message
+print("=" * 60)
+print("Example 3: Download image/file from a message")
+print("=" * 60)
 
-I've completed the Lark messaging tasks. Here's a summary:
+response = agent.step(
+    "If there are any images or files in the messages, "
+    "get the resource key and download one of them."
+)
+print(f"Response: {response.msgs[0].content}\n")
 
-1. **Listed Chats**: Found 3 chats you belong to:
-   - "Engineering Team" (group) - Chat ID: oc_xxx
-   - "Project Alpha" (group) - Chat ID: oc_yyy
-   - "John Doe" (p2p) - Chat ID: oc_zzz
+# Example 4: Direct toolkit usage (without agent)
+print("=" * 60)
+print("Example 4: Direct toolkit usage")
+print("=" * 60)
 
-2. **Retrieved Messages**: Got recent messages from "Engineering Team":
-   - Found 15 messages in the chat
-   - Messages include text discussions and file attachments
-
-3. **Downloaded Resource**: Found and downloaded an image:
-   - Message ID: om_xxx
-   - File Key: img_v2_xxx
-   - Content Type: image/png
-   - Saved to: ./workspace/lark_file/img_v2_xxx
-
-==========================================================================
-"""
+# List chats directly
+result = toolkit.lark_list_chats(page_size=10)
+print(f"lark_list_chats result: {result}")
