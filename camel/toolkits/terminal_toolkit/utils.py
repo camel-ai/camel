@@ -357,9 +357,22 @@ def setup_initial_env_with_venv(
     r"""Set up initial environment using standard venv."""
     try:
         # Create virtual environment with system Python
-        venv.create(
-            env_path, with_pip=True, system_site_packages=False, symlinks=False
-        )
+        try:
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=True,
+            )
+        except Exception:
+            # Fallback to symlinks=False if symlinks=True fails
+            # (e.g., on some Windows configurations)
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=False,
+            )
 
         # Get pip path
         if platform.system() == 'Windows':
@@ -526,8 +539,11 @@ def clone_current_environment(
                 update_callback(
                     "Falling back to standard venv for cloning environment\n"
                 )
-
-            venv.create(env_path, with_pip=True, symlinks=False)
+            try:
+                venv.create(env_path, with_pip=True, symlinks=True)
+            except Exception:
+                # Fallback to symlinks=False if symlinks=True fails
+                venv.create(env_path, with_pip=True, symlinks=False)
 
             # Get python/pip path
             if platform.system() == 'Windows':

@@ -51,7 +51,7 @@ Sync stream wrapper with logging.
 ```python
 def __init__(
     self,
-    stream: Stream[ChatCompletionChunk],
+    stream: Union[Stream[ChatCompletionChunk], Generator[ChatCompletionChunk, None, None]],
     log_path: Optional[str],
     log_enabled: bool
 ):
@@ -114,7 +114,7 @@ Async stream wrapper with logging.
 ```python
 def __init__(
     self,
-    stream: AsyncStream[ChatCompletionChunk],
+    stream: Union[AsyncStream[ChatCompletionChunk], AsyncGenerator[ChatCompletionChunk, None]],
     log_path: Optional[str],
     log_enabled: bool
 ):
@@ -270,6 +270,20 @@ Log the response to the existing log file.
 
 - **log_path** (str): The path to the log file.
 - **response** (Any): The response to log.
+
+<a id="camel.models.base_model.BaseModelBackend._log_and_trace"></a>
+
+### _log_and_trace
+
+```python
+def _log_and_trace(self):
+```
+
+Update Langfuse trace with session metadata.
+
+This method updates the current Langfuse trace with agent session
+information and model metadata. Called at the start of _run() and
+_arun() methods before API execution.
 
 <a id="camel.models.base_model.BaseModelBackend._run"></a>
 
