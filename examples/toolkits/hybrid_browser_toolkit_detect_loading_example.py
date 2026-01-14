@@ -12,16 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """
-Test Page Stability Detection for Xiaohongshu "One-Click Format" Feature
+Test Page Stability Detection using Carbon Code Screenshot Tool
 
 Test Objectives:
 1. Verify that the enhanced waitForPageStability correctly waits
    for all three states
 2. Observe DOM changes and network request completion after
-   clicking "One-Click Format"
+   interacting with Carbon's code editor and export feature
 
 Prerequisites:
-- Must have a logged-in Xiaohongshu account in the User_Data directory
+- Internet connection to access https://carbon.now.sh/
 """
 
 import asyncio
@@ -48,9 +48,6 @@ logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
 
-# Use a User Data directory that has saved Xiaohongshu login state
-USER_DATA_DIR = "User_Data"
-
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
@@ -60,7 +57,6 @@ model_backend = ModelFactory.create(
 # Configure the toolkit
 web_toolkit = HybridBrowserToolkit(
     headless=False,
-    user_data_dir=USER_DATA_DIR,
     enabled_tools=[
         "browser_open",
         "browser_close",
@@ -81,31 +77,25 @@ agent = ChatAgent(
     max_iteration=15,
 )
 
-# Test task: Open Xiaohongshu publish page, enter content,
-# click one-click format
+# Test task: Open Carbon, enter code, and export
 TASK_PROMPT = r"""
-Please perform the following steps to test Xiaohongshu's
-"One-Click Format" feature:
+Please perform the following steps to test page stability detection
+using Carbon (code screenshot tool):
 
-1. First, open the Xiaohongshu Creator Center publish page: https://creator.xiaohongshu.com/publish/publish
+1. Open Carbon: https://carbon.now.sh/
 
-2. Click on the "Write Long Article" tab, then click "New Creation"
+2. Clear the existing code in the editor and enter the following code:
+   ```python
+   def hello_world():
+       print("Hello, World!")
+       return True
 
-3. Enter the following test content in the body area:
-    Title: test
-    Body:
-    "This is a test text to verify the one-click format feature.
+   if __name__ == "__main__":
+       hello_world()
+   ```
+3. Find and click the "Export" button
 
-   First paragraph content goes here.
-
-   Second paragraph content goes here.
-
-   Third paragraph content goes here."
-
-
-4. Find and click the "One-Click Format" button
-
-5. After completion, click the button on the left of preview button
+4. Take a snapshot of the page to verify the current state
 
 """
 
@@ -113,9 +103,8 @@ Please perform the following steps to test Xiaohongshu's
 async def main() -> None:
     try:
         print("=" * 60)
-        print("Xiaohongshu One-Click Format Feature - Page Stability Test")
+        print("Carbon Code Screenshot - Page Stability Detection Test")
         print("=" * 60)
-        print(f"Using User Data directory: {USER_DATA_DIR}")
         print(f"Enabled tools: {web_toolkit.enabled_tools}")
         print("=" * 60)
 

@@ -1476,7 +1476,7 @@ export class HybridBrowserSession {
 
         const observer = new MutationObserver(() => {
           (window as any).__domStabilityCheck.changeCount++;
-          (window as any).__domStabilityCheck.lastChange = Date.now();  
+          (window as any).__domStabilityCheck.lastChange = Date.now();
         });
 
         observer.observe(document.body, {
