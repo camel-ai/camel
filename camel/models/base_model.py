@@ -12,10 +12,20 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
+import inspect
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncStream, Stream
 from openai.lib.streaming.chat import (
@@ -33,7 +43,12 @@ from camel.types import (
     ParsedChatCompletion,
     UnifiedModelType,
 )
-from camel.utils import BaseTokenCounter, Constants
+from camel.utils import (
+    BaseTokenCounter,
+    Constants,
+    get_current_agent_session_id,
+    update_langfuse_trace,
+)
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
     try:
@@ -108,7 +123,10 @@ class _SyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: Stream[ChatCompletionChunk],
+        stream: Union[
+            Stream[ChatCompletionChunk],
+            Generator[ChatCompletionChunk, None, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
@@ -142,7 +160,10 @@ class _AsyncStreamWrapper(_StreamLogger):
 
     def __init__(
         self,
-        stream: AsyncStream[ChatCompletionChunk],
+        stream: Union[
+            AsyncStream[ChatCompletionChunk],
+            AsyncGenerator[ChatCompletionChunk, None],
+        ],
         log_path: Optional[str],
         log_enabled: bool,
     ):
@@ -394,14 +415,29 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         import json
         from datetime import datetime
 
-        os.makedirs(self._log_dir, exist_ok=True)
+        from camel.utils.agent_context import get_current_agent_id
+
+        agent_id = get_current_agent_id()
+
+        # Remove _context_summarizer suffix to keep all logs in one directory
+        log_agent_id = agent_id
+        if agent_id and agent_id.endswith("_context_summarizer"):
+            log_agent_id = agent_id[: -len("_context_summarizer")]
+
+        log_subdir = (
+            os.path.join(self._log_dir, log_agent_id)
+            if log_agent_id
+            else self._log_dir
+        )
+        os.makedirs(log_subdir, exist_ok=True)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        log_file_path = os.path.join(self._log_dir, f"conv_{timestamp}.json")
+        log_file_path = os.path.join(log_subdir, f"conv_{timestamp}.json")
 
         log_entry = {
             "request_timestamp": datetime.now().isoformat(),
             "model": str(self.model_type),
+            "agent_id": agent_id,
             "request": {"messages": messages},
         }
 
@@ -439,6 +475,25 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             f.seek(0)
             json.dump(log_data, f, indent=4)
             f.truncate()
+
+    def _log_and_trace(self) -> None:
+        r"""Update Langfuse trace with session metadata.
+
+        This method updates the current Langfuse trace with agent session
+        information and model metadata. Called at the start of _run() and
+        _arun() methods before API execution.
+        """
+        agent_session_id = get_current_agent_session_id()
+        update_langfuse_trace(
+            session_id=agent_session_id,
+            metadata={
+                "source": "camel",
+                "agent_id": agent_session_id,
+                "agent_type": "camel_chat_agent",
+                "model_type": str(self.model_type),
+            },
+            tags=["CAMEL-AI", str(self.model_type)],
+        )
 
     @abstractmethod
     def _run(
@@ -549,7 +604,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, Stream):
+        if isinstance(result, Stream) or inspect.isgenerator(result):
             return _SyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )
@@ -604,7 +659,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         logger.info("Result: %s", result)
 
         # For streaming responses, wrap with logging; otherwise log immediately
-        if isinstance(result, AsyncStream):
+        if isinstance(result, AsyncStream) or inspect.isasyncgen(result):
             return _AsyncStreamWrapper(  # type: ignore[return-value]
                 result, log_path, self._log_enabled
             )

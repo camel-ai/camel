@@ -31,8 +31,6 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
-    get_current_agent_session_id,
-    update_langfuse_trace,
 )
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
@@ -183,18 +181,7 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -226,18 +213,7 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
