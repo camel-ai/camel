@@ -18,7 +18,6 @@ import numpy as np
 from datasets import Dataset, load_dataset
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
 from camel.logger import get_logger
 from camel.retrievers import AutoRetriever
 
@@ -222,7 +221,7 @@ def ragas_evaluate_dataset(
     return Dataset.from_pandas(ragas_result.to_pandas())
 
 
-class RAGBenchBenchmark(BaseBenchmark):
+class RAGBenchBenchmark:
     r"""RAGBench Benchmark for evaluating RAG performance.
 
     This benchmark uses the rungalileo/ragbench dataset to evaluate
@@ -255,7 +254,7 @@ class RAGBenchBenchmark(BaseBenchmark):
         ] = "hotpotqa",
         split: Literal["train", "test", "validation"] = "test",
     ) -> None:
-        super().__init__("ragbench", "rag_bench", "", processes)
+        # super().__init__("ragbench", "rag_bench", "", processes)
         self.subset = subset
         self.split = split
         self.dataset: Optional[Dataset] = None

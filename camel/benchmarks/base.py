@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
+import random
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -118,6 +119,47 @@ class BaseBenchmark(ABC):
             logger.info("Data not loaded. Loading data.")
             self.load()
         return self._data["test"]
+
+    def shuffle(self, seed: Optional[int] = 42) -> "BaseBenchmark":
+        r"""Shuffle all data splits.
+
+        Args:
+            seed: Random seed for reproducibility.
+                (default: :obj:`42`)
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
+        random.seed(seed)
+        logger.info(f"Shuffling data with seed: {seed}")
+
+        for _, split_data in self._data.items():
+            if split_data:
+                random.shuffle(split_data)
+
+        return self
+
+    def subset(
+        self,
+        n: int,
+        split: Optional[str] = None,
+    ) -> "BaseBenchmark":
+        r"""Take first N samples from data splits.
+
+        Args:
+            n: Number of samples to keep.
+            split: Specific split to subset. If None, subsets all splits.
+                (default: :obj:`None`)
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
+        splits = [split] if split else self._data.keys()
+
+        for split_name in splits:
+            if self._data.get(split_name):
+                self._data[split_name] = self._data[split_name][:n]
+        return self
 
     @abstractmethod
     def run(
