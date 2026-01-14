@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from .config_loader import EvidenceCaptureConfig
-from .hybrid_browser_toolkit import HybridBrowserToolkit
+
+from .vision_webjudge import WebJudgeVisionConfig, WebJudgeVisionEvaluator
 
 __all__ = [
-    "EvidenceCaptureConfig",
-    "HybridBrowserToolkit",
+    "WebJudgeVisionConfig",
+    "WebJudgeVisionEvaluator",
 ]

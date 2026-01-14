@@ -26,6 +26,7 @@ This script:
 
 import asyncio
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -40,6 +41,7 @@ from utils import (
     compute_session_summary,
     count_subtasks_in_dir,
     create_chat_agent,
+    get_timestamp_filename,
     get_timestamp_iso,
     resolve_website_skills_dir,
     update_cumulative_subtask_stats,
@@ -48,6 +50,18 @@ from utils import (
 from camel.messages import BaseMessage
 
 load_dotenv()
+
+from camel.evaluators.webjudge import WebJudgeVisionConfig, WebJudgeVisionEvaluator
+
+
+_SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
+
+
+def safe_name(value: str) -> str:
+    value = (value or "").strip()
+    value = _SAFE_NAME_RE.sub("_", value)
+    value = re.sub(r"_+", "_", value).strip("_")
+    return value or "unknown"
 
 
 class TaskVerifier:
@@ -131,6 +145,38 @@ Return ONLY the JSON object, no other text.
             }
 
 
+class WebJudgeTaskVerifier:
+    """WebJudge-based verifier using session evidence (vision-only)."""
+
+    def __init__(
+        self,
+        *,
+        vision_config: WebJudgeVisionConfig | None = None,
+    ):
+        self.vision_evaluator = WebJudgeVisionEvaluator(config=vision_config)
+
+    def verify_task(
+        self,
+        task_description: str,
+        agent_response: str,
+        *,
+        session_dir: Path | None = None,
+        website: str | None = None,
+    ) -> Dict[str, Any]:
+        if session_dir is None:
+            return {
+                "success": False,
+                "reasoning": "WebJudge verifier requires session_dir evidence",
+                "suggestions": "Re-run with session logging enabled and pass session_dir to the verifier.",
+            }
+        return self.vision_evaluator.evaluate_session(
+            task=task_description,
+            session_dir=session_dir,
+            agent_response=agent_response,
+            website=website,
+        )
+
+
 class WebVoyagerRunner:
     """Run WebVoyager tasks with retry logic."""
 
@@ -143,6 +189,7 @@ class WebVoyagerRunner:
         max_retries: int = 2,
         run_summary_out: str = "",
         results_out: str = "",
+        run_dir: Path | None = None,
         step_timeout: float | None = 180.0,
         tool_execution_timeout: float | None = 180.0,
     ):
@@ -165,9 +212,10 @@ class WebVoyagerRunner:
             run_summary_out.strip() or "webvoyager_run_summary.json"
         )
         self.results_out = results_out.strip() or "webvoyager_results_1.json"
+        self.run_dir = run_dir
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
-        self.verifier = TaskVerifier()
+        self.verifier = WebJudgeTaskVerifier()
 
         # Ensure subtask config directory exists
         self._ensure_config_dir_exists()
@@ -257,10 +305,18 @@ class WebVoyagerRunner:
         skills_dir = self._resolve_skills_dir_for_task(website)
         subtasks_before = count_subtasks_in_dir(skills_dir)
 
+        session_log_dir = None
+        if self.run_dir is not None:
+            session_log_dir = (
+                Path(self.run_dir)
+                / f"task_{safe_name(str(task_id))}_attempt_{attempt}"
+            )
+
         agent = SubtaskAgent(
             subtask_config_dir=str(skills_dir),
             use_agent_recovery=True,
             website=website,
+            session_log_dir=session_log_dir,
             start_url=start_url,
             step_timeout=self.step_timeout,
             tool_execution_timeout=self.tool_execution_timeout,
@@ -324,6 +380,12 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Could not get final snapshot: {e}")
 
+                # Capture final Vision-WebJudge evidence (best-effort)
+                try:
+                    await agent.toolkit.capture_final_evidence()
+                except Exception as e:
+                    print(f"⚠️  Could not capture final evidence: {e}")
+
             # Close browser completely after each task
             print("\n🧹 Closing browser...")
             if agent.toolkit:
@@ -333,10 +395,37 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Browser close failed: {e}")
 
-            # Extract subtasks BEFORE verification/retry/next task so skills can
-            # accumulate monotonically during a run.
+            # Get agent's response content
+            agent_response = "Task completed."
+            if response and response.msgs:
+                agent_response = response.msgs[0].content
+            elif agent.agent_communication_log:
+                # Fallback to communication log if response is empty
+                last_comm = agent.agent_communication_log[-1]
+                agent_response = last_comm.get('response', 'Task completed.')
+
+            # Verify task completion
+            print(f"\n{'=' * 80}")
+            print("🔍 VERIFYING TASK COMPLETION")
+            print(f"{'=' * 80}")
+
+            verification = self.verifier.verify_task(
+                task_description,
+                agent_response,
+                session_dir=session_dir,
+                website=website,
+            )
+
+            print("\n✓ Verification complete:")
+            print(f"  Success: {verification['success']}")
+            print(f"  Reasoning: {verification['reasoning']}")
+            if verification.get('suggestions'):
+                print(f"  Suggestions: {verification['suggestions']}")
+
+            # Extract subtasks ONLY after we have a verified successful run.
+            # This prevents unstable/failed trajectories from polluting skills.
             subtask_analysis = None
-            if session_dir:
+            if session_dir and verification.get("success"):
                 print(f"\n{'=' * 80}")
                 print("🔎 EXTRACTING SUBTASKS (SKILLS)")
                 print(f"{'=' * 80}")
@@ -357,30 +446,11 @@ class WebVoyagerRunner:
                         "status": "failed",
                         "error": str(e),
                     }
-
-            # Get agent's response content
-            agent_response = "Task completed."
-            if response and response.msgs:
-                agent_response = response.msgs[0].content
-            elif agent.agent_communication_log:
-                # Fallback to communication log if response is empty
-                last_comm = agent.agent_communication_log[-1]
-                agent_response = last_comm.get('response', 'Task completed.')
-
-            # Verify task completion
-            print(f"\n{'=' * 80}")
-            print("🔍 VERIFYING TASK COMPLETION")
-            print(f"{'=' * 80}")
-
-            verification = self.verifier.verify_task(
-                task_description, agent_response
-            )
-
-            print("\n✓ Verification complete:")
-            print(f"  Success: {verification['success']}")
-            print(f"  Reasoning: {verification['reasoning']}")
-            if verification.get('suggestions'):
-                print(f"  Suggestions: {verification['suggestions']}")
+            elif session_dir:
+                subtask_analysis = {
+                    "status": "skipped",
+                    "reason": "task_not_successful",
+                }
 
             result = {
                 'task_id': task_id,
@@ -658,7 +728,10 @@ class WebVoyagerRunner:
             print(f"Skills root: {self.skills_root}")
         else:
             print(f"Skills dir: {self.subtask_config_dir}")
+        if self.run_dir:
+            print(f"Run dir: {self.run_dir}")
         print(f"Run summary out: {self.run_summary_out}")
+        print(f"Results out: {self.results_out}")
         print()
 
         # Slice tasks
@@ -696,6 +769,7 @@ class WebVoyagerRunner:
     def save_results(self):
         """Save results to JSON file."""
         output_file = Path(self.results_out)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
         print(f"\n💾 Results saved to: {output_file}")
@@ -703,6 +777,7 @@ class WebVoyagerRunner:
     def save_run_summary(self):
         """Save a concise run summary to JSON."""
         output_file = Path(self.run_summary_out)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         summary = {
             "generated_at": get_timestamp_iso(),
             "jsonl_file": str(self.jsonl_file),
@@ -802,6 +877,7 @@ async def main():
     # Calculate default paths using relative path
     script_dir = Path(__file__).resolve().parent
     default_config_dir = str(script_dir / "subtask_configs")
+    default_session_logs_root = script_dir.parent / "session_logs"
     default_jsonl_candidates = [
         script_dir / "WebVoyager_data.jsonl",
         Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl",
@@ -861,6 +937,15 @@ async def main():
         help="Per-tool execution timeout in seconds (0 disables). Default: 180.",
     )
     parser.add_argument(
+        "--out-dir",
+        default="",
+        help=(
+            "Output directory for both results and run summary. "
+            "When set, writes `results.json` and `run_summary.json` under this directory. "
+            "Do not combine with --results-out/--run-summary-out."
+        ),
+    )
+    parser.add_argument(
         "--run-summary-out",
         default="",
         help="Write a concise run summary JSON to this path.",
@@ -873,6 +958,34 @@ async def main():
 
     args = parser.parse_args()
 
+    # Unify all outputs under one run folder: <out-root>/session_<timestamp>/...
+    # If --out-dir is not provided, default to examples/toolkits/session_logs.
+    out_root = (
+        Path(args.out_dir).expanduser().resolve()
+        if args.out_dir.strip()
+        else default_session_logs_root
+    )
+
+    if args.out_dir.strip() and (args.run_summary_out.strip() or args.results_out.strip()):
+        parser.error(
+            "--out-dir cannot be combined with --run-summary-out or --results-out"
+        )
+
+    # If user provided a directory already named like session_YYYYMMDD_HHMMSS,
+    # treat it as the run folder. Otherwise, create a new session_ folder under it.
+    session_dir_pattern = re.compile(r"^session_\\d{8}_\\d{6}$")
+    if session_dir_pattern.match(out_root.name):
+        run_dir = out_root
+    else:
+        run_dir = out_root / f"session_{get_timestamp_filename()}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    # Always write run-level outputs into the run folder unless explicitly overridden.
+    if not args.run_summary_out.strip():
+        args.run_summary_out = str(run_dir / "run_summary.json")
+    if not args.results_out.strip():
+        args.results_out = str(run_dir / "results.json")
+
     runner = WebVoyagerRunner(
         jsonl_file=args.jsonl,
         subtask_config_dir=args.config_dir,
@@ -881,6 +994,7 @@ async def main():
         max_retries=args.max_retries,
         run_summary_out=args.run_summary_out,
         results_out=args.results_out,
+        run_dir=run_dir,
         step_timeout=None if args.step_timeout <= 0 else args.step_timeout,
         tool_execution_timeout=None
         if args.tool_timeout <= 0

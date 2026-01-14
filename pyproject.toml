@@ -34,6 +34,7 @@ dependencies = [
     "astor>=0.8.1",
     "pillow>=10.0.0",
     "google-search-results>=2.4.2",
+    "matplotlib>=3.10.8",
 ]
 
 
@@ -522,6 +523,7 @@ ignore = [
     "B028", # Warning without stacklevel
     "B904", # use 'raise ... from err'
     "B905", # use explicit 'strict=' parameter with 'zip()'
+    "E501", # line too long (handled by formatter; allow long URLs/strings)
     "N818", #  Exception name should be named with an Error suffix
     "C416", # I think comprehension is more clear https://docs.astral.sh/ruff/rules/unnecessary-comprehension/
     "C408", # we have used lots of dict(...) instead of literal
@@ -532,9 +534,6 @@ convention = "google"
 
 [tool.ruff.lint.isort]
 known-first-party = ["camel"]
-
-[tool.ruff.lint.per-file-ignores]
-"camel/toolkits/search_toolkit.py" = ["E501"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

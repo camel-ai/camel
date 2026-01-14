@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional
 
 
@@ -58,6 +58,18 @@ class ToolkitConfig:
     log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
+    evidence_capture: "EvidenceCaptureConfig" = field(
+        default_factory=lambda: EvidenceCaptureConfig()
+    )
+
+
+@dataclass
+class EvidenceCaptureConfig:
+    enabled: bool = False
+    snapshot: bool = False
+    screenshot: bool = False
+    max_steps: int = 250
+    actions: Optional[list] = None
 
 
 class ConfigLoader:
@@ -158,6 +170,8 @@ class ConfigLoader:
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,
+            "cache_dir": self.toolkit_config.cache_dir,
+            "evidence_capture": asdict(self.toolkit_config.evidence_capture),
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:
@@ -168,8 +182,8 @@ class ConfigLoader:
             "navigation_timeout": self.browser_config.navigation_timeout,
             "network_idle_timeout": self.browser_config.network_idle_timeout,
             "screenshot_timeout": self.browser_config.screenshot_timeout,
-            "page_stability_timeout": self.browser_config.page_stability_timeout,  # noqa:E501
-            "dom_content_loaded_timeout": self.browser_config.dom_content_loaded_timeout,  # noqa:E501
+            "page_stability_timeout": self.browser_config.page_stability_timeout,
+            "dom_content_loaded_timeout": self.browser_config.dom_content_loaded_timeout,
         }
 
     def update_browser_config(self, **kwargs) -> None:

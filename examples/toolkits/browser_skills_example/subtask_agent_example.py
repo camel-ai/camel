@@ -54,7 +54,10 @@ from utils import (
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+from camel.toolkits.hybrid_browser_toolkit import (
+    EvidenceCaptureConfig,
+    HybridBrowserToolkit,
+)
 from camel.utils.constants import Constants
 
 # Define default directories using relative paths
@@ -461,6 +464,7 @@ class SubtaskAgent:
         subtask_config_dir: str,
         *,
         website: str,
+        session_log_dir: str | Path | None = None,
         start_url: str | None = None,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
@@ -502,7 +506,11 @@ class SubtaskAgent:
         # Session log directory for this run
         self.session_timestamp = get_timestamp_filename()
         self.toolkit_session_id = f"{self.session_timestamp}_{uuid.uuid4().hex[:8]}"
-        self.session_log_dir: Optional[Path] = None
+        self.session_log_dir: Optional[Path] = (
+            Path(session_log_dir).expanduser().resolve()
+            if session_log_dir is not None
+            else None
+        )
 
         # Base directory for session logs
         self.session_logs_root = DEFAULT_SESSION_LOGS_DIR
@@ -679,10 +687,12 @@ class SubtaskAgent:
         print("INITIALIZING SUBTASK AGENT")
         print("=" * 80)
 
-        # Create session log directory
-        self.session_log_dir = (
-            self.session_logs_root / f"session_{self.session_timestamp}"
-        )
+        # Create session log directory (caller can override the directory so that
+        # all outputs are grouped under a single run folder).
+        if self.session_log_dir is None:
+            self.session_log_dir = (
+                self.session_logs_root / f"session_{self.session_timestamp}"
+            )
         self.session_log_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n📁 Session log directory: {self.session_log_dir}")
         print("   All logs for this session will be saved here\n")
@@ -735,11 +745,19 @@ class SubtaskAgent:
             # "browser_console_exec",
             # "browser_mouse_drag",
         ]
+        # Vision-WebJudge evidence should live at session root so the session
+        # directory is portable and can be evaluated offline.
+        evidence_dir = Path(self.session_log_dir) / "evidence"
+        evidence_dir.mkdir(parents=True, exist_ok=True)
         # Initialize toolkit (single instance, shared by agent and replay)
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
             stealth=True,
+            cache_dir=str(evidence_dir),
+            evidence_capture=EvidenceCaptureConfig(
+                enabled=True, snapshot=True, screenshot=True
+            ),
             browser_log_to_file=True,
             log_dir=str(browser_log_dir),
             viewport_limit=False,
