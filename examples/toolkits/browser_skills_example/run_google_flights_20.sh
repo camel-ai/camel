@@ -2,19 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+cd "$ROOT_DIR"
 
 JSONL="${1:-$SCRIPT_DIR/WebVoyager_data.jsonl}"
 SKILLS_ROOT="${SKILLS_ROOT:-$SCRIPT_DIR/skills_store}"
-OUTPUT_DIR="${OUTPUT_DIR:-$SCRIPT_DIR/runs/run_$(date +%Y%m%d_%H%M%S)}"
-MAX_RETRIES="${MAX_RETRIES:-2}"
+OUT_DIR="${OUT_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
+MAX_RETRIES="${MAX_RETRIES:-0}"
 STEP_TIMEOUT="${STEP_TIMEOUT:-600}"
 TOOL_TIMEOUT="${TOOL_TIMEOUT:-180}"
+START_INDEX="${START_INDEX:-5}"
+MAX_TASKS="${MAX_TASKS:-20}"
 
-mkdir -p "$OUTPUT_DIR" "$SKILLS_ROOT"
+mkdir -p "$OUT_DIR" "$SKILLS_ROOT" "$ROOT_DIR/.tmp/uv-cache"
 
 echo "JSONL:        $JSONL"
 echo "SKILLS_ROOT:  $SKILLS_ROOT"
-echo "OUTPUT_DIR:   $OUTPUT_DIR"
+echo "OUT_DIR:      $OUT_DIR"
+echo "START_INDEX:  $START_INDEX"
+echo "MAX_TASKS:    $MAX_TASKS"
 echo "MAX_RETRIES:  $MAX_RETRIES"
 echo "STEP_TIMEOUT: $STEP_TIMEOUT"
 echo "TOOL_TIMEOUT: $TOOL_TIMEOUT"
@@ -27,15 +33,13 @@ python "$SCRIPT_DIR/run_webvoyager_tasks.py" \
   --jsonl "$JSONL" \
   --skills-root "$SKILLS_ROOT" \
   --website-filter "Google Flights" \
-  --start 0 \
-  --max-tasks 20 \
+  --start "$START_INDEX" \
+  --max-tasks "$MAX_TASKS" \
   --max-retries "$MAX_RETRIES" \
   --step-timeout "$STEP_TIMEOUT" \
   --tool-timeout "$TOOL_TIMEOUT" \
-  --run-summary-out "$OUTPUT_DIR/run_summary.json" \
-  --results-out "$OUTPUT_DIR/results.json"
+  --out-dir "$OUT_DIR"
 
 echo
 echo "Done."
-echo "Run summary: $OUTPUT_DIR/run_summary.json"
-echo "Results:     $OUTPUT_DIR/results.json"
+echo "Outputs are under: $OUT_DIR/session_<timestamp>/"

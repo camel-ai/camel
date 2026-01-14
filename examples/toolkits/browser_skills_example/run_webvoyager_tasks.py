@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501, E402
+# ruff: noqa: E402
 #!/usr/bin/env python3
 """
 Run WebVoyager tasks with subtask agent and analyze results.
 
 This script:
 1. Reads tasks from WebVoyager JSONL file
-2. Executes each task with subtask_agent_example.py
+2. Executes each task with subtask_agent.py
 3. Uses ChatAgent to verify if task requirements are met
 4. If met: runs analyze_subtask_candidate.py on the session
 5. If not met: provides suggestions and retries the task
@@ -36,7 +36,7 @@ from dotenv import load_dotenv
 # Add path first
 sys.path.insert(0, str(Path(__file__).parent))
 
-from subtask_agent_example import SubtaskAgent
+from subtask_agent import SubtaskAgent
 from utils import (
     compute_session_summary,
     count_subtasks_in_dir,
@@ -51,8 +51,10 @@ from camel.messages import BaseMessage
 
 load_dotenv()
 
-from camel.evaluators.webjudge import WebJudgeVisionConfig, WebJudgeVisionEvaluator
-
+from camel.evaluators.webjudge import (
+    WebJudgeVisionConfig,
+    WebJudgeVisionEvaluator,
+)
 
 _SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
 
@@ -966,7 +968,9 @@ async def main():
         else default_session_logs_root
     )
 
-    if args.out_dir.strip() and (args.run_summary_out.strip() or args.results_out.strip()):
+    if args.out_dir.strip() and (
+        args.run_summary_out.strip() or args.results_out.strip()
+    ):
         parser.error(
             "--out-dir cannot be combined with --run-summary-out or --results-out"
         )

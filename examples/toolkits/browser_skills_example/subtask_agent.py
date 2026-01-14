@@ -11,19 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501, E402
+# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Subtask Agent Example
+"""SubtaskAgent utilities for `browser_skills_example`.
 
-This script demonstrates how to use ChatAgent with subtask functions.
-Each subtask from the subtask configuration is wrapped as a callable function
-that the agent can use. The agent has both:
-1. High-level subtask functions (e.g., enter_departure_location)
-2. Low-level HybridBrowserToolkit tools
-
-The agent is instructed to prefer reusable subtask functions when available.
+This module provides `SubtaskAgent`, which wraps reusable subtasks as callable
+functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
 
 import asyncio
@@ -505,7 +499,9 @@ class SubtaskAgent:
 
         # Session log directory for this run
         self.session_timestamp = get_timestamp_filename()
-        self.toolkit_session_id = f"{self.session_timestamp}_{uuid.uuid4().hex[:8]}"
+        self.toolkit_session_id = (
+            f"{self.session_timestamp}_{uuid.uuid4().hex[:8]}"
+        )
         self.session_log_dir: Optional[Path] = (
             Path(session_log_dir).expanduser().resolve()
             if session_log_dir is not None
@@ -1660,56 +1656,4 @@ async def subtask_{subtask_func.subtask_id}():
             traceback.print_exc()
 
 
-async def main():
-    """Main entry point."""
-    # Configuration - now using directory instead of individual files
-    subtask_config_dir = str(DEFAULT_SUBTASK_CONFIGS_DIR)
-
-    # Create agent
-    agent = SubtaskAgent(
-        website="google flights",
-        subtask_config_dir=subtask_config_dir,
-        use_agent_recovery=True,
-    )
-
-    try:
-        # Initialize
-        success = await agent.initialize()
-        if not success:
-            print("Failed to initialize agent")
-            return
-
-        # Example task
-        task = """
-        Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.
-        """
-
-        await agent.run(task)
-
-        # Print statistics
-        agent.print_statistics()
-
-        # Save agent communication log
-        agent.save_communication_log()
-
-    finally:
-        # Cleanup: stop Node/WebSocket wrapper to avoid hanging executor threads
-        if agent.toolkit:
-            print("\n" + "=" * 80)
-            print("CLEANUP")
-            print("=" * 80)
-            print("Disconnecting browser toolkit...")
-            await agent.close()
-            print("✓ Cleanup completed")
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nInterrupted by user")
-    except Exception as e:
-        print(f"Error: {e}")
-        import traceback
-
-        traceback.print_exc()
+__all__ = ["SubtaskAgent", "SubtaskFunction"]

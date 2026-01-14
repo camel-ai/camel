@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from subtask_agent_example import SubtaskAgent
+from subtask_agent import SubtaskAgent
 from utils import (
     compute_session_summary,
     count_subtasks_in_dir,

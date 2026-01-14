@@ -13,8 +13,10 @@ CASE_WEB="${CASE_WEB:-https://www.allrecipes.com/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
 SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/empty_subtasks}"
+UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 
 mkdir -p "$SKILLS_DIR"
+mkdir -p "$UV_CACHE_DIR"
 
 echo "Repo: $ROOT_DIR"
 echo "Temp: $TMP_DIR"
@@ -44,7 +46,7 @@ check_cdp "$CDP_PORT" || {
 echo
 echo "Step 1/4: First run with EMPTY skills dir (expect: few/no subtask functions)."
 RUN1_LOG="$TMP_DIR/run1.log"
-python examples/toolkits/browser_skills_example/run_single_case.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
@@ -65,8 +67,22 @@ echo
 echo "First run session: $SESSION1"
 
 echo
-echo "Step 2/4: Extract skills from timeline into SKILLS_DIR."
-python examples/toolkits/browser_skills_example/analyze_subtask_candidate.py "$SESSION1" "$SKILLS_DIR" | tee "$TMP_DIR/skill_extract.log"
+echo "Step 2/4: Verify task success (Vision-WebJudge)."
+VERDICT1_JSON="$TMP_DIR/verdict1.json"
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/eval_webjudge_session.py \
+  "$SESSION1" \
+  --out "$VERDICT1_JSON"
+
+if ! grep -Eq '"success"[[:space:]]*:[[:space:]]*true' "$VERDICT1_JSON"; then
+  echo "❌ First run is NOT verified successful; skipping skill extraction to avoid unstable skills."
+  echo "Verdict JSON: $VERDICT1_JSON"
+  exit 1
+fi
+
+echo "✅ Verified success. Extracting skills into SKILLS_DIR."
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/analyze_subtask_candidate.py \
+  "$SESSION1" "$SKILLS_DIR" \
+  | tee "$TMP_DIR/skill_extract.log"
 
 echo
 echo "Skills dir now contains:"
@@ -75,7 +91,7 @@ ls -la "$SKILLS_DIR"
 echo
 echo "Step 3/4: Second run WITH skills (expect: subtask reuse)."
 RUN2_LOG="$TMP_DIR/run2.log"
-python examples/toolkits/browser_skills_example/run_single_case.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
