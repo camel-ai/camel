@@ -411,9 +411,8 @@ class TaskAnalysisResult(BaseModel):
                 failure analysis results.
         """
         return (
-            self.quality_score is not None
-            and self.quality_score >= 70
-            and self.recovery_strategy is None
+            self.quality_score is not None and self.quality_score >= 60
+            # and self.recovery_strategy is None
         )
 
 

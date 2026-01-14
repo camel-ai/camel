@@ -4498,13 +4498,35 @@ class Workforce(BaseNode):
             # Preserve assignee before cleanup
             original_assignee = self._assignees.get(task.id)
             if original_assignee is None:
-                logger.error(
-                    f"Task {task.id}: No assignee found in _assignees. "
-                    f"This indicates a bug in the task assignment chain."
-                )
-                task.state = TaskState.FAILED
-                self._completed_tasks.append(task)
-                return self.failure_handling_config.halt_on_max_retries
+                # fallback: match keys that contain the task.id
+                matching_keys = [k for k in self._assignees if task.id in k]
+
+                if len(matching_keys) == 1:
+                    original_assignee = self._assignees[matching_keys[0]]
+                    logger.warning(
+                        f"Task {task.id}: No exact assignee, "
+                        f"using substring match {matching_keys[0]} "
+                        f"-> {original_assignee}"
+                    )
+                elif len(matching_keys) > 1:
+                    logger.error(
+                        f"Task {task.id}: Multiple assignees matched by "
+                        f"substring: {matching_keys}. "
+                        f"Ambiguous assignment."
+                    )
+                    task.state = TaskState.FAILED
+                    self._completed_tasks.append(task)
+                    return self.failure_handling_config.halt_on_max_retries
+                else:
+                    logger.error(
+                        f"Task {task.id}: No assignee found in _assignees. "
+                        f"This indicates a bug in the task assignment "
+                        f"chain. "
+                        f"self._assignees={self._assignees}."
+                    )
+                    task.state = TaskState.FAILED
+                    self._completed_tasks.append(task)
+                    return self.failure_handling_config.halt_on_max_retries
 
             # Clean up tracking before recovery
             # Note: task.id is guaranteed to be in _assignees since we
@@ -4576,13 +4598,35 @@ class Workforce(BaseNode):
         # Preserve assignee before cleanup
         original_assignee = self._assignees.get(task.id)
         if original_assignee is None:
-            logger.error(
-                f"Task {task.id}: No assignee found in _assignees. "
-                f"This indicates a bug in the task assignment chain."
-            )
-            task.state = TaskState.FAILED
-            self._completed_tasks.append(task)
-            return self.failure_handling_config.halt_on_max_retries
+            # fallback: match keys that contain the task.id
+            matching_keys = [k for k in self._assignees if task.id in k]
+
+            if len(matching_keys) == 1:
+                original_assignee = self._assignees[matching_keys[0]]
+                logger.warning(
+                    f"Task {task.id}: No exact assignee, "
+                    f"using substring match {matching_keys[0]} "
+                    f"-> {original_assignee}"
+                )
+            elif len(matching_keys) > 1:
+                logger.error(
+                    f"Task {task.id}: Multiple assignees matched by "
+                    f"substring: {matching_keys}. "
+                    f"Ambiguous assignment."
+                )
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                return self.failure_handling_config.halt_on_max_retries
+            else:
+                logger.error(
+                    f"Task {task.id}: No assignee found in _assignees. "
+                    f"This indicates a bug in the task assignment "
+                    f"chain. "
+                    f"self._assignees={self._assignees}."
+                )
+                task.state = TaskState.FAILED
+                self._completed_tasks.append(task)
+                return self.failure_handling_config.halt_on_max_retries
 
         # Clean up tracking before attempting recovery
         await self._channel.archive_task(task.id)
@@ -5364,14 +5408,48 @@ class Workforce(BaseNode):
                                 returned_task.id
                             )
                             if original_assignee is None:
-                                logger.error(
-                                    f"Task {returned_task.id}: No assignee "
-                                    f"found in _assignees. This indicates a "
-                                    f"bug in the task assignment chain."
-                                )
-                                returned_task.state = TaskState.FAILED
-                                self._completed_tasks.append(returned_task)
-                                continue
+                                # fallback: match keys that contain the task.id
+                                matching_keys = [
+                                    k
+                                    for k in self._assignees
+                                    if returned_task.id in k
+                                ]
+
+                                if len(matching_keys) == 1:
+                                    original_assignee = self._assignees[
+                                        matching_keys[0]
+                                    ]
+                                    logger.warning(
+                                        f"Task {returned_task.id}: "
+                                        f"No exact assignee, using "
+                                        f"substring match {matching_keys[0]} "
+                                        f"-> {original_assignee}"
+                                    )
+                                elif len(matching_keys) > 1:
+                                    logger.error(
+                                        f"Task {returned_task.id}: Multiple "
+                                        f"assignees matched by "
+                                        f"substring: {matching_keys}. "
+                                        f"Ambiguous assignment."
+                                    )
+                                    returned_task.state = TaskState.FAILED
+                                    self._completed_tasks.append(returned_task)
+                                    if self.failure_handling_config.halt_on_max_retries:
+                                        self._stop_requested = True
+                                        break
+                                    await self._post_ready_tasks()
+                                    continue
+                                else:
+                                    logger.error(
+                                        f"Task {returned_task.id}: No "
+                                        f"assignee found in _assignees. "
+                                        f"This indicates a bug in the task "
+                                        f"assignment chain. "
+                                        f"self._assignees={self._assignees}."
+                                    )
+                                    returned_task.state = TaskState.FAILED
+                                    self._completed_tasks.append(returned_task)
+                                    continue
 
                             # Clean up tracking before attempting recovery
                             await self._channel.archive_task(returned_task.id)
