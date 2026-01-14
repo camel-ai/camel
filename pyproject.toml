@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.83a0"
+version = "0.2.83a8"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -188,7 +188,7 @@ dev_tools = [
     "langfuse>=2.60.5",
 ]
 model_platforms = [
-    "litellm>=1.38.1,<2",
+    "litellm>=1.38.1,<1.80.12",
     "mistralai>=1.1.0,<2",
     "reka-api>=3.0.8,<4",
     "anthropic>=0.47.0,<0.50.0",
@@ -383,7 +383,7 @@ all = [
     "markitdown>=0.1.1; python_version >= '3.13'",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
-    "litellm>=1.38.1,<2",
+    "litellm>=1.38.1,<1.80.12",
     "mistralai>=1.1.0,<2",
     "fish-audio-sdk>=1.0.0",
     "anthropic>=0.47.0,<0.50.0",

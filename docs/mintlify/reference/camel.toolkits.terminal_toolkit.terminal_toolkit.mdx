@@ -176,7 +176,7 @@ Executes a shell command in blocking or non-blocking mode.
 - **id** (str): A unique identifier for the command's session. This ID is used to interact with non-blocking processes.
 - **command** (str): The shell command to execute.
 - **block** (bool, optional): Determines the execution mode. Defaults to True. If `True` (blocking mode), the function waits for the command to complete and returns the full output. Use this for most commands. If `False` (non-blocking mode), the function starts the command in the background. Use this only for interactive sessions or long-running tasks, or servers.
-- **timeout** (float, optional): The maximum time in seconds to wait for the command to complete in blocking mode. If the command does not complete within the timeout, it will be restarted automatically as a non-blocking background session. You can then use `shell_view(id)` to check output, or `shell_kill_process(id)` to terminate it. This parameter is ignored in non-blocking mode. (default: :obj:`20`)
+- **timeout** (float, optional): The maximum time in seconds to wait for the command to complete in blocking mode. If the command does not complete within the timeout, it will be converted to a tracked background session (process keeps running without restart). You can then use `shell_view(id)` to check output, or `shell_kill_process(id)` to terminate it. This parameter is ignored in non-blocking mode. (default: :obj:`20`)
 
 **Returns:**
 
@@ -274,6 +274,25 @@ This method can handle different scenarios:
 
   str: The output from the shell session after the user's command has
 been executed, or help information for general queries.
+
+<a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.shell_write_content_to_file"></a>
+
+### shell_write_content_to_file
+
+```python
+def shell_write_content_to_file(self, content: str, file_path: str):
+```
+
+Writes the specified content to a file at the given path.
+
+**Parameters:**
+
+- **content** (str): The content to write to the file.
+- **file_path** (str): The path to the file where the content should be written. Can be absolute or relative to working_dir.
+
+**Returns:**
+
+  str: A confirmation message indicating success or an error message.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__enter__"></a>
 

@@ -19,6 +19,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from queue import Empty, Full, Queue
 from typing import Any, Dict, List, Optional
 
@@ -621,10 +622,11 @@ class TerminalToolkit(BaseToolkit):
             timeout (float, optional): The maximum time in seconds to
                 wait for the command to complete in blocking mode. If the
                 command does not complete within the timeout, it will be
-                restarted automatically as a non-blocking background session.
-                You can then use `shell_view(id)` to check output, or
-                `shell_kill_process(id)` to terminate it. This parameter is
-                ignored in non-blocking mode. (default: :obj:`20`)
+                converted to a tracked background session (process keeps
+                running without restart). You can then use `shell_view(id)`
+                to check output, or `shell_kill_process(id)` to terminate it.
+                This parameter is ignored in non-blocking mode.
+                (default: :obj:`20`)
 
         Returns:
             str: The output of the command execution, which varies by mode.
@@ -636,8 +638,6 @@ class TerminalToolkit(BaseToolkit):
                 `shell_write_to_process(id, "input")` to send input, and
                 `shell_kill_process(id)` to terminate.
         """
-        original_command = command
-
         if self.safe_mode:
             is_safe, message = self._sanitize_command(command)
             if not is_safe:
@@ -674,21 +674,73 @@ class TerminalToolkit(BaseToolkit):
 
             try:
                 if not self.use_docker_backend:
-                    # LOCAL BLOCKING
-                    result = subprocess.run(
+                    env_vars = os.environ.copy()
+                    env_vars["PYTHONUNBUFFERED"] = "1"
+                    proc = subprocess.Popen(
                         command,
-                        capture_output=True,
-                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        stdin=subprocess.PIPE,
                         shell=True,
-                        timeout=timeout,
+                        text=True,
                         cwd=self.working_dir,
                         encoding="utf-8",
+                        env=env_vars,
                     )
-                    stdout = result.stdout or ""
-                    stderr = result.stderr or ""
-                    output = stdout + (
-                        f"\nSTDERR:\n{stderr}" if stderr else ""
-                    )
+                    try:
+                        stdout, _ = proc.communicate(timeout=timeout)
+                        output = stdout or ""
+                    except subprocess.TimeoutExpired as e:
+                        if e.stdout:
+                            partial_output = (
+                                e.stdout.decode("utf-8", errors="ignore")
+                                if isinstance(e.stdout, bytes)
+                                else e.stdout
+                            )
+                        else:
+                            partial_output = ""
+
+                        session_log_file = os.path.join(
+                            self.log_dir, f"session_{session_id}.log"
+                        )
+                        self._write_to_log(
+                            session_log_file,
+                            f"--- Blocking command timed out, converted to "
+                            f"session at {time.ctime()} ---\n> {command}\n",
+                        )
+
+                        # Pre-populate output queue with partial output
+                        output_queue: Queue = Queue(maxsize=10000)
+                        if partial_output:
+                            output_queue.put(partial_output)
+
+                        with self._session_lock:
+                            self.shell_sessions[session_id] = {
+                                "id": session_id,
+                                "process": proc,
+                                "output_stream": output_queue,
+                                "command_history": [command],
+                                "running": True,
+                                "log_file": session_log_file,
+                                "backend": "local",
+                                "timeout_converted": True,
+                            }
+
+                        # Start reader thread to capture ongoing output
+                        self._start_output_reader_thread(session_id)
+
+                        self._write_to_log(
+                            self.blocking_log_file, log_entry + "\n"
+                        )
+                        return (
+                            f"Command did not complete within {timeout} "
+                            f"seconds. Process continues in background as "
+                            f"session '{session_id}'.\n\n"
+                            f"You can use:\n"
+                            f"  - shell_view('{session_id}') - get output\n"
+                            f"  - shell_kill_process('{session_id}') - "
+                            f"terminate"
+                        )
                 else:
                     # DOCKER BLOCKING with timeout
                     assert (
@@ -768,14 +820,6 @@ class TerminalToolkit(BaseToolkit):
                     return _to_plain(output)
                 else:
                     return "Command executed successfully (no output)."
-            except subprocess.TimeoutExpired:
-                # Timeout: restart as non-blocking mode
-                self._write_to_log(self.blocking_log_file, log_entry + "\n")
-                logger.warning(
-                    f"Command did not complete within {timeout} seconds. "
-                    f"Restarting as non-blocking session '{id}'."
-                )
-                return self.shell_exec(id, original_command, block=False)
             except Exception as e:
                 error_msg = f"Error executing command: {e}"
                 log_entry += f"--- Error ---\n{error_msg}\n"
@@ -1002,7 +1046,10 @@ class TerminalToolkit(BaseToolkit):
             return "".join(output)
         else:
             # For timeout-converted Docker sessions, check thread and output
-            if session.get("timeout_converted"):
+            if (
+                session.get("timeout_converted")
+                and session.get("backend") == "docker"
+            ):
                 exec_thread = session.get("exec_thread")
                 result_container = session.get("result_container", {})
 
@@ -1051,6 +1098,7 @@ class TerminalToolkit(BaseToolkit):
                 "too frequently)"
             )
 
+    @manual_timeout
     def shell_kill_process(self, id: str) -> str:
         r"""This function forcibly terminates a running non-blocking process.
 
@@ -1181,6 +1229,134 @@ class TerminalToolkit(BaseToolkit):
             except EOFError:
                 return f"User input interrupted for session '{id}'."
 
+    def shell_write_content_to_file(self, content: str, file_path: str) -> str:
+        r"""Writes the specified content to a file at the given path.
+
+        Args:
+            content (str): The content to write to the file.
+            file_path (str): The path to the file where the content should
+                be written. Can be absolute or relative to working_dir.
+
+        Returns:
+            str: A confirmation message indicating success or an error message.
+        """
+        # For local backend, resolve relative paths to working_dir
+        if not self.use_docker_backend and self.working_dir:
+            if not os.path.isabs(file_path):
+                file_path = os.path.normpath(
+                    os.path.join(self.working_dir, file_path)
+                )
+            else:
+                file_path = os.path.normpath(file_path)
+            file_path = os.path.abspath(file_path)
+
+            # Safe mode path containment check for local backend
+            if self.safe_mode:
+                working_dir_normalized = os.path.normpath(
+                    os.path.abspath(self.working_dir)
+                )
+                # Use os.path.commonpath for secure path containment check
+                try:
+                    common = os.path.commonpath(
+                        [file_path, working_dir_normalized]
+                    )
+                    if common != working_dir_normalized:
+                        return (
+                            "Error: Cannot write to a file outside of the "
+                            "working directory in safe mode."
+                        )
+                except ValueError:
+                    # Paths are on different drives (Windows) or invalid
+                    return (
+                        "Error: Cannot write to a file outside of the "
+                        "working directory in safe mode."
+                    )
+
+        log_entry = (
+            f"--- Writing content to file at {time.ctime()} ---\n"
+            f"> {file_path}\n"
+        )
+        if self.use_docker_backend:
+            temp_host_path = None
+            try:
+                # Ensure parent directory exists in container
+                parent_dir = os.path.dirname(file_path)
+                if parent_dir:
+                    quoted_dir = shlex.quote(parent_dir)
+                    mkdir_cmd = f'sh -lc "mkdir -p {quoted_dir}"'
+                    mkdir_exec = self.docker_api_client.exec_create(
+                        self.container.id, mkdir_cmd
+                    )
+                    self.docker_api_client.exec_start(mkdir_exec['Id'])
+
+                # Write content to a temporary file on the host inside log_dir
+                temp_file_name = f"temp_{uuid.uuid4().hex}.txt"
+                temp_host_path = os.path.join(self.log_dir, temp_file_name)
+                with open(temp_host_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                # Copy the temporary file into the Docker container
+                dest_path_in_container = file_path
+                container_dest = (
+                    f"{self.container.name}:{dest_path_in_container}"
+                )
+                subprocess.run(
+                    ['docker', 'cp', temp_host_path, container_dest],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+
+                log_entry += f"\n-------- \n{content}\n--------\n"
+                with open(self.blocking_log_file, "a", encoding="utf-8") as f:
+                    f.write(log_entry + "\n")
+                return (
+                    f"Content successfully written to '{file_path}' "
+                    f"in Docker container."
+                )
+            except subprocess.CalledProcessError as e:
+                log_entry += f"--- Error ---\n{e.stderr}\n"
+                with open(self.blocking_log_file, "a", encoding="utf-8") as f:
+                    f.write(log_entry + "\n")
+                return (
+                    f"Error writing to file '{file_path}' "
+                    f"in Docker container: {e.stderr}"
+                )
+            except Exception as e:
+                log_entry += f"--- Error ---\n{e}\n"
+                with open(self.blocking_log_file, "a", encoding="utf-8") as f:
+                    f.write(log_entry + "\n")
+                return (
+                    f"Error writing to file '{file_path}' "
+                    f"in Docker container: {e}"
+                )
+            finally:
+                # Clean up the temporary file
+                if temp_host_path and os.path.exists(temp_host_path):
+                    try:
+                        os.remove(temp_host_path)
+                    except OSError:
+                        pass
+
+        else:
+            try:
+                # Ensure parent directory exists
+                parent_dir = os.path.dirname(file_path)
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+                log_entry += f"\n-------- \n{content}\n--------\n"
+                with open(self.blocking_log_file, "a", encoding="utf-8") as f:
+                    f.write(log_entry + "\n")
+                return f"Content successfully written to '{file_path}'."
+            except Exception as e:
+                log_entry += f"--- Error ---\n{e}\n"
+                with open(self.blocking_log_file, "a", encoding="utf-8") as f:
+                    f.write(log_entry + "\n")
+                return f"Error writing to file '{file_path}': {e}"
+
     def __enter__(self):
         r"""Context manager entry."""
         return self
@@ -1228,6 +1404,7 @@ class TerminalToolkit(BaseToolkit):
         return [
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
+            FunctionTool(self.shell_write_content_to_file),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.shell_ask_user_for_help),
