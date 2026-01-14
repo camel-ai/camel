@@ -728,7 +728,11 @@ async def subtask_{subtask_func.subtask_id}():
 """
 
             # Execute the code to create the function
-            local_vars = {"_sf": subtask_func, "_agent": self}
+            local_vars = {
+                "_sf": subtask_func,
+                "_agent": self,
+                "get_timestamp_iso": get_timestamp_iso,
+            }
             exec(func_code, local_vars)
             wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
 
