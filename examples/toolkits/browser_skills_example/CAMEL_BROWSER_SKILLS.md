@@ -84,15 +84,6 @@ The Main Agent is the core of task execution, responsible for:
 - Deciding when to invoke existing Skills vs. executing atomic operations
 - Coordinating Skill composition and parameter passing
 
-```python
-# Usage example
-agent = SkillsAgent(
-    skills_dir="./browser_skills",  # Skill directory, defaults to ./browser_skills
-)
-await agent.initialize()
-result = await agent.run("Search for one-way flights from Beijing to Shanghai")
-```
-
 ### 2. Subtask Extractor (Task Agent)
 
 **File**: `subtask_extractor.py`
@@ -105,12 +96,6 @@ The Task Agent analyzes successfully executed task logs and splits them into reu
    - Natural language description
    - Configurable parameters (variables)
    - Execution preconditions
-
-```python
-# Analysis flow
-groups = extract_consecutive_individual_actions(session_log_path)
-subtasks = analyze_subtask_candidates(groups, existing_subtasks)
-```
 
 ### 3. Recovery Agent
 
@@ -127,10 +112,10 @@ When element location fails during Skill replay, the Recovery Agent intervenes:
 
 ```python
 # Recovery Agent workflow
-result_ref = await replayer.consult_recovery_agent(
-    current_snapshot=page_snapshot,
-    target_label="Where from?",
+result_ref = await replayer.agent_recovery(
     failed_action="click",
+    target_label="Where from?",
+    current_snapshot=page_snapshot,
     error_message="Element not found"
 )
 ```
@@ -264,25 +249,6 @@ Reasons:
 - `subtask_replay` is reuse of existing skills, no need to re-extract
 - Consecutive `individual_action` entries indicate scenarios not covered by the skill library
 - These new interaction patterns are exactly what needs to be learned and encapsulated
-
-```python
-# Extraction logic in subtask_extractor.py
-def extract_consecutive_individual_actions(timeline):
-    """Extract consecutive individual_action groups"""
-    groups = []
-    current_group = []
-
-    for entry in timeline:
-        if entry.get('action_type') == 'individual_action':
-            current_group.append(entry)
-        else:
-            # Upon encountering subtask_replay, save current group (at least 2 actions)
-            if len(current_group) >= 2:
-                groups.append(current_group)
-            current_group = []
-
-    return groups
-```
 
 ### Example: Mixed Execution Timeline
 
@@ -483,6 +449,21 @@ When element locating fails, the Recovery Agent will:
 
 ## Usage
 
+### 0. Prerequisites: Start Chrome with CDP
+
+Before running, start Chrome with Chrome DevTools Protocol (CDP) enabled:
+
+```bash
+# macOS
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9223
+
+# Linux
+google-chrome --remote-debugging-port=9223
+
+# Windows
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9223
+```
+
 ### 1. Install Dependencies
 
 Same with CAMEL framework.
@@ -493,17 +474,32 @@ Same with CAMEL framework.
 from browser_skills_example import SkillsAgent
 import asyncio
 
+
 async def main():
+    # Create agent with skills directory
     agent = SkillsAgent(
         skills_dir="./browser_skills",  # Optional, defaults to ./browser_skills
     )
-    await agent.initialize()
+
+    # Initialize agent (connects to browser via CDP)
+    success = await agent.initialize()
+    if not success:
+        print("Failed to initialize. Make sure Chrome is running with CDP enabled.")
+        return
+
+    # Run the task
     result = await agent.run(
         "Search for one-way flights from Tokyo to Osaka on Feb 20"
     )
     print(result)
 
-asyncio.run(main())
+    # Print statistics and save logs
+    agent.print_statistics()
+    agent.save_communication_log()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ### 3. Analyze New Tasks and Extract Subtasks
@@ -525,7 +521,7 @@ python subtask_to_skill_converter.py --clean
 
 ### 5. Verify Skill Loading
 
-```bash``
+```bash
 python skill_loader.py
 ```
 
