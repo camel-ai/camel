@@ -6,10 +6,11 @@ cd "$ROOT_DIR"
 
 CDP_PORT="${CDP_PORT:-9223}"
 
-CASE_WEB_NAME="${CASE_WEB_NAME:-Allrecipes}"
-CASE_ID="${CASE_ID:-Allrecipes--17}"
-CASE_QUES="${CASE_QUES:-Find the Easy Vegetarian Spinach Lasagna recipe on Allrecipes and tell me what the latest review says.}"
-CASE_WEB="${CASE_WEB:-https://www.allrecipes.com/}"
+# {"web_name": "Wolfram Alpha", "id": "Wolfram Alpha--1", "ques": "Give a constraint on the set of inequalities for the inner region of the pentagram.", "web": "https://www.wolframalpha.com/"}
+CASE_WEB_NAME="${CASE_WEB_NAME:-Wolfram Alpha}"
+CASE_ID="${CASE_ID:-Wolfram Alpha--1}"
+CASE_QUES="${CASE_QUES:-Give a constraint on the set of inequalities for the inner region of the pentagram.}"
+CASE_WEB="${CASE_WEB:-https://www.wolframalpha.com/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
 SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/empty_subtasks}"

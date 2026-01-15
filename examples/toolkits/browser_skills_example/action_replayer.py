@@ -1697,19 +1697,19 @@ async def main():
         epilog="""
 Examples:
   # Replay entire log
-  python replay_from_log.py my_log.log
+  python action_replayer.py my_log.log
 
   # Replay specific subtask
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location
 
   # Replay subtask with variable overrides
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location --var departure_city="London"
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location --var departure_city="London"
 
   # Multiple variables
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 04_set_travel_dates --var departure_date="2026-01-15" --var return_date="2026-01-20"
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 04_set_travel_dates --var departure_date="2026-01-15" --var return_date="2026-01-20"
 
   # List available subtasks
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
         """,
     )
     parser.add_argument('log_file', help='Path to the log file to replay')

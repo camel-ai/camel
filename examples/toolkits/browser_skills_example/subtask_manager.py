@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501
 """
 Unified Subtask Manager - manages subtask IDs and configurations across all files.
 
@@ -292,9 +291,9 @@ def renumber_existing_subtasks(config_dir: str, backup: bool = True) -> None:
         config_dir: Directory containing subtask configuration files
         backup: If True, create backup files before modifying
     """
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("RENUMBERING EXISTING SUBTASKS")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     manager = SubtaskManager(config_dir)
 
@@ -313,7 +312,7 @@ def renumber_existing_subtasks(config_dir: str, backup: bool = True) -> None:
             print(f"    - {subtask.get('id')}: {subtask.get('name')}")
 
     # Renumber
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("Renumbering all subtasks...")
     manager.renumber_all_subtasks()
 
@@ -327,15 +326,15 @@ def renumber_existing_subtasks(config_dir: str, backup: bool = True) -> None:
             print(f"    - {new_id} (was: {old_id}): {subtask.get('name')}")
 
     # Save
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("Saving changes...")
     manager.save_all_subtasks(backup=backup)
 
     # Summary
     summary = manager.get_subtask_summary()
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("SUMMARY")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"Total files: {summary['total_files']}")
     print(f"Total subtasks: {summary['total_subtasks']}")
     print(

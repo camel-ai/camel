@@ -144,6 +144,11 @@ async def _amain() -> int:
         subtasks_before = count_subtasks_in_dir(skills_dir)
         raw_before, full_before = _get_log_paths(agent)
         await agent.run(args.task)
+        if agent.toolkit:
+            try:
+                await agent.toolkit.capture_final_evidence()
+            except Exception:
+                pass
         agent.save_communication_log()
 
         if not agent.session_log_dir:

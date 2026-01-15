@@ -48,6 +48,8 @@ from utils import (
 
 load_dotenv()
 
+from modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
+
 from camel.evaluators.webjudge import (
     WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
@@ -71,7 +73,11 @@ class WebJudgeTaskVerifier:
         *,
         vision_config: WebJudgeVisionConfig | None = None,
     ):
-        self.vision_evaluator = WebJudgeVisionEvaluator(config=vision_config)
+        resolved_config = vision_config or WebJudgeVisionConfig(
+            model_platform=DEFAULT_MODEL_PLATFORM,
+            model_type=DEFAULT_MODEL_TYPE,
+        )
+        self.vision_evaluator = WebJudgeVisionEvaluator(config=resolved_config)
 
     def verify_task(
         self,
@@ -511,6 +517,11 @@ class WebVoyagerRunner:
                 'success': False,
                 'error': f'TimeoutError: {e}',
                 'is_timeout': True,
+                'website': website,
+                'skills_dir': str(skills_dir),
+                'session_dir': str(session_log_dir)
+                if session_log_dir is not None
+                else None,
             }
 
         except Exception as e:
@@ -524,6 +535,11 @@ class WebVoyagerRunner:
                 'attempt': attempt,
                 'success': False,
                 'error': str(e),
+                'website': website,
+                'skills_dir': str(skills_dir),
+                'session_dir': str(session_log_dir)
+                if session_log_dir is not None
+                else None,
             }
 
     async def run_task_with_retries(

@@ -17,23 +17,32 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from dotenv import load_dotenv
+from modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
+
 from camel.evaluators.webjudge import (
+    WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
 )
+
+load_dotenv()
 
 
 def _load_task_and_response(
     session_dir: Path,
 ) -> Tuple[str, str, Optional[str]]:
+    task = ""
+    website: Optional[str] = None
+    agent_response = ""
+
     timeline_path = session_dir / "action_timeline.json"
     if timeline_path.exists():
         timeline = json.loads(
             timeline_path.read_text(encoding="utf-8", errors="ignore")
         )
         if isinstance(timeline, dict):
-            task = str(timeline.get("task_description", "") or "")
-            website = timeline.get("website")
-            return task, "", str(website) if website else None
+            task = str(timeline.get("task_description", "") or task)
+            website = timeline.get("website") or website
 
     comm_path = session_dir / "agent_communication_log.json"
     if comm_path.exists():
@@ -41,9 +50,8 @@ def _load_task_and_response(
             comm_path.read_text(encoding="utf-8", errors="ignore")
         )
         if isinstance(comm, dict):
-            task = str(comm.get("task_description", "") or "")
-            website = comm.get("website")
-            agent_response = ""
+            task = str(comm.get("task_description", "") or task)
+            website = comm.get("website") or website
             comms = comm.get("communications", [])
             if isinstance(comms, list):
                 for entry in reversed(comms):
@@ -53,9 +61,8 @@ def _load_task_and_response(
                     ):
                         agent_response = str(entry.get("response", "") or "")
                         break
-            return task, agent_response, str(website) if website else None
 
-    return "", "", None
+    return task, agent_response, str(website) if website else None
 
 
 def main() -> None:
@@ -84,7 +91,12 @@ def main() -> None:
             "Task text not found. Provide --task or ensure session has action_timeline.json/agent_communication_log.json."
         )
 
-    evaluator = WebJudgeVisionEvaluator()
+    evaluator = WebJudgeVisionEvaluator(
+        config=WebJudgeVisionConfig(
+            model_platform=DEFAULT_MODEL_PLATFORM,
+            model_type=DEFAULT_MODEL_TYPE,
+        )
+    )
     verification: Dict[str, Any] = evaluator.evaluate_session(
         task=task,
         session_dir=session_dir,
