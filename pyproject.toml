@@ -35,6 +35,7 @@ dependencies = [
     "pillow>=10.0.0",
     "google-search-results>=2.4.2",
     "matplotlib>=3.10.8",
+    "pyyaml>=6.0.3",
 ]
 
 

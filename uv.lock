@@ -899,6 +899,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "tiktoken" },
     { name = "websockets" },
 ]
@@ -1627,6 +1628,7 @@ requires-dist = [
     { name = "pytidb", marker = "extra == 'all'", specifier = ">=0.0.13" },
     { name = "pytidb", marker = "extra == 'rag'", specifier = ">=0.0.13" },
     { name = "pytidb", marker = "extra == 'storage'", specifier = ">=0.0.13" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'storage'", specifier = ">=1.9.0,<2" },
