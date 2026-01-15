@@ -6,11 +6,11 @@ cd "$ROOT_DIR"
 
 CDP_PORT="${CDP_PORT:-9223}"
 
-# {"web_name": "Wolfram Alpha", "id": "Wolfram Alpha--1", "ques": "Give a constraint on the set of inequalities for the inner region of the pentagram.", "web": "https://www.wolframalpha.com/"}
-CASE_WEB_NAME="${CASE_WEB_NAME:-Wolfram Alpha}"
-CASE_ID="${CASE_ID:-Wolfram Alpha--1}"
-CASE_QUES="${CASE_QUES:-Give a constraint on the set of inequalities for the inner region of the pentagram.}"
-CASE_WEB="${CASE_WEB:-https://www.wolframalpha.com/}"
+# {"web_name": "Google Flights", "id": "Google Flights--1", "ques": "Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.", "web": "https://www.google.com/travel/flights/"}
+CASE_WEB_NAME="${CASE_WEB_NAME:-Google Flights}"
+CASE_ID="${CASE_ID:-Google Flights--1}"
+CASE_QUES="${CASE_QUES:-Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.}"
+CASE_WEB="${CASE_WEB:-https://www.google.com/travel/flights/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
 SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/empty_subtasks}"
@@ -70,18 +70,22 @@ echo "First run session: $SESSION1"
 echo
 echo "Step 2/4: Verify task success (Vision-WebJudge)."
 VERDICT1_JSON="$TMP_DIR/verdict1.json"
+VERDICT1_OUT_JSON="$SESSION1/verdict1.json"
 PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/eval_webjudge_session.py \
   "$SESSION1" \
   --out "$VERDICT1_JSON"
 
+cp -f "$VERDICT1_JSON" "$VERDICT1_OUT_JSON"
+
 if ! grep -Eq '"success"[[:space:]]*:[[:space:]]*true' "$VERDICT1_JSON"; then
   echo "❌ First run is NOT verified successful; skipping skill extraction to avoid unstable skills."
   echo "Verdict JSON: $VERDICT1_JSON"
+  echo "Verdict JSON (out-dir): $VERDICT1_OUT_JSON"
   exit 1
 fi
 
 echo "✅ Verified success. Extracting skills into SKILLS_DIR."
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/analyze_subtask_candidate.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/subtask_extractor.py \
   "$SESSION1" "$SKILLS_DIR" \
   | tee "$TMP_DIR/skill_extract.log"
 

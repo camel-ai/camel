@@ -505,11 +505,6 @@ def analyze_with_agent(
     Returns:
         Dictionary containing analysis results and token usage
     """
-    # Set default subtask_configs_dir using relative path
-    if subtask_configs_dir is None:
-        script_dir = Path(__file__).resolve().parent
-        subtask_configs_dir = str(script_dir / "subtask_configs")
-
     print(f"\n{'='*80}")
     print("SUBTASK CANDIDATE ANALYZER")
     print(f"{'='*80}\n")
@@ -550,7 +545,13 @@ def analyze_with_agent(
 
     # Step 3: Load existing subtasks
     print("Step 3: Loading existing subtasks...")
-    existing_subtasks = load_all_existing_subtasks(subtask_configs_dir)
+    if subtask_configs_dir is None:
+        existing_subtasks: List[Dict[str, Any]] = []
+        print(
+            "⚠️  No subtask_configs_dir provided; skipping existing-subtask loading."
+        )
+    else:
+        existing_subtasks = load_all_existing_subtasks(subtask_configs_dir)
     print(f"✓ Loaded {len(existing_subtasks)} existing subtasks\n")
 
     # Step 4: Create ChatAgent
@@ -628,32 +629,40 @@ def analyze_with_agent(
 
         # Step 8: Save new subtasks if auto_save is enabled
         if auto_save and reusable_count > 0:
-            print(f"\n{'='*80}")
-            print("Step 8: Saving new subtasks...")
-            print(f"{'='*80}\n")
+            if subtask_configs_dir is None:
+                print(f"\n{'='*80}")
+                print("Step 8: Saving new subtasks...")
+                print(f"{'='*80}\n")
+                print(
+                    "⚠️  Auto-save skipped: provide subtask_configs_dir to persist subtasks."
+                )
+            else:
+                print(f"\n{'='*80}")
+                print("Step 8: Saving new subtasks...")
+                print(f"{'='*80}\n")
 
-            # Initialize SubtaskManager
-            manager = SubtaskManager(subtask_configs_dir)
-            manager.load_all_subtasks()
+                # Initialize SubtaskManager
+                manager = SubtaskManager(subtask_configs_dir)
+                manager.load_all_subtasks()
 
-            # Enrich subtasks: expand agent's simplified output to full definition
-            print("Enriching subtask definitions...")
-            new_subtasks = enrich_subtask_definitions(results, action_groups)
-            print(
-                f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields"
-            )
+                # Enrich subtasks: expand agent's simplified output to full definition
+                print("Enriching subtask definitions...")
+                new_subtasks = enrich_subtask_definitions(results, action_groups)
+                print(
+                    f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields"
+                )
 
-            # Add new subtasks to a new config file
-            new_file = manager.add_new_subtasks(
-                new_subtasks=new_subtasks,
-                session_folder=session_folder,
-                task_description=task_description,
-                website=website,
-            )
+                # Add new subtasks to a new config file
+                new_file = manager.add_new_subtasks(
+                    new_subtasks=new_subtasks,
+                    session_folder=session_folder,
+                    task_description=task_description,
+                    website=website,
+                )
 
-            print(
-                f"\n✓ Successfully saved to: {subtask_configs_dir}/{new_file}"
-            )
+                print(
+                    f"\n✓ Successfully saved to: {subtask_configs_dir}/{new_file}"
+                )
 
         elif not auto_save and reusable_count > 0:
             print(f"\n{'='*80}")
@@ -740,15 +749,15 @@ def analyze_with_agent(
 def main():
     if len(sys.argv) < 2:
         print(
-            "Usage: python analyze_subtask_candidate.py <session_folder_path> [subtask_configs_dir]"
+            "Usage: python subtask_extractor.py <session_folder_path> [subtask_configs_dir]"
         )
         print("\nExample:")
         print(
-            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455"
+            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455"
         )
         print("\nOptional:")
         print(
-            "  python analyze_subtask_candidate.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
+            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
         )
         sys.exit(1)
 

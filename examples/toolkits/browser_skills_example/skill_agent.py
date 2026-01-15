@@ -28,8 +28,6 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from dotenv import load_dotenv
-
 # Add project root to path first (before camel imports)
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent
@@ -47,6 +45,7 @@ from utils import (
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.terminators import ResponseWordsTerminator
 from camel.toolkits.hybrid_browser_toolkit import (
     EvidenceCaptureConfig,
     HybridBrowserToolkit,
@@ -57,8 +56,6 @@ from camel.utils.constants import Constants
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
 DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
-
-load_dotenv()
 
 WEBSITE_GUIDELINES: Dict[str, str] = {
     "allrecipes": "\n".join(
@@ -451,6 +448,8 @@ class SubtaskFunction:
 
 class SkillsAgent:
     """Agent that can execute subtasks as functions."""
+
+    _TASK_DONE_TOKEN = "##TASK_DONE##"
 
     def __init__(
         self,
@@ -989,6 +988,10 @@ async def subtask_{subtask_func.subtask_id}():
             system_message=system_message,
             step_timeout=self.step_timeout,
             tool_execution_timeout=self.tool_execution_timeout,
+            response_terminators=[
+                ResponseWordsTerminator({self._TASK_DONE_TOKEN: 1})
+            ],
+            max_iteration=50,
         )
 
         print("✓ Agent created successfully with system prompt")
@@ -1038,6 +1041,10 @@ async def subtask_{subtask_func.subtask_id}():
                 "2. Your FIRST action MUST be calling browser_get_page_snapshot.",
                 "3. If you are not on the target website, navigate there using browser_visit_page.",
                 "4. After key actions (navigation/click/type), call browser_get_page_snapshot to verify state.",
+                "5. Do NOT give a final answer unless a page snapshot clearly contains the requested information.",
+                "   - If the result is still loading or missing, keep using tools (snapshot/scroll/click) until it appears.",
+                "6. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
+                f"   {self._TASK_DONE_TOKEN}",
                 "",
             ]
         )
@@ -1160,7 +1167,10 @@ async def subtask_{subtask_func.subtask_id}():
         # Log the response
         if response.msgs:
             for msg in response.msgs:
-                communication_entry['response'] = msg.content
+                content = msg.content or ""
+                communication_entry['response'] = (
+                    content.replace(self._TASK_DONE_TOKEN, "").strip()
+                )
 
                 # Extract tool calls from the message
                 if hasattr(msg, 'info') and msg.info:
@@ -1178,7 +1188,11 @@ async def subtask_{subtask_func.subtask_id}():
         print("=" * 80)
         print("Response:")
         if response.msgs:
-            print(response.msgs[0].content)
+            print(
+                (response.msgs[0].content or "")
+                .replace(self._TASK_DONE_TOKEN, "")
+                .strip()
+            )
         else:
             print("<no response>")
         print()
