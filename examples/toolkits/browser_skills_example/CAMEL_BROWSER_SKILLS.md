@@ -90,7 +90,7 @@ agent = SkillsAgent(
     skills_dir="./browser_skills",  # Skill directory, defaults to ./browser_skills
 )
 await agent.initialize()
-result = await agent.run_task("Search for one-way flights from Beijing to Shanghai")
+result = await agent.run("Search for one-way flights from Beijing to Shanghai")
 ```
 
 ### 2. Subtask Extractor (Task Agent)
@@ -498,7 +498,7 @@ async def main():
         skills_dir="./browser_skills",  # Optional, defaults to ./browser_skills
     )
     await agent.initialize()
-    result = await agent.run_task(
+    result = await agent.run(
         "Search for one-way flights from Tokyo to Osaka on Feb 20"
     )
     print(result)
@@ -510,10 +510,11 @@ asyncio.run(main())
 
 ```bash
 # 1. First ensure task executes successfully and generates logs
-# 2. Run extraction script
-python subtask_extractor.py \
-    --session-log ./session_logs/session_xxx \
-    --output ./subtask_configs/new_subtasks.json
+# 2. Run extraction script (pass session folder path as argument)
+python subtask_extractor.py ./session_logs/session_xxx
+
+# Optional: specify custom subtask_configs directory
+python subtask_extractor.py ./session_logs/session_xxx ./subtask_configs
 ```
 
 ### 4. Convert Subtasks to Skills Format
@@ -524,7 +525,7 @@ python subtask_to_skill_converter.py --clean
 
 ### 5. Verify Skill Loading
 
-```bash
+```bash``
 python skill_loader.py
 ```
 
