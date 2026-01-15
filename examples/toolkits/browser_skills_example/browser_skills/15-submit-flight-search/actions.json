@@ -1,0 +1,13 @@
+[
+  {
+    "action_step": 46,
+    "action": "click",
+    "element_label": "Search",
+    "args": [
+      "e3003"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights/search?tfs=CBwQAhooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC",
+    "timestamp": "2025-12-30T14:42:03.436628"
+  }
+]

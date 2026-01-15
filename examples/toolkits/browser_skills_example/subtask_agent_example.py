@@ -331,6 +331,8 @@ class SubtaskAgent:
         subtask_config_dir: str,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
+        skills_dir: Optional[str] = None,
+        use_skills_format: bool = True,
     ):
         """Initialize the SubtaskAgent.
 
@@ -338,10 +340,20 @@ class SubtaskAgent:
             subtask_config_dir: Path to directory containing subtask configuration JSON files
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
+            skills_dir: Path to directory containing skills in Claude Code format.
+                        If None and use_skills_format is True, defaults to ./skills
+            use_skills_format: If True, prefer loading from skills directory
         """
         self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
+        self.use_skills_format = use_skills_format
+
+        # Set skills directory
+        if skills_dir:
+            self.skills_dir = Path(skills_dir)
+        else:
+            self.skills_dir = self.subtask_config_dir.parent / "browser_skills"
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
@@ -387,7 +399,44 @@ class SubtaskAgent:
         self.current_user_task = None
 
     def _load_subtask_configs(self):
-        """Load all subtask configuration files from the directory."""
+        """Load subtask configurations from skills directory or JSON files."""
+        # Try to load from skills directory first if enabled
+        if self.use_skills_format and self.skills_dir.exists():
+            self._load_from_skills_dir()
+            if self.subtask_configs:
+                return
+
+        # Fall back to loading from JSON config files
+        self._load_from_json_configs()
+
+    def _load_from_skills_dir(self):
+        """Load subtasks from Claude Code Skills format directory."""
+        from skill_loader import SkillLoader
+
+        print(f"\n📂 Loading skills from: {self.skills_dir}")
+
+        loader = SkillLoader(str(self.skills_dir))
+        skills = loader.load_all_skills()
+
+        if not skills:
+            print("   No skills found, will try JSON config fallback.\n")
+            return
+
+        # Convert to config format
+        self.subtask_configs = loader.get_skills_as_configs()
+
+        total_skills = sum(
+            len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs
+        )
+        print(f"✓ Loaded {total_skills} skill(s) from skills directory\n")
+
+        # For backwards compatibility
+        self.subtask_config = (
+            self.subtask_configs[0][1] if self.subtask_configs else {}
+        )
+
+    def _load_from_json_configs(self):
+        """Load subtask configurations from JSON files (legacy format)."""
         if not self.subtask_config_dir.exists():
             print(
                 f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}"
