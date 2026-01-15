@@ -485,10 +485,7 @@ When element locating fails, the Recovery Agent will:
 
 ### 1. Install Dependencies
 
-```bash
-cd camel/examples/toolkits/browser_skills_example
-pip install -r requirements.txt
-```
+Same with CAMEL framework.
 
 ### 2. Run Task (Using Existing Skills)
 
