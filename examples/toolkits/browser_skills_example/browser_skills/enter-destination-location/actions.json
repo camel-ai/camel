@@ -1,0 +1,34 @@
+[
+  {
+    "action_step": 13,
+    "action": "click",
+    "element_label": "Where to?",
+    "args": [
+      "e836"
+    ],
+    "url_before": "https://www.google.com/travel/flights",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:26:40.775495"
+  },
+  {
+    "action_step": 15,
+    "action": "type",
+    "element_label": "Where to?",
+    "args": [
+      "e931",
+      "Manchester"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:26:42.749425"
+  },
+  {
+    "action_step": 17,
+    "action": "enter",
+    "element_label": null,
+    "args": [],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:26:44.266912"
+  }
+]

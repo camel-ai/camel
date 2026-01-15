@@ -265,7 +265,7 @@ def compute_session_summary(
     """
     Compute a structured summary for a single session directory.
 
-    Uses existing artifacts produced by SubtaskAgent:
+    Uses existing artifacts produced by SkillsAgent:
       - complete_browser_log.log
       - non_subtask_actions.json (if available)
       - agent_communication_log.json

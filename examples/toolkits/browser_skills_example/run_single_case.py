@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from subtask_agent import SubtaskAgent
+from skill_agent import SkillsAgent
 from utils import (
     compute_session_summary,
     count_subtasks_in_dir,
@@ -28,7 +28,7 @@ def _find_newest_browser_log_file(browser_log_dir: Path) -> Path | None:
     return candidates[0] if candidates else None
 
 
-def _get_log_paths(agent: SubtaskAgent) -> tuple[Path | None, Path | None]:
+def _get_log_paths(agent: SkillsAgent) -> tuple[Path | None, Path | None]:
     session_dir = agent.session_log_dir
     if not session_dir:
         return None, None
@@ -47,7 +47,7 @@ async def _amain() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Run a single browser task with"
-            "SubtaskAgent and write session logs."
+            "SkillsAgent and write session logs."
         ),
     )
     parser.add_argument(
@@ -123,8 +123,8 @@ async def _amain() -> int:
         )
         return 2
 
-    agent = SubtaskAgent(
-        subtask_config_dir=str(skills_dir),
+    agent = SkillsAgent(
+        skills_dir=str(skills_dir),
         cdp_port=args.cdp_port,
         use_agent_recovery=not args.no_recovery,
         website=website,

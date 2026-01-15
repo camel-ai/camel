@@ -14,9 +14,9 @@
 # ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""SubtaskAgent utilities for `browser_skills_example`.
+"""SkillsAgent utilities for `browser_skills_example`.
 
-This module provides `SubtaskAgent`, which wraps reusable subtasks as callable
+This module provides `SkillsAgent`, which wraps reusable subtasks as callable
 functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
 
@@ -450,12 +450,12 @@ class SubtaskFunction:
         }
 
 
-class SubtaskAgent:
+class SkillsAgent:
     """Agent that can execute subtasks as functions."""
 
     def __init__(
         self,
-        subtask_config_dir: str,
+        skills_dir: str,
         *,
         website: str,
         session_log_dir: str | Path | None = None,
@@ -465,10 +465,10 @@ class SubtaskAgent:
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
     ):
-        """Initialize the SubtaskAgent.
+        """Initialize the SkillsAgent.
 
         Args:
-            subtask_config_dir: Path to directory containing subtask configuration JSON files
+            skills_dir: Path to directory containing subtask configuration JSON files
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
@@ -476,13 +476,13 @@ class SubtaskAgent:
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
         """
-        self.subtask_config_dir = Path(subtask_config_dir)
+        self.skills_dir = Path(skills_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
         self.website = website.strip()
         if not self.website:
             raise ValueError(
-                "website is required (non-empty). Pass `website=` (or `--web-name`)."
+                "website is required (non-empty). Pass `website=`."
             )
         self.start_url = start_url.strip() if start_url else None
         self.step_timeout = step_timeout
@@ -538,12 +538,12 @@ class SubtaskAgent:
 
     def _load_subtask_configs(self):
         """Load all subtask configuration files from the directory."""
-        if not self.subtask_config_dir.exists():
+        if not self.skills_dir.exists():
             print(
-                f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}"
+                f"\n⚠️  Subtask config directory not found: {self.skills_dir}"
             )
             print("📁 Creating directory...")
-            self.subtask_config_dir.mkdir(parents=True, exist_ok=True)
+            self.skills_dir.mkdir(parents=True, exist_ok=True)
             print(
                 "✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n"
             )
@@ -551,17 +551,15 @@ class SubtaskAgent:
             self.subtask_config = {}
             return
 
-        if not self.subtask_config_dir.is_dir():
-            raise ValueError(
-                f"Path is not a directory: {self.subtask_config_dir}"
-            )
+        if not self.skills_dir.is_dir():
+            raise ValueError(f"Path is not a directory: {self.skills_dir}")
 
         # Find all subtask config files in the directory
-        config_files = sorted(self.subtask_config_dir.glob("*_subtasks.json"))
+        config_files = sorted(self.skills_dir.glob("*_subtasks.json"))
 
         if not config_files:
             print(
-                f"\n📝 No subtask config files found in: {self.subtask_config_dir}"
+                f"\n📝 No subtask config files found in: {self.skills_dir}"
             )
             print(
                 "   Agent will run without pre-existing subtasks (will create new ones as needed).\n"
@@ -1656,4 +1654,4 @@ async def subtask_{subtask_func.subtask_id}():
             traceback.print_exc()
 
 
-__all__ = ["SubtaskAgent", "SubtaskFunction"]
+__all__ = ["SkillsAgent", "SubtaskFunction"]

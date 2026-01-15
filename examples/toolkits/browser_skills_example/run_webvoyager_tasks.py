@@ -18,9 +18,9 @@ Run WebVoyager tasks with subtask agent and analyze results.
 
 This script:
 1. Reads tasks from WebVoyager JSONL file
-2. Executes each task with subtask_agent.py
-3. Uses ChatAgent to verify if task requirements are met
-4. If met: runs analyze_subtask_candidate.py on the session
+2. Executes each task with skill_agent.py
+3. Uses WebJudge to verify if task requirements are met
+4. If met: runs subtask_extractor.py on the session
 5. If not met: provides suggestions and retries the task
 """
 
@@ -36,18 +36,15 @@ from dotenv import load_dotenv
 # Add path first
 sys.path.insert(0, str(Path(__file__).parent))
 
-from subtask_agent import SubtaskAgent
+from skill_agent import SkillsAgent
 from utils import (
     compute_session_summary,
     count_subtasks_in_dir,
-    create_chat_agent,
     get_timestamp_filename,
     get_timestamp_iso,
     resolve_website_skills_dir,
     update_cumulative_subtask_stats,
 )
-
-from camel.messages import BaseMessage
 
 load_dotenv()
 
@@ -64,87 +61,6 @@ def safe_name(value: str) -> str:
     value = _SAFE_NAME_RE.sub("_", value)
     value = re.sub(r"_+", "_", value).strip("_")
     return value or "unknown"
-
-
-class TaskVerifier:
-    """ChatAgent to verify if task results meet requirements."""
-
-    def __init__(self):
-        """Initialize the verifier agent."""
-        self.agent = create_chat_agent(
-            role_name="Task Verifier",
-            system_content="You are an expert at verifying if browser automation task results meet the specified requirements.",
-        )
-
-    def verify_task(
-        self, task_description: str, agent_response: str
-    ) -> Dict[str, Any]:
-        """
-        Verify if the task was completed successfully.
-
-        Args:
-            task_description: Original task description
-            agent_response: Agent's final response
-
-        Returns:
-            Dict with 'success' (bool), 'reasoning' (str), and 'suggestions' (str)
-        """
-        # IMPORTANT: Reset agent to clear conversation history
-        # This ensures each task verification is independent
-        self.agent.reset()
-
-        prompt = f"""You are verifying if a browser automation task was completed successfully.
-
-**TASK DESCRIPTION:**
-{task_description}
-
-**AGENT'S FINAL RESPONSE:**
-{agent_response}
-
-**YOUR TASK:**
-Analyze whether the task requirements were fully met. Consider:
-1. Did the agent complete all required actions? Do not be too strict!
-
-
-**OUTPUT FORMAT:**
-Return a JSON object with exactly this structure:
-```json
-{{
-  "success": true or false,
-  "reasoning": "Detailed explanation of why the task succeeded or failed",
-  "suggestions": "If failed, specific suggestions for next attempt (focus on what was missed or done incorrectly). If succeeded, leave empty string."
-}}
-```
-
-Return ONLY the JSON object, no other text.
-"""
-
-        response = self.agent.step(
-            BaseMessage.make_user_message(role_name="User", content=prompt)
-        )
-
-        # Parse response
-        try:
-            # Try to extract JSON from response
-            import re
-
-            json_match = re.search(
-                r'```json\s*(.*?)\s*```', response.msg.content, re.DOTALL
-            )
-            if json_match:
-                result = json.loads(json_match.group(1))
-            else:
-                result = json.loads(response.msg.content)
-
-            return result
-        except Exception as e:
-            print(f"⚠️  Failed to parse verifier response: {e}")
-            print(f"Raw response: {response.msg.content}")
-            return {
-                "success": False,
-                "reasoning": "Failed to parse verification result",
-                "suggestions": "Unable to provide suggestions due to parsing error",
-            }
 
 
 class WebJudgeTaskVerifier:
@@ -314,8 +230,8 @@ class WebVoyagerRunner:
                 / f"task_{safe_name(str(task_id))}_attempt_{attempt}"
             )
 
-        agent = SubtaskAgent(
-            subtask_config_dir=str(skills_dir),
+        agent = SkillsAgent(
+            skills_dir=str(skills_dir),
             use_agent_recovery=True,
             website=website,
             session_log_dir=session_log_dir,
@@ -432,7 +348,7 @@ class WebVoyagerRunner:
                 print("🔎 EXTRACTING SUBTASKS (SKILLS)")
                 print(f"{'=' * 80}")
                 try:
-                    from analyze_subtask_candidate import analyze_with_agent
+                    from subtask_extractor import analyze_with_agent
 
                     subtask_analysis = analyze_with_agent(
                         session_folder=str(session_dir),

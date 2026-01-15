@@ -1416,7 +1416,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
     async def replay_subtask(self) -> Dict[str, Any]:
         """Replay a single subtask and return detailed results.
 
-        This method is designed to be called from SubtaskAgent.
+        This method is designed to be called from SkillsAgent.
         It assumes toolkit is already initialized.
 
         Returns:
