@@ -57,6 +57,31 @@ DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
 load_dotenv()
 
 
+def skill_name_to_function_name(name: str) -> str:
+    """Convert a skill name to a valid Python function name.
+
+    Args:
+        name: Skill name (e.g., 'enter-departure-location' or 'Enter Departure Location')
+
+    Returns:
+        Valid Python function name (e.g., 'enter_departure_location')
+    """
+    import re
+
+    # Convert to lowercase and replace hyphens/spaces with underscores
+    func_name = name.lower().replace('-', '_').replace(' ', '_')
+    # Remove any characters that aren't alphanumeric or underscore
+    func_name = re.sub(r'[^a-z0-9_]', '', func_name)
+    # Remove multiple consecutive underscores
+    func_name = re.sub(r'_+', '_', func_name)
+    # Remove leading/trailing underscores
+    func_name = func_name.strip('_')
+    # Ensure it doesn't start with a number
+    if func_name and func_name[0].isdigit():
+        func_name = 'skill_' + func_name
+    return func_name
+
+
 class SubtaskFunction:
     """Wrapper for a subtask that can be called as a function."""
 
@@ -83,6 +108,7 @@ class SubtaskFunction:
         """
         self.subtask_id = subtask_id
         self.name = name
+        self.function_name = skill_name_to_function_name(name)
         self.description = description
         self.variables = variables
         self.replayer = replayer
@@ -233,7 +259,7 @@ class SubtaskFunction:
                 if self.session_log_dir:
                     replay_log_file = (
                         self.session_log_dir
-                        / f"subtask_{self.subtask_id}_replay_actions.json"
+                        / f"{self.function_name}_replay_actions.json"
                     )
                 else:
                     # Use browser_log default path
@@ -317,31 +343,39 @@ class SubtaskFunction:
             description = f"{self.description}. This is a fixed operation with no parameters."
 
         return {
-            "name": f"subtask_{self.subtask_id}",
+            "name": self.function_name,
             "description": description,
             "parameters": parameters,
         }
 
 
-class SubtaskAgent:
+class SkillsAgent:
     """Agent that can execute subtasks as functions."""
 
     def __init__(
         self,
-        subtask_config_dir: str,
+        skills_dir: Optional[str] = None,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
     ):
-        """Initialize the SubtaskAgent.
+        """Initialize the SkillsAgent.
 
         Args:
-            subtask_config_dir: Path to directory containing subtask configuration JSON files
+            skills_dir: Path to directory containing browser skills.
+                        If None, defaults to ./browser_skills
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
         """
-        self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
+
+        # Set skills directory
+        if skills_dir:
+            self.skills_dir = Path(skills_dir)
+        else:
+            self.skills_dir = (
+                Path(__file__).resolve().parent / "browser_skills"
+            )
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
@@ -387,66 +421,36 @@ class SubtaskAgent:
         self.current_user_task = None
 
     def _load_subtask_configs(self):
-        """Load all subtask configuration files from the directory."""
-        if not self.subtask_config_dir.exists():
-            print(
-                f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}"
-            )
+        """Load subtask configurations from skills directory."""
+        from skill_loader import SkillLoader
+
+        if not self.skills_dir.exists():
+            print(f"\n⚠️  Skills directory not found: {self.skills_dir}")
             print("📁 Creating directory...")
-            self.subtask_config_dir.mkdir(parents=True, exist_ok=True)
-            print(
-                "✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n"
-            )
-            # Set empty config for backwards compatibility
+            self.skills_dir.mkdir(parents=True, exist_ok=True)
+            print("✓ Directory created. No skills available yet.\n")
             self.subtask_config = {}
             return
 
-        if not self.subtask_config_dir.is_dir():
-            raise ValueError(
-                f"Path is not a directory: {self.subtask_config_dir}"
-            )
+        print(f"\n📂 Loading skills from: {self.skills_dir}")
 
-        # Find all JSON files in the directory
-        config_files = sorted(self.subtask_config_dir.glob("*.json"))
+        loader = SkillLoader(str(self.skills_dir))
+        skills = loader.load_all_skills()
 
-        if not config_files:
-            print(
-                f"\n📝 No subtask config files found in: {self.subtask_config_dir}"
-            )
-            print(
-                "   Agent will run without pre-existing subtasks (will create new ones as needed).\n"
-            )
-            # Set empty config for backwards compatibility
+        if not skills:
+            print("   No skills found in directory.\n")
             self.subtask_config = {}
             return
 
-        print(f"Found {len(config_files)} subtask config file(s):")
+        # Convert to config format
+        self.subtask_configs = loader.get_skills_as_configs()
 
-        for config_file in config_files:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-
-            log_file = config.get('log_file')
-            if not log_file:
-                print(f"  ⚠️  Skipping {config_file.name}: no 'log_file' field")
-                continue
-
-            subtasks = config.get('subtasks', [])
-            print(
-                f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}"
-            )
-
-            self.subtask_configs.append((log_file, config))
-
-        if not self.subtask_configs:
-            raise ValueError("No valid subtask configs loaded")
-
-        print(
-            f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)"
+        total_skills = sum(
+            len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs
         )
+        print(f"✓ Loaded {total_skills} skill(s) from skills directory\n")
 
-        # For backwards compatibility, store first config as main config
-        # This allows existing code to use self.subtask_config
+        # For backwards compatibility
         self.subtask_config = (
             self.subtask_configs[0][1] if self.subtask_configs else {}
         )
@@ -470,7 +474,7 @@ class SubtaskAgent:
         # Connect to browser - get browser endpoint, not page endpoint
         from urllib.request import urlopen
 
-        from replay_from_log import ActionReplayer
+        from action_replayer import ActionReplayer
 
         cdp_url = None
         try:
@@ -644,7 +648,7 @@ class SubtaskAgent:
         print("Creating subtask tool wrappers...")
         subtask_tools = []
 
-        for subtask_id, subtask_func in self.subtask_functions.items():
+        for _subtask_id, subtask_func in self.subtask_functions.items():
             # Create wrapper with proper signature that logs calls
             if subtask_func.variables:
                 # Build parameter list for the function signature
@@ -662,7 +666,7 @@ class SubtaskAgent:
 
                 # Create function code dynamically with logging
                 func_code = f"""
-async def subtask_{subtask_func.subtask_id}({params_str}):
+async def {subtask_func.function_name}({params_str}):
     \"\"\"
     {subtask_func.description}
 
@@ -680,7 +684,7 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
     call_log = {{
         'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
-        'subtask_id': '{subtask_func.subtask_id}',
+        'function_name': '{subtask_func.function_name}',
         'subtask_name': '{subtask_func.name}',
         'arguments': kwargs,
         'result': None
@@ -698,7 +702,7 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
             else:
                 # No parameters - fixed operation
                 func_code = f"""
-async def subtask_{subtask_func.subtask_id}():
+async def {subtask_func.function_name}():
     \"\"\"
     {subtask_func.description}. This is a fixed operation with no parameters.
 
@@ -711,7 +715,7 @@ async def subtask_{subtask_func.subtask_id}():
     call_log = {{
         'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
-        'subtask_id': '{subtask_func.subtask_id}',
+        'function_name': '{subtask_func.function_name}',
         'subtask_name': '{subtask_func.name}',
         'arguments': {{}},
         'result': None
@@ -728,12 +732,16 @@ async def subtask_{subtask_func.subtask_id}():
 """
 
             # Execute the code to create the function
-            local_vars = {"_sf": subtask_func, "_agent": self}
+            local_vars = {
+                "_sf": subtask_func,
+                "_agent": self,
+                "get_timestamp_iso": get_timestamp_iso,
+            }
             exec(func_code, local_vars)
-            wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
+            wrapper = local_vars[subtask_func.function_name]
 
             subtask_tools.append(wrapper)
-            print(f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}")
+            print(f"  ✓ Created wrapper: {wrapper.__name__}")
 
         # Combine all tools
         all_tools = [*browser_tools, *subtask_tools]
@@ -795,7 +803,7 @@ async def subtask_{subtask_func.subtask_id}():
             # Generate subtask list
             subtask_list = "\n".join(
                 [
-                    f"- subtask_{sid}: {sf.description}"
+                    f"- {sf.function_name}: {sf.description}"
                     + (
                         f" (variables: {list(sf.variables.keys())})"
                         if sf.variables
@@ -1398,12 +1406,8 @@ async def subtask_{subtask_func.subtask_id}():
 
 async def main():
     """Main entry point."""
-    # Configuration - now using directory instead of individual files
-    subtask_config_dir = str(DEFAULT_SUBTASK_CONFIGS_DIR)
-
-    # Create agent
-    agent = SubtaskAgent(
-        subtask_config_dir=subtask_config_dir,
+    # Create agent (uses default browser_skills directory)
+    agent = SkillsAgent(
         use_agent_recovery=True,
     )
 
