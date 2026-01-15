@@ -27,10 +27,6 @@ source:
 
 Enter and confirm both departure and return dates for round-trip flight search. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **departure_date** (default: `28 Jan 2026`): Date of departure (e.g., '28 Jan 2026')

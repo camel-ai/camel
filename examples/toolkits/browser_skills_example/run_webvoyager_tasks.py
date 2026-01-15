@@ -35,7 +35,7 @@ from dotenv import load_dotenv
 # Add path first
 sys.path.insert(0, str(Path(__file__).parent))
 
-from subtask_agent_example import SubtaskAgent
+from browser_skills_example import SkillsAgent
 from utils import create_chat_agent
 
 from camel.messages import BaseMessage
@@ -212,7 +212,7 @@ class WebVoyagerRunner:
         print()
 
         # Create agent
-        agent = SubtaskAgent(
+        agent = SkillsAgent(
             skills_dir=self.skills_dir,
             use_agent_recovery=True,
         )
@@ -301,7 +301,7 @@ class WebVoyagerRunner:
                 print(f"{'='*80}")
 
                 try:
-                    from analyze_subtask_candidate import analyze_with_agent
+                    from subtask_extractor import analyze_with_agent
 
                     analysis_result = analyze_with_agent(
                         session_folder=str(session_dir),

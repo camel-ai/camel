@@ -57,6 +57,31 @@ DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
 load_dotenv()
 
 
+def skill_name_to_function_name(name: str) -> str:
+    """Convert a skill name to a valid Python function name.
+
+    Args:
+        name: Skill name (e.g., 'enter-departure-location' or 'Enter Departure Location')
+
+    Returns:
+        Valid Python function name (e.g., 'enter_departure_location')
+    """
+    import re
+
+    # Convert to lowercase and replace hyphens/spaces with underscores
+    func_name = name.lower().replace('-', '_').replace(' ', '_')
+    # Remove any characters that aren't alphanumeric or underscore
+    func_name = re.sub(r'[^a-z0-9_]', '', func_name)
+    # Remove multiple consecutive underscores
+    func_name = re.sub(r'_+', '_', func_name)
+    # Remove leading/trailing underscores
+    func_name = func_name.strip('_')
+    # Ensure it doesn't start with a number
+    if func_name and func_name[0].isdigit():
+        func_name = 'skill_' + func_name
+    return func_name
+
+
 class SubtaskFunction:
     """Wrapper for a subtask that can be called as a function."""
 
@@ -83,6 +108,7 @@ class SubtaskFunction:
         """
         self.subtask_id = subtask_id
         self.name = name
+        self.function_name = skill_name_to_function_name(name)
         self.description = description
         self.variables = variables
         self.replayer = replayer
@@ -233,7 +259,7 @@ class SubtaskFunction:
                 if self.session_log_dir:
                     replay_log_file = (
                         self.session_log_dir
-                        / f"subtask_{self.subtask_id}_replay_actions.json"
+                        / f"{self.function_name}_replay_actions.json"
                     )
                 else:
                     # Use browser_log default path
@@ -317,13 +343,13 @@ class SubtaskFunction:
             description = f"{self.description}. This is a fixed operation with no parameters."
 
         return {
-            "name": f"subtask_{self.subtask_id}",
+            "name": self.function_name,
             "description": description,
             "parameters": parameters,
         }
 
 
-class SubtaskAgent:
+class SkillsAgent:
     """Agent that can execute subtasks as functions."""
 
     def __init__(
@@ -332,7 +358,7 @@ class SubtaskAgent:
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
     ):
-        """Initialize the SubtaskAgent.
+        """Initialize the SkillsAgent.
 
         Args:
             skills_dir: Path to directory containing browser skills.
@@ -448,7 +474,7 @@ class SubtaskAgent:
         # Connect to browser - get browser endpoint, not page endpoint
         from urllib.request import urlopen
 
-        from replay_from_log import ActionReplayer
+        from action_replayer import ActionReplayer
 
         cdp_url = None
         try:
@@ -622,7 +648,7 @@ class SubtaskAgent:
         print("Creating subtask tool wrappers...")
         subtask_tools = []
 
-        for subtask_id, subtask_func in self.subtask_functions.items():
+        for _subtask_id, subtask_func in self.subtask_functions.items():
             # Create wrapper with proper signature that logs calls
             if subtask_func.variables:
                 # Build parameter list for the function signature
@@ -640,7 +666,7 @@ class SubtaskAgent:
 
                 # Create function code dynamically with logging
                 func_code = f"""
-async def subtask_{subtask_func.subtask_id}({params_str}):
+async def {subtask_func.function_name}({params_str}):
     \"\"\"
     {subtask_func.description}
 
@@ -658,7 +684,7 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
     call_log = {{
         'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
-        'subtask_id': '{subtask_func.subtask_id}',
+        'function_name': '{subtask_func.function_name}',
         'subtask_name': '{subtask_func.name}',
         'arguments': kwargs,
         'result': None
@@ -676,7 +702,7 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
             else:
                 # No parameters - fixed operation
                 func_code = f"""
-async def subtask_{subtask_func.subtask_id}():
+async def {subtask_func.function_name}():
     \"\"\"
     {subtask_func.description}. This is a fixed operation with no parameters.
 
@@ -689,7 +715,7 @@ async def subtask_{subtask_func.subtask_id}():
     call_log = {{
         'timestamp': get_timestamp_iso(),
         'type': 'subtask_call',
-        'subtask_id': '{subtask_func.subtask_id}',
+        'function_name': '{subtask_func.function_name}',
         'subtask_name': '{subtask_func.name}',
         'arguments': {{}},
         'result': None
@@ -712,10 +738,10 @@ async def subtask_{subtask_func.subtask_id}():
                 "get_timestamp_iso": get_timestamp_iso,
             }
             exec(func_code, local_vars)
-            wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
+            wrapper = local_vars[subtask_func.function_name]
 
             subtask_tools.append(wrapper)
-            print(f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}")
+            print(f"  ✓ Created wrapper: {wrapper.__name__}")
 
         # Combine all tools
         all_tools = [*browser_tools, *subtask_tools]
@@ -777,7 +803,7 @@ async def subtask_{subtask_func.subtask_id}():
             # Generate subtask list
             subtask_list = "\n".join(
                 [
-                    f"- subtask_{sid}: {sf.description}"
+                    f"- {sf.function_name}: {sf.description}"
                     + (
                         f" (variables: {list(sf.variables.keys())})"
                         if sf.variables
@@ -1381,7 +1407,7 @@ async def subtask_{subtask_func.subtask_id}():
 async def main():
     """Main entry point."""
     # Create agent (uses default browser_skills directory)
-    agent = SubtaskAgent(
+    agent = SkillsAgent(
         use_agent_recovery=True,
     )
 

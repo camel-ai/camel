@@ -20,10 +20,6 @@ source:
 
 Open browser and navigate to the flight search website
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **flight_search_url** (default: `https://www.google.com/flights`): URL of the flight search website (e.g., 'https://www.google.com/flights')

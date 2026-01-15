@@ -21,10 +21,6 @@ source:
 
 Select and confirm the departure date for a one-way flight search. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **departure_date** (default: `Saturday, January 17, 2026 , 303 British pounds`): Date of departure for one-way flight (e.g., 'January 17, 2026')

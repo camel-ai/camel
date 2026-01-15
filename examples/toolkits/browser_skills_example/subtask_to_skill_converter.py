@@ -152,11 +152,6 @@ def generate_skill_md(
         "",
         subtask['description'],
         "",
-        "## Usage",
-        "",
-        "This skill is automatically invoked when the agent needs to "
-        "perform this action.",
-        "",
     ]
 
     # Add variables section if any
@@ -303,11 +298,10 @@ def convert_subtask_configs_to_skills(
         print(f"  Found {len(subtasks)} subtask(s)")
 
         for subtask in subtasks:
-            subtask_id = subtask.get('id', 'unknown')
             subtask_name = subtask.get('name', 'Unknown')
 
-            # Create skill directory name: {id}-{slugified-name}
-            skill_dir_name = f"{subtask_id}-{slugify(subtask_name)}"
+            # Create skill directory name: {slugified-name}
+            skill_dir_name = slugify(subtask_name)
             skill_dir = skills_path / skill_dir_name
 
             # Check if skill already exists

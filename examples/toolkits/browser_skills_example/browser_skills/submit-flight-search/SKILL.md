@@ -14,10 +14,6 @@ source:
 
 Click the search button to submit the flight search query. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Execution Context
 
 - **Start URL**: https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTI4agwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxooEgoyMDI2LTAxLTI4agwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw

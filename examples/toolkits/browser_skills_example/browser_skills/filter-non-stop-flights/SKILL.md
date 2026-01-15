@@ -14,10 +14,6 @@ source:
 
 Apply filter to show only non-stop flights in the search results. Execution page: https://www.google.com/travel/flights/search
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Execution Context
 
 - **Start URL**: https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg

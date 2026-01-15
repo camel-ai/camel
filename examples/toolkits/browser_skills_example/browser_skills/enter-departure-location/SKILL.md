@@ -21,10 +21,6 @@ source:
 
 Enter and confirm the departure city for flight search. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **departure_city** (default: `Edinburgh`): Name of the departure city (e.g., 'Edinburgh')

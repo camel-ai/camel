@@ -21,10 +21,6 @@ source:
 
 Enter and confirm the destination city for flight search. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **destination_city** (default: `Manchester`): Name of the destination city (e.g., 'Manchester')

@@ -21,10 +21,6 @@ source:
 
 Change the seating class for the flight search (e.g., Economy, Business, First). Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Variables
 
 - **seating_class** (default: `First`): Desired seating class to select (e.g., 'First', 'Business', 'Economy')

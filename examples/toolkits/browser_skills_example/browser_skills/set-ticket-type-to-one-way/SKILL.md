@@ -14,10 +14,6 @@ source:
 
 Change the ticket type from round-trip to one-way for flight search. Execution page: https://www.google.com/travel/flights
 
-## Usage
-
-This skill is automatically invoked when the agent needs to perform this action.
-
 ## Execution Context
 
 - **Start URL**: https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDFfZDQaDnIMCAMSCC9tLzAxX2Q0QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw
