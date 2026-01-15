@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501, E402
+# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -55,7 +55,7 @@ class ActionReplayer:
 
     def __init__(
         self,
-        log_file: str,
+        log_file: str | None,
         cdp_port: int = 9223,
         subtask_config: Optional[str] = None,
         subtask_id: Optional[str] = None,
@@ -72,7 +72,9 @@ class ActionReplayer:
             variables (dict, optional): Variable overrides for subtask replay
             use_agent_recovery (bool): Use ChatAgent for error recovery
         """
-        self.log_file = Path(log_file)
+        self.log_file = (
+            Path(log_file).expanduser().resolve() if log_file else None
+        )
         self.cdp_port = cdp_port
         self.toolkit: Optional[HybridBrowserToolkit] = None
         self.actions: List[Dict[str, Any]] = []
@@ -250,6 +252,11 @@ class ActionReplayer:
         Returns:
             List of action dictionaries
         """
+        if self.log_file is None:
+            raise ValueError(
+                "log_file is required when replaying from raw logs. "
+                "Provide subtask_config with embedded actions instead."
+            )
         actions = []
         print(f"Loading log file: {self.log_file}")
 

@@ -41,6 +41,7 @@ from utils import (
     extract_token_usage,
     get_timestamp_filename,
     get_timestamp_iso,
+    resolve_website_skills_leaf_dir,
 )
 
 from camel.agents import ChatAgent
@@ -55,7 +56,6 @@ from camel.utils.constants import Constants
 # Define default directories using relative paths
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
-DEFAULT_SUBTASK_CONFIGS_DIR = script_dir / "subtask_configs"
 
 WEBSITE_GUIDELINES: Dict[str, str] = {
     "allrecipes": "\n".join(
@@ -466,7 +466,9 @@ class SkillsAgent:
         """Initialize the SkillsAgent.
 
         Args:
-            skills_dir: Path to directory containing subtask configuration JSON files
+            skills_dir: Path to skills storage directory. Supports:
+                - Skills folders: `<skills_dir>/*/SKILL.md` (+ actions.json)
+                - Legacy configs: `<skills_dir>/*_subtasks.json`
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
@@ -535,7 +537,7 @@ class SkillsAgent:
         self.tool_definitions = []
 
     def _load_subtask_configs(self):
-        """Load all subtask configuration files from the directory."""
+        """Load all skills/subtasks from the directory."""
         if not self.skills_dir.exists():
             print(
                 f"\n⚠️  Subtask config directory not found: {self.skills_dir}"
@@ -552,7 +554,44 @@ class SkillsAgent:
         if not self.skills_dir.is_dir():
             raise ValueError(f"Path is not a directory: {self.skills_dir}")
 
-        # Find all subtask config files in the directory
+        resolved_dir = resolve_website_skills_leaf_dir(
+            self.skills_dir, self.website
+        )
+        if resolved_dir != self.skills_dir:
+            self.skills_dir = resolved_dir
+
+        # Prefer Skills folders (SKILL.md) when present.
+        skill_dirs = sorted(
+            [
+                p
+                for p in self.skills_dir.iterdir()
+                if p.is_dir() and (p / "SKILL.md").exists()
+            ]
+        )
+        if skill_dirs:
+            from skill_loader import SkillLoader
+
+            loader = SkillLoader(str(self.skills_dir))
+            all_subtasks = loader.load_all_skills()
+
+            if not all_subtasks:
+                print(f"\n📝 No skills found in: {self.skills_dir}")
+                self.subtask_config = {}
+                return
+
+            print(
+                f"✓ Loaded {len(all_subtasks)} skill(s) from: {self.skills_dir}"
+            )
+            for subtask in all_subtasks:
+                skill_id = str(subtask.get("id", ""))
+                log_file = loader.skill_log_files.get(skill_id)
+                self.subtask_configs.append((log_file, {"subtasks": [subtask]}))
+
+            # For backwards compatibility
+            self.subtask_config = self.subtask_configs[0][1]
+            return
+
+        # Legacy: Find all subtask config files in the directory
         config_files = sorted(self.skills_dir.glob("*_subtasks.json"))
 
         if not config_files:
@@ -598,7 +637,11 @@ class SkillsAgent:
             self.subtask_configs.append((log_file, config))
 
         if not self.subtask_configs:
-            raise ValueError("No valid subtask configs loaded")
+            print(
+                "\n📝 No valid subtask configs loaded; continuing without subtasks.\n"
+            )
+            self.subtask_config = {}
+            return
 
         print(
             f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)"
@@ -796,9 +839,13 @@ class SkillsAgent:
                     print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
                     continue
 
-                if not log_file:
-                    print(f"  ⚠️  Subtask {subtask_id} has no log file")
-                    raise ValueError(f"Subtask {subtask_id} has no log file")
+                if not log_file and not bool(subtask.get('actions', [])):
+                    print(
+                        f"  ⚠️  Subtask {subtask_id} has no log file and no embedded actions"
+                    )
+                    raise ValueError(
+                        f"Subtask {subtask_id} has no log file and no embedded actions"
+                    )
 
                 # Create replayer instance for this subtask
                 replayer = ActionReplayer(

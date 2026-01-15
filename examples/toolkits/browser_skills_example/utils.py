@@ -192,6 +192,28 @@ def resolve_website_skills_dir(skills_root: Path, website: str) -> Path:
     return website_dir
 
 
+def resolve_website_skills_leaf_dir(skills_root_or_leaf: Path, website: str) -> Path:
+    """Resolve a directory to a per-website skills directory.
+
+    - If `skills_root_or_leaf` already contains Skills folders (`*/SKILL.md`)
+      or legacy `*_subtasks.json`, treat it as a *leaf* and return it.
+    - Otherwise, treat it as a multi-website root and return
+      `<skills_root_or_leaf>/<website_slug>`.
+    """
+    base = Path(skills_root_or_leaf).expanduser()
+    # Leaf detection: direct Skills folders or legacy subtasks configs.
+    try:
+        if any((p.is_dir() and (p / "SKILL.md").exists()) for p in base.iterdir()):
+            return base
+    except FileNotFoundError:
+        pass
+
+    if any(base.glob("*_subtasks.json")):
+        return base
+
+    return resolve_website_skills_dir(base, website)
+
+
 def count_subtasks_in_dir(skills_dir: Path) -> int:
     """Count subtasks across all `*_subtasks.json` files under `skills_dir`."""
     total = 0
@@ -203,6 +225,17 @@ def count_subtasks_in_dir(skills_dir: Path) -> int:
         subtasks = data.get("subtasks", [])
         if isinstance(subtasks, list):
             total += len(subtasks)
+    return total
+
+
+def count_skills_in_dir(skills_dir: Path) -> int:
+    """Count Skills folders under `skills_dir` (directories containing `SKILL.md`)."""
+    if not skills_dir.exists():
+        return 0
+    total = 0
+    for path in sorted(skills_dir.iterdir()):
+        if path.is_dir() and (path / "SKILL.md").exists():
+            total += 1
     return total
 
 
@@ -353,7 +386,13 @@ def compute_session_summary(
             stats["failure_rate"] = 0.0
 
     subtasks_available = (
-        count_subtasks_in_dir(skills_dir) if skills_dir is not None else None
+        (
+            count_skills_in_dir(skills_dir)
+            if any(skills_dir.glob("*/SKILL.md"))
+            else count_subtasks_in_dir(skills_dir)
+        )
+        if skills_dir is not None
+        else None
     )
 
     return {

@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from skill_agent import SkillsAgent
 from utils import (
     compute_session_summary,
+    count_skills_in_dir,
     count_subtasks_in_dir,
     get_timestamp_filename,
     get_timestamp_iso,
@@ -107,8 +108,7 @@ class WebVoyagerRunner:
     def __init__(
         self,
         jsonl_file: str,
-        subtask_config_dir: str,
-        skills_root: str = "",
+        skills_root: str,
         website_filter: str = "",
         max_retries: int = 2,
         run_summary_out: str = "",
@@ -122,14 +122,14 @@ class WebVoyagerRunner:
 
         Args:
             jsonl_file: Path to WebVoyager JSONL file
-            subtask_config_dir: Path to subtask configs directory
+            skills_root: Root directory for per-website skills.
             max_retries: Maximum retry attempts per task
         """
         self.jsonl_file = Path(jsonl_file)
-        self.subtask_config_dir = subtask_config_dir
-        self.skills_root = (
-            Path(skills_root).expanduser() if skills_root else None
-        )
+        resolved_root = skills_root.strip()
+        if not resolved_root:
+            raise ValueError("skills_root must be a non-empty path.")
+        self.skills_root = Path(resolved_root).expanduser()
         self.website_filter = website_filter.strip()
         self.max_retries = max_retries
         self.run_summary_out = (
@@ -141,7 +141,7 @@ class WebVoyagerRunner:
         self.tool_execution_timeout = tool_execution_timeout
         self.verifier = WebJudgeTaskVerifier()
 
-        # Ensure subtask config directory exists
+        # Ensure skills root directory exists
         self._ensure_config_dir_exists()
 
         # Results tracking
@@ -153,10 +153,9 @@ class WebVoyagerRunner:
 
     def _ensure_config_dir_exists(self):
         """
-        Ensure the subtask config directory (or skills root) exists.
-        Creates it if it doesn't exist.
+        Ensure the skills root directory exists. Creates it if needed.
         """
-        base_path = self.skills_root or Path(self.subtask_config_dir)
+        base_path = self.skills_root
 
         if not base_path.exists():
             print(f"\n⚠️  Skills directory not found: {base_path}")
@@ -169,10 +168,6 @@ class WebVoyagerRunner:
             )
 
     def _resolve_skills_dir_for_task(self, website: str) -> Path:
-        if self.skills_root is None:
-            skills_dir = Path(self.subtask_config_dir)
-            skills_dir.mkdir(parents=True, exist_ok=True)
-            return skills_dir
         return resolve_website_skills_dir(self.skills_root, website)
 
     def load_tasks(self) -> List[Dict[str, Any]]:
@@ -227,7 +222,11 @@ class WebVoyagerRunner:
         start_url = (task.get('web') or '').strip() or None
 
         skills_dir = self._resolve_skills_dir_for_task(website)
-        subtasks_before = count_subtasks_in_dir(skills_dir)
+        subtasks_before = (
+            count_skills_in_dir(skills_dir)
+            if any(skills_dir.glob("*/SKILL.md"))
+            else count_subtasks_in_dir(skills_dir)
+        )
 
         session_log_dir = None
         if self.run_dir is not None:
@@ -284,8 +283,10 @@ class WebVoyagerRunner:
                 summary["start_url"] = start_url
                 summary["attempt"] = attempt
                 summary["subtasks_available_before"] = subtasks_before
-                summary["subtasks_available_after"] = count_subtasks_in_dir(
-                    skills_dir
+                summary["subtasks_available_after"] = (
+                    count_skills_in_dir(skills_dir)
+                    if any(skills_dir.glob("*/SKILL.md"))
+                    else count_subtasks_in_dir(skills_dir)
                 )
                 summary["phase"] = "post_run_pre_extract"
                 summary["generated_at"] = get_timestamp_iso()
@@ -358,7 +359,7 @@ class WebVoyagerRunner:
 
                     subtask_analysis = analyze_with_agent(
                         session_folder=str(session_dir),
-                        subtask_configs_dir=str(skills_dir),
+                        skills_dir=str(skills_dir),
                         auto_save=True,
                     )
                 except Exception as e:
@@ -408,8 +409,10 @@ class WebVoyagerRunner:
                 summary["verification"] = verification
                 summary["subtask_analysis"] = result.get("subtask_analysis")
                 summary["subtasks_available_before"] = subtasks_before
-                summary["subtasks_available_after"] = count_subtasks_in_dir(
-                    skills_dir
+                summary["subtasks_available_after"] = (
+                    count_skills_in_dir(skills_dir)
+                    if any(skills_dir.glob("*/SKILL.md"))
+                    else count_subtasks_in_dir(skills_dir)
                 )
                 summary["phase"] = "final"
                 summary["generated_at"] = get_timestamp_iso()
@@ -658,10 +661,7 @@ class WebVoyagerRunner:
         print(f"Max retries per task: {self.max_retries}")
         if self.website_filter:
             print(f"Website filter: {self.website_filter}")
-        if self.skills_root:
-            print(f"Skills root: {self.skills_root}")
-        else:
-            print(f"Skills dir: {self.subtask_config_dir}")
+        print(f"Skills root: {self.skills_root}")
         if self.run_dir:
             print(f"Run dir: {self.run_dir}")
         print(f"Run summary out: {self.run_summary_out}")
@@ -715,10 +715,7 @@ class WebVoyagerRunner:
         summary = {
             "generated_at": get_timestamp_iso(),
             "jsonl_file": str(self.jsonl_file),
-            "skills_root": str(self.skills_root) if self.skills_root else None,
-            "skills_dir": None
-            if self.skills_root
-            else str(self.subtask_config_dir),
+            "skills_root": str(self.skills_root),
             "website_filter": self.website_filter or None,
             "aggregate": self.aggregate,
             "tasks": [],
@@ -810,7 +807,6 @@ async def main():
 
     # Calculate default paths using relative path
     script_dir = Path(__file__).resolve().parent
-    default_config_dir = str(script_dir / "subtask_configs")
     default_session_logs_root = script_dir.parent / "session_logs"
     default_jsonl_candidates = [
         script_dir / "WebVoyager_data.jsonl",
@@ -832,14 +828,9 @@ async def main():
         help="Path to WebVoyager JSONL file",
     )
     parser.add_argument(
-        "--config-dir",
-        default=default_config_dir,
-        help="Path to subtask configs directory",
-    )
-    parser.add_argument(
         "--skills-root",
-        default="",
-        help="Root directory for per-website skills (overrides --config-dir).",
+        default=str(script_dir / "skills_store"),
+        help="Root directory for per-website skills.",
     )
     parser.add_argument(
         "--website-filter",
@@ -924,7 +915,6 @@ async def main():
 
     runner = WebVoyagerRunner(
         jsonl_file=args.jsonl,
-        subtask_config_dir=args.config_dir,
         skills_root=args.skills_root,
         website_filter=args.website_filter,
         max_retries=args.max_retries,

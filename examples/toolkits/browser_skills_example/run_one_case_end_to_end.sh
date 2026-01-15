@@ -13,7 +13,7 @@ CASE_QUES="${CASE_QUES:-Show me the list of one-way flights on January 17, 2026 
 CASE_WEB="${CASE_WEB:-https://www.google.com/travel/flights/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
-SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/empty_subtasks}"
+SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/browser_skills}"
 UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 
 mkdir -p "$SKILLS_DIR"
@@ -47,11 +47,15 @@ check_cdp "$CDP_PORT" || {
 echo
 echo "Step 1/4: First run with EMPTY skills dir (expect: few/no subtask functions)."
 RUN1_LOG="$TMP_DIR/run1.log"
+STEP_TIMEOUT="${STEP_TIMEOUT:-360}"
+TOOL_TIMEOUT="${TOOL_TIMEOUT:-360}"
 PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
   --task "$CASE_QUES" \
+  --step-timeout "$STEP_TIMEOUT" \
+  --tool-timeout "$TOOL_TIMEOUT" \
   | tee "$RUN1_LOG"
 
 extract_session_dir() {
@@ -101,6 +105,8 @@ PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
   --task "$CASE_QUES" \
+  --step-timeout "$STEP_TIMEOUT" \
+  --tool-timeout "$TOOL_TIMEOUT" \
   | tee "$RUN2_LOG"
 
 SESSION2="$(extract_session_dir "$RUN2_LOG")"

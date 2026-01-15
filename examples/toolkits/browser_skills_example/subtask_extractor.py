@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501
 """
 Analyze consecutive individual_action entries to determine if they can
 form reusable subtasks.
@@ -27,8 +26,9 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
-from subtask_manager import SubtaskManager
-from utils import create_chat_agent
+from skill_loader import parse_skill_md
+from skill_store import SkillStore
+from utils import create_chat_agent, resolve_website_skills_leaf_dir
 
 from camel.messages import BaseMessage
 
@@ -79,39 +79,54 @@ def extract_consecutive_individual_actions(timeline_path: str):
     return consecutive_groups
 
 
-def load_all_existing_subtasks(
-    subtask_configs_dir: str,
+def _extract_title_from_skill_md(skill_md_path: Path) -> str:
+    """Best-effort extraction of the first markdown H1 title."""
+    try:
+        content = skill_md_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return ""
+    # Strip YAML frontmatter if present
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            content = parts[2]
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            return stripped[2:].strip()
+    return ""
+
+
+def load_all_existing_subtasks_from_skills_dir(
+    skills_dir: str,
 ) -> List[Dict[str, Any]]:
-    """
-    Load all existing subtasks from the subtask_configs directory.
-
-    Args:
-        subtask_configs_dir: Path to the directory containing subtask config JSON files
-
-    Returns:
-        List of all subtask definitions from all config files
-    """
-    all_subtasks = []
-    configs_path = Path(subtask_configs_dir)
-
-    if not configs_path.exists():
-        print(f"Warning: Subtask configs directory not found: {configs_path}")
+    """Load existing skills (SKILL.md) as lightweight subtask summaries."""
+    base = Path(skills_dir).expanduser()
+    if not base.exists():
+        print(f"Warning: Skills directory not found: {base}")
         return []
 
-    # Load only subtask config files in the directory
-    for json_file in sorted(configs_path.glob("*_subtasks.json")):
+    subtasks: List[Dict[str, Any]] = []
+    for skill_dir in sorted([p for p in base.iterdir() if p.is_dir()]):
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.exists():
+            continue
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
-                config_data = json.load(f)
-                subtasks = config_data.get('subtasks', [])
-                for subtask in subtasks:
-                    # Add source file info
-                    subtask['_source_file'] = json_file.name
-                    all_subtasks.append(subtask)
-        except Exception as e:
-            print(f"Warning: Failed to load {json_file}: {e}")
-
-    return all_subtasks
+            frontmatter = parse_skill_md(skill_md)
+        except Exception:
+            continue
+        title = _extract_title_from_skill_md(skill_md) or str(
+            frontmatter.get("name") or skill_dir.name
+        )
+        subtasks.append(
+            {
+                "id": frontmatter.get("id"),
+                "name": title,
+                "description": frontmatter.get("description", ""),
+                "_source_file": str(skill_md),
+            }
+        )
+    return subtasks
 
 
 def create_analysis_prompt(
@@ -491,7 +506,7 @@ def parse_agent_response(response_text: str) -> List[Dict[str, Any]]:
 
 def analyze_with_agent(
     session_folder: str,
-    subtask_configs_dir: str | None = None,
+    skills_dir: str | None = None,
     auto_save: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -499,7 +514,7 @@ def analyze_with_agent(
 
     Args:
         session_folder: Path to the session log folder
-        subtask_configs_dir: Path to the directory containing existing subtask configs
+        skills_dir: Directory containing Skills folders (SKILL.md + actions.json)
         auto_save: If True, automatically save identified subtasks to a new config file
 
     Returns:
@@ -543,15 +558,25 @@ def analyze_with_agent(
     if website:
         print(f"Website: {website}\n")
 
-    # Step 3: Load existing subtasks
-    print("Step 3: Loading existing subtasks...")
-    if subtask_configs_dir is None:
-        existing_subtasks: List[Dict[str, Any]] = []
-        print(
-            "⚠️  No subtask_configs_dir provided; skipping existing-subtask loading."
+    resolved_skills_dir: str | None = None
+    if skills_dir is not None and website:
+        resolved_skills_dir = str(
+            resolve_website_skills_leaf_dir(Path(skills_dir), website)
         )
     else:
-        existing_subtasks = load_all_existing_subtasks(subtask_configs_dir)
+        resolved_skills_dir = skills_dir
+
+    # Step 3: Load existing subtasks
+    print("Step 3: Loading existing subtasks...")
+    if resolved_skills_dir is None:
+        existing_subtasks: List[Dict[str, Any]] = []
+        print(
+            "⚠️  No skills_dir provided; skipping existing-skill loading."
+        )
+    else:
+        existing_subtasks = load_all_existing_subtasks_from_skills_dir(
+            resolved_skills_dir
+        )
     print(f"✓ Loaded {len(existing_subtasks)} existing subtasks\n")
 
     # Step 4: Create ChatAgent
@@ -629,21 +654,17 @@ def analyze_with_agent(
 
         # Step 8: Save new subtasks if auto_save is enabled
         if auto_save and reusable_count > 0:
-            if subtask_configs_dir is None:
+            if resolved_skills_dir is None:
                 print(f"\n{'='*80}")
                 print("Step 8: Saving new subtasks...")
                 print(f"{'='*80}\n")
                 print(
-                    "⚠️  Auto-save skipped: provide subtask_configs_dir to persist subtasks."
+                    "⚠️  Auto-save skipped: provide skills_dir to persist skills."
                 )
             else:
                 print(f"\n{'='*80}")
-                print("Step 8: Saving new subtasks...")
+                print("Step 8: Saving new skills...")
                 print(f"{'='*80}\n")
-
-                # Initialize SubtaskManager
-                manager = SubtaskManager(subtask_configs_dir)
-                manager.load_all_subtasks()
 
                 # Enrich subtasks: expand agent's simplified output to full definition
                 print("Enriching subtask definitions...")
@@ -652,17 +673,30 @@ def analyze_with_agent(
                     f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields"
                 )
 
-                # Add new subtasks to a new config file
-                new_file = manager.add_new_subtasks(
-                    new_subtasks=new_subtasks,
-                    session_folder=session_folder,
-                    task_description=task_description,
-                    website=website,
+                store = SkillStore(resolved_skills_dir)
+                source_info = {
+                    "log_file": "",
+                    "task_description": task_description,
+                }
+                save_summary = store.write_subtasks(
+                    subtasks=new_subtasks,
+                    source_info=source_info,
+                    overwrite=False,
+                    skip_if_slug_exists=True,
                 )
 
-                print(
-                    f"\n✓ Successfully saved to: {subtask_configs_dir}/{new_file}"
-                )
+                if save_summary.get("created"):
+                    print("\n✓ Skills created:")
+                    for p in save_summary["created"]:
+                        print(f"  - {p}")
+                if save_summary.get("skipped"):
+                    print("\n⚠️  Skills skipped (existing slug):")
+                    for name in save_summary["skipped"]:
+                        print(f"  - {name}")
+                if save_summary.get("errors"):
+                    print("\n⚠️  Errors while saving skills:")
+                    for err in save_summary["errors"]:
+                        print(f"  - {err}")
 
         elif not auto_save and reusable_count > 0:
             print(f"\n{'='*80}")
@@ -684,6 +718,9 @@ def analyze_with_agent(
                 'total_tokens': total_tokens,
             },
             'existing_subtasks_count': len(existing_subtasks),
+            'skills_dir': str(Path(resolved_skills_dir).expanduser().resolve())
+            if resolved_skills_dir
+            else None,
             'results': results,
         }
 
@@ -749,7 +786,7 @@ def analyze_with_agent(
 def main():
     if len(sys.argv) < 2:
         print(
-            "Usage: python subtask_extractor.py <session_folder_path> [subtask_configs_dir]"
+            "Usage: python subtask_extractor.py <session_folder_path> [skills_dir]"
         )
         print("\nExample:")
         print(
@@ -757,16 +794,16 @@ def main():
         )
         print("\nOptional:")
         print(
-            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455 /path/to/subtask_configs"
+            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455 /path/to/browser_skills"
         )
         sys.exit(1)
 
     session_folder = sys.argv[1]
 
-    # Use command line argument if provided, otherwise use default (None -> handled in function)
-    subtask_configs_dir = sys.argv[2] if len(sys.argv) > 2 else None
+    # Use command line argument if provided, otherwise skip saving.
+    skills_dir = sys.argv[2] if len(sys.argv) > 2 else None
 
-    analyze_with_agent(session_folder, subtask_configs_dir)
+    analyze_with_agent(session_folder, skills_dir)
 
 
 if __name__ == "__main__":

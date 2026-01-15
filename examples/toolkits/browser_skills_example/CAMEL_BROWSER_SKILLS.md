@@ -20,21 +20,14 @@ The core concept is: **progressively transforming Agent's exploratory execution 
 │                            SIMPLE WORKFLOW                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. EXTRACT: Log → Subtask                                                  │
+│  1. EXTRACT: Log → Skills Folder                            │               │
 │     ┌──────────────┐     subtask_extractor.py      ┌──────────────────┐    │
-│     │ session_logs │  ─────────────────────────►   │ subtask_configs/ │    │
-│     │ (raw logs)   │                               │ (JSON format)    │    │
-│     └──────────────┘                               └──────────────────┘    │
+│     │ session_logs │  ─────────────────────────►   │ skills_store/<web│    │
+│     │ (raw logs)   │                               │ site>/*/SKILL.md │    │
+│     └──────────────┘                               │ + actions.json   │    │
+│                                                     └──────────────────┘    │
 │                                                             │               │
-│  2. CONVERT: Subtask → Skill                                │               │
-│                                                             ▼               │
-│     ┌──────────────────┐  subtask_to_skill_converter.py  ┌──────────────┐  │
-│     │ subtask_configs/ │  ─────────────────────────────► │browser_skills│  │
-│     │ (JSON format)    │                                 │(SKILL.md +   │  │
-│     └──────────────────┘                                 │ actions.json)│  │
-│                                                          └──────────────┘  │
-│                                                             │               │
-│  3. USE: Load Skill → Execute                               │               │
+│  2. USE: Load Skill → Execute                               │               │
 │                                                             ▼               │
 │     ┌─────────────────────────────────────────────────────────────────┐    │
 │     │  skill_agent.py (SkillsAgent)                                   │    │
@@ -50,19 +43,22 @@ The core concept is: **progressively transforming Agent's exploratory execution 
 
 ```
 browser_skills_example/
-├── browser_skills/                    # Skill library (reusable, standard format)
-│   ├── enter-departure-location/
-│   │   ├── SKILL.md                   # Skill metadata and description
-│   │   └── actions.json               # Action sequence
-│   ├── enter-destination-location/
-│   └── ...
-├── subtask_configs/                   # Subtask configs (extracted, JSON format)
+├── browser_skills/                    # Bundled Skill library (by website)
+│   ├── google_flights/
+│   │   ├── initialize-flight-search-page/
+│   │   │   ├── SKILL.md
+│   │   │   └── actions.json
+│   │   └── ...
+├── skills_store/                      # Generated skills (by website; default for WebVoyager)
+│   ├── google_flights/
+│   │   └── 001-.../ (SKILL.md + actions.json)
+│   └── wolfram_alpha/
+│       └── 001-.../ (SKILL.md + actions.json)
 │
 │ ## Core Files
 ├── skill_agent.py                    # Main Agent (SkillsAgent)
 ├── subtask_extractor.py               # Extract subtasks from logs
-├── subtask_manager.py                 # Manage/save subtasks
-├── subtask_to_skill_converter.py      # Convert subtask → skill
+├── skill_store.py                     # Persist extracted skills (SKILL.md + actions.json)
 ├── skill_loader.py                    # Load skills
 ├── action_replayer.py                 # Replay actions (with Recovery Agent)
 │
@@ -87,11 +83,11 @@ The Main Agent is the core of task execution, responsible for:
 ```python
 # Usage example
 agent = SkillsAgent(
-    skills_dir="./subtask_configs",  # Directory containing *_subtasks.json
+    skills_dir="./skills_store",  # Skills root (auto-scoped by website)
     website="Google Flights",
 )
 await agent.initialize()
-result = await agent.run_task("Search for one-way flights from Beijing to Shanghai")
+result = await agent.run("Search for one-way flights from Beijing to Shanghai")
 ```
 
 ### 2. Subtask Extractor (Task Agent)
@@ -357,17 +353,9 @@ In this example, the two consecutive `individual_action` entries in the middle w
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  subtask_manager.py saves subtasks                          │
+│  skill_store.py saves Skills folders                        │
 │  - Assign unique IDs                                        │
-│  - Save to subtask_configs/*.json                           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│  subtask_to_skill_converter.py converts to Skills format    │
-│  - Generate SKILL.md                                        │
-│  - Generate actions.json                                    │
-│  - Save to browser_skills/                                  │
+│  - Write */SKILL.md + actions.json                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -499,10 +487,11 @@ import asyncio
 
 async def main():
     agent = SkillsAgent(
-        skills_dir="./browser_skills",  # Optional, defaults to ./browser_skills
+        skills_dir="./skills_store",  # Skills root (auto-scoped by website)
+        website="Google Flights",
     )
     await agent.initialize()
-    result = await agent.run_task(
+    result = await agent.run(
         "Search for one-way flights from Tokyo to Osaka on Feb 20"
     )
     print(result)
@@ -513,20 +502,12 @@ asyncio.run(main())
 ### 3. Analyze New Tasks and Extract Subtasks
 
 ```bash
-# 1. First ensure task executes successfully and generates logs
-# 2. Run extraction script
-python subtask_extractor.py \
-    --session-log ./session_logs/session_xxx \
-    --output ./subtask_configs/new_subtasks.json
+# 1. Ensure task executes successfully and generates logs
+# 2. Write new skills into a per-website leaf directory
+python subtask_extractor.py ./session_logs/session_xxx ./skills_store
 ```
 
-### 4. Convert Subtasks to Skills Format
-
-```bash
-python subtask_to_skill_converter.py --clean
-```
-
-### 5. Verify Skill Loading
+### 4. Verify Skill Loading
 
 ```bash
 python skill_loader.py

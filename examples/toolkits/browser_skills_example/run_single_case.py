@@ -10,8 +10,10 @@ from pathlib import Path
 from skill_agent import SkillsAgent
 from utils import (
     compute_session_summary,
+    count_skills_in_dir,
     count_subtasks_in_dir,
     resolve_website_skills_dir,
+    resolve_website_skills_leaf_dir,
 )
 
 
@@ -53,7 +55,7 @@ async def _amain() -> int:
     parser.add_argument(
         "--skills-dir",
         default="",
-        help="Directory containing *_subtasks.json (legacy; overrides --skills-root).",
+        help="Skills directory (contains `*/SKILL.md` folders; overrides --skills-root).",
     )
     parser.add_argument(
         "--skills-root",
@@ -110,8 +112,9 @@ async def _amain() -> int:
 
     website = args.web_name.strip()
     if args.skills_dir.strip():
-        skills_dir = Path(args.skills_dir)
-        skills_dir.mkdir(parents=True, exist_ok=True)
+        skills_root = Path(args.skills_dir)
+        skills_root.mkdir(parents=True, exist_ok=True)
+        skills_dir = resolve_website_skills_leaf_dir(skills_root, website)
     elif args.skills_root.strip():
         skills_root = Path(args.skills_root)
         skills_root.mkdir(parents=True, exist_ok=True)
@@ -141,7 +144,11 @@ async def _amain() -> int:
         return 2
 
     try:
-        subtasks_before = count_subtasks_in_dir(skills_dir)
+        subtasks_before = (
+            count_skills_in_dir(skills_dir)
+            if any(skills_dir.glob("*/SKILL.md"))
+            else count_subtasks_in_dir(skills_dir)
+        )
         raw_before, full_before = _get_log_paths(agent)
         await agent.run(args.task)
         if agent.toolkit:
@@ -155,7 +162,11 @@ async def _amain() -> int:
             print("No session_log_dir found after run", file=sys.stderr)
             return 3
 
-        subtasks_after = count_subtasks_in_dir(skills_dir)
+        subtasks_after = (
+            count_skills_in_dir(skills_dir)
+            if any(skills_dir.glob("*/SKILL.md"))
+            else count_subtasks_in_dir(skills_dir)
+        )
         raw_after, full_after = _get_log_paths(agent)
 
         summary = compute_session_summary(

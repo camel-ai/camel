@@ -15,6 +15,7 @@
 import base64
 import datetime
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
@@ -22,7 +23,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from camel.types import ModelPlatformType, ModelType
 
 from .session_utils import (
-    extract_json_object,
     get_url_before_after,
     parse_json_objects_log,
     truncate_middle,
@@ -63,16 +63,15 @@ class WebJudgeVisionConfig:
         default_factory=lambda: {
             "temperature": 0.0,
             "parallel_tool_calls": False,
-            # Enforce valid JSON output for the judge steps when supported by
-            # the backend (OpenAI-compatible APIs).
-            "response_format": {"type": "json_object"},
         }
     )
-    max_frames: int = 8
+    step_timeout: Optional[float] = 360.0
+    tool_execution_timeout: Optional[float] = 360.0
+    max_frames: int = 10_000
     action_history_max_chars: int = 4000
-    evidence_score_threshold: int = 4
+    evidence_score_threshold: int = 3
     evidence_top_k: int = 4
-    max_images_for_outcome: int = 4
+    max_images_for_outcome: int = 50
     include_raw: bool = False
 
     def __post_init__(self) -> None:
@@ -83,6 +82,10 @@ class WebJudgeVisionConfig:
         self.evidence_score_threshold = int(self.evidence_score_threshold)
         self.evidence_top_k = max(1, int(self.evidence_top_k))
         self.max_images_for_outcome = max(1, int(self.max_images_for_outcome))
+        if self.step_timeout is not None:
+            self.step_timeout = float(self.step_timeout)
+        if self.tool_execution_timeout is not None:
+            self.tool_execution_timeout = float(self.tool_execution_timeout)
 
 
 class WebJudgeVisionEvaluator:
@@ -91,6 +94,10 @@ class WebJudgeVisionEvaluator:
     This consumes stable pre-capture screenshots stored under
     `session_dir/evidence/` and indexed from `complete_browser_log.log`
     via `pre_capture_screenshot_path`.
+
+    Note: This evaluator is intentionally aligned with the original
+    Online-Mind2Web WebJudge prompting style (natural language outputs and
+    string-based parsing), rather than strict JSON-only judge steps.
     """
 
     def __init__(self, config: Optional[WebJudgeVisionConfig] = None):
@@ -158,7 +165,9 @@ class WebJudgeVisionEvaluator:
 
             raw: Dict[str, Any] = {}
 
-            key_points, raw_kp = self._identify_key_points(task)
+            key_points, key_points_text, raw_kp = self._identify_key_points(
+                task
+            )
             debug_payload["stages"]["key_points"] = raw_kp
             if self.config.include_raw:
                 raw["key_points"] = raw_kp
@@ -168,7 +177,7 @@ class WebJudgeVisionEvaluator:
                 f.frame_id for f in candidates
             ]
             scores, score_thoughts, raw_scores = self._score_evidence(
-                task, key_points, candidates
+                task, key_points_text, candidates
             )
             debug_payload["stages"]["evidence_scoring"] = raw_scores
             debug_payload["artifacts"]["evidence_scores"] = scores
@@ -195,10 +204,8 @@ class WebJudgeVisionEvaluator:
 
             verdict, raw_verdict = self._judge_outcome(
                 task=task,
-                website=website,
-                agent_response=agent_response,
                 action_history=action_history,
-                key_points=key_points,
+                key_points_text=key_points_text,
                 evidence=selected,
                 evidence_thoughts=selected_thoughts,
             )
@@ -261,12 +268,17 @@ class WebJudgeVisionEvaluator:
                 "suggestions": "Check session_dir evidence and retry.",
                 "debug_path": str(debug_path),
             }
-            debug_payload["error"] = {"type": type(e).__name__, "message": str(e)}
+            debug_payload["error"] = {
+                "type": type(e).__name__,
+                "message": str(e),
+            }
             debug_payload["result"] = result
             self._try_write_debug_json(debug_path, debug_payload)
             return result
 
-    def _try_write_debug_json(self, path: Path, payload: Dict[str, Any]) -> None:
+    def _try_write_debug_json(
+        self, path: Path, payload: Dict[str, Any]
+    ) -> None:
         try:
             path.write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
@@ -275,7 +287,9 @@ class WebJudgeVisionEvaluator:
         except Exception:
             return
 
-    def _make_agent(self, *, role_name: str, system_content: str) -> "ChatAgent":
+    def _make_agent(
+        self, *, role_name: str, system_content: str
+    ) -> "ChatAgent":
         from camel.agents import ChatAgent
         from camel.messages import BaseMessage
 
@@ -283,10 +297,16 @@ class WebJudgeVisionEvaluator:
             role_name=role_name, content=system_content
         )
         return ChatAgent(
-            system_message=system_message, model=self._model, tools=[]
+            system_message=system_message,
+            model=self._model,
+            tools=[],
+            step_timeout=self.config.step_timeout,
+            tool_execution_timeout=self.config.tool_execution_timeout,
         )
 
-    def _user_message(self, content: str, *, images: Optional[List[str]] = None):
+    def _user_message(
+        self, content: str, *, images: Optional[List[str]] = None
+    ):
         from camel.messages import BaseMessage
 
         return BaseMessage.make_user_message(
@@ -295,42 +315,42 @@ class WebJudgeVisionEvaluator:
 
     def _identify_key_points(
         self, task: str
-    ) -> Tuple[List[str], Dict[str, Any]]:
+    ) -> Tuple[List[str], str, Dict[str, Any]]:
         agent = self._make_agent(
             role_name="WebJudge(Vision): Key Point Identifier",
             system_content=(
-                "Extract explicit success criteria from the task.\n"
-                "- Only use requirements stated in the task.\n"
-                "- Do NOT infer unstated constraints.\n"
-                "- Return short, checkable bullet-like points.\n"
-                "Output JSON only."
+                "You are an expert tasked with analyzing a given task to identify the key points explicitly stated in the task description.\n\n"
+                "**Objective**: Carefully analyze the task description and extract the critical elements explicitly mentioned in the task for achieving its goal.\n\n"
+                "**Instructions**:\n"
+                "1. Read the task description carefully.\n"
+                "2. Identify and extract **key points** directly stated in the task description.\n"
+                "   - A **key point** is a critical element, condition, or step explicitly mentioned in the task description.\n"
+                "   - Do not infer or add any unstated elements.\n"
+                '   - Words such as "best," "highest," "cheapest," "latest," "most recent," "lowest," "closest," "highest-rated," "largest," and "newest" must go through the sort function(e.g., the key point should be "Filter by highest").\n\n'
+                "**Respond with**:\n"
+                "- **Key Points**: A numbered list of the explicit key points for completing this task, one per line, without explanations or additional details."
             ),
         )
-        prompt = (
-            f"TASK:\n{task}\n\nReturn JSON:\n{{ \"key_points\": [\"...\"] }}\n"
-        )
+        prompt = f"Task: {task}"
         resp = agent.step(self._user_message(prompt))
-        try:
-            parsed = extract_json_object(resp.msg.content)
-        except Exception as e:
-            raise WebJudgeStageError(
-                stage="key_points",
-                prompt=prompt,
-                response=resp.msg.content,
-                parse_error=str(e),
-            ) from e
-        points = parsed.get("key_points", [])
-        if not isinstance(points, list):
-            points = []
-        key_points = [str(x).strip() for x in points if str(x).strip()]
-        return key_points, {
-            "prompt": prompt,
-            "response": resp.msg.content,
-            "parsed": parsed,
-        }
+        response_text = resp.msg.content or ""
+        key_points_text = self._normalize_key_points_text(response_text)
+        key_points = self._key_points_text_to_list(key_points_text)
+        return (
+            key_points,
+            key_points_text,
+            {
+                "prompt": prompt,
+                "response": response_text,
+                "key_points_text": key_points_text,
+            },
+        )
 
     def _score_evidence(
-        self, task: str, key_points: List[str], frames: List[VisionEvidenceFrame]
+        self,
+        task: str,
+        key_points_text: str,
+        frames: List[VisionEvidenceFrame],
     ) -> Tuple[Dict[str, int], Dict[str, str], Dict[str, Any]]:
         system_msg = (
             "You are an expert evaluator tasked with determining whether an image contains information about the necessary steps to complete a task.\n\n"
@@ -369,66 +389,41 @@ class WebJudgeVisionEvaluator:
             prompt = (
                 "**Task**: "
                 f"{task}\n\n"
-                "**Key Points for Task Completion**:\n"
-                + "\n".join(f"- {p}" for p in key_points)
-                + "\n\n"
-                "FRAME (metadata):\n"
-                + json.dumps(
-                    {
-                        "frame_id": f.frame_id,
-                        "action_step": f.action_step,
-                        "timestamp": f.timestamp,
-                        "action": f.action,
-                        "url_before": f.url_before,
-                        "url_after": f.url_after,
-                        "screenshot_path": f.screenshot_path,
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n\n"
+                "**Key Points for Task Completion**: "
+                f"{key_points_text}\n\n" + "\n\n"
                 "The snapshot of the web page is shown in the image.\n\n"
-                "Return JSON exactly:\n"
-                '{ "frame_id": "f1", "reasoning": "...", "score": 1 }\n'
             )
             resp = agent.step(self._user_message(prompt, images=images))
-            try:
-                parsed = extract_json_object(resp.msg.content)
-            except Exception as e:
-                raise WebJudgeStageError(
-                    stage="evidence_scoring",
-                    prompt=prompt,
-                    response=resp.msg.content,
-                    parse_error=str(e),
-                ) from e
-
-            score = parsed.get("score")
-            reasoning = parsed.get("reasoning")
-            if isinstance(score, int):
+            response_text = resp.msg.content or ""
+            score, reasoning = self._parse_score_reasoning(response_text)
+            if score is not None:
                 scores[f.frame_id] = max(1, min(5, score))
-            if isinstance(reasoning, str) and reasoning.strip():
-                thoughts[f.frame_id] = reasoning.strip().replace("\n", " ")
+            if reasoning:
+                thoughts[f.frame_id] = reasoning.replace("\n", " ").strip()
 
             per_frame.append(
                 {
                     "frame_id": f.frame_id,
                     "prompt": prompt,
-                    "response": resp.msg.content,
-                    "parsed": parsed,
+                    "response": response_text,
+                    "parsed": {"score": score, "reasoning": reasoning},
                 }
             )
 
-        return scores, thoughts, {
-            "per_frame": per_frame,
-        }
+        return (
+            scores,
+            thoughts,
+            {
+                "per_frame": per_frame,
+            },
+        )
 
     def _judge_outcome(
         self,
         *,
         task: str,
-        website: Optional[str],
-        agent_response: str,
         action_history: str,
-        key_points: List[str],
+        key_points_text: str,
         evidence: List[VisionEvidenceFrame],
         evidence_thoughts: List[Dict[str, Any]],
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -460,98 +455,73 @@ class WebJudgeVisionEvaluator:
             ),
         )
 
-        evidence_payload = []
         images: List[str] = []
         for f in evidence:
-            evidence_payload.append(
-                {
-                    "frame_id": f.frame_id,
-                    "action_step": f.action_step,
-                    "timestamp": f.timestamp,
-                    "action": f.action,
-                    "url_before": f.url_before,
-                    "url_after": f.url_after,
-                    "screenshot_path": f.screenshot_path,
-                }
-            )
             resolved = self._resolve_path(f.screenshot_path)
-            if resolved is None:
-                images.append("")
-                continue
-            images.append(self._file_to_data_url(resolved))
+            images.append(self._file_to_data_url(resolved) if resolved else "")
 
-        thoughts_text = "\n".join(
-            f"{i + 1}. frame_id={t.get('frame_id')} score={t.get('score')}: {t.get('reasoning','')}"
-            for i, t in enumerate(evidence_thoughts)
-            if isinstance(t, dict)
+        whole_thoughts: List[str] = []
+        for t in evidence_thoughts:
+            if not isinstance(t, dict):
+                continue
+            thought = str(t.get("reasoning", "")).strip()
+            if thought:
+                whole_thoughts.append(thought)
+
+        action_lines = [
+            ln.strip() for ln in action_history.splitlines() if ln.strip()
+        ]
+        last_actions_text = "\n".join(
+            f"{i + 1}. {action}" for i, action in enumerate(action_lines)
         )
-        prompt = (
-            "User Task: "
-            f"{task}\n\n"
-            "Key Points:\n"
-            + "\n".join(f"- {p}" for p in key_points)
-            + "\n\n"
-            "Action History:\n"
-            f"{action_history}\n\n"
-            "The potentially important snapshots of the webpage in the agent's trajectory and their reasons:\n"
-            f"{thoughts_text}\n\n"
-            "WEBSITE: "
-            f"{website or ''}\n\n"
-            "EVIDENCE (metadata). Attached images correspond to this array order:\n"
-            + json.dumps(evidence_payload, ensure_ascii=False)
-            + "\n\n"
-            "AGENT FINAL RESPONSE (untrusted unless supported by evidence):\n"
-            f"{agent_response}\n\n"
-            "Return JSON exactly:\n"
-            "{\n"
-            '  "success": true or false,\n'
-            '  "reasoning": "...",\n'
-            '  "suggestions": "If failed, concrete next-step suggestions; else empty string.",\n'
-            '  "frame_descriptions": [\n'
-            '    { "frame_id": "f1", "description": "What is visible in this screenshot relevant to the task." }\n'
-            "  ],\n"
-            '  "key_point_checks": [\n'
-            '    {\n'
-            '      "key_point": "One of the KEY POINTS above",\n'
-            '      "status": "met|not_met|uncertain",\n'
-            '      "evidence_frame_ids": ["f1"],\n'
-            '      "reasoning": "Why this key point is met or not met, citing visible evidence."\n'
-            "    }\n"
-            "  ]\n"
-            "}\n"
+
+        if images:
+            prompt = (
+                f"User Task: {task}\n\n"
+                f"Key Points: {key_points_text}\n\n"
+                "Action History:\n"
+                f"{last_actions_text}\n\n"
+                "The potentially important snapshots of the webpage in the agent's trajectory and their reasons:\n"
+                + "\n".join(
+                    f"{i + 1}. {thought}"
+                    for i, thought in enumerate(whole_thoughts)
+                )
+            )
+        else:
+            prompt = (
+                f"User Task: {task}\n\n"
+                f"Key Points: {key_points_text}\n\n"
+                "Action History:\n"
+                f"{last_actions_text}"
+            )
+
+        resp = agent.step(
+            self._user_message(prompt, images=images if images else None)
         )
-        resp = agent.step(self._user_message(prompt, images=images))
-        try:
-            parsed = extract_json_object(resp.msg.content)
-        except Exception as e:
-            raise WebJudgeStageError(
-                stage="outcome",
-                prompt=prompt,
-                response=resp.msg.content,
-                parse_error=str(e),
-            ) from e
-        return parsed, {
+        response_text = resp.msg.content or ""
+        success = self._extract_success_from_status(response_text)
+        verdict = {
+            "success": bool(success),
+            "reasoning": response_text.strip(),
+            "suggestions": "",
+            "key_point_checks": [],
+            "frame_descriptions": [],
+        }
+        return verdict, {
             "prompt": prompt,
-            "response": resp.msg.content,
-            "parsed": parsed,
+            "response": response_text,
+            "parsed": verdict,
         }
 
     def _select_evidence(
         self, frames: List[VisionEvidenceFrame], scores: Dict[str, int]
     ) -> List[VisionEvidenceFrame]:
-        selected = [
+        return [
             f
             for f in frames
-            if scores.get(f.frame_id, 0) >= int(self.config.evidence_score_threshold)
+            if scores.get(f.frame_id, 0)
+            >= int(self.config.evidence_score_threshold)
         ]
-        if selected:
-            return selected
-        scored = sorted(
-            [(f, scores.get(f.frame_id, 0)) for f in frames],
-            key=lambda x: x[1],
-            reverse=True,
-        )
-        return [f for f, _ in scored[: self.config.evidence_top_k]]
 
     def _select_candidate_subset(
         self, frames: List[VisionEvidenceFrame]
@@ -596,7 +566,65 @@ class WebJudgeVisionEvaluator:
             if f.action in important_actions:
                 add(f)
 
-        return sorted(keep, key=lambda x: x.action_step)[: self.config.max_frames]
+        return sorted(keep, key=lambda x: x.action_step)[
+            : self.config.max_frames
+        ]
+
+    def _normalize_key_points_text(self, key_points_response: str) -> str:
+        text = (key_points_response or "").replace("\r\n", "\n").strip()
+        text = text.replace("\n\n", "\n")
+        try:
+            text = text.split("**Key Points**:")[1]
+        except Exception:
+            text = text.split("Key Points:")[-1]
+        text = "\n".join(line.lstrip() for line in text.splitlines())
+        return text.strip()
+
+    def _key_points_text_to_list(self, key_points_text: str) -> List[str]:
+        points: List[str] = []
+        for raw_line in (key_points_text or "").splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            line = re.sub(r"^\s*[\-\*\u2022]\s*", "", line)
+            line = re.sub(r"^\s*\d+\s*[\.\)]\s*", "", line)
+            line = line.strip()
+            if line:
+                points.append(line)
+        return points
+
+    def _parse_score_reasoning(
+        self, response_text: str
+    ) -> Tuple[Optional[int], str]:
+        text = (response_text or "").strip()
+        score: Optional[int] = None
+        try:
+            score_text = re.split(
+                r"Score", text, flags=re.IGNORECASE, maxsplit=1
+            )[1]
+            m = re.search(r"\b([1-5])\b", score_text)
+            if m:
+                score = int(m.group(1))
+        except Exception:
+            score = None
+
+        reasoning = ""
+        if "**Reasoning**:" in text:
+            reasoning = text.split("**Reasoning**:")[-1].strip()
+            reasoning = (
+                reasoning.lstrip("\n").split("\n\n")[0].replace("\n", " ")
+            )
+        elif "Reasoning:" in text:
+            reasoning = text.split("Reasoning:")[-1].strip()
+            reasoning = reasoning.split("\n\n")[0].replace("\n", " ")
+        return score, reasoning.strip()
+
+    def _extract_success_from_status(self, response_text: str) -> bool:
+        text = (response_text or "").strip().lower()
+        if "status:" in text:
+            after = text.split("status:", 1)[1]
+            return "success" in after
+        return "status" in text and "success" in text
 
     def _load_session_artifacts(self, session_dir: Path) -> Dict[str, Any]:
         timeline_path = session_dir / "action_timeline.json"
@@ -667,8 +695,16 @@ class WebJudgeVisionEvaluator:
                 continue
             ts = a.get("timestamp", "")
             url_before, url_after = get_url_before_after(actions, i)
-            inputs = a.get("inputs", {}) if isinstance(a.get("inputs"), dict) else {}
-            args = inputs.get("args", []) if isinstance(inputs.get("args"), list) else []
+            inputs = (
+                a.get("inputs", {})
+                if isinstance(a.get("inputs"), dict)
+                else {}
+            )
+            args = (
+                inputs.get("args", [])
+                if isinstance(inputs.get("args"), list)
+                else []
+            )
             lines.append(
                 f"[{ts}] action: {action} args={args} url={url_after or url_before or ''}"
             )
@@ -690,7 +726,9 @@ class WebJudgeVisionEvaluator:
             screenshot_path = action.get("pre_capture_screenshot_path")
             if not isinstance(screenshot_path, str) or not screenshot_path:
                 continue
-            resolved = self._resolve_path_in_session(session_dir, screenshot_path)
+            resolved = self._resolve_path_in_session(
+                session_dir, screenshot_path
+            )
             if resolved is None or not resolved.exists():
                 continue
 
@@ -709,11 +747,16 @@ class WebJudgeVisionEvaluator:
             # Next-step pre-capture alignment:
             # pre_capture at action[idx] represents the post-state of action[idx-1]
             target_idx = max(0, idx - 1)
-            while target_idx > 0 and actions[target_idx].get("action") in excluded_for_alignment:
+            while (
+                target_idx > 0
+                and actions[target_idx].get("action") in excluded_for_alignment
+            ):
                 target_idx -= 1
 
             url_before, url_after = get_url_before_after(actions, target_idx)
-            ts = action.get("pre_capture_captured_at") or action.get("timestamp", "")
+            ts = action.get("pre_capture_captured_at") or action.get(
+                "timestamp", ""
+            )
 
             frames.append(
                 VisionEvidenceFrame(

@@ -57,6 +57,25 @@ def parse_skill_md(skill_md_path: Path) -> Dict[str, Any]:
     return frontmatter
 
 
+def extract_skill_title(skill_md_path: Path) -> str:
+    """Best-effort parse of the first markdown H1 after YAML frontmatter."""
+    try:
+        content = skill_md_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            content = parts[2]
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            return stripped[2:].strip()
+    return ""
+
+
 def load_actions_json(actions_json_path: Path) -> List[Dict[str, Any]]:
     """Load actions from actions.json file.
 
@@ -94,6 +113,7 @@ def convert_skill_to_subtask(
 
     # Parse SKILL.md
     frontmatter = parse_skill_md(skill_md_path)
+    title = extract_skill_title(skill_md_path)
 
     # Load actions
     actions = load_actions_json(actions_json_path)
@@ -113,7 +133,7 @@ def convert_skill_to_subtask(
     # Build subtask definition
     subtask = {
         'id': frontmatter.get('id'),
-        'name': frontmatter.get('name', skill_dir.name),
+        'name': title or frontmatter.get('name', skill_dir.name),
         'description': frontmatter.get('description', ''),
         'start_index': frontmatter.get('start_index'),
         'end_index': frontmatter.get('end_index'),
