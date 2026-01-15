@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E501, E402
+# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -42,7 +42,7 @@ project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(script_dir))
 
-from utils import create_gpt4_model, extract_token_usage, get_timestamp_iso
+from utils import create_default_model, extract_token_usage, get_timestamp_iso
 
 from camel.agents import ChatAgent
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
@@ -55,7 +55,7 @@ class ActionReplayer:
 
     def __init__(
         self,
-        log_file: str,
+        log_file: str | None,
         cdp_port: int = 9223,
         subtask_config: Optional[str] = None,
         subtask_id: Optional[str] = None,
@@ -72,7 +72,9 @@ class ActionReplayer:
             variables (dict, optional): Variable overrides for subtask replay
             use_agent_recovery (bool): Use ChatAgent for error recovery
         """
-        self.log_file = Path(log_file)
+        self.log_file = (
+            Path(log_file).expanduser().resolve() if log_file else None
+        )
         self.cdp_port = cdp_port
         self.toolkit: Optional[HybridBrowserToolkit] = None
         self.actions: List[Dict[str, Any]] = []
@@ -250,6 +252,11 @@ class ActionReplayer:
         Returns:
             List of action dictionaries
         """
+        if self.log_file is None:
+            raise ValueError(
+                "log_file is required when replaying from raw logs. "
+                "Provide subtask_config with embedded actions instead."
+            )
         actions = []
         print(f"Loading log file: {self.log_file}")
 
@@ -618,20 +625,13 @@ class ActionReplayer:
         if not self.use_agent_recovery or self.recovery_agent is not None:
             return
 
-        print("\n" + "=" * 80)
-        print("INITIALIZING RECOVERY AGENT")
-        print("=" * 80)
-
         # Create model
-        model = create_gpt4_model()
+        model = create_default_model()
 
         # Create agent with toolkit
         self.recovery_agent = ChatAgent(
             model=model, tools=self.toolkit.get_tools() if self.toolkit else []
         )
-
-        print("✓ Recovery agent initialized")
-        print()
 
     async def agent_recovery(
         self,
@@ -669,7 +669,7 @@ Description: {subtask['description']}
         # Build action history
         history_text = "\n".join(
             [
-                f"{i+1}. {act['action']} on element '{act['label']}'"
+                f"{i + 1}. {act['action']} on element '{act['label']}'"
                 for i, act in enumerate(
                     self.action_history[-5:]
                 )  # Last 5 actions
@@ -801,7 +801,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
         inputs = action.get('inputs', {})
         args = inputs.get('args', [])
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Replaying action: {action_name}")
         print(f"Original args: {args}")
 
@@ -1423,7 +1423,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
     async def replay_subtask(self) -> Dict[str, Any]:
         """Replay a single subtask and return detailed results.
 
-        This method is designed to be called from SubtaskAgent.
+        This method is designed to be called from SkillsAgent.
         It assumes toolkit is already initialized.
 
         Returns:
@@ -1704,19 +1704,19 @@ async def main():
         epilog="""
 Examples:
   # Replay entire log
-  python replay_from_log.py my_log.log
+  python action_replayer.py my_log.log
 
   # Replay specific subtask
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location
 
   # Replay subtask with variable overrides
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location --var departure_city="London"
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location --var departure_city="London"
 
   # Multiple variables
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 04_set_travel_dates --var departure_date="2026-01-15" --var return_date="2026-01-20"
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 04_set_travel_dates --var departure_date="2026-01-15" --var return_date="2026-01-20"
 
   # List available subtasks
-  python replay_from_log.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
+  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
         """,
     )
     parser.add_argument('log_file', help='Path to the log file to replay')
