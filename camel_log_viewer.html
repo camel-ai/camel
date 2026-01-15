@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Log Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* File Upload Section */
+        .upload-section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #475569;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #60a5fa;
+            background: #1e3a5f;
+        }
+
+        .upload-section.dragover {
+            border-color: #a78bfa;
+            background: #2e1065;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #334155;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .stat-card.total .stat-value { color: #60a5fa; }
+        .stat-card.input .stat-value { color: #34d399; }
+        .stat-card.output .stat-value { color: #fbbf24; }
+        .stat-card.cost .stat-value { color: #f472b6; }
+
+        /* Model Stats Table */
+        .section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #334155;
+        }
+
+        .model-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .model-deepseek { background: #065f46; color: #6ee7b7; }
+        .model-gpt { background: #1e40af; color: #93c5fd; }
+        .model-gemini { background: #7c2d12; color: #fdba74; }
+        .model-default { background: #374151; color: #d1d5db; }
+
+        .cost-cell {
+            font-weight: 600;
+            color: #f472b6;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        select, input[type="text"] {
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            min-width: 150px;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        /* Log List */
+        .log-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .log-item:hover {
+            border-color: #60a5fa;
+            background: #1e3a5f;
+        }
+
+        .log-item.selected {
+            border-color: #a78bfa;
+            background: #2e1065;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .log-time {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .log-tokens {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+        }
+
+        .token-info {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .token-info.input { color: #34d399; }
+        .token-info.output { color: #fbbf24; }
+
+        /* Detail Panel */
+        .detail-panel {
+            position: fixed;
+            top: 0;
+            right: -600px;
+            width: 600px;
+            height: 100vh;
+            background: #1e293b;
+            border-left: 1px solid #334155;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .detail-panel.open {
+            right: 0;
+        }
+
+        .detail-header {
+            position: sticky;
+            top: 0;
+            background: #1e293b;
+            padding: 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .close-btn:hover {
+            color: #e2e8f0;
+        }
+
+        .detail-content {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+        }
+
+        .detail-section-title {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .message-box {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .usage-item {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .usage-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+
+        .usage-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Charts */
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: #94a3b8;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bar-label {
+            width: 150px;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 24px;
+            background: #0f172a;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .bar-value {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .bar-fill.deepseek { background: linear-gradient(90deg, #065f46, #10b981); }
+        .bar-fill.gpt { background: linear-gradient(90deg, #1e40af, #3b82f6); }
+        .bar-fill.gemini { background: linear-gradient(90deg, #7c2d12, #f97316); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-btn {
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #334155;
+            border-color: #60a5fa;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: #94a3b8;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #334155;
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Agent Trace Styles */
+        .agent-card {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .agent-card:hover {
+            border-color: #60a5fa;
+        }
+
+        .agent-card.expanded {
+            border-color: #a78bfa;
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .agent-id {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #60a5fa;
+        }
+
+        .agent-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .agent-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .agent-stat.success { color: #34d399; }
+        .agent-stat.error { color: #f87171; }
+        .agent-stat.calls { color: #fbbf24; }
+
+        .trace-timeline {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #334155;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .trace-item {
+            display: flex;
+            gap: 15px;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #1e293b;
+            border-radius: 8px;
+            border-left: 3px solid #475569;
+        }
+
+        .trace-item.success {
+            border-left-color: #34d399;
+        }
+
+        .trace-item.error {
+            border-left-color: #f87171;
+        }
+
+        .trace-time {
+            color: #64748b;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .trace-content {
+            flex: 1;
+        }
+
+        .trace-tool {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .trace-args {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .trace-result {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 8px;
+            background: #0f172a;
+            border-radius: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .trace-result.error {
+            color: #f87171;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: #065f46;
+            color: #6ee7b7;
+        }
+
+        .status-badge.error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        /* Tool Stats */
+        .tool-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tool-stat-card {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .tool-stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .tool-stat-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 API Log Viewer</h1>
+            <p class="subtitle">Analyze your API call logs with ease</p>
+        </header>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <p class="upload-text">Drag and drop your JSON log files here, or click to browse</p>
+            <input type="file" id="fileInput" multiple accept=".json" webkitdirectory>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Select Log Folder
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing log files...</p>
+        </div>
+
+        <!-- Stats Section (hidden until files loaded) -->
+        <div id="statsSection" style="display: none;">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="overview">📈 Overview</button>
+                <button class="tab-btn" data-tab="logs">📜 Logs</button>
+                <button class="tab-btn" data-tab="traces">🔍 Agent Traces</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="tab-overview">
+                <!-- Summary Stats -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card total">
+                        <div class="stat-value" id="totalCalls">0</div>
+                        <div class="stat-label">Total API Calls</div>
+                    </div>
+                    <div class="stat-card input">
+                        <div class="stat-value" id="totalInputTokens">0</div>
+                        <div class="stat-label">Input Tokens</div>
+                    </div>
+                    <div class="stat-card output">
+                        <div class="stat-value" id="totalOutputTokens">0</div>
+                        <div class="stat-label">Output Tokens</div>
+                    </div>
+                    <div class="stat-card cost">
+                        <div class="stat-value" id="totalCost">$0.00</div>
+                        <div class="stat-label">Total Cost</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-container">
+                    <div class="chart-box">
+                        <div class="chart-title">📈 Calls by Model</div>
+                        <div class="bar-chart" id="callsChart"></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title">💰 Cost by Model</div>
+                        <div class="bar-chart" id="costChart"></div>
+                    </div>
+                </div>
+
+                <!-- Model Stats Table -->
+                <div class="section">
+                    <h2 class="section-title">📋 Model Statistics</h2>
+                    <table id="modelTable">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Calls</th>
+                                <th>Input Tokens</th>
+                                <th>Output Tokens</th>
+                                <th>Total Tokens</th>
+                                <th>Input Cost</th>
+                                <th>Output Cost</th>
+                                <th>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modelTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-content" id="tab-logs">
+                <div class="section">
+                    <h2 class="section-title">📜 Log Entries</h2>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Model</label>
+                            <select id="filterModel">
+                                <option value="">All Models</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Agent ID</label>
+                            <select id="filterAgentId">
+                                <option value="">All Agents</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Search</label>
+                            <input type="text" id="filterSearch" placeholder="Search in messages...">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Sort By</label>
+                            <select id="sortBy">
+                                <option value="time_desc">Time (Newest)</option>
+                                <option value="time_asc">Time (Oldest)</option>
+                                <option value="tokens_desc">Tokens (Most)</option>
+                                <option value="tokens_asc">Tokens (Least)</option>
+                                <option value="cost_desc">Cost (Highest)</option>
+                                <option value="cost_asc">Cost (Lowest)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="log-list" id="logList"></div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+
+            <!-- Agent Traces Tab -->
+            <div class="tab-content" id="tab-traces">
+                <div class="section">
+                    <h2 class="section-title">🔍 Agent Traces</h2>
+
+                    <!-- Tool Stats Summary -->
+                    <div class="tool-stats-grid" id="toolStatsGrid">
+                        <div class="tool-stat-card">
+                            <div class="tool-stat-value" id="totalAgents" style="color: #60a5fa;">0</div>
+                            <div class="tool-stat-label">Agents</div>
+                        </div>
+                        <div class="tool-stat-card">
+                            <div class="tool-stat-value" id="totalToolCalls" style="color: #fbbf24;">0</div>
+                            <div class="tool-stat-label">Tool Calls</div>
+                        </div>
+                        <div class="tool-stat-card">
+                            <div class="tool-stat-value" id="successfulCalls" style="color: #34d399;">0</div>
+                            <div class="tool-stat-label">Successful</div>
+                        </div>
+                        <div class="tool-stat-card">
+                            <div class="tool-stat-value" id="failedCalls" style="color: #f87171;">0</div>
+                            <div class="tool-stat-label">Failed</div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Filter -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Agent</label>
+                            <select id="traceAgentFilter">
+                                <option value="">All Agents</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Tool</label>
+                            <select id="traceToolFilter">
+                                <option value="">All Tools</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Status</label>
+                            <select id="traceStatusFilter">
+                                <option value="">All</option>
+                                <option value="success">Success</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Sort By</label>
+                            <select id="traceSortBy">
+                                <option value="calls_desc">Tool Calls (Most)</option>
+                                <option value="calls_asc">Tool Calls (Least)</option>
+                                <option value="success_desc">Success Rate (High)</option>
+                                <option value="success_asc">Success Rate (Low)</option>
+                                <option value="errors_desc">Errors (Most)</option>
+                                <option value="errors_asc">Errors (Least)</option>
+                                <option value="time_desc">Time (Newest)</option>
+                                <option value="time_asc">Time (Oldest)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="agentTraceList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="overlay" id="overlay"></div>
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <h3>Log Details</h3>
+            <button class="close-btn" id="closePanel">×</button>
+        </div>
+        <div class="detail-content" id="detailContent"></div>
+    </div>
+
+    <script>
+        // Pricing configuration
+        const TOKEN_PRICING = {
+            "gemini_3_pro": { input: 4.0, output: 18.0 },
+            "gpt_5_2": { input: 1.75, output: 14.0 },
+            "deepseek_chat": { input: 0.28, output: 0.42 },
+            "doubao_seed": { input: 1.0, output: 2.0 },
+        };
+
+        // State
+        let allLogs = [];
+        let filteredLogs = [];
+        let agentTraces = {};
+        let currentPage = 1;
+        const logsPerPage = 50;
+
+        // Get pricing key from model name
+        function getPricingKey(modelName) {
+            const lower = modelName.toLowerCase();
+            if (lower.includes('deepseek')) return 'deepseek_chat';
+            if (lower.includes('gpt-5') || lower.includes('gpt5')) return 'gpt_5_2';
+            if (lower.includes('gemini')) return 'gemini_3_pro';
+            if (lower.includes('doubao')) return 'doubao_seed';
+            return null;
+        }
+
+        // Calculate cost for a log entry
+        function calculateCost(log) {
+            const pricingKey = getPricingKey(log.model);
+            if (!pricingKey || !TOKEN_PRICING[pricingKey]) return { input: 0, output: 0, total: 0 };
+
+            const pricing = TOKEN_PRICING[pricingKey];
+            const usage = log.response?.usage || {};
+            const inputCost = (usage.prompt_tokens || 0) / 1000000 * pricing.input;
+            const outputCost = (usage.completion_tokens || 0) / 1000000 * pricing.output;
+
+            return { input: inputCost, output: outputCost, total: inputCost + outputCost };
+        }
+
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        // Format currency
+        function formatCurrency(num) {
+            return '$' + num.toFixed(4);
+        }
+
+        // Get model badge class
+        function getModelBadgeClass(model) {
+            const lower = model.toLowerCase();
+            if (lower.includes('deepseek')) return 'model-deepseek';
+            if (lower.includes('gpt')) return 'model-gpt';
+            if (lower.includes('gemini')) return 'model-gemini';
+            return 'model-default';
+        }
+
+        // Get bar class
+        function getBarClass(model) {
+            const lower = model.toLowerCase();
+            if (lower.includes('deepseek')) return 'deepseek';
+            if (lower.includes('gpt')) return 'gpt';
+            if (lower.includes('gemini')) return 'gemini';
+            return 'deepseek';
+        }
+
+        // Parse log files
+        async function parseLogFiles(files) {
+            const logs = [];
+
+            for (const file of files) {
+                if (!file.name.endsWith('.json')) continue;
+
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    data._filename = file.name;
+                    logs.push(data);
+                } catch (e) {
+                    console.error(`Error parsing ${file.name}:`, e);
+                }
+            }
+
+            return logs;
+        }
+
+        // Build agent traces from logs
+        function buildAgentTraces(logs) {
+            const traces = {};
+            // Use a Set to track tool call IDs we've already added (avoid duplicates)
+            const seenToolCallIds = new Set();
+
+            // First pass: collect all tool calls from responses only
+            for (const log of logs) {
+                const agentId = log.agent_id || 'unknown';
+                if (!traces[agentId]) {
+                    traces[agentId] = {
+                        model: log.model,
+                        calls: [],
+                        toolCalls: [],
+                        successCount: 0,
+                        errorCount: 0
+                    };
+                }
+
+                traces[agentId].calls.push(log);
+
+                // Extract tool calls from response ONLY (not from request messages)
+                const toolCalls = log.response?.choices?.[0]?.message?.tool_calls || [];
+                for (const tc of toolCalls) {
+                    const tcId = tc.id;
+                    // Skip if we've already seen this tool call ID
+                    if (seenToolCallIds.has(tcId)) continue;
+                    seenToolCallIds.add(tcId);
+
+                    traces[agentId].toolCalls.push({
+                        timestamp: log.request_timestamp,
+                        tool: tc.function?.name || 'unknown',
+                        args: tc.function?.arguments || '{}',
+                        id: tcId,
+                        status: 'pending'
+                    });
+                }
+            }
+
+            // Second pass: match tool results from request messages
+            // Tool results appear in SUBSEQUENT logs' request.messages
+            for (const log of logs) {
+                const messages = log.request?.messages || [];
+                for (const msg of messages) {
+                    if (msg.role === 'tool') {
+                        const content = msg.content || '';
+                        const toolCallId = msg.tool_call_id;
+
+                        // Determine if error
+                        const isError = content.toLowerCase().includes('error') ||
+                                       content.toLowerCase().includes('timeout') ||
+                                       content.toLowerCase().includes('failed') ||
+                                       content.toLowerCase().includes('exception');
+
+                        // Find matching tool call and update status
+                        for (const agent of Object.values(traces)) {
+                            for (const tc of agent.toolCalls) {
+                                if (tc.id === toolCallId && tc.status === 'pending') {
+                                    tc.status = isError ? 'error' : 'success';
+                                    tc.result = content.substring(0, 500);
+                                    if (isError) {
+                                        agent.errorCount++;
+                                    } else {
+                                        agent.successCount++;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return traces;
+        }
+
+        // Calculate statistics
+        function calculateStats(logs) {
+            const modelStats = {};
+            const agentIds = new Set();
+            let totalCalls = 0;
+            let totalInputTokens = 0;
+            let totalOutputTokens = 0;
+            let totalCost = 0;
+
+            for (const log of logs) {
+                const model = log.model || 'unknown';
+                const usage = log.response?.usage || {};
+                const cost = calculateCost(log);
+
+                // Collect agent IDs
+                if (log.agent_id) {
+                    agentIds.add(log.agent_id);
+                }
+
+                if (!modelStats[model]) {
+                    modelStats[model] = {
+                        calls: 0,
+                        inputTokens: 0,
+                        outputTokens: 0,
+                        totalTokens: 0,
+                        inputCost: 0,
+                        outputCost: 0,
+                        totalCost: 0
+                    };
+                }
+
+                modelStats[model].calls++;
+                modelStats[model].inputTokens += usage.prompt_tokens || 0;
+                modelStats[model].outputTokens += usage.completion_tokens || 0;
+                modelStats[model].totalTokens += usage.total_tokens || 0;
+                modelStats[model].inputCost += cost.input;
+                modelStats[model].outputCost += cost.output;
+                modelStats[model].totalCost += cost.total;
+
+                totalCalls++;
+                totalInputTokens += usage.prompt_tokens || 0;
+                totalOutputTokens += usage.completion_tokens || 0;
+                totalCost += cost.total;
+            }
+
+            return { modelStats, agentIds: Array.from(agentIds), totalCalls, totalInputTokens, totalOutputTokens, totalCost };
+        }
+
+        // Render statistics
+        function renderStats(stats) {
+            document.getElementById('totalCalls').textContent = formatNumber(stats.totalCalls);
+            document.getElementById('totalInputTokens').textContent = formatNumber(stats.totalInputTokens);
+            document.getElementById('totalOutputTokens').textContent = formatNumber(stats.totalOutputTokens);
+            document.getElementById('totalCost').textContent = formatCurrency(stats.totalCost);
+
+            // Model table
+            const tbody = document.getElementById('modelTableBody');
+            tbody.innerHTML = '';
+
+            const sortedModels = Object.entries(stats.modelStats)
+                .sort((a, b) => b[1].totalCost - a[1].totalCost);
+
+            for (const [model, data] of sortedModels) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="model-badge ${getModelBadgeClass(model)}">${escapeHtml(model)}</span></td>
+                    <td>${formatNumber(data.calls)}</td>
+                    <td>${formatNumber(data.inputTokens)}</td>
+                    <td>${formatNumber(data.outputTokens)}</td>
+                    <td>${formatNumber(data.totalTokens)}</td>
+                    <td class="cost-cell">${formatCurrency(data.inputCost)}</td>
+                    <td class="cost-cell">${formatCurrency(data.outputCost)}</td>
+                    <td class="cost-cell">${formatCurrency(data.totalCost)}</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            // Charts
+            renderCharts(stats);
+
+            // Populate model filter
+            const filterModel = document.getElementById('filterModel');
+            filterModel.innerHTML = '<option value="">All Models</option>';
+            for (const model of Object.keys(stats.modelStats)) {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                filterModel.appendChild(option);
+            }
+
+            // Populate agent ID filter
+            const filterAgentId = document.getElementById('filterAgentId');
+            filterAgentId.innerHTML = '<option value="">All Agents</option>';
+            for (const agentId of stats.agentIds.sort()) {
+                const option = document.createElement('option');
+                option.value = agentId;
+                option.textContent = agentId.length > 12 ? agentId.substring(0, 8) + '...' : agentId;
+                option.title = agentId;
+                filterAgentId.appendChild(option);
+            }
+        }
+
+        // Render charts
+        function renderCharts(stats) {
+            const callsChart = document.getElementById('callsChart');
+            const costChart = document.getElementById('costChart');
+
+            const sortedByCalls = Object.entries(stats.modelStats)
+                .sort((a, b) => b[1].calls - a[1].calls);
+            const sortedByCost = Object.entries(stats.modelStats)
+                .sort((a, b) => b[1].totalCost - a[1].totalCost);
+
+            const maxCalls = Math.max(...sortedByCalls.map(([, d]) => d.calls));
+            const maxCost = Math.max(...sortedByCost.map(([, d]) => d.totalCost));
+
+            callsChart.innerHTML = sortedByCalls.map(([model, data]) => `
+                <div class="bar-item">
+                    <div class="bar-label">${escapeHtml(model)}</div>
+                    <div class="bar-track">
+                        <div class="bar-fill ${getBarClass(model)}" style="width: ${(data.calls / maxCalls * 100)}%"></div>
+                        <span class="bar-value">${formatNumber(data.calls)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            costChart.innerHTML = sortedByCost.map(([model, data]) => `
+                <div class="bar-item">
+                    <div class="bar-label">${escapeHtml(model)}</div>
+                    <div class="bar-track">
+                        <div class="bar-fill ${getBarClass(model)}" style="width: ${(data.totalCost / maxCost * 100)}%"></div>
+                        <span class="bar-value">${formatCurrency(data.totalCost)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render agent traces
+        function renderAgentTraces() {
+            const agentFilter = document.getElementById('traceAgentFilter').value;
+            const toolFilter = document.getElementById('traceToolFilter').value;
+            const statusFilter = document.getElementById('traceStatusFilter').value;
+
+            // Calculate totals
+            let totalAgents = 0;
+            let totalToolCalls = 0;
+            let successfulCalls = 0;
+            let failedCalls = 0;
+            const allTools = new Set();
+
+            for (const [agentId, trace] of Object.entries(agentTraces)) {
+                if (agentFilter && agentId !== agentFilter) continue;
+                totalAgents++;
+
+                for (const tc of trace.toolCalls) {
+                    allTools.add(tc.tool);
+                    if (toolFilter && tc.tool !== toolFilter) continue;
+                    if (statusFilter && tc.status !== statusFilter) continue;
+
+                    totalToolCalls++;
+                    if (tc.status === 'success') successfulCalls++;
+                    if (tc.status === 'error') failedCalls++;
+                }
+            }
+
+            // Update stats
+            document.getElementById('totalAgents').textContent = Object.keys(agentTraces).length;
+            document.getElementById('totalToolCalls').textContent = formatNumber(totalToolCalls);
+            document.getElementById('successfulCalls').textContent = formatNumber(successfulCalls);
+            document.getElementById('failedCalls').textContent = formatNumber(failedCalls);
+
+            // Populate tool filter
+            const traceToolFilter = document.getElementById('traceToolFilter');
+            const currentToolValue = traceToolFilter.value;
+            traceToolFilter.innerHTML = '<option value="">All Tools</option>';
+            for (const tool of Array.from(allTools).sort()) {
+                const option = document.createElement('option');
+                option.value = tool;
+                option.textContent = tool;
+                traceToolFilter.appendChild(option);
+            }
+            traceToolFilter.value = currentToolValue;
+
+            // Populate agent filter for traces
+            const traceAgentFilter = document.getElementById('traceAgentFilter');
+            const currentAgentValue = traceAgentFilter.value;
+            traceAgentFilter.innerHTML = '<option value="">All Agents</option>';
+            for (const agentId of Object.keys(agentTraces).sort()) {
+                const option = document.createElement('option');
+                option.value = agentId;
+                option.textContent = agentId.length > 20 ? agentId.substring(0, 16) + '...' : agentId;
+                option.title = agentId;
+                traceAgentFilter.appendChild(option);
+            }
+            traceAgentFilter.value = currentAgentValue;
+
+            // Render agent cards
+            const container = document.getElementById('agentTraceList');
+            const sortBy = document.getElementById('traceSortBy').value;
+            let html = '';
+
+            // Prepare agent data for sorting
+            const agentData = Object.entries(agentTraces)
+                .filter(([agentId]) => !agentFilter || agentId === agentFilter)
+                .map(([agentId, trace]) => {
+                    const filteredToolCalls = trace.toolCalls.filter(tc => {
+                        if (toolFilter && tc.tool !== toolFilter) return false;
+                        if (statusFilter && tc.status !== statusFilter) return false;
+                        return true;
+                    });
+                    const successCount = filteredToolCalls.filter(tc => tc.status === 'success').length;
+                    const errorCount = filteredToolCalls.filter(tc => tc.status === 'error').length;
+                    const successRate = filteredToolCalls.length > 0
+                        ? (successCount / filteredToolCalls.length) * 100
+                        : 0;
+                    // Get timestamps from original log calls for proper sorting
+                    const timestamps = trace.calls.map(c => c.request_timestamp).filter(Boolean).sort();
+                    const firstTimestamp = timestamps[0] || '';
+                    const lastTimestamp = timestamps[timestamps.length - 1] || '';
+                    return { agentId, trace, filteredToolCalls, successCount, errorCount, successRate, firstTimestamp, lastTimestamp };
+                })
+                .filter(item => item.filteredToolCalls.length > 0 || (!toolFilter && !statusFilter));
+
+            // Sort agent data
+            agentData.sort((a, b) => {
+                switch (sortBy) {
+                    case 'calls_desc':
+                        return b.filteredToolCalls.length - a.filteredToolCalls.length;
+                    case 'calls_asc':
+                        return a.filteredToolCalls.length - b.filteredToolCalls.length;
+                    case 'success_desc':
+                        return b.successRate - a.successRate;
+                    case 'success_asc':
+                        return a.successRate - b.successRate;
+                    case 'errors_desc':
+                        return b.errorCount - a.errorCount;
+                    case 'errors_asc':
+                        return a.errorCount - b.errorCount;
+                    case 'time_desc':
+                        // Sort by last activity (newest first)
+                        if (!a.lastTimestamp && !b.lastTimestamp) return 0;
+                        if (!a.lastTimestamp) return 1;
+                        if (!b.lastTimestamp) return -1;
+                        return b.lastTimestamp.localeCompare(a.lastTimestamp);
+                    case 'time_asc':
+                        // Sort by first activity (oldest first)
+                        if (!a.firstTimestamp && !b.firstTimestamp) return 0;
+                        if (!a.firstTimestamp) return 1;
+                        if (!b.firstTimestamp) return -1;
+                        return a.firstTimestamp.localeCompare(b.firstTimestamp);
+                    default:
+                        return b.filteredToolCalls.length - a.filteredToolCalls.length;
+                }
+            });
+
+            for (const { agentId, trace, filteredToolCalls, successCount, errorCount, successRate } of agentData) {
+                const successRateDisplay = successRate.toFixed(1);
+
+                // Sort tool calls based on sortBy
+                const sortedToolCalls = [...filteredToolCalls].sort((a, b) => {
+                    switch (sortBy) {
+                        case 'time_desc':
+                            return (b.timestamp || '').localeCompare(a.timestamp || '');
+                        case 'time_asc':
+                            return (a.timestamp || '').localeCompare(b.timestamp || '');
+                        case 'success_desc':
+                        case 'success_asc':
+                            // Sort success first or error first
+                            if (a.status === b.status) return (a.timestamp || '').localeCompare(b.timestamp || '');
+                            if (sortBy === 'success_desc') {
+                                return a.status === 'success' ? -1 : 1;
+                            } else {
+                                return a.status === 'error' ? -1 : 1;
+                            }
+                        case 'errors_desc':
+                            // Errors first
+                            if (a.status === b.status) return (a.timestamp || '').localeCompare(b.timestamp || '');
+                            return a.status === 'error' ? -1 : 1;
+                        case 'errors_asc':
+                            // Success first
+                            if (a.status === b.status) return (a.timestamp || '').localeCompare(b.timestamp || '');
+                            return a.status === 'success' ? -1 : 1;
+                        default:
+                            // Default: sort by time ascending (chronological order)
+                            return (a.timestamp || '').localeCompare(b.timestamp || '');
+                    }
+                });
+
+                html += `
+                    <div class="agent-card" data-agent="${escapeHtml(agentId)}">
+                        <div class="agent-header">
+                            <div>
+                                <span class="model-badge ${getModelBadgeClass(trace.model)}">${escapeHtml(trace.model || '')}</span>
+                                <span class="agent-id">${escapeHtml(agentId)}</span>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="agent-stat calls">🔧 ${filteredToolCalls.length} calls</span>
+                                <span class="agent-stat success">✅ ${successCount}</span>
+                                <span class="agent-stat error">❌ ${errorCount}</span>
+                                <span style="color: ${successRate >= 80 ? '#34d399' : successRate >= 50 ? '#fbbf24' : '#f87171'}">
+                                    ${successRateDisplay}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="trace-timeline" style="display: none;">
+                            ${sortedToolCalls.map(tc => {
+                                const safeStatus = (tc.status || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                                return `
+                                <div class="trace-item ${safeStatus}">
+                                    <div class="trace-time">${tc.timestamp ? escapeHtml(new Date(tc.timestamp).toLocaleTimeString()) : ''}</div>
+                                    <div class="trace-content">
+                                        <div class="trace-tool">
+                                            ${escapeHtml(tc.tool || '')}
+                                            <span class="status-badge ${safeStatus}">${escapeHtml((tc.status || '').toUpperCase())}</span>
+                                        </div>
+                                        <div class="trace-args">${escapeHtml(tc.args.substring(0, 200))}${tc.args.length > 200 ? '...' : ''}</div>
+                                        ${tc.result ? `<div class="trace-result ${safeStatus === 'error' ? 'error' : ''}">${escapeHtml(tc.result)}</div>` : ''}
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No agent traces found</p></div>';
+
+            // Add click handlers
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const timeline = card.querySelector('.trace-timeline');
+                    const isExpanded = timeline.style.display !== 'none';
+                    timeline.style.display = isExpanded ? 'none' : 'block';
+                    card.classList.toggle('expanded', !isExpanded);
+                });
+            });
+        }
+
+        // Filter and sort logs
+        function filterAndSortLogs() {
+            const modelFilter = document.getElementById('filterModel').value;
+            const agentIdFilter = document.getElementById('filterAgentId').value;
+            const searchFilter = document.getElementById('filterSearch').value.toLowerCase();
+            const sortBy = document.getElementById('sortBy').value;
+
+            filteredLogs = allLogs.filter(log => {
+                if (modelFilter && log.model !== modelFilter) return false;
+                if (agentIdFilter && log.agent_id !== agentIdFilter) return false;
+                if (searchFilter) {
+                    const messages = log.request?.messages || [];
+                    const content = messages.map(m => m.content || '').join(' ').toLowerCase();
+                    const responseContent = log.response?.choices?.[0]?.message?.content || '';
+                    if (!content.includes(searchFilter) && !responseContent.toLowerCase().includes(searchFilter)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            // Sort
+            filteredLogs.sort((a, b) => {
+                const usageA = a.response?.usage || {};
+                const usageB = b.response?.usage || {};
+                const costA = calculateCost(a).total;
+                const costB = calculateCost(b).total;
+
+                switch (sortBy) {
+                    case 'time_desc':
+                        return new Date(b.request_timestamp) - new Date(a.request_timestamp);
+                    case 'time_asc':
+                        return new Date(a.request_timestamp) - new Date(b.request_timestamp);
+                    case 'tokens_desc':
+                        return (usageB.total_tokens || 0) - (usageA.total_tokens || 0);
+                    case 'tokens_asc':
+                        return (usageA.total_tokens || 0) - (usageB.total_tokens || 0);
+                    case 'cost_desc':
+                        return costB - costA;
+                    case 'cost_asc':
+                        return costA - costB;
+                    default:
+                        return 0;
+                }
+            });
+
+            currentPage = 1;
+            renderLogList();
+        }
+
+        // Render log list
+        function renderLogList() {
+            const logList = document.getElementById('logList');
+            const startIdx = (currentPage - 1) * logsPerPage;
+            const endIdx = startIdx + logsPerPage;
+            const pageLogs = filteredLogs.slice(startIdx, endIdx);
+
+            if (pageLogs.length === 0) {
+                logList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No logs found matching your filters</p>
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            logList.innerHTML = pageLogs.map((log, idx) => {
+                const usage = log.response?.usage || {};
+                const cost = calculateCost(log);
+                const timestamp = log.request_timestamp || 'Unknown';
+                const firstMessage = log.request?.messages?.[0]?.content || '';
+                const preview = firstMessage.substring(0, 150) + (firstMessage.length > 150 ? '...' : '');
+
+                return `
+                    <div class="log-item" data-index="${startIdx + idx}">
+                        <div class="log-header">
+                            <span class="model-badge ${getModelBadgeClass(log.model)}">${escapeHtml(log.model || '')}</span>
+                            <span class="log-time">${escapeHtml(timestamp)}</span>
+                        </div>
+                        <div class="log-tokens">
+                            <span class="token-info input">⬆️ ${formatNumber(usage.prompt_tokens || 0)}</span>
+                            <span class="token-info output">⬇️ ${formatNumber(usage.completion_tokens || 0)}</span>
+                            <span class="token-info" style="color: #f472b6;">💰 ${formatCurrency(cost.total)}</span>
+                        </div>
+                        <p style="margin-top: 10px; color: #94a3b8; font-size: 0.85rem;">${escapeHtml(preview)}</p>
+                    </div>
+                `;
+            }).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.log-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.dataset.index);
+                    showLogDetail(filteredLogs[idx]);
+                });
+            });
+
+            renderPagination();
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            pagination.innerHTML = `
+                <button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Prev</button>
+                <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+                <button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
+            `;
+        }
+
+        window.goToPage = function(page) {
+            currentPage = page;
+            renderLogList();
+            document.getElementById('logList').scrollTop = 0;
+        };
+
+        // Show log detail
+        function showLogDetail(log) {
+            const panel = document.getElementById('detailPanel');
+            const overlay = document.getElementById('overlay');
+            const content = document.getElementById('detailContent');
+
+            const usage = log.response?.usage || {};
+            const cost = calculateCost(log);
+            const messages = log.request?.messages || [];
+            const responseContent = log.response?.choices?.[0]?.message?.content || 'No response content';
+            const toolCalls = log.response?.choices?.[0]?.message?.tool_calls;
+
+            content.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-section-title">📊 Usage Statistics</div>
+                    <div class="usage-grid">
+                        <div class="usage-item">
+                            <div class="usage-value">${formatNumber(usage.prompt_tokens || 0)}</div>
+                            <div class="usage-label">Prompt Tokens</div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-value">${formatNumber(usage.completion_tokens || 0)}</div>
+                            <div class="usage-label">Completion Tokens</div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-value">${formatNumber(usage.total_tokens || 0)}</div>
+                            <div class="usage-label">Total Tokens</div>
+                        </div>
+                        <div class="usage-item">
+                            <div class="usage-value" style="color: #f472b6;">${formatCurrency(cost.total)}</div>
+                            <div class="usage-label">Cost</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">ℹ️ Metadata</div>
+                    <div class="message-box">
+<strong>Model:</strong> ${escapeHtml(log.model || '')}
+<strong>Agent ID:</strong> ${escapeHtml(log.agent_id || 'N/A')}
+<strong>File:</strong> ${escapeHtml(log._filename || '')}
+<strong>Request Time:</strong> ${escapeHtml(log.request_timestamp || '')}
+<strong>Response Time:</strong> ${escapeHtml(log.response_timestamp || '')}
+<strong>Response ID:</strong> ${escapeHtml(log.response?.id || 'N/A')}
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">📝 Request Messages</div>
+                    ${messages.filter(msg => msg.content && msg.content.trim()).map((msg, i) => `
+                        <div class="message-box" style="margin-bottom: 10px;">
+                            <strong style="color: ${msg.role === 'user' ? '#60a5fa' : msg.role === 'tool' ? '#fbbf24' : '#34d399'};">[${escapeHtml(msg.role || '')}]</strong>
+${escapeHtml(msg.content)}
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-section-title">💬 Response</div>
+                    <div class="message-box">${escapeHtml(responseContent)}</div>
+                </div>
+
+                ${toolCalls ? `
+                <div class="detail-section">
+                    <div class="detail-section-title">🔧 Tool Calls</div>
+                    <div class="message-box">${escapeHtml(JSON.stringify(toolCalls, null, 2))}</div>
+                </div>
+                ` : ''}
+            `;
+
+            panel.classList.add('open');
+            overlay.classList.add('open');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close panel
+        document.getElementById('closePanel').addEventListener('click', closePanel);
+        document.getElementById('overlay').addEventListener('click', closePanel);
+
+        function closePanel() {
+            document.getElementById('detailPanel').classList.remove('open');
+            document.getElementById('overlay').classList.remove('open');
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+
+                // Update buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+
+                // Render traces if switching to traces tab
+                if (tabId === 'traces') {
+                    renderAgentTraces();
+                }
+            });
+        });
+
+        // File upload handling
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+
+            const items = e.dataTransfer.items;
+            const files = [];
+
+            for (const item of items) {
+                if (item.kind === 'file') {
+                    const entry = item.webkitGetAsEntry();
+                    if (entry.isDirectory) {
+                        await traverseDirectory(entry, files);
+                    } else {
+                        files.push(item.getAsFile());
+                    }
+                }
+            }
+
+            processFiles(files);
+        });
+
+        async function traverseDirectory(entry, files) {
+            const reader = entry.createReader();
+            const entries = await new Promise((resolve) => {
+                reader.readEntries(resolve);
+            });
+
+            for (const e of entries) {
+                if (e.isFile && e.name.endsWith('.json')) {
+                    const file = await new Promise((resolve) => e.file(resolve));
+                    files.push(file);
+                }
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            processFiles(Array.from(e.target.files));
+        });
+
+        async function processFiles(files) {
+            if (files.length === 0) return;
+
+            document.getElementById('loading').classList.add('show');
+            uploadSection.style.display = 'none';
+
+            try {
+                allLogs = await parseLogFiles(files);
+                const stats = calculateStats(allLogs);
+
+                // Build agent traces
+                agentTraces = buildAgentTraces(allLogs);
+
+                // Debug: log summary
+                let totalTC = 0;
+                for (const [agentId, trace] of Object.entries(agentTraces)) {
+                    totalTC += trace.toolCalls.length;
+                    console.log(`Agent ${agentId}: ${trace.toolCalls.length} tool calls`);
+                }
+                console.log(`Total: ${Object.keys(agentTraces).length} agents, ${totalTC} tool calls`);
+
+                renderStats(stats);
+                filteredLogs = [...allLogs];
+                filterAndSortLogs();
+
+                document.getElementById('statsSection').style.display = 'block';
+            } catch (e) {
+                console.error('Error processing files:', e);
+                alert('Error processing files. Please check the console for details.');
+                uploadSection.style.display = 'block';
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        // Filter event listeners
+        document.getElementById('filterModel').addEventListener('change', filterAndSortLogs);
+        document.getElementById('filterAgentId').addEventListener('change', filterAndSortLogs);
+        document.getElementById('filterSearch').addEventListener('input', debounce(filterAndSortLogs, 300));
+        document.getElementById('sortBy').addEventListener('change', filterAndSortLogs);
+
+        // Trace filter listeners
+        document.getElementById('traceAgentFilter').addEventListener('change', renderAgentTraces);
+        document.getElementById('traceToolFilter').addEventListener('change', renderAgentTraces);
+        document.getElementById('traceStatusFilter').addEventListener('change', renderAgentTraces);
+        document.getElementById('traceSortBy').addEventListener('change', renderAgentTraces);
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePanel();
+            }
+        });
+    </script>
+</body>
+</html>
