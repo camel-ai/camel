@@ -392,7 +392,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
+        if tools:
             request_config["tools"] = tools
         else:
             # Remove parallel_tool_calls if no tools are specified
@@ -417,7 +417,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
+        if tools:
             request_config["tools"] = tools
         else:
             # Remove parallel_tool_calls if no tools are specified
@@ -446,7 +446,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        if tools is not None:
+        if tools:
             request_config["tools"] = tools
         else:
             # Remove parallel_tool_calls if no tools are specified
@@ -477,7 +477,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        if tools is not None:
+        if tools:
             request_config["tools"] = tools
         else:
             # Remove parallel_tool_calls if no tools are specified
