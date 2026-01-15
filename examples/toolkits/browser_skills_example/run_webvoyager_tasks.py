@@ -130,7 +130,7 @@ class WebVoyagerRunner:
     def __init__(
         self,
         jsonl_file: str,
-        subtask_config_dir: str,
+        skills_dir: str,
         max_retries: int = 2,
     ):
         """
@@ -138,11 +138,11 @@ class WebVoyagerRunner:
 
         Args:
             jsonl_file: Path to WebVoyager JSONL file
-            subtask_config_dir: Path to subtask configs directory
+            skills_dir: Path to subtask configs directory
             max_retries: Maximum retry attempts per task
         """
         self.jsonl_file = Path(jsonl_file)
-        self.subtask_config_dir = subtask_config_dir
+        self.skills_dir = skills_dir
         self.max_retries = max_retries
         self.verifier = TaskVerifier()
 
@@ -157,7 +157,7 @@ class WebVoyagerRunner:
         Ensure the subtask config directory exists.
         Creates it if it doesn't exist.
         """
-        config_path = Path(self.subtask_config_dir)
+        config_path = Path(self.skills_dir)
 
         if not config_path.exists():
             print(f"\n⚠️  Config directory not found: {config_path}")
@@ -213,7 +213,7 @@ class WebVoyagerRunner:
 
         # Create agent
         agent = SubtaskAgent(
-            subtask_config_dir=self.subtask_config_dir,
+            skills_dir=self.skills_dir,
             use_agent_recovery=True,
         )
 
@@ -305,7 +305,7 @@ class WebVoyagerRunner:
 
                     analysis_result = analyze_with_agent(
                         session_folder=str(session_dir),
-                        subtask_configs_dir=self.subtask_config_dir,
+                        subtask_configs_dir=self.skills_dir,
                         auto_save=True,
                     )
 
@@ -620,7 +620,7 @@ async def main():
 
     runner = WebVoyagerRunner(
         jsonl_file=args.jsonl,
-        subtask_config_dir=args.config_dir,
+        skills_dir=args.config_dir,
         max_retries=args.max_retries,
     )
 

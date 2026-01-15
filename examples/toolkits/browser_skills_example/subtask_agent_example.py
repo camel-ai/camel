@@ -328,32 +328,28 @@ class SubtaskAgent:
 
     def __init__(
         self,
-        subtask_config_dir: str,
+        skills_dir: Optional[str] = None,
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
-        skills_dir: Optional[str] = None,
-        use_skills_format: bool = True,
     ):
         """Initialize the SubtaskAgent.
 
         Args:
-            subtask_config_dir: Path to directory containing subtask configuration JSON files
+            skills_dir: Path to directory containing browser skills.
+                        If None, defaults to ./browser_skills
             cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
-            skills_dir: Path to directory containing skills in Claude Code format.
-                        If None and use_skills_format is True, defaults to ./skills
-            use_skills_format: If True, prefer loading from skills directory
         """
-        self.subtask_config_dir = Path(subtask_config_dir)
         self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
-        self.use_skills_format = use_skills_format
 
         # Set skills directory
         if skills_dir:
             self.skills_dir = Path(skills_dir)
         else:
-            self.skills_dir = self.subtask_config_dir.parent / "browser_skills"
+            self.skills_dir = (
+                Path(__file__).resolve().parent / "browser_skills"
+            )
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
@@ -399,19 +395,16 @@ class SubtaskAgent:
         self.current_user_task = None
 
     def _load_subtask_configs(self):
-        """Load subtask configurations from skills directory or JSON files."""
-        # Try to load from skills directory first if enabled
-        if self.use_skills_format and self.skills_dir.exists():
-            self._load_from_skills_dir()
-            if self.subtask_configs:
-                return
-
-        # Fall back to loading from JSON config files
-        self._load_from_json_configs()
-
-    def _load_from_skills_dir(self):
-        """Load subtasks from Claude Code Skills format directory."""
+        """Load subtask configurations from skills directory."""
         from skill_loader import SkillLoader
+
+        if not self.skills_dir.exists():
+            print(f"\n⚠️  Skills directory not found: {self.skills_dir}")
+            print("📁 Creating directory...")
+            self.skills_dir.mkdir(parents=True, exist_ok=True)
+            print("✓ Directory created. No skills available yet.\n")
+            self.subtask_config = {}
+            return
 
         print(f"\n📂 Loading skills from: {self.skills_dir}")
 
@@ -419,7 +412,8 @@ class SubtaskAgent:
         skills = loader.load_all_skills()
 
         if not skills:
-            print("   No skills found, will try JSON config fallback.\n")
+            print("   No skills found in directory.\n")
+            self.subtask_config = {}
             return
 
         # Convert to config format
@@ -431,71 +425,6 @@ class SubtaskAgent:
         print(f"✓ Loaded {total_skills} skill(s) from skills directory\n")
 
         # For backwards compatibility
-        self.subtask_config = (
-            self.subtask_configs[0][1] if self.subtask_configs else {}
-        )
-
-    def _load_from_json_configs(self):
-        """Load subtask configurations from JSON files (legacy format)."""
-        if not self.subtask_config_dir.exists():
-            print(
-                f"\n⚠️  Subtask config directory not found: {self.subtask_config_dir}"
-            )
-            print("📁 Creating directory...")
-            self.subtask_config_dir.mkdir(parents=True, exist_ok=True)
-            print(
-                "✓ Directory created. No subtasks available yet (will be populated as tasks are analyzed).\n"
-            )
-            # Set empty config for backwards compatibility
-            self.subtask_config = {}
-            return
-
-        if not self.subtask_config_dir.is_dir():
-            raise ValueError(
-                f"Path is not a directory: {self.subtask_config_dir}"
-            )
-
-        # Find all JSON files in the directory
-        config_files = sorted(self.subtask_config_dir.glob("*.json"))
-
-        if not config_files:
-            print(
-                f"\n📝 No subtask config files found in: {self.subtask_config_dir}"
-            )
-            print(
-                "   Agent will run without pre-existing subtasks (will create new ones as needed).\n"
-            )
-            # Set empty config for backwards compatibility
-            self.subtask_config = {}
-            return
-
-        print(f"Found {len(config_files)} subtask config file(s):")
-
-        for config_file in config_files:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-
-            log_file = config.get('log_file')
-            if not log_file:
-                print(f"  ⚠️  Skipping {config_file.name}: no 'log_file' field")
-                continue
-
-            subtasks = config.get('subtasks', [])
-            print(
-                f"  ✓ {config_file.name}: {len(subtasks)} subtask(s), log: {Path(log_file).name}"
-            )
-
-            self.subtask_configs.append((log_file, config))
-
-        if not self.subtask_configs:
-            raise ValueError("No valid subtask configs loaded")
-
-        print(
-            f"\nTotal: {len(self.subtask_configs)} config(s) loaded with {sum(len(cfg.get('subtasks', [])) for _, cfg in self.subtask_configs)} subtask(s)"
-        )
-
-        # For backwards compatibility, store first config as main config
-        # This allows existing code to use self.subtask_config
         self.subtask_config = (
             self.subtask_configs[0][1] if self.subtask_configs else {}
         )
@@ -1451,12 +1380,8 @@ async def subtask_{subtask_func.subtask_id}():
 
 async def main():
     """Main entry point."""
-    # Configuration - now using directory instead of individual files
-    subtask_config_dir = str(DEFAULT_SUBTASK_CONFIGS_DIR)
-
-    # Create agent
+    # Create agent (uses default browser_skills directory)
     agent = SubtaskAgent(
-        subtask_config_dir=subtask_config_dir,
         use_agent_recovery=True,
     )
 
