@@ -129,7 +129,16 @@ class _StreamLogger:
                 data = json.load(f)
                 data["response_timestamp"] = datetime.now().isoformat()
 
-                response_data = {
+                response_data: Dict[
+                    str,
+                    Union[
+                        str,
+                        bool,
+                        Dict[str, Any],
+                        List[Dict[str, Any]],
+                        None,
+                    ],
+                ] = {
                     "id": self._id,
                     "model": self._model,
                     "content": self._content,
