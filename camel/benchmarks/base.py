@@ -15,10 +15,11 @@
 import logging
 import random
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
+from camel.societies.role_playing import RolePlaying
+from camel.societies.workforce.workforce import Workforce
 
 logger = logging.getLogger(__name__)
 
@@ -34,49 +35,45 @@ class BaseBenchmark(ABC):
             processing. :(default: :obj:`1`)
     """
 
-    def __init__(
-        self, name: str, data_dir: str, save_to: str, processes: int = 1
-    ):
+    def __init__(self, name: str, data_dir: Optional[str], processes: int = 1):
         r"""Initialize the benchmark.
 
         Args:
             name (str): Name of the benchmark.
-            data_dir (str): Path to the data directory.
+            data_dir (Optional[str]): Path to the data directory.
             save_to (str): Path to save the results.
             processes (int): Number of processes to use for parallel
                 processing. :(default: :obj:`1`)
 
         """
         self.name = name
-        self.data_dir = Path(data_dir)
+        self.data_dir = data_dir
         self.processes = processes
-        self.save_to = save_to
-        if not self.data_dir.exists():
-            logger.info(
-                f"Data directory {data_dir} does not exist. Creating it."
-            )
-            self.data_dir.mkdir(parents=True, exist_ok=True)
-        if not self.data_dir.is_dir():
-            raise NotADirectoryError(
-                f"Data directory {data_dir} is not a directory"
-            )
         self._data: Dict[str, List[Dict[str, Any]]] = dict()
         self._results: List[Dict[str, Any]] = []
 
     @abstractmethod
     def download(self) -> "BaseBenchmark":
         r"""Download the benchmark data.
-
         Returns:
             BaseBenchmark: The benchmark instance.
         """
         pass
 
     @abstractmethod
-    def load(self, force_download: bool = False) -> "BaseBenchmark":
+    def load(
+        self,
+        name: str,
+        subset: Optional[str],
+        split: Optional[str],
+        force_download: bool = False,
+    ) -> "BaseBenchmark":
         r"""Load the benchmark data.
 
         Args:
+            name (str): Name of the dataset or the github repo to be loaded.
+            subset (Optional[str]): Name of the huggingface dataset subset to load.
+            split (Optional[str]): Name of the split to load (train, test, validation)
             force_download (bool): Whether to force download the data.
 
         Returns:
@@ -85,7 +82,7 @@ class BaseBenchmark(ABC):
         pass
 
     @property
-    def train(self) -> List[Dict[str, Any]]:
+    def train_data(self) -> List[Dict[str, Any]]:
         r"""Get the training data.
 
         Returns:
@@ -94,10 +91,10 @@ class BaseBenchmark(ABC):
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
-        return self._data["train"]
+        return self._data.get("train", [])
 
     @property
-    def valid(self) -> List[Dict[str, Any]]:
+    def valid_data(self) -> List[Dict[str, Any]]:
         r"""Get the validation data.
 
         Returns:
@@ -106,10 +103,10 @@ class BaseBenchmark(ABC):
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
-        return self._data["valid"]
+        return self._data["valid", []]
 
     @property
-    def test(self) -> List[Dict[str, Any]]:
+    def test_data(self) -> List[Dict[str, Any]]:
         r"""Get the test data.
 
         Returns:
@@ -118,7 +115,7 @@ class BaseBenchmark(ABC):
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
-        return self._data["test"]
+        return self._data["test", []]
 
     def shuffle(self, seed: Optional[int] = 42) -> "BaseBenchmark":
         r"""Shuffle all data splits.
@@ -164,23 +161,24 @@ class BaseBenchmark(ABC):
     @abstractmethod
     def run(
         self,
-        agent: ChatAgent,
-        on: Literal["train", "valid", "test"],
+        pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         randomize: bool = False,
         subset: Optional[int] = None,
         *args,
         **kwargs,
-    ) -> "BaseBenchmark":
+    ) -> Dict[str, Any]:
         r"""Run the benchmark.
 
         Args:
-            agent (ChatAgent): The chat agent.
-            on (str): The data split to run the benchmark on.
+            pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The
+                template agent or framework to use for processing examples.
+                Can be a ChatAgent, RolePlaying, or Workforce instance that
+                will be cloned for each example.
             randomize (bool): Whether to randomize the data.
             subset (int): The subset of the data to run the benchmark on.
 
         Returns:
-            BaseBenchmark: The benchmark instance.
+            Dict[str, Any]: The results of the benchmark.
         """
         pass
 
