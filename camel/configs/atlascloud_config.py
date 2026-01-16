@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, Optional, Sequence, Union
+from typing import Optional
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NotGiven
 
 
 class AtlasCloudConfig(BaseConfig):
