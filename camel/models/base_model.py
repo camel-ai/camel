@@ -100,7 +100,7 @@ class _StreamLogger:
                                 'type': 'function',
                                 'function': {'name': '', 'arguments': ''},
                             }
-                        
+
                         acc = self._tool_calls_acc[idx]
                         if tc.id:
                             acc['id'] = tc.id
@@ -128,7 +128,7 @@ class _StreamLogger:
             with open(self._log_path, "r+") as f:
                 data = json.load(f)
                 data["response_timestamp"] = datetime.now().isoformat()
-                
+
                 response_data = {
                     "id": self._id,
                     "model": self._model,
@@ -137,17 +137,17 @@ class _StreamLogger:
                     "usage": self._usage,
                     "streaming": True,
                 }
-                
+
                 if self._tool_calls_acc:
                     # Sort by index and convert to list
                     tool_calls = [
-                        self._tool_calls_acc[i] 
+                        self._tool_calls_acc[i]
                         for i in sorted(self._tool_calls_acc.keys())
                     ]
                     response_data["tool_calls"] = tool_calls
 
                 data["response"] = response_data
-                
+
                 f.seek(0)
                 json.dump(data, f, indent=4)
                 f.truncate()

@@ -4225,18 +4225,21 @@ class ChatAgent(BaseAgent):
                             content_accumulator.get_full_reasoning_content()
                             or None
                         )
-                        
-                        # Convert external tool requests to OpenAI tool calls format
+
+                        # Convert external tool requests
+                        # to OpenAI tool calls format
                         tool_calls_meta = []
                         for req in external_tool_requests:
-                            tool_calls_meta.append({
-                                'id': req.tool_call_id,
-                                'type': 'function',
-                                'function': {
-                                    'name': req.tool_name,
-                                    'arguments': json.dumps(req.args)
+                            tool_calls_meta.append(
+                                {
+                                    'id': req.tool_call_id,
+                                    'type': 'function',
+                                    'function': {
+                                        'name': req.tool_name,
+                                        'arguments': json.dumps(req.args),
+                                    },
                                 }
-                            })
+                            )
 
                         # Create message for response
                         final_message = BaseMessage(
@@ -4246,7 +4249,7 @@ class ChatAgent(BaseAgent):
                             content=final_content,
                             reasoning_content=final_reasoning,
                         )
-                        
+
                         # Create final response with external tool requests
                         final_response = ChatAgentResponse(
                             msgs=[final_message],
@@ -4257,7 +4260,9 @@ class ChatAgent(BaseAgent):
                                 "finish_reasons": ["tool_calls"],
                                 "num_tokens": num_tokens,
                                 "tool_calls": [],
-                                "external_tool_call_requests": external_tool_requests,
+                                "external_tool_call_requests": (
+                                    external_tool_requests
+                                ),
                                 "streaming": True,
                                 "partial": False,
                             },
@@ -4406,9 +4411,13 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool, Optional[List[ToolCallRequest]]]]:
+    ) -> Generator[
+        ChatAgentResponse,
+        None,
+        Tuple[bool, bool, Optional[List[ToolCallRequest]]],
+    ]:
         r"""Process streaming chunks with content accumulator.
-        
+
         Returns:
             Generator that yields ChatAgentResponse and returns a tuple of:
             - stream_completed: whether the stream has finished
@@ -4474,11 +4483,13 @@ class ChatAgent(BaseAgent):
 
                     # If we have complete tool calls, execute them with
                     # sync status updates
-                    external_tool_requests: Optional[List[ToolCallRequest]] = None
+                    external_tool_requests: Optional[List[ToolCallRequest]] = (
+                        None
+                    )
                     if accumulated_tool_calls:
                         # Execute tools synchronously with
                         # optimized status updates
-                        external_tool_requests = yield from self._execute_tools_sync_with_status_accumulator(
+                        external_tool_requests = yield from self._execute_tools_sync_with_status_accumulator(  # noqa: E501
                             accumulated_tool_calls,
                             tool_call_records,
                         )
@@ -4489,15 +4500,17 @@ class ChatAgent(BaseAgent):
                             # Create assistant message with tool calls
                             tool_calls_list = []
                             for req in external_tool_requests:
-                                tool_calls_list.append({
-                                    'id': req.tool_call_id,
-                                    'type': 'function',
-                                    'function': {
-                                        'name': req.tool_name,
-                                        'arguments': json.dumps(req.args)
+                                tool_calls_list.append(
+                                    {
+                                        'id': req.tool_call_id,
+                                        'type': 'function',
+                                        'function': {
+                                            'name': req.tool_name,
+                                            'arguments': json.dumps(req.args),
+                                        },
                                     }
-                                })
-                            
+                                )
+
                             # Record assistant message with tool calls
                             assist_msg = FunctionCallingMessage(
                                 role_name=self.role_name,
@@ -4506,14 +4519,20 @@ class ChatAgent(BaseAgent):
                                 content="",
                                 func_name=external_tool_requests[0].tool_name,
                                 args=external_tool_requests[0].args,
-                                tool_call_id=external_tool_requests[0].tool_call_id,
+                                tool_call_id=external_tool_requests[
+                                    0
+                                ].tool_call_id,
                             )
                             self.update_memory(
                                 assist_msg, OpenAIBackendRole.ASSISTANT
                             )
-                            
+
                             # Return with external tool requests flag
-                            return stream_completed, True, external_tool_requests
+                            return (
+                                stream_completed,
+                                True,
+                                external_tool_requests,
+                            )
 
                         # Log sending status instead of adding to content
                         if tool_call_records:
@@ -4723,7 +4742,7 @@ class ChatAgent(BaseAgent):
                     function_name in self._internal_tools
                     or function_name in self._external_tool_schemas
                 )
-                
+
                 if is_known_tool:
                     try:
                         # Try to parse arguments to check completeness
@@ -4743,7 +4762,7 @@ class ChatAgent(BaseAgent):
     ) -> Generator[ChatAgentResponse, None, Optional[List[ToolCallRequest]]]:
         r"""Execute multiple tools synchronously with proper content
         accumulation, using ThreadPoolExecutor for better timeout handling.
-        
+
         Returns:
             Generator that yields ChatAgentResponse for status updates, and
             finally returns Optional[List[ToolCallRequest]] for external tools.
@@ -4751,27 +4770,29 @@ class ChatAgent(BaseAgent):
 
         tool_calls_to_execute = []
         external_tool_call_requests: List[ToolCallRequest] = []
-        
+
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
             # Skip internal mapping key
             if _tool_call_index == '_index_to_key_map':
                 continue
             if tool_call_data.get('complete', False):
                 function_name = tool_call_data['function']['name']
-                
+
                 # Check if this is an external tool
                 if function_name in self._external_tool_schemas:
                     try:
-                        args = json.loads(tool_call_data['function']['arguments'])
+                        args = json.loads(
+                            tool_call_data['function']['arguments']
+                        )
                     except json.JSONDecodeError:
                         args = tool_call_data['function']['arguments']
-                    
+
                     # Create external tool request
                     external_tool_call_requests.append(
                         ToolCallRequest(
                             tool_name=function_name,
                             args=args,
-                            tool_call_id=tool_call_data['id']
+                            tool_call_id=tool_call_data['id'],
                         )
                     )
                 else:
