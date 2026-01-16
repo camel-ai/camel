@@ -1432,7 +1432,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
             ModelType.NEBIUS_GPT_OSS_120B,
-            ModelType.ATLASCLOUD_GPT_OSS_120B
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
             ModelType.NEBIUS_GPT_OSS_20B,
             ModelType.COMETAPI_GPT_5_CHAT_LATEST,
             ModelType.COMETAPI_CHATGPT_4O_LATEST,
@@ -1526,7 +1526,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
-            ModelType.ATLASCLOUD_GLM_4_7
+            ModelType.ATLASCLOUD_GLM_4_7,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1834,6 +1834,7 @@ class ModelPlatformType(Enum):
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
     FUNCTION_GEMMA = "function-gemma"
+    ATLASCLOUD = "atlascloud"
 
     @classmethod
     def from_name(cls, name):
