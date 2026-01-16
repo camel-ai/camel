@@ -519,6 +519,10 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2 = "MiniMax-M2"
     MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
+    # AtlasCloud models
+    ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
+    ATLASCLOUD_GLM_4_7 = "zai-org/glm-4.7"
+
     def __str__(self):
         return self.value
 
@@ -2043,6 +2047,11 @@ class ModelPlatformType(Enum):
     def is_cerebras(self) -> bool:
         r"""Returns whether this platform is Cerebras."""
         return self is ModelPlatformType.CEREBRAS
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this platform is AtlasCloud."""
+        return self is ModelPlatformType.ATLASCLOUD
 
 
 class AudioModelType(Enum):
