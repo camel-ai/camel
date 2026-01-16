@@ -157,37 +157,6 @@ member of the chat.
 - has_more: Whether there are more messages to fetch
 - page_token: Token to fetch the next page
 
-<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_send_message"></a>
-
-### lark_send_message
-
-```python
-def lark_send_message(
-    self,
-    receive_id: str,
-    text: str,
-    receive_id_type: Literal['open_id', 'user_id', 'union_id', 'email', 'chat_id'] = 'chat_id'
-):
-```
-
-Sends a message to a user or chat. If send message to
-a chat, use lark_list_chats to get chat_id first, if send
-message to a user, need user provide open_id, user_id,
-union_id or email.
-
-**Parameters:**
-
-- **receive_id** (str): The recipient identifier.
-- **text** (str): The text message content.
-- **receive_id_type** (str): The recipient ID type. Options: - "open_id" - "user_id" - "union_id" - "email" - "chat_id" (default)
-
-**Returns:**
-
-  Dict[str, object]: A dictionary containing:
-- message_id: The sent message ID
-- chat_id: The chat ID the message belongs to
-- msg_type: Message type (text)
-
 <a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_get_message_resource"></a>
 
 ### lark_get_message_resource
