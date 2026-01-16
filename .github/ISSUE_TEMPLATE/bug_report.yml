@@ -26,7 +26,7 @@ body:
     attributes:
       label: What version of camel are you using?
       description: Run command `python3 -c 'print(__import__("camel").__version__)'` in your shell and paste the output here.
-      placeholder: E.g., 0.2.83a6
+      placeholder: E.g., 0.2.83a9
     validations:
       required: true
 

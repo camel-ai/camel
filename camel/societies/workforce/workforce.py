@@ -3862,6 +3862,8 @@ class Workforce(BaseNode):
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
+        # Ensure assignee mapping exists for retries and follow-up handling.
+        self._assignees[task.id] = assignee_id
         task.assigned_worker_id = assignee_id
 
         task_started_event = TaskStartedEvent(
@@ -4542,14 +4544,28 @@ class Workforce(BaseNode):
             task, for_failure=True, error_message=detailed_error
         )
 
-        # Fallback to first enabled strategy if no strategy recommended
+        # Validate and fallback recovery strategy based on enabled_strategies
+        config_strategies = self.failure_handling_config.enabled_strategies
         if recovery_decision.recovery_strategy is None:
-            config_strategies = self.failure_handling_config.enabled_strategies
+            # No strategy recommended - use fallback
             # config_strategies is None means all enabled, use RETRY as default
             # otherwise use the first enabled strategy from user's config
             if config_strategies is None:
                 recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
             else:
+                recovery_decision.recovery_strategy = config_strategies[0]
+        elif config_strategies is not None:
+            # Strategy recommended - validate it's in enabled list
+            if recovery_decision.recovery_strategy not in config_strategies:
+                # LLM recommended a disabled strategy, use first enabled
+                recommended = recovery_decision.recovery_strategy.value
+                enabled_list = [s.value for s in config_strategies]
+                fallback = config_strategies[0].value
+                logger.warning(
+                    f"Task {task.id}: LLM recommended '{recommended}' "
+                    f"but it's not in enabled_strategies {enabled_list}. "
+                    f"Using '{fallback}' instead."
+                )
                 recovery_decision.recovery_strategy = config_strategies[0]
 
         strategy_str = recovery_decision.recovery_strategy.value
@@ -5308,16 +5324,38 @@ class Workforce(BaseNode):
                                 f"Issues: {', '.join(quality_eval.issues)}"
                             )
 
-                            # Fallback to first enabled strategy if none
-                            # recommended
+                            # Validate and fallback recovery strategy based on
+                            # enabled_strategies
+                            config = self.failure_handling_config
+                            config_strategies = config.enabled_strategies
                             if quality_eval.recovery_strategy is None:
-                                config = self.failure_handling_config
-                                config_strategies = config.enabled_strategies
+                                # No strategy recommended - use fallback
                                 if config_strategies is None:
                                     quality_eval.recovery_strategy = (
                                         RecoveryStrategy.RETRY
                                     )
                                 else:
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
+                            elif config_strategies is not None:
+                                # Strategy recommended - validate it's enabled
+                                if (
+                                    quality_eval.recovery_strategy
+                                    not in config_strategies
+                                ):
+                                    # LLM recommended a disabled strategy
+                                    rec = quality_eval.recovery_strategy.value
+                                    enabled = [
+                                        s.value for s in config_strategies
+                                    ]
+                                    fallback = config_strategies[0].value
+                                    logger.warning(
+                                        f"Task {returned_task.id}: LLM "
+                                        f"recommended '{rec}' but it's not in "
+                                        f"enabled_strategies {enabled}. "
+                                        f"Using '{fallback}' instead."
+                                    )
                                     quality_eval.recovery_strategy = (
                                         config_strategies[0]
                                     )
