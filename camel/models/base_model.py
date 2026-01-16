@@ -76,6 +76,7 @@ class _StreamLogger:
         self._finish_reason: Optional[str] = None
         self._usage: Optional[Dict[str, Any]] = None
         self._logged = False
+        self._tool_calls_acc: Dict[int, Dict[str, Any]] = {}
 
     def _collect(self, chunk: ChatCompletionChunk) -> None:
         self._id = self._id or getattr(chunk, 'id', '')
@@ -87,8 +88,32 @@ class _StreamLogger:
             )
         if chunk.choices:
             choice = chunk.choices[0]
-            if choice.delta and choice.delta.content:
-                self._content += choice.delta.content
+            if choice.delta:
+                if choice.delta.content:
+                    self._content += choice.delta.content
+                if choice.delta.tool_calls:
+                    for tc in choice.delta.tool_calls:
+                        idx = tc.index
+                        if idx not in self._tool_calls_acc:
+                            self._tool_calls_acc[idx] = {
+                                'id': '',
+                                'type': 'function',
+                                'function': {'name': '', 'arguments': ''},
+                            }
+                        
+                        acc = self._tool_calls_acc[idx]
+                        if tc.id:
+                            acc['id'] = tc.id
+                        if tc.type:
+                            acc['type'] = tc.type
+                        if tc.function:
+                            if tc.function.name:
+                                acc['function']['name'] += tc.function.name
+                            if tc.function.arguments:
+                                acc['function']['arguments'] += (
+                                    tc.function.arguments
+                                )
+
             if choice.finish_reason:
                 self._finish_reason = choice.finish_reason
 
@@ -103,7 +128,8 @@ class _StreamLogger:
             with open(self._log_path, "r+") as f:
                 data = json.load(f)
                 data["response_timestamp"] = datetime.now().isoformat()
-                data["response"] = {
+                
+                response_data = {
                     "id": self._id,
                     "model": self._model,
                     "content": self._content,
@@ -111,6 +137,17 @@ class _StreamLogger:
                     "usage": self._usage,
                     "streaming": True,
                 }
+                
+                if self._tool_calls_acc:
+                    # Sort by index and convert to list
+                    tool_calls = [
+                        self._tool_calls_acc[i] 
+                        for i in sorted(self._tool_calls_acc.keys())
+                    ]
+                    response_data["tool_calls"] = tool_calls
+
+                data["response"] = response_data
+                
                 f.seek(0)
                 json.dump(data, f, indent=4)
                 f.truncate()
