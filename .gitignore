@@ -476,3 +476,7 @@ yarn-error.log*
 
 # Lark OAuth tokens (sensitive)
 .lark_tokens.json
+
+# local working directories
+working_dir/
+tmp/
