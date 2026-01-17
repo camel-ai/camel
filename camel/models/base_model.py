@@ -274,6 +274,36 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration dictionary.
+
+        Creates a deep copy of the model config and handles tool-related
+        parameters. If no tools are specified, removes parallel_tool_calls
+        as OpenAI API only allows it when tools are present.
+
+        Args:
+            tools (Optional[List[Dict[str, Any]]]): The tools to include
+                in the request. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The prepared request configuration.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        if tools:
+            request_config["tools"] = tools
+        else:
+            # Remove parallel_tool_calls if no tools are specified
+            # as OpenAI API only allows it when tools are present
+            request_config.pop("parallel_tool_calls", None)
+
+        return request_config
+
     def preprocess_messages(
         self, messages: List[OpenAIMessage]
     ) -> List[OpenAIMessage]:
