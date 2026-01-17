@@ -13,68 +13,18 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import ast
-import json
 import logging
-import os
-import random
 import textwrap
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks._utils import construct_prompt, save_to_jsonl
 
 logger = logging.getLogger(__name__)
-
-
-# Define the data class
-@dataclass
-class NexusSample:
-    r"""Nexus benchmark dataset sample."""
-
-    input: str
-    output: str
-
-
-@dataclass
-class NexusTool:
-    r"""Nexus benchmark tool"""
-
-    function_calls: str
-    descriptions: str
-
-
-dataset_mapping = {
-    "NVDLibrary": "Nexusflow/NVDLibraryBenchmark",
-    "VirusTotal": "Nexusflow/VirusTotalBenchmark",
-    "PlacesAPI": "Nexusflow/PlacesAPIBenchmark",
-    "ClimateAPI": "Nexusflow/ClimateAPIBenchmark",
-    "OTX": "Nexusflow/OTXAPIBenchmark",
-    "VirusTotal-NestedCalls": "Nexusflow/vt_multiapi",
-    "VirusTotal-ParallelCalls": "Nexusflow/vt_multiapi",
-    "NVDLibrary-NestedCalls": "Nexusflow/CVECPEAPIBenchmark",
-}
-
-TOOL_CALLING_PROMPT = """
-You are given multiple functions and a user query.
-
-Please proceed with generating a function call for the function \
-with the proper arguments that best answers the given prompt.
-
-Respond with nothing but the function call ONLY, such that I can \
-directly execute your function call without any post processing \
-necessary from my end. Do not use variables.
-If there are more than two function calls, separate them with a semicolon (;).
-
-{tools}
-
-Question: {input}
-"""
 
 
 class NexusBenchmark(BaseBenchmark):
@@ -88,269 +38,141 @@ class NexusBenchmark(BaseBenchmark):
         processes (int, optional): The number of processes to use.
             (default: :obj:`1`)
     """
+    DEFAULT_DATASET_NAME = "Nexusflow/VirusTotalBenchmark"
+    DEFAULT_SPLIT = "train"
 
     def __init__(
         self,
-        data_dir: str,
-        save_to: str,
+        save_to: Optional[str] = None,
         processes: int = 1,
     ):
         r"""Initialize the Nexus Function Calling benchmark.
 
         Args:
             data_dir (str): The directory to save the data.
-            save_to (str): The file to save the results.
+            save_to (Optional[str]): The file to save the results. If None,
+                uses default 'NexusResults.jsonl'. (default: :obj:`None`)
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
         """
-        super().__init__("nexus", data_dir, save_to, processes)
-        self._data: List[NexusSample] = []  # type: ignore[assignment]
+        self.save_to = save_to or "NexusResults.jsonl"
+        self.num_processes = processes
+        self.dataset: Optional[Dataset] = None
+        self.dataset_name: Optional[str] = None
+        self.split: Optional[str] = None
 
-    def download(self):
-        r"""Download the Nexus Functional Calling Benchmark dataset."""
-        from huggingface_hub import snapshot_download
+        self._agent: Optional[ChatAgent] = None
+        super().__init__("nexus", "", save_to, processes)
+    
+    def download(self) -> None:
+        r"""Download the RAGBench dataset using stored configuration.
 
-        for dataset_name, repo_id in dataset_mapping.items():
-            local_dir = self.data_dir / dataset_name
-            snapshot_download(
-                repo_id=repo_id,
-                repo_type="dataset",
-                local_dir=local_dir,
-                local_dir_use_symlinks=True,
+        Raises:
+            ValueError: If dataset configuration is not set via load().
+            Exception: If dataset download fails.
+        """
+        if self.dataset_name is None:
+            raise ValueError(
+                "Dataset configuration not set. Please call load() first."
             )
 
-    def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]
-        r"""Load the Nexus Benchmark dataset.
+        try:
+            self.dataset = load_dataset(
+                self.dataset_name, split=self.split
+            )
+        except Exception as e:
+            logger.error(f"Failed to download dataset: {e}")
+            raise
+    
+    def load(
+        self,
+        name: str = DEFAULT_DATASET_NAME,
+        split: Optional[str] = DEFAULT_SPLIT,
+        force_download: bool = False,
+    ) -> None:
+        r"""Load the RAGBench dataset.
 
         Args:
-            dataset_name (str): Name of the specific dataset to be loaded.
-            force_download (bool): Whether to force download the data.
+            name (str): Dataset name/path.
+            split (Optional[str]): Dataset split. Defaults to "train".
+            force_download (bool): Whether to force re-download. Defaults to False.
         """
+        self.dataset_name = name
+        self.split = split
 
-        def _load_csv_data(dataset_dir: Path) -> List:
-            r"""Load datasets from CSV files."""
-            dataset = []
-            for file_name in os.listdir(dataset_dir):
-                file_path = dataset_dir / file_name
-                if file_name.endswith(".csv"):
-                    data = pd.read_csv(file_path)
-                    for _, sample in data.iterrows():
-                        dataset.append(
-                            NexusSample(
-                                sample["Input"], "".join(sample["Output"])
-                            )
-                        )
-                    continue
-
-                logger.warning(f"Skipping unsupported file: {file_name}")
-            return dataset
-
-        def _load_parquet_data(data_dir: Path, dataset_name: str) -> List:
-            r"""Load datasets from Parquet files."""
-            dataset = []
-            if not data_dir.exists():
-                raise FileNotFoundError(
-                    f"Data directory '{data_dir}' does not exist."
-                )
-
-            for file_name in os.listdir(data_dir):
-                file_path = data_dir / file_name
-                if file_name.endswith(".parquet"):
-                    data = pd.read_parquet(file_path)
-                    dataset.extend(_process_parquet_data(data, dataset_name))
-                    continue
-
-                logger.warning(f"Skipping unsupported file: {file_name}")
-
-            return dataset
-
-        def _process_parquet_data(
-            data: pd.DataFrame, dataset_name: str
-        ) -> List:
-            r"""Process data from Parquet files based on dataset name."""
-            dataset: List = []
-            dataset_handlers = {
-                "NVDLibrary": _process_nvdlibrary,
-                "VirusTotal": _process_simple,
-                "PlacesAPI": _process_simple,
-                "ClimateAPI": _process_simple,
-                "OTX": _process_simple,
-                "VirusTotal-NestedCalls": _process_nested_calls,
-                "VirusTotal-ParallelCalls": _process_parallel_calls,
-            }
-
-            if dataset_name not in dataset_handlers:
-                logger.warning(
-                    f"No specific handler for dataset: {dataset_name}"
-                )
-                return dataset
-
-            handler = dataset_handlers[dataset_name]
-            for _, sample in data.iterrows():
-                processed_sample = handler(sample)
-                if processed_sample:
-                    dataset.append(processed_sample)
-            return dataset
-
-        def _process_nvdlibrary(sample) -> NexusSample:
-            r"""Process samples for the NVDLibrary dataset."""
-            return NexusSample(
-                sample["Input"], sample["Output"].replace("r = nvdlib.", "")
+        if force_download or self.dataset is None:
+            logger.info(
+                "%s dataset: %s (split=%s)",
+                "Force downloading" if force_download else "Loading",
+                name,
+                split,
             )
-
-        def _process_simple(sample) -> NexusSample:
-            r"""Process samples for simple datasets (e.g., VirusTotal)."""
-            return NexusSample(sample["Input"], sample["Output"])
-
-        def _process_nested_calls(sample) -> Union[NexusSample, None]:
-            r"""Process samples for VirusTotal-NestedCalls dataset."""
-            if len(sample["fncall"]) == 1:
-                return NexusSample(
-                    sample["generated_question"], "".join(sample["fncall"])
-                )
-            return None
-
-        def _process_parallel_calls(sample) -> Union[NexusSample, None]:
-            r"""Process samples for VirusTotal-ParallelCalls dataset."""
-            if len(sample["fncall"]) > 1:
-                return NexusSample(
-                    sample["generated_question"], "; ".join(sample["fncall"])
-                )
-            return None
-
-        if force_download:
-            logger.info("Force downloading data.")
             self.download()
+    
+    def _construct_tool_descriptions(self) -> str:
+        r"""Construct tool descriptions from function definitions and
+        descriptions."""
+        tool_dataset_mapping = {
+            "Nexusflow/NVDLibraryBenchmark": "CVECPE",
+            "Nexusflow/VirusTotalBenchmark": "VirusTotal",
+            "Nexusflow/PlacesAPIBenchmark": "Places",
+            "Nexusflow/ClimateAPIBenchmark": "Climate",
+            "Nexusflow/OTXAPIBenchmark": "OTX",
+            "Nexusflow/CVECPEAPIBenchmark": "CVECPE_Multi (Nested)",
+        }
 
-        # Validate dataset name
-        if dataset_name not in dataset_mapping:
-            available_datasets = list(dataset_mapping.keys())
-            raise ValueError(
-                f"Dataset '{dataset_name}' is not recognized. "
-                f"Available datasets: {available_datasets}"
-            )
+        dataset = load_dataset(
+            "Nexusflow/Function_Call_Definitions",
+            name=tool_dataset_mapping[self.dataset_name],
+        )["train"]
 
-        # Get the dataset directory
-        dataset_dir = self.data_dir / dataset_name
-        if not dataset_dir.exists():
-            raise FileNotFoundError(
-                f"The dataset directory for '{dataset_name}' \
-                does not exist at {dataset_dir}. "
-                "Please download it first."
-            )
-
-        # Load the dataset
-        if dataset_name == "NVDLibrary-NestedCalls":
-            self._data = _load_csv_data(dataset_dir)
-        else:
-            self._data = _load_parquet_data(dataset_dir / "data", dataset_name)
-
-    @property
-    def train(self):
-        r"""Get the training set."""
-        raise NotImplementedError(
-            "Nexus Functional Calling has only a single 'train' set."
+        # Generate the tool prompt
+        tool_prompt = "".join(
+            f"Function:\ndef {row['function_calls']}:\n"
+            + "\"\"\"\n"
+            + f"{row['descriptions']}\n"
+            + "\"\"\"\n"
+            for row in dataset
         )
 
-    def run(  # type: ignore[override, return]
+        return tool_prompt
+
+    def run(
         self,
-        agent: ChatAgent,
-        task: Literal[
-            "NVDLibrary",
-            "VirusTotal",
-            "OTX",
-            "PlacesAPI",
-            "ClimateAPI",
-            "VirusTotal-ParallelCalls",
-            "VirusTotal-NestedCalls",
-            "NVDLibrary-NestedCalls",
-        ],
-        randomize: bool = False,
-        subset: Optional[int] = None,
+        pipeline_template: ChatAgent,
     ) -> Dict[str, Any]:
-        r"""Run the benchmark.
+        r"""Run the benchmark evaluation.
 
         Args:
-            agent (ChatAgent): The agent to run the benchmark.
-            task (Literal["NVDLibrary", "VirusTotal", "OTX",
-            "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls",
-            "VirusTotal-NestedCalls",
-            "NVDLibrary-NestedCalls"]): The task to run the benchmark.
-            randomize (bool, optional): Whether to randomize the data.
-                (default: :obj:`False`)
-            subset (Optional[int], optional): The subset of data to run.
-                (default: :obj:`None`)
+            pipeline_template (ChatAgent): Chat agent for generating answers.
 
         Returns:
-            Dict[str, Any]: The results of the benchmark.
+            Dict[str, Any]: Dictionary containing:
+                - total_samples: Total number of samples evaluated
+                - correct: total correct calls
+                - accuracy: accuracy score
+
+        Raises:
+            ValueError: If dataset is not loaded.
         """
+        if self.dataset is None:
+            raise ValueError(
+                "Dataset not loaded. Please call load() before run()."
+            )
+        logger.info(
+            f"Running Nexus Function Calling benchmark on {self.dataset_name} "
+            f"with {self.num_processes} process(es)."
+        )
+        self._agent = pipeline_template
+        tools = self._construct_tool_descriptions()
 
-        if task not in dataset_mapping:
-            raise ValueError(f"Invalid value for dataset: {task}.")
+        # Clear the results file if it exists
+        open(self.save_to, "w").close()
 
-        logger.info(f"Running Nexus Function Calling benchmark on {task}.")
-        self.load(task)
-        datas = self._data
+        results = self._process_sample(tools)
 
-        # Shuffle and subset data if necessary
-        if randomize:
-            random.shuffle(datas)
-        if subset:
-            datas = datas[:subset]
-
-        logger.info(f"Number of tasks: {len(datas)}")
-
-        # Initialize results storage
-        self._results = []
-
-        # Process samples
-        tools = construct_tool_descriptions(task)
-        with open(self.save_to, "w") as f:
-            for sample in tqdm(datas, desc="Running"):
-                prompt = construct_prompt(input=sample.input, tools=tools)
-                ground_truth_call = sample.output
-                try:
-                    # Generate response
-                    response = agent.step(prompt)
-                    agent_call = response.msgs[0].content
-
-                    # Evaluate response
-                    if agent_call:
-                        result = compare_function_calls(
-                            agent_call=agent_call,
-                            ground_truth_call=ground_truth_call,
-                        )
-                        self._results.append(
-                            {
-                                "input": sample.input,
-                                "agent_call": agent_call,
-                                "ground_truth_call": ground_truth_call,
-                                "result": result,
-                                "error": None,
-                            }
-                        )
-                except Exception as e:
-                    logger.warning(f"Error in processing task: {sample.input}")
-                    self._results.append(
-                        {
-                            "input": sample.input,
-                            "agent_call": None,
-                            "ground_truth_call": ground_truth_call,
-                            "result": 0,
-                            "error": str(e),
-                        }
-                    )
-
-                agent.reset()
-
-                json_str = json.dumps(
-                    self._results[-1], indent=2, ensure_ascii=False
-                )
-                f.write(json_str + "\n")
-                f.flush()
-
-        total = len(self._results)
-        correct = sum(r["result"] for r in self._results)
+        total = len(results)
+        correct = sum(r["result"] for r in results)
 
         return {
             "total": total,
@@ -358,58 +180,65 @@ class NexusBenchmark(BaseBenchmark):
             "accuracy": correct / total,
         }
 
+    def _process_sample(
+        self,
+        tools: str,
+    ) -> List[Dict[str, Any]]:
+        r"""Process samples sequentially.
 
-# Utility functions
-def construct_tool_descriptions(dataset_name: str) -> str:
-    r"""Construct tool descriptions from function definitions and
-    descriptions."""
-    tool_dataset_mapping = {
-        "NVDLibrary": "CVECPE",
-        "VirusTotal": "VirusTotal",
-        "PlacesAPI": "Places",
-        "ClimateAPI": "Climate",
-        "OTX": "OTX",
-        "VirusTotal-NestedCalls": "VT_Multi (Nested)",
-        "VirusTotal-ParallelCalls": "VT_Multi (Parallel)",
-        "NVDLibrary-NestedCalls": "CVECPE_Multi (Nested)",
-    }
+        Args:
+            tools: Tool descriptions.
 
-    if dataset_name not in tool_dataset_mapping:
-        raise ValueError(
-            f"Dataset '{dataset_name}' is not recognized. "
-            f"Available datasets: {list(dataset_mapping.keys())}"
-        )
+        Returns:
+            List of result dictionaries.
+        """
+        results = []
+        for sample in tqdm(self.dataset, desc="Running"):
+            prompt = construct_prompt(input=sample["Input"], tools=tools)
+            ground_truth_call = sample["Output"]
 
-    # Load the dataset based on the dataset name
-    dataset = load_dataset(
-        "Nexusflow/Function_Call_Definitions",
-        name=tool_dataset_mapping[dataset_name],
-    )["train"]
+            try:
+                response = self._agent.step(prompt)
+                agent_call = response.msgs[0].content
 
-    # Construct tool descriptions
-    tools = [
-        NexusTool(tool["function_calls"], tool["descriptions"])
-        for tool in dataset
-    ]
+                if agent_call:
+                    result = compare_function_calls(
+                        agent_call=agent_call,
+                        ground_truth_call=ground_truth_call,
+                    )
+                    result_dict = {
+                        "input": sample["Input"],
+                        "agent_call": agent_call,
+                        "ground_truth_call": ground_truth_call,
+                        "result": result,
+                        "error": None,
+                    }
+                else:
+                    result_dict = {
+                        "input": sample["input"],
+                        "agent_call": None,
+                        "ground_truth_call": ground_truth_call,
+                        "result": 0,
+                        "error": "No response generated",
+                    }
+            except Exception as e:
+                logger.warning(f"Error in processing task: {sample['Input']}")
+                result_dict = {
+                    "input": sample["Input"],
+                    "agent_call": None,
+                    "ground_truth_call": ground_truth_call,
+                    "result": 0,
+                    "error": str(e),
+                }
 
-    # Generate the tool prompt
-    tool_prompt = "".join(
-        f"Function:\ndef {tool.function_calls}:\n"
-        + "\"\"\"\n"
-        + f"{tool.descriptions}\n"
-        + "\"\"\"\n"
-        for tool in tools
-    )
+            results.append(result_dict)
+            self._agent.reset()
 
-    return tool_prompt
+            save_to_jsonl(self.save_to, result_dict, mode="a")
+
+        return results
 
 
-def construct_prompt(input: str, tools: str) -> str:
-    r"Construct prompt from tools and input."
-    return TOOL_CALLING_PROMPT.format(tools=tools, input=input)
-
-
-# Functions for function call evaluation
 def parse_function_call(
     call: str,
 ) -> Tuple[Optional[str], Optional[List[Any]], Optional[Dict[str, Any]]]:

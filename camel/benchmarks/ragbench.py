@@ -158,17 +158,17 @@ class RAGBenchBenchmark(BaseBenchmark):
 
     def run(
         self,
-        agent: ChatAgent,
+        pipeline_template: ChatAgent,
         auto_retriever: AutoRetriever,
-    ) -> Dict[str, Optional[float]]:
+    ) -> Dict[str, Any]:
         r"""Run the benchmark evaluation.
 
         Args:
-            agent (ChatAgent): Chat agent for generating answers.
+            pipeline_template (ChatAgent): Chat agent for generating answers.
             auto_retriever (AutoRetriever): Retriever for finding relevant contexts.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary containing:
+            Dict[str, Any]: Dictionary containing:
                 - total_samples: Total number of samples evaluated
                 - faithfulness score: Average faithfulness score
                 - context_relevance score: Average context relevance score
@@ -181,16 +181,16 @@ class RAGBenchBenchmark(BaseBenchmark):
                 "Dataset not loaded. Please call load() before run()."
             )
 
-        self._agent = agent
+        self._agent = pipeline_template
         self._auto_retriever = auto_retriever
 
         self._context_relevance_evaluator = LLMScoreEvaluator(
-            agent=agent,
+            agent=pipeline_template,
             prompt_builder=build_context_relevance_prompt,
             default_score=0.0,
         )
         self._faithfulness_evaluator = LLMScoreEvaluator(
-            agent=agent,
+            agent=pipeline_template,
             prompt_builder=build_faithfulness_prompt,
             default_score=0.0,
         )

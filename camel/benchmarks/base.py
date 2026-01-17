@@ -35,7 +35,7 @@ class BaseBenchmark(ABC):
             processing. :(default: :obj:`1`)
     """
 
-    def __init__(self, name: str, data_dir: Optional[str], processes: int = 1):
+    def __init__(self, name: str, data_dir: Optional[str], save_to: Optional[str], processes: int = 1):
         r"""Initialize the benchmark.
 
         Args:
@@ -48,6 +48,7 @@ class BaseBenchmark(ABC):
         """
         self.name = name
         self.data_dir = data_dir
+        self.save_to = save_to
         self.processes = processes
         self._data: Dict[str, List[Dict[str, Any]]] = dict()
         self._results: List[Dict[str, Any]] = []

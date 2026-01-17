@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Callable
+import json
+from typing import Any, Callable, Dict
 
 from camel.agents import ChatAgent
 
@@ -92,3 +93,42 @@ Provide a faithfulness score from 0.0 to 1.0, where:
 - 1.0: Answer is fully faithful
 
 Respond with only the numeric score, nothing else."""
+
+
+def save_to_jsonl(
+    file_path: str,
+    data: Dict[str, Any],
+    mode: str = "a",
+) -> None:
+    r"""Save a dictionary to a JSONL file.
+
+    Args:
+        file_path (str): Path to the JSONL file.
+        data (Dict[str, Any]): Dictionary to save as a JSON line.
+        mode (str): File mode. Defaults to "a" (append).
+    """
+    json_str = json.dumps(data, indent=2, ensure_ascii=False)
+    with open(file_path, mode) as f:
+        f.write(json_str + "\n")
+        f.flush()
+
+
+TOOL_CALLING_PROMPT = """
+You are given multiple functions and a user query.
+
+Please proceed with generating a function call for the function \
+with the proper arguments that best answers the given prompt.
+
+Respond with nothing but the function call ONLY, such that I can \
+directly execute your function call without any post processing \
+necessary from my end. Do not use variables.
+If there are more than two function calls, separate them with a semicolon (;).
+
+{tools}
+
+Question: {input}
+"""
+
+def construct_prompt(input: str, tools: str) -> str:
+    r"Construct prompt from tools and input."
+    return TOOL_CALLING_PROMPT.format(tools=tools, input=input)
