@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
-import copy
 import json
 import os
 import time
@@ -1675,7 +1674,7 @@ class Workforce(BaseNode):
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
                 if recovery_decision.modified_task_content:
-                    old_content = copy.deepcopy(task.content)
+                    old_content = task.content
                     new_content = recovery_decision.modified_task_content
 
                     task.content = new_content
@@ -2096,7 +2095,7 @@ class Workforce(BaseNode):
 
         for task in self._pending_tasks:
             if task.id == task_id:
-                old_content = copy.deepcopy(task.content)
+                old_content = task.content
                 task.content = new_content
                 logger.info(f"Task {task_id} content modified.")
 
