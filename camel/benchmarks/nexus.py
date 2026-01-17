@@ -31,12 +31,6 @@ class NexusBenchmark(BaseBenchmark):
     r"""Nexus Function Calling Benchmark adapted from `NexusRaven V2
     Function Calling Benchmark`
     <https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>.
-
-    Args:
-        data_dir (str): The directory to save the data.
-        save_to (str): The file to save the results.
-        processes (int, optional): The number of processes to use.
-            (default: :obj:`1`)
     """
     DEFAULT_DATASET_NAME = "Nexusflow/VirusTotalBenchmark"
     DEFAULT_SPLIT = "train"
@@ -49,7 +43,7 @@ class NexusBenchmark(BaseBenchmark):
         r"""Initialize the Nexus Function Calling benchmark.
 
         Args:
-            data_dir (str): The directory to save the data.
+            data_dir (str): Path to the data directory.
             save_to (Optional[str]): The file to save the results. If None,
                 uses default 'NexusResults.jsonl'. (default: :obj:`None`)
             processes (int, optional): The number of processes to use for

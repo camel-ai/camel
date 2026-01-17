@@ -76,7 +76,7 @@ class APIBenchBenchmark(BaseBenchmark):
         r"""Initialize the APIBench benchmark.
 
         Args:
-            data_dir (Optional[str]): The directory to save the data.
+            data_dir (Optional[str]): Path to the data directory.
             save_to (Optional[str]): The file to save the results. If None,
                 uses default 'apibench.jsonl'. (default: :obj:`None`)
             processes (int, optional): The number of processes to use for
