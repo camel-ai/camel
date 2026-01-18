@@ -181,6 +181,13 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                 self._task_hierarchy[event.task_id]['token_usage'] = (
                     event.token_usage
                 )
+            # Store file information in task hierarchy for display in tree
+            if event.file_path is not None:
+                self._task_hierarchy[event.task_id]['file_path'] = event.file_path
+            if event.file_description is not None:
+                self._task_hierarchy[event.task_id]['file_description'] = (
+                    event.file_description
+                )
         if event.worker_id in self._worker_information:
             self._worker_information[event.worker_id]['current_task_id'] = None
             self._worker_information[event.worker_id]['status'] = 'idle'
@@ -443,7 +450,15 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
                     elif isinstance(token_usage, int):
                         token_usage_str = f" [tokens: {token_usage}]"
 
-        tree_str = f"{prefix}{'`-- ' if is_last else '|-- '}[{task_id}] {description} [{status}]{completion_time_str}{token_usage_str}{assignee_str}{dependencies_str}{error_str}\n"  # noqa: E501
+        # Add file information if available
+        file_info_str = ""
+        if 'file_path' in task_info and task_info['file_path']:
+            file_path_str = str(task_info['file_path'])
+            file_info_str = f"\n{prefix}{'    ' if is_last else '|   '}  Files: {file_path_str}"
+        if 'file_description' in task_info and task_info['file_description']:
+            file_info_str += f"\n{prefix}{'    ' if is_last else '|   '}  Description: {task_info['file_description']}"
+
+        tree_str = f"{prefix}{'`-- ' if is_last else '|-- '}[{task_id}] {description} [{status}]{completion_time_str}{token_usage_str}{assignee_str}{dependencies_str}{error_str}\n{file_info_str}"  # noqa: E501
 
         children = task_info.get('children', [])
         for i, child_id in enumerate(children):

@@ -4691,6 +4691,13 @@ class Workforce(BaseNode):
                     token_usage = None
 
         # Log the completed task
+        # Extract file information from task.additional_info
+        file_path = None
+        file_description = None
+        if task.additional_info:
+            file_path = task.additional_info.get("file_paths")
+            file_description = task.additional_info.get("file_description")
+
         task_completed_event = TaskCompletedEvent(
             task_id=task.id,
             worker_id=worker_id,
@@ -4698,6 +4705,8 @@ class Workforce(BaseNode):
             result_summary=task.result if task.result else "Completed",
             processing_time_seconds=processing_time_seconds,
             token_usage=token_usage,
+            file_path=file_path,
+            file_description=file_description,
             metadata={'current_state': task.state.value},
         )
         for cb in self._callbacks:

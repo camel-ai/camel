@@ -17,6 +17,7 @@ import asyncio
 import datetime
 import time
 from collections import deque
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from colorama import Fore
@@ -333,6 +334,94 @@ class SingleAgentWorker(Worker):
             )
         return self._workflow_manager
 
+    def _extract_file_paths(self, tool_calls: Optional[List]) -> Optional[List[str]]:
+        r"""Extract file paths from tool calls.
+
+        This method extracts file paths from write_to_file tool calls.
+        For MVP, only tracks write_to_file operations.
+
+        Args:
+            tool_calls: List of tool calling records from response.info.
+
+        Returns:
+            List of file paths, or None if no file operations found.
+        """
+        if not tool_calls:
+            return None
+
+        file_paths = []
+
+        for call in tool_calls:
+            # MVP: Only track write_to_file operations
+            if hasattr(call, 'tool_name') and call.tool_name == 'write_to_file':
+                filename = None
+                if hasattr(call, 'args') and call.args:
+                    filename = call.args.get('filename')
+
+                if filename:
+                    # Extract full path from result
+                    # Result format: "Content successfully written to file: /full/path"
+                    if hasattr(call, 'result'):
+                        result_str = str(call.result)
+                        if "successfully written to file:" in result_str:
+                            full_path = result_str.split(
+                                "successfully written to file:"
+                            )[-1].strip()
+                            file_paths.append(full_path)
+                        elif filename not in file_paths:
+                            # Fallback to just the filename
+                            file_paths.append(filename)
+
+        return file_paths if file_paths else None
+
+    async def _generate_file_description(
+        self, task_content: str, file_paths: List[str]
+    ) -> Optional[str]:
+        r"""Generate description for files based on task content.
+
+        This method uses a heuristic-based approach to generate file
+        descriptions without making API calls.
+
+        Args:
+            task_content: The original task content.
+            file_paths: List of generated file paths.
+
+        Returns:
+            File description string, or None if generation fails.
+        """
+        try:
+            # Simple heuristic-based approach (no API call)
+            content_lower = task_content.lower()
+
+            # Determine action
+            if any(word in content_lower for word in ['create', 'write', 'generate']):
+                action = "Creates"
+            elif any(word in content_lower for word in ['update', 'modify', 'edit']):
+                action = "Updates"
+            elif any(word in content_lower for word in ['read', 'load', 'fetch']):
+                action = "Reads"
+            else:
+                action = "Processes"
+
+            # Extract file types
+            file_types = []
+            for path in file_paths:
+                ext = Path(path).suffix.lstrip('.')
+                if ext and ext not in file_types:
+                    file_types.append(ext)
+
+            if file_types:
+                file_names = ', '.join(Path(p).name for p in file_paths)
+                return f"{action} {', '.join(file_types)} file(s): {file_names}"
+            else:
+                file_names = ', '.join(Path(p).name for p in file_paths)
+                return f"{action} files: {file_names}"
+
+        except Exception:
+            # Fallback to simple description
+            file_names = ', '.join(Path(p).name for p in file_paths)
+            return f"Generated files: {file_names}"
+
     async def _process_task(
         self, task: Task, dependencies: List[Task]
     ) -> TaskState:
@@ -497,6 +586,27 @@ class SingleAgentWorker(Worker):
         if task.additional_info is None:
             task.additional_info = {}
 
+        # Extract tool calls for file path detection
+        tool_calls = (
+            final_response.info.get("tool_calls")
+            if isinstance(response, AsyncStreamingChatAgentResponse)
+            else response.info.get("tool_calls")
+        )
+
+        # Extract file paths from tool calls (MVP: write_to_file only)
+        file_paths = self._extract_file_paths(tool_calls)
+        file_description = None
+        if file_paths:
+            file_description = await self._generate_file_description(
+                task.content, file_paths
+            )
+
+        # Store file information in additional_info for TaskCompletedEvent
+        if file_paths:
+            task.additional_info["file_paths"] = file_paths
+        if file_description:
+            task.additional_info["file_description"] = file_description
+
         # Create worker attempt details with descriptive keys
         worker_attempt_details = {
             "agent_id": getattr(
@@ -512,11 +622,7 @@ class SingleAgentWorker(Worker):
             f"{getattr(self.worker, 'agent_id', self.worker.role_name)}) "
             f"to process task: {task.content}",
             "response_content": response_content[:50],
-            "tool_calls": str(
-                final_response.info.get("tool_calls")
-                if isinstance(response, AsyncStreamingChatAgentResponse)
-                else response.info.get("tool_calls")
-            )[:50],
+            "tool_calls": str(tool_calls)[:50],
             "total_tokens": total_tokens,
         }
 
