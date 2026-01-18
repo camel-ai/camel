@@ -71,9 +71,18 @@ if (Array.isArray(slidesData)) {
 // Save File
 pres.writeFile({ fileName: filename })
     .then((fileName) => {
-        console.log(`PowerPoint presentation successfully created: ${fileName}`);
+        const result = {
+            success: true,
+            path: fileName,
+            slides: Array.isArray(slidesData) ? slidesData.length : 0
+        };
+        console.log(JSON.stringify(result));
     })
     .catch((err) => {
-        console.error("Error saving file:", err);
+        const result = {
+            success: false,
+            error: err.toString()
+        };
+        console.log(JSON.stringify(result));
         process.exit(1);
     });
