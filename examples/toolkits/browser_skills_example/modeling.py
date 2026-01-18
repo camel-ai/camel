@@ -11,10 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from .config_loader import EvidenceCaptureConfig
-from .hybrid_browser_toolkit import HybridBrowserToolkit
+"""Model configuration for browser_skills_example."""
 
-__all__ = [
-    "EvidenceCaptureConfig",
-    "HybridBrowserToolkit",
-]
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+# === Single source of truth for the example scripts ===
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
+DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
+
+
+def create_default_model():
+    """Create the default model used by the example scripts."""
+    return ModelFactory.create(
+        model_platform=DEFAULT_MODEL_PLATFORM,
+        model_type=DEFAULT_MODEL_TYPE,
+        model_config_dict={
+            "temperature": 0.0,
+            "parallel_tool_calls": False,
+        },
+    )

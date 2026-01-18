@@ -150,12 +150,6 @@ def load_main_log(log_file: str) -> List[Dict[str, Any]]:
     return actions
 
 
-def load_subtask_log(log_file: str) -> Dict[str, Any]:
-    """Load a subtask replay log file."""
-    with open(log_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
 def get_latest_snapshot_before_action(
     main_actions: List[Dict], action_index: int
 ) -> str:
@@ -288,12 +282,6 @@ def analyze_session(session_dir: str):
         print(f"Error: Main log file not found: {main_log_file}")
         return
 
-    # Find all subtask files
-    subtask_files = sorted(session_path.glob("subtask_*_replay_actions.json"))
-
-    if not subtask_files:
-        print("Warning: No subtask files found")
-
     # Actions to exclude from timeline
     excluded_actions = {
         'get_tab_info',
@@ -325,104 +313,9 @@ def analyze_session(session_dir: str):
     # Load main log
     main_actions = load_main_log(str(main_log_file))
 
-    # Load all subtasks
-    subtasks = []
-    all_subtask_timings = set()
-
-    for subtask_file in subtask_files:
-        print(f"\nLoading subtask: {subtask_file.name}")
-        subtask_data = load_subtask_log(str(subtask_file))
-        subtasks.append(subtask_data)
-
-        subtask_id = subtask_data.get('subtask_id', 'unknown')
-        subtask_name = subtask_data.get('subtask_name', 'Unknown')
-        actions = subtask_data.get('actions', [])
-
-        print(f"  Subtask: {subtask_name} ({subtask_id})")
-        print(f"  Actions: {len(actions)}")
-
-        # Collect timing values from this subtask
-        for action in actions:
-            result = action.get('result', {})
-            if isinstance(result, dict):
-                timing = result.get('timing')
-                if timing:
-                    # Convert timing dict to a hashable tuple for set storage
-                    timing_tuple = tuple(sorted(timing.items()))
-                    all_subtask_timings.add(timing_tuple)
-
-    print(
-        f"\n✓ Loaded {len(subtasks)} subtasks with {len(all_subtask_timings)} unique timings"
-    )
-
-    # Filter main log actions that are NOT in subtasks
-    non_subtask_actions = []
-
-    for action in main_actions:
-        outputs = action.get('outputs', {})
-        if isinstance(outputs, dict):
-            timing = outputs.get('timing')
-            if timing:
-                timing_tuple = tuple(sorted(timing.items()))
-                if timing_tuple not in all_subtask_timings:
-                    non_subtask_actions.append(action)
-        else:
-            # No timing, include it
-            non_subtask_actions.append(action)
-
-    print(f"\n✓ Found {len(non_subtask_actions)} actions NOT in subtasks")
-
-    # Save non-subtask actions to file
-    output_file = session_path / "non_subtask_actions.json"
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(non_subtask_actions, f, indent=2, ensure_ascii=False)
-
-    print(f"✓ Saved non-subtask actions to: {output_file}")
-
     # Generate timeline with all actions in chronological order
     timeline = []
 
-    # Track all subtask actions with their timing
-    # Map: timing_tuple -> subtask info
-    subtask_action_timings = {}
-    # Map: subtask_id -> first_action_timing (for identifying subtask start)
-    subtask_first_action = {}
-    # Map: subtask_id -> variables_used
-    subtask_variables = {}
-
-    for subtask in subtasks:
-        subtask_id = subtask.get('subtask_id', 'unknown')
-        subtask_name = subtask.get('subtask_name', 'Unknown')
-        variables_used = subtask.get('variables_used', {})
-        actions = subtask.get('actions', [])
-
-        # Store variables for this subtask
-        subtask_variables[subtask_id] = variables_used
-
-        for idx, action in enumerate(actions):
-            result = action.get('result', {})
-            if isinstance(result, dict):
-                timing = result.get('timing')
-                if timing:
-                    timing_tuple = tuple(sorted(timing.items()))
-                    subtask_action_timings[timing_tuple] = {
-                        'subtask_id': subtask_id,
-                        'subtask_name': subtask_name,
-                        'action_index': idx,
-                        'variables_used': variables_used,
-                    }
-
-                    # Record first action timing for this subtask
-                    if idx == 0:
-                        subtask_first_action[subtask_id] = {
-                            'timing': timing_tuple,
-                            'timestamp': action.get('timestamp'),
-                            'subtask_name': subtask_name,
-                            'variables_used': variables_used,
-                        }
-
-    # Process main log and build timeline
-    already_added_subtasks = set()
 
     for action_index, action in enumerate(main_actions):
         action_name = action.get('action', '')
@@ -436,114 +329,43 @@ def analyze_session(session_dir: str):
             continue
 
         timestamp = action.get('timestamp', '')
-        outputs = action.get('outputs', {})
+        inputs = action.get('inputs', {})
+        args = inputs.get('args', [])
 
-        # Check if this action is part of a subtask
-        timing = None
-        if isinstance(outputs, dict):
-            timing = outputs.get('timing')
-
-        is_subtask_action = False
-        subtask_info = None
-
-        if timing:
-            timing_tuple = tuple(sorted(timing.items()))
-            if timing_tuple in subtask_action_timings:
-                is_subtask_action = True
-                subtask_info = subtask_action_timings[timing_tuple]
-
-        # If this is a subtask action, check if it's the first one
-        if is_subtask_action and subtask_info:
-            subtask_id = subtask_info['subtask_id']
-            action_index_in_subtask = subtask_info.get('action_index', 0)
-
-            # Only add subtask_replay entry for the first action of each subtask
-            if (
-                action_index_in_subtask == 0
-                and subtask_id not in already_added_subtasks
-            ):
-                # Extract aria label for the first action if it has args
-                inputs = action.get('inputs', {})
-                args = inputs.get('args', [])
-                element_label = None
-
-                if args:
-                    # Get the most recent snapshot before this action
-                    snapshot_before = get_latest_snapshot_before_action(
-                        main_actions, action_index
-                    )
-
-                    # Try to extract label from first ref argument
-                    for arg in args:
-                        if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                            element_label = extract_aria_label_from_snapshot(
-                                snapshot_before, arg
-                            )
-                            if element_label:
-                                break
-
-                # Get URL before and after this action
-                url_info = get_url_before_and_after_action(
-                    main_actions, action_index
-                )
-
-                timeline.append(
-                    {
-                        'action_step': action_index,
-                        'timestamp': timestamp,
-                        'action_type': 'subtask_replay',
-                        'subtask_id': subtask_id,
-                        'subtask_name': subtask_info['subtask_name'],
-                        'element_label': element_label,
-                        'variables_used': subtask_info.get(
-                            'variables_used', {}
-                        ),
-                        'url_before': url_info['url_before'],
-                        'url_after': url_info['url_after'],
-                    }
-                )
-
-                already_added_subtasks.add(subtask_id)
-
-        # If not a subtask action, add as individual action
-        elif not is_subtask_action:
-            inputs = action.get('inputs', {})
-            args = inputs.get('args', [])
-
-            # Extract aria label from snapshot
-            element_label = None
-            if args:
-                # Get the most recent snapshot before this action
-                snapshot_before = get_latest_snapshot_before_action(
-                    main_actions, action_index
-                )
-
-                # Try to extract label from first ref argument
-                for arg in args:
-                    if isinstance(arg, str) and re.match(r'^e\d+$', arg):
-                        element_label = extract_aria_label_from_snapshot(
-                            snapshot_before, arg
-                        )
-                        if element_label:
-                            break
-
-            # Get URL before and after this action
-            url_info = get_url_before_and_after_action(
+        # Extract aria label from snapshot
+        element_label = None
+        if args:
+            # Get the most recent snapshot before this action
+            snapshot_before = get_latest_snapshot_before_action(
                 main_actions, action_index
             )
 
-            timeline.append(
-                {
-                    'action_step': action_index,
-                    'timestamp': timestamp,
-                    'action_type': 'individual_action',
-                    'action': action_name,
-                    'element_label': element_label,
-                    'args': args,
-                    'url_before': url_info['url_before'],
-                    'url_after': url_info['url_after'],
-                }
-            )
+            # Try to extract label from first ref argument
+            for arg in args:
+                if isinstance(arg, str) and re.match(r'^e\d+$', arg):
+                    element_label = extract_aria_label_from_snapshot(
+                        snapshot_before, arg
+                    )
+                    if element_label:
+                        break
+
+        # Get URL before and after this action
+        url_info = get_url_before_and_after_action(
+            main_actions, action_index
+        )
+
+        timeline.append(
+            {
+                'action_step': action_index,
+                'timestamp': timestamp,
+                'action_type': 'individual_action',
+                'action': action_name,
+                'element_label': element_label,
+                'args': args,
+                'url_before': url_info['url_before'],
+                'url_after': url_info['url_after'],
+            }
+        )
 
     # Save timeline with task description
     timeline_output = {
@@ -567,18 +389,6 @@ def analyze_session(session_dir: str):
     print("ANALYSIS SUMMARY")
     print("=" * 80)
     print(f"Total actions in main log: {len(main_actions)}")
-    print(
-        f"Actions in subtasks: {len(main_actions) - len(non_subtask_actions)}"
-    )
-    print(f"Actions NOT in subtasks: {len(non_subtask_actions)}")
-    print(f"Timeline entries: {len(timeline)}")
-    print(f"  - Subtask replays: {len(already_added_subtasks)}")
-    print(
-        f"  - Individual actions: {len(timeline) - len(already_added_subtasks)}"
-    )
-    print("\nOutput files:")
-    print(f"  - Non-subtask actions: {output_file}")
-    print(f"  - Timeline: {timeline_file}")
     print("=" * 80)
 
 
