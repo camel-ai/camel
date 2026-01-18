@@ -73,6 +73,7 @@ export interface BrowserToolkitConfig {
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
   cdpKeepCurrentPage?: boolean; // When true, CDP mode will keep the current page instead of creating new one
+  interactionMode?: 'default' | 'full_vision' | 'pixel_interaction'; // Browser interaction mode
 }
 
 export interface ClickAction {

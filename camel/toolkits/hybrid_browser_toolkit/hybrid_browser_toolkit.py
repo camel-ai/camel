@@ -109,6 +109,7 @@ class HybridBrowserToolkit(BaseToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        interaction_mode: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         r"""Create a HybridBrowserToolkit instance with the specified mode.
@@ -165,6 +166,11 @@ class HybridBrowserToolkit(BaseToolkit):
                 as snapshot instead of actual page content. The
                 browser_get_page_snapshot method will still return the actual
                 snapshot. Defaults to False.
+            interaction_mode (Optional[str]): Browser interaction mode. One
+                of 'default', 'full_vision', or 'pixel_interaction'. When
+                'pixel_interaction', browser_click and browser_type will use
+                pixel coordinates instead of element refs. Defaults to None
+                (which is equivalent to 'default').
             **kwargs: Additional keyword arguments passed to the
                 implementation.
 
@@ -198,6 +204,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cdp_url=cdp_url,
                 cdp_keep_current_page=cdp_keep_current_page,
                 full_visual_mode=full_visual_mode,
+                interaction_mode=interaction_mode,
                 **kwargs,
             )
         elif mode == "python":

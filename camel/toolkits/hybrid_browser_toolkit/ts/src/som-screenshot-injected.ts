@@ -11,12 +11,19 @@ export class SomScreenshotInjected {
   /**
    * Take a screenshot with SOM-labels injected into the page
    * This approach uses a single script injection for better performance
+   *
+   * @param page Playwright page object
+   * @param snapshotResult Snapshot result with elements
+   * @param clickableElements Set of clickable element refs
+   * @param exportPath Optional path to export element geometry
+   * @param includeLabels Whether to include SOM overlay labels (default: true)
    */
   static async captureOptimized(
     page: Page,
     snapshotResult: SnapshotResult,
     clickableElements: Set<string>,
-    exportPath?: string
+    exportPath?: string,
+    includeLabels: boolean = true
   ): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
 
@@ -33,7 +40,7 @@ export class SomScreenshotInjected {
       const visibilityDebugInfo: any[] = [];
 
       const result = await page.evaluate(async (data) => {
-        const { elements, clickable, filterDebugInfo } = data;
+        const { elements, clickable, filterDebugInfo, includeLabels } = data;
         const markedElements: any[] = [];
 
         // Debug info collector - include filter debug info
@@ -329,6 +336,38 @@ export class SomScreenshotInjected {
         }
 
         // Add labels and collect geometry data (only for filtered elements)
+        // Skip if includeLabels is false (for pixel_interaction mode)
+        if (!includeLabels) {
+          // Still collect element geometry data even without labels
+          Object.entries(elements).forEach(([ref, element]: [string, any]) => {
+            if (element.coordinates && clickable.includes(ref)) {
+              const { x, y, width, height } = element.coordinates;
+              markedElements.push({
+                ref,
+                x,
+                y,
+                width,
+                height,
+                center: {
+                  x: x + width / 2,
+                  y: y + height / 2
+                },
+                area: width * height,
+                type: element.role || 'unknown',
+                tagName: element.tagName || ''
+              });
+            }
+          });
+
+          return {
+            overlayId: null,  // No overlay when labels are disabled
+            elementCount: 0,
+            markedElements,
+            debugInfo
+          };
+        }
+
+        // Create overlay and add labels (original behavior)
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
             const state = elementStates.get(ref);
@@ -439,7 +478,8 @@ export class SomScreenshotInjected {
       }, {
         elements: snapshotResult.elements,
         clickable: Array.from(clickableElements),
-        filterDebugInfo: []
+        filterDebugInfo: [],
+        includeLabels: includeLabels
       });
 
       // Take screenshot
@@ -448,14 +488,16 @@ export class SomScreenshotInjected {
         type: 'png'
       });
 
-      // Keep the overlay visible for 1 second before cleanup
-      await page.waitForTimeout(1000);
+      // Keep the overlay visible for 1 second before cleanup (only if labels were shown)
+      if (result.overlayId) {
+        await page.waitForTimeout(1000);
 
-      // Clean up
-      await page.evaluate((overlayId) => {
-        const overlay = document.getElementById(overlayId);
-        if (overlay) overlay.remove();
-      }, result.overlayId);
+        // Clean up
+        await page.evaluate((overlayId) => {
+          const overlay = document.getElementById(overlayId);
+          if (overlay) overlay.remove();
+        }, result.overlayId);
+      }
 
       // Export element geometry if path is provided
       if (exportPath && result.markedElements) {

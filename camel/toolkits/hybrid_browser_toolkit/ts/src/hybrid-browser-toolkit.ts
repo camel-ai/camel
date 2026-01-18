@@ -189,7 +189,7 @@ export class HybridBrowserToolkit {
     return await this.session.getSnapshotForAI();
   }
 
-  async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
+  async getSomScreenshot(includeLabels: boolean = true): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
     console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
 
@@ -211,7 +211,8 @@ export class HybridBrowserToolkit {
         page,
         snapshotResult,
         filteredElements,
-        undefined  // No export path - don't generate files
+        undefined,  // No export path - don't generate files
+        includeLabels  // Pass includeLabels parameter
       );
 
       // Add snapshot timing info to result
