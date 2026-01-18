@@ -172,6 +172,7 @@ class ConfigLoader:
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
+            "interactionMode": self.browser_config.interaction_mode.value,
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,

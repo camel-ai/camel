@@ -1045,6 +1045,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 }
             )
 
+            # FR3: No Snapshot behavior - remove snapshot in PIXEL/FULL_VISION modes
+            if self._interaction_mode != BrowserInteractionMode.DEFAULT:
+                result["snapshot"] = ""
+
             return result
         except Exception as e:
             logger.error(f"Failed to control mouse: {e}")
