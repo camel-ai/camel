@@ -21,12 +21,12 @@ try {
 }
 
 // Create Presentation
-const pres = new PptxGenJS();
+const ppt = new PptxGenJS();
 
 // Process slides
 if (Array.isArray(slidesData)) {
     slidesData.forEach((slideData) => {
-        const slide = pres.addSlide();
+        const slide = ppt.addSlide();
 
         // simple layout heuristics based on keys
         if (slideData.title) {
@@ -69,7 +69,7 @@ if (Array.isArray(slidesData)) {
 }
 
 // Save File
-pres.writeFile({ fileName: filename })
+ppt.writeFile({ fileName: filename })
     .then((fileName) => {
         const result = {
             success: true,
