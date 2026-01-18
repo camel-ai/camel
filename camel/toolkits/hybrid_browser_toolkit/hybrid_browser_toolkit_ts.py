@@ -30,9 +30,11 @@ from typing import (
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.types.enums import BrowserInteractionMode
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+from .tool_generator import ToolGenerator
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -115,6 +117,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        interaction_mode: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -165,6 +168,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
+            interaction_mode (Optional[str]): Browser interaction mode. One
+                of 'default', 'full_vision', or 'pixel_interaction'. When
+                'pixel_interaction', browser_click and browser_type will use
+                pixel coordinates instead of element refs. Defaults to None
+                (which is equivalent to 'default').
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -191,6 +199,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url=cdp_url,
             cdp_keep_current_page=cdp_keep_current_page,
             full_visual_mode=full_visual_mode,
+            interactionMode=interaction_mode,
         )
 
         browser_config = self.config_loader.get_browser_config()
@@ -216,6 +225,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
+        self._interaction_mode = browser_config.interaction_mode
 
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
@@ -646,32 +656,67 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
 
-    async def browser_click(self, *, ref: str) -> Dict[str, Any]:
+    async def browser_click(
+        self,
+        *,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
+        This method supports two interaction modes:
+        - DOM-based: Click using element reference (ref parameter)
+        - Pixel-based: Click at coordinates (x, y parameters)
+
+        The available parameters depend on the interaction_mode:
+        - DEFAULT/FULL_VISION: Uses ref (DOM element reference)
+        - PIXEL_INTERACTION: Uses x, y (pixel coordinates)
+
         Args:
-            ref (str): The `ref` ID of the element to click. This ID is
-                obtained from a page snapshot (`get_page_snapshot` or
-                `get_som_screenshot`).
+            ref (Optional[str]): The `ref` ID of the element to click.
+                Used in DEFAULT/FULL_VISION modes.
+            x (Optional[float]): X-coordinate for the click (in pixels).
+                Used in PIXEL_INTERACTION mode.
+            y (Optional[float]): Y-coordinate for the click (in pixels).
+                Used in PIXEL_INTERACTION mode.
+            reason (Optional[str]): Reason for clicking at this location.
+                Used for logging and debugging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
                 - "result" (str): Confirmation of the action.
                 - "snapshot" (str): A textual snapshot of the page after the
-                  click.
+                  click (only in DEFAULT mode).
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+
+        Raises:
+            ValueError: If invalid parameter combination is provided.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.click(ref)
+
+            # Determine which mode to use based on provided parameters
+            if ref is not None:
+                # DOM-based click
+                result = await ws_wrapper.click(ref)
+            elif x is not None and y is not None:
+                # Pixel-based click using mouse_control
+                result = await ws_wrapper.mouse_control("click", x, y)
+            else:
+                raise ValueError(
+                    "Either provide 'ref' for DOM-based click, "
+                    "or both 'x' and 'y' for pixel-based click."
+                )
 
             tab_info = await ws_wrapper.get_tab_info()
 
+            # Build response
             response = {
                 "result": result.get("result", ""),
-                "snapshot": result.get("snapshot", ""),
                 "tabs": tab_info,
                 "current_tab": next(
                     (
@@ -684,6 +729,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": len(tab_info),
             }
 
+            # Only include snapshot in DEFAULT mode (FR3: No Snapshot Behavior)
+            # In FULL_VISION and PIXEL_INTERACTION modes, don't return snapshots
+            if self._interaction_mode == BrowserInteractionMode.DEFAULT:
+                response["snapshot"] = result.get("snapshot", "")
+
             if "newTabId" in result:
                 response["newTabId"] = result["newTabId"]
 
@@ -693,13 +743,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return response
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
-            return {
+            error_response = {
                 "result": f"Error clicking element: {e}",
-                "snapshot": "",
                 "tabs": [],
                 "current_tab": 0,
                 "total_tabs": 0,
             }
+            # Only include snapshot in DEFAULT mode
+            if self._interaction_mode == BrowserInteractionMode.DEFAULT:
+                error_response["snapshot"] = ""
+            return error_response
 
     async def browser_type(
         self,
@@ -707,74 +760,107 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         ref: Optional[str] = None,
         text: Optional[str] = None,
         inputs: Optional[List[Dict[str, str]]] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        reason: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Types text into one or more input elements on the page.
 
-        This method supports two modes:
-        1. Single input mode (backward compatible): Provide 'ref' and 'text'
-        2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
-           with 'ref' and 'text' keys
+        This method supports multiple interaction modes:
+        - DOM-based single input: Provide 'ref' and 'text'
+        - DOM-based multiple inputs: Provide 'inputs' list
+        - Pixel-based input: Provide 'x', 'y' coordinates and 'text'
+
+        The available parameters depend on the interaction_mode:
+        - DEFAULT/FULL_VISION: Uses ref (DOM element reference)
+        - PIXEL_INTERACTION: Uses x, y (pixel coordinates)
 
         Args:
-            ref (Optional[str]): The `ref` ID of the input element, from a
-                snapshot. Required when using single input mode.
-            text (Optional[str]): The text to type into the element. Required
-                when using single input mode.
-            inputs (Optional[List[Dict[str, str]]]): List of dictionaries,
-                each containing 'ref' and 'text' keys for typing into multiple
-                elements. Example: [{'ref': '1', 'text': 'username'},
-                {'ref': '2', 'text': 'password'}]
+            ref (Optional[str]): The `ref` ID of the input element.
+                Used in DEFAULT/FULL_VISION modes.
+            text (Optional[str]): The text to type into the element.
+                Required for single input mode.
+            inputs (Optional[List[Dict[str, str]]]): List of dictionaries
+                with 'ref' and 'text' for multiple inputs.
+            x (Optional[float]): X-coordinate for the input (in pixels).
+                Used in PIXEL_INTERACTION mode.
+            y (Optional[float]): Y-coordinate for the input (in pixels).
+                Used in PIXEL_INTERACTION mode.
+            reason (Optional[str]): Reason for typing at this location.
+                Used for logging and debugging.
 
         Returns:
-            Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A textual snapshot of the page after
-                  typing.
-                - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab.
-                - "total_tabs" (int): Total number of open tabs.
-                - "details" (Dict[str, Any]): When using multiple inputs,
-                  contains success/error status for each ref.
+            Dict[str, Any]: A dictionary with the result of the action.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
 
             if ref is not None and text is not None:
+                # DOM-based single input
                 result = await ws_wrapper.type(ref, text)
             elif inputs is not None:
+                # DOM-based multiple inputs
                 result = await ws_wrapper.type_multiple(inputs)
+            elif x is not None and y is not None and text is not None:
+                # Pixel-based input: click at coordinates, then type
+                import asyncio
+
+                # First click to focus the element
+                await ws_wrapper.mouse_control("click", x, y)
+                # Small delay to ensure focus
+                await asyncio.sleep(0.1)
+                # Then type the text using batch keyboard input
+                operations = [{"type": "type", "text": text, "delay": 0}]
+                await ws_wrapper._send_command(
+                    'batch_keyboard_input',
+                    {'operations': operations, 'skipStabilityWait': True},
+                )
+                result = {"result": f"Typed '{text}' at ({x}, {y})", "snapshot": ""}
             else:
                 raise ValueError(
-                    "Either provide 'ref' and 'text' for single input, "
-                    "or 'inputs' for multiple inputs"
+                    "Either provide 'ref' and 'text' for DOM-based input, "
+                    "'inputs' for multiple DOM-based inputs, "
+                    "or 'x', 'y' and 'text' for pixel-based input."
                 )
 
             tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
-            )
 
-            return result
+            # Build response with tab info
+            response = {
+                "result": result.get("result", ""),
+                "tabs": tab_info,
+                "current_tab": next(
+                    (
+                        i
+                        for i, tab in enumerate(tab_info)
+                        if tab.get("is_current")
+                    ),
+                    0,
+                ),
+                "total_tabs": len(tab_info),
+            }
+
+            # Include snapshot in DEFAULT mode only (FR3)
+            if self._interaction_mode == BrowserInteractionMode.DEFAULT:
+                response["snapshot"] = result.get("snapshot", "")
+
+            # Include details if present (for multiple inputs mode)
+            if "details" in result:
+                response["details"] = result["details"]
+
+            return response
         except Exception as e:
             logger.error(f"Failed to type text: {e}")
-            return {
+            error_response = {
                 "result": f"Error typing text: {e}",
-                "snapshot": "",
                 "tabs": [],
                 "current_tab": 0,
                 "total_tabs": 0,
             }
+            # Only include snapshot in DEFAULT mode
+            if self._interaction_mode == BrowserInteractionMode.DEFAULT:
+                error_response["snapshot"] = ""
+            return error_response
 
     async def browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
         r"""Selects an option in a dropdown (`<select>`) element.
@@ -1914,8 +2000,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         )
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Get available function tools based
-        on enabled_tools configuration."""
+        r"""Get available function tools based on enabled_tools configuration.
+
+        The tool schemas are dynamically generated based on interaction_mode:
+        - DEFAULT: DOM-based tools with ref parameter
+        - FULL_VISION: DOM-based tools with ref parameter, no snapshots
+        - PIXEL_INTERACTION: Pixel-based tools with x, y parameters, no snapshots
+        """
+        # Get current interaction mode
+        mode = self._interaction_mode
+
         # Map tool names to their corresponding methods
         tool_map = {
             "browser_open": self.browser_open,
@@ -1947,12 +2041,39 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         for tool_name in self.enabled_tools:
             if tool_name in tool_map:
-                tool = FunctionTool(
-                    cast(Callable[..., Any], tool_map[tool_name])
-                )
+                tool_func = tool_map[tool_name]
+
+                # Generate dynamic schemas for mode-dependent tools
+                if tool_name == "browser_click":
+                    custom_schema = ToolGenerator().generate_click_tool(mode)
+                    tool = FunctionTool(
+                        cast(Callable[..., Any], tool_func),
+                        openai_tool_schema=custom_schema
+                    )
+                elif tool_name == "browser_type":
+                    custom_schema = ToolGenerator().generate_type_tool(mode)
+                    tool = FunctionTool(
+                        cast(Callable[..., Any], tool_func),
+                        openai_tool_schema=custom_schema
+                    )
+                elif tool_name == "browser_get_som_screenshot":
+                    custom_schema = ToolGenerator().generate_screenshot_tool(mode)
+                    tool = FunctionTool(
+                        cast(Callable[..., Any], tool_func),
+                        openai_tool_schema=custom_schema
+                    )
+                else:
+                    # Use default schema for other tools
+                    tool = FunctionTool(
+                        cast(Callable[..., Any], tool_func)
+                    )
+
                 enabled_tools.append(tool)
             else:
                 logger.warning(f"Unknown tool name: {tool_name}")
 
-        logger.info(f"Returning {len(enabled_tools)} enabled tools")
+        logger.info(
+            f"Returning {len(enabled_tools)} enabled tools "
+            f"for mode: {mode.value}"
+        )
         return enabled_tools
