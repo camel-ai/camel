@@ -1,0 +1,47 @@
+{
+  "log_file": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_165921/complete_browser_log.log",
+  "task_description": "Search for one-way flights from New York to London on Jan. 26th, 2026 and filter the results to show only non-stop flights.",
+  "subtasks": [
+    {
+      "name": "Filter Non-Stop Flights",
+      "description": "Apply filter to show only non-stop flights in the search results. Execution page: https://www.google.com/travel/flights/search",
+      "start_index": 51,
+      "end_index": 53,
+      "actions": [
+        {
+          "action_step": 51,
+          "timestamp": "2025-12-30T17:00:03.665674",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Stops, Not selected",
+          "args": [
+            "e3228"
+          ],
+          "url_before": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg",
+          "url_after": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg"
+        },
+        {
+          "action_step": 53,
+          "timestamp": "2025-12-30T17:00:14.055557",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": null,
+          "args": [
+            "e3233"
+          ],
+          "url_before": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg",
+          "url_after": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg"
+        }
+      ],
+      "variables": {},
+      "url_start": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg",
+      "url_end": "https://www.google.com/travel/flights/search?tfs=CBwQAhopEgoyMDI2LTAxLTI2ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg",
+      "id": 16
+    }
+  ],
+  "metadata": {
+    "total_subtasks": 1,
+    "created_from": "subtask_candidate_analyzer",
+    "source_session": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_165921"
+  }
+}

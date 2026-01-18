@@ -1,0 +1,73 @@
+[
+  {
+    "action_step": 19,
+    "action": "click",
+    "element_label": "Departure",
+    "args": [
+      "e1139"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDJtNzcaDnIMCAMSCC9tLzAybTc3QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:26:46.449207"
+  },
+  {
+    "action_step": 21,
+    "action": "type",
+    "element_label": "Departure",
+    "args": [
+      "e1242",
+      "28 Jan 2026"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:26:51.642738"
+  },
+  {
+    "action_step": 22,
+    "action": "enter",
+    "element_label": null,
+    "args": [],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:27:29.848499"
+  },
+  {
+    "action_step": 23,
+    "action": "type",
+    "element_label": "Return",
+    "args": [
+      "e1247",
+      "28 Jan 2026"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:27:29.848499"
+  },
+  {
+    "action_step": 25,
+    "action": "enter",
+    "element_label": null,
+    "args": [],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:27:32.559308"
+  },
+  {
+    "action_step": 27,
+    "action": "enter",
+    "element_label": null,
+    "args": [],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:27:45.220740"
+  },
+  {
+    "action_step": 29,
+    "action": "enter",
+    "element_label": null,
+    "args": [],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxocagwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTI4agwIAxIIL20vMDJtNzdyDAgDEggvbS8wNTJidxooEgoyMDI2LTAxLTI4agwIAxIIL20vMDUyYndyDAgDEggvbS8wMm03N0ABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:27:48.006197"
+  }
+]

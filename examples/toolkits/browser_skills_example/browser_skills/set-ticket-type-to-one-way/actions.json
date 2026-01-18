@@ -1,0 +1,24 @@
+[
+  {
+    "action_step": 28,
+    "action": "click",
+    "element_label": "Change ticket type. Round trip",
+    "args": [
+      "e1155"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDFfZDQaDnIMCAMSCC9tLzAxX2Q0QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0ahocagwIAxIIL20vMDVxdGpyDAgDEggvbS8wMV9kNEABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:41:09.610008"
+  },
+  {
+    "action_step": 30,
+    "action": "click",
+    "element_label": "One way",
+    "args": [
+      "e1253"
+    ],
+    "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0ahocagwIAxIIL20vMDVxdGpyDAgDEggvbS8wMV9kNEABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+    "timestamp": "2025-12-30T14:41:11.518119"
+  }
+]

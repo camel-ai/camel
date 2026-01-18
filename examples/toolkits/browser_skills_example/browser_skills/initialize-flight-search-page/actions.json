@@ -1,0 +1,23 @@
+[
+  {
+    "action_step": 0,
+    "action": "open_browser",
+    "element_label": null,
+    "args": [
+      "https://google.com/"
+    ],
+    "url_after": "https://www.google.com/?zx=1767104786449&no_sw_cr=1",
+    "timestamp": "2025-12-30T14:26:27.136095"
+  },
+  {
+    "action_step": 2,
+    "action": "visit_page",
+    "element_label": null,
+    "args": [
+      "https://www.google.com/flights"
+    ],
+    "url_before": "https://www.google.com/?zx=1767104786449&no_sw_cr=1",
+    "url_after": "https://www.google.com/travel/flights",
+    "timestamp": "2025-12-30T14:26:29.565732"
+  }
+]
