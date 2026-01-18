@@ -413,6 +413,9 @@ class TicTacToeEnv(MultiStepEnv):
         Args:
             board (List[str]): The current game board as a list of strings.
             is_x_turn (bool): True if it's X's turn to move, False otherwise.
+            depth (int): Current recursion depth. (default: :obj:`0`)
+            max_depth (int): Maximum recursion depth to prevent stack overflow.
+                (default: :obj:`10`)
 
         Returns:
             float: A float value representing the position evaluation:
