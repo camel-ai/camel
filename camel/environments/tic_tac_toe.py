@@ -435,14 +435,17 @@ class TicTacToeEnv(MultiStepEnv):
             return 0.5  # Return draw evaluation at max depth
 
         moves = TicTacToeEnv.available_moves(board)
+        if not moves:
+            return 0.5
+        symbol = "X" if is_x_turn else "O"
         values = []
-        # Create a copy of the board to avoid side effects
+
         for move in moves:
-            board_copy = board.copy()
-            board_copy[move] = "X" if is_x_turn else "O"
+            board[move] = symbol
             value = TicTacToeEnv.evaluate_position_for_x(
-                board_copy, not is_x_turn, depth + 1, max_depth
+                board, not is_x_turn, depth + 1, max_depth
             )
+            board[move] = " "  # undo the move
             values.append(value)
 
         return max(values) if is_x_turn else min(values)
