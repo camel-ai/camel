@@ -2070,3 +2070,24 @@ class HuggingFaceRepoType(str, Enum):
     DATASET = "dataset"
     MODEL = "model"
     SPACE = "space"
+
+
+class BrowserInteractionMode(Enum):
+    r"""Browser interaction mode for computer-use models.
+
+    This enum defines different modes for browser automation, particularly
+    for vision-based models that may prefer pixel-based interactions over
+    DOM element references.
+
+    Attributes:
+        DEFAULT: Use DOM element references, return snapshots after
+            operations (SOM-labeled screenshots).
+        FULL_VISION: Use DOM element references, but don't return snapshots
+            after operations (only explicit screenshot requests).
+        PIXEL_INTERACTION: Use pixel coordinates only (no DOM refs), don't
+            return snapshots after operations. Designed for vision models
+            that can visually locate UI elements.
+    """
+    DEFAULT = "default"
+    FULL_VISION = "full_vision"
+    PIXEL_INTERACTION = "pixel_interaction"

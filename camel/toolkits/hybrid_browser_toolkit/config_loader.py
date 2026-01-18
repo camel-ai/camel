@@ -14,6 +14,8 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from camel.types.enums import BrowserInteractionMode
+
 
 @dataclass
 class BrowserConfig:
@@ -47,6 +49,9 @@ class BrowserConfig:
 
     # Full visual mode configuration
     full_visual_mode: bool = False
+
+    # Interaction mode configuration
+    interaction_mode: BrowserInteractionMode = BrowserInteractionMode.DEFAULT
 
 
 @dataclass
@@ -125,6 +130,18 @@ class ConfigLoader:
                 toolkit_kwargs["enabled_tools"] = value
             elif key == "fullVisualMode":
                 browser_kwargs["full_visual_mode"] = value
+            elif key == "interactionMode":
+                # Convert string to BrowserInteractionMode enum
+                if isinstance(value, str):
+                    try:
+                        browser_kwargs["interaction_mode"] = BrowserInteractionMode(value)
+                    except ValueError:
+                        raise ValueError(
+                            f"Invalid interaction_mode: '{value}'. "
+                            f"Must be one of: {[m.value for m in BrowserInteractionMode]}"
+                        )
+                else:
+                    browser_kwargs["interaction_mode"] = value
 
         browser_config = BrowserConfig(**browser_kwargs)
         toolkit_config = ToolkitConfig(**toolkit_kwargs)
