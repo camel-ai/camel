@@ -27,7 +27,9 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class PptxNodeToolkit(BaseToolkit):
-    r"""A toolkit for creating PowerPoint presentations using PptxGenJS (Node.js)."""
+    r"""A toolkit for creating PowerPoint presentations using PptxGenJS
+    (Node.js).
+    """
 
     def __init__(
         self,
@@ -119,7 +121,10 @@ class PptxNodeToolkit(BaseToolkit):
                     json_obj = json.loads(content)
                     content_str = json.dumps(json_obj)
             except json.JSONDecodeError:
-                return "Error: Content must be valid JSON string representing slides."
+                return (
+                    "Error: Content must be valid JSON string representing "
+                    "slides."
+                )
 
             # Run node script
             result = subprocess.run(
@@ -133,9 +138,16 @@ class PptxNodeToolkit(BaseToolkit):
             try:
                 script_output = json.loads(result.stdout.strip())
                 if script_output.get("success"):
-                    return f"Presentation created successfully. Path: {script_output.get('path')}, Slides: {script_output.get('slides')}"
+                    return (
+                        f"Presentation created successfully. "
+                        f"Path: {script_output.get('path')}, "
+                        f"Slides: {script_output.get('slides')}"
+                    )
                 else:
-                    return f"Error creating presentation: {script_output.get('error')}"
+                    return (
+                        f"Error creating presentation: "
+                        f"{script_output.get('error')}"
+                    )
             except json.JSONDecodeError:
                 return f"Error parsing script output: {result.stdout.strip()}"
 
