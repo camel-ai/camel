@@ -3721,21 +3721,24 @@ class ChatAgent(BaseAgent):
             usage = safe_model_dump(response.usage)
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
-        if tool_calls := response.choices[0].message.tool_calls:
-            tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
+        try:
+            if tool_calls := response.choices[0].message.tool_calls:
+                tool_call_requests = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call.function.name  # type: ignore[union-attr]
+                    tool_call_id = tool_call.id
+                    args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+                    extra_content = getattr(tool_call, 'extra_content', None)
 
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                tool_call_requests.append(tool_call_request)
+                    tool_call_request = ToolCallRequest(
+                        tool_name=tool_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                        extra_content=extra_content,
+                    )
+                    tool_call_requests.append(tool_call_request)
+        except (AttributeError, IndexError, json.JSONDecodeError) as e:
+            logger.warning(f"Error parsing tool calls: {e!s}")
 
         return ModelResponse(
             response=response,

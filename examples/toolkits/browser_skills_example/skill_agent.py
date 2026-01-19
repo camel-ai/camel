@@ -462,6 +462,7 @@ class SkillsAgent:
         use_agent_recovery: bool = True,
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
+        enable_skills: bool = True,
     ):
         """Initialize the SkillsAgent.
 
@@ -475,6 +476,7 @@ class SkillsAgent:
             start_url: Optional URL to navigate to before executing tasks
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
+            enable_skills: Enable skill loading, usage, and generation (default: True)
         """
         self.skills_dir = Path(skills_dir)
         self.cdp_port = cdp_port
@@ -487,10 +489,16 @@ class SkillsAgent:
         self.start_url = start_url.strip() if start_url else None
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
+        self.enable_skills = enable_skills
 
         # Load all subtask configurations from directory
         self.subtask_configs = []  # List of (log_file, config) tuples
-        self._load_subtask_configs()
+        if self.enable_skills:
+            self._load_subtask_configs()
+        else:
+            print("\n⚠️  Skills disabled: Skipping skill loading")
+            print("   Agent will operate using browser tools only\n")
+            self.subtask_config = {}
 
         # Initialize components
         self.toolkit: Optional[HybridBrowserToolkit] = None
@@ -801,97 +809,109 @@ class SkillsAgent:
         print("✓ Browser connected via CDP")
 
         # Create subtask functions from all configs
-        print("\n" + "=" * 80)
-        print("CREATING SUBTASK FUNCTIONS")
-        print("=" * 80)
+        if self.enable_skills and self.subtask_configs:
+            print("\n" + "=" * 80)
+            print("CREATING SUBTASK FUNCTIONS")
+            print("=" * 80)
 
-        # Iterate through all loaded configs
-        for log_file, config in self.subtask_configs:
-            config_name = config.get('metadata', {}).get(
-                'subtask_type', 'unknown'
-            )
+            # Iterate through all loaded configs
+            for log_file, config in self.subtask_configs:
+                config_name = config.get('metadata', {}).get(
+                    'subtask_type', 'unknown'
+                )
+                print(
+                    f"\n📦 Processing config: {Path(log_file).name if log_file else '<embedded actions>'}"
+                )
+                print(f"   Type: {config_name}")
+
+                # Save config to temp file for ActionReplayer
+                # (ActionReplayer expects a file path, not a dict)
+                with tempfile.NamedTemporaryFile(
+                    mode='w', suffix='.json', delete=False, encoding='utf-8'
+                ) as temp_config:
+                    json.dump(config, temp_config, indent=2, ensure_ascii=False)
+                    temp_config_path = temp_config.name
+
+                for subtask in config.get('subtasks', []):
+                    subtask_id = subtask['id']
+                    name = subtask['name']
+                    description = subtask['description']
+                    variables = subtask.get('variables', {})
+
+                    # Skip if subtask already exists (first config wins)
+                    if subtask_id in self.subtask_functions:
+                        print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
+                        continue
+
+                    if not log_file and not bool(subtask.get('actions', [])):
+                        print(
+                            f"  ⚠️  Subtask {subtask_id} has no log file and no embedded actions"
+                        )
+                        raise ValueError(
+                            f"Subtask {subtask_id} has no log file and no embedded actions"
+                        )
+
+                    # Create replayer instance for this subtask
+                    replayer = ActionReplayer(
+                        log_file=log_file,
+                        cdp_port=self.cdp_port,
+                        subtask_config=temp_config_path,
+                        subtask_id=subtask_id,
+                        use_agent_recovery=self.use_agent_recovery,
+                    )
+                    # Share the same toolkit to avoid WebSocket conflicts
+                    replayer.toolkit = self.toolkit
+
+                    # Check if subtask has embedded actions
+                    subtask_has_actions = bool(subtask.get('actions', []))
+
+                    if subtask_has_actions:
+                        # Initialize with empty list - will be populated by load_subtask_config()
+                        replayer.actions = []
+                        print(
+                            f"  [Info] Subtask {subtask_id} has embedded actions, skipping log file load"
+                        )
+                    else:
+                        # Load from log file for backward compatibility
+                        replayer.actions = replayer.load_log_file()
+                        print(
+                            f"  [Info] Subtask {subtask_id} loading actions from log file"
+                        )
+
+                    # Create subtask function with stats tracker and session log dir
+                    subtask_func = SubtaskFunction(
+                        subtask_id=subtask_id,
+                        name=name,
+                        description=description,
+                        variables=variables,
+                        replayer=replayer,
+                        stats_tracker=self.stats,
+                        session_log_dir=self.session_log_dir,
+                    )
+
+                    self.subtask_functions[subtask_id] = subtask_func
+
+                    if variables:
+                        print(f"  ✓ Created function: {subtask_id}")
+                        print(f"     Variables: {list(variables.keys())}")
+                    else:
+                        print(f"  ✓ Created function: {subtask_id}")
+                        print("     No variables (fixed operation)")
+
             print(
-                f"\n📦 Processing config: {Path(log_file).name if log_file else '<embedded actions>'}"
+                f"\n✅ Total subtask functions created: {len(self.subtask_functions)}"
             )
-            print(f"   Type: {config_name}")
-
-            # Save config to temp file for ActionReplayer
-            # (ActionReplayer expects a file path, not a dict)
-            with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.json', delete=False, encoding='utf-8'
-            ) as temp_config:
-                json.dump(config, temp_config, indent=2, ensure_ascii=False)
-                temp_config_path = temp_config.name
-
-            for subtask in config.get('subtasks', []):
-                subtask_id = subtask['id']
-                name = subtask['name']
-                description = subtask['description']
-                variables = subtask.get('variables', {})
-
-                # Skip if subtask already exists (first config wins)
-                if subtask_id in self.subtask_functions:
-                    print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
-                    continue
-
-                if not log_file and not bool(subtask.get('actions', [])):
-                    print(
-                        f"  ⚠️  Subtask {subtask_id} has no log file and no embedded actions"
-                    )
-                    raise ValueError(
-                        f"Subtask {subtask_id} has no log file and no embedded actions"
-                    )
-
-                # Create replayer instance for this subtask
-                replayer = ActionReplayer(
-                    log_file=log_file,
-                    cdp_port=self.cdp_port,
-                    subtask_config=temp_config_path,
-                    subtask_id=subtask_id,
-                    use_agent_recovery=self.use_agent_recovery,
-                )
-                # Share the same toolkit to avoid WebSocket conflicts
-                replayer.toolkit = self.toolkit
-
-                # Check if subtask has embedded actions
-                subtask_has_actions = bool(subtask.get('actions', []))
-
-                if subtask_has_actions:
-                    # Initialize with empty list - will be populated by load_subtask_config()
-                    replayer.actions = []
-                    print(
-                        f"  [Info] Subtask {subtask_id} has embedded actions, skipping log file load"
-                    )
-                else:
-                    # Load from log file for backward compatibility
-                    replayer.actions = replayer.load_log_file()
-                    print(
-                        f"  [Info] Subtask {subtask_id} loading actions from log file"
-                    )
-
-                # Create subtask function with stats tracker and session log dir
-                subtask_func = SubtaskFunction(
-                    subtask_id=subtask_id,
-                    name=name,
-                    description=description,
-                    variables=variables,
-                    replayer=replayer,
-                    stats_tracker=self.stats,
-                    session_log_dir=self.session_log_dir,
-                )
-
-                self.subtask_functions[subtask_id] = subtask_func
-
-                if variables:
-                    print(f"  ✓ Created function: {subtask_id}")
-                    print(f"     Variables: {list(variables.keys())}")
-                else:
-                    print(f"  ✓ Created function: {subtask_id}")
-                    print("     No variables (fixed operation)")
-
-        print(
-            f"\n✅ Total subtask functions created: {len(self.subtask_functions)}"
-        )
+        elif not self.enable_skills:
+            print("\n" + "=" * 80)
+            print("SKILLS DISABLED - SKIPPING SUBTASK FUNCTIONS")
+            print("=" * 80)
+            print("   Agent will use browser tools only\n")
+        else:
+            print("\n" + "=" * 80)
+            print("NO SUBTASKS AVAILABLE")
+            print("=" * 80)
+            print(f"   No skills found in: {self.skills_dir}")
+            print("   Agent will operate without pre-existing subtasks\n")
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)
@@ -911,27 +931,28 @@ class SkillsAgent:
         # to avoid breaking the function signatures that ChatAgent expects
 
         # Create subtask tool wrappers
-        print("Creating subtask tool wrappers...")
         subtask_tools = []
+        if self.enable_skills and self.subtask_functions:
+            print("Creating subtask tool wrappers...")
 
-        for subtask_id, subtask_func in self.subtask_functions.items():
-            # Create wrapper with proper signature that logs calls
-            if subtask_func.variables:
-                # Build parameter list for the function signature
-                param_list = []
-                param_docs = []
-                for var_name, var_config in subtask_func.variables.items():
-                    param_list.append(f"{var_name}: str")
-                    param_docs.append(
-                        f"    {var_name} (str): {var_config['description']}"
-                    )
+            for subtask_id, subtask_func in self.subtask_functions.items():
+                # Create wrapper with proper signature that logs calls
+                if subtask_func.variables:
+                    # Build parameter list for the function signature
+                    param_list = []
+                    param_docs = []
+                    for var_name, var_config in subtask_func.variables.items():
+                        param_list.append(f"{var_name}: str")
+                        param_docs.append(
+                            f"    {var_name} (str): {var_config['description']}"
+                        )
 
-                # Build function signature and docstring
-                params_str = ", ".join(param_list)
-                params_doc = "\n".join(param_docs)
+                    # Build function signature and docstring
+                    params_str = ", ".join(param_list)
+                    params_doc = "\n".join(param_docs)
 
-                # Create function code dynamically with logging
-                func_code = f"""
+                    # Create function code dynamically with logging
+                    func_code = f"""
 async def subtask_{subtask_func.subtask_id}({params_str}):
     \"\"\"
     {subtask_func.description}
@@ -965,9 +986,9 @@ async def subtask_{subtask_func.subtask_id}({params_str}):
 
     return json.dumps(result, ensure_ascii=False)
 """
-            else:
-                # No parameters - fixed operation
-                func_code = f"""
+                else:
+                    # No parameters - fixed operation
+                    func_code = f"""
 async def subtask_{subtask_func.subtask_id}():
     \"\"\"
     {subtask_func.description}. This is a fixed operation with no parameters.
@@ -997,23 +1018,28 @@ async def subtask_{subtask_func.subtask_id}():
     return json.dumps(result, ensure_ascii=False)
 """
 
-            # Execute the code to create the function
-            local_vars = {
-                "_sf": subtask_func,
-                "_agent": self,
-                "get_timestamp_iso": get_timestamp_iso,
-            }
-            exec(func_code, local_vars)
-            wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
+                # Execute the code to create the function
+                local_vars = {
+                    "_sf": subtask_func,
+                    "_agent": self,
+                    "get_timestamp_iso": get_timestamp_iso,
+                }
+                exec(func_code, local_vars)
+                wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
 
-            subtask_tools.append(wrapper)
-            print(f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}")
+                subtask_tools.append(wrapper)
+                print(f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}")
 
         # Combine all tools
         all_tools = [*browser_tools, *subtask_tools]
-        print(
-            f"✓ Total tools: {len(all_tools)} ({len(browser_tools)} browser + {len(subtask_tools)} subtask)"
-        )
+        if self.enable_skills and subtask_tools:
+            print(
+                f"✓ Total tools: {len(all_tools)} ({len(browser_tools)} browser + {len(subtask_tools)} subtask)"
+            )
+        else:
+            print(
+                f"✓ Total tools: {len(all_tools)} (browser tools only, skills disabled)"
+            )
 
         # Get system prompt before creating agent
         self.system_prompt = self.get_system_message()

@@ -119,6 +119,7 @@ class WebVoyagerRunner:
         run_dir: Path | None = None,
         step_timeout: float | None = 180.0,
         tool_execution_timeout: float | None = 180.0,
+        enable_skills: bool = True,
     ):
         """
         Initialize the runner.
@@ -127,6 +128,7 @@ class WebVoyagerRunner:
             jsonl_file: Path to WebVoyager JSONL file
             skills_root: Root directory for per-website skills.
             max_retries: Maximum retry attempts per task
+            enable_skills: Enable skill loading, usage, and generation (default: True)
         """
         self.jsonl_file = Path(jsonl_file)
         resolved_root = skills_root.strip()
@@ -152,6 +154,7 @@ class WebVoyagerRunner:
         self.run_dir = run_dir
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
+        self.enable_skills = enable_skills
         self.verifier = WebJudgeTaskVerifier()
 
         # Ensure skills directories exist
@@ -289,6 +292,7 @@ class WebVoyagerRunner:
             start_url=start_url,
             step_timeout=self.step_timeout,
             tool_execution_timeout=self.tool_execution_timeout,
+            enable_skills=self.enable_skills,
         )
 
         try:
@@ -396,7 +400,7 @@ class WebVoyagerRunner:
             # Extract subtasks ONLY after we have a verified successful run.
             # This prevents unstable/failed trajectories from polluting skills.
             subtask_analysis = None
-            if session_dir and verification.get("success"):
+            if self.enable_skills and session_dir and verification.get("success"):
                 print(f"\n{'=' * 80}")
                 print("🔎 EXTRACTING SUBTASKS (SKILLS)")
                 print(f"{'=' * 80}")
@@ -417,6 +421,13 @@ class WebVoyagerRunner:
                         "status": "failed",
                         "error": str(e),
                     }
+            elif not self.enable_skills and session_dir and verification.get("success"):
+                # Skills disabled - skip extraction
+                subtask_analysis = {
+                    "status": "skipped",
+                    "reason": "skills_disabled",
+                }
+                print(f"\n⚠️  Skills disabled: Skipping subtask extraction\n")
             elif session_dir:
                 subtask_analysis = {
                     "status": "skipped",
@@ -1019,6 +1030,11 @@ async def main():
         default="",
         help="Write the raw per-attempt results JSON to this path.",
     )
+    parser.add_argument(
+        "--disable-skills",
+        action="store_true",
+        help="Disable skill loading, usage, and generation (agent uses only browser tools)",
+    )
 
     args = parser.parse_args()
 
@@ -1076,6 +1092,7 @@ async def main():
         tool_execution_timeout=None
         if args.tool_timeout <= 0
         else args.tool_timeout,
+        enable_skills=not args.disable_skills,
     )
 
     await runner.run_all_tasks(
