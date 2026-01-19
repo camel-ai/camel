@@ -186,7 +186,9 @@ def test_workforce_callback_registration_and_metrics_handling():
         Workforce("CB Test - Invalid", callbacks=[object()])
 
 
-def assert_event_sequence(events: list[WorkforceEvent], min_worker_count: int):
+def assert_event_sequence(
+    events: list[type[WorkforceEvent]], min_worker_count: int
+):
     """
     Validate that the given event sequence follows the expected logical order.
     This version is flexible to handle:
@@ -223,17 +225,11 @@ def assert_event_sequence(events: list[WorkforceEvent], min_worker_count: int):
 
     # 4. Count all event types in the remaining events
     all_events = events[idx:]
-    task_assigned_count = sum(
-        isinstance(e, TaskAssignedEvent) for e in all_events
-    )
-    task_started_count = sum(
-        isinstance(e, TaskStartedEvent) for e in all_events
-    )
-    task_completed_count = sum(
-        isinstance(e, TaskCompletedEvent) for e in all_events
-    )
+    task_assigned_count = sum(e is TaskAssignedEvent for e in all_events)
+    task_started_count = sum(e is TaskStartedEvent for e in all_events)
+    task_completed_count = sum(e is TaskCompletedEvent for e in all_events)
     all_tasks_completed_count = sum(
-        isinstance(e, AllTasksCompletedEvent) for e in all_events
+        e is AllTasksCompletedEvent for e in all_events
     )
 
     # 5. Validate basic invariants
