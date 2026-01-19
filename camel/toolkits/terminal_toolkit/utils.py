@@ -297,6 +297,17 @@ def setup_initial_env_with_uv(
 ) -> bool:
     r"""Set up initial environment using uv."""
     try:
+        if platform.system() == 'Windows':
+            python_path = os.path.join(env_path, "Scripts", "python.exe")
+        else:
+            python_path = os.path.join(env_path, "bin", "python")
+
+        if os.path.exists(python_path):
+            if update_callback:
+                update_callback(
+                    "[UV] Environment already exists, skipping creation\n"
+                )
+            return True
         # Create virtual environment with Python 3.10 using uv
         subprocess.run(
             [uv_path, "venv", "--python", "3.10", env_path],
@@ -305,12 +316,6 @@ def setup_initial_env_with_uv(
             cwd=working_dir,
             timeout=300,
         )
-
-        # Get the python path from the new environment
-        if platform.system() == 'Windows':
-            python_path = os.path.join(env_path, "Scripts", "python.exe")
-        else:
-            python_path = os.path.join(env_path, "bin", "python")
 
         # Install essential packages using uv
         essential_packages = [
@@ -356,6 +361,20 @@ def setup_initial_env_with_venv(
 ) -> bool:
     r"""Set up initial environment using standard venv."""
     try:
+        # Get pip path
+        if platform.system() == 'Windows':
+            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
+        else:
+            pip_path = os.path.join(env_path, "bin", "pip")
+
+        # Check if environment already exists
+        if os.path.exists(pip_path):
+            if update_callback:
+                update_callback(
+                    "Environment already exists, skipping creation\n"
+                )
+            return True
+
         # Create virtual environment with system Python
         try:
             venv.create(
@@ -373,12 +392,6 @@ def setup_initial_env_with_venv(
                 system_site_packages=False,
                 symlinks=False,
             )
-
-        # Get pip path
-        if platform.system() == 'Windows':
-            pip_path = os.path.join(env_path, "Scripts", "pip.exe")
-        else:
-            pip_path = os.path.join(env_path, "bin", "pip")
 
         # Upgrade pip and install essential packages
         essential_packages = [
