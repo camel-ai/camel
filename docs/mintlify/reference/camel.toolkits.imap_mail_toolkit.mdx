@@ -1,0 +1,351 @@
+<a id="camel.toolkits.imap_mail_toolkit"></a>
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAP_RETURN_STATUS"></a>
+
+## IMAP_RETURN_STATUS
+
+```python
+class IMAP_RETURN_STATUS(Enum):
+```
+
+IMAP operation return status codes.
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit"></a>
+
+## IMAPMailToolkit
+
+```python
+class IMAPMailToolkit(BaseToolkit):
+```
+
+A toolkit for IMAP email operations.
+
+This toolkit provides comprehensive email functionality including:
+- Fetching emails with filtering options
+- Retrieving specific emails by ID
+- Sending emails via SMTP
+- Replying to emails
+- Moving emails to folders
+- Deleting emails
+
+The toolkit implements connection pooling with automatic idle timeout
+to prevent resource leaks when used by LLM agents.
+
+**Parameters:**
+
+- **imap_server** (str, optional): IMAP server hostname. If not provided, will be obtained from environment variables.
+- **imap_port** (int, optional): IMAP server port. Defaults to 993. (default: 993)
+- **smtp_server** (str, optional): SMTP server hostname. If not provided, will be obtained from environment variables.
+- **smtp_port** (int, optional): SMTP server port. Defaults to 587. (default: 587)
+- **username** (str, optional): Email username. If not provided, will be obtained from environment variables.
+- **password** (str, optional): Email password. If not provided, will be obtained from environment variables.
+- **timeout** (Optional[float]): The timeout for the toolkit operations.
+- **connection_idle_timeout** (float): Maximum idle time (in seconds) before auto-closing connections. Defaults to 300 (5 minutes).
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    imap_server: Optional[str] = None,
+    imap_port: int = 993,
+    smtp_server: Optional[str] = None,
+    smtp_port: int = 587,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    timeout: Optional[float] = None,
+    connection_idle_timeout: float = 300.0
+):
+```
+
+Initialize the IMAP Mail Toolkit.
+
+**Parameters:**
+
+- **imap_server**: IMAP server hostname (default: :obj:`None`)
+- **imap_port**: IMAP server port (default: :obj:`993`) (default: 993)
+- **smtp_server**: SMTP server hostname (default: :obj:`None`)
+- **smtp_port**: SMTP server port (default: :obj:`587`) (default: 587)
+- **username**: Email username (default: :obj:`None`)
+- **password**: Email password (default: :obj:`None`)
+- **timeout**: Timeout for operations (default: :obj:`None`)
+- **connection_idle_timeout**: Max idle time before auto-close (default: :obj:`300` seconds)
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit._get_imap_connection"></a>
+
+### _get_imap_connection
+
+```python
+def _get_imap_connection(self):
+```
+
+**Returns:**
+
+  imaplib.IMAP4_SSL: Connected IMAP client
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit._get_smtp_connection"></a>
+
+### _get_smtp_connection
+
+```python
+def _get_smtp_connection(self):
+```
+
+**Returns:**
+
+  smtplib.SMTP: Connected SMTP client
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit._ensure_imap_ok"></a>
+
+### _ensure_imap_ok
+
+```python
+def _ensure_imap_ok(self, status: str, action: str):
+```
+
+Ensure IMAP status is OK, otherwise raise a ConnectionError.
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.fetch_emails"></a>
+
+### fetch_emails
+
+```python
+def fetch_emails(
+    self,
+    folder: Literal['INBOX'] = 'INBOX',
+    limit: int = 10,
+    unread_only: bool = False,
+    sender_filter: Optional[str] = None,
+    subject_filter: Optional[str] = None
+):
+```
+
+Fetch emails from a folder with optional filtering.
+
+**Parameters:**
+
+- **folder** (`Literal["INBOX"]`): Email folder to search in (default: :obj:`"INBOX"`)
+- **limit** (int): Maximum number of emails to retrieve (default: :obj:`10`)
+- **unread_only** (bool): If True, only fetch unread emails (default: :obj:`False`)
+- **sender_filter** (str, optional): Filter emails by sender email address (default: :obj:`None`)
+- **subject_filter** (str, optional): Filter emails by subject content (default: :obj:`None`)
+
+**Returns:**
+
+  List[Dict]: List of email dictionaries with metadata
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.get_email_by_id"></a>
+
+### get_email_by_id
+
+```python
+def get_email_by_id(self, email_id: str, folder: Literal['INBOX'] = 'INBOX'):
+```
+
+Retrieve a specific email by ID with full metadata.
+
+**Parameters:**
+
+- **email_id** (str): ID of the email to retrieve
+- **folder** (`Literal["INBOX"]`): Folder containing the email (default: :obj:`"INBOX"`)
+
+**Returns:**
+
+  Dict: Email dictionary with complete metadata
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.send_email"></a>
+
+### send_email
+
+```python
+def send_email(
+    self,
+    to_recipients: List[str],
+    subject: str,
+    body: str,
+    cc_recipients: Optional[List[str]] = None,
+    bcc_recipients: Optional[List[str]] = None,
+    html_body: Optional[str] = None
+):
+```
+
+Send an email via SMTP.
+
+**Parameters:**
+
+- **to_recipients** (List[str]): List of recipient email addresses
+- **subject** (str): Email subject line
+- **body** (str): Plain text email body
+- **cc_recipients** (List[str], optional): List of CC recipient email addresses
+- **bcc_recipients** (List[str], optional): List of BCC recipient email addresses
+- **html_body** (str, optional): HTML version of email body
+- **extra_headers** (Dict[str, str], optional): Additional email headers
+
+**Returns:**
+
+  str: Success message
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.reply_to_email"></a>
+
+### reply_to_email
+
+```python
+def reply_to_email(
+    self,
+    original_email_id: str,
+    reply_body: str,
+    folder: Literal['INBOX'] = 'INBOX',
+    html_body: Optional[str] = None
+):
+```
+
+Send a reply to an existing email.
+
+**Parameters:**
+
+- **original_email_id** (str): ID of the email to reply to
+- **reply_body** (str): Reply message body
+- **folder** (`Literal["INBOX"]`): Folder containing the original email (default: :obj:`"INBOX"`)
+- **html_body** (str, optional): HTML version of reply body (default: :obj:`None`)
+
+**Returns:**
+
+  str: Success message
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.move_email_to_folder"></a>
+
+### move_email_to_folder
+
+```python
+def move_email_to_folder(
+    self,
+    email_id: str,
+    target_folder: str,
+    source_folder: Literal['INBOX'] = 'INBOX'
+):
+```
+
+Move an email to a different folder.
+
+**Parameters:**
+
+- **email_id** (str): ID of the email to move
+- **target_folder** (str): Destination folder name
+- **source_folder** (`Literal["INBOX"]`): Source folder name (default: :obj:`"INBOX"`)
+
+**Returns:**
+
+  str: Success message
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.delete_email"></a>
+
+### delete_email
+
+```python
+def delete_email(
+    self,
+    email_id: str,
+    folder: Literal['INBOX'] = 'INBOX',
+    permanent: bool = False
+):
+```
+
+Delete an email.
+
+**Parameters:**
+
+- **email_id** (str): ID of the email to delete
+- **folder** (`Literal["INBOX"]`): Folder containing the email (default: :obj:`"INBOX"`)
+- **permanent** (bool): If True, permanently delete the email (default: :obj:`False`)
+
+**Returns:**
+
+  str: Success message
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit._extract_email_body"></a>
+
+### _extract_email_body
+
+```python
+def _extract_email_body(self, email_message: email.message.Message):
+```
+
+Extract plain text and HTML body from email message.
+
+**Parameters:**
+
+- **email_message**: Email message object
+
+**Returns:**
+
+  Dict[str, str]: Dictionary with 'plain' and 'html' body content
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.close"></a>
+
+### close
+
+```python
+def close(self):
+```
+
+Close all open connections.
+
+This method should be called when the toolkit is no longer needed
+to properly clean up network connections.
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Destructor to ensure connections are closed.
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+**Returns:**
+
+  IMAPMailToolkit: Self instance
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc_val,
+    exc_tb
+):
+```
+
+Context manager exit, ensuring connections are closed.
+
+**Parameters:**
+
+- **exc_type**: Exception type if an exception occurred
+- **exc_val**: Exception value if an exception occurred
+- **exc_tb**: Exception traceback if an exception occurred
+
+<a id="camel.toolkits.imap_mail_toolkit.IMAPMailToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available tools
