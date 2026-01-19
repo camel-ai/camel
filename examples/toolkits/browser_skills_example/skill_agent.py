@@ -68,11 +68,11 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
     ),
     "google flights": "\n".join(
         [
-            "- Target site: Google Flights",
-            "- Enter origin/destination with city-level specificity, then press Enter to confirm",
-            "- For dates: click the date input first, type dates, **click Done** to confirm and exit date picker",
-            "- If a Search button is visible, ensure required fields are filled and then click Search",
-            "- Ensure all the result you need is loaded and visible finishing the task.",
+            "- All tasks are to be performed on Google Flights",
+            "- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).",
+            "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
+            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then click Search to initiate the search.",
+            "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
         ]
     ),
     "amazon": "\n".join(

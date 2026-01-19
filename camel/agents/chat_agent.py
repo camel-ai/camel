@@ -49,6 +49,7 @@ from typing import (
     cast,
 )
 
+from json_repair import repair_json
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -1796,7 +1797,7 @@ class ChatAgent(BaseAgent):
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
             else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -2243,7 +2244,7 @@ class ChatAgent(BaseAgent):
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
             else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -3684,6 +3685,16 @@ class ChatAgent(BaseAgent):
         Returns:
             _ModelResponse: parsed model response.
         """
+        if response.choices is None:
+            return ModelResponse(
+                response=response,
+                tool_call_requests=None,
+                output_messages=[],
+                finish_reasons=[],
+                usage_dict={},
+                response_id=response.id or "",
+            )
+
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
             # Skip messages with no meaningful content
@@ -3721,13 +3732,13 @@ class ChatAgent(BaseAgent):
             usage = safe_model_dump(response.usage)
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
-        try:
-            if tool_calls := response.choices[0].message.tool_calls:
+        if tool_calls := response.choices[0].message.tool_calls:
+            try:
                 tool_call_requests = []
                 for tool_call in tool_calls:
                     tool_name = tool_call.function.name  # type: ignore[union-attr]
                     tool_call_id = tool_call.id
-                    args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+                    args = json.loads(repair_json(tool_call.function.arguments or "{}")) # type: ignore[union-attr] some models return '' as {}
                     extra_content = getattr(tool_call, 'extra_content', None)
 
                     tool_call_request = ToolCallRequest(
@@ -3737,8 +3748,9 @@ class ChatAgent(BaseAgent):
                         extra_content=extra_content,
                     )
                     tool_call_requests.append(tool_call_request)
-        except (AttributeError, IndexError, json.JSONDecodeError) as e:
-            logger.warning(f"Error parsing tool calls: {e!s}")
+            except (AttributeError, IndexError, json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Error parsing tool calls: {e!s}. Raw tool calls: {tool_calls!s}")
+                raise e
 
         return ModelResponse(
             response=response,
@@ -4255,7 +4267,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -5231,7 +5243,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -5822,7 +5834,7 @@ class ChatAgent(BaseAgent):
                             cloned_toolkits[toolkit_id] = new_toolkit
                         except Exception as e:
                             logger.warning(
-                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"
                             )
                             # Use original toolkit if cloning fails
                             cloned_toolkits[toolkit_id] = toolkit_instance

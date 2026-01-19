@@ -65,8 +65,8 @@ class WebJudgeVisionConfig:
             "parallel_tool_calls": False,
         }
     )
-    step_timeout: Optional[float] = 360.0
-    tool_execution_timeout: Optional[float] = 360.0
+    step_timeout: Optional[float] = 600.0
+    tool_execution_timeout: Optional[float] = 600.0
     max_frames: int = 10_000
     action_history_max_chars: int = 4000
     evidence_score_threshold: int = 3

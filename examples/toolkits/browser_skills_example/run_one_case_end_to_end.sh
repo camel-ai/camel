@@ -50,8 +50,8 @@ check_cdp "$CDP_PORT" || {
 echo
 echo "Step 1/4: First run with EMPTY skills dir (expect: few/no subtask functions)."
 RUN1_LOG="$TMP_DIR/run1.log"
-STEP_TIMEOUT="${STEP_TIMEOUT:-360}"
-TOOL_TIMEOUT="${TOOL_TIMEOUT:-360}"
+STEP_TIMEOUT="${STEP_TIMEOUT:-600}"
+TOOL_TIMEOUT="${TOOL_TIMEOUT:-600}"
 PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \

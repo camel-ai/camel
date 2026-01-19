@@ -578,7 +578,11 @@ class WebVoyagerRunner:
 
         except asyncio.TimeoutError as e:
             print(f"⏱️  Task execution timeout: {e}")
+            import traceback
             traceback.print_exc()
+
+            # Save communication log
+            agent.save_communication_log()
 
             return {
                 'task_id': task_id,
@@ -598,6 +602,7 @@ class WebVoyagerRunner:
 
         except Exception as e:
             print(f"❌ Task execution failed: {e}")
+            import traceback
             traceback.print_exc()
 
             return {
@@ -1002,13 +1007,13 @@ async def main():
     parser.add_argument(
         "--step-timeout",
         type=float,
-        default=360.0,
+        default=600.0,
         help="ChatAgent step timeout in seconds (0 disables). Default: 180.",
     )
     parser.add_argument(
         "--tool-timeout",
         type=float,
-        default=360.0,
+        default=600.0,
         help="Per-tool execution timeout in seconds (0 disables). Default: 180.",
     )
     parser.add_argument(
