@@ -340,15 +340,12 @@ If the task quality is insufficient, select the best recovery strategy from the 
 
 **DECISION GUIDELINES:**
 
-**IMPORTANT: You MUST ONLY select from the ENABLED strategies listed above.**
-If a strategy is not in the ENABLED list, you CANNOT use it regardless of the guidelines below.
-
-**Priority Rules (apply ONLY if the strategy is ENABLED):**
-1. Connection/Network Errors → prefer **retry** if enabled
-2. Deep Tasks (depth > 2) → Avoid decompose, prefer **retry** or **replan** if enabled
-3. Worker Skill Mismatch → prefer **reassign** (quality) or **decompose** (failure) if enabled, otherwise use **replan**
-4. Unclear Requirements → prefer **replan** with specifics if enabled
-5. Task Too Complex → prefer **decompose** into subtasks if enabled, otherwise use **replan**
+**Priority Rules:**
+1. Connection/Network Errors → **retry** (almost always)
+2. Deep Tasks (depth > 2) → Avoid decompose, prefer **retry** or **replan**
+3. Worker Skill Mismatch → **reassign** (quality) or **decompose** (failure)
+4. Unclear Requirements → **replan** with specifics
+5. Task Too Complex → **decompose** into subtasks
 
 **RESPONSE FORMAT:**
 {response_format}
@@ -358,7 +355,7 @@ If a strategy is not in the ENABLED list, you CANNOT use it regardless of the gu
 - No explanations or text outside the JSON structure
 - Ensure all required fields are included
 - Use null for optional fields when not applicable
-- **MANDATORY: The recovery_strategy MUST be one of the ENABLED strategies listed above. Using a disabled strategy will cause an error.**
+- ONLY use strategies listed above as ENABLED
 """
 )
 
