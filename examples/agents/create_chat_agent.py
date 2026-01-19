@@ -35,7 +35,7 @@ agent_3 = ChatAgent(
 # Method 4: Initialize the agent with a `tuple` of `enum`
 agent_4 = ChatAgent(
     "You are a helpful assistant.",
-    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_HAIKU),
 )
 
 # Method 5: Default model when none is specified.

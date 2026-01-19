@@ -187,7 +187,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   model = ModelFactory.create(
       model_platform=ModelPlatformType.ANTHROPIC,
-      model_type=ModelType.CLAUDE_3_5_SONNET,
+      model_type=ModelType.CLAUDE_3_HAIKU,
       model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
   )
 

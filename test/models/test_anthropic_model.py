@@ -32,13 +32,7 @@ pytest.importorskip("anthropic", reason="anthropic package is required")
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.CLAUDE_INSTANT_1_2,
-        ModelType.CLAUDE_2_0,
-        ModelType.CLAUDE_2_1,
-        ModelType.CLAUDE_3_OPUS,
-        ModelType.CLAUDE_3_SONNET,
         ModelType.CLAUDE_3_HAIKU,
-        ModelType.CLAUDE_3_5_SONNET,
         ModelType.CLAUDE_3_5_HAIKU,
         ModelType.CLAUDE_3_7_SONNET,
         ModelType.CLAUDE_SONNET_4_5,
