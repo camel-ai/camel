@@ -22,6 +22,8 @@ export interface BrowserConfig {
   screenshotTimeout: number;
   pageStabilityTimeout: number;
   domContentLoadedTimeout: number;
+  domStabilityTimeout: number;
+  domStabilityThreshold: number;
 
   // Action timeouts
   popupTimeout: number;
@@ -112,6 +114,8 @@ function getDefaultBrowserConfig(): BrowserConfig {
     screenshotTimeout: 15000,
     pageStabilityTimeout: 1500,
     domContentLoadedTimeout: 5000,
+    domStabilityTimeout: 5000,
+    domStabilityThreshold: 200,       // Consider DOM stable if no changes for 200ms
     popupTimeout: 5000,
     clickTimeout: 3000,
     tabIdPrefix: 'tab-',
@@ -211,6 +215,8 @@ export class ConfigLoader {
     if (config.networkIdleTimeout !== undefined) browserConfig.networkIdleTimeout = config.networkIdleTimeout;
     if (config.screenshotTimeout !== undefined) browserConfig.screenshotTimeout = config.screenshotTimeout;
     if (config.pageStabilityTimeout !== undefined) browserConfig.pageStabilityTimeout = config.pageStabilityTimeout;
+    if (config.domStabilityThreshold !== undefined) browserConfig.domStabilityThreshold = config.domStabilityThreshold;
+    if (config.domStabilityTimeout !== undefined) browserConfig.domStabilityTimeout = config.domStabilityTimeout;
 
     if (config.browser_log_to_file !== undefined) wsConfig.browser_log_to_file = config.browser_log_to_file;
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
