@@ -515,6 +515,10 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2 = "MiniMax-M2"
     MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
+    # AtlasCloud models
+    ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
+    ATLASCLOUD_GLM_4_7 = "zai-org/glm-4.7"
+
     def __str__(self):
         return self.value
 
@@ -1428,6 +1432,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
             ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
             ModelType.NEBIUS_GPT_OSS_20B,
             ModelType.COMETAPI_GPT_5_CHAT_LATEST,
             ModelType.COMETAPI_CHATGPT_4O_LATEST,
@@ -1521,6 +1526,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
+            ModelType.ATLASCLOUD_GLM_4_7,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1828,6 +1834,7 @@ class ModelPlatformType(Enum):
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
     FUNCTION_GEMMA = "function-gemma"
+    ATLASCLOUD = "atlascloud"
 
     @classmethod
     def from_name(cls, name):
@@ -2022,6 +2029,11 @@ class ModelPlatformType(Enum):
     def is_cerebras(self) -> bool:
         r"""Returns whether this platform is Cerebras."""
         return self is ModelPlatformType.CEREBRAS
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this platform is AtlasCloud."""
+        return self is ModelPlatformType.ATLASCLOUD
 
 
 class AudioModelType(Enum):
