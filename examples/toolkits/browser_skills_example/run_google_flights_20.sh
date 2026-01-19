@@ -9,10 +9,15 @@ JSONL="${1:-$SCRIPT_DIR/WebVoyager_data.jsonl}"
 SKILLS_ROOT="${SKILLS_ROOT:-$SCRIPT_DIR/skills_store}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
 MAX_RETRIES="${MAX_RETRIES:-0}"
+MAX_ATTEMPTS_PER_TASK="${MAX_ATTEMPTS_PER_TASK:-}"
 STEP_TIMEOUT="${STEP_TIMEOUT:-600}"
 TOOL_TIMEOUT="${TOOL_TIMEOUT:-180}"
 START_INDEX="${START_INDEX:-5}"
 MAX_TASKS="${MAX_TASKS:-20}"
+
+if [[ -z "$MAX_ATTEMPTS_PER_TASK" ]]; then
+  MAX_ATTEMPTS_PER_TASK="$((MAX_RETRIES + 1))"
+fi
 
 mkdir -p "$OUT_DIR" "$SKILLS_ROOT" "$ROOT_DIR/.tmp/uv-cache"
 
@@ -21,7 +26,7 @@ echo "SKILLS_ROOT:  $SKILLS_ROOT"
 echo "OUT_DIR:      $OUT_DIR"
 echo "START_INDEX:  $START_INDEX"
 echo "MAX_TASKS:    $MAX_TASKS"
-echo "MAX_RETRIES:  $MAX_RETRIES"
+echo "MAX_ATTEMPTS_PER_TASK: $MAX_ATTEMPTS_PER_TASK"
 echo "STEP_TIMEOUT: $STEP_TIMEOUT"
 echo "TOOL_TIMEOUT: $TOOL_TIMEOUT"
 echo
@@ -35,7 +40,7 @@ python "$SCRIPT_DIR/run_webvoyager_tasks.py" \
   --website-filter "Google Flights" \
   --start "$START_INDEX" \
   --max-tasks "$MAX_TASKS" \
-  --max-retries "$MAX_RETRIES" \
+  --max-attempts-per-task "$MAX_ATTEMPTS_PER_TASK" \
   --step-timeout "$STEP_TIMEOUT" \
   --tool-timeout "$TOOL_TIMEOUT" \
   --out-dir "$OUT_DIR"

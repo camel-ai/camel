@@ -12,12 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model configuration for browser_skills_example."""
+import os
+
+from dotenv import load_dotenv
 
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
+load_dotenv()
+
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
 DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
 
@@ -26,6 +31,9 @@ def create_default_model():
     return ModelFactory.create(
         model_platform=DEFAULT_MODEL_PLATFORM,
         model_type=DEFAULT_MODEL_TYPE,
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        url=os.getenv("AZURE_OPENAI_BASE_URL"),
+        api_version=os.getenv("AZURE_API_VERSION"),
         model_config_dict={
             "temperature": 0.0,
             "parallel_tool_calls": False,

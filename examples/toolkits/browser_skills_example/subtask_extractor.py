@@ -28,7 +28,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 from skill_loader import parse_skill_md
 from skill_store import SkillStore
-from utils import create_chat_agent, resolve_website_skills_leaf_dir
+from utils import create_chat_agent
 
 from camel.messages import BaseMessage
 
@@ -558,13 +558,7 @@ def analyze_with_agent(
     if website:
         print(f"Website: {website}\n")
 
-    resolved_skills_dir: str | None = None
-    if skills_dir is not None and website:
-        resolved_skills_dir = str(
-            resolve_website_skills_leaf_dir(Path(skills_dir), website)
-        )
-    else:
-        resolved_skills_dir = skills_dir
+    resolved_skills_dir = skills_dir
 
     # Step 3: Load existing subtasks
     print("Step 3: Loading existing subtasks...")

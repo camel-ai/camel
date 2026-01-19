@@ -28,6 +28,7 @@ import asyncio
 import json
 import re
 import sys
+import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -109,8 +110,10 @@ class WebVoyagerRunner:
         self,
         jsonl_file: str,
         skills_root: str,
+        skills_dir: str = "",
         website_filter: str = "",
-        max_retries: int = 2,
+        max_retries: int = 4,
+        max_attempts_per_website: int = 100,
         run_summary_out: str = "",
         results_out: str = "",
         run_dir: Path | None = None,
@@ -130,8 +133,18 @@ class WebVoyagerRunner:
         if not resolved_root:
             raise ValueError("skills_root must be a non-empty path.")
         self.skills_root = Path(resolved_root).expanduser()
+        self.skills_dir_override = (
+            Path(skills_dir).expanduser().resolve()
+            if skills_dir.strip()
+            else None
+        )
         self.website_filter = website_filter.strip()
         self.max_retries = max_retries
+        if self.max_retries < 0:
+            raise ValueError("max_retries must be >= 0.")
+        self.max_attempts_per_website = int(max_attempts_per_website)
+        if self.max_attempts_per_website <= 0:
+            raise ValueError("max_attempts_per_website must be > 0.")
         self.run_summary_out = (
             run_summary_out.strip() or "webvoyager_run_summary.json"
         )
@@ -141,8 +154,8 @@ class WebVoyagerRunner:
         self.tool_execution_timeout = tool_execution_timeout
         self.verifier = WebJudgeTaskVerifier()
 
-        # Ensure skills root directory exists
-        self._ensure_config_dir_exists()
+        # Ensure skills directories exist
+        self._ensure_skills_dirs_exist()
 
         # Results tracking
         self.results: List[Dict[str, Any]] = []
@@ -150,11 +163,39 @@ class WebVoyagerRunner:
             "generated_at": get_timestamp_iso(),
             "websites": {},
         }
+        self._website_attempt_counts: Dict[str, int] = {}
 
-    def _ensure_config_dir_exists(self):
-        """
-        Ensure the skills root directory exists. Creates it if needed.
-        """
+    @staticmethod
+    def _normalize_website_key(website: str) -> str:
+        return " ".join((website or "").strip().lower().split())
+
+    def _website_attempts_used(self, website: str) -> int:
+        return int(
+            self._website_attempt_counts.get(
+                self._normalize_website_key(website), 0
+            )
+            or 0
+        )
+
+    def _reserve_website_attempt(self, website: str) -> bool:
+        website_key = self._normalize_website_key(website)
+        used = int(self._website_attempt_counts.get(website_key, 0) or 0)
+        if used >= self.max_attempts_per_website:
+            return False
+        self._website_attempt_counts[website_key] = used + 1
+        return True
+
+    def _ensure_skills_dirs_exist(self):
+        """Ensure configured skills directories exist."""
+        if self.skills_dir_override is not None:
+            if not self.website_filter:
+                raise ValueError(
+                    "skills_dir can only be used together with --website-filter "
+                    "(because WebVoyager tasks can span multiple websites)."
+                )
+            self.skills_dir_override.mkdir(parents=True, exist_ok=True)
+            return
+
         base_path = self.skills_root
 
         if not base_path.exists():
@@ -168,6 +209,8 @@ class WebVoyagerRunner:
             )
 
     def _resolve_skills_dir_for_task(self, website: str) -> Path:
+        if self.skills_dir_override is not None:
+            return self.skills_dir_override
         return resolve_website_skills_dir(self.skills_root, website)
 
     def load_tasks(self) -> List[Dict[str, Any]]:
@@ -197,6 +240,7 @@ class WebVoyagerRunner:
         Returns:
             Result dictionary
         """
+        started_at = get_timestamp_iso()
         task_id = task.get('id', 'unknown')
         task_description = task.get('ques', '')
 
@@ -217,6 +261,8 @@ class WebVoyagerRunner:
                 'attempt': attempt,
                 'success': False,
                 'error': 'Missing required field: web_name',
+                'started_at': started_at,
+                'finished_at': get_timestamp_iso(),
             }
 
         start_url = (task.get('web') or '').strip() or None
@@ -384,12 +430,23 @@ class WebVoyagerRunner:
                 'skills_dir': str(skills_dir),
                 'attempt': attempt,
                 'success': verification['success'],
+                'verification': verification,
                 'reasoning': verification['reasoning'],
                 'suggestions': verification.get('suggestions', ''),
+                'agent_response': agent_response,
                 'session_dir': str(session_dir) if session_dir else None,
                 'summary_path': str(summary_path) if summary_path else None,
                 'subtask_analysis': subtask_analysis,
+                'started_at': started_at,
+                'finished_at': get_timestamp_iso(),
             }
+            if session_dir:
+                debug_path = Path(session_dir) / "webjudge_debug.json"
+                result["webjudge_debug_path"] = (
+                    str(debug_path) if debug_path.exists() else None
+                )
+            else:
+                result["webjudge_debug_path"] = None
 
             # Update summary after verification/analysis
             if session_dir:
@@ -510,8 +567,6 @@ class WebVoyagerRunner:
 
         except asyncio.TimeoutError as e:
             print(f"⏱️  Task execution timeout: {e}")
-            import traceback
-
             traceback.print_exc()
 
             return {
@@ -525,12 +580,13 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
+                'traceback': traceback.format_exc(),
+                'started_at': started_at,
+                'finished_at': get_timestamp_iso(),
             }
 
         except Exception as e:
             print(f"❌ Task execution failed: {e}")
-            import traceback
-
             traceback.print_exc()
 
             return {
@@ -543,6 +599,9 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
+                'traceback': traceback.format_exc(),
+                'started_at': started_at,
+                'finished_at': get_timestamp_iso(),
             }
 
     async def run_task_with_retries(
@@ -557,23 +616,80 @@ class WebVoyagerRunner:
         Returns:
             Final result dictionary with retry history
         """
+        task_id = task.get('id', 'unknown')
+        task_description = task.get('ques', '')
+        website = (task.get('web_name') or '').strip()
+        if not website:
+            return {
+                "task_id": task_id,
+                "task_description": task_description,
+                "website": website or None,
+                "attempt": 0,
+                "total_attempts": 0,
+                "retry_count": 0,
+                "success": False,
+                "error": "Missing required field: web_name",
+                "attempt_history": [],
+            }
+
         attempt = 1
         suggestions = ""
         attempt_history = []  # Track all attempts
 
         while attempt <= self.max_retries + 1:
+            if not self._reserve_website_attempt(website):
+                used = self._website_attempts_used(website)
+                attempt_history.append(
+                    {
+                        "attempt_number": attempt,
+                        "status": "skipped",
+                        "success": False,
+                        "skip_reason": "website_attempt_cap_reached",
+                        "website_attempts_used": used,
+                        "website_attempt_limit": self.max_attempts_per_website,
+                    }
+                )
+                return {
+                    "task_id": task_id,
+                    "task_description": task_description,
+                    "website": website,
+                    "attempt": 0,
+                    "total_attempts": attempt - 1,
+                    "retry_count": max(0, attempt - 1),
+                    "success": False,
+                    "skipped": True,
+                    "skip_reason": "website_attempt_cap_reached",
+                    "website_attempts_used": used,
+                    "website_attempt_limit": self.max_attempts_per_website,
+                    "attempt_history": attempt_history,
+                }
+
+            suggestions_used = suggestions
             result = await self.run_single_task(task, attempt, suggestions)
 
             # Record this attempt in history
             attempt_history.append(
                 {
                     'attempt_number': attempt,
+                    'status': (
+                        "success" if result.get("success") else "failed"
+                    ),
                     'success': result.get('success', False),
+                    'verification': result.get('verification', None),
                     'reasoning': result.get('reasoning', ''),
                     'suggestions': result.get('suggestions', ''),
                     'error': result.get('error', ''),
+                    'traceback': result.get('traceback', ''),
                     'session_dir': result.get('session_dir', ''),
+                    'summary_path': result.get('summary_path', ''),
+                    'webjudge_debug_path': result.get(
+                        'webjudge_debug_path', ''
+                    ),
+                    'agent_response': result.get('agent_response', ''),
                     'is_timeout': result.get('is_timeout', False),
+                    'previous_suggestions': suggestions_used,
+                    'started_at': result.get('started_at', ''),
+                    'finished_at': result.get('finished_at', ''),
                 }
             )
 
@@ -601,23 +717,11 @@ class WebVoyagerRunner:
                     )
                     await asyncio.sleep(40)
                     print("✓ Ready to retry")
-                    attempt += 1
-                elif suggestions:
-                    # For other failures with suggestions, retry immediately
-                    print(
-                        f"\n🔄 Task failed. Retrying with suggestions (attempt {attempt + 1}/{self.max_retries + 1})..."
-                    )
-                    attempt += 1
                 else:
-                    # No suggestions, stop retrying
                     print(
-                        f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
+                        f"\n🔄 Task failed. Retrying (attempt {attempt + 1}/{self.max_retries + 1})..."
                     )
-                    # Add retry metadata to final result
-                    result['total_attempts'] = attempt
-                    result['retry_count'] = attempt - 1
-                    result['attempt_history'] = attempt_history
-                    return result
+                attempt += 1
             else:
                 print(
                     f"\n❌ Task {task['id']} failed after {attempt} attempt(s)."
@@ -658,7 +762,12 @@ class WebVoyagerRunner:
         print(f"Total tasks: {len(tasks)}")
         print(f"Start index: {start_index}")
         print(f"Max tasks: {max_tasks or 'all'}")
-        print(f"Max retries per task: {self.max_retries}")
+        print(
+            f"Max attempts per task: {self.max_retries + 1} (max_retries={self.max_retries})"
+        )
+        print(
+            f"Max attempts per website: {self.max_attempts_per_website}"
+        )
         if self.website_filter:
             print(f"Website filter: {self.website_filter}")
         print(f"Skills root: {self.skills_root}")
@@ -689,12 +798,12 @@ class WebVoyagerRunner:
             self.save_results()
             self.save_run_summary()
 
-            # Wait 20 seconds before next task
+            # Wait 2 seconds before next task
             if (
                 idx < len(tasks) + start_index - 1
             ):  # Don't wait after last task
-                print("\n⏳ Waiting 20 seconds before next task...")
-                await asyncio.sleep(20)
+                print("\n⏳ Waiting 2 seconds before next task...")
+                await asyncio.sleep(2)
                 print("✓ Ready for next task")
 
         # Final summary
@@ -716,7 +825,12 @@ class WebVoyagerRunner:
             "generated_at": get_timestamp_iso(),
             "jsonl_file": str(self.jsonl_file),
             "skills_root": str(self.skills_root),
+            "skills_dir": str(self.skills_dir_override)
+            if self.skills_dir_override is not None
+            else None,
             "website_filter": self.website_filter or None,
+            "max_attempts_per_task": self.max_retries + 1,
+            "max_attempts_per_website": self.max_attempts_per_website,
             "aggregate": self.aggregate,
             "tasks": [],
         }
@@ -728,6 +842,8 @@ class WebVoyagerRunner:
                     "website": task_result.get("website"),
                     "attempt": task_result.get("attempt"),
                     "success": task_result.get("success"),
+                    "skipped": task_result.get("skipped", False),
+                    "skip_reason": task_result.get("skip_reason", ""),
                     "session_dir": task_result.get("session_dir"),
                     "summary_path": task_result.get("summary_path"),
                     "reasoning": task_result.get("reasoning"),
@@ -833,6 +949,14 @@ async def main():
         help="Root directory for per-website skills.",
     )
     parser.add_argument(
+        "--skills-dir",
+        default="",
+        help=(
+            "Directory for a single website's skills (leaf). "
+            "Use together with --website-filter to avoid accidental double nesting."
+        ),
+    )
+    parser.add_argument(
         "--website-filter",
         default="",
         help="Run only tasks whose web_name matches exactly (case-insensitive).",
@@ -844,10 +968,25 @@ async def main():
         "--max-tasks", type=int, default=None, help="Maximum tasks to run"
     )
     parser.add_argument(
+        "--max-attempts-per-task",
+        type=int,
+        default=5,
+        help="Maximum total runs per task (including the first attempt).",
+    )
+    parser.add_argument(
         "--max-retries",
         type=int,
-        default=4,
-        help="Maximum retry attempts per task",
+        default=None,
+        help=(
+            "DEPRECATED: Maximum retry attempts per task (total attempts = max_retries + 1). "
+            "Overrides --max-attempts-per-task when set."
+        ),
+    )
+    parser.add_argument(
+        "--max-attempts-per-website",
+        type=int,
+        default=100,
+        help="Maximum total runs per website (web_name) across all tasks.",
     )
     parser.add_argument(
         "--step-timeout",
@@ -883,6 +1022,16 @@ async def main():
 
     args = parser.parse_args()
 
+    max_attempts_per_task = int(args.max_attempts_per_task)
+    if max_attempts_per_task <= 0:
+        parser.error("--max-attempts-per-task must be > 0")
+    if args.max_retries is not None:
+        if args.max_retries < 0:
+            parser.error("--max-retries must be >= 0")
+        max_attempts_per_task = int(args.max_retries) + 1
+
+    max_retries = max(0, max_attempts_per_task - 1)
+
     # Unify all outputs under one run folder: <out-root>/session_<timestamp>/...
     # If --out-dir is not provided, default to examples/toolkits/session_logs.
     out_root = (
@@ -916,8 +1065,10 @@ async def main():
     runner = WebVoyagerRunner(
         jsonl_file=args.jsonl,
         skills_root=args.skills_root,
+        skills_dir=args.skills_dir,
         website_filter=args.website_filter,
-        max_retries=args.max_retries,
+        max_retries=max_retries,
+        max_attempts_per_website=args.max_attempts_per_website,
         run_summary_out=args.run_summary_out,
         results_out=args.results_out,
         run_dir=run_dir,

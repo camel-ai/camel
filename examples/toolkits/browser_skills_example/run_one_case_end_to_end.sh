@@ -6,14 +6,16 @@ cd "$ROOT_DIR"
 
 CDP_PORT="${CDP_PORT:-9223}"
 
-# {"web_name": "Google Flights", "id": "Google Flights--1", "ques": "Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.", "web": "https://www.google.com/travel/flights/"}
+# {"web_name": "Google Flights", "id": "Google Flights--1", "ques": "Show me the list of one-way flights on January 25, 2026 from Chicago to Paris.", "web": "https://www.google.com/travel/flights/"}
 CASE_WEB_NAME="${CASE_WEB_NAME:-Google Flights}"
 CASE_ID="${CASE_ID:-Google Flights--1}"
-CASE_QUES="${CASE_QUES:-Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.}"
+CASE_QUES="${CASE_QUES:-Show me the list of one-way flights on January 25, 2026 from Chicago to Paris.}"
 CASE_WEB="${CASE_WEB:-https://www.google.com/travel/flights/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
-SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/browser_skills}"
+SKILLS_ROOT="${SKILLS_ROOT:-$TMP_DIR/browser_skills}"
+WEBSITE_SLUG="$(echo "$CASE_WEB_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g; s/_+/_/g')"
+SKILLS_DIR="${SKILLS_DIR:-$SKILLS_ROOT/$WEBSITE_SLUG}"
 UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 
 mkdir -p "$SKILLS_DIR"
@@ -22,7 +24,8 @@ mkdir -p "$UV_CACHE_DIR"
 echo "Repo: $ROOT_DIR"
 echo "Temp: $TMP_DIR"
 echo "Case: $CASE_ID ($CASE_WEB_NAME) — $CASE_WEB"
-echo "Skills dir: $SKILLS_DIR"
+echo "Skills root: $SKILLS_ROOT"
+echo "Skills dir:  $SKILLS_DIR"
 echo
 
 check_cdp() {

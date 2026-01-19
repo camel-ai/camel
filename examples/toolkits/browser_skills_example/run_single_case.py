@@ -13,7 +13,6 @@ from utils import (
     count_skills_in_dir,
     count_subtasks_in_dir,
     resolve_website_skills_dir,
-    resolve_website_skills_leaf_dir,
 )
 
 
@@ -55,7 +54,7 @@ async def _amain() -> int:
     parser.add_argument(
         "--skills-dir",
         default="",
-        help="Skills directory (contains `*/SKILL.md` folders; overrides --skills-root).",
+        help="Skills leaf directory for a single website (contains `*/SKILL.md` folders; overrides --skills-root).",
     )
     parser.add_argument(
         "--skills-root",
@@ -112,9 +111,8 @@ async def _amain() -> int:
 
     website = args.web_name.strip()
     if args.skills_dir.strip():
-        skills_root = Path(args.skills_dir)
-        skills_root.mkdir(parents=True, exist_ok=True)
-        skills_dir = resolve_website_skills_leaf_dir(skills_root, website)
+        skills_dir = Path(args.skills_dir).expanduser().resolve()
+        skills_dir.mkdir(parents=True, exist_ok=True)
     elif args.skills_root.strip():
         skills_root = Path(args.skills_root)
         skills_root.mkdir(parents=True, exist_ok=True)

@@ -41,7 +41,6 @@ from utils import (
     extract_token_usage,
     get_timestamp_filename,
     get_timestamp_iso,
-    resolve_website_skills_leaf_dir,
 )
 
 from camel.agents import ChatAgent
@@ -71,8 +70,9 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: Google Flights",
             "- Enter origin/destination with city-level specificity, then press Enter to confirm",
-            "- For dates: click the date input first, type dates, press Enter to confirm and exit date picker",
+            "- For dates: click the date input first, type dates, **click Done** to confirm and exit date picker",
             "- If a Search button is visible, ensure required fields are filled and then click Search",
+            "- Ensure all the result you need is loaded and visible finishing the task.",
         ]
     ),
     "amazon": "\n".join(
@@ -554,12 +554,6 @@ class SkillsAgent:
         if not self.skills_dir.is_dir():
             raise ValueError(f"Path is not a directory: {self.skills_dir}")
 
-        resolved_dir = resolve_website_skills_leaf_dir(
-            self.skills_dir, self.website
-        )
-        if resolved_dir != self.skills_dir:
-            self.skills_dir = resolved_dir
-
         # Prefer Skills folders (SKILL.md) when present.
         skill_dirs = sorted(
             [
@@ -585,7 +579,9 @@ class SkillsAgent:
             for subtask in all_subtasks:
                 skill_id = str(subtask.get("id", ""))
                 log_file = loader.skill_log_files.get(skill_id)
-                self.subtask_configs.append((log_file, {"subtasks": [subtask]}))
+                self.subtask_configs.append(
+                    (log_file, {"subtasks": [subtask]})
+                )
 
             # For backwards compatibility
             self.subtask_config = self.subtask_configs[0][1]
@@ -761,7 +757,6 @@ class SkillsAgent:
             return False
 
         custom_tools = [
-            "browser_open",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
@@ -1215,9 +1210,9 @@ async def subtask_{subtask_func.subtask_id}():
         if response.msgs:
             for msg in response.msgs:
                 content = msg.content or ""
-                communication_entry['response'] = (
-                    content.replace(self._TASK_DONE_TOKEN, "").strip()
-                )
+                communication_entry['response'] = content.replace(
+                    self._TASK_DONE_TOKEN, ""
+                ).strip()
 
                 # Extract tool calls from the message
                 if hasattr(msg, 'info') and msg.info:
