@@ -305,7 +305,7 @@ def setup_initial_env_with_uv(
         if os.path.exists(python_path):
             if update_callback:
                 update_callback(
-                    "[UV] Environment already exists, skipping creation"
+                    "[UV] Environment already exists, skipping creation\n"
                 )
             return True
         # Create virtual environment with Python 3.10 using uv
@@ -371,7 +371,7 @@ def setup_initial_env_with_venv(
         if os.path.exists(pip_path):
             if update_callback:
                 update_callback(
-                    "Environment already exists, skipping creation"
+                    "Environment already exists, skipping creation\n"
                 )
             return True
 
