@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
@@ -27,6 +27,7 @@ from camel.models.cohere_model import CohereModel
 from camel.models.cometapi_model import CometAPIModel
 from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
+from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
@@ -113,6 +114,7 @@ class ModelFactory:
         ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
         ModelPlatformType.AIHUBMIX: AihubMixModel,
+        ModelPlatformType.FUNCTION_GEMMA: FunctionGemmaModel,
     }
 
     @staticmethod

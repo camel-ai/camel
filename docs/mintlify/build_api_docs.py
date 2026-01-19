@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -634,6 +634,41 @@ def escape_mdx_content(text):
     # Apply JSON wrapping
     text = find_and_wrap_json(text)
 
+    # Find and wrap content with >= and <= operators that should be in code format
+    # Do this BEFORE angle bracket wrapping to avoid conflicts
+    def find_and_wrap_comparison_operators(text):
+        """Find comparison operators and wrap them with backticks when appropriate"""
+        # Pattern for length constraints like "length >= 1 and <= 100"
+        # Match the full expression and wrap it once
+        text = re.sub(r'(?<![`\w])(length\s*>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])', r'`\1`', text)
+        text = re.sub(r'(?<![`\w])(>=\s*\d+\s*and\s*<=\s*\d+)(?![`\w])', r'`\1`', text)
+
+        # Extract newly created inline codes to protect them from further processing
+        protected = []
+
+        def protect_inline(match):
+            protected.append(match.group(0))
+            return f"__PROTECTED_{len(protected) - 1}__"
+
+        text = re.sub(r'`[^`\n]+`', protect_inline, text)
+
+        # Now handle standalone comparison operators
+        # Pattern for standalone >= or <= with numbers (not inside already wrapped content)
+        text = re.sub(r'(?<![`\w])(>=\s*\d+)(?![`\w])', r'`\1`', text)
+        text = re.sub(r'(?<![`\w])(<=\s*\d+)(?![`\w])', r'`\1`', text)
+
+        # Restore protected content
+        for i, code in enumerate(protected):
+            text = text.replace(f"__PROTECTED_{i}__", code)
+
+        return text
+
+    # Apply comparison operator wrapping
+    text = find_and_wrap_comparison_operators(text)
+
+    # Extract inline codes created by comparison operator wrapping before angle bracket processing
+    text = re.sub(r'`[^`\n]+`', extract_inline_code, text)
+
     # Find and wrap angle bracket content that should be in code format
     def find_and_wrap_angle_brackets(text):
         """Find angle bracket content and wrap with backticks when appropriate"""
@@ -657,22 +692,6 @@ def escape_mdx_content(text):
 
     # Apply angle bracket wrapping
     text = find_and_wrap_angle_brackets(text)
-
-    # Find and wrap content with >= and <= operators that should be in code format
-    def find_and_wrap_comparison_operators(text):
-        """Find comparison operators and wrap them with backticks when appropriate"""
-        # Pattern for length constraints like "length >= 1 and <= 100"
-        text = re.sub(r'(length\s*>=\s*\d+\s*and\s*<=\s*\d+)', r'`\1`', text)
-        text = re.sub(r'(>=\s*\d+\s*and\s*<=\s*\d+)', r'`\1`', text)
-
-        # Pattern for standalone comparison operators with numbers
-        text = re.sub(r'(?<!\w)(>=\s*\d+)(?!\w)', r'`\1`', text)
-        text = re.sub(r'(?<!\w)(<=\s*\d+)(?!\w)', r'`\1`', text)
-
-        return text
-
-    # Apply comparison operator wrapping
-    text = find_and_wrap_comparison_operators(text)
 
     # Now extract ALL newly created inline code sections (including angle brackets and operators)
     text = re.sub(r'`[^`\n]+`', extract_inline_code, text)

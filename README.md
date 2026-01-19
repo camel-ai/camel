@@ -524,11 +524,6 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 | Name | Description |
 |:---|:---|
 | **[Eigent](https://www.eigent.ai/)** | The World First Multi-agent Workforce |
-| **[EigentBot](https://bot.eigent.ai/)** | One EigentBot,
-Every Code Answer |
-| **[Matrix](https://matrix.eigent.ai/)** | Social Media Simulation |
-| **[AI Geometric](https://www.linkedin.com/posts/aigeometric_ai-interviewpreparation-careerdevelopment-activity-7261428422516555776-MtaK/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAChHluEB9xRwkjiJ6VSAzqM2Y-U4NI2sKGY)** | AI-powered interview copilot |
-| **[Log10](https://github.com/log10-io/log10/blob/main/src/log10/agents/camel.py)** | AI accuracy, delivered |
 
 
 ## 🗓️ Events
@@ -560,7 +555,40 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 <br>
 
+## Acknowledgment
+
+Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
+
+We would also like to thank Haya Hammoud for designing the initial logo of our project.
+
+We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
+- `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+
+- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
+
+- `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## License
+
+The source code is licensed under Apache 2.0.
+
+## Citation
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+Here is an example of how to cite our work:
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
+
 ## Community & Contact
+
 For more information please contact camel-ai@eigent.ai
 
 - **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
@@ -577,35 +605,6 @@ For more information please contact camel-ai@eigent.ai
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## Citation
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
-## Acknowledgment
-Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
-
-We would also like to thank Haya Hammoud for designing the initial logo of our project.
-
-We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
-- `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
-
-- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
-
-- `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
-
-
-## License
-
-The source code is licensed under Apache 2.0.
 
 <br>
 

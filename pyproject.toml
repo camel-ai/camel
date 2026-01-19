@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.82.dev1"
+version = "0.2.83a9"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -36,6 +36,8 @@ dependencies = [
     "google-search-results>=2.4.2",
 ]
 
+[tool.uv]
+upgrade = false
 
 [project.dependency-groups]
 test = ["pytest>=7,<8", "mock>=5,<6", "pytest-asyncio>=0.23.0,<0.24"]
@@ -140,6 +142,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
     "pytesseract>=0.3.13",
+    "av<16",
 ]
 
 communication_tools = [
@@ -151,6 +154,9 @@ communication_tools = [
     "notion-client>=2.2.1,<3",
     "praw>=7.7.1,<8",
     "resend>=2.0.0,<3",
+    "azure-identity>=1.25.1,<2",
+    "msgraph-sdk>=1.46.0,<2",
+    "msal>=1.34.0,<2"
 ]
 data_tools = [
     "numpy>=1.2,<=2.2",
@@ -185,7 +191,7 @@ dev_tools = [
     "langfuse>=2.60.5",
 ]
 model_platforms = [
-    "litellm>=1.38.1,<2",
+    "litellm>=1.38.1,<1.80.12",
     "mistralai>=1.1.0,<2",
     "reka-api>=3.0.8,<4",
     "anthropic>=0.47.0,<0.50.0",
@@ -273,6 +279,7 @@ owl = [
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
+    "av<16",
 ]
 eigent = [
     "numpy>=1.2,<=2.2",
@@ -307,6 +314,7 @@ eigent = [
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "httplib2>=0.31.0",
+    "av<16",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -354,6 +362,9 @@ all = [
     "agentops>=0.3.21,<0.4",
     "praw>=7.7.1,<8",
     "resend>=2.0.0,<3",
+    "azure-identity>=1.25.1,<2",
+    "msgraph-sdk>=1.46.0,<2",
+    "msal>=1.34.0,<2",
     "textblob>=0.17.1,<0.18",
     "scholarly[tor]==1.7.11",
     "notion-client>=2.2.1,<3",
@@ -377,7 +388,7 @@ all = [
     "markitdown>=0.1.1; python_version >= '3.13'",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
-    "litellm>=1.38.1,<2",
+    "litellm>=1.38.1,<1.80.12",
     "mistralai>=1.1.0,<2",
     "fish-audio-sdk>=1.0.0",
     "anthropic>=0.47.0,<0.50.0",
@@ -440,6 +451,27 @@ all = [
     "google-cloud-aiplatform>=1.111.0",
     "httplib2>=0.31.0",
     "duckdb>=1.4.3",
+    "opencv-python>=4.11.0.86",
+    "rasterio>=1.4.4",
+    "ruptures>=1.1.10",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "statsmodels>=0.14.6",
+    "av<16",
+]
+earth-science = [
+    "numpy>=1.2,<=2.2",
+    "pandas>=2",
+    "matplotlib>=3.10.7",
+    "opencv-python>=4.11.0.86",
+    "rasterio>=1.4.4",
+    "ruptures>=1.1.10",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "statsmodels>=0.14.6",
+    # Note: GDAL/osgeo requires system-level installation
+    # Install via: brew install gdal (macOS) or apt-get install gdal-bin libgdal-dev (Linux)
+    # Then: pip install gdal==$(gdal-config --version)
 ]
 
 [project.urls]
@@ -655,6 +687,15 @@ module = [
     "outlines.*",
     "torch.*",
     "cv2",
+    "matplotlib.*",
+    "rasterio",
+    "rasterio.*",
+    "ruptures",
+    "osgeo",
+    "osgeo.*",
+    "scipy.*",
+    "skimage.*",
+    "statsmodels.*",
     "rlcard.*",
     "pytesseract",
     "psycopg.*",
@@ -679,4 +720,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,checkin,ND,'

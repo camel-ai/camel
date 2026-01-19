@@ -558,7 +558,40 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 
 <br>
 
+## 謝辞
+
+データセット探索ツール（Atlas）への拡張アクセスを提供してくださった[Nomic AI](https://home.nomic.ai/)に特別な感謝を申し上げます。
+
+また、プロジェクトの初期ロゴをデザインしてくださったHaya Hammoud氏にも感謝いたします。
+
+私たちは、エージェントを構築、比較、カスタマイズするための他の作品から素晴らしい研究アイデアを実装しました。これらのモジュールを使用する場合は、元の作品を引用してください：
+- `TaskCreationAgent`、`TaskPrioritizationAgent`、`BabyAGI`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。[[例](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+
+- `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
+
+- `Self-Instruct`：*Yizhong Wang et al.*から：[SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560)。[[例](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+## ライセンス
+
+ソースコードはApache 2.0でライセンスされています。
+
+## 引用
+```
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+以下は、私たちの研究を引用する方法の一例です：
+```
+We use the CAMEL framework \cite{li2023camel} to develop the agents used in our experiments.
+```
+
 ## コミュニティ & コンタクト
+
 詳細については camel-ai@eigent.ai までお問い合わせください
 
 - **GitHubイシュー：** バグを報告し、機能をリクエストし、開発を追跡します。[イシューを提出](https://github.com/camel-ai/camel/issues)
@@ -575,35 +608,6 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
     <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
-
-<br>
-
-## 引用
-```
-@inproceedings{li2023camel,
-  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
-  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
-  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
-  year={2023}
-}
-```
-
-## 謝辞
-データセット探索ツール（Atlas）への拡張アクセスを提供してくださった[Nomic AI](https://home.nomic.ai/)に特別な感謝を申し上げます。
-
-また、プロジェクトの初期ロゴをデザインしてくださったHaya Hammoud氏にも感謝いたします。
-
-私たちは、エージェントを構築、比較、カスタマイズするための他の作品から素晴らしい研究アイデアを実装しました。これらのモジュールを使用する場合は、元の作品を引用してください：
-- `TaskCreationAgent`、`TaskPrioritizationAgent`、`BabyAGI`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。[[例](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
-
-- `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
-
-- `Self-Instruct`：*Yizhong Wang et al.*から：[SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560)。[[例](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
-
-
-## ライセンス
-
-ソースコードはApache 2.0でライセンスされています。
 
 <br>
 
