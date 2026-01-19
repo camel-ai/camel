@@ -1162,6 +1162,14 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this type of models is served by AtlasCloud."""
+        return self in {
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GLM_4_7,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
