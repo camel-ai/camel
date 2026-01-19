@@ -33,6 +33,9 @@ class ToolResult:
         """
         self.text = text
         self.images = images or []
+        # Internal attribute for logging browser snapshots
+        # Not part of the public API
+        self._snapshot_for_logging: Optional[str] = None
 
     def __str__(self) -> str:
         r"""Return the text representation of the result."""

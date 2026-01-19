@@ -1,0 +1,55 @@
+{
+  "log_file": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_175829/complete_browser_log.log",
+  "task_description": "Search for a flight on January 19, 2026 and return on January 26, 2026 from Tel Aviv to Venice and Select First Class.",
+  "subtasks": [
+    {
+      "name": "Select Seating Class",
+      "description": "Change the seating class for the flight search (e.g., Economy, Business, First). Execution page: https://www.google.com/travel/flights",
+      "start_index": 49,
+      "end_index": 51,
+      "actions": [
+        {
+          "action_step": 49,
+          "timestamp": "2025-12-30T17:59:12.846750",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Change seating class. Economy",
+          "args": [
+            "e2911"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+        },
+        {
+          "action_step": 51,
+          "timestamp": "2025-12-30T17:59:14.249123",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "First",
+          "args": [
+            "e3035"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSARwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+        }
+      ],
+      "variables": {
+        "seating_class": {
+          "action_index": 51,
+          "arg_position": 0,
+          "type": "string",
+          "default_value": "First",
+          "description": "Desired seating class to select (e.g., 'First', 'Business', 'Economy')"
+        }
+      },
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE5agwIAxIIL20vMDdxenZyDAgDEggvbS8wN19wZhooEgoyMDI2LTAxLTI2agwIAxIIL20vMDdfcGZyDAgDEggvbS8wN3F6dkABSARwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "id": 17
+    }
+  ],
+  "metadata": {
+    "total_subtasks": 1,
+    "created_from": "subtask_candidate_analyzer",
+    "source_session": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_175829"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "log_file": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_184816/complete_browser_log.log",
+  "task_description": "Find a one-way flight from Prague to a city in Japan on Jan 20, 2026, which city in Japan is cheaper to go to, Tokyo or a certain city in Hokkaido?",
+  "subtasks": [
+    {
+      "name": "Enter Destination Location",
+      "description": "Enter and confirm the destination city for flight search. Execution page: https://www.google.com/travel/flights",
+      "start_index": 25,
+      "end_index": 31,
+      "actions": [
+        {
+          "action_step": 25,
+          "timestamp": "2025-12-30T18:48:37.404723",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Where to?",
+          "args": [
+            "e1014"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw"
+        },
+        {
+          "action_step": 28,
+          "timestamp": "2025-12-30T18:48:39.359913",
+          "action_type": "individual_action",
+          "action": "type",
+          "element_label": "Where to?",
+          "args": [
+            "e1107",
+            "Tokyo"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw"
+        },
+        {
+          "action_step": 31,
+          "timestamp": "2025-12-30T18:48:40.952931",
+          "action_type": "individual_action",
+          "action": "enter",
+          "element_label": null,
+          "args": [],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw"
+        }
+      ],
+      "variables": {
+        "destination_city": {
+          "action_index": 28,
+          "arg_position": 1,
+          "type": "string",
+          "default_value": "Tokyo",
+          "description": "Name of the destination city (e.g., 'Tokyo', 'Sapporo')"
+        }
+      },
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+      "id": 18
+    },
+    {
+      "name": "Set One-Way Departure Date",
+      "description": "Select and confirm the departure date for a one-way flight search. Execution page: https://www.google.com/travel/flights",
+      "start_index": 35,
+      "end_index": 44,
+      "actions": [
+        {
+          "action_step": 35,
+          "timestamp": "2025-12-30T18:48:44.601905",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Departure",
+          "args": [
+            "e1300"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 38,
+          "timestamp": "2025-12-30T18:48:46.654116",
+          "action_type": "individual_action",
+          "action": "type",
+          "element_label": "Departure",
+          "args": [
+            "e1401",
+            "20 Jan 2026"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 41,
+          "timestamp": "2025-12-30T18:48:48.279185",
+          "action_type": "individual_action",
+          "action": "enter",
+          "element_label": null,
+          "args": [],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 44,
+          "timestamp": "2025-12-30T18:48:49.861246",
+          "action_type": "individual_action",
+          "action": "enter",
+          "element_label": null,
+          "args": [],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        }
+      ],
+      "variables": {
+        "departure_date": {
+          "action_index": 38,
+          "arg_position": 1,
+          "type": "string",
+          "default_value": "20 Jan 2026",
+          "description": "Departure date for the one-way flight (e.g., '20 Jan 2026')"
+        }
+      },
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDV5d2dAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDV5d2dyDAgDEggvbS8wN2Rma0ABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+      "id": 19
+    }
+  ],
+  "metadata": {
+    "total_subtasks": 2,
+    "created_from": "subtask_candidate_analyzer",
+    "source_session": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_184816"
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "log_file": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_144040/complete_browser_log.log",
+  "task_description": "\n        Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.\n        ",
+  "subtasks": [
+    {
+      "name": "Set Ticket Type to One-Way",
+      "description": "Change the ticket type from round-trip to one-way for flight search. Execution page: https://www.google.com/travel/flights",
+      "start_index": 28,
+      "end_index": 30,
+      "actions": [
+        {
+          "action_step": 28,
+          "timestamp": "2025-12-30T14:41:09.610008",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Change ticket type. Round trip",
+          "args": [
+            "e1155"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDFfZDQaDnIMCAMSCC9tLzAxX2Q0QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0ahocagwIAxIIL20vMDVxdGpyDAgDEggvbS8wMV9kNEABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+        },
+        {
+          "action_step": 30,
+          "timestamp": "2025-12-30T14:41:11.518119",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "One way",
+          "args": [
+            "e1253"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0ahocagwIAxIIL20vMDVxdGpyDAgDEggvbS8wMV9kNEABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        }
+      ],
+      "variables": {},
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAxIIL20vMDFfZDQaDnIMCAMSCC9tLzAxX2Q0QAFIAXABggELCP___________wGYAQE&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+      "id": 13
+    },
+    {
+      "name": "Set One-Way Departure Date",
+      "description": "Select and confirm the departure date for a one-way flight search. Execution page: https://www.google.com/travel/flights",
+      "start_index": 35,
+      "end_index": 43,
+      "actions": [
+        {
+          "action_step": 35,
+          "timestamp": "2025-12-30T14:41:19.108774",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Departure",
+          "args": [
+            "e1349"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 40,
+          "timestamp": "2025-12-30T14:41:38.853147",
+          "action_type": "individual_action",
+          "action": "type",
+          "element_label": "Departure",
+          "args": [
+            "e1349",
+            "January 17, 2026"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 42,
+          "timestamp": "2025-12-30T14:41:55.703610",
+          "action_type": "individual_action",
+          "action": "enter",
+          "element_label": "Done. Search for one-way flights, departing on January 17, 2026",
+          "args": [
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw"
+        },
+        {
+          "action_step": 43,
+          "timestamp": "2025-12-30T14:41:55.703610",
+          "action_type": "individual_action",
+          "action": "enter",
+          "element_label": "Done. Search for one-way flights, departing on January 17, 2026",
+          "args": [
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights?tfs=CBwQARopEgoyMDI2LTAxLTE3ag0IAxIJL20vMDJfMjg2cgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&tfu=KgIIAw"
+        }
+      ],
+      "variables": {
+        "departure_date": {
+          "action_index": 40,
+          "arg_position": 1,
+          "type": "string",
+          "default_value": "Saturday, January 17, 2026 , 303 British pounds",
+          "description": "Date of departure for one-way flight (e.g., 'January 17, 2026')"
+        }
+      },
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+      "id": 14
+    },
+    {
+      "name": "Submit Flight Search",
+      "description": "Click the search button to submit the flight search query. Execution page: https://www.google.com/travel/flights",
+      "start_index": 46,
+      "end_index": 46,
+      "actions": [
+        {
+          "action_step": 46,
+          "timestamp": "2025-12-30T14:42:03.436628",
+          "action_type": "individual_action",
+          "action": "click",
+          "element_label": "Search",
+          "args": [
+            "e3003"
+          ],
+          "url_before": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+          "url_after": "https://www.google.com/travel/flights/search?tfs=CBwQAhooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC"
+        }
+      ],
+      "variables": {},
+      "url_start": "https://www.google.com/travel/flights?tfs=CBwQARooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC&tfu=KgIIAw",
+      "url_end": "https://www.google.com/travel/flights/search?tfs=CBwQAhooEgoyMDI2LTAxLTE3agwIAxIIL20vMDFfZDRyDAgDEggvbS8wNXF0akABSAFwAYIBCwj___________8BmAEC",
+      "id": 15
+    }
+  ],
+  "metadata": {
+    "total_subtasks": 3,
+    "created_from": "subtask_candidate_analyzer",
+    "source_session": "/Users/puzhen/Desktop/pre/camel_project/camel/examples/toolkits/session_logs/session_20251230_144040"
+  }
+}
