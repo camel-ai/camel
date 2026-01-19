@@ -19,6 +19,7 @@ from camel.models.aihubmix_model import AihubMixModel
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.atlascloud_model import AtlasCloudModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -97,6 +98,7 @@ class ModelFactory:
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
+        ModelPlatformType.ATLASCLOUD: AtlasCloudModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,
         ModelPlatformType.MISTRAL: MistralModel,
