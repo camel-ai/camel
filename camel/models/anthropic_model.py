@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
 import os
 import time
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
@@ -288,8 +290,6 @@ class AnthropicModel(BaseModelBackend):
                             "arguments", "{}"
                         )
                         if isinstance(arguments, str):
-                            import json
-
                             try:
                                 tool_use_block["input"] = json.loads(arguments)
                             except json.JSONDecodeError:
@@ -364,8 +364,6 @@ class AnthropicModel(BaseModelBackend):
                             if hasattr(block, "text"):
                                 text_parts.append(block.text)
                         elif block.type == "tool_use":
-                            import json
-
                             tool_input = (
                                 block.input if hasattr(block, "input") else {}
                             )
@@ -389,8 +387,6 @@ class AnthropicModel(BaseModelBackend):
                         if block.get("type") == "text":
                             text_parts.append(block.get("text", ""))
                         elif block.get("type") == "tool_use":
-                            import json
-
                             tool_input = block.get("input", {})
                             tool_calls_list.append(
                                 {
@@ -466,13 +462,16 @@ class AnthropicModel(BaseModelBackend):
         )
 
     def _convert_anthropic_stream_to_openai_chunk(
-        self, chunk: Any, model: str
+        self, chunk: Any, model: str, tool_call_index: Dict[str, int]
     ) -> ChatCompletionChunk:
         r"""Convert Anthropic streaming chunk to OpenAI ChatCompletionChunk.
 
         Args:
             chunk: The streaming chunk from Anthropic API.
             model (str): The model name.
+            tool_call_index (Dict[str, int]): A mutable dict tracking tool call
+                indices by their IDs, used to maintain consistent indexing
+                across streaming chunks.
 
         Returns:
             ChatCompletionChunk: Chunk in OpenAI format.
@@ -496,25 +495,59 @@ class AnthropicModel(BaseModelBackend):
                     object="chat.completion.chunk",
                 )
             elif chunk_type == "content_block_start":
-                # Content block starting - skip for now
-                return ChatCompletionChunk.construct(
-                    id=chunk_id,
-                    choices=[{"index": 0, "delta": {}, "finish_reason": None}],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
-                )
+                # Content block starting
+                if hasattr(chunk, "content_block"):
+                    block = chunk.content_block
+                    if hasattr(block, "type") and block.type == "tool_use":
+                        # Tool use block starting
+                        tool_id = getattr(block, "id", "")
+                        tool_name = getattr(block, "name", "")
+                        # Assign index for this tool call
+                        idx = len(tool_call_index)
+                        tool_call_index[tool_id] = idx
+                        tool_calls = [
+                            {
+                                "index": idx,
+                                "id": tool_id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_name,
+                                    "arguments": "",
+                                },
+                            }
+                        ]
+                if tool_calls is None:
+                    return ChatCompletionChunk.construct(
+                        id=chunk_id,
+                        choices=[
+                            {"index": 0, "delta": {}, "finish_reason": None}
+                        ],
+                        created=int(time.time()),
+                        model=model,
+                        object="chat.completion.chunk",
+                    )
             elif chunk_type == "content_block_delta":
                 # Content delta
                 if hasattr(chunk, "delta"):
                     delta_obj = chunk.delta
-                    if hasattr(delta_obj, "text"):
-                        delta_content = delta_obj.text
-                    elif (
-                        hasattr(delta_obj, "type") and delta_obj.type == "text"
+                    delta_type = getattr(delta_obj, "type", "")
+                    if delta_type == "text_delta" or hasattr(
+                        delta_obj, "text"
                     ):
-                        if hasattr(delta_obj, "text"):
-                            delta_content = delta_obj.text
+                        delta_content = getattr(delta_obj, "text", "")
+                    elif delta_type == "input_json_delta":
+                        # Tool input arguments delta
+                        partial_json = getattr(delta_obj, "partial_json", "")
+                        # Get the current tool call index from chunk.index
+                        block_index = getattr(chunk, "index", 0)
+                        tool_calls = [
+                            {
+                                "index": block_index,
+                                "function": {
+                                    "arguments": partial_json,
+                                },
+                            }
+                        ]
             elif chunk_type == "content_block_stop":
                 # Content block finished - skip
                 return ChatCompletionChunk.construct(
@@ -617,6 +650,15 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if response_format is not None:
+            warnings.warn(
+                "The 'response_format' parameter is not supported by the "
+                "Anthropic API and will be ignored. Consider using tools "
+                "for structured output instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -658,7 +700,7 @@ class AnthropicModel(BaseModelBackend):
                 request_params["system"] = system_message
 
         # if cache_control is configured, add it to the last message
-        if self._cache_control_config:
+        if self._cache_control_config and request_params["messages"]:
             if isinstance(request_params["messages"], list):
                 if isinstance(request_params["messages"][-1]["content"], str):
                     request_params["messages"][-1]["content"] = [
@@ -671,7 +713,9 @@ class AnthropicModel(BaseModelBackend):
                 elif isinstance(
                     request_params["messages"][-1]["content"], list
                 ):
-                    if isinstance(
+                    if request_params["messages"][-1][
+                        "content"
+                    ] and isinstance(
                         request_params["messages"][-1]["content"][-1], dict
                     ):
                         request_params["messages"][-1]["content"][-1][
@@ -731,6 +775,15 @@ class AnthropicModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        if response_format is not None:
+            warnings.warn(
+                "The 'response_format' parameter is not supported by the "
+                "Anthropic API and will be ignored. Consider using tools "
+                "for structured output instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
         if agent_session_id:
@@ -772,7 +825,7 @@ class AnthropicModel(BaseModelBackend):
                 request_params["system"] = system_message
 
         # if cache_control is configured, add it to the last message
-        if self._cache_control_config:
+        if self._cache_control_config and request_params["messages"]:
             if isinstance(request_params["messages"], list):
                 if isinstance(request_params["messages"][-1]["content"], str):
                     request_params["messages"][-1]["content"] = [
@@ -785,7 +838,9 @@ class AnthropicModel(BaseModelBackend):
                 elif isinstance(
                     request_params["messages"][-1]["content"], list
                 ):
-                    if isinstance(
+                    if request_params["messages"][-1][
+                        "content"
+                    ] and isinstance(
                         request_params["messages"][-1]["content"][-1], dict
                     ):
                         request_params["messages"][-1]["content"][-1][
@@ -839,9 +894,10 @@ class AnthropicModel(BaseModelBackend):
         """
 
         def _generate_chunks():
+            tool_call_index: Dict[str, int] = {}
             for chunk in stream:
                 yield self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model
+                    chunk, model, tool_call_index
                 )
 
         return cast(Stream[ChatCompletionChunk], _generate_chunks())
@@ -860,9 +916,10 @@ class AnthropicModel(BaseModelBackend):
         """
 
         async def _generate_chunks():
+            tool_call_index: Dict[str, int] = {}
             async for chunk in stream:
                 yield self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model
+                    chunk, model, tool_call_index
                 )
 
         return cast(AsyncStream[ChatCompletionChunk], _generate_chunks())
