@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.83a8"
+version = "0.2.83a9"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -36,6 +36,8 @@ dependencies = [
     "google-search-results>=2.4.2",
 ]
 
+[tool.uv]
+upgrade = false
 
 [project.dependency-groups]
 test = ["pytest>=7,<8", "mock>=5,<6", "pytest-asyncio>=0.23.0,<0.24"]
@@ -140,6 +142,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
     "pytesseract>=0.3.13",
+    "av<16",
 ]
 
 communication_tools = [
@@ -276,6 +279,7 @@ owl = [
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
+    "av<16",
 ]
 eigent = [
     "numpy>=1.2,<=2.2",
@@ -310,6 +314,7 @@ eigent = [
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "httplib2>=0.31.0",
+    "av<16",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -452,6 +457,7 @@ all = [
     "scikit-image>=0.25.2",
     "scipy>=1.15.3",
     "statsmodels>=0.14.6",
+    "av<16",
 ]
 earth-science = [
     "numpy>=1.2,<=2.2",
