@@ -25,7 +25,7 @@ export ANTHROPIC_API_KEY=""
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_3_5_SONNET,
+    model_type=ModelType.CLAUDE_3_HAIKU,
     model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
 
@@ -43,7 +43,7 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hi CAMEL AI! It's great to meet an open-source community focused on advancing research in autonomous and communicative agents. Your work on developing and studying AI systems that can effectively communicate and operate autonomously is fascinating and important for the field. I appreciate communities like yours that contribute to open research and development in AI. Wishing you continued success in your mission!
+Hi CAMEL AI! I'm an AI assistant created by Anthropic. I'm happy to chat and help out however I can. Let me know if you have any questions or if there's anything I can assist with.
 ===============================================================================
 '''  # noqa: E501
 
@@ -61,54 +61,59 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-# Matrix Transpose Bash Script
-
-Here's a bash script that transposes a matrix from the format `[1,2],[3,4],[5,
-6]` to `[1,3,5],[2,4,6]`:
+Here's a bash script that takes a matrix represented as a string with the format '[1,2],[3,4],[5,6]' and prints its transpose in the same format:
 
 ```bash
 #!/bin/bash
 
-# Check if input argument is provided
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 '[row1],[row2],...'"
+# Check if an argument is provided
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 '[1,2],[3,4],[5,6]'"
     exit 1
 fi
 
-# Input matrix as string
-input="$1"
+matrix=$1
 
-# Remove outer brackets and split into rows
-input="${input//\]\,\[/]|[}"  # Replace "],[" with "]|["
-input="${input#\[}"           # Remove leading "["
-input="${input%\]}"           # Remove trailing "]"
-IFS='|' read -ra rows <<< "$input"
+# Remove any spaces from the input
+matrix=${matrix// /}
 
-# Determine dimensions of the matrix
-row_count="${#rows[@]}"
-IFS=',' read -ra first_row <<< "${rows[0]//[\[\]]}"  # Remove brackets from
-first row
-col_count="${#first_row[@]}"
+# Extract rows using regex
+if [[ ! $matrix =~ ^\[([0-9,]+)\](,\[([0-9,]+)\])*$ ]]; then
+    echo "Invalid matrix format. Expected format: '[1,2],[3,4],[5,6]'"
+    exit 1
+fi
 
-# Create transpose
+# Split the matrix into rows
+IFS='],[' read -ra rows <<< "${matrix//[\[\]]/}"
+
+# Determine the number of columns from the first row
+IFS=',' read -ra first_row <<< "${rows[0]}"
+num_cols=${#first_row[@]}
+num_rows=${#rows[@]}
+
+# Initialize an empty array to store the transposed matrix
+declare -A transposed
+
+# Fill the transposed matrix
+for ((i=0; i<num_rows; i++)); do
+    IFS=',' read -ra row_values <<< "${rows[i]}"
+    for ((j=0; j<num_cols; j++)); do
+        transposed[$j,$i]=${row_values[j]}
+    done
+done
+
+# Build the output string
 result=""
-for (( col=0; col<col_count; col++ )); do
+for ((i=0; i<num_cols; i++)); do
     result+="["
-    for (( row=0; row<row_count; row++ )); do
-        # Extract current row without brackets
-        current="${rows[row]//[\[\]]}"
-        # Split by commas
-        IFS=',' read -ra elements <<< "$current"
-        # Add element to transpose
-        result+="${elements[col]}"
-        # Add comma if not the last element
-        if (( row < row_count-1 )); then
+    for ((j=0; j<num_rows; j++)); do
+        result+="${transposed[$i,$j]}"
+        if ((j < num_rows-1)); then
             result+=","
         fi
     done
     result+="]"
-    # Add comma if not the last row
-    if (( col < col_count-1 )); then
+    if ((i < num_cols-1)); then
         result+=","
     fi
 done
@@ -116,23 +121,24 @@ done
 echo "$result"
 ```
 
-## How to Use:
+Usage example:
+```
+$ ./transpose.sh '[1,2],[3,4],[5,6]'
+[1,3,5],[2,4,6]
+```
 
-1. Save the script to a file (e.g., `transpose.sh`)
-2. Make it executable: `chmod +x transpose.sh`
-3. Run it with your matrix: `./transpose.sh "[1,2],[3,4],[5,6]"`
+The script works as follows:
+1. It checks if an input argument is provided
+2. It removes any spaces from the input
+3. It validates the input format
+4. It splits the matrix into rows
+5. It determines the number of columns and rows
+6. It creates a transposed matrix by swapping rows and columns
+7. It builds the output string in the required format
+8. It prints the transposed matrix
 
-## Example:
-- Input: `[1,2],[3,4],[5,6]`
-- Output: `[1,3,5],[2,4,6]`
-
-The script works by:
-1. Parsing the input string to extract rows and elements
-2. Finding the dimensions of the original matrix
-3. Creating the transpose by iterating through columns first, then rows
-4. Formatting the result with proper brackets and commas
-===============================================================================
-'''
+The transpose operation converts rows into columns and vice versa, so a matrix like '[1,2],[3,4],[5,6]' (which represents a 3x2 matrix) becomes '[1,3,5],[2,4,6]' (a 2x3 matrix).
+'''  # noqa: E501
 
 
 def my_add(a: int, b: int) -> int:
@@ -142,7 +148,7 @@ def my_add(a: int, b: int) -> int:
 
 anthropic_model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_3_5_SONNET,
+    model_type=ModelType.CLAUDE_3_5_HAIKU,
     model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
 
@@ -157,7 +163,7 @@ response = anthropic_agent.step(user_msg)
 print(response.msgs[0].content)
 """
 ===============================================================================
-The result of adding 2 + 2 is 4.
+The result of adding 2 and 2 is 4, as calculated by the my_add tool.
 ===============================================================================
 """
 
@@ -171,14 +177,13 @@ else:
 """
 ===============================================================================
 Tool was called successfully!
-Tool calls: [ToolCallingRecord(tool_name='my_add', args={'a': 2, 'b': 2},
-result=4, tool_call_id='toolu_01L1KV8GZtMEyHUGTudpMg5g')]
+Tool calls: [ToolCallingRecord(tool_name='my_add', args={'a': 2, 'b': 2}, result=4, tool_call_id='toolu_019iGVdtjmzai2pwmCkX3f5T', images=None)]
 ===============================================================================
-"""
+"""  # noqa: E501
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_SONNET_4,
+    model_type=ModelType.CLAUDE_SONNET_4_5,
     model_config_dict={
         "extra_body": {"thinking": {"type": "enabled", "budget_tokens": 2000}}
     },
@@ -196,39 +201,35 @@ print(response.msgs[0].content)
 ===============================================================================
 Yes, there are infinitely many prime numbers that are congruent to 3 modulo 4.
 
-This can be proven using a technique similar to Euclid's proof of the
-infinitude of primes. Here's the proof:
+This can be proven using a clever argument similar to Euclid's proof of the
+infinitude of primes:
 
-**Proof by contradiction:**
+**Proof:**
 
-Assume there are only finitely many primes of the form 4k + 3. Let's call them
-p₁, p₂, ..., pₙ where each pᵢ ≡ 3 (mod 4).
+Suppose there are only finitely many primes ≡ 3 (mod 4), say p₁, p₂, ..., pₖ.
 
-Consider the number N = 4(p₁ × p₂ × ... × pₙ) - 1.
+Consider the number:
+N = 4(p₁ · p₂ · ... · pₖ) - 1
 
-Note that N ≡ 3 (mod 4) since 4(p₁ × p₂ × ... × pₙ) ≡ 0 (mod 4), so N ≡ -1 ≡ 3
-(mod 4).
+Note that N ≡ -1 ≡ 3 (mod 4).
 
-Now, N must have at least one prime factor. We know that:
-- N is not divisible by any of the primes p₁, p₂, ..., pₙ (since N ≡ -1 (mod
-pᵢ) for each i)
-- N cannot be divisible only by primes of the form 4k + 1, because the product
-of numbers that are ≡ 1 (mod 4) is also ≡ 1 (mod 4), but N ≡ 3 (mod 4)
+Now, N must have at least one prime divisor q where q ≡ 3 (mod 4). Why?
+Because:
+- The product of numbers that are ≡ 1 (mod 4) is also ≡ 1 (mod 4)
+- Since N ≡ 3 (mod 4), it cannot be factored solely into primes ≡ 1 (mod 4)
+- (Note: 2 ∤ N since N is odd)
 
-Therefore, N must have at least one prime factor that is congruent to 3 modulo
-4, and this prime factor is different from all the primes in our assumed
-finite list.
+This prime divisor q cannot be any of p₁, p₂, ..., pₖ because:
+- q divides N = 4(p₁ · p₂ · ... · pₖ) - 1
+- If q = pᵢ for some i, then q would divide both N and 4(p₁ · p₂ · ... · pₖ)
+- Therefore q would divide their difference, which is 1 — a contradiction
 
-This contradicts our assumption that p₁, p₂, ..., pₙ were all the primes
-congruent to 3 modulo 4.
+So we've found a new prime ≡ 3 (mod 4) not in our original list, contradicting
+our assumption.
 
-Therefore, there must be infinitely many primes of the form 4k + 3.
-
-This result is part of **Dirichlet's theorem on arithmetic progressions**,
-which more generally states that for any arithmetic progression an + b where
-gcd(a,b) = 1, there are infinitely many primes in that progression.
+Therefore, there are infinitely many primes ≡ 3 (mod 4). ∎
 ===============================================================================
-"""  # noqa: RUF001
+"""
 
 
 model = ModelFactory.create(
@@ -249,42 +250,37 @@ print(response.msgs[0].content)
 
 """
 ===============================================================================
-Yes, there are infinitely many prime numbers p such that p ≡ 3 (mod 4).
+Yes, there are infinitely many primes congruent to 3 modulo 4.
 
-Here's a proof by contradiction:
+Here's a classic elementary proof by contradiction:
 
 **Proof:**
 
-Suppose there are only finitely many primes ≡ 3 (mod 4). Let's call them p₁,
-p₂, ..., pₙ.
+Suppose there are only finitely many primes ≡ 3 (mod 4). Let's call them p₁, p₂, ..., pₖ.
 
 Consider the number:
-**N = 4p₁p₂···pₙ - 1**
+N = 4p₁p₂...pₖ - 1
 
-Key observations about N:
-1. **N ≡ 3 (mod 4)** since N = 4(p₁p₂···pₙ) - 1
-2. N is odd (so 2 doesn't divide N)
-3. None of the primes p₁, p₂, ..., pₙ divide N (if pᵢ divided N, then pᵢ would
-divide N - 4p₁p₂···pₙ = -1, which is impossible)
+Note that N ≡ 3 (mod 4) since N = 4(p₁p₂...pₖ) - 1.
 
-Now, N must have prime factorization. Every odd prime is either ≡ 1 (mod 4) or
-≡ 3 (mod 4).
+Now, N must have prime factorization. Let's analyze the primes that divide N:
 
-**Crucial fact:** The product of numbers that are all ≡ 1 (mod 4) is also ≡ 1
-(mod 4).
+1) N is odd (since N ≡ 3 (mod 4)), so 2 doesn't divide N.
 
-Since N ≡ 3 (mod 4), not all of its prime factors can be ≡ 1 (mod 4).
-Therefore, N must have at least one prime factor q where q ≡ 3 (mod 4).
+2) None of p₁, p₂, ..., pₖ divide N, because if pᵢ divided N, then pᵢ would divide N - 4p₁p₂...pₖ = -1, which is impossible.
 
-But we established that none of p₁, p₂, ..., pₙ divide N, so q must be a prime
-≡ 3 (mod 4) that's not in our supposedly complete list. This is a
-contradiction!
+3) Every odd prime is either ≡ 1 (mod 4) or ≡ 3 (mod 4).
 
-Therefore, there must be infinitely many primes ≡ 3 (mod 4).
+4) The product of primes that are all ≡ 1 (mod 4) is also ≡ 1 (mod 4), since 1 * 1 * ... * 1 ≡ 1 (mod 4).
 
-This same argument structure can also prove there are infinitely many primes ≡
-2 (mod 3), but interestingly, it *cannot* directly prove there are infinitely
-many primes ≡ 1 (mod 4) (that requires Dirichlet's theorem on primes in
-arithmetic progressions).
+5) Since N ≡ 3 (mod 4), at least one prime factor of N must be ≡ 3 (mod 4).
+
+6) But this prime cannot be any of p₁, p₂, ..., pₖ (from point 2), so there must be another prime ≡ 3 (mod 4).
+
+This contradicts our assumption that p₁, p₂, ..., pₖ were all such primes.
+
+Therefore, there are infinitely many primes ≡ 3 (mod 4).
+
+**Note:** This is actually a special case of Dirichlet's theorem on primes in arithmetic progressions, which states that for coprime integers a and d, there are infinitely many primes p such that p ≡ a (mod d).
 ===============================================================================
-"""
+"""  # noqa: E501
