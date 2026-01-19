@@ -23,7 +23,7 @@ assistant_sys_msg = """You are a helpful assistant to answer question,
 agent = ChatAgent(assistant_sys_msg)
 auto_retriever = AutoRetriever()
 
-benchmark = RAGBenchBenchmark(subset="hotpotqa", split="test")
-benchmark.download()
+benchmark = RAGBenchBenchmark()
+benchmark.load(subset="hotpotqa", split="test")
 results = benchmark.run(agent, auto_retriever)
 print(results)

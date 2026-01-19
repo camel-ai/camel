@@ -19,18 +19,13 @@ from camel.benchmarks import APIBenchBenchmark
 agent = ChatAgent()
 
 # Set up the APIBench Benchmark
-benchmark = APIBenchBenchmark(
-    data_dir="APIBenchDatasets", save_to="APIBenchResults.jsonl"
-)
+benchmark = APIBenchBenchmark(save_to="APIBenchResults.jsonl")
 
-# Download the benchmark data
-benchmark.download()
-
-# Set the subset to be benchmarked
-subset_name = 'torchhub'
+# load the torchhub split
+benchmark.load("torchhub")
 
 # Run the benchmark
-result = benchmark.run(agent, subset_name, subset=10)
+result = benchmark.run(agent, subset=10)
 
 # Please note that APIBench does not use 'real function call'
 # but instead includes API documentation in the questions
@@ -73,7 +68,7 @@ print("Hallucination:", result["hallucination"])
 '''
 ===============================================================================
 Total: 10
-Correct: 10
-Hallucination: 0
+Correct: 9
+Hallucination: 1
 ===============================================================================
 '''
