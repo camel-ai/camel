@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -65,8 +66,6 @@ class PptxNodeToolkit(BaseToolkit):
     def _check_node_environment(self) -> None:
         """Checks if Node.js and the required scripts are available."""
         # 1. Check if node is available
-        import shutil
-
         if not shutil.which(self.node_executable):
             logger.warning(
                 f"Node.js executable '{self.node_executable}' not found. "
@@ -91,20 +90,29 @@ class PptxNodeToolkit(BaseToolkit):
 
     def create_presentation(
         self,
-        content: str,
+        content: Union[str, List[Dict[str, Any]]],
         filename: str,
     ) -> str:
         r"""Create a PowerPoint presentation (PPTX) file using PptxGenJS.
 
         The filename MUST end with ".pptx". If it does not, the toolkit will
-        automatically append it, but the agent should strive to provide the
-        correct extension.
+        automatically append it.
 
         Args:
-            content (str): The content to write to the PPTX file as a JSON
-                string. It must be a list of dictionaries representing slides.
+            content (Union[str, List[Dict[str, Any]]]): The content to write
+                to the PPTX file. It can be a JSON string or a list of
+                dictionaries/slides.
 
-                JSON Schema Example:
+                Supported keys for each slide dictionary:
+                - `title` (str): Title text for the slide.
+                - `subtitle` (str): Subtitle text.
+                - `heading` (str): Main heading for the slide.
+                - `text` (str): Body text.
+                - `bullet_points` (List[str]): A list of bullet point strings.
+                - `table` (Dict): A dictionary with `headers` (List[str]) and
+                  `rows` (List[List[str]]).
+
+                Example Structure:
                 [
                     {
                         "title": "Main Title",
@@ -148,8 +156,8 @@ class PptxNodeToolkit(BaseToolkit):
                     content_str = json.dumps(json_obj)
             except json.JSONDecodeError:
                 return (
-                    "Error: Content must be valid JSON string representing "
-                    "slides."
+                    "Error: Content must be valid JSON string or structure "
+                    "representing slides."
                 )
 
             # Run node script
