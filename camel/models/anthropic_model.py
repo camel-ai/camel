@@ -15,7 +15,7 @@ import json
 import os
 import time
 import warnings
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -119,8 +119,9 @@ class AnthropicModel(BaseModelBackend):
         async_client (Optional[Any], optional): A custom asynchronous Anthropic
             client instance. If provided, this client will be used instead of
             creating a new one. (default: :obj:`None`)
-        cache_control (Optional[str], optional): The cache control value for
-            the request. Must be either '5m' or '1h'. (default: :obj:`None`)
+        cache_control (Optional[Literal["5m", "1h"]], optional): The cache
+            control TTL for prompt caching. Use '5m' for 5-minute cache or
+            '1h' for 1-hour cache. (default: :obj:`None`)
         use_beta_for_structured_outputs (bool, optional): Whether to use the
             beta API for structured outputs. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
@@ -144,7 +145,7 @@ class AnthropicModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
-        cache_control: Optional[str] = None,
+        cache_control: Optional[Literal["5m", "1h"]] = None,
         use_beta_for_structured_outputs: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -189,8 +190,11 @@ class AnthropicModel(BaseModelBackend):
                 **kwargs,
             )
 
-        if cache_control and cache_control not in ["5m", "1h"]:
-            raise ValueError("cache_control must be either '5m' or '1h'")
+        if cache_control is not None and cache_control not in ("5m", "1h"):
+            raise ValueError(
+                f"Invalid cache_control value: {cache_control!r}. "
+                f"Must be either '5m' or '1h'."
+            )
 
         self._cache_control_config = None
         if cache_control:
