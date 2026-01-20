@@ -94,27 +94,29 @@ class ChatHistoryMemory(AgentMemory):
 
     def replace_record_by_uuid(
         self, record_uuid: str, new_record: MemoryRecord
-    ) -> bool:
-        r"""Replace a chat history record by UUID."""
+    ) -> None:
+        r"""Replace a chat history record by UUID.
+
+        Raises:
+            ValueError: If the record with the given UUID is not found.
+        """
         record_dicts = self._chat_history_block.storage.load()
         if not record_dicts:
-            return False
+            raise ValueError(f"Record with UUID {record_uuid} not found.")
 
-        updated = False
         new_record_dict = new_record.to_dict()
         new_record_dict["uuid"] = record_uuid
+
+        # TODO: Current implementation has O(n) time complexity.
+        # Consider adding UUID indexing for O(1) lookups.
         for i, record_dict in enumerate(record_dicts):
             if record_dict.get("uuid") == record_uuid:
                 record_dicts[i] = new_record_dict
-                updated = True
-                break
+                self._chat_history_block.storage.clear()
+                self._chat_history_block.storage.save(record_dicts)
+                return
 
-        if not updated:
-            return False
-
-        self._chat_history_block.storage.clear()
-        self._chat_history_block.storage.save(record_dicts)
-        return True
+        raise ValueError(f"Record with UUID {record_uuid} not found.")
 
     def clear(self) -> None:
         self._chat_history_block.clear()
@@ -244,7 +246,7 @@ class VectorDBMemory(AgentMemory):
 
     def replace_record_by_uuid(
         self, record_uuid: str, new_record: MemoryRecord
-    ) -> bool:
+    ) -> None:
         r"""Replacing records is unsupported for vector database memory."""
         raise NotImplementedError(
             "VectorDBMemory does not support replacing records."
@@ -326,7 +328,7 @@ class LongtermAgentMemory(AgentMemory):
 
     def replace_record_by_uuid(
         self, record_uuid: str, new_record: MemoryRecord
-    ) -> bool:
+    ) -> None:
         r"""Replace a chat history record by UUID and sync vector DB."""
         raise NotImplementedError(
             "LongtermAgentMemory does not support replacing records."

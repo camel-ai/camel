@@ -187,15 +187,15 @@ class AgentMemory(MemoryBlock, ABC):
     @abstractmethod
     def replace_record_by_uuid(
         self, record_uuid: str, new_record: MemoryRecord
-    ) -> bool:
+    ) -> None:
         r"""Replace a stored record by UUID.
 
         Args:
             record_uuid (str): UUID of the record to replace.
             new_record (MemoryRecord): The new record to persist.
 
-        Returns:
-            bool: True if replacement succeeded, False otherwise.
+        Raises:
+            ValueError: If the record with the given UUID is not found.
         """
         pass
 

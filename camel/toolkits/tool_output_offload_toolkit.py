@@ -23,6 +23,16 @@ from typing import Any, Dict, List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
+from camel.toolkits.tool_output_offload_templates import (
+    OFFLOAD_SUCCESS,
+    OFFLOADABLE_LIST_FOOTER,
+    OFFLOADABLE_LIST_HEADER,
+    OFFLOADABLE_OUTPUT_ITEM,
+    OFFLOADED_LIST_HEADER,
+    OFFLOADED_OUTPUT_ITEM,
+    REPLACEMENT_CONTENT,
+    RETRIEVED_CONTENT,
+)
 
 logger = get_logger(__name__)
 
@@ -68,7 +78,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             ./tool_output_offload.
         timeout: Timeout for toolkit operations.
         min_output_length: Minimum character length for outputs to appear
-            in list_offloadable_outputs. Lower values allow more outputs.
+            in list_offloadable_tool_outputs. Lower values allow more outputs.
             (default: :obj:`1000`)
 
     Example:
@@ -96,7 +106,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         # Storage for offloaded outputs metadata
         self._offloaded_outputs: Dict[str, OffloadedOutput] = {}
 
-        # Cache for list_offloadable_outputs to map index -> record info
+        # Cache for list_offloadable_tool_outputs to map index -> record info
         self._last_offloadable_list: List[Dict[str, Any]] = []
 
         # Setup storage directory
@@ -229,82 +239,86 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         self,
         record_uuid: str,
         new_result: str,
-    ) -> bool:
+    ) -> None:
         r"""Replace a memory record's result with summarized content.
 
         Args:
             record_uuid: UUID of the record to replace.
             new_result: New result content (summary with reference).
 
-        Returns:
-            True if replacement succeeded, False otherwise.
+        Raises:
+            ValueError: If agent is not set, record not found, or record
+                has no message/result attribute.
         """
         if self._agent is None:
-            return False
+            raise ValueError("Agent is not set.")
 
-        try:
-            memory = self._agent.memory
-            if not (
-                hasattr(memory, "replace_record_by_uuid")
-                and hasattr(memory, "get_records")
-            ):
-                logger.warning(
-                    "Memory does not support record replacement APIs."
+        memory = self._agent.memory
+        records = memory.get_records()
+
+        for record in records:
+            if str(getattr(record, "uuid", "")) != record_uuid:
+                continue
+            msg = getattr(record, "message", None)
+            if msg is None:
+                raise ValueError(
+                    f"Record {record_uuid} has no message attribute."
                 )
-                return False
+            new_record = record.model_copy(deep=True)
+            if hasattr(new_record.message, "result"):
+                new_record.message.result = new_result
+            else:
+                raise ValueError(
+                    f"Record {record_uuid} message has no result attribute."
+                )
+            memory.replace_record_by_uuid(record_uuid, new_record)
+            return
 
-            records = memory.get_records()
-            for record in records:
-                if str(getattr(record, "uuid", "")) != record_uuid:
-                    continue
-                msg = getattr(record, "message", None)
-                if msg is None:
-                    return False
-                new_record = record.model_copy(deep=True)
-                if hasattr(new_record.message, "result"):
-                    new_record.message.result = new_result
-                else:
-                    return False
-                return memory.replace_record_by_uuid(record_uuid, new_record)
-
-            return False
-
-        except Exception as e:
-            logger.error(f"Error replacing in memory: {e}")
-            return False
+        raise ValueError(f"Record with UUID {record_uuid} not found.")
 
     # ========= PUBLIC TOOL METHODS =========
 
-    def list_offloadable_outputs(
+    def list_offloadable_tool_outputs(
         self,
         min_length: Optional[int] = None,
         max_results: int = 10,
+        preview_length: int = 100,
     ) -> str:
-        r"""List recent tool outputs that could be offloaded.
+        r"""List tool outputs in memory that can be offloaded to save context.
 
-        Returns information about tool outputs in memory that are candidates
-        for offloading (summarization + storage), ordered by size descending.
+        Call this tool to inspect recent tool outputs stored in the agent's
+        memory and identify large candidates suitable for offloading. This
+        does not modify memory; it only returns a formatted list with indexes
+        you can use for offloading.
+
+        After calling this, use offload_tool_output_with_summary() with the
+        returned index to offload a specific output. The index values are
+        specific to the last call and may change if memory changes.
 
         Args:
-            min_length: Minimum character length to consider. Uses instance
-                default if not specified. (default: :obj:`None`)
-            max_results: Maximum number of outputs to list. (default: :obj:`10`)
+            min_length: Minimum character length to consider for offloading.
+                Smaller outputs are filtered out. Uses instance default if not
+                specified. (default: :obj:`None`)
+            max_results: Maximum number of outputs to list.
+                (default: :obj:`10`)
+            preview_length: Maximum length of the preview text shown for each
+                output. (default: :obj:`100`)
 
         Returns:
-            str: Formatted string with tool output info (index, tool_name,
-                length, preview). Returns message if no candidates found.
-        """  # noqa: E501
+            str: Formatted list showing index, tool name, output length, and
+                preview for each candidate. Use the index with
+                offload_tool_output_with_summary() to offload.
+        """
         if min_length is None:
             min_length = self.min_output_length
 
         tool_outputs = self._get_tool_outputs_from_memory()
 
-        # Filter by length and sort by size descending
+        # Filter by length
         candidates = [o for o in tool_outputs if o["length"] >= min_length]
-        candidates.sort(key=lambda x: x["length"], reverse=True)
         candidates = candidates[:max_results]
 
-        # Cache for offload_with_summary
+        # Cache for offload_tool_output_with_summary
         self._last_offloadable_list = candidates
 
         if not candidates:
@@ -316,51 +330,58 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         # Format output
         lines = [
-            f"Found {len(candidates)} offloadable tool outputs "
-            f"(min length: {min_length}):\n"
+            OFFLOADABLE_LIST_HEADER.format(
+                count=len(candidates), min_length=min_length
+            )
         ]
 
         for i, output in enumerate(candidates):
-            preview = output["result_str"][:100]
-            if len(output["result_str"]) > 100:
+            preview = output["result_str"][:preview_length]
+            if len(output["result_str"]) > preview_length:
                 preview += "..."
             lines.append(
-                f"\n[{i}] Tool: {output['tool_name']}\n"
-                f"    Length: {output['length']} chars\n"
-                f"    Preview: {preview}"
+                OFFLOADABLE_OUTPUT_ITEM.format(
+                    index=i,
+                    tool_name=output["tool_name"],
+                    length=output["length"],
+                    preview=preview,
+                )
             )
 
-        lines.append(
-            "\n\nUse offload_with_summary(index, summary) to offload a "
-            "specific output."
-            "output."
-        )
+        lines.append(OFFLOADABLE_LIST_FOOTER)
 
         return "\n".join(lines)
 
-    def offload_with_summary(
+    def offload_tool_output_with_summary(
         self,
         index: int,
         summary: str,
     ) -> str:
-        r"""Offload a tool output using a provided summary.
+        r"""Offload a tool output by replacing it with a summary in memory.
 
-        This method:
-        1. Validates the provided summary
-        2. Stores the original content to disk with a unique ID
-        3. Replaces the tool output in memory with the summary + reference
+        Call this after list_offloadable_tool_outputs() to offload a specific
+        output. You must provide a concise summary that captures the essential
+        information from the original output. The summary replaces the original
+        content in memory and includes a reference for later retrieval.
+
+        The original content is saved to disk and can be retrieved later using
+        retrieve_offloaded_tool_output() with the returned offload_id.
 
         Args:
-            index: Index from list_offloadable_outputs() to offload.
-            summary: Summary created by the agent in the same turn.
+            index: Index of the output to offload (from
+                list_offloadable_tool_outputs() results).
+            summary: A concise summary you create that captures the key
+                information from the original output. This replaces the
+                original in memory.
 
         Returns:
-            str: Success message with offload_id, or error message if failed.
+            str: Success message with offload_id for later retrieval, or error
+                message if failed.
         """
         if not self._last_offloadable_list:
             return (
                 "No offloadable outputs cached. "
-                "Please run list_offloadable_outputs() first."
+                "Please run list_offloadable_tool_outputs() first."
             )
 
         if index < 0 or index >= len(self._last_offloadable_list):
@@ -384,7 +405,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                 )
 
             # Create offload ID
-            offload_id = str(uuid.uuid4())[:8]
+            offload_id = str(uuid.uuid4())
 
             # Create metadata
             metadata = OffloadedOutput(
@@ -405,52 +426,57 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
             # Create replacement content
-            replacement = (
-                f"[SUMMARIZED OUTPUT - ID: {offload_id}]\n\n"
-                f"Summary: {summary}\n\n"
-                f"Original length: {len(original_content)} chars\n"
-                f'Use retrieve_offloaded_output("{offload_id}") '
-                f"to get full content."
+            replacement = REPLACEMENT_CONTENT.format(
+                offload_id=offload_id,
+                summary=summary,
+                original_length=len(original_content),
             )
 
             # Replace in memory
-            if self._replace_in_memory(record_uuid, replacement):
-                # Clear cache since memory changed
-                self._last_offloadable_list = []
+            try:
+                self._replace_in_memory(record_uuid, replacement)
+            except ValueError as e:
+                logger.error(f"Failed to replace in memory: {e}")
+                return (
+                    f"Failed to update memory: {e}\n"
+                    f"Original content saved with ID: {offload_id}, "
+                    f"but memory was not modified."
+                )
 
-                return (
-                    f"Successfully offloaded output from '{tool_name}'.\n"
-                    f"Offload ID: {offload_id}\n"
-                    f"Original: {len(original_content)} chars -> "
-                    f"Summary: {len(summary)} chars\n"
-                    f"Use retrieve_offloaded_output(\"{offload_id}\") "
-                    f"to retrieve original."
-                )
-            else:
-                return (
-                    f"Failed to update memory. Original content saved with "
-                    f"ID: {offload_id}, but memory was not modified."
-                )
+            # Clear cache since memory changed
+            self._last_offloadable_list = []
+
+            return OFFLOAD_SUCCESS.format(
+                tool_name=tool_name,
+                offload_id=offload_id,
+                original_length=len(original_content),
+                summary_length=len(summary),
+            )
 
         except Exception as e:
             logger.error(f"Error during offload: {e}")
             return f"Error during offload: {e}"
 
-    def retrieve_offloaded_output(
+    def retrieve_offloaded_tool_output(
         self,
         offload_id: str,
     ) -> str:
-        r"""Retrieve the original content of an offloaded tool output.
+        r"""Retrieve full original content of a previously offloaded output.
 
-        Use this when you need the full original content that was previously
-        summarized and offloaded.
+        Call this when you need to access the complete original tool output
+        that was previously offloaded. The offload_id was returned when you
+        called offload_tool_output_with_summary(). This does not modify memory;
+        it only returns the stored content.
+
+        The retrieved content will be sent back to you for processing.
 
         Args:
-            offload_id: The unique ID returned when the output was offloaded.
+            offload_id (str): The unique ID that was returned when the output
+                was offloaded via offload_tool_output_with_summary().
 
         Returns:
-            str: The original tool output content, or error message if not
-                found.
+            str: The full original tool output content, or error message if
+                the offload_id is not found.
         """
         # Check in-memory cache
         if offload_id in self._offloaded_outputs:
@@ -465,13 +491,17 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                     )
                     file_path = meta_data.get("file_path", "")
                 except Exception:
+                    logger.error(
+                        f"Error reading metadata file for "
+                        f"offload ID: {offload_id}"
+                    )
                     return (
                         f"Error reading metadata for offload ID: {offload_id}"
                     )
             else:
                 return (
                     f"Offload ID '{offload_id}' not found. "
-                    f"Use list_offloaded_outputs() to see available IDs."
+                    f"Use list_offloaded_tool_outputs() to see available IDs."
                 )
 
         # Read content file
@@ -482,21 +512,32 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         if content_file.exists():
             try:
                 content = content_file.read_text(encoding="utf-8")
-                return (
-                    f"[Retrieved Original Content - ID: {offload_id}]\n\n"
-                    f"{content}"
+                return RETRIEVED_CONTENT.format(
+                    offload_id=offload_id, content=content
                 )
             except Exception as e:
+                logger.error(f"Error reading content file: {e}")
                 return f"Error reading content file: {e}"
         else:
             return f"Content file not found for offload ID: {offload_id}"
 
-    def list_offloaded_outputs(self) -> str:
-        r"""List all previously offloaded outputs in current session.
+    def list_offloaded_tool_outputs(
+        self,
+        summary_preview_length: int = 80,
+    ) -> str:
+        r"""List all tool outputs that have been offloaded in this session.
+
+        Call this to see what outputs have been previously offloaded and their
+        offload_ids. Use the offload_id with retrieve_offloaded_tool_output()
+        to get the full original content when needed.
+
+        Args:
+            summary_preview_length (int): Maximum length of the summary preview
+                shown for each offloaded output. (default: :obj:`80`)
 
         Returns:
-            str: Formatted string with offload_id, tool_name, summary preview,
-                and offload timestamp for each stored output.
+            str: Formatted list showing offload_id, tool name, original size,
+                summary preview, and when it was offloaded.
         """
         if not self._offloaded_outputs:
             # Try to load from index file
@@ -514,59 +555,25 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             return "No outputs have been offloaded in this session."
 
         lines = [
-            f"Offloaded outputs ({len(self._offloaded_outputs)} total):\n"
+            OFFLOADED_LIST_HEADER.format(count=len(self._offloaded_outputs))
         ]
 
         for offload_id, meta in self._offloaded_outputs.items():
-            summary_preview = meta.summary[:80]
-            if len(meta.summary) > 80:
+            summary_preview = meta.summary[:summary_preview_length]
+            if len(meta.summary) > summary_preview_length:
                 summary_preview += "..."
 
             lines.append(
-                f"\n[{offload_id}] Tool: {meta.tool_name}\n"
-                f"    Original size: {meta.original_length} chars\n"
-                f"    Summary: {summary_preview}\n"
-                f"    Offloaded at: {meta.offloaded_at}"
+                OFFLOADED_OUTPUT_ITEM.format(
+                    offload_id=offload_id,
+                    tool_name=meta.tool_name,
+                    original_length=meta.original_length,
+                    summary_preview=summary_preview,
+                    offloaded_at=meta.offloaded_at,
+                )
             )
 
         return "\n".join(lines)
-
-    def get_offload_info(self) -> str:
-        r"""Get information about current offload status and storage.
-
-        Returns:
-            str: Summary including: number of offloaded outputs, storage
-                directory, total storage used, and number of potential
-                candidates in memory.
-        """
-        # Count offloaded
-        offloaded_count = len(self._offloaded_outputs)
-
-        # Calculate storage used
-        storage_bytes = 0
-        if self.outputs_dir.exists():
-            for f in self.outputs_dir.iterdir():
-                if f.is_file():
-                    storage_bytes += f.stat().st_size
-
-        # Count candidates in memory
-        tool_outputs = self._get_tool_outputs_from_memory()
-        candidates = [
-            o for o in tool_outputs if o["length"] >= self.min_output_length
-        ]
-
-        storage_kb = storage_bytes / 1024
-
-        return (
-            f"Tool Output Offload Status:\n"
-            f"  Offloaded outputs: {offloaded_count}\n"
-            f"  Storage directory: {self.session_dir}\n"
-            f"  Storage used: {storage_kb:.1f} KB\n"
-            f"  Tool outputs in memory: {len(tool_outputs)}\n"
-            f"  Offloadable candidates (>={self.min_output_length} chars): "
-            f"{len(candidates)}\n"
-            f"  Min output length threshold: {self.min_output_length} chars"
-        )
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects for the toolkit.
@@ -575,9 +582,8 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             List[FunctionTool]: A list of FunctionTool objects.
         """
         return [
-            FunctionTool(self.list_offloadable_outputs),
-            FunctionTool(self.offload_with_summary),
-            FunctionTool(self.retrieve_offloaded_output),
-            FunctionTool(self.list_offloaded_outputs),
-            FunctionTool(self.get_offload_info),
+            FunctionTool(self.list_offloadable_tool_outputs),
+            FunctionTool(self.offload_tool_output_with_summary),
+            FunctionTool(self.retrieve_offloaded_tool_output),
+            FunctionTool(self.list_offloaded_tool_outputs),
         ]
