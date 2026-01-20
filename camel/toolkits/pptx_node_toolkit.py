@@ -35,6 +35,7 @@ class PptxNodeToolkit(BaseToolkit):
         self,
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
+        node_executable: str = "node",
     ) -> None:
         r"""Initialize the PptxNodeToolkit.
 
@@ -43,8 +44,11 @@ class PptxNodeToolkit(BaseToolkit):
                 output files.
             timeout (Optional[float]): The timeout for the toolkit.
                 (default: :obj:`None`)
+            node_executable (str): The path to the Node.js executable.
+                (default: "node")
         """
         super().__init__(timeout=timeout)
+        self.node_executable = node_executable
 
         if working_directory:
             self.working_directory = Path(working_directory).resolve()
@@ -56,6 +60,28 @@ class PptxNodeToolkit(BaseToolkit):
                 self.working_directory = Path("./camel_working_dir").resolve()
 
         self.working_directory.mkdir(parents=True, exist_ok=True)
+        self._check_node_environment()
+
+    def _check_node_environment(self) -> None:
+        """Checks if Node.js and the required scripts are available."""
+        # 1. Check if node is available
+        import shutil
+
+        if not shutil.which(self.node_executable):
+            logger.warning(
+                f"Node.js executable '{self.node_executable}' not found. "
+                "PptxNodeToolkit will not function correctly."
+            )
+
+        # 2. Check if the script's package.json dependencies are installed
+        script_dir = Path(__file__).parent / "scripts"
+        node_modules_path = script_dir / "node_modules"
+        
+        if not node_modules_path.exists():
+             logger.warning(
+                f"Node dependencies not found in {script_dir}. "
+                "Please run `npm install` in that directory."
+            )
 
     def _resolve_filepath(self, file_path: str) -> Path:
         path_obj = Path(file_path)
@@ -128,7 +154,7 @@ class PptxNodeToolkit(BaseToolkit):
 
             # Run node script
             result = subprocess.run(
-                ["node", str(script_path), str(file_path), content_str],
+                [self.node_executable, str(script_path), str(file_path), content_str],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -151,6 +177,10 @@ class PptxNodeToolkit(BaseToolkit):
             except json.JSONDecodeError:
                 return f"Error parsing script output: {result.stdout.strip()}"
 
+        except FileNotFoundError:
+             return (
+                f"Error: Node.js executable '{self.node_executable}' not found."
+            )
         except subprocess.CalledProcessError as e:
             logger.error(f"Error creating presentation: {e.stderr}")
             return f"Error creating presentation subprocess: {e.stderr}"

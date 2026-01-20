@@ -18,12 +18,19 @@ from unittest.mock import MagicMock, patch
 from camel.toolkits.pptx_node_toolkit import PptxNodeToolkit
 
 
+@patch("shutil.which")
+@patch("pathlib.Path.exists")
 class TestPptxNodeToolkit(unittest.TestCase):
     def setUp(self):
         self.toolkit = PptxNodeToolkit()
 
     @patch("subprocess.run")
-    def test_create_presentation_success(self, mock_subprocess_run):
+    def test_create_presentation_success(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
+        mock_which.return_value = "/usr/bin/node"
+        mock_exists.return_value = True
+
         # Mock successful execution
         mock_result = MagicMock()
         mock_result.stdout = json.dumps(
@@ -47,7 +54,33 @@ class TestPptxNodeToolkit(unittest.TestCase):
         self.assertIn("Slides: 5", result)
 
     @patch("subprocess.run")
-    def test_create_presentation_failure(self, mock_subprocess_run):
+    def test_create_presentation_custom_node(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
+        mock_which.return_value = "/custom/node"
+        mock_exists.return_value = True
+        
+        toolkit = PptxNodeToolkit(node_executable="/custom/node")
+
+        # Mock successful execution
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {"success": True, "path": "/path/to/test.pptx", "slides": 5}
+        )
+        mock_subprocess_run.return_value = mock_result
+
+        content = [{"title": "Test Slide"}]
+        filename = "test_presentation"
+
+        toolkit.create_presentation(content, filename)
+
+        expected_call_args = mock_subprocess_run.call_args[0][0]
+        self.assertEqual(expected_call_args[0], "/custom/node")
+
+    @patch("subprocess.run")
+    def test_create_presentation_failure(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
         # Mock failed execution
         mock_result = MagicMock()
         mock_result.stdout = json.dumps(
@@ -64,8 +97,21 @@ class TestPptxNodeToolkit(unittest.TestCase):
             "Error creating presentation: Some error occurred", result
         )
 
-    def test_create_presentation_invalid_json(self):
+    def test_create_presentation_invalid_json(self, mock_exists, mock_which):
         content = "Invalid JSON"
         filename = "test.pptx"
         result = self.toolkit.create_presentation(content, filename)
         self.assertIn("Error: Content must be valid JSON", result)
+
+    @patch("subprocess.run")
+    def test_create_presentation_node_not_found(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
+        mock_subprocess_run.side_effect = FileNotFoundError 
+        
+        content = [{"title": "Test Slide"}]
+        filename = "test.pptx"
+        
+        result = self.toolkit.create_presentation(content, filename)
+        self.assertIn("Error: Node.js executable 'node' not found", result)
+
