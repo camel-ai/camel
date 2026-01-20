@@ -71,7 +71,7 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
             "- All tasks are to be performed on Google Flights",
             "- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).",
             "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
-            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then click Search to initiate the search.",
+            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then Click Search to initiate the search.(Only works when all necessary information has been entered, and date selector is invisible).",
             "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
         ]
     ),
@@ -111,7 +111,9 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: Booking.com",
             "- Start by calling browser_get_page_snapshot to see where you are",
-            "- Fill required fields carefully (destination, dates, guests)",
+            "- Fill the destination and click the dropdown selector. "
+            "- Fill the dates using paged calendar selector, carefully selecting the correct month and days. "
+            "- Click the Search button to get results.",
             "- Use filters/sorting to find the best match",
         ]
     ),

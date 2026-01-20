@@ -72,7 +72,7 @@ class WebJudgeVisionConfig:
     evidence_score_threshold: int = 3
     evidence_top_k: int = 4
     min_images_for_outcome: int = 3
-    max_images_for_outcome: int = 8
+    max_images_for_outcome: int = 16
     include_raw: bool = False
 
     def __post_init__(self) -> None:
