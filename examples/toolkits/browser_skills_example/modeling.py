@@ -22,9 +22,8 @@ from camel.types import ModelPlatformType, ModelType
 load_dotenv()
 
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
-# DEFAULT_MODEL_TYPE = ModelType.GPT_4_1  # Direct OpenAI
-DEFAULT_MODEL_TYPE = "qwen/qwen3-vl-235b-a22b-instruct"
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
+DEFAULT_MODEL_TYPE = ModelType.GPT_4_1
 
 
 
