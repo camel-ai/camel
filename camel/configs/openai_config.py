@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import uuid
 from typing import Dict, Optional, Sequence, Type, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
 
@@ -107,7 +106,7 @@ class ChatGPTConfig(BaseConfig):
             (default: :obj:`None`)
         prompt_cache_key (str, optional): A key used by the OpenAI Prompt
             Caching system to identify and reuse cached prompt segments.
-            (default: :obj:`str(uuid.uuid4())`)
+            (default: :obj:`None`)
         extra_headers: Optional[Dict[str, str]]: Extra headers to use for the
             model. (default: :obj:`None`)
     """
@@ -128,9 +127,7 @@ class ChatGPTConfig(BaseConfig):
     ] = None
     reasoning_effort: Optional[str] = None
     parallel_tool_calls: Optional[bool] = None
-    prompt_cache_key: Optional[str] = Field(
-        default_factory=lambda: str(uuid.uuid4())
-    )
+    prompt_cache_key: Optional[str] = None
     extra_headers: Optional[Dict[str, str]] = None
 
 
