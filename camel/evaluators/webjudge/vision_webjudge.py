@@ -18,14 +18,16 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Literal
 
 from camel.types import ModelPlatformType, ModelType
+from camel.messages import BaseMessage
 
 from .session_utils import (
     get_url_before_after,
     parse_json_objects_log,
     truncate_middle,
+    clean_lines,
 )
 
 if TYPE_CHECKING:
@@ -57,6 +59,11 @@ class VisionEvidenceFrame:
 
 @dataclass
 class WebJudgeVisionConfig:
+    """ Configuration for Vision-WebJudge evaluator.
+    Args:
+        vision_type: Type of vision input, either 'image' or 'dom'.
+            image will use screenshots, dom will use DOM snapshots.
+    """
     model_platform: ModelPlatformType = ModelPlatformType.OPENAI
     model_type: ModelType = ModelType.GPT_4_1
     model_config_dict: Dict[str, Any] = field(
@@ -64,7 +71,8 @@ class WebJudgeVisionConfig:
             "temperature": 0.0,
             "parallel_tool_calls": False,
         }
-    )
+    ),
+    vision_type: Literal["image", "dom"] = "dom"
     step_timeout: Optional[float] = 360.0
     tool_execution_timeout: Optional[float] = 360.0
     max_frames: int = 10_000
@@ -307,17 +315,32 @@ class WebJudgeVisionEvaluator:
     def _user_message(
         self, content: str, *, images: Optional[List[str]] = None
     ):
-        from camel.messages import BaseMessage
+        if self.config.vision_type == "image":
+            return BaseMessage.make_user_message(
+                role_name="User", content=content, image_list=images
+            )
+        elif self.config.vision_type == "dom":
+            # Inline DOM snapshots with clear separators
+            if images:
+                dom_blocks = "\n\n".join(
+                    f"--- DOM Snapshot {i+1} ---\n{img}\n--- end DOM Snapshot {i+1} ---"
+                    for i, img in enumerate(images)
+                )
+                content = f"{content}\n\n{dom_blocks}"
+            return BaseMessage.make_user_message(
+                role_name="User", content=content
+            )
+        else:
+            return BaseMessage.make_user_message(
+                role_name="User", content=content
+            )
 
-        return BaseMessage.make_user_message(
-            role_name="User", content=content, image_list=images
-        )
 
     def _identify_key_points(
         self, task: str
     ) -> Tuple[List[str], str, Dict[str, Any]]:
         agent = self._make_agent(
-            role_name="WebJudge(Vision): Key Point Identifier",
+            role_name="WebJudge: Key Point Identifier",
             system_content=(
                 "You are an expert tasked with analyzing a given task to identify the key points explicitly stated in the task description.\n\n"
                 "**Objective**: Carefully analyze the task description and extract the critical elements explicitly mentioned in the task for achieving its goal.\n\n"
@@ -352,24 +375,25 @@ class WebJudgeVisionEvaluator:
         key_points_text: str,
         frames: List[VisionEvidenceFrame],
     ) -> Tuple[Dict[str, int], Dict[str, str], Dict[str, Any]]:
+        data = "image" if self.config.vision_type == "image" else "DOM snapshot"
         system_msg = (
-            "You are an expert evaluator tasked with determining whether an image contains information about the necessary steps to complete a task.\n\n"
-            "**Objective**: Analyze the provided image and decide if it shows essential steps or evidence required for completing the task. Use your reasoning to explain your decision before assigning a score.\n\n"
+            f"You are an expert evaluator tasked with determining whether an {data} or text from DOM contains information about the necessary steps to complete a task.\n\n"
+            f"**Objective**: Analyze the provided {data} and decide if it shows essential steps or evidence required for completing the task. Use your reasoning to explain your decision before assigning a score.\n\n"
             "**Instructions**:\n"
-            "1. Provide a detailed description of the image, including its contents, visible elements, text (if any), and any notable features.\n\n"
-            "2. Carefully examine the image and evaluate whether it contains necessary steps or evidence crucial to task completion:  \n"
+            f"1. Provide a detailed description of the {data}, including its contents, visible elements, text (if any), and any notable features.\n\n"
+            f"2. Carefully examine the {data} and evaluate whether it contains necessary steps or evidence crucial to task completion:  \n"
             "- Identify key points that could be relevant to task completion, such as actions, progress indicators, tool usage, applied filters, or step-by-step instructions.  \n"
-            "- Does the image show actions, progress indicators, or critical information directly related to completing the task?  \n"
+            f"- Does the {data} show actions, progress indicators, or critical information directly related to completing the task?  \n"
             "- Is this information indispensable for understanding or ensuring task success?\n"
-            "- If the image contains partial but relevant information, consider its usefulness rather than dismissing it outright.\n\n"
+            f"- If the {data} contains partial but relevant information, consider its usefulness rather than dismissing it outright.\n\n"
             "3. Provide your response in the following format:  \n"
-            "- **Reasoning**: Explain your thought process and observations. Mention specific elements in the image that indicate necessary steps, evidence, or lack thereof.  \n"
+            f"- **Reasoning**: Explain your thought process and observations. Mention specific elements in the {data} that indicate necessary steps, evidence, or lack thereof.  \n"
             "- **Score**: Assign a score based on the reasoning, using the following scale:  \n"
-            "    - **1**: The image does not contain any necessary steps or relevant information.  \n"
-            "    - **2**: The image contains minimal or ambiguous information, unlikely to be essential.  \n"
-            "    - **3**: The image includes some relevant steps or hints but lacks clarity or completeness.  \n"
-            "    - **4**: The image contains important steps or evidence that are highly relevant but not fully comprehensive.  \n"
-            "    - **5**: The image clearly displays necessary steps or evidence crucial for completing the task.\n\n"
+            f"    - **1**: The {data} does not contain any necessary steps or relevant information.  \n"
+            f"    - **2**: The {data} contains minimal or ambiguous information, unlikely to be essential.  \n"
+            f"    - **3**: The {data} includes some relevant steps or hints but lacks clarity or completeness.  \n"
+            f"    - **4**: The {data} contains important steps or evidence that are highly relevant but not fully comprehensive.  \n"
+            f"    - **5**: The {data} clearly displays necessary steps or evidence crucial for completing the task.\n\n"
             "Respond with:  \n"
             "1. **Reasoning**: [Your explanation]  \n"
             "2. **Score**: [1-5]\n"
@@ -381,17 +405,25 @@ class WebJudgeVisionEvaluator:
 
         for f in frames:
             agent = self._make_agent(
-                role_name="WebJudge(Vision): Evidence Scorer",
+                role_name="WebJudge: Evidence Scorer",
                 system_content=system_msg,
             )
-            resolved = self._resolve_path(f.screenshot_path)
-            images = [self._file_to_data_url(resolved)] if resolved else [""]
+            if self.config.vision_type == "image":
+                resolved = self._resolve_path(f.screenshot_path)
+                images = [self._file_to_data_url(resolved)] if resolved else [""]
+            elif self.config.vision_type == "dom":
+                resolved = self._resolve_path(f.snapshot_path)
+                images = [self._file_to_dom_text(resolved)] if resolved else [""]
+            else:
+                raise ValueError(
+                    f"Unsupported vision_type: {self.config.vision_type}"
+                )
             prompt = (
                 "**Task**: "
                 f"{task}\n\n"
                 "**Key Points for Task Completion**: "
                 f"{key_points_text}\n\n" + "\n\n"
-                "The snapshot of the web page is shown in the image.\n\n"
+                f"The snapshot of the web page is shown in the {data}.\n\n"
             )
             resp = agent.step(self._user_message(prompt, images=images))
             response_text = resp.msg.content or ""
@@ -428,7 +460,7 @@ class WebJudgeVisionEvaluator:
         evidence_thoughts: List[Dict[str, Any]],
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         agent = self._make_agent(
-            role_name="WebJudge(Vision): Outcome Judge",
+            role_name="WebJudge: Outcome Judge",
             system_content=(
                 "You are an expert in evaluating the performance of a web navigation agent. The agent is designed to help a human user navigate a website to complete a task. Given the user's task, the agent's action history, key points for task completion, some potentially important web pages in the agent's trajectory and their reasons, your goal is to determine whether the agent has completed the task and achieved all requirements.\n\n"
                 "Your response must strictly follow the following evaluation criteria!\n"
@@ -457,8 +489,14 @@ class WebJudgeVisionEvaluator:
 
         images: List[str] = []
         for f in evidence:
-            resolved = self._resolve_path(f.screenshot_path)
-            images.append(self._file_to_data_url(resolved) if resolved else "")
+            if self.config.vision_type == "image":
+                resolved = self._resolve_path(f.screenshot_path)
+                images.append(self._file_to_data_url(resolved) if resolved else "")
+            elif self.config.vision_type == "dom":
+                resolved = self._resolve_path(f.snapshot_path)
+                images.append(self._file_to_dom_text(resolved) if resolved else "")
+            else:
+                raise ValueError("Unsupported vision_type")    
 
         whole_thoughts: List[str] = []
         for t in evidence_thoughts:
@@ -713,6 +751,7 @@ class WebJudgeVisionEvaluator:
     def _extract_screenshot_candidates(
         self, session_dir: Path, actions: List[Dict[str, Any]]
     ) -> List[VisionEvidenceFrame]:
+        """ Load screenshots or DOM snapshots and actions to VisionEvidenceFrame. """
         frames: List[VisionEvidenceFrame] = []
         excluded_for_alignment = {
             "get_tab_info",
@@ -775,6 +814,7 @@ class WebJudgeVisionEvaluator:
     def _append_final_candidate(
         self, session_dir: Path, frames: List[VisionEvidenceFrame]
     ) -> List[VisionEvidenceFrame]:
+        """ Add final frame if available. """
         final_png = session_dir / "evidence" / "final.png"
         if final_png.exists():
             target_idx = frames[-1].action_step if frames else 10**9
@@ -812,3 +852,16 @@ class WebJudgeVisionEvaluator:
     def _file_to_data_url(self, path: Path) -> str:
         data = base64.b64encode(path.read_bytes()).decode("utf-8")
         return f"data:image/png;base64,{data}"
+
+    def _file_to_dom_text(self, path: Path) -> str:
+        """ Get DOM snapshot text from file. """
+        try:
+            dom = path.read_text(encoding="utf-8", errors="ignore")
+            cleaned = clean_lines(dom)
+            name = path.stem + ".cleaned.txt"
+            with open(path.parent/name, "w", encoding="utf-8") as f:
+                f.write(cleaned)
+            return cleaned
+        except Exception:
+            return ""
+        

@@ -17,7 +17,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
 DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
 

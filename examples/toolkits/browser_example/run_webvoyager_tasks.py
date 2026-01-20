@@ -224,7 +224,7 @@ class WebVoyagerRunner:
 
             # Get results
             session_dir = agent.session_log_dir
-
+            agent.save_memory()
             # Save communication log
             agent.save_communication_log()
 
@@ -351,6 +351,9 @@ class WebVoyagerRunner:
             return result
 
         except asyncio.TimeoutError as e:
+            agent.save_memory()
+            # Save communication log
+            agent.save_communication_log()
             print(f"⏱️  Task execution timeout: {e}")
             import traceback
 

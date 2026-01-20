@@ -58,10 +58,11 @@ WEBSITE_GUIDELINES: dict[str, str] = {
     ),
     "google flights": "\n".join(
         [
-            "- Target site: Google Flights",
-            "- Enter origin/destination with city-level specificity, then press Enter to confirm",
-            "- For dates: click the date input first, type dates, press Enter to confirm and exit date picker",
-            "- If a Search button is visible, ensure required fields are filled and then click Search",
+            "- All tasks are to be performed on Google Flights",
+            "- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).",
+            "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
+            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then click Search to initiate the search.",
+            "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
         ]
     ),
     "amazon": "\n".join(
@@ -351,7 +352,6 @@ class BrowserAgent:
         #     return False
 
         custom_tools = [
-            "browser_open",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
@@ -543,7 +543,7 @@ class BrowserAgent:
         # Use astep like hybrid_browser_toolkit_example.py
         print("\nSending task to agent...")
         task_with_context = f"{user_task}\n\nTARGET WEBSITE:\n- web_name: {self.website}\n- web: {self.start_url or ''}\n"
-
+        print(f"\nFull task with context:\n{task_with_context}\n")
         response = await self.agent.astep(task_with_context)
 
         # Log the response
@@ -935,5 +935,10 @@ class BrowserAgent:
 
             traceback.print_exc()
 
+    def save_memory(self, path: Path | str | None = None):
+        """Save agent memory to a file (if applicable)."""
+        if not path:
+            path = self.session_log_dir / "agent_memory.json"
+        self.agent.save_memory(path)
 
 __all__ = ["BrowserAgent"]
