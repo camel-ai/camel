@@ -16,7 +16,7 @@ from __future__ import annotations
 import uuid
 from typing import Dict, Optional, Sequence, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
 
@@ -128,7 +128,9 @@ class ChatGPTConfig(BaseConfig):
     ] = None
     reasoning_effort: Optional[str] = None
     parallel_tool_calls: Optional[bool] = None
-    prompt_cache_key: Optional[str] = str(uuid.uuid4())
+    prompt_cache_key: Optional[str] = Field(
+        default_factory=lambda: str(uuid.uuid4())
+    )
     extra_headers: Optional[Dict[str, str]] = None
 
 
