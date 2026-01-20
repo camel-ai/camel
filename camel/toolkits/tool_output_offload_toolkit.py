@@ -304,7 +304,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         candidates.sort(key=lambda x: x["length"], reverse=True)
         candidates = candidates[:max_results]
 
-        # Cache for summarize_and_offload
+        # Cache for offload_with_summary
         self._last_offloadable_list = candidates
 
         if not candidates:
@@ -331,21 +331,22 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
         lines.append(
-            "\n\nUse summarize_and_offload(index) to offload a specific "
+            "\n\nUse offload_with_summary(index, summary) to offload a "
+            "specific output."
             "output."
         )
 
         return "\n".join(lines)
 
-    def summarize_and_offload(
+    def offload_with_summary(
         self,
         index: int,
         summary: str,
     ) -> str:
-        r"""Summarize a tool output and offload the original to storage.
+        r"""Offload a tool output using a provided summary.
 
         This method:
-        1. Generates a summary of the specified tool output
+        1. Validates the provided summary
         2. Stores the original content to disk with a unique ID
         3. Replaces the tool output in memory with the summary + reference
 
@@ -575,7 +576,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         return [
             FunctionTool(self.list_offloadable_outputs),
-            FunctionTool(self.summarize_and_offload),
+            FunctionTool(self.offload_with_summary),
             FunctionTool(self.retrieve_offloaded_output),
             FunctionTool(self.list_offloaded_outputs),
             FunctionTool(self.get_offload_info),

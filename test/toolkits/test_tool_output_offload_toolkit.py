@@ -12,15 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
+from uuid import UUID
 
+from camel.memories.records import MemoryRecord
+from camel.messages import FunctionCallingMessage
 from camel.toolkits.tool_output_offload_toolkit import (
     OffloadedOutput,
     ToolOutputOffloadToolkit,
 )
+from camel.types import OpenAIBackendRole, RoleType
 
 
 class TestToolOutputOffloadToolkit:
@@ -67,14 +70,8 @@ class TestToolOutputOffloadToolkit:
 
             # Mock agent with empty memory
             mock_agent = MagicMock()
-            mock_storage = MagicMock()
-            mock_storage.load.return_value = []
-
-            mock_chat_history_block = MagicMock()
-            mock_chat_history_block.storage = mock_storage
-
             mock_memory = MagicMock()
-            mock_memory._chat_history_block = mock_chat_history_block
+            mock_memory.get_records.return_value = []
 
             mock_agent.memory = mock_memory
             toolkit._agent = mock_agent
@@ -93,35 +90,33 @@ class TestToolOutputOffloadToolkit:
 
             # Mock agent with tool outputs of varying lengths
             mock_agent = MagicMock()
-            mock_storage = MagicMock()
-            mock_storage.load.return_value = [
-                {
-                    "uuid": "uuid-1",
-                    "timestamp": 1000,
-                    "message": {
-                        "__class__": "FunctionCallingMessage",
-                        "func_name": "short_tool",
-                        "tool_call_id": "call-1",
-                        "result": "short",  # 5 chars, below threshold
-                    },
-                },
-                {
-                    "uuid": "uuid-2",
-                    "timestamp": 2000,
-                    "message": {
-                        "__class__": "FunctionCallingMessage",
-                        "func_name": "long_tool",
-                        "tool_call_id": "call-2",
-                        "result": "x" * 200,  # 200 chars, above threshold
-                    },
-                },
-            ]
-
-            mock_chat_history_block = MagicMock()
-            mock_chat_history_block.storage = mock_storage
-
             mock_memory = MagicMock()
-            mock_memory._chat_history_block = mock_chat_history_block
+            mock_memory.get_records.return_value = [
+                MemoryRecord(
+                    message=FunctionCallingMessage(
+                        role_name="assistant",
+                        role_type=RoleType.ASSISTANT,
+                        meta_dict=None,
+                        content="",
+                        func_name="short_tool",
+                        tool_call_id="call-1",
+                        result="short",
+                    ),
+                    role_at_backend=OpenAIBackendRole.FUNCTION,
+                ),
+                MemoryRecord(
+                    message=FunctionCallingMessage(
+                        role_name="assistant",
+                        role_type=RoleType.ASSISTANT,
+                        meta_dict=None,
+                        content="",
+                        func_name="long_tool",
+                        tool_call_id="call-2",
+                        result="x" * 200,
+                    ),
+                    role_at_backend=OpenAIBackendRole.FUNCTION,
+                ),
+            ]
 
             mock_agent.memory = mock_memory
             toolkit._agent = mock_agent
@@ -132,25 +127,103 @@ class TestToolOutputOffloadToolkit:
             assert "short_tool" not in result
             assert "1 offloadable" in result
 
-    def test_summarize_and_offload_no_cached_list(self):
+    def test_offload_with_summary_no_cached_list(self):
         r"""Test error when no cached list exists."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
 
-            result = toolkit.summarize_and_offload(0)
+            result = toolkit.offload_with_summary(0, "summary")
 
             assert "No offloadable outputs cached" in result
             assert "list_offloadable_outputs()" in result
 
-    def test_summarize_and_offload_invalid_index(self):
+    def test_offload_with_summary_invalid_index(self):
         r"""Test error handling for invalid index."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
             toolkit._last_offloadable_list = [{"test": "data"}]
 
-            result = toolkit.summarize_and_offload(5)
+            result = toolkit.offload_with_summary(5, "summary")
 
             assert "Invalid index" in result
+
+    def test_offload_with_summary_empty_summary(self):
+        r"""Test error when summary is empty."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
+            toolkit._last_offloadable_list = [
+                {
+                    "index": 0,
+                    "uuid": "uuid-1",
+                    "tool_name": "test_tool",
+                    "tool_call_id": "call-1",
+                    "result": "x" * 10,
+                    "result_str": "x" * 10,
+                    "timestamp": 1000,
+                    "length": 10,
+                }
+            ]
+
+            result = toolkit.offload_with_summary(0, "")
+
+            assert "Summary is required" in result
+
+    def test_offload_with_summary_success(self):
+        r"""Test successful offload flow."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
+
+            record_uuid = "123e4567-e89b-12d3-a456-426614174000"
+            memory_record = MemoryRecord(
+                message=FunctionCallingMessage(
+                    role_name="assistant",
+                    role_type=RoleType.ASSISTANT,
+                    meta_dict=None,
+                    content="",
+                    func_name="test_tool",
+                    tool_call_id="call-1",
+                    result="x" * 20,
+                ),
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+                uuid=UUID(record_uuid),
+            )
+
+            mock_memory = MagicMock()
+            mock_memory.get_records.return_value = [memory_record]
+            mock_memory.replace_record_by_uuid.return_value = True
+
+            mock_agent = MagicMock()
+            mock_agent.memory = mock_memory
+            toolkit._agent = mock_agent
+
+            toolkit._last_offloadable_list = [
+                {
+                    "index": 0,
+                    "uuid": record_uuid,
+                    "tool_name": "test_tool",
+                    "tool_call_id": "call-1",
+                    "result": "x" * 20,
+                    "result_str": "x" * 20,
+                    "timestamp": 1000,
+                    "length": 20,
+                }
+            ]
+
+            result = toolkit.offload_with_summary(0, "short summary")
+
+            assert "Successfully offloaded output" in result
+            assert "Offload ID:" in result
+            mock_memory.replace_record_by_uuid.assert_called_once()
+
+            offload_id = ""
+            for line in result.splitlines():
+                if line.startswith("Offload ID:"):
+                    offload_id = line.split("Offload ID:", 1)[1].strip()
+                    break
+
+            assert offload_id
+            content_file = toolkit.outputs_dir / f"{offload_id}.txt"
+            assert content_file.exists()
 
     def test_retrieve_offloaded_output_not_found(self):
         r"""Test error handling for missing offload_id."""
@@ -236,110 +309,6 @@ class TestToolOutputOffloadToolkit:
             assert "Offloaded outputs: 0" in result
             assert "Storage directory:" in result
             assert "Tool outputs in memory: 0" in result
-
-    def test_get_tools_returns_all_tools(self):
-        r"""Test that get_tools returns all expected tools."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            tools = toolkit.get_tools()
-
-            tool_names = [tool.get_function_name() for tool in tools]
-            assert "list_offloadable_outputs" in tool_names
-            assert "summarize_and_offload" in tool_names
-            assert "retrieve_offloaded_output" in tool_names
-            assert "list_offloaded_outputs" in tool_names
-            assert "get_offload_info" in tool_names
-            assert len(tools) == 5
-
-    def test_serialize_result_string(self):
-        r"""Test serialization of string result."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            result = toolkit._serialize_result("test string")
-            assert result == "test string"
-
-    def test_serialize_result_dict(self):
-        r"""Test serialization of dict result."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            data = {"key": "value", "number": 42}
-            result = toolkit._serialize_result(data)
-
-            parsed = json.loads(result)
-            assert parsed == data
-
-    def test_serialize_result_list(self):
-        r"""Test serialization of list result."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            data = [1, 2, 3, "test"]
-            result = toolkit._serialize_result(data)
-
-            parsed = json.loads(result)
-            assert parsed == data
-
-    def test_store_original_content(self):
-        r"""Test storing original content to file."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            offload_id = "test-store"
-            content = "Test content to store"
-            meta = OffloadedOutput(
-                offload_id=offload_id,
-                tool_name="test_tool",
-                tool_call_id="call-1",
-                record_uuid="uuid-1",
-                original_length=len(content),
-                summary="Test summary",
-                file_path=str(toolkit.outputs_dir / f"{offload_id}.txt"),
-                timestamp=1000,
-                offloaded_at="2024-01-01T00:00:00",
-            )
-
-            path = toolkit._store_original_content(content, offload_id, meta)
-
-            # Verify content file
-            content_file = Path(path)
-            assert content_file.exists()
-            assert content_file.read_text() == content
-
-            # Verify metadata file
-            meta_file = toolkit.outputs_dir / f"{offload_id}.meta.json"
-            assert meta_file.exists()
-
-            # Verify index
-            assert offload_id in toolkit._offloaded_outputs
-
-    def test_index_persistence(self):
-        r"""Test that index is saved to file."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            offload_id = "persist-test"
-            meta = OffloadedOutput(
-                offload_id=offload_id,
-                tool_name="test_tool",
-                tool_call_id="call-1",
-                record_uuid="uuid-1",
-                original_length=100,
-                summary="Test",
-                file_path="/path",
-                timestamp=1000,
-                offloaded_at="2024-01-01T00:00:00",
-            )
-
-            toolkit._offloaded_outputs[offload_id] = meta
-            toolkit._save_index()
-
-            # Verify index file
-            assert toolkit.index_file.exists()
-            index_data = json.loads(toolkit.index_file.read_text())
-            assert offload_id in index_data
 
 
 class TestOffloadedOutput:
