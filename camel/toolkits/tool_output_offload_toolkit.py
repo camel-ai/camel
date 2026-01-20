@@ -18,14 +18,11 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
-
-if TYPE_CHECKING:
-    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 
@@ -57,23 +54,6 @@ class OffloadedOutput:
     offloaded_at: str
 
 
-DEFAULT_SUMMARY_PROMPT_TEMPLATE = """\
-Summarize the following output from the '{tool_name}' tool.
-
-Create a concise summary that:
-- Preserves key information, data points, and findings
-- Notes important identifiers, values, or references
-- Indicates the type and structure of the content
-- Is useful for understanding what the original output contained
-
-Keep the summary under 500 characters if possible.
-
-Tool Output:
-{content}
-
-Summary:"""
-
-
 class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A toolkit for agent-driven tool output summarization and offloading.
 
@@ -90,10 +70,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         min_output_length: Minimum character length for outputs to appear
             in list_offloadable_outputs. Lower values allow more outputs.
             (default: :obj:`1000`)
-        summary_prompt_template: Custom template for summarization prompts.
-            Use {tool_name} and {content} placeholders.
-        summary_agent: Custom ChatAgent for summarization. If None,
-            creates a default summarization agent. (default: :obj:`None`)
 
     Example:
         >>> from camel.agents import ChatAgent
@@ -111,15 +87,11 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
         min_output_length: int = 1000,
-        summary_prompt_template: Optional[str] = None,
-        summary_agent: Optional["ChatAgent"] = None,
     ):
         BaseToolkit.__init__(self, timeout=timeout)
         RegisteredAgentToolkit.__init__(self)
 
         self.min_output_length = min_output_length
-        self.summary_prompt_template = summary_prompt_template
-        self._summary_agent = summary_agent
 
         # Storage for offloaded outputs metadata
         self._offloaded_outputs: Dict[str, OffloadedOutput] = {}
@@ -154,21 +126,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         logger.info(f"ToolOutputOffloadToolkit storage: {self.session_dir}")
 
-    def _get_summary_agent(self) -> "ChatAgent":
-        r"""Get or create the summarization agent."""
-        if self._summary_agent is None:
-            from camel.agents import ChatAgent
-
-            self._summary_agent = ChatAgent(
-                system_message=(
-                    "You are a summarization assistant. Create concise "
-                    "summaries of tool outputs while preserving key "
-                    "information, data points, and actionable details."
-                ),
-                agent_id=f"{self.__class__.__name__}_summarizer",
-            )
-        return self._summary_agent
-
     def _get_tool_outputs_from_memory(self) -> List[Dict[str, Any]]:
         r"""Extract tool output records from agent's memory.
 
@@ -181,45 +138,31 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             return []
 
         try:
-            # Access memory storage
             memory = self._agent.memory
-            chat_history_block = getattr(memory, "_chat_history_block", None)
-            if chat_history_block is None:
-                # Try alternative access
-                chat_history_block = getattr(
-                    memory, "chat_history_block", None
-                )
-            if chat_history_block is None:
-                logger.warning("Could not access chat history block")
+            if not hasattr(memory, "get_records"):
+                logger.warning("Memory does not support get_records()")
                 return []
 
-            storage = getattr(chat_history_block, "storage", None)
-            if storage is None:
-                logger.warning("Could not access storage")
-                return []
-
-            # Load records
-            record_dicts = storage.load()
-
+            records = memory.get_records()
             tool_outputs = []
-            for idx, record in enumerate(record_dicts):
-                msg = record.get("message", {})
-                # Check if this is a FunctionCallingMessage with result
+            for idx, record in enumerate(records):
+                msg = getattr(record, "message", None)
                 if (
-                    msg.get("__class__") == "FunctionCallingMessage"
-                    and "result" in msg
-                    and msg["result"] is not None
+                    msg is not None
+                    and msg.__class__.__name__ == "FunctionCallingMessage"
+                    and getattr(msg, "result", None) is not None
                 ):
-                    result_str = self._serialize_result(msg["result"])
+                    result = msg.result
+                    result_str = self._serialize_result(result)
                     tool_outputs.append(
                         {
                             "index": idx,
-                            "uuid": record.get("uuid", ""),
-                            "tool_name": msg.get("func_name", "unknown"),
-                            "tool_call_id": msg.get("tool_call_id", ""),
-                            "result": msg["result"],
+                            "uuid": str(getattr(record, "uuid", "")),
+                            "tool_name": getattr(msg, "func_name", "unknown"),
+                            "tool_call_id": getattr(msg, "tool_call_id", ""),
+                            "result": result,
                             "result_str": result_str,
-                            "timestamp": record.get("timestamp", 0),
+                            "timestamp": getattr(record, "timestamp", 0),
                             "length": len(result_str),
                         }
                     )
@@ -238,27 +181,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             return json.dumps(result, ensure_ascii=False, indent=2)
         except (TypeError, ValueError):
             return str(result)
-
-    def _generate_summary(self, content: str, tool_name: str) -> str:
-        r"""Generate a summary of tool output content using LLM.
-
-        Args:
-            content: The tool output content to summarize.
-            tool_name: Name of the tool that produced the output.
-
-        Returns:
-            Generated summary string.
-        """
-        summary_agent = self._get_summary_agent()
-        summary_agent.reset()
-
-        template = (
-            self.summary_prompt_template or DEFAULT_SUMMARY_PROMPT_TEMPLATE
-        )
-        prompt = template.format(tool_name=tool_name, content=content)
-        response = summary_agent.step(prompt)
-
-        return response.msgs[-1].content.strip()
 
     def _store_original_content(
         self,
@@ -307,16 +229,12 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         self,
         record_uuid: str,
         new_result: str,
-        tool_name: str,
-        tool_call_id: str,
     ) -> bool:
         r"""Replace a memory record's result with summarized content.
 
         Args:
             record_uuid: UUID of the record to replace.
             new_result: New result content (summary with reference).
-            tool_name: Tool name for the message.
-            tool_call_id: Tool call ID for the message.
 
         Returns:
             True if replacement succeeded, False otherwise.
@@ -326,39 +244,30 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         try:
             memory = self._agent.memory
-            chat_history_block = getattr(memory, "_chat_history_block", None)
-            if chat_history_block is None:
-                chat_history_block = getattr(
-                    memory, "chat_history_block", None
+            if not (
+                hasattr(memory, "replace_record_by_uuid")
+                and hasattr(memory, "get_records")
+            ):
+                logger.warning(
+                    "Memory does not support record replacement APIs."
                 )
-            if chat_history_block is None:
                 return False
 
-            storage = getattr(chat_history_block, "storage", None)
-            if storage is None:
-                return False
+            records = memory.get_records()
+            for record in records:
+                if str(getattr(record, "uuid", "")) != record_uuid:
+                    continue
+                msg = getattr(record, "message", None)
+                if msg is None:
+                    return False
+                new_record = record.model_copy(deep=True)
+                if hasattr(new_record.message, "result"):
+                    new_record.message.result = new_result
+                else:
+                    return False
+                return memory.replace_record_by_uuid(record_uuid, new_record)
 
-            # Load existing records
-            existing_records = storage.load()
-
-            # Find and update the target record
-            updated = False
-            for record in existing_records:
-                if record.get("uuid") == record_uuid:
-                    msg = record.get("message", {})
-                    if msg.get("__class__") == "FunctionCallingMessage":
-                        msg["result"] = new_result
-                        updated = True
-                        break
-
-            if not updated:
-                return False
-
-            # Save back to storage
-            storage.clear()
-            storage.save(existing_records)
-
-            return True
+            return False
 
         except Exception as e:
             logger.error(f"Error replacing in memory: {e}")
@@ -431,6 +340,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
     def summarize_and_offload(
         self,
         index: int,
+        summary: str,
     ) -> str:
         r"""Summarize a tool output and offload the original to storage.
 
@@ -441,6 +351,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Args:
             index: Index from list_offloadable_outputs() to offload.
+            summary: Summary created by the agent in the same turn.
 
         Returns:
             str: Success message with offload_id, or error message if failed.
@@ -465,8 +376,11 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         timestamp = output["timestamp"]
 
         try:
-            # Generate summary
-            summary = self._generate_summary(original_content, tool_name)
+            if not summary:
+                return (
+                    "Summary is required. Provide a concise summary in the "
+                    "summary parameter."
+                )
 
             # Create offload ID
             offload_id = str(uuid.uuid4())[:8]
@@ -499,9 +413,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
             # Replace in memory
-            if self._replace_in_memory(
-                record_uuid, replacement, tool_name, tool_call_id
-            ):
+            if self._replace_in_memory(record_uuid, replacement):
                 # Clear cache since memory changed
                 self._last_offloadable_list = []
 
