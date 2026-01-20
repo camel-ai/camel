@@ -57,17 +57,30 @@ class OffloadedOutput:
     offloaded_at: str
 
 
+DEFAULT_SUMMARY_PROMPT_TEMPLATE = """\
+Summarize the following output from the '{tool_name}' tool.
+
+Create a concise summary that:
+- Preserves key information, data points, and findings
+- Notes important identifiers, values, or references
+- Indicates the type and structure of the content
+- Is useful for understanding what the original output contained
+
+Keep the summary under 500 characters if possible.
+
+Tool Output:
+{content}
+
+Summary:"""
+
+
 class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A toolkit for agent-driven tool output summarization and offloading.
 
-    This toolkit allows agents to proactively manage memory by:
+    This toolkit allows agents to manage memory by:
     1. Listing recent tool outputs that could be summarized/offloaded
     2. Summarizing specific tool outputs and storing originals externally
     3. Retrieving original content when needed
-
-    Unlike automatic threshold-based approaches, this is agent-driven -
-    the LLM decides when outputs are too large or no longer relevant
-    and should be offloaded.
 
     Args:
         working_directory: Directory for storing offloaded content.
@@ -79,6 +92,8 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
             (default: :obj:`1000`)
         summary_prompt_template: Custom template for summarization prompts.
             Use {tool_name} and {content} placeholders.
+        summary_agent: Custom ChatAgent for summarization. If None,
+            creates a default summarization agent. (default: :obj:`None`)
 
     Example:
         >>> from camel.agents import ChatAgent
@@ -97,12 +112,14 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         timeout: Optional[float] = None,
         min_output_length: int = 1000,
         summary_prompt_template: Optional[str] = None,
+        summary_agent: Optional["ChatAgent"] = None,
     ):
         BaseToolkit.__init__(self, timeout=timeout)
         RegisteredAgentToolkit.__init__(self)
 
         self.min_output_length = min_output_length
         self.summary_prompt_template = summary_prompt_template
+        self._summary_agent = summary_agent
 
         # Storage for offloaded outputs metadata
         self._offloaded_outputs: Dict[str, OffloadedOutput] = {}
@@ -112,9 +129,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         # Setup storage directory
         self._setup_storage(working_directory)
-
-        # Lazy-initialized summary agent
-        self._summary_agent: Optional["ChatAgent"] = None
 
     def _setup_storage(self, working_directory: Optional[str]) -> None:
         r"""Initialize storage paths and create session directories."""
@@ -151,7 +165,6 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                     "summaries of tool outputs while preserving key "
                     "information, data points, and actionable details."
                 ),
-                model=None,  # Uses default model
                 agent_id=f"{self.__class__.__name__}_summarizer",
             )
         return self._summary_agent
@@ -239,33 +252,13 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         summary_agent = self._get_summary_agent()
         summary_agent.reset()
 
-        prompt = self._create_summary_prompt(content, tool_name)
+        template = (
+            self.summary_prompt_template or DEFAULT_SUMMARY_PROMPT_TEMPLATE
+        )
+        prompt = template.format(tool_name=tool_name, content=content)
         response = summary_agent.step(prompt)
 
         return response.msgs[-1].content.strip()
-
-    def _create_summary_prompt(self, content: str, tool_name: str) -> str:
-        r"""Create the summarization prompt."""
-        if self.summary_prompt_template:
-            return self.summary_prompt_template.format(
-                tool_name=tool_name,
-                content=content,
-            )
-
-        return f"""Summarize the following output from the '{tool_name}' tool.
-
-Create a concise summary that:
-- Preserves key information, data points, and findings
-- Notes important identifiers, values, or references
-- Indicates the type and structure of the content
-- Is useful for understanding what the original output contained
-
-Keep the summary under 500 characters if possible.
-
-Tool Output:
-{content}
-
-Summary:"""
 
     def _store_original_content(
         self,
