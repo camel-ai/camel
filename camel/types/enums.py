@@ -1828,6 +1828,7 @@ class ModelPlatformType(Enum):
     PPIO = "ppio"
     SGLANG = "sglang"
     INTERNLM = "internlm"
+    KIMI = "kimi"
     MOONSHOT = "moonshot"
     MODELSCOPE = "modelscope"
     SILICONFLOW = "siliconflow"
@@ -1982,6 +1983,11 @@ class ModelPlatformType(Enum):
     def is_internlm(self) -> bool:
         r"""Returns whether this platform is InternLM."""
         return self is ModelPlatformType.INTERNLM
+
+    @property
+    def is_kimi(self) -> bool:
+        r"""Returns whether this platform is Kimi."""
+        return self is ModelPlatformType.KIMI
 
     @property
     def is_moonshot(self) -> bool:

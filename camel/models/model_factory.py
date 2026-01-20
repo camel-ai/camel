@@ -32,6 +32,7 @@ from camel.models.function_gemma_model import FunctionGemmaModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
+from camel.models.kimi_model import KimiModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.lmstudio_model import LMStudioModel
 from camel.models.minimax_model import MinimaxModel
@@ -109,6 +110,7 @@ class ModelFactory:
         ModelPlatformType.DEEPSEEK: DeepSeekModel,
         ModelPlatformType.PPIO: PPIOModel,
         ModelPlatformType.INTERNLM: InternLMModel,
+        ModelPlatformType.KIMI: KimiModel,
         ModelPlatformType.MOONSHOT: MoonshotModel,
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,

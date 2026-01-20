@@ -30,6 +30,7 @@ from .function_gemma_model import FunctionGemmaModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
+from .kimi_model import KimiModel
 from .litellm_model import LiteLLMModel
 from .lmstudio_model import LMStudioModel
 from .minimax_model import MinimaxModel
@@ -103,6 +104,7 @@ __all__ = [
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',
+    'KimiModel',
     'ModelScopeModel',
     'MoonshotModel',
     'AIMLModel',

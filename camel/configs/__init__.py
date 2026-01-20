@@ -30,6 +30,7 @@ from .function_gemma_config import (
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
+from .kimi_config import KIMI_API_PARAMS, KimiConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .minimax_config import MINIMAX_API_PARAMS, MinimaxConfig
@@ -135,6 +136,8 @@ __all__ = [
     'ATLASCLOUD_API_PARAMS',
     'LMSTUDIO_API_PARAMS',
     'LMStudioConfig',
+    'KimiConfig',
+    'KIMI_API_PARAMS',
     'MINIMAX_API_PARAMS',
     'MinimaxConfig',
     'WatsonXConfig',

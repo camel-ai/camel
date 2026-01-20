@@ -336,6 +336,8 @@ def api_keys_required(
                 key_way = "https://api.groq.com/openai/v1"
             elif env_var_name == 'MISTRAL_API_KEY':
                 key_way = "https://mistral.ai/"
+            elif env_var_name == 'KIMI_API_KEY':
+                key_way = "https://api.moonshot.cn/v1"
             elif env_var_name == 'MOONSHOT_API_KEY':
                 key_way = "https://api.moonshot.cn/v1"
             elif env_var_name == 'NVIDIA_API_KEY':
