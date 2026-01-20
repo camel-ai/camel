@@ -15,6 +15,7 @@ from .aihubmix_config import AIHUBMIX_API_PARAMS, AihubMixConfig
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
 from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
+from .atlascloud_config import ATLASCLOUD_API_PARAMS, AtlasCloudConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cerebras_config import CEREBRAS_API_PARAMS, CerebrasConfig
@@ -130,6 +131,8 @@ __all__ = [
     'AMD_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
+    'AtlasCloudConfig',
+    'ATLASCLOUD_API_PARAMS',
     'LMSTUDIO_API_PARAMS',
     'LMStudioConfig',
     'MINIMAX_API_PARAMS',
