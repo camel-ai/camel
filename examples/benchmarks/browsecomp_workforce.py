@@ -83,9 +83,8 @@ You excel at understanding complex queries and finding precise answers.""",
     )
 
     # Create the BrowseComp benchmark
-    benchmark = BrowseCompBenchmark(
-        "report_workforce.html", num_examples=3, processes=2
-    )
+    benchmark = BrowseCompBenchmark()
+    benchmark.load(num_examples=3)
 
     # Run the benchmark with the workforce
     print("Running BrowseComp benchmark with workforce...")
@@ -93,9 +92,3 @@ You excel at understanding complex queries and finding precise answers.""",
         pipeline_template=workforce,
         task_json_formatter=formatter_agent,
     )
-
-    # Validate the results
-    print("Validating results...")
-    benchmark.validate(grader=grader_agent)
-
-    print("Benchmark completed. Results saved to report_workforce.html")

@@ -15,32 +15,23 @@
 import base64
 import hashlib
 import json
-import os
+import logging
 import random
-import traceback
-from collections import defaultdict
 from multiprocessing.pool import ThreadPool
-from typing import Any, Dict, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+from tqdm import tqdm
 
-from camel.agents.chat_agent import ChatAgent
+from camel.agents import ChatAgent
+from camel.benchmarks._utils import save_to_jsonl
 from camel.benchmarks.base import BaseBenchmark
-from camel.logger import get_logger
 from camel.societies.role_playing import RolePlaying
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task
 
-logger = get_logger(__name__)
-
-
-class Message(BaseModel):
-    role: str
-    content: str
-    variant: Optional[str] = None
-
-
-MessageList = List[Message]
+logger = logging.getLogger(__name__)
 
 
 class QueryResponse(BaseModel):
@@ -51,13 +42,11 @@ class QueryResponse(BaseModel):
     """
 
     explanation: str = Field(
-        description="""your explanation for your final answer."""
+        description="your explanation for your final answer."
     )
-    exact_answer: str = Field(description="""your succinct, final answer.""")
+    exact_answer: str = Field(description="your succinct, final answer.")
     confidence: str = Field(
-        description=r"""
-your confidence score between 0|\%| and 100|\%| for your answer.
-"""
+        description="your confidence score between 0% and 100% for your answer."
     )
 
 
@@ -92,52 +81,12 @@ inconsistency, ambiguity, non-equivalency, or if the extracted answer is
 incorrect."""
     )
     confidence: str = Field(
-        description=r"""The extracted confidence score between 0|\%|
-and 100|\%| from [response]. Put 100 if there is no confidence score available.
-"""
+        description="""The extracted confidence score between 0%
+and 100% from [response]. Put 100 if there is no confidence score available."""
     )
 
 
-class SingleEvalResult(BaseModel):
-    r"""Result of evaluating a single benchmark sample.
-
-    This class stores the evaluation results for a single benchmark example,
-    including score, HTML representation, conversation history, and metrics.
-    """
-
-    score: Optional[float] = None
-    html: str
-    convo: MessageList
-    metrics: Dict[str, float] = Field(default_factory=dict)
-
-
-class EvalResult(BaseModel):
-    r"""Result of running a complete benchmark evaluation.
-
-    This class aggregates results from multiple sample evaluations, storing
-    the overall score, detailed metrics, HTML reports, and conversation logs.
-    """
-
-    score: Optional[float] = None  # top-line metric
-    metrics: Optional[Dict[str, float]] = None  # other metrics
-    htmls: List[str]  # strings of valid HTML
-    convos: List[MessageList]  # sampled conversations
-
-
-# Define the message template first
-_message_template = """
-<div class="message {{ role }}">
-    <div class="role">
-    {{ role }}
-    {% if variant %}<span class="variant">({{ variant }})</span>{% endif %}
-    </div>
-    <div class="content">
-    <pre>{{ content }}</pre>
-    </div>
-</div>
-"""
-
-# TODO: Add necessary prompts when tuning.
+# Query prompt template
 QUERY_TEMPLATE = """
 {question}
 
@@ -147,6 +96,7 @@ Exact Answer: {{your succinct, final answer}}
 Confidence: {{your confidence score between 0% and 100% for your answer}}
 """.strip()
 
+
 SUMMARIZE_TEMPLATE = """
 Based on the chat history:
 {chat_history}
@@ -155,12 +105,14 @@ answer the question:
 {query}
 """
 
+
 FORMAT_JSON_TEMPLATE = """
 format content into json:
 {content}
 """
 
-GRADER_TEMPLATE = r"""
+
+GRADER_TEMPLATE = """
 Judge whether the following [response] to [question] is correct or not
 based on the precise and unambiguous [correct_answer] below.
 
@@ -172,16 +124,10 @@ Your judgement must be in the format and criteria specified below:
 
 extracted_final_answer: The final exact answer extracted from the [response].
 Put the extracted answer as 'None' if there is no exact, final answer to
-Put the extracted answer as 'None' if there is no exact, final answer to
 extract from the response.
 
 [correct_answer]: {correct_answer}
 
-reasoning: Explain why the extracted_final_answer is correct or incorrect
-based on [correct_answer], focusing only on if there are meaningful
-differences between [correct_answer] and the extracted_final_answer.
-Do not comment on any background to the problem, do not attempt
-to solve the problem, do not argue for any answer different
 reasoning: Explain why the extracted_final_answer is correct or incorrect
 based on [correct_answer], focusing only on if there are meaningful
 differences between [correct_answer] and the extracted_final_answer.
@@ -193,177 +139,11 @@ correct: Answer 'yes' if extracted_final_answer matches the
 [correct_answer] given above, or is within a small margin of error for
 numerical problems. Answer 'no' otherwise, i.e. if there is any
 inconsistency, ambiguity, non-equivalency, or if the extracted answer is
-correct: Answer 'yes' if extracted_final_answer matches the
-[correct_answer] given above, or is within a small margin of error for
-numerical problems. Answer 'no' otherwise, i.e. if there is any
-inconsistency, ambiguity, non-equivalency, or if the extracted answer is
 incorrect.
 
-
-confidence: The extracted confidence score between 0|\%| and 100|\%|
-confidence: The extracted confidence score between 0|\%| and 100|\%|
-from [response]. Put 100 if there is no confidence score available.
+confidence: The extracted confidence score between 0%
+and 100% from [response]. Put 100 if there is no confidence score available.
 """.strip()
-
-
-HTML_JINJA = """
-<h3>Question:</h3>
-{{ message_to_html(prompt_messages) | safe }}
-<h3>Sampled message</h3>
-{{ message_to_html(next_message) | safe }}
-<h3>Results</h3>
-<p>Correct Answer: {{ correct_answer }}</p>
-<p>Extracted Answer: {{ extracted_answer }}</p>
-<p>Score: {{ score }}</p>
-"""
-_report_template = """<!DOCTYPE html>
-<html>
-    <head>
-        <style>
-            .message {
-                padding: 8px 16px;
-                margin-bottom: 8px;
-                border-radius: 4px;
-            }
-            .message.user {
-                background-color: #B2DFDB;
-                color: #00695C;
-            }
-            .message.assistant {
-                background-color: #B39DDB;
-                color: #4527A0;
-            }
-            .message.system {
-                background-color: #EEEEEE;
-                color: #212121;
-            }
-            .role {
-                font-weight: bold;
-                margin-bottom: 4px;
-            }
-            .variant {
-                color: #795548;
-            }
-            table, th, td {
-                border: 1px solid black;
-            }
-            pre {
-                white-space: pre-wrap;
-            }
-        </style>
-    </head>
-    <body>
-    {% if metrics %}
-    <h1>Metrics</h1>
-    <table>
-    <tr>
-        <th>Metric</th>
-        <th>Value</th>
-    </tr>
-    <tr>
-        <td><b>Score</b></td>
-        <td>{{ score | float | round(3) }}</td>
-    </tr>
-    {% for name, value in metrics.items() %}
-    <tr>
-        <td>{{ name }}</td>
-        <td>{{ value }}</td>
-    </tr>
-    {% endfor %}
-    </table>
-    {% endif %}
-    <h1>Examples</h1>
-    {% for html in htmls %}
-    {{ html | safe }}
-    <hr>
-    {% endfor %}
-    </body>
-</html>
-"""
-
-
-class JinjaEnv:
-    r"""A class that encapsulates the Jinja environment setup."""
-
-    _instance: Optional['JinjaEnv'] = None
-    _env = None
-
-    def __init__(self):
-        r"""Initialize the JinjaEnv instance if not already initialized."""
-        if not getattr(self, '_initialized', False):
-            self._initialized = True
-
-    def __new__(cls):
-        r"""Implement singleton pattern to ensure only one instance exists."""
-        if cls._instance is None:
-            cls._instance = super(JinjaEnv, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    @classmethod
-    def get_instance(cls):
-        r"""Get the singleton instance of JinjaEnv.
-
-        Returns:
-            JinjaEnv: The singleton instance.
-        """
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    @property
-    def env(self):
-        r"""Lazily initialize and return the Jinja environment.
-
-        Returns:
-            jinja2.Environment: The Jinja environment instance.
-        """
-        if self._env is None:
-            # Lazy import of jinja2
-            import jinja2
-
-            # Create the Jinja environment
-            self._env = jinja2.Environment(
-                loader=jinja2.BaseLoader(),
-                undefined=jinja2.StrictUndefined,
-                autoescape=jinja2.select_autoescape(["html", "xml"]),
-            )
-
-            # Register the message_to_html function
-            self._env.globals["message_to_html"] = self.message_to_html
-
-        return self._env
-
-    def from_string(self, template_str):
-        r"""Create a template from the given string.
-
-        Args:
-            template_str (str): The template string.
-
-        Returns:
-            jinja2.Template: The compiled template.
-        """
-        return self.env.from_string(template_str)
-
-    @staticmethod
-    def message_to_html(message: Message) -> str:
-        r"""Generate HTML snippet (inside a <div>) for a message.
-
-        Args:
-            message (Message): The message to convert to HTML.
-
-        Returns:
-            str: The HTML representation of the message.
-        """
-        return (
-            JinjaEnv.get_instance()
-            .from_string(_message_template)
-            .render(
-                role=message.role,
-                content=message.content,
-                variant=message.variant,
-            )
-        )
 
 
 def derive_key(password: str, length: int) -> bytes:
@@ -382,67 +162,6 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
     return decrypted.decode()
 
 
-def _compute_stat(values: list, stat: str):
-    import numpy as np
-
-    if stat == "mean":
-        return np.mean(values)
-    elif stat == "std":
-        return np.std(values)
-    elif stat == "min":
-        return np.min(values)
-    elif stat == "max":
-        return np.max(values)
-    else:
-        raise ValueError(f"Unknown {stat =}")
-
-
-def aggregate_results(
-    single_eval_results: List[SingleEvalResult],
-    default_stats: Tuple[str, str] = ("mean", "std"),
-    name2stats: Optional[Dict[str, Tuple[str]]] = None,
-) -> EvalResult:
-    r"""Aggregate results from multiple evaluations into a single EvalResult.
-
-    Args:
-        single_eval_results (List[SingleEvalResult]): A list of
-            `SingleEvalResult` objects.
-        default_stats (Tuple[str, str]): A tuple of default statistics to
-            compute. (default: :obj:`("mean", "std")`)
-        name2stats (Optional[Dict[str, Tuple[str]]]): A dictionary mapping
-            metric names to statistics to compute. (default: :obj:`None`)
-
-    Returns:
-        EvalResult: An `EvalResult` object containing aggregated results.
-    """
-    name2stats = name2stats or {}
-    name2values = defaultdict(list)
-    htmls = []
-    convos = []
-
-    for single_eval_result in single_eval_results:
-        for name, value in single_eval_result.metrics.items():
-            name2values[name].append(value)
-        if single_eval_result.score is not None:
-            name2values["score"].append(single_eval_result.score)
-        htmls.append(single_eval_result.html)
-        convos.append(single_eval_result.convo)
-
-    final_metrics = {}
-    for name, values in name2values.items():
-        stats = name2stats.get(name, default_stats)
-        for stat in stats:
-            key = name if stat == "mean" else f"{name}:{stat}"
-            final_metrics[key] = _compute_stat(values, stat)
-
-    return EvalResult(
-        score=final_metrics.pop("score", None),
-        metrics=final_metrics,
-        htmls=htmls,
-        convos=convos,
-    )
-
-
 class BrowseCompBenchmark(BaseBenchmark):
     r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks.
 
@@ -453,413 +172,351 @@ class BrowseCompBenchmark(BaseBenchmark):
 
     def __init__(
         self,
-        save_to: str,
+        data_dir: Optional[str] = None,
+        save_to: Optional[str] = None,
         processes: int = 1,
-        num_examples: Optional[int] = None,
-        n_repeats: int = 1,
     ):
         r"""Initialize the BrowseComp benchmark.
 
         Args:
-            save_to (str): The file to save the results.
+            data_dir (Optional[str]): Path to the data directory.
+                (default: :obj:`None`)
+            save_to (Optional[str]): The file to save the results. If None,
+                uses default 'browsecomp_results.jsonl'. (default: :obj:`None`)
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
-            num_examples (Optional[int]): Number of examples to evaluate.
-                If None, all examples are used. Controls the sample size for
-                testing. (default: :obj:`None`)
-            n_repeats (int, optional): Number of times to repeat each example.
-                Useful for evaluating consistency across multiple runs.
-                (default: :obj:`1`)
         """
-        # Browsecomp benchmark won't download any data
-        # use current path as the data_dir passing into super init
-        current_path = os.path.dirname(os.path.abspath(__file__))
+        self.data_dir = data_dir or str(Path(__file__).parent / "data")
+        self.save_to = save_to or "browsecomp_results.jsonl"
+        super().__init__("browsecomp", self.data_dir, self.save_to, processes)
+        self._raw_results: List[Dict[str, Any]] = []
 
-        super().__init__("browsecomp", current_path, save_to, processes)
-        self.num_examples = num_examples
-        self.n_repeats = n_repeats
-        self.examples: List[Dict[str, Any]] = []
-        self.load()
-        self._raw_results: List[Any] = []
-        self._validated_results: List[SingleEvalResult] = []
-        self._eval_result: EvalResult
-        self.jinja_env = JinjaEnv.get_instance()
-
-    def download(self):
+    def download(self) -> None:
         r"""Download the BrowseComp dataset.
 
-        This method is implemented to maintain compatibility
-        with the BaseBenchmark interface, but BrowseComp doesn't
-        require downloading data separately.
-
-        Returns:
-            self: The benchmark instance
+        BrowseComp doesn't require downloading data separately as it loads
+        directly from a remote URL.
         """
-        logger.info("BrowseComp benchmark does not require downloading data.")
-        return self
+        logger.info(
+            "BrowseComp benchmark loads data directly from remote URL, "
+            "no download needed."
+        )
 
-    def load(self):
+    def load(
+        self,
+        num_examples: Optional[int] = None,
+        n_repeats: int = 1,
+        force_download: bool = False,
+    ) -> None:
         r"""Load the BrowseComp dataset.
 
-        This method loads the dataset from a remote CSV file, converts each
-        row to a dictionary, and applies sampling if num_examples is
-        specified. It also handles repeating examples if n_repeats > 1.
-
-        Returns:
-            self: The benchmark instance
+        Args:
+            num_examples (Optional[int]): Number of examples to evaluate.
+                If None, all examples are used. (default: :obj:`None`)
+            n_repeats (int, optional): Number of times to repeat each example.
+                (default: :obj:`1`)
+            force_download (bool, optional): Whether to force
+                download the data. (default: :obj:`False`)
         """
-        # Load dataset from remote CSV
-        import pandas
+        _ = force_download
+        import pandas as pd
 
-        df = pandas.read_csv(
-            "https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv"
+        logger.info("Loading BrowseComp dataset from remote URL.")
+        df = pd.read_csv(
+            "https://openaipublic.blob.core.windows.net/simple-evals/"
+            "browse_comp_test_set.csv"
         )
+
         # Convert each row to a dictionary
         examples = [row.to_dict() for _, row in df.iterrows()]
 
         # Sample examples if num_examples is specified
-        if self.num_examples:
+        if num_examples:
             assert (
-                self.n_repeats == 1
-            ), "n_repeats only supported when max_examples = None"
+                n_repeats == 1
+            ), "n_repeats only supported when num_examples = None"
             rng = random.Random(0)  # Use fixed seed for reproducibility
-            examples = rng.sample(examples, self.num_examples)
+            examples = rng.sample(examples, num_examples)
 
         # Repeat examples if n_repeats > 1
-        self.examples = examples * self.n_repeats
-        return self
+        self._data["test"] = examples * n_repeats
+        logger.info(f"Loaded {len(self._data['test'])} examples.")
 
-    @property
-    def train(self):
-        r"""Get the training set.
-
-        This property is implemented to maintain compatibility with
-        the BaseBenchmark interface, but BrowseComp doesn't have a
-        training set.
-
-        Raises:
-            NotImplementedError: BrowseComp does not have a training set.
-        """
-        raise NotImplementedError("BrowseComp does not have a training set.")
-
-    def run(  # type: ignore[override]
+    def run(
         self,
         pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+        randomize: bool = False,
+        subset: Optional[int] = None,
         chat_turn_limit: int = 10,
         roleplaying_summarizer: Optional[ChatAgent] = None,
         task_json_formatter: Optional[ChatAgent] = None,
-    ) -> None:
-        r"""Run the benchmark by processing each example in parallel.
-
-        This method applies the provided pipeline to each example in the
-        dataset using a process pool for parallel execution. It shows progress
-        using tqdm and stores the results in self._raw_results.
+    ) -> Dict[str, Any]:
+        r"""Run the benchmark.
 
         Args:
             pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The
                 template agent or framework to use for processing examples.
-                Can be a ChatAgent, RolePlaying, or Workforce instance that
-                will be cloned for each example.
+            randomize (bool, optional): Whether to randomize the data.
+                (default: :obj:`False`)
+            subset (Optional[int], optional): The subset of data to run.
+                (default: :obj:`None`)
             chat_turn_limit (int): Maximum number of conversation turns allowed
                 when using RolePlaying pipeline. (default: :obj:`10`)
             roleplaying_summarizer (Optional[ChatAgent]): Optional ChatAgent to
-                summarize RolePlaying conversations. If None and RolePlaying is
-                used, a default summarizer will be created.
-                (default: :obj:`None`)
+                summarize RolePlaying conversations. (default: :obj:`None`)
             task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
-                format task JSON. If None and Workforce is used, a default
-                formatter will be created. (default: :obj:`None`)
-        """
-        from tqdm import tqdm
+                format task JSON. (default: :obj:`None`)
 
-        # Use a process pool for parallel execution
-        def process_benchmark_row(row: Dict[str, Any]) -> Dict[str, Any]:
-            r"""This inner function processes a single benchmark row by
-            extracting the problem and answer, creating a pipeline instance,
-            and generating a response using the appropriate method based on
-            the pipeline type.
+        Returns:
+            Dict[str, Any]: Dictionary containing:
+                - total: Total number of questions evaluated
+                - correct: Number of correct answers
+                - accuracy: Accuracy score
+        """
+        if not self._data.get("test"):
+            raise ValueError(
+                "Dataset not loaded. Please call load() before run()."
+            )
+
+        examples = self._data["test"]
+
+        # Shuffle and subset data if necessary
+        if randomize:
+            random.shuffle(examples)
+        if subset:
+            examples = examples[:subset]
+
+        logger.info(f"Running benchmark on {len(examples)} examples.")
+
+        # Clear the results file if it exists
+        open(self.save_to, "w").close()
+
+        self._results = []
+        self._raw_results = []
+
+        def process_example(row: Dict[str, Any]) -> Dict[str, Any]:
+            r"""Process a single benchmark example.
 
             Args:
                 row (Dict[str, Any]): A row from the dataset containing
-                    encrypted problem and answer, along with a canary for
-                    decryption.
+                    encrypted problem and answer.
 
             Returns:
-                Dict[str, Any]: A dictionary containing the decrypted problem,
-                    expected answer, model response, and structured response
-                    fields.
+                Dict[str, Any]: Result dictionary with problem, answer,
+                    and response.
             """
-
             problem = decrypt(row.get("problem", ""), row.get("canary", ""))
             answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+
             try:
                 input_message = QUERY_TEMPLATE.format(question=problem)
 
-                if isinstance(pipeline_template, (ChatAgent)):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
-
+                if isinstance(pipeline_template, ChatAgent):
+                    pipeline = pipeline_template.clone()
                     response_text = pipeline.step(
                         input_message, response_format=QueryResponse
                     )
+
                 elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
+                    pipeline = pipeline_template.clone()
                     task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
+                    task = pipeline.process_task(task)
+
                     if task_json_formatter:
-                        formatter_in_process = task_json_formatter.clone()
+                        formatter = task_json_formatter.clone()
                     else:
-                        formatter_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
-                    response_text = formatter_in_process.step(
+                        formatter = ChatAgent("You are a helpful assistant.")
+
+                    response_text = formatter.step(
                         FORMAT_JSON_TEMPLATE.format(content=task.result),
                         response_format=QueryResponse,
                     )
 
                 elif isinstance(pipeline_template, RolePlaying):
-                    # RolePlaying is different.
-                    pipeline = pipeline_template.clone(  # type: ignore[assignment]
+                    pipeline = pipeline_template.clone(
                         task_prompt=input_message
                     )
 
                     n = 0
-                    input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
+                    input_msg = pipeline.init_chat()
                     chat_history = []
+
                     while n < chat_turn_limit:
                         n += 1
                         assistant_response, user_response = pipeline.step(
                             input_msg
                         )
-                        if assistant_response.terminated:  # type: ignore[union-attr]
+                        if assistant_response.terminated:
                             break
-                        if user_response.terminated:  # type: ignore[union-attr]
+                        if user_response.terminated:
                             break
-                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[union-attr]
+                        if "CAMEL_TASK_DONE" in user_response.msg.content:
                             break
 
                         chat_history.append(
-                            f"AI User: {user_response.msg.content}"  # type: ignore[union-attr]
+                            f"AI User: {user_response.msg.content}"
                         )
                         chat_history.append(
-                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[union-attr]
+                            f"AI Assistant: {assistant_response.msg.content}"
                         )
-                        input_msg = assistant_response.msg  # type: ignore[union-attr]
+                        input_msg = assistant_response.msg
 
                     chat_history_str = "\n".join(chat_history)
+
                     if roleplaying_summarizer:
-                        summarizer_in_process = roleplaying_summarizer.clone()
+                        summarizer = roleplaying_summarizer.clone()
                     else:
-                        summarizer_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
+                        summarizer = ChatAgent("You are a helpful assistant.")
 
                     summarize_prompt = SUMMARIZE_TEMPLATE.format(
                         chat_history=chat_history_str,
                         query=input_message,
                     )
-                    response_text = summarizer_in_process.step(
+                    response_text = summarizer.step(
                         summarize_prompt, response_format=QueryResponse
                     )
                 else:
                     raise NotImplementedError(
                         f"{type(pipeline_template)} is not supported."
                     )
-                # Parse the response JSON
+
                 response_dict = json.loads(response_text.msg.content)
 
-                # Format the response as a key-value string
-                formatted_response = f"""
-    Explanation: {response_dict['explanation']}
+                formatted_response = f"""Explanation: {response_dict['explanation']}
 
-    Exact Answer: {response_dict['exact_answer']}
-    Confidence: {response_dict['confidence']}"""
+Exact Answer: {response_dict['exact_answer']}
+Confidence: {response_dict['confidence']}"""
 
-                # Create the result dictionary
-                raw_result = {}
-                raw_result['problem'] = problem
-                raw_result['expected_answer'] = answer
-                raw_result['response'] = formatted_response
-                # Keep the original dict for reference
-                raw_result['response_dict'] = response_dict
-
-                return raw_result
-            except Exception as e:
-                # Log any errors that occur during evaluation
-                logger.error(f"Error evaluating result: {e}")
-                logger.error(traceback.format_exc())
                 return {
-                    'problem': problem,
-                    'expected_answer': answer,
-                    'response': traceback.format_exc(),
-                    'response_dict': {},
+                    "problem": problem,
+                    "expected_answer": answer,
+                    "response": formatted_response,
+                    "response_dict": response_dict,
+                }
+
+            except Exception as e:
+                logger.error(f"Error processing example: {e}")
+                return {
+                    "problem": problem,
+                    "expected_answer": answer,
+                    "response": str(e),
+                    "response_dict": {},
+                    "error": str(e),
                 }
 
         pool_class = ThreadPool
-        with pool_class(min(self.processes, len(self.examples))) as pool:
+        with pool_class(min(self.processes, len(examples))) as pool:
             self._raw_results = list(
                 tqdm(
-                    pool.imap(process_benchmark_row, self.examples),
-                    total=len(self.examples),
+                    pool.imap(process_example, examples),
+                    total=len(examples),
+                    desc="Processing",
                 )
             )
 
-    def make_report(self, eval_result: EvalResult) -> str:
-        r"""Create a standalone HTML report from an EvalResult."""
-        return self.jinja_env.from_string(_report_template).render(
-            score=eval_result.score,
-            metrics=eval_result.metrics,
-            htmls=eval_result.htmls,
-        )
+        validated_results = self._validate_results()
 
-    def validate(self, grader: Optional[ChatAgent] = None) -> None:
-        r"""Validate the raw results using the GRADER_TEMPLATE and ChatAgent.
+        total = len(validated_results)
+        correct = sum(r["score"] for r in validated_results)
 
-        This method evaluates the correctness of each response by
-        multi-threading. A dedicated chat agent is created in each thread.
-        The chat agent will compare raw result with the expected answer. The
-        grading results will be aggregated in a report.
+        summary = {
+            "total": total,
+            "correct": correct,
+            "accuracy": correct / total if total > 0 else 0.0,
+            "results": validated_results,
+        }
+
+        logger.info(f"Accuracy: {summary['accuracy']:.3f}")
+
+        return summary
+
+    def _validate_results(
+        self, grader: Optional[ChatAgent] = None
+    ) -> List[Dict[str, Any]]:
+        r"""Validate raw results using grader.
 
         Args:
-            grader: The ChatAgent used for validation. If None, a default
-                agent will be created in each thread. If provided, the
-                provided agent will be used as a template and be cloned into
-                new agents in each thread. (default: :obj:`None`)
-        """
-        from tqdm import tqdm
+            grader (Optional[ChatAgent]): Optional grader agent.
+                If None, a default one will be created.
 
-        def validate_each_one(raw_result: Dict[str, Any]) -> SingleEvalResult:
-            r"""This inner function formats the prompt for the ChatAgent
-            grader, sends it for evaluation, extracts the correctness
-            assessment, and creates an HTML representation of the result.
+        Returns:
+            List[Dict[str, Any]]: Validated results with scores.
+        """
+
+        def validate_single(raw_result: Dict[str, Any]) -> Dict[str, Any]:
+            r"""Validate a single result.
 
             Args:
-                raw_result (Dict[str, Any]): A dictionary containing 'problem',
-                    'response', and 'expected_answer' keys.
+                raw_result (Dict[str, Any]): Raw result to validate.
 
             Returns:
-                SingleEvalResult: An evaluation result object with score,
-                    metrics, and HTML.
+                Dict[str, Any]: Validated result with score.
             """
-            # Format the template
-            prompt = GRADER_TEMPLATE.format(
-                question=raw_result['problem'],
-                response=raw_result['response'],
-                correct_answer=raw_result['expected_answer'],
-            )
-            if grader:
-                grader_in_process = grader.clone()
-            else:
-                grader_in_process = ChatAgent("You are a helpful assistant.")
-
-            # Create a conversation list for the result
-            convo = [
-                Message(content=raw_result['problem'], role="user"),
-                Message(content=raw_result['response'], role="assistant"),
-            ]
+            problem = raw_result["problem"]
+            response = raw_result["response"]
+            expected_answer = raw_result["expected_answer"]
 
             try:
-                response = grader_in_process.step(
+                if grader:
+                    grader_agent = grader.clone()
+                else:
+                    grader_agent = ChatAgent("You are a helpful assistant.")
+
+                prompt = GRADER_TEMPLATE.format(
+                    question=problem,
+                    response=response,
+                    correct_answer=expected_answer,
+                )
+
+                grade_response = grader_agent.step(
                     prompt, response_format=GradingResponse
                 )
+                content = json.loads(grade_response.msg.content)
 
-                content = json.loads(response.msg.content)
+                grade_result = content.get("correct", "no")
+                score = 1 if grade_result == "yes" else 0
 
-                grade_result = content['correct']
-
-                # Convert to binary metrics (1 for correct, 0 for incorrect)
-                is_correct = int(grade_result == "yes")
-                is_incorrect = int(grade_result == "no")
-
-                # Set the score (1 for correct, 0 for incorrect)
-                score = is_correct
-
-                # Generate HTML representation of the result
-                html = self.jinja_env.from_string(HTML_JINJA).render(
-                    prompt_messages=Message(
-                        content=raw_result.get('problem', ''), role="user"
+                result = {
+                    "problem": problem,
+                    "expected_answer": expected_answer,
+                    "model_response": response,
+                    "extracted_answer": content.get(
+                        "extracted_final_answer", ""
                     ),
-                    next_message=Message(
-                        content=raw_result.get('response', ''),
-                        role="assistant",
-                    ),
-                    score=score,
-                    correct_answer=raw_result.get('expected_answer', ''),
-                    extracted_answer=raw_result.get('response_dict', {}).get(
-                        'exact_answer', ''
-                    ),
-                )
-                # Return the evaluation result
-                return SingleEvalResult(
-                    html=html,
-                    score=score,
-                    convo=convo,
-                    metrics={
-                        "is_correct": is_correct,
-                        "is_incorrect": is_incorrect,
-                    },
-                )
+                    "score": score,
+                    "reasoning": content.get("reasoning", ""),
+                    "confidence": content.get("confidence", "100"),
+                    "error": raw_result.get("error"),
+                }
+
+                save_to_jsonl(self.save_to, result, mode="a")
+
+                return result
+
             except Exception as e:
-                # Log any errors that occur during evaluation
-                logger.error(f"Error evaluating result: {e}")
-                logger.error(traceback.format_exc())
-                html = self.jinja_env.from_string(HTML_JINJA).render(
-                    prompt_messages=Message(
-                        content=raw_result.get('problem', ''), role="user"
-                    ),
-                    next_message=Message(
-                        content=raw_result.get('response', ''),
-                        role="assistant",
-                    ),
-                    score=0,
-                    correct_answer=raw_result.get('expected_answer', ''),
-                    extracted_answer=raw_result.get('response_dict', {}).get(
-                        'exact_answer', ''
-                    ),
-                )
-                return SingleEvalResult(
-                    html=html,
-                    score=0,
-                    convo=convo,
-                    metrics={
-                        "is_correct": 0,
-                        "is_incorrect": 1,
-                    },
-                )
+                logger.error(f"Error validating result: {e}")
+                result = {
+                    "problem": problem,
+                    "expected_answer": expected_answer,
+                    "model_response": response,
+                    "extracted_answer": "",
+                    "score": 0,
+                    "reasoning": "",
+                    "confidence": "0",
+                    "error": str(e),
+                }
+                save_to_jsonl(self.save_to, result, mode="a")
+                return result
 
+        validated = []
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self._raw_results))) as pool:
-            self._validated_results = list(
+            validated = list(
                 tqdm(
-                    pool.imap(validate_each_one, self._raw_results),
+                    pool.imap(validate_single, self._raw_results),
                     total=len(self._raw_results),
+                    desc="Validating",
                 )
             )
 
-        aggregate_metrics = {
-            "is_correct": sum(
-                result.metrics["is_correct"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-            "is_incorrect": sum(
-                result.metrics["is_incorrect"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-        }
-        logger.info("AGGREGATE METRICS")
-        logger.info(aggregate_metrics)
-        logger.info("##################")
-
-        output_d = {
-            "accuracy": aggregate_metrics["is_correct"],
-        }
-
-        logger.info(f"Accuracy: {output_d['accuracy']:.3f}")
-
-        self._eval_result = aggregate_results(self._validated_results)
-        # ^^^ how to use a sampler
-        report_filename = self.save_to
-        logger.info(f"Writing report to {report_filename}")
-        with open(report_filename, "w") as fh:
-            fh.write(self.make_report(self._eval_result))
+        return validated
