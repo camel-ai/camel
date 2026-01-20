@@ -1470,30 +1470,122 @@ export class HybridBrowserSession {
     const stabilityThreshold = browserConfig.domStabilityThreshold; // Consider stable if no changes for configured duration
 
     try {
-      // Monitor DOM changes
+      // Monitor DOM changes and loading elements
       await page.evaluate(() => {
-        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+        // Helper function to check if className contains loading indicators
+        const hasLoadingClass = (className: string): boolean => {
+          const lowerClassName = className.toLowerCase();
+          return lowerClassName.includes('loading') || lowerClassName.includes('spin');
+        };
 
-        const observer = new MutationObserver(() => {
-          (window as any).__domStabilityCheck.changeCount++;
-          (window as any).__domStabilityCheck.lastChange = Date.now();
+        // Helper function to check if any loading elements exist in the DOM
+        const checkForLoadingElements = (): boolean => {
+          const loadingElements = document.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
+          return loadingElements.length > 0;
+        };
+
+        (window as any).__domStabilityCheck = {
+          changeCount: 0,
+          lastChange: Date.now(),
+          hasLoadingElements: checkForLoadingElements() // Initial check
+        };
+
+        const observer = new MutationObserver((mutations: MutationRecord[]) => {
+          const check = (window as any).__domStabilityCheck;
+          check.changeCount++;
+          check.lastChange = Date.now();
+
+          // Check if any loading elements were added or removed
+          let loadingAdded = false;
+          let loadingRemoved = false;
+
+          for (const mutation of mutations) {
+            // Check if class attribute changed to add/remove loading
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              const target = mutation.target as Element;
+              const oldValue = mutation.oldValue || '';
+              const newValue = target.getAttribute('class') || '';
+
+              const hadLoading = hasLoadingClass(oldValue);
+              const hasLoading = hasLoadingClass(newValue);
+
+              if (!hadLoading && hasLoading) {
+                // Loading class was added
+                loadingAdded = true;
+              } else if (hadLoading && !hasLoading) {
+                // Loading class was removed
+                loadingRemoved = true;
+              }
+            }
+
+            // Check added/removed nodes for loading elements
+            if (mutation.type === 'childList') {
+              for (const node of Array.from(mutation.addedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingAdded = true;
+                  }
+                  // Also check descendants
+                  const loadingDescendants = el.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
+                  if (loadingDescendants.length > 0) {
+                    loadingAdded = true;
+                  }
+                }
+              }
+
+              // Check if loading elements were removed
+              for (const node of Array.from(mutation.removedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingRemoved = true;
+                  }
+                  // Also check descendants of removed nodes
+                  const loadingDescendants = el.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
+                  if (loadingDescendants.length > 0) {
+                    loadingRemoved = true;
+                  }
+                }
+              }
+            }
+          }
+
+          // Update loading state
+          if (loadingAdded) {
+            check.hasLoadingElements = true;
+          }
+
+          // If loading was removed, re-check the entire DOM to confirm
+          if (loadingRemoved) {
+            check.hasLoadingElements = checkForLoadingElements();
+          }
         });
 
         observer.observe(document.body, {
           childList: true,
           subtree: true,
           attributes: true,
+          attributeOldValue: true, // Enable to get old class value
           characterData: true
         });
 
         (window as any).__domStabilityObserver = observer;
       });
 
-      // Wait until no changes for stabilityThreshold or timeout
+      // Wait until no changes for stabilityThreshold AND no loading elements, or timeout
       await page.waitForFunction(
         (threshold) => {
           const check = (window as any).__domStabilityCheck;
-          return check && (Date.now() - check.lastChange) > threshold;
+          if (!check) return true;
+
+          const timeSinceLastChange = Date.now() - check.lastChange;
+          const isStable = timeSinceLastChange > threshold;
+
+          // Must be stable AND have no loading elements
+          return isStable && !check.hasLoadingElements;
         },
         stabilityThreshold,
         { timeout: Math.max(0, maxWaitTime) }
@@ -1523,15 +1615,12 @@ export class HybridBrowserSession {
         browserConfig.domStabilityTimeout
       );
 
-      const domContentLoadedPromise = (async () => {
-        const start = Date.now();
-        await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
-            timeout: browserConfig.domContentLoadedTimeout
-          });
+      const start = Date.now();
+      await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
+          timeout: browserConfig.domContentLoadedTimeout
+        });
 
-        return Date.now() - start;
-
-      })();
+      const domContentLoadedTime = Date.now() - start;
 
       const networkIdlePromise = (async () => {
         const start = Date.now();
@@ -1552,8 +1641,8 @@ export class HybridBrowserSession {
         setTimeout(() => reject(new Error('max timeout')), maxTimeout)
       );
 
-      const [domContentLoadedTime, networkIdleTime, domStabilityTime] = await Promise.race([
-        Promise.all([domContentLoadedPromise, networkIdlePromise, domStabilityPromise]),
+      const [networkIdleTime, domStabilityTime] = await Promise.race([
+        Promise.all([networkIdlePromise, domStabilityPromise]),
         timeoutPromise
       ]);
 

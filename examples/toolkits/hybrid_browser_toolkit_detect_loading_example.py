@@ -12,16 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """
-Test Page Stability Detection using Carbon Code Screenshot Tool
+Test Page Stability Detection for Xiaohongshu "One-Click Format" Feature
 
 Test Objectives:
 1. Verify that the enhanced waitForPageStability correctly waits
    for all three states
 2. Observe DOM changes and network request completion after
-   interacting with Carbon's code editor and export feature
+   clicking "One-Click Format"
 
 Prerequisites:
-- Internet connection to access https://carbon.now.sh/
+- Must have a logged-in Xiaohongshu account in the User_Data directory
 """
 
 import asyncio
@@ -29,12 +29,12 @@ import logging
 
 from dotenv import load_dotenv
 
-load_dotenv()
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import HybridBrowserToolkit
+from camel.types import ModelPlatformType, ModelType
 
-from camel.agents import ChatAgent  # noqa: E402
-from camel.models import ModelFactory  # noqa: E402
-from camel.toolkits import HybridBrowserToolkit  # noqa: E402
-from camel.types import ModelPlatformType, ModelType  # noqa: E402
+load_dotenv()
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -48,15 +48,19 @@ logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
 
+# Use a User Data directory that has saved Xiaohongshu login state
+USER_DATA_DIR = "User_Data"
+
 model_backend = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_5_MINI,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
 # Configure the toolkit
 web_toolkit = HybridBrowserToolkit(
     headless=False,
+    user_data_dir=USER_DATA_DIR,
     enabled_tools=[
         "browser_open",
         "browser_close",
@@ -77,25 +81,33 @@ agent = ChatAgent(
     max_iteration=15,
 )
 
-# Test task: Open Carbon, enter code, and export
+# Test task: Open Xiaohongshu publish page, enter content,
+# click one-click format
 TASK_PROMPT = r"""
-Please perform the following steps to test page stability detection
-using Carbon (code screenshot tool):
+Please perform the following steps to test Xiaohongshu's
+"One-Click Format" feature:
 
-1. Open Carbon: https://carbon.now.sh/
+1. First, open the Xiaohongshu Creator Center publish page: https://creator.xiaohongshu.com/publish/publish
 
-2. Clear the existing code in the editor and enter the following code:
-   ```python
-   def hello_world():
-       print("Hello, World!")
-       return True
+2. Click on the "Write Long Article" tab, then click "New Creation"
 
-   if __name__ == "__main__":
-       hello_world()
-   ```
-3. Find and click the "Export" button
+3. Enter the following test content in the body area:
+    Title: test
+    Body:
+    "This is a test text to verify the one-click format feature.
 
-4. Take a snapshot of the page to verify the current state
+   First paragraph content goes here.
+
+   Second paragraph content goes here.
+
+   Third paragraph content goes here."
+
+
+4. Find and click the "One-Click Format" button
+
+5. click "next step" button
+
+6. click "publish" button
 
 """
 
@@ -103,8 +115,9 @@ using Carbon (code screenshot tool):
 async def main() -> None:
     try:
         print("=" * 60)
-        print("Carbon Code Screenshot - Page Stability Detection Test")
+        print("Xiaohongshu One-Click Format Feature - Page Stability Test")
         print("=" * 60)
+        print(f"Using User Data directory: {USER_DATA_DIR}")
         print(f"Enabled tools: {web_toolkit.enabled_tools}")
         print("=" * 60)
 
