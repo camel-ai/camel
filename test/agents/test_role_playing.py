@@ -32,10 +32,14 @@ from camel.types import (
     TaskType,
 )
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.DEFAULT,
-)
+@pytest.fixture
+def openai_model():
+    """Fixture to lazily create OpenAI model only when test runs."""
+    return ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+
 
 model_backend_rsp = ChatCompletion(
     id="mock_response_id",
@@ -63,10 +67,16 @@ model_backend_rsp = ChatCompletion(
 )
 
 
-@pytest.mark.parametrize("model", [None, model])
+@pytest.mark.parametrize("model_param", [None, "openai_model"])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
+def test_role_playing_init(
+    model_param, critic_role_name, with_critic_in_the_loop, request
+):
+    # Resolve fixture if model_param is a string (fixture name)
+    model = (
+        request.getfixturevalue(model_param) if model_param is not None else None
+    )
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
@@ -140,11 +150,13 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     ],
 )
 def test_role_playing_step(
+    openai_model,
     task_type,
     extend_sys_msg_meta_dicts,
     extend_task_specify_meta_dict,
     step_call_count=3,
 ):
+    model = openai_model
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
@@ -206,11 +218,13 @@ def test_role_playing_step(
     ],
 )
 async def test_role_playing_astep(
+    openai_model,
     task_type,
     extend_sys_msg_meta_dicts,
     extend_task_specify_meta_dict,
     step_call_count=3,
 ):
+    model = openai_model
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
@@ -258,7 +272,8 @@ async def test_role_playing_astep(
 
 
 @pytest.mark.model_backend
-def test_role_playing_with_function(step_call_count=3):
+def test_role_playing_with_function(openai_model, step_call_count=3):
+    model = openai_model
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
@@ -291,7 +306,8 @@ def test_role_playing_with_function(step_call_count=3):
 @pytest.mark.model_backend
 @pytest.mark.asyncio
 @pytest.mark.parametrize("init_msg_content", [None, "Custom init message"])
-async def test_role_playing_ainit_chat(init_msg_content):
+async def test_role_playing_ainit_chat(openai_model, init_msg_content):
+    model = openai_model
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 

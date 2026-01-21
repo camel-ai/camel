@@ -78,21 +78,29 @@ model_backend_rsp_base = ChatCompletion(
     ),
 )
 
+@pytest.fixture
+def openai_model():
+    """Fixture to lazily create OpenAI model only when test runs."""
+    return ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+
+
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.DEFAULT,
-        ),
+        pytest.param('openai_model', marks=pytest.mark.model_backend),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
 
 
 @parametrize
-def test_chat_agent(model, step_call_count=3):
-    model = model
+def test_chat_agent(model, request, step_call_count=3):
+    # Resolve fixture if model is a string (fixture name)
+    if isinstance(model, str):
+        model = request.getfixturevalue(model)
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(
