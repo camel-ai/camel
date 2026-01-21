@@ -102,6 +102,7 @@ from .events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
 )
 
@@ -1673,8 +1674,30 @@ class Workforce(BaseNode):
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
                 if recovery_decision.modified_task_content:
-                    task.content = recovery_decision.modified_task_content
-                    logger.info(f"Task {task.id} content modified for replan")
+                    old_content = task.content
+                    new_content = recovery_decision.modified_task_content
+
+                    task.content = new_content
+                    logger.info(
+                        f"Task {task.id} content modified for replan, "
+                        f"new_content: {new_content}"
+                    )
+
+                    task_updated_event = TaskUpdatedEvent(
+                        task_id=task.id,
+                        parent_task_id=task.parent.id if task.parent else None,
+                        worker_id=task.assigned_worker_id,
+                        update_type="replan",
+                        old_value=old_content,
+                        new_value=new_content,
+                        metadata={
+                            "quality_score": recovery_decision.quality_score,
+                            "reasoning": recovery_decision.reasoning,
+                            "issues": recovery_decision.issues,
+                        },
+                    )
+                    for cb in self._callbacks:
+                        cb.log_task_updated(task_updated_event)
 
                 # Repost the modified task to the same worker
                 await self._post_task(task, original_assignee)
@@ -1716,6 +1739,22 @@ class Workforce(BaseNode):
                     f"Task {task.id} reassigned from {old_worker} to "
                     f"{new_worker}"
                 )
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="reassign",
+                    old_value=old_worker,
+                    new_value=new_worker,
+                    metadata={
+                        "quality_score": recovery_decision.quality_score,
+                        "reasoning": recovery_decision.reasoning,
+                        "issues": recovery_decision.issues,
+                    },
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
 
             elif strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
@@ -2056,8 +2095,21 @@ class Workforce(BaseNode):
 
         for task in self._pending_tasks:
             if task.id == task_id:
+                old_content = task.content
                 task.content = new_content
                 logger.info(f"Task {task_id} content modified.")
+
+                task_updated_event = TaskUpdatedEvent(
+                    task_id=task.id,
+                    parent_task_id=task.parent.id if task.parent else None,
+                    worker_id=task.assigned_worker_id,
+                    update_type="manual",
+                    old_value=old_content,
+                    new_value=new_content,
+                )
+                for cb in self._callbacks:
+                    cb.log_task_updated(task_updated_event)
+
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
@@ -3862,6 +3914,8 @@ class Workforce(BaseNode):
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
+        # Ensure assignee mapping exists for retries and follow-up handling.
+        self._assignees[task.id] = assignee_id
         task.assigned_worker_id = assignee_id
 
         task_started_event = TaskStartedEvent(
@@ -4542,14 +4596,28 @@ class Workforce(BaseNode):
             task, for_failure=True, error_message=detailed_error
         )
 
-        # Fallback to first enabled strategy if no strategy recommended
+        # Validate and fallback recovery strategy based on enabled_strategies
+        config_strategies = self.failure_handling_config.enabled_strategies
         if recovery_decision.recovery_strategy is None:
-            config_strategies = self.failure_handling_config.enabled_strategies
+            # No strategy recommended - use fallback
             # config_strategies is None means all enabled, use RETRY as default
             # otherwise use the first enabled strategy from user's config
             if config_strategies is None:
                 recovery_decision.recovery_strategy = RecoveryStrategy.RETRY
             else:
+                recovery_decision.recovery_strategy = config_strategies[0]
+        elif config_strategies is not None:
+            # Strategy recommended - validate it's in enabled list
+            if recovery_decision.recovery_strategy not in config_strategies:
+                # LLM recommended a disabled strategy, use first enabled
+                recommended = recovery_decision.recovery_strategy.value
+                enabled_list = [s.value for s in config_strategies]
+                fallback = config_strategies[0].value
+                logger.warning(
+                    f"Task {task.id}: LLM recommended '{recommended}' "
+                    f"but it's not in enabled_strategies {enabled_list}. "
+                    f"Using '{fallback}' instead."
+                )
                 recovery_decision.recovery_strategy = config_strategies[0]
 
         strategy_str = recovery_decision.recovery_strategy.value
@@ -5308,16 +5376,38 @@ class Workforce(BaseNode):
                                 f"Issues: {', '.join(quality_eval.issues)}"
                             )
 
-                            # Fallback to first enabled strategy if none
-                            # recommended
+                            # Validate and fallback recovery strategy based on
+                            # enabled_strategies
+                            config = self.failure_handling_config
+                            config_strategies = config.enabled_strategies
                             if quality_eval.recovery_strategy is None:
-                                config = self.failure_handling_config
-                                config_strategies = config.enabled_strategies
+                                # No strategy recommended - use fallback
                                 if config_strategies is None:
                                     quality_eval.recovery_strategy = (
                                         RecoveryStrategy.RETRY
                                     )
                                 else:
+                                    quality_eval.recovery_strategy = (
+                                        config_strategies[0]
+                                    )
+                            elif config_strategies is not None:
+                                # Strategy recommended - validate it's enabled
+                                if (
+                                    quality_eval.recovery_strategy
+                                    not in config_strategies
+                                ):
+                                    # LLM recommended a disabled strategy
+                                    rec = quality_eval.recovery_strategy.value
+                                    enabled = [
+                                        s.value for s in config_strategies
+                                    ]
+                                    fallback = config_strategies[0].value
+                                    logger.warning(
+                                        f"Task {returned_task.id}: LLM "
+                                        f"recommended '{rec}' but it's not in "
+                                        f"enabled_strategies {enabled}. "
+                                        f"Using '{fallback}' instead."
+                                    )
                                     quality_eval.recovery_strategy = (
                                         config_strategies[0]
                                     )
