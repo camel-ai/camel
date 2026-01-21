@@ -311,9 +311,7 @@ def api_keys_required(
 
             key_way = "the official website"
             if env_var_name == 'ANTHROPIC_API_KEY':
-                key_way = (
-                    "https://platform.claude.com/docs/en/api/overview"
-                )
+                key_way = "https://platform.claude.com/docs/en/api/overview"
             elif env_var_name == 'AIML_API_KEY':
                 key_way = "https://aimlapi.com/"
             elif env_var_name == 'COHERE_API_KEY':
