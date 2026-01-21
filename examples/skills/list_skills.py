@@ -40,40 +40,6 @@ print(f"Response: {response.msgs[0].content}\n")
 Example 1: List all skills
 ============================================================
 Response: Here are all the skills I have access to:
-
-*   **algorithmic-art**: Creating algorithmic art using p5.js with seeded 
-randomness and interactive parameter exploration.
-*   **brand-guidelines**: Applies Anthropic's official brand colors and 
-typography to any sort of artifact that may benefit from having Anthropic's 
-look-and-feel.
-*   **canvas-design**: Create beautiful visual art in .png and .pdf 
-documents using design philosophy.
-*   **doc-coauthoring**: Guide users through a structured workflow for 
-co-authoring documentation.
-*   **docx**: Comprehensive document creation, editing, and analysis 
-with support for tracked changes, comments, formatting preservation, 
-and text extraction.
-*   **frontend-design**: Create distinctive, production-grade frontend 
-interfaces with high design quality.
-*   **internal-comms**: A set of resources to help me write all kinds of 
-internal communications, using the formats that my company likes to use.
-*   **mcp-builder**: Guide for creating high-quality MCP 
-(Model Context Protocol) servers that enable LLMs to interact with 
-external services through well-designed tools.
-*   **pdf**: Comprehensive PDF manipulation toolkit for extracting 
-text and tables, creating new PDFs, merging/splitting documents, 
-and handling forms.
-*   **pptx**: Presentation creation, editing, and analysis.
 *   **skill-creator**: Guide for creating effective skills.
-*   **slack-gif-creator**: Knowledge and utilities for creating animated 
-GIFs optimized for Slack.
-*   **theme-factory**: Toolkit for styling artifacts with a theme.
-*   **web-artifacts-builder**: Suite of tools for creating elaborate, 
-multi-component claude.ai HTML artifacts using modern frontend web 
-technologies (React, Tailwind CSS, shadcn/ui).
-*   **webapp-testing**: Toolkit for interacting with and testing local 
-web applications using Playwright.
-*   **xlsx**: Comprehensive spreadsheet creation, editing, and analysis 
-with support for formulas, formatting, data analysis, and visualization.
 ===========================================================================
 """
