@@ -23,9 +23,10 @@ from typing import (
     Dict,
     List,
     Optional,
-    TypedDict,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
