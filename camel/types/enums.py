@@ -69,6 +69,11 @@ class ModelType(UnifiedModelType, Enum):
 
     AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
+    GLM_4_7 = "glm-4.7"
+    GLM_4_7_FLASH = "glm-4.7-flash"
+    GLM_4_6 = "glm-4.6"
+    GLM_4_6V = "glm-4.6v"
+    GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4 = "glm-4"
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASHX = "glm-4.7-flashx"
@@ -698,6 +703,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH,
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
         }
 
     @property
@@ -1516,6 +1526,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
             ModelType.ERNIE_5_0_THINKING,
             ModelType.ERNIE_4_5_TURBO_VL,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
         }:
             return 128_000
         elif self in {
@@ -1584,6 +1596,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
         }:
             return 200_000
         elif self in {
