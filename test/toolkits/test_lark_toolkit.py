@@ -11,9 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import json
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -75,12 +74,11 @@ def test_lark_toolkit_init_with_feishu(mock_env_vars):
 def test_lark_toolkit_get_tools(lark_toolkit):
     """Test only the expected tools are exposed."""
     tools = lark_toolkit.get_tools()
-    assert len(tools) == 5
+    assert len(tools) == 4
     assert all(isinstance(tool, FunctionTool) for tool in tools)
     assert [tool.func.__name__ for tool in tools] == [
         "lark_list_chats",
         "lark_get_chat_messages",
-        "lark_send_message",
         "lark_get_message_resource",
         "lark_get_message_resource_key",
     ]
@@ -169,45 +167,6 @@ def test_lark_get_chat_messages_time_filters(lark_toolkit):
         assert params["start_time"] == "1609459200"
         assert params["end_time"] == "1609545600"
         assert params["sort_type"] == "ByCreateTimeAsc"
-
-
-def test_lark_send_message(lark_toolkit):
-    """Test sending a text message."""
-    with patch("requests.post") as mock_post:
-        tenant_response = Mock()
-        tenant_response.json.return_value = {
-            "code": 0,
-            "tenant_access_token": "token",
-            "expire": 7200,
-        }
-        send_response = Mock()
-        send_response.json.return_value = {
-            "code": 0,
-            "data": {
-                "message_id": "om_123",
-                "chat_id": "oc_456",
-                "msg_type": "text",
-            },
-        }
-        mock_post.side_effect = [tenant_response, send_response]
-
-        result = lark_toolkit.lark_send_message(
-            receive_id="oc_456",
-            text="test content",
-            receive_id_type="chat_id",
-        )
-
-        assert result["message_id"] == "om_123"
-        assert result["chat_id"] == "oc_456"
-        assert result["msg_type"] == "text"
-
-        call_args = mock_post.call_args_list[1]
-        params = call_args[1]["params"]
-        payload = call_args[1]["json"]
-        assert params["receive_id_type"] == "chat_id"
-        assert payload["receive_id"] == "oc_456"
-        assert payload["msg_type"] == "text"
-        assert payload["content"] == json.dumps({"text": "test content"})
 
 
 def test_lark_get_message_resource(tmp_path, mock_env_vars):
