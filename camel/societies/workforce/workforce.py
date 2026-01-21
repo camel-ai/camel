@@ -102,7 +102,6 @@ from .events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
-    TaskUpdatedEvent,
     WorkerCreatedEvent,
 )
 
@@ -1674,30 +1673,8 @@ class Workforce(BaseNode):
             elif strategy == RecoveryStrategy.REPLAN:
                 # Modify the task content and retry
                 if recovery_decision.modified_task_content:
-                    old_content = task.content
-                    new_content = recovery_decision.modified_task_content
-
-                    task.content = new_content
-                    logger.info(
-                        f"Task {task.id} content modified for replan, "
-                        f"new_content: {new_content}"
-                    )
-
-                    task_updated_event = TaskUpdatedEvent(
-                        task_id=task.id,
-                        parent_task_id=task.parent.id if task.parent else None,
-                        worker_id=task.assigned_worker_id,
-                        update_type="replan",
-                        old_value=old_content,
-                        new_value=new_content,
-                        metadata={
-                            "quality_score": recovery_decision.quality_score,
-                            "reasoning": recovery_decision.reasoning,
-                            "issues": recovery_decision.issues,
-                        },
-                    )
-                    for cb in self._callbacks:
-                        cb.log_task_updated(task_updated_event)
+                    task.content = recovery_decision.modified_task_content
+                    logger.info(f"Task {task.id} content modified for replan")
 
                 # Repost the modified task to the same worker
                 await self._post_task(task, original_assignee)
@@ -1739,22 +1716,6 @@ class Workforce(BaseNode):
                     f"Task {task.id} reassigned from {old_worker} to "
                     f"{new_worker}"
                 )
-
-                task_updated_event = TaskUpdatedEvent(
-                    task_id=task.id,
-                    parent_task_id=task.parent.id if task.parent else None,
-                    worker_id=task.assigned_worker_id,
-                    update_type="reassign",
-                    old_value=old_worker,
-                    new_value=new_worker,
-                    metadata={
-                        "quality_score": recovery_decision.quality_score,
-                        "reasoning": recovery_decision.reasoning,
-                        "issues": recovery_decision.issues,
-                    },
-                )
-                for cb in self._callbacks:
-                    cb.log_task_updated(task_updated_event)
 
             elif strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
@@ -2095,21 +2056,8 @@ class Workforce(BaseNode):
 
         for task in self._pending_tasks:
             if task.id == task_id:
-                old_content = task.content
                 task.content = new_content
                 logger.info(f"Task {task_id} content modified.")
-
-                task_updated_event = TaskUpdatedEvent(
-                    task_id=task.id,
-                    parent_task_id=task.parent.id if task.parent else None,
-                    worker_id=task.assigned_worker_id,
-                    update_type="manual",
-                    old_value=old_content,
-                    new_value=new_content,
-                )
-                for cb in self._callbacks:
-                    cb.log_task_updated(task_updated_event)
-
                 return True
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
