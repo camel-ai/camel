@@ -71,20 +71,15 @@ class ModelType(UnifiedModelType, Enum):
 
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASH = "glm-4.7-flash"
+    GLM_4_7_FLASHX = "glm-4.7-flashx"
     GLM_4_6 = "glm-4.6"
     GLM_4_6V = "glm-4.6v"
     GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4 = "glm-4"
-    GLM_4_7 = "glm-4.7"
-    GLM_4_7_FLASHX = "glm-4.7-flashx"
-    GLM_4_7_FLASH = "glm-4.7-flash"
-    GLM_4_6 = "glm-4.6"
     GLM_4_5_AIR = "glm-4.5-air"
     GLM_4_5_AIRX = "glm-4.5-airx"
     GLM_4_5_FLASH = "glm-4.5-flash"
     GLM_4V = "glm-4v"
-    GLM_4_6V = "glm-4.6v"
-    GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4_1V_THINKING_FLASHX = "glm-4.1v-thinking-flashx"
     GLM_4_1V_THINKING_FLASH = "glm-4.1v-thinking-flash"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -675,7 +670,7 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_zhipuai(self) -> bool:
-        r"""Returns whether this type of models is an ZhipuAI model."""
+        r"""Returns whether this type of models is a ZhipuAI model."""
         return self in {
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
@@ -703,11 +698,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH,
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
-            ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASH,
-            ModelType.GLM_4_6,
-            ModelType.GLM_4_6V,
-            ModelType.GLM_4_6V_FLASH,
         }
 
     @property
