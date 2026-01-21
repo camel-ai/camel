@@ -40,6 +40,10 @@ class PptxNodeToolkit(BaseToolkit):
     ) -> None:
         r"""Initialize the PptxNodeToolkit.
 
+        Note:
+            This toolkit requires Node.js to be installed and available in the
+            system path (or specified via `node_executable`). It also requires
+            the `pptxgenjs` npm package to be installed in the `scripts` dir.
         Args:
             working_directory (str, optional): The default directory for
                 output files.
@@ -75,9 +79,9 @@ class PptxNodeToolkit(BaseToolkit):
         # 2. Check if the script's package.json dependencies are installed
         script_dir = Path(__file__).parent / "scripts"
         node_modules_path = script_dir / "node_modules"
-        
+
         if not node_modules_path.exists():
-             logger.warning(
+            logger.warning(
                 f"Node dependencies not found in {script_dir}. "
                 "Please run `npm install` in that directory."
             )
@@ -142,52 +146,59 @@ class PptxNodeToolkit(BaseToolkit):
         if not filename.lower().endswith('.pptx'):
             filename += '.pptx'
 
+        # Ensure content is a valid JSON string or structure
+        try:
+            if not isinstance(content, str):
+                # If it's a list/dict, check for expected keys if possible
+                if isinstance(content, list):
+                    for item in content:
+                        if not isinstance(item, dict):
+                            return "Error: Slide content must be a dictionary."
+                        # Basic validation for known keys
+                        valid_keys = {
+                            "title",
+                            "subtitle",
+                            "heading",
+                            "text",
+                            "bullet_points",
+                            "table",
+                        }
+                        if not any(key in item for key in valid_keys):
+                            # Soft validation: warn/ignore if keys missing
+                            pass
+                content_str = json.dumps(content)
+            else:
+                # Validate JSON
+                json_obj = json.loads(content)
+                content_str = json.dumps(json_obj)
+        except json.JSONDecodeError:
+            return (
+                "Error: Content must be valid JSON string or structure "
+                "representing slides."
+            )
+
         file_path = self._resolve_filepath(filename)
         script_path = Path(__file__).parent / "scripts" / "generate_pptx.js"
 
         try:
-            # Ensure content is a valid JSON string
-            try:
-                if not isinstance(content, str):
-                    content_str = json.dumps(content)
-                else:
-                    # Validate JSON
-                    json_obj = json.loads(content)
-                    content_str = json.dumps(json_obj)
-            except json.JSONDecodeError:
-                return (
-                    "Error: Content must be valid JSON string or structure "
-                    "representing slides."
-                )
-
             # Run node script
             result = subprocess.run(
-                [self.node_executable, str(script_path), str(file_path), content_str],
+                [
+                    self.node_executable,
+                    str(script_path),
+                    str(file_path),
+                    content_str,
+                ],
                 capture_output=True,
                 text=True,
                 check=True,
             )
-
-            # Parse JSON output from script
-            try:
-                script_output = json.loads(result.stdout.strip())
-                if script_output.get("success"):
-                    return (
-                        f"Presentation created successfully. "
-                        f"Path: {script_output.get('path')}, "
-                        f"Slides: {script_output.get('slides')}"
-                    )
-                else:
-                    return (
-                        f"Error creating presentation: "
-                        f"{script_output.get('error')}"
-                    )
-            except json.JSONDecodeError:
-                return f"Error parsing script output: {result.stdout.strip()}"
+            return self._parse_script_output(result.stdout)
 
         except FileNotFoundError:
-             return (
-                f"Error: Node.js executable '{self.node_executable}' not found."
+            return (
+                f"Error: Node.js executable '{self.node_executable}' "
+                "not found."
             )
         except subprocess.CalledProcessError as e:
             logger.error(f"Error creating presentation: {e.stderr}")
@@ -195,6 +206,97 @@ class PptxNodeToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error creating presentation: {e!s}")
             return f"Error creating presentation: {e!s}"
+
+    def create_presentation_from_js(
+        self,
+        js_code: str,
+        filename: str,
+    ) -> str:
+        r"""Create a PowerPoint presentation by executing raw PptxGenJS code.
+
+        This method allows for flexibility by letting the agent generate
+        the exact JavaScript code needed to create the presentation using the
+        PptxGenJS library.
+
+        Args:
+            js_code (str): The JavaScript code to execute. This code should
+                use the `pptxgen` library (available globally or via require)
+                and save the file to `filename`.
+            filename (str): The name of the file to save.
+
+        Returns:
+            str: Status message.
+        """
+        if not filename.lower().endswith('.pptx'):
+            filename += '.pptx'
+
+        file_path = self._resolve_filepath(filename)
+        script_dir = Path(__file__).parent / "scripts"
+
+        # Create a temporary JS file in the scripts directory to ensure
+        # it can find node_modules
+        import uuid
+
+        temp_js_filename = f"temp_gen_{uuid.uuid4()}.js"
+        temp_js_path = script_dir / temp_js_filename
+
+        try:
+            with open(temp_js_path, "w", encoding="utf-8") as f:
+                f.write(js_code)
+
+            # Run node script
+            result = subprocess.run(
+                [self.node_executable, str(temp_js_path)],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            # Check if file exists first
+            if file_path.exists():
+                return f"Presentation created successfully at {file_path}"
+            else:
+                # Try to parse stdout if they followed our convention
+                try:
+                    return self._parse_script_output(result.stdout)
+                except Exception:
+                    return (
+                        "Script executed but presentation file validation "
+                        "failed or file not found."
+                    )
+
+        except FileNotFoundError:
+            return (
+                f"Error: Node.js executable '{self.node_executable}' "
+                "not found."
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error executing JS script: {e.stderr}")
+            return f"Error executing JS script: {e.stderr}"
+        except Exception as e:
+            logger.error(f"Error executing JS script: {e!s}")
+            return f"Error executing JS script: {e!s}"
+        finally:
+            # Cleanup temp file
+            if temp_js_path.exists():
+                os.remove(temp_js_path)
+
+    def _parse_script_output(self, stdout: str) -> str:
+        try:
+            script_output = json.loads(stdout.strip())
+            if script_output.get("success"):
+                return (
+                    f"Presentation created successfully. "
+                    f"Path: {script_output.get('path')}, "
+                    f"Slides: {script_output.get('slides')}"
+                )
+            else:
+                return (
+                    f"Error creating presentation: "
+                    f"{script_output.get('error')}"
+                )
+        except json.JSONDecodeError:
+            return f"Error parsing script output: {stdout.strip()}"
 
     def get_tools(self) -> list[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -204,4 +306,7 @@ class PptxNodeToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.create_presentation)]
+        return [
+            FunctionTool(self.create_presentation),
+            FunctionTool(self.create_presentation_from_js),
+        ]

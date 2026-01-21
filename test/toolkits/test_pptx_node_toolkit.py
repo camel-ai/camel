@@ -59,7 +59,7 @@ class TestPptxNodeToolkit(unittest.TestCase):
     ):
         mock_which.return_value = "/custom/node"
         mock_exists.return_value = True
-        
+
         toolkit = PptxNodeToolkit(node_executable="/custom/node")
 
         # Mock successful execution
@@ -107,11 +107,47 @@ class TestPptxNodeToolkit(unittest.TestCase):
     def test_create_presentation_node_not_found(
         self, mock_subprocess_run, mock_exists, mock_which
     ):
-        mock_subprocess_run.side_effect = FileNotFoundError 
-        
+        mock_subprocess_run.side_effect = FileNotFoundError
+
         content = [{"title": "Test Slide"}]
         filename = "test.pptx"
-        
+
         result = self.toolkit.create_presentation(content, filename)
         self.assertIn("Error: Node.js executable 'node' not found", result)
 
+    def test_create_presentation_validation(self, mock_exists, mock_which):
+        # Test non-dict item in list
+        content = ["Not a dict"]
+        filename = "test.pptx"
+        result = self.toolkit.create_presentation(content, filename)
+        self.assertIn("Error: Slide content must be a dictionary", result)
+
+    @patch("subprocess.run")
+    def test_create_presentation_from_js(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
+        mock_which.return_value = "/usr/bin/node"
+        mock_exists.return_value = True
+
+        js_code = "console.log('Generating PPTX');"
+        filename = "test.pptx"
+
+        # Mock successful execution
+        mock_result = MagicMock()
+        mock_result.stdout = ""
+        mock_subprocess_run.return_value = mock_result
+
+        # Mock file existence check (since we check if file created)
+        # We need to patch Path.exists but it is already patched on class level
+        # We need it to return True for the .pptx file check
+        mock_exists.return_value = True
+
+        result = self.toolkit.create_presentation_from_js(js_code, filename)
+
+        self.assertIn("Presentation created successfully", result)
+
+        # Verify subprocess called with a temp js file
+        args = mock_subprocess_run.call_args[0][0]
+        self.assertEqual(args[0], "node")
+        self.assertTrue(args[1].endswith(".js"))
+        self.assertIn("temp_gen_", args[1])
