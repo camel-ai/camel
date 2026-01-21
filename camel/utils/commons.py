@@ -312,7 +312,7 @@ def api_keys_required(
             key_way = "the official website"
             if env_var_name == 'ANTHROPIC_API_KEY':
                 key_way = (
-                    "https://docs.anthropic.com/zh-CN/api/getting-started"
+                    "https://platform.claude.com/docs/en/api/overview"
                 )
             elif env_var_name == 'AIML_API_KEY':
                 key_way = "https://aimlapi.com/"
@@ -331,15 +331,15 @@ def api_keys_required(
             elif env_var_name == 'GEMINI_API_KEY':
                 key_way = "https://gemini.google.com/"
             elif env_var_name == 'INTERNLM_API_KEY':
-                key_way = "https://internlm-chat.intern-ai.org.cn/puyu/api/v1"
+                key_way = "https://internlm.intern-ai.org.cn/api/tokens"
             elif env_var_name == 'GROQ_API_KEY':
-                key_way = "https://api.groq.com/openai/v1"
+                key_way = "https://console.groq.com/keys"
             elif env_var_name == 'MISTRAL_API_KEY':
                 key_way = "https://mistral.ai/"
             elif env_var_name == 'MOONSHOT_API_KEY':
-                key_way = "https://api.moonshot.cn/v1"
+                key_way = "platform.moonshot.ai/console"
             elif env_var_name == 'NVIDIA_API_KEY':
-                key_way = "https://integrate.api.nvidia.com/"
+                key_way = "https://build.nvidia.com/settings/api-keys"
             elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
                 key_way = "https://platform.openai.com/docs/overview"
             elif env_var_name == 'QWEN_API_KEY':
@@ -347,7 +347,7 @@ def api_keys_required(
             elif env_var_name == 'REKA_API_KEY':
                 key_way = "https://docs.reka.ai/quick-start"
             elif env_var_name == 'SAMBA_API_KEY':
-                key_way = "https://community.sambanova.ai/t/looking-for-api-key-and-url-for-sambanova/576"
+                key_way = "cloud.sambanova.ai/apis"
             elif env_var_name == 'TOGETHER_API_KEY':
                 key_way = "https://docs.together.ai/docs/quickstart"
             elif env_var_name == 'YI_API_KEY':
@@ -357,7 +357,7 @@ def api_keys_required(
             elif env_var_name == 'KLAVIS_API_KEY':
                 key_way = "https://www.klavis.ai/docs"
             elif env_var_name == 'XAI_API_KEY':
-                key_way = "https://api.x.ai/v1"
+                key_way = "https://docs.x.ai/docs/overview"
 
             if missing_keys:
                 raise ValueError(
