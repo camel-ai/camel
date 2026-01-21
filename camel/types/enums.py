@@ -674,16 +674,10 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
-            ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASHX,
-            ModelType.GLM_4_7_FLASH,
-            ModelType.GLM_4_6,
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
             ModelType.GLM_4_5_FLASH,
             ModelType.GLM_4V,
-            ModelType.GLM_4_6V,
-            ModelType.GLM_4_6V_FLASH,
             ModelType.GLM_4_1V_THINKING_FLASHX,
             ModelType.GLM_4_1V_THINKING_FLASH,
             ModelType.GLM_4V_FLASH,
@@ -698,6 +692,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH,
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_6,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
         }
 
     @property
@@ -1572,10 +1572,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
             ModelType.ATLASCLOUD_GLM_4_7,
-            ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASHX,
-            ModelType.GLM_4_7_FLASH,
-            ModelType.GLM_4_6,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1588,6 +1584,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_7_FLASHX,
             ModelType.GLM_4_6,
         }:
             return 200_000
