@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import sys
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -19,8 +20,18 @@ from mcp.server.fastmcp import Context
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
-from services.agent_mcp.agent_config import agents_dict, description_dict
-from services.agent_mcp.agent_mcp_server import (
+
+# Mock agent_config before importing to prevent API key validation at import time
+mock_agents_dict: dict = {}
+mock_description_dict: dict = {}
+
+# Create a mock module for agent_config
+mock_agent_config = Mock()
+mock_agent_config.agents_dict = mock_agents_dict
+mock_agent_config.description_dict = mock_description_dict
+sys.modules['services.agent_mcp.agent_config'] = mock_agent_config
+
+from services.agent_mcp.agent_mcp_server import (  # noqa: E402
     get_agent_info,
     get_agents_info,
     get_available_tools,
@@ -29,6 +40,10 @@ from services.agent_mcp.agent_mcp_server import (
     set_output_language,
     step,
 )
+
+# Get the actual dicts from the mocked module for use in tests
+agents_dict = mock_agents_dict
+description_dict = mock_description_dict
 
 
 @pytest.fixture
