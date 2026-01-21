@@ -32,6 +32,7 @@ from camel.types import (
     TaskType,
 )
 
+
 @pytest.fixture
 def openai_model():
     """Fixture to lazily create OpenAI model only when test runs."""

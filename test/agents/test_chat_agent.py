@@ -78,6 +78,7 @@ model_backend_rsp_base = ChatCompletion(
     ),
 )
 
+
 @pytest.fixture
 def openai_model():
     """Fixture to lazily create OpenAI model only when test runs."""
