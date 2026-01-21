@@ -74,9 +74,10 @@ def test_role_playing_init(
     model_param, critic_role_name, with_critic_in_the_loop, request
 ):
     # Resolve fixture if model_param is a string (fixture name)
-    model = (
-        request.getfixturevalue(model_param) if model_param is not None else None
-    )
+    if model_param is not None:
+        model = request.getfixturevalue(model_param)
+    else:
+        model = None
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 

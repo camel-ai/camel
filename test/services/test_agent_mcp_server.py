@@ -21,7 +21,7 @@ from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
 
-# Mock agent_config before importing to prevent API key validation at import time
+# Mock agent_config before importing to prevent API key validation
 mock_agents_dict: dict = {}
 mock_description_dict: dict = {}
 
