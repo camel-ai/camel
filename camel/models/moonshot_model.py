@@ -16,7 +16,7 @@ import copy
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncStream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import MoonshotConfig
@@ -112,6 +112,81 @@ class MoonshotModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Store the last reasoning_content from model response for
+        # interleaved thinking support (Kimi K2 thinking models)
+        self._last_reasoning_content: Optional[str] = None
+
+    def _is_thinking_enabled(self) -> bool:
+        r"""Check if interleaved thinking mode is enabled.
+
+        Returns:
+            bool: True if interleaved_thinking is enabled in the model config.
+        """
+        return bool(self.model_config_dict.get("interleaved_thinking", False))
+
+    def _inject_reasoning_content(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> List[OpenAIMessage]:
+        r"""Inject the last reasoning_content into assistant messages.
+
+        For Kimi K2 thinking models with interleaved thinking enabled,
+        the reasoning_content from the model response needs to be passed back
+        in subsequent requests for proper context management.
+
+        Args:
+            messages: The original messages list.
+
+        Returns:
+            Messages with reasoning_content added to the last assistant
+            message that has tool_calls.
+        """
+        if not self._last_reasoning_content or not self._is_thinking_enabled():
+            return messages
+
+        # Find the last assistant message with tool_calls and inject
+        # reasoning_content
+        processed: List[OpenAIMessage] = []
+        reasoning_injected = False
+
+        for msg in reversed(messages):
+            if (
+                not reasoning_injected
+                and isinstance(msg, dict)
+                and msg.get("role") == "assistant"
+                and msg.get("tool_calls")
+                and "reasoning_content" not in msg
+            ):
+                # Inject reasoning_content into this message
+                new_msg = dict(msg)
+                new_msg["reasoning_content"] = self._last_reasoning_content
+                processed.append(new_msg)  # type: ignore[arg-type]
+                reasoning_injected = True
+            else:
+                processed.append(msg)
+
+        # Only clear after successful injection
+        if reasoning_injected:
+            self._last_reasoning_content = None
+
+        return list(reversed(processed))
+
+    def _extract_reasoning_content(
+        self, response: ChatCompletion
+    ) -> Optional[str]:
+        r"""Extract reasoning_content from the model response.
+
+        Args:
+            response: The model response.
+
+        Returns:
+            The reasoning_content if available, None otherwise.
+        """
+        if response.choices:
+            return getattr(
+                response.choices[0].message, "reasoning_content", None
+            )
+        return None
 
     def _prepare_request(
         self,
@@ -133,6 +208,9 @@ class MoonshotModel(OpenAICompatibleModel):
             Dict[str, Any]: The prepared request configuration.
         """
         request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove internal config params that are not part of the API
+        request_config.pop("interleaved_thinking", None)
 
         if tools:
             # Clean tools to remove null types (Moonshot API incompatibility)
@@ -234,6 +312,40 @@ class MoonshotModel(OpenAICompatibleModel):
         return cleaned_tools
 
     @observe()
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of Moonshot chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        self._log_and_trace()
+
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -267,3 +379,77 @@ class MoonshotModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of Moonshot chat completion.
+
+        Overrides the base run method to inject reasoning_content from
+        previous responses into subsequent requests, as required by
+        Kimi K2 thinking models with interleaved thinking enabled.
+
+        Args:
+            messages: Message list with the chat history in OpenAI API format.
+            response_format: The format of the response.
+            tools: The schema of the tools to use for the request.
+
+        Returns:
+            ChatCompletion in the non-stream mode, or
+            Stream[ChatCompletionChunk] in the stream mode.
+        """
+        # Inject reasoning_content from previous response if thinking is
+        # enabled
+        processed_messages = self._inject_reasoning_content(messages)
+
+        # Call parent's run
+        response = super().run(processed_messages, response_format, tools)
+
+        # Extract and store reasoning_content for next request
+        if isinstance(response, ChatCompletion):
+            self._last_reasoning_content = self._extract_reasoning_content(
+                response
+            )
+
+        return response
+
+    async def arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs async inference of Moonshot chat completion.
+
+        Overrides the base arun method to inject reasoning_content from
+        previous responses into subsequent requests, as required by
+        Kimi K2 thinking models with interleaved thinking enabled.
+
+        Args:
+            messages: Message list with the chat history in OpenAI API format.
+            response_format: The format of the response.
+            tools: The schema of the tools to use for the request.
+
+        Returns:
+            ChatCompletion in the non-stream mode, or
+            AsyncStream[ChatCompletionChunk] in the stream mode.
+        """
+        # Inject reasoning_content from previous response if thinking is
+        # enabled
+        processed_messages = self._inject_reasoning_content(messages)
+
+        # Call parent's arun
+        response = await super().arun(
+            processed_messages, response_format, tools
+        )
+
+        # Extract and store reasoning_content for next request
+        if isinstance(response, ChatCompletion):
+            self._last_reasoning_content = self._extract_reasoning_content(
+                response
+            )
+
+        return response

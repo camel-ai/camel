@@ -93,15 +93,36 @@ class VolcanoModel(OpenAICompatibleModel):
         # This will be injected into the next request's assistant message
         self._last_reasoning_content: Optional[str] = None
 
+    def _is_thinking_enabled(self) -> bool:
+        r"""Check if interleaved thinking mode is enabled.
+
+        Returns:
+            bool: True if interleaved_thinking is enabled in the model config.
+        """
+        return bool(self.model_config_dict.get("interleaved_thinking", False))
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration dictionary.
+
+        Overrides the base method to remove interleaved_thinking parameter
+        which is only used internally.
+        """
+        request_config = super()._prepare_request_config(tools)
+        request_config.pop("interleaved_thinking", None)
+        return request_config
+
     def _inject_reasoning_content(
         self,
         messages: List[OpenAIMessage],
     ) -> List[OpenAIMessage]:
         r"""Inject the last reasoning_content into assistant messages.
 
-        For Volcano Engine's doubao-seed models with deep thinking enabled,
-        the reasoning_content from the model response needs to be passed back
-        in subsequent requests for proper context management.
+        For Volcano Engine's doubao-seed models with interleaved thinking
+        enabled, the reasoning_content from the model response needs to be
+        passed back in subsequent requests for proper context management.
 
         Args:
             messages: The original messages list.
@@ -110,7 +131,7 @@ class VolcanoModel(OpenAICompatibleModel):
             Messages with reasoning_content added to the last assistant
             message that has tool_calls.
         """
-        if not self._last_reasoning_content:
+        if not self._last_reasoning_content or not self._is_thinking_enabled():
             return messages
 
         # Find the last assistant message with tool_calls and inject

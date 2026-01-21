@@ -39,7 +39,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro, o3<br/>o4-mini<br/>gpt-4.1, gpt-4.1-mini, gpt-4.1-nano<br/>gpt-5, gpt-5-mini, gpt-5-nano<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
 | **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508<br/>magistral-small-1.2, magistral-medium-1.2 |
-| **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
+| **Moonshot**     | kimi-k2-0905-preview, kimi-k2-0711-preview, kimi-k2-turbo-preview<br/>kimi-k2-thinking, kimi-k2-thinking-turbo<br/>moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest, claude-3-7-sonnet-latest<br/>claude-sonnet-4-5, claude-sonnet-4-20250514, claude-opus-4-20250514, claude-opus-4-1-20250805 |
 | **Gemini**       | gemini-3-pro-preview, gemini-3-flash-preview<br/>gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking-exp<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
