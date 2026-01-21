@@ -69,6 +69,11 @@ class ModelType(UnifiedModelType, Enum):
 
     AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
+    GLM_4_7 = "glm-4.7"
+    GLM_4_7_FLASH = "glm-4.7-flash"
+    GLM_4_6 = "glm-4.6"
+    GLM_4_6V = "glm-4.6v"
+    GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -515,6 +520,10 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2 = "MiniMax-M2"
     MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
+    # AtlasCloud models
+    ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
+    ATLASCLOUD_GLM_4_7 = "zai-org/glm-4.7"
+
     def __str__(self):
         return self.value
 
@@ -668,6 +677,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
         }
 
     @property
@@ -1158,6 +1172,14 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this type of models is served by AtlasCloud."""
+        return self in {
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GLM_4_7,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -1428,6 +1450,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
             ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.ATLASCLOUD_GPT_OSS_120B,
             ModelType.NEBIUS_GPT_OSS_20B,
             ModelType.COMETAPI_GPT_5_CHAT_LATEST,
             ModelType.COMETAPI_CHATGPT_4O_LATEST,
@@ -1468,6 +1491,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
             ModelType.ERNIE_5_0_THINKING,
             ModelType.ERNIE_4_5_TURBO_VL,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
         }:
             return 128_000
         elif self in {
@@ -1521,6 +1546,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
+            ModelType.ATLASCLOUD_GLM_4_7,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1531,6 +1557,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
         }:
             return 200_000
         elif self in {
@@ -1828,6 +1857,7 @@ class ModelPlatformType(Enum):
     MINIMAX = "minimax"
     CEREBRAS = "cerebras"
     FUNCTION_GEMMA = "function-gemma"
+    ATLASCLOUD = "atlascloud"
 
     @classmethod
     def from_name(cls, name):
@@ -2022,6 +2052,11 @@ class ModelPlatformType(Enum):
     def is_cerebras(self) -> bool:
         r"""Returns whether this platform is Cerebras."""
         return self is ModelPlatformType.CEREBRAS
+
+    @property
+    def is_atlascloud(self) -> bool:
+        r"""Returns whether this platform is AtlasCloud."""
+        return self is ModelPlatformType.ATLASCLOUD
 
 
 class AudioModelType(Enum):
