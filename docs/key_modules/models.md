@@ -47,7 +47,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
 | **CometAPI**     | **All models available on [CometAPI](https://api.cometapi.com/pricing)**<br/>Including: gpt-5-chat-latest, gpt-5, gpt-5-mini, gpt-5-nano<br/>claude-opus-4-1-20250805, claude-sonnet-4-20250514, claude-3-7-sonnet-latest<br/>gemini-2.5-pro, gemini-2.5-flash, grok-4-0709, grok-3<br/>deepseek-v3.1, deepseek-v3, deepseek-r1-0528, qwen3-30b-a3b |
 | **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
-| **ZhipuAI**      | glm-4-plus, glm-4-air-250414, glm-4-long<br/>glm-4-airx, glm-4-flashx-250414, glm-4-flash-250414<br/>glm-z1-air, glm-z1-airx, glm-z1-flashx, glm-z1-flash<br/>glm-4.1v-thinking-flash, glm-4v-plus-0111, glm-4v-flash |
+| **ZhipuAI**      | glm-4.7, glm-4.7-flashx, glm-4.7-flash, glm-4.6<br/> glm-4.5, glm-4.5x, glm-4.5-air, glm-4.5-airx, glm-4.5-flash<br/> glm-4-32b-0414-128k<br/> glm-4-plus, glm-4-air-250414, glm-4-long, glm-4-airx, glm-4-flashx-250414, glm-4-flash-250414<br/> glm-z1-air, glm-z1-airx, glm-z1-flashx, glm-z1-flash<br/> glm-4.1v-thinking-flash, glm-4v-plus-0111, glm-4v-flash |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
@@ -455,6 +455,41 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
   </Tab>
 
 </Tabs>
+
+## Using OpenAI-Compatible Models
+
+If your provider exposes an OpenAI-compatible API, you can connect it by
+using `OPENAI_COMPATIBLE_MODEL` and passing the model name as a string. This
+lets you reuse the same request patterns while pointing to a different
+endpoint.
+
+```python
+import os
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="your-model-name", #e.g. "gpt-4o"
+    url="https://your-openai-compatible-endpoint/v1",
+    api_key=os.getenv("OPENAI_COMPATIBLE_API_KEY"),
+    model_config_dict={"temperature": 0.2},
+)
+
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model=model
+)
+
+response = agent.step("Explain quantum computing in simple terms.")
+print(response.msg.content)
+```
+
+<Note type="info">
+  Replace the model name, base URL, and API key with values provided by your
+  OpenAI-compatible service.
+</Note>
 
 
 ## Using On-Device Open Source Models

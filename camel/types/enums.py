@@ -69,16 +69,39 @@ class ModelType(UnifiedModelType, Enum):
 
     AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
+    # ZhipuAI GLM-4.7 series (latest)
+    GLM_4_7 = "glm-4.7"
+    GLM_4_7_FLASHX = "glm-4.7-flashx"
+    GLM_4_7_FLASH = "glm-4.7-flash"
+
+    # ZhipuAI GLM-4.6 series
+    GLM_4_6 = "glm-4.6"
+
+    # ZhipuAI GLM-4.5 series
+    GLM_4_5 = "glm-4.5"
+    GLM_4_5_X = "glm-4.5x"
+    GLM_4_5_AIR = "glm-4.5-air"
+    GLM_4_5_AIRX = "glm-4.5-airx"
+    GLM_4_5_FLASH = "glm-4.5-flash"
+
+    # ZhipuAI GLM-4 32B variant
+    GLM_4_32B_0414_128K = "glm-4-32b-0414-128k"
+
+    # ZhipuAI GLM-4 legacy models
     GLM_4_PLUS = "glm-4-plus"
     GLM_4_AIR_250414 = "glm-4-air-250414"
     GLM_4_LONG = "glm-4-long"
     GLM_4_AIRX = "glm-4-airx"
     GLM_4_FLASHX_250414 = "glm-4-flashx-250414"
     GLM_4_FLASH_250414 = "glm-4-flash-250414"
+
+    # ZhipuAI GLM-Z1 series (reasoning models)
     GLM_Z1_AIR = "glm-z1-air"
     GLM_Z1_AIRX = "glm-z1-airx"
     GLM_Z1_FLASHX = "glm-z1-flashx"
     GLM_Z1_FLASH = "glm-z1-flash"
+
+    # ZhipuAI GLM Vision models
     GLM_4_1V_THINKING_FLASH = "glm-4.1v-thinking-flash"
     GLM_4V_PLUS_0111 = "glm-4v-plus-0111"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -664,16 +687,33 @@ class ModelType(UnifiedModelType, Enum):
     def is_zhipuai(self) -> bool:
         r"""Returns whether this type of models is an ZhipuAI model."""
         return self in {
+            # GLM-4.7 series
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_7_FLASH,
+            # GLM-4.6 series
+            ModelType.GLM_4_6,
+            # GLM-4.5 series
+            ModelType.GLM_4_5,
+            ModelType.GLM_4_5_X,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
+            ModelType.GLM_4_5_FLASH,
+            # GLM-4 32B variant
+            ModelType.GLM_4_32B_0414_128K,
+            # GLM-4 legacy models
             ModelType.GLM_4_PLUS,
             ModelType.GLM_4_AIR_250414,
             ModelType.GLM_4_AIRX,
             ModelType.GLM_4_LONG,
             ModelType.GLM_4_FLASHX_250414,
             ModelType.GLM_4_FLASH_250414,
+            # GLM-Z1 series
             ModelType.GLM_Z1_AIR,
             ModelType.GLM_Z1_AIRX,
             ModelType.GLM_Z1_FLASHX,
             ModelType.GLM_Z1_FLASH,
+            # GLM Vision models
             ModelType.GLM_4_1V_THINKING_FLASH,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_4V_FLASH,
@@ -1489,6 +1529,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
             ModelType.ERNIE_5_0_THINKING,
             ModelType.ERNIE_4_5_TURBO_VL,
+            ModelType.GLM_4_5,
+            ModelType.GLM_4_5_X,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
+            ModelType.GLM_4_32B_0414_128K,
         }:
             return 128_000
         elif self in {
@@ -1553,6 +1598,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
+            ModelType.GLM_4_5_FLASH,
         }:
             return 200_000
         elif self in {

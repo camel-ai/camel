@@ -26,16 +26,33 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
+        # GLM-4.7 series (latest)
+        ModelType.GLM_4_7,
+        ModelType.GLM_4_7_FLASHX,
+        ModelType.GLM_4_7_FLASH,
+        # GLM-4.6 series
+        ModelType.GLM_4_6,
+        # GLM-4.5 series
+        ModelType.GLM_4_5,
+        ModelType.GLM_4_5_X,
+        ModelType.GLM_4_5_AIR,
+        ModelType.GLM_4_5_AIRX,
+        ModelType.GLM_4_5_FLASH,
+        # GLM-4 32B variant
+        ModelType.GLM_4_32B_0414_128K,
+        # GLM-4 legacy models
         ModelType.GLM_4_PLUS,
         ModelType.GLM_4_AIR_250414,
         ModelType.GLM_4_AIRX,
         ModelType.GLM_4_LONG,
         ModelType.GLM_4_FLASHX_250414,
         ModelType.GLM_4_FLASH_250414,
+        # GLM-Z1 series
         ModelType.GLM_Z1_AIR,
         ModelType.GLM_Z1_AIRX,
         ModelType.GLM_Z1_FLASHX,
         ModelType.GLM_Z1_FLASH,
+        # GLM Vision models
         ModelType.GLM_4_1V_THINKING_FLASH,
         ModelType.GLM_4V_PLUS_0111,
         ModelType.GLM_4V_FLASH,
