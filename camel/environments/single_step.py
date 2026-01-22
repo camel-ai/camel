@@ -60,6 +60,7 @@ class SingleStepEnv:
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
         timeout: Optional[float] = 180.0,
+        rollout_duplication_size: Optional[int] = 1,
         **kwargs,
     ) -> None:
         r"""Initialize the SingleStepEnv.
@@ -71,6 +72,10 @@ class SingleStepEnv:
                 against ground-truth answers.
             timeout (Optional[float], optional): The execution timeout in
                 seconds. (default: :obj:`180.0`)
+            rollout_duplication_size (Optional[int], optional): Some RL
+                frameworks create multiple rollouts for one input to improve
+                exploration. This parameter should be left untouched unless
+                when used for training. (default: :obj:`1`)
             **kwargs: Optional metadata or configuration values.
 
         Notes:
@@ -87,6 +92,10 @@ class SingleStepEnv:
         self._states: List[DataPoint] = []
         self._states_done: List[bool] = []
         self.current_batch_size: int = 0
+
+        # Training purposes only
+        self._rollout_duplication_size = rollout_duplication_size
+        self._states_counts: List[int] = []
 
     async def setup(self) -> None:
         r"""Set up the environment by initializing the verifier.
@@ -132,6 +141,7 @@ class SingleStepEnv:
             await self.verifier.cleanup()
             self._states = []
             self._states_done = []
+            self._states_counts = []
             self.current_batch_size = 0
             logger.info('Environment closed successfully')
         except Exception as e:
@@ -203,6 +213,7 @@ class SingleStepEnv:
 
             self.current_batch_size = len(self._states)
             self._states_done = [False] * self.current_batch_size
+            self._states_counts = [0] * self.current_batch_size
 
             observations = [
                 Observation(
@@ -248,6 +259,7 @@ class SingleStepEnv:
 
             self.current_batch_size = batch_size
             self._states_done = [False] * batch_size
+            self._states_counts = [0] * batch_size
 
             observations = [
                 Observation(
@@ -443,8 +455,13 @@ class SingleStepEnv:
             for i in range(len(actions))
         ]
 
-        for _, idx in enumerate(indices):
-            self._states_done[idx] = True
+        for state_idx in enumerate(indices):
+            self._states_counts[state_idx] += 1
+            if (
+                self._states_counts[state_idx]
+                >= self._rollout_duplication_size
+            ):
+                self._states_done[state_idx] = True
 
         return step_results[0] if len(step_results) == 1 else step_results
 
@@ -536,8 +553,21 @@ class SingleStepEnv:
                     )
 
         indices = [a.index for a in actions]
-        if len(set(indices)) != len(indices):
-            raise ValueError("Duplicate state indices in actions.")
+
+        new_counts: Dict[int, int] = {}
+        for idx in indices:
+            new_counts[idx] = new_counts.get(idx, 0) + 1
+        for idx, add in new_counts.items():
+            already_done = (
+                self._states_counts[idx] if self._states_counts else 0
+            )
+            if already_done + add > self._rollout_duplication_size:
+                raise ValueError(
+                    f"State {idx} would exceed "
+                    f"rollout_duplication_size="
+                    f"{self._rollout_duplication_size} "
+                    f"(already {already_done}, trying to add {add})."
+                )
 
         return actions
 
