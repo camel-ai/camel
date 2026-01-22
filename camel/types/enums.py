@@ -515,9 +515,10 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
-    # Minimax M2 models
+    # Minimax models
+    MINIMAX_M2_1 = "MiniMax-M2.1"
+    MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
-    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     # AtlasCloud models
     ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
@@ -1613,10 +1614,11 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         elif self in {
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
-            ModelType.MINIMAX_M2_STABLE,
         }:
-            return 32_000
+            return 204_800
 
         else:
             logger.warning(
