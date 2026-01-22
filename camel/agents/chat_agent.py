@@ -844,14 +844,69 @@ class ChatAgent(BaseAgent):
         r"""Set the agent memory.
 
         When setting a new memory, the system message is automatically
-        re-added to ensure it's not lost.
+        added after existing system messages, while preserving existing
+        memory data.
 
         Args:
             value (AgentMemory): The new agent memory to use.
         """
         self._memory = value
-        # Ensure the new memory has the system message
-        self.init_messages()
+
+        # Reset summary state for the new memory
+        self._reset_summary_state()
+
+        # Clear token cache for the new memory
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'clear_cache'):
+            context_creator.clear_cache()
+
+        if self.system_message is None:
+            return
+
+        # Get existing records from new memory
+        existing_records = self.memory.retrieve()
+
+        # Fast path: empty memory, just write system message
+        if not existing_records:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+            return
+
+        # Separate system messages and other messages in one pass
+        existing_system_records = []
+        other_records = []
+        for r in existing_records:
+            if r.memory_record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                existing_system_records.append(r.memory_record)
+            else:
+                other_records.append(r.memory_record)
+
+        # Clear and rewrite in correct order
+        self.memory.clear()
+
+        # 1. Write existing system messages first
+        if existing_system_records:
+            self.memory.write_records(existing_system_records)
+
+        # 2. Write current agent's system message
+        self.memory.write_record(
+            MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=time.time_ns() / 1_000_000_000,
+                agent_id=self.agent_id,
+            )
+        )
+
+        # 3. Write other records
+        if other_records:
+            self.memory.write_records(other_records)
 
     def set_context_utility(
         self, context_utility: Optional[ContextUtility]
