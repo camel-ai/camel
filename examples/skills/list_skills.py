@@ -25,7 +25,7 @@ model = ModelFactory.create(
 agent = ChatAgent(
     system_message="You are a helpful assistant.",
     model=model,
-    skills_enabled=True
+    skills_enabled=True,
 )
 
 # Example 1: List all skills
