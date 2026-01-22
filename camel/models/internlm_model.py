@@ -80,7 +80,7 @@ class InternLMModel(OpenAICompatibleModel):
         api_key = api_key or os.environ.get("INTERNLM_API_KEY")
         url = url or os.environ.get(
             "INTERNLM_API_BASE_URL",
-            "https://internlm-chat.intern-ai.org.cn/puyu/api/v1",
+            "https://internlm.intern-ai.org.cn/api/tokens",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
