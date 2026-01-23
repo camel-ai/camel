@@ -42,6 +42,8 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_4_32B_0414_128K,
         # GLM-4 legacy models
         ModelType.GLM_4_PLUS,
+        # GLM-Zero series (reasoning models)
+        ModelType.GLM_ZERO_PREVIEW,
         # GLM Vision models (VLM)
         ModelType.GLM_4_6V,
         ModelType.GLM_4_6V_FLASHX,

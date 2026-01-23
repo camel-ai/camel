@@ -90,6 +90,9 @@ class ModelType(UnifiedModelType, Enum):
     # ZhipuAI GLM-4 legacy models
     GLM_4_PLUS = "glm-4-plus"
 
+    # ZhipuAI GLM-Zero series (reasoning models)
+    GLM_ZERO_PREVIEW = "glm-zero-preview"
+
     # ZhipuAI GLM Vision models (VLM)
     GLM_4_6V = "glm-4.6v"
     GLM_4_6V_FLASHX = "glm-4.6v-flashx"
@@ -693,6 +696,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_32B_0414_128K,
             # GLM-4 legacy models
             ModelType.GLM_4_PLUS,
+            # GLM-Zero series (reasoning models)
+            ModelType.GLM_ZERO_PREVIEW,
             # GLM Vision models (VLM)
             ModelType.GLM_4_6V,
             ModelType.GLM_4_6V_FLASHX,
@@ -1444,6 +1449,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_MIXTRAL_NEMO,
             ModelType.MOONSHOT_V1_128K,
             ModelType.GLM_4_PLUS,
+            ModelType.GLM_ZERO_PREVIEW,
             ModelType.GLM_4_6V,
             ModelType.GLM_4_6V_FLASHX,
             ModelType.GLM_4_6V_FLASH,
