@@ -41,7 +41,7 @@ class DatabaseAdapter(ABC):
     async def update_execution_status(
         self,
         execution_id: str,
-        status: str,
+        status: TriggerState,
         result: Optional[Dict[str, Any]] = None,
     ):
         """Update execution status"""
