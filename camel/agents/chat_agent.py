@@ -4298,7 +4298,10 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif (
+                type(response).__name__ in ('ChatCompletionStreamManager', 'AsyncChatCompletionStreamManager')
+                or hasattr(response, 'get_final_completion')
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
@@ -5273,7 +5276,10 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif (
+                type(response).__name__ == 'AsyncChatCompletionStreamManager'
+                or hasattr(response, 'get_final_completion')
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
                 async with response as stream:  # type: ignore[union-attr]
