@@ -42,20 +42,11 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_4_32B_0414_128K,
         # GLM-4 legacy models
         ModelType.GLM_4_PLUS,
-        ModelType.GLM_4_AIR_250414,
-        ModelType.GLM_4_AIRX,
-        ModelType.GLM_4_LONG,
-        ModelType.GLM_4_FLASHX_250414,
-        ModelType.GLM_4_FLASH_250414,
-        # GLM-Z1 series
-        ModelType.GLM_Z1_AIR,
-        ModelType.GLM_Z1_AIRX,
-        ModelType.GLM_Z1_FLASHX,
-        ModelType.GLM_Z1_FLASH,
-        # GLM Vision models
-        ModelType.GLM_4_1V_THINKING_FLASH,
-        ModelType.GLM_4V_PLUS_0111,
-        ModelType.GLM_4V_FLASH,
+        # GLM Vision models (VLM)
+        ModelType.GLM_4_6V,
+        ModelType.GLM_4_6V_FLASHX,
+        ModelType.GLM_4_5V,
+        ModelType.GLM_4_6V_FLASH,
     ],
 )
 def test_zhipuai_model(model_type: ModelType):
