@@ -12,10 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
+from openai import AsyncStream, Stream
+from pydantic import BaseModel
+
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion
+from camel.types import ChatCompletion, ChatCompletionChunk
+
+logger = get_logger(__name__)
 
 
 class InterleavedThinkingMixin:
@@ -140,3 +146,65 @@ class InterleavedThinkingMixin:
         """
         config.pop("interleaved_thinking", None)
         return config
+
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Run inference with interleaved thinking support.
+
+        Note:
+            Interleaved thinking is not supported with stream=True. When
+            streaming is enabled, reasoning content cannot be captured and
+            injected into subsequent requests.
+        """
+        if self._is_thinking_enabled() and self.model_config_dict.get(
+            "stream", False
+        ):
+            logger.warning(
+                "Interleaved thinking is not supported with stream=True. "
+                "Reasoning content cannot be captured or injected into "
+                "subsequent requests."
+            )
+        processed_messages = self._inject_reasoning(messages)
+        response = super().run(  # type: ignore[misc]
+            processed_messages, response_format, tools
+        )
+
+        if isinstance(response, ChatCompletion):
+            self._last_reasoning = self._extract_reasoning(response)
+
+        return response
+
+    async def arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Run async inference with interleaved thinking support.
+
+        Note:
+            Interleaved thinking is not supported with stream=True. When
+            streaming is enabled, reasoning content cannot be captured and
+            injected into subsequent requests.
+        """
+        if self._is_thinking_enabled() and self.model_config_dict.get(
+            "stream", False
+        ):
+            logger.warning(
+                "Interleaved thinking is not supported with stream=True. "
+                "Reasoning content cannot be captured or injected into "
+                "subsequent requests."
+            )
+        processed_messages = self._inject_reasoning(messages)
+        response = await super().arun(  # type: ignore[misc]
+            processed_messages, response_format, tools
+        )
+
+        if isinstance(response, ChatCompletion):
+            self._last_reasoning = self._extract_reasoning(response)
+
+        return response

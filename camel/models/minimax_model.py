@@ -12,16 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncStream, Stream
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import MinimaxConfig
-from camel.messages import OpenAIMessage
 from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
@@ -130,73 +126,3 @@ class MinimaxModel(InterleavedThinkingMixin, OpenAICompatibleModel):
         """
         request_config = super()._prepare_request_config(tools)
         return self._prepare_thinking_config(request_config)
-
-    def run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of MiniMax chat completion.
-
-        Overrides the base run method to inject reasoning_details from
-        previous responses into subsequent requests, as required by
-        MiniMax M2 models with interleaved thinking enabled.
-
-        Args:
-            messages: Message list with the chat history in OpenAI API format.
-            response_format: The format of the response.
-            tools: The schema of the tools to use for the request.
-
-        Returns:
-            ChatCompletion in the non-stream mode, or
-            Stream[ChatCompletionChunk] in the stream mode.
-        """
-        # Inject reasoning content from previous response if thinking is
-        # enabled
-        processed_messages = self._inject_reasoning(messages)
-
-        # Call parent's run
-        response = super().run(processed_messages, response_format, tools)
-
-        # Extract and store reasoning content for next request
-        if isinstance(response, ChatCompletion):
-            self._last_reasoning = self._extract_reasoning(response)
-
-        return response
-
-    async def arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs async inference of MiniMax chat completion.
-
-        Overrides the base arun method to inject reasoning_details from
-        previous responses into subsequent requests, as required by
-        MiniMax M2 models with interleaved thinking enabled.
-
-        Args:
-            messages: Message list with the chat history in OpenAI API format.
-            response_format: The format of the response.
-            tools: The schema of the tools to use for the request.
-
-        Returns:
-            ChatCompletion in the non-stream mode, or
-            AsyncStream[ChatCompletionChunk] in the stream mode.
-        """
-        # Inject reasoning content from previous response if thinking is
-        # enabled
-        processed_messages = self._inject_reasoning(messages)
-
-        # Call parent's arun
-        response = await super().arun(
-            processed_messages, response_format, tools
-        )
-
-        # Extract and store reasoning content for next request
-        if isinstance(response, ChatCompletion):
-            self._last_reasoning = self._extract_reasoning(response)
-
-        return response
