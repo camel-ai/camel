@@ -17,7 +17,15 @@ import asyncio
 import datetime
 import time
 from collections import deque
-from typing import Any, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+)
 
 from colorama import Fore
 
@@ -34,7 +42,11 @@ from camel.societies.workforce.workflow_memory_manager import (
     WorkflowMemoryManager,
 )
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
+from camel.utils import consume_response_content_async
 from camel.utils.context_utils import ContextUtility
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 logger = get_logger(__name__)
 
@@ -334,7 +346,12 @@ class SingleAgentWorker(Worker):
         return self._workflow_manager
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         r"""Processes a task with its dependencies using an efficient agent
         management system.
@@ -348,7 +365,9 @@ class SingleAgentWorker(Worker):
             task (Task): The task to process, which includes necessary details
                 like content and type.
             dependencies (List[Task]): Tasks that the given task depends on.
-
+            stream_callback (Callable[[ChatAgentResponse], None], optional): A
+                callback function that receives each chunk (ChatAgentResponse)
+                during streaming decomposition.
         Returns:
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
@@ -391,18 +410,12 @@ class SingleAgentWorker(Worker):
                 response = await worker_agent.astep(enhanced_prompt)
 
                 # Handle streaming response
-                if isinstance(response, AsyncStreamingChatAgentResponse):
-                    content = ""
-                    async for chunk in response:
-                        if chunk.msg:
-                            content = chunk.msg.content
-                    response_content = content
-                else:
-                    # Regular ChatAgentResponse
-                    response_content = (
-                        response.msg.content if response.msg else ""
-                    )
-
+                (
+                    response,
+                    response_content,
+                ) = await consume_response_content_async(
+                    response, stream_callback
+                )
                 task_result = (
                     self.structured_handler.parse_structured_response(
                         response_text=response_content,

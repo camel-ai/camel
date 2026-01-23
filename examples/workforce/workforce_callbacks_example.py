@@ -20,11 +20,12 @@ Includes:
   `Workforce`.
 """
 
-import asyncio
-
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import FailureHandlingConfig
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
     LogEvent,
@@ -41,6 +42,7 @@ from camel.societies.workforce.events import (
 from camel.societies.workforce.workforce import Workforce
 from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.societies.workforce.workforce_logger import WorkforceLogger
+from camel.tasks import Task
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -113,48 +115,73 @@ class PrintCallback(WorkforceCallback):
         print("[PrintCallback] all_tasks_completed")
 
 
-def build_teacher_agent() -> ChatAgent:
+def main() -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig(stream=True).as_dict(),
     )
-    return ChatAgent(system_message="You are a teacher", model=model)
 
-
-def build_student_agent() -> ChatAgent:
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+    search_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Research Specialist",
+            content="You are a research specialist who excels at finding and "
+            "gathering information from the web.",
+        ),
+        model=model,
     )
-    return ChatAgent(system_message="You are a student", model=model)
 
+    analyst_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Business Analyst",
+            content="You are an expert business analyst. Your job is "
+            "to analyze research findings, identify key insights, "
+            "opportunities, and challenges.",
+        ),
+        model=model,
+    )
 
-async def run_demo() -> None:
-    logger_cb = WorkforceLogger('demo-logger')
-    print_cb = PrintCallback()
-    callbacks = [logger_cb, print_cb]
+    writer_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Report Writer",
+            content="You are a professional report writer. You take "
+            "analytical insights and synthesize them into a clear, "
+            "concise, and well-structured final report.",
+        ),
+        model=model,
+    )
 
     workforce = Workforce(
         "Workforce Callbacks Demo",
-        callbacks=callbacks,
+        callbacks=[WorkforceLogger('demo-logger'), PrintCallback()],
         use_structured_output_handler=True,
+        failure_handling_config=FailureHandlingConfig(enabled_strategies=[]),
+        default_model=model,
     )
 
-    teacher = build_teacher_agent()
-    student = build_student_agent()
-    workforce.add_single_agent_worker("Teacher Worker", teacher)
-    workforce.add_single_agent_worker("Student Worker", student)
-    workforce.add_main_task(
-        "The teacher set an exam question and had the students answer it."
+    workforce.add_single_agent_worker(
+        "A researcher who can search online for information.",
+        worker=search_agent,
+    ).add_single_agent_worker(
+        "An analyst who can process research findings.", worker=analyst_agent
+    ).add_single_agent_worker(
+        "A writer who can create a final report from the analysis.",
+        worker=writer_agent,
     )
 
-    # Start Workforce and wait for completion (timeout to avoid hanging)
-    wf_task = asyncio.create_task(workforce.start())
-    try:
-        await asyncio.wait_for(wf_task, timeout=30.0)
-    except asyncio.TimeoutError:
-        logger.warning("Workforce run timed out; stopping...")
-        workforce.stop()
+    # Use a simpler task to ensure fast and deterministic execution
+    human_task = Task(
+        content=(
+            "Create a simple report about electric scooters. "
+            "The report should have three sections: "
+            "1. Market overview "
+            "2. Target customers "
+            "3. Summary"
+        ),
+        id='0',
+    )
+
+    workforce.process_task(human_task)
 
     # Read KPIs and a simple "tree"
     print(f"KPIs: {workforce.get_workforce_kpis()}")
@@ -162,4 +189,4 @@ async def run_demo() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(run_demo())
+    main()
