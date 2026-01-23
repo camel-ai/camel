@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.83a6"
+version = "0.2.85a0"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -38,6 +38,8 @@ dependencies = [
     "aiohttp>=3.10.11",
 ]
 
+[tool.uv]
+upgrade = false
 
 [project.dependency-groups]
 test = ["pytest>=7,<8", "mock>=5,<6", "pytest-asyncio>=0.23.0,<0.24"]
@@ -142,6 +144,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
     "pytesseract>=0.3.13",
+    "av<16",
 ]
 
 communication_tools = [
@@ -162,7 +165,7 @@ data_tools = [
     "pandas>=2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
-    "datacommons_pandas>=0.0.3,<0.0.4",
+    "datacommons_pandas>=0.0.4",
     "rouge>=1.0.1,<2",
     "aiosqlite>=0.20.0,<0.21",
     "stripe>=11.3.0,<12",
@@ -278,6 +281,7 @@ owl = [
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
+    "av<16",
 ]
 eigent = [
     "numpy>=1.2,<=2.2",
@@ -312,6 +316,7 @@ eigent = [
     "google-auth-httplib2==0.2.0",
     "google-auth-oauthlib==1.2.1",
     "httplib2>=0.31.0",
+    "av<16",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -368,7 +373,7 @@ all = [
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
     "datacommons>=1.4.3,<2",
-    "datacommons_pandas>=0.0.3,<0.0.4",
+    "datacommons_pandas>=0.0.4",
     "tavily-python>=0.5.0,<0.6",
     "apify_client>=1.8.1,<2",
     "stripe>=11.3.0,<12",
@@ -454,6 +459,7 @@ all = [
     "scikit-image>=0.25.2",
     "scipy>=1.15.3",
     "statsmodels>=0.14.6",
+    "av<16",
 ]
 earth-science = [
     "numpy>=1.2,<=2.2",
