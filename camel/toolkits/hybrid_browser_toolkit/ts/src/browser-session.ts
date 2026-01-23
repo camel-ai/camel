@@ -566,7 +566,20 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string; dialogMessage?: string }> {
+    // Track dialog (alert/confirm/prompt) that may appear during click
+    let dialogMessage: string | undefined;
+    let dialogHandled = false;
+
+    const dialogHandler = (dialog: any) => {
+      dialogMessage = dialog.message();
+      dialogHandled = true;
+      // Auto-accept the dialog to prevent blocking
+      dialog.accept().catch(() => {});
+    };
+
+    // Set up dialog handler before clicking
+    page.on('dialog', dialogHandler);
 
     try {
       //  Ensure we have the latest snapshot and mapping
@@ -654,12 +667,14 @@ export class HybridBrowserSession {
           // Wait for new page to be ready
           await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
 
-          return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref-newtab', newTabId, dialogMessage };
         } catch (popupError) {
           // Popup didn't open within timeout - this is expected for elements that
           // look like they might open popups but don't (e.g., JS intercepted the click)
           // The click still executed successfully
-          return { success: true, method: 'playwright-aria-ref' };
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref', dialogMessage };
         }
       } else {
         //  Add options to prevent scrolling issues
@@ -684,16 +699,19 @@ export class HybridBrowserSession {
           }
 
           if (diffSnapshot && diffSnapshot.trim() !== '') {
-            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+            page.off('dialog', dialogHandler);
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot, dialogMessage };
           }
         }
 
-        return { success: true, method: 'playwright-aria-ref' };
+        page.off('dialog', dialogHandler);
+        return { success: true, method: 'playwright-aria-ref', dialogMessage };
       }
 
     } catch (error) {
+      page.off('dialog', dialogHandler);
       console.error('[performClick] Exception during click for ref: %s', ref, error);
-      return { success: false, error: `Click failed with exception: ${error}` };
+      return { success: false, error: `Click failed with exception: ${error}`, dialogMessage };
     }
   }
 
@@ -1297,9 +1315,12 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
 
-          // Capture diff snapshot if present
-          if (clickResult.diffSnapshot) {
-            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          // Capture diff snapshot and dialog message if present
+          if (clickResult.diffSnapshot || clickResult.dialogMessage) {
+            actionDetails = {
+              ...(clickResult.diffSnapshot && { diffSnapshot: clickResult.diffSnapshot }),
+              ...(clickResult.dialogMessage && { dialogMessage: clickResult.dialogMessage })
+            };
           }
 
           actionExecutionTime = Date.now() - clickStart;
