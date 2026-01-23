@@ -535,6 +535,7 @@ class ModelType(UnifiedModelType, Enum):
     MINIMAX_M2_1 = "MiniMax-M2.1"
     MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
+    MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
     # AtlasCloud models
     ATLASCLOUD_GPT_OSS_120B = "openai/gpt-oss-120b"
@@ -1646,6 +1647,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
+            ModelType.MINIMAX_M2_STABLE,
         }:
             return 204_800
 

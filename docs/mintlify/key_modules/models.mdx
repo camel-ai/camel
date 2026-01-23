@@ -52,7 +52,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
 | **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview<br/>ernie-4.5-turbo-128k, ernie-4.5-turbo-32k<br/>deepseek-v3, deepseek-r1, qwen3-235b-a22b |
-| **MiniMax**      | MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2 |
+| **MiniMax**      | MiniMax-M2.1, MiniMax-M2.1-lightning, MiniMax-M2, MiniMax-M2-Stable |
 | **AtlasCloud**   | openai/gpt-oss-120b, zai-org/glm-4-7 |
 
 
