@@ -19,7 +19,7 @@ import hmac
 import json
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypedDict
 
 from camel.auth.base import (
     AuthenticationError,
@@ -80,15 +80,19 @@ class SlackAuth(AuthenticationProvider, WebhookAuth):
             self.signing_secret or self.api_token or self.bot_token
         )
 
+    class SlackRequestData(TypedDict, total=False):
+        headers: Dict[str, str]
+        raw_body: bytes | str
+
     def authenticate(
-        self, request_data: Optional[Dict[str, Any]] = None
+        self, *, request_data: Optional['SlackRequestData'] = None
     ) -> bool:
         """Authenticate Slack webhook request or API access.
 
         Args:
-            request_data (Optional[Dict[str, Any]]): Request data for webhook
-            authentication.
-                If None, performs general authentication check.
+            request_data (Optional[SlackRequestData]): Request data for
+                webhook authentication. If None, performs general
+                authentication check.
 
         Returns:
             bool: True if authentication successful, False otherwise
