@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.84"
+version = "0.2.85a0"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -163,7 +163,7 @@ data_tools = [
     "pandas>=2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
-    "datacommons_pandas>=0.0.3,<0.0.4",
+    "datacommons_pandas>=0.0.4",
     "rouge>=1.0.1,<2",
     "aiosqlite>=0.20.0,<0.21",
     "stripe>=11.3.0,<12",
@@ -371,7 +371,7 @@ all = [
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
     "datacommons>=1.4.3,<2",
-    "datacommons_pandas>=0.0.3,<0.0.4",
+    "datacommons_pandas>=0.0.4",
     "tavily-python>=0.5.0,<0.6",
     "apify_client>=1.8.1,<2",
     "stripe>=11.3.0,<12",
