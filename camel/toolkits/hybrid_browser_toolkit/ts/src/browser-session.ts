@@ -624,28 +624,9 @@ export class HybridBrowserSession {
         (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
       );
 
-      //  Open ALL links in new tabs
-      // Check if this is a navigable link
-      const isNavigableLink = tagName === 'a' && href &&
-        !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
-        !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
-        href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
-        href !== browserConfig.anchorOnly; // Not just #
-
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
-
-
-      if (shouldOpenNewTab) {
-        //  Handle new tab opening
-        // If it's a link that doesn't naturally open in new tab, force it
-        if (isNavigableLink && !naturallyOpensNewTab) {
-          await element.evaluate((el, blankTarget) => {
-            if (el.tagName.toLowerCase() === 'a') {
-              el.setAttribute('target', blankTarget);
-            }
-          }, browserConfig.blankTarget);
-        }
-
+      // Only open new tab if element naturally opens one (has target="_blank" or window.open)
+      // Do NOT force all links to open in new tabs
+      if (naturallyOpensNewTab) {
         // Set up popup listener before clicking
         const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
 
@@ -675,6 +656,9 @@ export class HybridBrowserSession {
 
           return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
         } catch (popupError) {
+          // Popup didn't open within timeout - this is expected for elements that
+          // look like they might open popups but don't (e.g., JS intercepted the click)
+          // The click still executed successfully
           return { success: true, method: 'playwright-aria-ref' };
         }
       } else {
