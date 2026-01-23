@@ -569,11 +569,9 @@ export class HybridBrowserSession {
   private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string; dialogMessage?: string }> {
     // Track dialog (alert/confirm/prompt) that may appear during click
     let dialogMessage: string | undefined;
-    let dialogHandled = false;
 
     const dialogHandler = (dialog: any) => {
       dialogMessage = dialog.message();
-      dialogHandled = true;
       // Auto-accept the dialog to prevent blocking
       dialog.accept().catch(() => {});
     };
@@ -593,6 +591,7 @@ export class HybridBrowserSession {
       const exists = await element.count() > 0;
 
       if (!exists) {
+        page.off('dialog', dialogHandler);
         return { success: false, error: `Element with ref ${ref} not found` };
       }
 
