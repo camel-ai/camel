@@ -84,15 +84,15 @@ def test_moonshot_model_inject_reasoning_content():
     ]
 
     # Set the last reasoning content
-    model._last_reasoning_content = "This is my reasoning"
+    model._last_reasoning = "This is my reasoning"
 
     # Inject reasoning content
-    processed = model._inject_reasoning_content(messages)
+    processed = model._inject_reasoning(messages)
 
     # Check that reasoning_content was injected
     assert processed[1].get("reasoning_content") == "This is my reasoning"
-    # Check that _last_reasoning_content was cleared
-    assert model._last_reasoning_content is None
+    # Check that _last_reasoning was cleared
+    assert model._last_reasoning is None
 
 
 @pytest.mark.model_backend
@@ -109,13 +109,13 @@ def test_moonshot_model_inject_reasoning_content_disabled():
         },
     ]
 
-    model._last_reasoning_content = "This is my reasoning"
-    processed = model._inject_reasoning_content(messages)
+    model._last_reasoning = "This is my reasoning"
+    processed = model._inject_reasoning(messages)
 
     # Should return original messages unchanged
     assert processed == messages
-    # reasoning_content should not be cleared when thinking is disabled
-    assert model._last_reasoning_content == "This is my reasoning"
+    # reasoning content should not be cleared when thinking is disabled
+    assert model._last_reasoning == "This is my reasoning"
 
 
 @pytest.mark.model_backend
@@ -131,7 +131,7 @@ def test_moonshot_model_extract_reasoning_content():
     mock_choice.message = mock_message
     mock_response.choices = [mock_choice]
 
-    result = model._extract_reasoning_content(mock_response)
+    result = model._extract_reasoning(mock_response)
     assert result == "Extracted reasoning"
 
 
@@ -147,5 +147,5 @@ def test_moonshot_model_extract_reasoning_content_none():
     mock_choice.message = mock_message
     mock_response.choices = [mock_choice]
 
-    result = model._extract_reasoning_content(mock_response)
+    result = model._extract_reasoning(mock_response)
     assert result is None

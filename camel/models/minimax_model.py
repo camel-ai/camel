@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from camel.configs import MinimaxConfig
 from camel.messages import OpenAIMessage
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
@@ -27,7 +28,7 @@ from camel.utils import (
 )
 
 
-class MinimaxModel(OpenAICompatibleModel):
+class MinimaxModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""LLM API served by Minimax in a unified OpenAICompatibleModel
     interface.
 
@@ -55,6 +56,9 @@ class MinimaxModel(OpenAICompatibleModel):
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
+
+    # Minimax uses "reasoning_details" instead of "reasoning_content"
+    _reasoning_field = "reasoning_details"
 
     @api_keys_required([("api_key", "MINIMAX_API_KEY")])
     def __init__(
@@ -85,17 +89,34 @@ class MinimaxModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-        # Store the last reasoning_details from model response for
-        # interleaved thinking support (MiniMax M2 models)
-        self._last_reasoning_details: Optional[Any] = None
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
 
-    def _is_thinking_enabled(self) -> bool:
-        r"""Check if interleaved thinking mode is enabled.
+    def _prepare_thinking_config(
+        self,
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        r"""Prepare the request config for thinking-enabled requests.
+
+        Overrides base method to add reasoning_split=True to extra_body
+        when interleaved thinking is enabled.
+
+        Args:
+            config: The request configuration dictionary.
 
         Returns:
-            bool: True if interleaved_thinking is enabled in the model config.
+            The modified configuration dictionary.
         """
-        return bool(self.model_config_dict.get("interleaved_thinking", False))
+        config = super()._prepare_thinking_config(config)
+
+        # Add reasoning_split to extra_body when interleaved thinking is
+        # enabled
+        if self._is_thinking_enabled():
+            extra_body = config.get("extra_body", {})
+            extra_body["reasoning_split"] = True
+            config["extra_body"] = extra_body
+
+        return config
 
     def _prepare_request_config(
         self,
@@ -108,80 +129,7 @@ class MinimaxModel(OpenAICompatibleModel):
         2. Add reasoning_split=True to extra_body when thinking is enabled
         """
         request_config = super()._prepare_request_config(tools)
-        request_config.pop("interleaved_thinking", None)
-
-        # Add reasoning_split to extra_body when interleaved thinking is
-        # enabled
-        if self._is_thinking_enabled():
-            extra_body = request_config.get("extra_body", {})
-            extra_body["reasoning_split"] = True
-            request_config["extra_body"] = extra_body
-
-        return request_config
-
-    def _inject_reasoning_details(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> List[OpenAIMessage]:
-        r"""Inject the last reasoning_details into assistant messages.
-
-        For MiniMax M2 models with interleaved thinking enabled,
-        the reasoning_details from the model response needs to be passed back
-        in subsequent requests for proper context management.
-
-        Args:
-            messages: The original messages list.
-
-        Returns:
-            Messages with reasoning_details added to the last assistant
-            message that has tool_calls.
-        """
-        if not self._last_reasoning_details or not self._is_thinking_enabled():
-            return messages
-
-        # Find the last assistant message with tool_calls and inject
-        # reasoning_details
-        processed: List[OpenAIMessage] = []
-        reasoning_injected = False
-
-        for msg in reversed(messages):
-            if (
-                not reasoning_injected
-                and isinstance(msg, dict)
-                and msg.get("role") == "assistant"
-                and msg.get("tool_calls")
-                and "reasoning_details" not in msg
-            ):
-                # Inject reasoning_details into this message
-                new_msg = dict(msg)
-                new_msg["reasoning_details"] = self._last_reasoning_details
-                processed.append(new_msg)  # type: ignore[arg-type]
-                reasoning_injected = True
-            else:
-                processed.append(msg)
-
-        # Only clear after successful injection
-        if reasoning_injected:
-            self._last_reasoning_details = None
-
-        return list(reversed(processed))
-
-    def _extract_reasoning_details(
-        self, response: ChatCompletion
-    ) -> Optional[Any]:
-        r"""Extract reasoning_details from the model response.
-
-        Args:
-            response: The model response.
-
-        Returns:
-            The reasoning_details if available, None otherwise.
-        """
-        if response.choices:
-            return getattr(
-                response.choices[0].message, "reasoning_details", None
-            )
-        return None
+        return self._prepare_thinking_config(request_config)
 
     def run(
         self,
@@ -204,18 +152,16 @@ class MinimaxModel(OpenAICompatibleModel):
             ChatCompletion in the non-stream mode, or
             Stream[ChatCompletionChunk] in the stream mode.
         """
-        # Inject reasoning_details from previous response if thinking is
+        # Inject reasoning content from previous response if thinking is
         # enabled
-        processed_messages = self._inject_reasoning_details(messages)
+        processed_messages = self._inject_reasoning(messages)
 
         # Call parent's run
         response = super().run(processed_messages, response_format, tools)
 
-        # Extract and store reasoning_details for next request
+        # Extract and store reasoning content for next request
         if isinstance(response, ChatCompletion):
-            self._last_reasoning_details = self._extract_reasoning_details(
-                response
-            )
+            self._last_reasoning = self._extract_reasoning(response)
 
         return response
 
@@ -240,19 +186,17 @@ class MinimaxModel(OpenAICompatibleModel):
             ChatCompletion in the non-stream mode, or
             AsyncStream[ChatCompletionChunk] in the stream mode.
         """
-        # Inject reasoning_details from previous response if thinking is
+        # Inject reasoning content from previous response if thinking is
         # enabled
-        processed_messages = self._inject_reasoning_details(messages)
+        processed_messages = self._inject_reasoning(messages)
 
         # Call parent's arun
         response = await super().arun(
             processed_messages, response_format, tools
         )
 
-        # Extract and store reasoning_details for next request
+        # Extract and store reasoning content for next request
         if isinstance(response, ChatCompletion):
-            self._last_reasoning_details = self._extract_reasoning_details(
-                response
-            )
+            self._last_reasoning = self._extract_reasoning(response)
 
         return response

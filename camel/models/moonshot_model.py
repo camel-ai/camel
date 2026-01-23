@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from camel.configs import MoonshotConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
+from camel.models._interleaved_thinking_mixin import InterleavedThinkingMixin
 from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -50,7 +51,7 @@ else:
     from camel.utils import observe
 
 
-class MoonshotModel(OpenAICompatibleModel):
+class MoonshotModel(InterleavedThinkingMixin, OpenAICompatibleModel):
     r"""Moonshot API in a unified OpenAICompatibleModel interface.
 
     Args:
@@ -112,81 +113,8 @@ class MoonshotModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-        # Store the last reasoning_content from model response for
-        # interleaved thinking support (Kimi K2 thinking models)
-        self._last_reasoning_content: Optional[str] = None
-
-    def _is_thinking_enabled(self) -> bool:
-        r"""Check if interleaved thinking mode is enabled.
-
-        Returns:
-            bool: True if interleaved_thinking is enabled in the model config.
-        """
-        return bool(self.model_config_dict.get("interleaved_thinking", False))
-
-    def _inject_reasoning_content(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> List[OpenAIMessage]:
-        r"""Inject the last reasoning_content into assistant messages.
-
-        For Kimi K2 thinking models with interleaved thinking enabled,
-        the reasoning_content from the model response needs to be passed back
-        in subsequent requests for proper context management.
-
-        Args:
-            messages: The original messages list.
-
-        Returns:
-            Messages with reasoning_content added to the last assistant
-            message that has tool_calls.
-        """
-        if not self._last_reasoning_content or not self._is_thinking_enabled():
-            return messages
-
-        # Find the last assistant message with tool_calls and inject
-        # reasoning_content
-        processed: List[OpenAIMessage] = []
-        reasoning_injected = False
-
-        for msg in reversed(messages):
-            if (
-                not reasoning_injected
-                and isinstance(msg, dict)
-                and msg.get("role") == "assistant"
-                and msg.get("tool_calls")
-                and "reasoning_content" not in msg
-            ):
-                # Inject reasoning_content into this message
-                new_msg = dict(msg)
-                new_msg["reasoning_content"] = self._last_reasoning_content
-                processed.append(new_msg)  # type: ignore[arg-type]
-                reasoning_injected = True
-            else:
-                processed.append(msg)
-
-        # Only clear after successful injection
-        if reasoning_injected:
-            self._last_reasoning_content = None
-
-        return list(reversed(processed))
-
-    def _extract_reasoning_content(
-        self, response: ChatCompletion
-    ) -> Optional[str]:
-        r"""Extract reasoning_content from the model response.
-
-        Args:
-            response: The model response.
-
-        Returns:
-            The reasoning_content if available, None otherwise.
-        """
-        if response.choices:
-            return getattr(
-                response.choices[0].message, "reasoning_content", None
-            )
-        return None
+        # Initialize interleaved thinking state
+        self._init_thinking_state()
 
     def _prepare_request(
         self,
@@ -401,18 +329,16 @@ class MoonshotModel(OpenAICompatibleModel):
             ChatCompletion in the non-stream mode, or
             Stream[ChatCompletionChunk] in the stream mode.
         """
-        # Inject reasoning_content from previous response if thinking is
+        # Inject reasoning content from previous response if thinking is
         # enabled
-        processed_messages = self._inject_reasoning_content(messages)
+        processed_messages = self._inject_reasoning(messages)
 
         # Call parent's run
         response = super().run(processed_messages, response_format, tools)
 
-        # Extract and store reasoning_content for next request
+        # Extract and store reasoning content for next request
         if isinstance(response, ChatCompletion):
-            self._last_reasoning_content = self._extract_reasoning_content(
-                response
-            )
+            self._last_reasoning = self._extract_reasoning(response)
 
         return response
 
@@ -437,19 +363,17 @@ class MoonshotModel(OpenAICompatibleModel):
             ChatCompletion in the non-stream mode, or
             AsyncStream[ChatCompletionChunk] in the stream mode.
         """
-        # Inject reasoning_content from previous response if thinking is
+        # Inject reasoning content from previous response if thinking is
         # enabled
-        processed_messages = self._inject_reasoning_content(messages)
+        processed_messages = self._inject_reasoning(messages)
 
         # Call parent's arun
         response = await super().arun(
             processed_messages, response_format, tools
         )
 
-        # Extract and store reasoning_content for next request
+        # Extract and store reasoning content for next request
         if isinstance(response, ChatCompletion):
-            self._last_reasoning_content = self._extract_reasoning_content(
-                response
-            )
+            self._last_reasoning = self._extract_reasoning(response)
 
         return response
