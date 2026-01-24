@@ -642,6 +642,7 @@ module = [
     "ffmpeg",
     "yt_dlp",
     "datasets",
+    "datacommons_client",
     "pandas",
     "tree-sitter-python",
     "tree-sitter",

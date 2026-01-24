@@ -891,7 +891,6 @@ source = { editable = "." }
 dependencies = [
     { name = "astor" },
     { name = "colorama" },
-    { name = "datacommons-client", extra = ["pandas"] },
     { name = "docstring-parser" },
     { name = "google-search-results" },
     { name = "httpx" },
@@ -924,6 +923,7 @@ all = [
     { name = "cohere" },
     { name = "crawl4ai" },
     { name = "dappier" },
+    { name = "datacommons-client", extra = ["pandas"] },
     { name = "datasets" },
     { name = "daytona-sdk" },
     { name = "ddgs" },
@@ -1070,6 +1070,7 @@ communication-tools = [
 ]
 data-tools = [
     { name = "aiosqlite" },
+    { name = "datacommons-client", extra = ["pandas"] },
     { name = "math-verify" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1401,7 +1402,8 @@ requires-dist = [
     { name = "crawl4ai", marker = "extra == 'rag'", specifier = ">=0.3.745" },
     { name = "dappier", marker = "extra == 'all'", specifier = ">=0.3.3,<0.4" },
     { name = "dappier", marker = "extra == 'web-tools'", specifier = ">=0.3.3,<0.4" },
-    { name = "datacommons-client", extras = ["pandas"], specifier = ">=2.1.5" },
+    { name = "datacommons-client", extras = ["pandas"], marker = "extra == 'all'", specifier = ">=2.1.5" },
+    { name = "datacommons-client", extras = ["pandas"], marker = "extra == 'data-tools'", specifier = ">=2.1.5" },
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'eigent'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },

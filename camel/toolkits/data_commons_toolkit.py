@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import MCPServer, api_keys_required
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ class DataCommonsToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         from datacommons_client import DataCommonsClient
+
         datacommons_api_key = os.environ.get("DATACOMMONS_API_KEY")
 
         self.client = DataCommonsClient(datacommons_api_key)
@@ -80,7 +81,7 @@ class DataCommonsToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"An error occurred: {e!s}")
             return None
-    
+
     def get_triples_incoming(
         self, dcids: Union[str, List[str]]
     ) -> Optional[Dict[str, List[tuple]]]:
@@ -109,17 +110,17 @@ class DataCommonsToolkit(BaseToolkit):
         date: str,
         entity_dcids: Union[str, List[str]],
         variable_dcids: Union[str, List[str]],
-        select: Optional[List[str]] = ["date", "variable", "entity", "value"]
     ) -> Optional[Dict[str, Any]]:
         r"""Retrieve statistical time series for a place.
 
         Args:
-            date (str): The date option for the observations. 
+            date (str): The date option for the observations.
             Use 'all' for all dates, 'latest' for the most recent data,
             or provide a date as a string (e.g., "2026")
-            entity_dcids (Union[str, List[str]]): One or more entity IDs to filter the data
-            variable_dcids (Union[str, List[str]]): The variable(s) to fetch observations for. This can be a single variable ID or a list of IDs.
-            select (Optional[list[str]]): Fields to include in the response. If not provided, defaults to ["date", "variable", "entity", "value"].
+            entity_dcids (Union[str, List[str]]): entity IDs to filter the data
+            variable_dcids (Union[str, List[str]]):
+            The variable(s) to fetch observations for.
+            This can be a single variable ID or a list of IDs.
 
         Returns:
             Optional[Dict[str, Any]]: A dictionary containing the statistical
@@ -127,7 +128,9 @@ class DataCommonsToolkit(BaseToolkit):
         """
 
         try:
-            result = self.client.observation.fetch_observations_by_entity_dcid(date, entity_dcids, variable_dcids, select)
+            result = self.client.observation.fetch_observations_by_entity_dcid(
+                date, entity_dcids, variable_dcids
+            )
             return result.byVariable
         except Exception as e:
             logger.error(
@@ -173,8 +176,10 @@ class DataCommonsToolkit(BaseToolkit):
             dcids (Union[str, List[str]]): A single DCID or a list of DCIDs
                 to query.
             properties (str): The property to analyze.
-            constraints : Optional[str]: Additional constraints for the query. Defaults to None.
-            out (bool, optional): Whether to fetch outgoing properties. Defaults to True
+            constraints (Optional[str]): Additional constraints for the query.
+            Defaults to None.
+            out (bool, optional): Whether to fetch outgoing properties.
+            Defaults to True
 
         Returns:
             Optional[Dict[str, Any]]: Analysis results for each DCID if
@@ -182,7 +187,9 @@ class DataCommonsToolkit(BaseToolkit):
         """
 
         try:
-            result = self.client.node.fetch_property_values(dcids, properties, constraints, out)
+            result = self.client.node.fetch_property_values(
+                dcids, properties, constraints, out
+            )
             return result.data
 
         except Exception as e:
@@ -192,15 +199,16 @@ class DataCommonsToolkit(BaseToolkit):
             return None
 
     def get_places_in(
-        self, place_dcids: Union[str, List[str]], 
-        children_type: Optional[str] = None
+        self,
+        place_dcids: Union[str, List[str]],
+        children_type: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         r"""Retrieves places within a given place type.
 
         Args:
             dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
-            children_type : (Optional[str]): 
-            The type of the child entities to fetch (e.g., 'Country', 'State', 'IPCCPlace_50'). 
+            children_type : (Optional[str]):
+            The type of the child entities to fetch.
             If None, fetches all child types.
 
         Returns:
@@ -210,7 +218,9 @@ class DataCommonsToolkit(BaseToolkit):
         """
 
         try:
-            result = self.client.node.fetch_place_children(place_dcids, children_type)
+            result = self.client.node.fetch_place_children(
+                place_dcids, children_type
+            )
             return result
 
         except Exception as e:
