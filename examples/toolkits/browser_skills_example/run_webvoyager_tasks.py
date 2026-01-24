@@ -186,7 +186,7 @@ class WebVoyagerRunner:
         self,
         task: Dict[str, Any],
         attempt: int = 1,
-        previous_suggestions: str = ""
+        previous_suggestions: str = "",
     ) -> Dict[str, Any]:
         """
         Run a single task with the subtask agent.
@@ -314,14 +314,42 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Could not capture final evidence: {e}")
 
-            # Close browser completely after each task
-            print("\n🧹 Closing browser...")
+            # Clean up tabs: close all tabs and keep only one blank page
+            print("\n🧹 Cleaning up browser tabs...")
             if agent.toolkit:
                 try:
-                    await agent.toolkit.browser_close()
-                    print("✓ Browser closed successfully")
+                    # Create a new blank page (this opens in a new tab)
+                    await agent.toolkit.browser_visit_page("about:blank")
+
+                    # Get all tabs
+                    tab_info = await agent.toolkit.browser_get_tab_info()
+                    tabs = tab_info.get("tabs", [])
+
+                    # Find the current tab (should be the blank page we just created)
+                    current_tab_id = None
+                    for tab in tabs:
+                        if tab.get("is_current"):
+                            current_tab_id = tab.get("tab_id")
+                            break
+
+                    # Close all other tabs
+                    closed_count = 0
+                    for tab in tabs:
+                        tab_id = tab.get("tab_id")
+                        if tab_id and tab_id != current_tab_id:
+                            try:
+                                await agent.toolkit.browser_close_tab(
+                                    tab_id=tab_id
+                                )
+                                closed_count += 1
+                            except Exception as e:
+                                print(f"⚠️  Failed to close tab {tab_id}: {e}")
+
+                    print(
+                        f"✓ Browser tabs cleaned up: closed {closed_count} tabs, only blank page remains"
+                    )
                 except Exception as e:
-                    print(f"⚠️  Browser close failed: {e}")
+                    print(f"⚠️  Browser tabs cleanup failed: {e}")
 
             # Get agent's response content
             agent_response = "Task completed."
@@ -548,7 +576,29 @@ class WebVoyagerRunner:
                 else None,
             }
         finally:
-            agent.toolkit.browser_close_tab()
+            # Ensure browser tabs are cleaned up even on exception
+            if agent.toolkit:
+                try:
+                    # Try to clean up tabs in finally block as well
+                    await agent.toolkit.browser_visit_page("about:blank")
+                    tab_info = await agent.toolkit.browser_get_tab_info()
+                    tabs = tab_info.get("tabs", [])
+                    current_tab_id = None
+                    for tab in tabs:
+                        if tab.get("is_current"):
+                            current_tab_id = tab.get("tab_id")
+                            break
+                    for tab in tabs:
+                        tab_id = tab.get("tab_id")
+                        if tab_id and tab_id != current_tab_id:
+                            try:
+                                await agent.toolkit.browser_close_tab(
+                                    tab_id=tab_id
+                                )
+                            except Exception:
+                                pass
+                except Exception:
+                    pass  # Best effort cleanup
 
     async def run_task_with_retries(
         self, task: Dict[str, Any]
