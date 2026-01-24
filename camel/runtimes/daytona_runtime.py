@@ -16,7 +16,7 @@ import inspect
 import json
 import os
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -25,6 +25,12 @@ from camel.runtimes import BaseRuntime
 from camel.toolkits.function_tool import FunctionTool
 
 logger = get_logger(__name__)
+
+_DEFAULT_IMAGES: Dict[str, str] = {
+    "python": "python:3.11",
+    "typescript": "node:20",
+    "javascript": "node:20",
+}
 
 
 class DaytonaRuntime(BaseRuntime):
@@ -39,15 +45,22 @@ class DaytonaRuntime(BaseRuntime):
             provided, it will try to use the DAYTONA_API_URL environment
             variable. If none is provided, it will use "http://localhost:8000".
             (default: :obj:`None`)
-        language (Optional[str]): The programming language for the sandbox.
+        language (Optional[Literal["python", "typescript", "javascript"]]):
+            The programming language for the sandbox.
             (default: :obj:`"python"`)
+        image (Optional[str]): The Docker image to use for the sandbox.
+            If not provided, a default image based on the language will be
+            used. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
-        language: Optional[str] = "python",
+        language: Optional[
+            Literal["python", "typescript", "javascript"]
+        ] = "python",
+        image: Optional[str] = None,
     ):
         from daytona_sdk import Daytona, DaytonaConfig, Sandbox
 
@@ -55,6 +68,9 @@ class DaytonaRuntime(BaseRuntime):
         self.api_key = api_key or os.environ.get('DAYTONA_API_KEY')
         self.api_url = api_url or os.environ.get('DAYTONA_API_URL')
         self.language = language
+        self.image = image or _DEFAULT_IMAGES.get(
+            language or "python", "python:3.11"
+        )
         self.config = DaytonaConfig(api_key=self.api_key, api_url=self.api_url)
         self.daytona = Daytona(self.config)
         self.sandbox: Optional[Sandbox] = None
@@ -66,10 +82,12 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
-        from daytona_sdk import CreateSandboxBaseParams
+        from daytona_sdk import CreateSandboxFromImageParams
 
         try:
-            params = CreateSandboxBaseParams(language=self.language)
+            params = CreateSandboxFromImageParams(
+                image=self.image, language=self.language
+            )
             self.sandbox = self.daytona.create(params)
             if self.sandbox is None:
                 raise RuntimeError("Failed to create sandbox.")
