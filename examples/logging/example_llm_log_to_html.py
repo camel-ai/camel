@@ -22,7 +22,7 @@ from camel.configs import ChatGPTConfig
 from camel.logging.prompt_logger import PromptLogger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, ModelType, OpenAIBackendRole
 
 # Load environment variables
 load_dotenv()
@@ -48,32 +48,41 @@ def setup_prompt_logging():
     def logged_get_model_response(
         self,
         openai_messages,
-        num_tokens,
         current_iteration=0,
         response_format=None,
         tool_schemas=None,
         prev_num_openai_messages=0,
     ):
-        r"""Wrapper that logs prompts before calling the original method."""
-        # Log the prompt if logger is available
-        if prompt_logger:
-            model_info = f"{self.model_backend.model_type}"
-            prompt_logger.log_prompt(
-                openai_messages,
-                model_info=model_info,
-                iteration=current_iteration,
-            )
-
-        # Call the original method
-        return original_get_model_response(
+        r"""Wrapper that logs prompts and responses."""
+        # Call the original method first to get the response
+        response = original_get_model_response(
             self,
             openai_messages,
-            num_tokens,
             current_iteration,
             response_format,
             tool_schemas,
             prev_num_openai_messages,
         )
+
+        # Log the full conversation including the response
+        if prompt_logger and response.output_messages:
+            # Create a copy of messages and add the assistant's response
+            full_messages = list(openai_messages)
+
+            # Add assistant response to the messages
+            assistant_msg = response.output_messages[0].to_openai_message(
+                role_at_backend=OpenAIBackendRole.ASSISTANT
+            )
+            full_messages.append(assistant_msg)
+
+            model_info = f"{self.model_backend.model_type}"
+            prompt_logger.log_prompt(
+                full_messages,
+                model_info=model_info,
+                iteration=current_iteration,
+            )
+
+        return response
 
     # Apply the patch
     ChatAgent._get_model_response = logged_get_model_response
