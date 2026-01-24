@@ -54,7 +54,6 @@ from openai import (
     RateLimitError,
     Stream,
 )
-from openai.types.chat import ChatCompletion
 from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
@@ -4300,12 +4299,11 @@ class ChatAgent(BaseAgent):
                     accumulated_tool_calls.clear()
                     break
             elif (
-                hasattr(response, '__iter__')
-                and hasattr(response, '__enter__')
-                and not hasattr(response, 'get_final_completion')
-                and not isinstance(response, ChatCompletion)
+                hasattr(response, '__enter__')
+                and not hasattr(response, '__iter__')
             ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5280,13 +5278,12 @@ class ChatAgent(BaseAgent):
                     accumulated_tool_calls.clear()
                     break
             elif (
-                hasattr(response, '__aiter__')
-                and hasattr(response, '__aenter__')
-                and not hasattr(response, 'get_final_completion')
-                and not isinstance(response, ChatCompletion)
+                hasattr(response, '__aenter__')
+                and not hasattr(response, '__aiter__')
             ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
