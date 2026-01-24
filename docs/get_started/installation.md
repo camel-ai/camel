@@ -52,7 +52,7 @@ CAMEL-AI supports multiple installation methods to suit different development wo
         - `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
         - `media_tools`: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.
         - `communication_tools`: Slack, Discord, Telegram, GitHub, Reddit, Notion etc.
-        - `data_tools`: Pandas, TextBlob, DataCommons, OpenBB, Stripe etc.
+        - `data_tools`: Pandas, TextBlob, OpenBB, Stripe etc.
         - `research_tools`: arXiv, Google Scholar etc.
         - `dev_tools`: Docker, Jupyter, Tree-sitter, Code Interpreter etc.
 

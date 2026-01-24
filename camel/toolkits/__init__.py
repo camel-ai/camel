@@ -69,7 +69,6 @@ from .file_toolkit import FileToolkit, FileWriteToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
-from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .searxng_toolkit import SearxNGToolkit
@@ -157,7 +156,6 @@ __all__ = [
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
-    'DataCommonsToolkit',
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
     'SearxNGToolkit',
