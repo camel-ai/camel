@@ -28,6 +28,7 @@ import asyncio
 import json
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -202,6 +203,10 @@ class WebVoyagerRunner:
         task_id = task.get('id', 'unknown')
         task_description = task.get('ques', '')
 
+        # Record task start time
+        task_start_time = time.time()
+        task_start_iso = get_timestamp_iso()
+
         print(f"\n{'=' * 80}")
         print(
             f"RUNNING TASK: {task_id} (Attempt {attempt}/{self.max_retries + 1})"
@@ -244,6 +249,7 @@ class WebVoyagerRunner:
             session_log_dir=session_log_dir,
             start_url=start_url,
             step_timeout=self.step_timeout,
+            step_timeout_max_retries=10,  # Retry 10 times on step timeout
             tool_execution_timeout=self.tool_execution_timeout,
         )
 
@@ -404,6 +410,10 @@ class WebVoyagerRunner:
                     "reason": "task_not_successful",
                 }
 
+            # Calculate task duration
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
+
             result = {
                 'task_id': task_id,
                 'task_description': task_description,
@@ -416,7 +426,11 @@ class WebVoyagerRunner:
                 'session_dir': str(session_dir) if session_dir else None,
                 'summary_path': str(summary_path) if summary_path else None,
                 'subtask_analysis': subtask_analysis,
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
+            print(f"\n⏱️  Task completed in {task_duration_seconds:.1f}s")
 
             # Update summary after verification/analysis
             if session_dir:
@@ -536,7 +550,10 @@ class WebVoyagerRunner:
             return result
 
         except asyncio.TimeoutError as e:
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
             print(f"⏱️  Task execution timeout: {e}")
+            print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
 
             traceback.print_exc()
@@ -552,10 +569,16 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
 
         except Exception as e:
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
             print(f"❌ Task execution failed: {e}")
+            print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
 
             traceback.print_exc()
@@ -570,6 +593,9 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
         finally:
             # Save communication log and whole memory
@@ -830,6 +856,23 @@ class WebVoyagerRunner:
         print(
             f"Tasks succeeded after retry: {succeeded_after_retry}/{tasks_with_retries if tasks_with_retries > 0 else 0}"
         )
+
+        # Time statistics
+        durations = [
+            r.get('duration_seconds', 0)
+            for r in self.results
+            if r.get('duration_seconds') is not None
+        ]
+        if durations:
+            total_time = sum(durations)
+            avg_time = total_time / len(durations)
+            min_time = min(durations)
+            max_time = max(durations)
+            print("\n⏱️  Time Statistics:")
+            print(f"Total time: {total_time:.1f}s ({total_time / 60:.1f}min)")
+            print(f"Average time per task: {avg_time:.1f}s")
+            print(f"Min time: {min_time:.1f}s")
+            print(f"Max time: {max_time:.1f}s")
 
         # Show failed tasks
         if failed > 0:

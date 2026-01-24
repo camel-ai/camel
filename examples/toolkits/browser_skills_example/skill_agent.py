@@ -466,6 +466,7 @@ class SkillsAgent:
         cdp_port: int = 9223,
         use_agent_recovery: bool = True,
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
+        step_timeout_max_retries: int = 10,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
     ):
         """Initialize the SkillsAgent.
@@ -479,6 +480,7 @@ class SkillsAgent:
             website: Website name (e.g., "Allrecipes", "Google Flights")
             start_url: Optional URL to navigate to before executing tasks
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
+            step_timeout_max_retries: Maximum retry attempts when a step times out. (default: 10)
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
         """
         self.skills_dir = Path(skills_dir)
@@ -491,6 +493,7 @@ class SkillsAgent:
             )
         self.start_url = start_url.strip() if start_url else None
         self.step_timeout = step_timeout
+        self.step_timeout_max_retries = step_timeout_max_retries
         self.tool_execution_timeout = tool_execution_timeout
 
         # Load all subtask configurations from directory
@@ -590,7 +593,9 @@ class SkillsAgent:
             for subtask in all_subtasks:
                 skill_id = str(subtask.get("id", ""))
                 log_file = loader.skill_log_files.get(skill_id)
-                self.subtask_configs.append((log_file, {"subtasks": [subtask]}))
+                self.subtask_configs.append(
+                    (log_file, {"subtasks": [subtask]})
+                )
 
             # For backwards compatibility
             self.subtask_config = self.subtask_configs[0][1]
@@ -1039,6 +1044,7 @@ async def subtask_{subtask_func.subtask_id}():
             tools=all_tools,
             system_message=system_message,
             step_timeout=self.step_timeout,
+            step_timeout_max_retries=self.step_timeout_max_retries,
             tool_execution_timeout=self.tool_execution_timeout,
             response_terminators=[
                 ResponseWordsTerminator({self._TASK_DONE_TOKEN: 1})
@@ -1220,9 +1226,9 @@ async def subtask_{subtask_func.subtask_id}():
         if response.msgs:
             for msg in response.msgs:
                 content = msg.content or ""
-                communication_entry['response'] = (
-                    content.replace(self._TASK_DONE_TOKEN, "").strip()
-                )
+                communication_entry['response'] = content.replace(
+                    self._TASK_DONE_TOKEN, ""
+                ).strip()
 
                 # Extract tool calls from the message
                 if hasattr(msg, 'info') and msg.info:
