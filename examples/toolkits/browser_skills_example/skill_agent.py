@@ -70,9 +70,13 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
     "google flights": "\n".join(
         [
             "- Target site: Google Flights",
-            "- Enter origin/destination with city-level specificity, then press Enter to confirm",
-            "- For dates: click the date input first, type dates, press Enter to confirm and exit date picker",
-            "- If a Search button is visible, ensure required fields are filled and then click Search",
+            "- https://www.google.com/travel/flights/?hl=en-US use this link for the web to get the best experience",
+            "- All tasks are to be performed on Google Flights",
+            "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
+            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then Click Search to initiate the search.(Only works when all necessary information has been entered, and date selector is invisible).",
+            "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
+            "- The date is for days in 2026 unless otherwise specified.",
+            "- Before extract information, you need to click the search button to get the results after entering all the details. Do not assume that the results are already displayed after entering the information.",
         ]
     ),
     "amazon": "\n".join(
@@ -129,6 +133,7 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
             "- Start by calling browser_get_page_snapshot to see where you are",
             "- Use the site search and filters (level, language, duration) when helpful",
             "- Open the course page before extracting details (instructor, syllabus, ratings)",
+            "- If there are cookies/privacy popups, close them before proceeding",
         ]
     ),
     "espn": "\n".join(
@@ -1710,6 +1715,12 @@ async def subtask_{subtask_func.subtask_id}():
             import traceback
 
             traceback.print_exc()
+
+    def save_memory(self, path: Path | str | None = None):
+        """Save agent memory to a file (if applicable)."""
+        if not path:
+            path = self.session_log_dir / "agent_memory.json"
+        self.agent.save_memory(path)
 
 
 __all__ = ["SkillsAgent", "SubtaskFunction"]

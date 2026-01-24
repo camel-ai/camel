@@ -116,6 +116,7 @@ class WebVoyagerRunner:
         run_dir: Path | None = None,
         step_timeout: float | None = 180.0,
         tool_execution_timeout: float | None = 180.0,
+        auto_save_skills: bool = True,
     ):
         """
         Initialize the runner.
@@ -150,6 +151,7 @@ class WebVoyagerRunner:
             "generated_at": get_timestamp_iso(),
             "websites": {},
         }
+        self.auto_save_skills = auto_save_skills
 
     def _ensure_config_dir_exists(self):
         """
@@ -184,7 +186,7 @@ class WebVoyagerRunner:
         self,
         task: Dict[str, Any],
         attempt: int = 1,
-        previous_suggestions: str = "",
+        previous_suggestions: str = ""
     ) -> Dict[str, Any]:
         """
         Run a single task with the subtask agent.
@@ -267,8 +269,9 @@ class WebVoyagerRunner:
             # Get results
             session_dir = agent.session_log_dir
 
-            # Save communication log
+            # Save communication log and whole memory
             agent.save_communication_log()
+            agent.save_memory()
 
             # Write a first-pass summary (before subtask extraction), if possible
             summary_path = None
@@ -360,7 +363,7 @@ class WebVoyagerRunner:
                     subtask_analysis = analyze_with_agent(
                         session_folder=str(session_dir),
                         skills_dir=str(skills_dir),
-                        auto_save=True,
+                        auto_save=self.auto_save_skills,
                     )
                 except Exception as e:
                     print(f"⚠️  Subtask extraction failed: {e}")
@@ -544,6 +547,8 @@ class WebVoyagerRunner:
                 if session_log_dir is not None
                 else None,
             }
+        finally:
+            agent.toolkit.browser_close_tab()
 
     async def run_task_with_retries(
         self, task: Dict[str, Any]
@@ -880,6 +885,10 @@ async def main():
         default="",
         help="Write the raw per-attempt results JSON to this path.",
     )
+    parser.add_argument(
+        "--auto-save-skills",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
@@ -925,6 +934,7 @@ async def main():
         tool_execution_timeout=None
         if args.tool_timeout <= 0
         else args.tool_timeout,
+        auto_save_skills=args.auto_save_skills,
     )
 
     await runner.run_all_tasks(

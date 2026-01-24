@@ -17,9 +17,11 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
-DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
+DEFAULT_MODEL_TYPE: ModelType = "qwen-flash"
 
+# DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
+# DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
 def create_default_model():
     """Create the default model used by the example scripts."""
@@ -31,3 +33,10 @@ def create_default_model():
             "parallel_tool_calls": False,
         },
     )
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+    model = create_default_model()
+    reponse = model.run(messages=[{"role": "user", "content": "Do you support function calling?"}])
+    print(reponse)
