@@ -12,7 +12,6 @@ The script will automatically convert logs to HTML using the llm_log_to_html
 module from camel.logging.
 """
 
-import os
 import subprocess
 from pathlib import Path
 
@@ -23,7 +22,7 @@ from camel.configs import ChatGPTConfig
 from camel.logging.prompt_logger import PromptLogger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
 load_dotenv()
@@ -101,11 +100,8 @@ def example_simple_conversation():
     )
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type="gpt-5.1",
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        url=os.getenv("AZURE_OPENAI_BASE_URL"),
-        api_version=os.getenv("AZURE_API_VERSION"),
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig(temperature=0.7).as_dict(),
     )
 
@@ -135,11 +131,11 @@ def example_simple_conversation():
 
 
 def example_multi_turn_conversation():
-    r"""Example 3: Multi-turn conversation with real agent."""
+    r"""Example 2: Multi-turn conversation with real agent."""
     global prompt_logger
 
     print("=" * 70)
-    print("Example 3: Multi-turn Conversation")
+    print("Example 2: Multi-turn Conversation")
     print("=" * 70)
     print()
 
@@ -154,11 +150,8 @@ def example_multi_turn_conversation():
     )
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.AZURE,
-        model_type="gpt-5.1",
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        url=os.getenv("AZURE_OPENAI_BASE_URL"),
-        api_version=os.getenv("AZURE_API_VERSION"),
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig(temperature=0.7).as_dict(),
     )
 

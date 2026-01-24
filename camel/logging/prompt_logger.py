@@ -9,6 +9,7 @@ real-time HTML updates. Use llm_log_to_html.py to convert logs after execution.
 import json
 import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class PromptLogger:
@@ -32,14 +33,19 @@ class PromptLogger:
         >>> # python llm_log_to_html.py /path/to/llm_prompts.log
     """
 
-    def __init__(self, log_file_path):
+    def __init__(self, log_file_path: Optional[str] = None) -> None:
         self.log_file_path = log_file_path
         self.prompt_counter = 0
 
         # Ensure parent directory exists
         Path(log_file_path).parent.mkdir(parents=True, exist_ok=True)
 
-    def log_prompt(self, openai_messages, model_info="", iteration=0):
+    def log_prompt(
+        self,
+        openai_messages: List[Dict[str, Any]],
+        model_info: str = "",
+        iteration: int = 0,
+    ) -> int:
         r"""Log the prompt messages to file.
 
         This method appends a formatted prompt entry to the log file, including
@@ -79,7 +85,7 @@ class PromptLogger:
 
         return self.prompt_counter
 
-    def get_stats(self):
+    def get_stats(self) -> Dict[str, Any]:
         r"""Get statistics about the logged prompts.
 
         Returns:
