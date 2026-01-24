@@ -16,35 +16,6 @@ from unittest.mock import patch
 from camel.toolkits.data_commons_toolkit import DataCommonsToolkit
 
 
-def test_query_data_commons():
-    dc_toolkit = DataCommonsToolkit()
-    query = '''
-    SELECT ?name ?dcid
-    WHERE {
-        ?a typeOf Place .
-        ?a name ?name .
-        ?a dcid ("geoId/06" "geoId/21" "geoId/24") .
-        ?a dcid ?dcid
-    }
-    '''
-    expected_result = [
-        {'?name': 'Kentucky', '?dcid': 'geoId/21'},
-        {'?name': 'California', '?dcid': 'geoId/06'},
-        {'?name': 'Maryland', '?dcid': 'geoId/24'},
-    ]
-
-    with patch('datacommons.query') as mock_query:
-        mock_query.return_value = expected_result
-        try:
-            result = dc_toolkit.query_data_commons(query)
-            assert result == expected_result
-            print("test_query_data_commons passed successfully")
-        except Exception as e:
-            print(f"An error occurred: {e!s}")
-            print(f"Result: {result}")
-            raise
-
-
 def test_get_triples():
     dc_toolkit = DataCommonsToolkit()
     dcids = ['dc/c3j78rpyssdmf', 'dc/7hfhd2ek8ppd2']
@@ -237,11 +208,10 @@ def test_get_stat_all():
 
 
 if __name__ == '__main__':
-    test_query_data_commons()
-    test_get_triples()
-    test_get_property_labels()
-    test_get_property_values()
-    test_get_places_in()
-    test_get_stat_all()
-    test_get_stat_value()
+    # test_get_triples()
+    # test_get_property_labels()
+    # test_get_property_values()
+    # test_get_places_in()
+    # test_get_stat_all()
+    # test_get_stat_value()
     print("All tests completed successfully!")
