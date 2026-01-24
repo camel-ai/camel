@@ -13,16 +13,21 @@ module from camel.logging.
 """
 
 import subprocess
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.logging.prompt_logger import PromptLogger
+from camel.logging import (
+    disable_agent_logging,
+    enable_agent_logging,
+    get_logger,
+)
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, OpenAIBackendRole
+from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
 load_dotenv()
@@ -30,77 +35,20 @@ load_dotenv()
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent
 
-# Global logger instance
-prompt_logger = None
-
-
-def setup_prompt_logging():
-    r"""Set up automatic prompt logging by monkey-patching ChatAgent.
-
-    This function patches ChatAgent's _get_model_response method to
-    automatically log all LLM interactions to the PromptLogger.
-    """
-    global prompt_logger
-
-    # Store the original method
-    original_get_model_response = ChatAgent._get_model_response
-
-    def logged_get_model_response(
-        self,
-        openai_messages,
-        current_iteration=0,
-        response_format=None,
-        tool_schemas=None,
-        prev_num_openai_messages=0,
-    ):
-        r"""Wrapper that logs prompts and responses."""
-        # Call the original method first to get the response
-        response = original_get_model_response(
-            self,
-            openai_messages,
-            current_iteration,
-            response_format,
-            tool_schemas,
-            prev_num_openai_messages,
-        )
-
-        # Log the full conversation including the response
-        if prompt_logger and response.output_messages:
-            # Create a copy of messages and add the assistant's response
-            full_messages = list(openai_messages)
-
-            # Add assistant response to the messages
-            assistant_msg = response.output_messages[0].to_openai_message(
-                role_at_backend=OpenAIBackendRole.ASSISTANT
-            )
-            full_messages.append(assistant_msg)
-
-            model_info = f"{self.model_backend.model_type}"
-            prompt_logger.log_prompt(
-                full_messages,
-                model_info=model_info,
-                iteration=current_iteration,
-            )
-
-        return response
-
-    # Apply the patch
-    ChatAgent._get_model_response = logged_get_model_response
-    print("✅ ChatAgent patched for automatic prompt logging\n")
-
 
 def example_simple_conversation():
     r"""Example 1: Simple conversation with real ChatAgent."""
-    global prompt_logger
-
     print("=" * 70)
     print("Example 1: Simple Conversation with Real Agent")
     print("=" * 70)
     print()
 
-    # Initialize logger
+    # Disable any existing logging first
+    disable_agent_logging(verbose=False)
+
+    # Enable automatic logging for all agents
     log_path = SCRIPT_DIR / "example_simple_conversation.log"
-    prompt_logger = PromptLogger(str(log_path))
+    enable_agent_logging(str(log_path))
 
     # Create a ChatAgent
     sys_msg = BaseMessage.make_assistant_message(
@@ -134,23 +82,26 @@ def example_simple_conversation():
     print(f"🤖 Assistant: {response.msg.content}\n")
 
     # Get stats
-    stats = prompt_logger.get_stats()
-    print(f"📊 Logged {stats['total_prompts']} prompts to {stats['log_file']}")
+    logger = get_logger()
+    if logger:
+        stats = logger.get_stats()
+        print(f"📊 Logged {stats['total_prompts']} prompts to {stats['log_file']}")
     print()
 
 
 def example_multi_turn_conversation():
     r"""Example 2: Multi-turn conversation with real agent."""
-    global prompt_logger
-
     print("=" * 70)
     print("Example 2: Multi-turn Conversation")
     print("=" * 70)
     print()
 
-    # Initialize logger
+    # Disable any existing logging first
+    disable_agent_logging(verbose=False)
+
+    # Enable automatic logging for all agents
     log_path = SCRIPT_DIR / "example_multi_turn.log"
-    prompt_logger = PromptLogger(str(log_path))
+    enable_agent_logging(str(log_path))
 
     # Create agent
     sys_msg = BaseMessage.make_assistant_message(
@@ -199,9 +150,11 @@ def example_multi_turn_conversation():
     print(f"🤖 Assistant: {response3.msg.content}\n")
 
     # Get stats
-    stats = prompt_logger.get_stats()
-    print(f"📊 Logged {stats['total_prompts']} prompts from multi-turn conversation")
-    print(f"   Log file: {stats['log_file']}")
+    logger = get_logger()
+    if logger:
+        stats = logger.get_stats()
+        print(f"📊 Logged {stats['total_prompts']} prompts from multi-turn conversation")
+        print(f"   Log file: {stats['log_file']}")
     print()
 
 
@@ -211,9 +164,6 @@ def main():
     print("🎯 PromptLogger Examples with Real CAMEL ChatAgent")
     print("=" * 70)
     print()
-
-    # Set up logging
-    setup_prompt_logging()
 
     # Run examples
     try:
@@ -247,7 +197,7 @@ def main():
             try:
                 print(f"Converting {log_file.name}...")
                 result = subprocess.run(
-                    ["python3", "-m", "camel.logging.llm_log_to_html", str(log_file)],
+                    [sys.executable, "-m", "camel.logging.llm_log_to_html", str(log_file)],
                     capture_output=True,
                     text=True,
                     check=True
