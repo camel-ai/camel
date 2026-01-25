@@ -23,8 +23,9 @@ class WebSocketBrowserServer {
         console.log('Client connected');
 
         ws.on('message', async (message) => {
+          let data;
           try {
-            const data = JSON.parse(message.toString());
+            data = JSON.parse(message.toString());
             const { id, command, params } = data;
 
             console.log(`Received command: ${command} with id: ${id}`);
@@ -84,7 +85,9 @@ class WebSocketBrowserServer {
         let cdpUrl = params.cdpUrl || 'http://localhost:9222';
 
         // Extract base URL and port for validation
-        const baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
+        let baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
+        if (baseUrl.startsWith('ws://')) baseUrl = `http://${baseUrl.slice(5)}`;
+        if (baseUrl.startsWith('wss://')) baseUrl = `https://${baseUrl.slice(6)}`;
 
         // Validate CDP URL to prevent SSRF - only allow localhost
         const parsed = new URL(baseUrl);
@@ -157,12 +160,40 @@ class WebSocketBrowserServer {
 
       case 'get_som_screenshot': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        console.log('Starting screenshot...');
-        const startTime = Date.now();
-        const result = await this.toolkit.getSomScreenshot();
-        const endTime = Date.now();
-        console.log(`Screenshot completed in ${endTime - startTime}ms`);
-        return result;
+        const overlay = params?.overlay !== undefined ? Boolean(params.overlay) : true;
+        if (overlay) {
+          try {
+            console.log('Starting SoM screenshot...');
+            const startTime = Date.now();
+            const result = await this.toolkit.getSomScreenshot();
+            const endTime = Date.now();
+            console.log(`Screenshot completed in ${endTime - startTime}ms`);
+            return result;
+          } catch (error) {
+            // Can happen early in CDP mode before a context/page exists.
+            return {
+              text: `SoM screenshot skipped: ${error?.message || String(error)}`,
+              images: [],
+              timing: null,
+            };
+          }
+        }
+        try {
+          const { buffer, timing } = await this.toolkit.session.takeScreenshot();
+          const base64Image = buffer.toString('base64');
+          return {
+            text: 'Raw webpage screenshot captured (no SoM overlay).',
+            images: [`data:image/png;base64,${base64Image}`],
+            timing,
+          };
+        } catch (error) {
+          // Can happen early in CDP mode before a context/page exists.
+          return {
+            text: `Raw screenshot skipped: ${error?.message || String(error)}`,
+            images: [],
+            timing: null,
+          };
+        }
       }
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');

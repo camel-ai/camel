@@ -32,7 +32,7 @@ from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils.tool_result import ToolResult
 
-from .config_loader import ConfigLoader
+from .config_loader import ConfigLoader, EvidenceCaptureConfig
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -98,6 +98,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         cache_dir: Optional[str] = None,
+        evidence_capture: Optional[EvidenceCaptureConfig] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
@@ -183,6 +184,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             dom_content_loaded_timeout=dom_content_loaded_timeout,
             viewport_limit=viewport_limit,
             cache_dir=cache_dir,
+            evidence_capture=evidence_capture,
             browser_log_to_file=browser_log_to_file,
             log_dir=log_dir,
             session_id=session_id,
@@ -366,6 +368,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except Exception as e:
             logger.error(f"Failed to close browser: {e}")
             return f"Error closing browser: {e}"
+
+    async def capture_final_evidence(self) -> Dict[str, Any]:
+        """Capture a final evidence frame for Vision-WebJudge (best-effort)."""
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            return await ws_wrapper.capture_final_evidence()
+        except Exception:
+            return {}
 
     async def disconnect_websocket(self) -> str:
         r"""Disconnects the WebSocket connection without closing the browser.
@@ -557,6 +567,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
+        overlay: bool = True,
     ) -> "str | ToolResult":
         r"""Captures a screenshot with interactive elements highlighted.
 
@@ -588,7 +599,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.get_som_screenshot()
+            result = await ws_wrapper.get_som_screenshot(overlay=overlay)
 
             result_text = result.text
             file_path = None
