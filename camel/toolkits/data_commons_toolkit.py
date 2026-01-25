@@ -115,12 +115,13 @@ class DataCommonsToolkit(BaseToolkit):
 
         Args:
             date (str): The date option for the observations.
-            Use 'all' for all dates, 'latest' for the most recent data,
-            or provide a date as a string (e.g., "2026")
-            entity_dcids (Union[str, List[str]]): entity IDs to filter the data
-            variable_dcids (Union[str, List[str]]):
-            The variable(s) to fetch observations for.
-            This can be a single variable ID or a list of IDs.
+                Use 'all' for all dates, 'latest' for the most recent data,
+                or provide a date as a string (e.g., "2023").
+            entity_dcids (Union[str, List[str]]): Entity IDs to filter the
+                data.
+            variable_dcids (Union[str, List[str]]): The variable(s) to fetch
+                observations for. This can be a single variable ID or a list
+                of IDs.
 
         Returns:
             Optional[Dict[str, Any]]: A dictionary containing the statistical
@@ -175,11 +176,12 @@ class DataCommonsToolkit(BaseToolkit):
         Args:
             dcids (Union[str, List[str]]): A single DCID or a list of DCIDs
                 to query.
-            properties (str): The property to analyze.
+            properties (Union[str, List[str]]): The property or properties to
+                analyze.
             constraints (Optional[str]): Additional constraints for the query.
-            Defaults to None.
+                (default: :obj:`None`)
             out (bool, optional): Whether to fetch outgoing properties.
-            Defaults to True
+                (default: :obj:`True`)
 
         Returns:
             Optional[Dict[str, Any]]: Analysis results for each DCID if
@@ -206,10 +208,11 @@ class DataCommonsToolkit(BaseToolkit):
         r"""Retrieves places within a given place type.
 
         Args:
-            dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
-            children_type : (Optional[str]):
-            The type of the child entities to fetch.
-            If None, fetches all child types.
+            place_dcids (Union[str, List[str]]): A single DCID or a list of
+                DCIDs to query.
+            children_type (Optional[str]): The type of the child entities to
+                fetch. If None, fetches all child types.
+                (default: :obj:`None`)
 
         Returns:
             Optional[Dict[str, Any]]: Analysis results for each DCID if
