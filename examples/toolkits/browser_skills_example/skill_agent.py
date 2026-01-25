@@ -130,10 +130,11 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
     "coursera": "\n".join(
         [
             "- Target site: Coursera",
-            "- Start by calling browser_get_page_snapshot to see where you are",
-            "- Use the site search and filters (level, language, duration) when helpful",
-            "- Open the course page before extracting details (instructor, syllabus, ratings)",
-            "- If there are cookies/privacy popups, close them before proceeding",
+            "- Handle consent dialogs: If any cookie, privacy, or consent pop-ups appear, accept or dismiss them before continuing",
+            "- Initial state check: Start by calling browser_get_page_snapshot to understand the current page structure and available elements.",
+            "- Search strategy: Use the site's search bar to enter relevant keywords. Apply available filters (topic, level, language, duration, etc.) when they help narrow down results.",
+            "- Execute search: After filling the search field and/or configuring filters, explicitly click the search button to load the results page.",
+            "- Data extraction: From the course page, extract key details such as instructor(s), syllabus, ratings, and other relevant metadata.",
         ]
     ),
     "espn": "\n".join(
@@ -1147,10 +1148,13 @@ async def subtask_{subtask_func.subtask_id}():
                     "   - Each subtask has an 'Execution page' specified in its description",
                     "   - Before calling a subtask, verify you are on the correct page using browser_get_page_snapshot",
                     "   - Do not call subtasks designed for different pages (e.g., don't call a subtask for Google Flights when on Google Search)",
-                    "3. Use low-level browser tools only when:",
-                    "   - No suitable subtask function exists",
-                    "   - You need fine-grained control",
-                    "   - The subtask function failed and you need to recover",
+                    "3. Use low-level browser tools only under the following conditions:",
+                    "   - No suitable high-level subtask function is available.",
+                    "   - Fine-grained, manual control of page interactions is required.",
+                    "   - A subtask function has failed and manual recovery is necessary.",
+                    "   Tool usage constraints:"
+                    "   - Do not call browser_get_page_snapshot consecutively. Consecutive calls are redundant because the page state does not change without an intervening action.",
+                    "   - Minimize snapshot calls, as they are token-expensive and should only be used when the page state is expected to change.",
                     "",
                     "4. After executing a subtask function, you will receive:",
                     "   - Status (success/error)",

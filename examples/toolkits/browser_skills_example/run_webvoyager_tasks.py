@@ -275,6 +275,10 @@ class WebVoyagerRunner:
             # Get results
             session_dir = agent.session_log_dir
 
+            # Save communication log and whole memory
+            agent.save_communication_log()
+            agent.save_memory()
+
             # Write a first-pass summary (before subtask extraction), if possible
             summary_path = None
             if session_dir:
@@ -598,7 +602,7 @@ class WebVoyagerRunner:
                 'duration_seconds': round(task_duration_seconds, 2),
             }
         finally:
-            # Save communication log and whole memory
+            # Save communication log and whole memory, ensure they are saved again even there was an exception
             agent.save_communication_log()
             agent.save_memory()
             # Ensure browser tabs are cleaned up even on exception
