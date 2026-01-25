@@ -4251,7 +4251,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5218,7 +5217,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
