@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -923,8 +923,7 @@ all = [
     { name = "cohere" },
     { name = "crawl4ai" },
     { name = "dappier" },
-    { name = "datacommons" },
-    { name = "datacommons-pandas" },
+    { name = "datacommons-client", extra = ["pandas"] },
     { name = "datasets" },
     { name = "daytona-sdk" },
     { name = "ddgs" },
@@ -1071,8 +1070,7 @@ communication-tools = [
 ]
 data-tools = [
     { name = "aiosqlite" },
-    { name = "datacommons" },
-    { name = "datacommons-pandas" },
+    { name = "datacommons-client", extra = ["pandas"] },
     { name = "math-verify" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1404,10 +1402,8 @@ requires-dist = [
     { name = "crawl4ai", marker = "extra == 'rag'", specifier = ">=0.3.745" },
     { name = "dappier", marker = "extra == 'all'", specifier = ">=0.3.3,<0.4" },
     { name = "dappier", marker = "extra == 'web-tools'", specifier = ">=0.3.3,<0.4" },
-    { name = "datacommons", marker = "extra == 'all'", specifier = ">=1.4.3,<2" },
-    { name = "datacommons", marker = "extra == 'data-tools'", specifier = ">=1.4.3,<2" },
-    { name = "datacommons-pandas", marker = "extra == 'all'", specifier = ">=0.0.4" },
-    { name = "datacommons-pandas", marker = "extra == 'data-tools'", specifier = ">=0.0.4" },
+    { name = "datacommons-client", extras = ["pandas"], marker = "extra == 'all'", specifier = ">=2.1.5" },
+    { name = "datacommons-client", extras = ["pandas"], marker = "extra == 'data-tools'", specifier = ">=2.1.5" },
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'eigent'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
@@ -2563,30 +2559,22 @@ wheels = [
 ]
 
 [[package]]
-name = "datacommons"
-version = "1.4.4"
+name = "datacommons-client"
+version = "2.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "pydantic" },
     { name = "requests" },
-    { name = "six" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/36/12e64ec5931a48dd86dd930979bf323881652ddfdebf71e34810ec6ee798/datacommons-1.4.4.tar.gz", hash = "sha256:7f7f84181f6e8933cfd31f29078a06110c4ce9bcfc20340733edf59c5864dace", size = 17065, upload-time = "2026-01-12T22:39:32.428Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/be/378f623f2e7dd3d06108a940b2916bb6afdc3a132598e23cee5239012725/datacommons_client-2.1.5.tar.gz", hash = "sha256:1cc691778a6d0d251b6565dc20669c9529746e4cae71743e5c4a1030c331b94a", size = 60037, upload-time = "2026-01-12T20:04:47.683Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fa/17/6313fcd1a8d93ee6311f3a83dc396753e32548f06dfbe479376ba99d66d7/datacommons-1.4.4-py3-none-any.whl", hash = "sha256:efd5acad708e56ac1216794e5efcf49134c1a7fb0de2034445a9a27ca7ce7ba4", size = 43688, upload-time = "2026-01-12T22:39:30.305Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/99/fc2814651c64ce2a6e5c2da1dce10d7092852ac5ab23a58092981721f2ae/datacommons_client-2.1.5-py3-none-any.whl", hash = "sha256:d8ebf3cd568ed2a7cdcbdb42fd48fc09c124c2fd3cdbb51ac7f9115721374cc2", size = 77052, upload-time = "2026-01-12T20:04:46.659Z" },
 ]
 
-[[package]]
-name = "datacommons-pandas"
-version = "0.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
+[package.optional-dependencies]
+pandas = [
     { name = "pandas" },
-    { name = "requests" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/fb/36c9245449713c622cfd26b9fc9647b6804c81075d45cf8b4a9b86359afc/datacommons_pandas-0.0.4.tar.gz", hash = "sha256:99423f23f49e6e3f95ca787ddc991561525acf9eb3d48dafada41951a6193a1f", size = 19644, upload-time = "2026-01-12T22:39:31.603Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/3c/50063fcb93a5057a75809acca2651a92035b320cc6cc4c19a423f131bd6f/datacommons_pandas-0.0.4-py3-none-any.whl", hash = "sha256:b086fdfe87bcb86079ed155917899b6fa37e418871b835d3f0d43e840a4d30b3", size = 43785, upload-time = "2026-01-12T22:39:28.999Z" },
 ]
 
 [[package]]
@@ -7299,7 +7287,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -8270,7 +8258,7 @@ name = "pyobjc-framework-cocoa"
 version = "12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/a3/16ca9a15e77c061a9250afbae2eae26f2e1579eb8ca9462ae2d2c71e1169/pyobjc_framework_cocoa-12.1.tar.gz", hash = "sha256:5556c87db95711b985d5efdaaf01c917ddd41d148b1e52a0c66b1a2e2c5c1640", size = 2772191, upload-time = "2025-11-14T10:13:02.069Z" }
 wheels = [
@@ -8288,8 +8276,8 @@ name = "pyobjc-framework-quartz"
 version = "12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/18/cc59f3d4355c9456fc945eae7fe8797003c4da99212dd531ad1b0de8a0c6/pyobjc_framework_quartz-12.1.tar.gz", hash = "sha256:27f782f3513ac88ec9b6c82d9767eef95a5cf4175ce88a1e5a65875fee799608", size = 3159099, upload-time = "2025-11-14T10:21:24.31Z" }
 wheels = [
