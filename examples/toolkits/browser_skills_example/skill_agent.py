@@ -34,7 +34,6 @@ project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from utils import (
     create_default_model,
@@ -664,19 +663,24 @@ class SkillsAgent:
         )
 
     async def close(self) -> None:
-        """Cleanup toolkit resources for this run.
+        """Cleanup toolkit resources and close the browser.
 
-        In CDP mode, this disconnects the toolkit without closing the browser.
+        This closes the browser completely to ensure a fresh state for the next task.
         """
         if not self.toolkit:
             return
 
         try:
+            # Close the browser completely
+            await self.toolkit.browser_close()
+            print("✓ Browser closed successfully")
+        except Exception as e:
+            print(f"⚠️  Browser close failed: {e}")
+
+        try:
             await self.toolkit.disconnect_websocket()
         except AttributeError:
-            print(
-                "⚠️  Python Toolkit does not have disconnect_websocket method"
-            )
+            pass  # Expected if browser already closed
         except Exception as e:
             print(f"⚠️  Toolkit cleanup failed: {e}")
         finally:
@@ -745,33 +749,11 @@ class SkillsAgent:
         browser_log_dir.mkdir(parents=True, exist_ok=True)
 
         # Import ActionReplayer
-        # sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'camel' / 'toolkits' / 'hybrid_browser_toolkit'))
-        # Connect to browser - get browser endpoint, not page endpoint
-
         from action_replayer import ActionReplayer
-
-        cdp_url = None
-        try:
-            # Use /json/version to get the browser-level WebSocket endpoint
-            with urlopen(
-                f'http://localhost:{self.cdp_port}/json/version', timeout=5
-            ) as response:
-                version_info = json.loads(response.read().decode('utf-8'))
-                cdp_url = version_info.get('webSocketDebuggerUrl')
-                print(
-                    f"✓ Connected to browser: {version_info.get('Browser', 'N/A')}"
-                )
-                print(f"   CDP endpoint: {cdp_url}")
-        except Exception as e:
-            print(f"Error connecting to browser: {e}")
-            return False
-
-        if not cdp_url:
-            print("Error: Could not get browser CDP endpoint")
-            return False
 
         custom_tools = [
             "browser_open",
+            "browser_close",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
@@ -792,7 +774,8 @@ class SkillsAgent:
         # directory is portable and can be evaluated offline.
         evidence_dir = Path(self.session_log_dir) / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
-        # Initialize toolkit (single instance, shared by agent and replay)
+        # Initialize toolkit - launches its own browser (no CDP)
+        # Browser language is set to English in browser-session.ts
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
@@ -805,15 +788,13 @@ class SkillsAgent:
             log_dir=str(browser_log_dir),
             viewport_limit=False,
             session_id=self.toolkit_session_id,
-            connect_over_cdp=True,
-            cdp_url=cdp_url,
+            connect_over_cdp=False,  # Launch own browser instead of CDP
             default_start_url=None,
-            # cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
         )
 
-        # When connecting via CDP, browser is already open, no need to call browser_open()
-        # await self.toolkit.browser_open()
-        print("✓ Browser connected via CDP")
+        # Open browser - this starts a fresh browser instance
+        await self.toolkit.browser_open()
+        print("✓ Browser launched (language: English)")
 
         # Create subtask functions from all configs
         print("\n" + "=" * 80)
