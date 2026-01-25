@@ -116,7 +116,7 @@ class DataCommonsToolkit(BaseToolkit):
         Args:
             date (str): The date option for the observations.
                 Use 'all' for all dates, 'latest' for the most recent data,
-                or provide a date as a string (e.g., "2023").
+                or provide a date as a string (e.g., "2026").
             entity_dcids (Union[str, List[str]]): Entity IDs to filter the
                 data.
             variable_dcids (Union[str, List[str]]): The variable(s) to fetch
