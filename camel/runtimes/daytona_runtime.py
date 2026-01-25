@@ -164,7 +164,7 @@ class DaytonaRuntime(BaseRuntime):
                 script_path = f"/home/daytona/{func_name}.py"
                 try:
                     self.sandbox.fs.upload_file(
-                        script_path, func_code.encode()
+                        remote_path=script_path, file=func_code.encode()
                     )
                 except Exception as e:
                     logger.error(
