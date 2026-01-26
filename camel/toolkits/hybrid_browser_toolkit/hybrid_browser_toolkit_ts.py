@@ -34,6 +34,7 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+from .extension_proxy_wrapper import ExtensionProxyWrapper
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -116,6 +117,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        extension_proxy_mode: bool = False,
+        extension_proxy_host: str = "localhost",
+        extension_proxy_port: int = 8765,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -166,6 +170,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
+            extension_proxy_mode (bool): When True, uses a Chrome extension
+            as a proxy to control the browser. This allows controlling a
+            normal Chrome browser without requiring --remote-debugging-port.
+            The extension connects to a WebSocket server hosted by this toolkit.
+            Defaults to False.
+            extension_proxy_host (str): Host for the extension proxy WebSocket
+            server. Defaults to "localhost".
+            extension_proxy_port (int): Port for the extension proxy WebSocket
+            server. Defaults to 8765.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -244,20 +257,76 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         logger.info(f"Enabled tools: {self.enabled_tools}")
 
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
+        self._extension_proxy_wrapper: Optional[ExtensionProxyWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
+
+        # Extension proxy mode settings
+        self._extension_proxy_mode = extension_proxy_mode
+        self._extension_proxy_host = extension_proxy_host
+        self._extension_proxy_port = extension_proxy_port
+
+        if extension_proxy_mode:
+            logger.info(
+                f"Extension proxy mode enabled. "
+                f"Server will listen on ws://{extension_proxy_host}:{extension_proxy_port}"
+            )
 
     async def _ensure_ws_wrapper(self):
         """Ensure WebSocket wrapper is initialized."""
-        if self._ws_wrapper is None:
-            self._ws_wrapper = WebSocketBrowserWrapper(self._ws_config)
-            await self._ws_wrapper.start()
+        if self._extension_proxy_mode:
+            # Use extension proxy wrapper
+            if self._extension_proxy_wrapper is None:
+                self._extension_proxy_wrapper = ExtensionProxyWrapper(
+                    config=self._ws_config,
+                    host=self._extension_proxy_host,
+                    port=self._extension_proxy_port,
+                )
+                await self._extension_proxy_wrapper.start()
+        else:
+            # Use standard WebSocket wrapper
+            if self._ws_wrapper is None:
+                self._ws_wrapper = WebSocketBrowserWrapper(self._ws_config)
+                await self._ws_wrapper.start()
 
-    async def _get_ws_wrapper(self) -> WebSocketBrowserWrapper:
-        """Get the WebSocket wrapper, initializing if needed."""
+    async def _get_ws_wrapper(self):
+        """Get the WebSocket wrapper, initializing if needed.
+
+        Returns WebSocketBrowserWrapper or ExtensionProxyWrapper depending on mode.
+        """
         await self._ensure_ws_wrapper()
-        if self._ws_wrapper is None:
-            raise RuntimeError("Failed to initialize WebSocket wrapper")
-        return self._ws_wrapper
+
+        if self._extension_proxy_mode:
+            if self._extension_proxy_wrapper is None:
+                raise RuntimeError(
+                    "Failed to initialize Extension Proxy wrapper"
+                )
+            return self._extension_proxy_wrapper
+        else:
+            if self._ws_wrapper is None:
+                raise RuntimeError("Failed to initialize WebSocket wrapper")
+            return self._ws_wrapper
+
+    async def wait_for_extension(self, timeout: float = 60.0) -> bool:
+        """Wait for Chrome extension to connect (extension proxy mode only).
+
+        Args:
+            timeout: Maximum time to wait in seconds.
+
+        Returns:
+            True if extension connected, False if timeout.
+        """
+        if not self._extension_proxy_mode:
+            logger.warning(
+                "wait_for_extension called but not in extension proxy mode"
+            )
+            return True
+
+        await self._ensure_ws_wrapper()
+        if self._extension_proxy_wrapper:
+            return await self._extension_proxy_wrapper.wait_for_connection(
+                timeout
+            )
+        return False
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -275,11 +344,22 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 else False
             )
 
+            is_extension_proxy = getattr(self, '_extension_proxy_mode', False)
+
             try:
                 loop = asyncio.get_event_loop()
                 if not loop.is_closed() and not loop.is_running():
                     try:
-                        if is_cdp:
+                        if is_extension_proxy:
+                            # Extension proxy: just stop the server
+                            if self._extension_proxy_wrapper:
+                                loop.run_until_complete(
+                                    asyncio.wait_for(
+                                        self._extension_proxy_wrapper.stop(),
+                                        timeout=2.0,
+                                    )
+                                )
+                        elif is_cdp:
                             # CDP: disconnect only
                             loop.run_until_complete(
                                 asyncio.wait_for(
