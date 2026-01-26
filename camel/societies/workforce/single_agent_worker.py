@@ -114,6 +114,7 @@ class AgentPool:
                     agent = self._available_agents.popleft()
                     self._in_use_agents.add(id(agent))
                     self._pool_hits += 1
+                    agent.reset()  # Ensure clean memory state
                     return agent
 
                 # Check if we can create a new agent

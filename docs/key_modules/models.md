@@ -47,7 +47,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
 | **CometAPI**     | **All models available on [CometAPI](https://api.cometapi.com/pricing)**<br/>Including: gpt-5-chat-latest, gpt-5, gpt-5-mini, gpt-5-nano<br/>claude-opus-4-1-20250805, claude-sonnet-4-20250514, claude-3-7-sonnet-latest<br/>gemini-2.5-pro, gemini-2.5-flash, grok-4-0709, grok-3<br/>deepseek-v3.1, deepseek-v3, deepseek-r1-0528, qwen3-30b-a3b |
 | **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
-| **ZhipuAI**      | glm-4.7, glm-4.7-flash<br/>glm-4.6, glm-4.6v, glm-4.6v-flash<br/>glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
+| **ZhipuAI**      | glm-4.7, glm-4.7-flash, glm-4.7-flashx<br/>glm-4.6, glm-4.6v, glm-4.6v-flash<br/>glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-4-flashx-250414<br/>glm-4-flash, glm-4-flash-250414<br/>glm-4.5-air, glm-4.5-airx, glm-4.5-flash<br/>glm-4.1v-thinking-flash, glm-4.1v-thinking-flashx<br/>glm-zero-preview, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
