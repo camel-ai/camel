@@ -73,25 +73,27 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASHX = "glm-4.7-flashx"
     GLM_4_7_FLASH = "glm-4.7-flash"
-
-    # ZhipuAI GLM-4.6 series
     GLM_4_6 = "glm-4.6"
-
-    # ZhipuAI GLM-4.5 series
-    GLM_4_5 = "glm-4.5"
-    GLM_4_5_X = "glm-4.5x"
+    GLM_4 = "glm-4"
     GLM_4_5_AIR = "glm-4.5-air"
     GLM_4_5_AIRX = "glm-4.5-airx"
     GLM_4_5_FLASH = "glm-4.5-flash"
-
-    # ZhipuAI GLM-4 32B variant
-    GLM_4_32B_0414_128K = "glm-4-32b-0414-128k"
-
-    # ZhipuAI GLM-4 legacy models
+    GLM_4V = "glm-4v"
+    GLM_4_1V_THINKING_FLASHX = "glm-4.1v-thinking-flashx"
+    GLM_4_1V_THINKING_FLASH = "glm-4.1v-thinking-flash"
+    GLM_4V_FLASH = "glm-4v-flash"
+    GLM_4V_PLUS_0111 = "glm-4v-plus-0111"
     GLM_4_PLUS = "glm-4-plus"
-
-    # ZhipuAI GLM-Zero series (reasoning models)
+    GLM_4_AIR = "glm-4-air"
+    GLM_4_AIR_0111 = "glm-4-air-0111"
+    GLM_4_AIRX = "glm-4-airx"
+    GLM_4_LONG = "glm-4-long"
+    GLM_4_FLASHX = "glm-4-flashx"
+    GLM_4_FLASHX_250414 = "glm-4-flashx-250414"
+    GLM_4_FLASH = "glm-4-flash"
+    GLM_4_FLASH_250414 = "glm-4-flash-250414"
     GLM_ZERO_PREVIEW = "glm-zero-preview"
+    GLM_3_TURBO = "glm-3-turbo"
 
     # ZhipuAI GLM Vision models (VLM)
     GLM_4_6V = "glm-4.6v"
@@ -679,27 +681,32 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_zhipuai(self) -> bool:
-        r"""Returns whether this type of models is an ZhipuAI model."""
+        r"""Returns whether this type of models is a ZhipuAI model."""
         return self in {
-            # GLM-4.7 series
-            ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASHX,
-            ModelType.GLM_4_7_FLASH,
-            # GLM-4.6 series
-            ModelType.GLM_4_6,
-            # GLM-4.5 series
-            ModelType.GLM_4_5,
-            ModelType.GLM_4_5_X,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
             ModelType.GLM_4_5_FLASH,
-            # GLM-4 32B variant
-            ModelType.GLM_4_32B_0414_128K,
-            # GLM-4 legacy models
+            ModelType.GLM_4V,
+            ModelType.GLM_4_1V_THINKING_FLASHX,
+            ModelType.GLM_4_1V_THINKING_FLASH,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_4_PLUS,
-            # GLM-Zero series (reasoning models)
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_AIRX,
+            ModelType.GLM_4_LONG,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASHX_250414,
+            ModelType.GLM_4_FLASH,
+            ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
-            # GLM Vision models (VLM)
+            ModelType.GLM_4_7,
+            ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_6,
             ModelType.GLM_4_6V,
             ModelType.GLM_4_6V_FLASHX,
             ModelType.GLM_4_5V,
@@ -1235,6 +1242,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
             ModelType.MOONSHOT_V1_8K,
+            ModelType.GLM_4_AIRX,
             ModelType.OPENROUTER_OLYMPICODER_7B,
             ModelType.LMSTUDIO_GEMMA_3_1B,
             ModelType.LMSTUDIO_GEMMA_3_4B,
@@ -1271,6 +1279,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_RAG,
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_ZERO_PREVIEW,
             ModelType.PPIO_YI_1_5_34B_CHAT,
             ModelType.NOVITA_LLAMA_3_1_8B,
         }:
@@ -1394,7 +1405,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
-            ModelType.GLM_4_5V,
+            ModelType.GLM_4_1V_THINKING_FLASHX,
+            ModelType.GLM_4_1V_THINKING_FLASH,
         }:
             return 64_000
         elif self in {
@@ -1450,9 +1462,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_MIXTRAL_NEMO,
             ModelType.MOONSHOT_V1_128K,
             ModelType.GLM_4_PLUS,
-            ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASH,
+            ModelType.GLM_4_FLASHX_250414,
+            ModelType.GLM_4_FLASH_250414,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
+            ModelType.GLM_4_5_FLASH,
             ModelType.GLM_4_6V,
-            ModelType.GLM_4_6V_FLASHX,
             ModelType.GLM_4_6V_FLASH,
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
@@ -1510,11 +1529,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
             ModelType.ERNIE_5_0_THINKING,
             ModelType.ERNIE_4_5_TURBO_VL,
-            ModelType.GLM_4_5,
-            ModelType.GLM_4_5_X,
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
-            ModelType.GLM_4_32B_0414_128K,
         }:
             return 128_000
         elif self in {

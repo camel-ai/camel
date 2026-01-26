@@ -32,18 +32,29 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_4_7_FLASH,
         # GLM-4.6 series
         ModelType.GLM_4_6,
-        # GLM-4.5 series
-        ModelType.GLM_4_5,
-        ModelType.GLM_4_5_X,
+        # GLM-4 series
+        ModelType.GLM_4,
         ModelType.GLM_4_5_AIR,
         ModelType.GLM_4_5_AIRX,
         ModelType.GLM_4_5_FLASH,
-        # GLM-4 32B variant
-        ModelType.GLM_4_32B_0414_128K,
+        ModelType.GLM_4V,
+        ModelType.GLM_4_1V_THINKING_FLASHX,
+        ModelType.GLM_4_1V_THINKING_FLASH,
+        ModelType.GLM_4V_FLASH,
+        ModelType.GLM_4V_PLUS_0111,
         # GLM-4 legacy models
         ModelType.GLM_4_PLUS,
+        ModelType.GLM_4_AIR,
+        ModelType.GLM_4_AIR_0111,
+        ModelType.GLM_4_AIRX,
+        ModelType.GLM_4_LONG,
+        ModelType.GLM_4_FLASHX,
+        ModelType.GLM_4_FLASHX_250414,
+        ModelType.GLM_4_FLASH,
+        ModelType.GLM_4_FLASH_250414,
         # GLM-Zero series (reasoning models)
         ModelType.GLM_ZERO_PREVIEW,
+        ModelType.GLM_3_TURBO,
         # GLM Vision models (VLM)
         ModelType.GLM_4_6V,
         ModelType.GLM_4_6V_FLASHX,
