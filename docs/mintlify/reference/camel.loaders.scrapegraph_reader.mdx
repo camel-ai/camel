@@ -14,7 +14,7 @@ searching.
 **Parameters:**
 
 - **api_key** (Optional[str]): API key for authenticating with the ScrapeGraphAI API.
-- **References**: 
+- **References**:
 - **https**: //scrapegraph.ai/
 
 <a id="camel.loaders.scrapegraph_reader.ScrapeGraphAI.__init__"></a>
