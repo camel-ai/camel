@@ -97,8 +97,8 @@ class SkillToolkit(BaseToolkit):
             "- How to use a skill (progressive disclosure):\n"
             "  1) After deciding to use a skill, open its `SKILL.md` from the "
             "filesystem. Read only enough to follow the workflow.\n"
-            "  2) If `SKILL.md` points to extra folders such as `references/`, "
-            "load only the specific files needed for the request; don't "
+            "  2) If `SKILL.md` points to extra folders such as `references/` "
+            ", load only the specific files needed for the request; don't "
             "bulk-load everything.\n"
             "  3) If `scripts/` exist, prefer running or patching them "
             "instead of rewriting large code blocks.\n"
@@ -107,20 +107,19 @@ class SkillToolkit(BaseToolkit):
             "- Coordination and sequencing:\n"
             "  - If multiple skills apply, choose the minimal set that covers "
             "the request and state the order you'll use them.\n"
-            "  - Announce which skill(s) you're using and why (one short line). "
-            "If you skip an obvious skill, say why.\n"
+            "  - Announce which skill(s) you're using and why "
+            "(one short line). If you skip an obvious skill, say why.\n"
             "- Context hygiene:\n"
-            "  - Keep context small: summarize long sections instead of pasting "
-            "them; only load extra files when needed.\n"
-            "  - Avoid deep reference-chasing: prefer opening only files directly "
-            "linked from `SKILL.md` unless you're blocked.\n"
-            "  - When variants exist (frameworks, providers, domains), pick only "
-            "the relevant reference file(s) and note that choice.\n"
-            "- Safety and fallback: If a skill can't be applied cleanly (missing "
-            "files, unclear instructions), state the issue, pick the next-best "
-            "approach, and continue.\n"
-            "\n"
-            + " ".join(lines)
+            "  - Keep context small: summarize long sections instead of "
+            "pasting them; only load extra files when needed.\n"
+            "  - Avoid deep reference-chasing: prefer opening only files "
+            "directly linked from `SKILL.md` unless you're blocked.\n"
+            "  - When variants exist (frameworks, providers, domains), pick "
+            "only the relevant reference file(s) and note that choice.\n"
+            "- Safety and fallback: If a skill can't be applied cleanly "
+            "(missing files, unclear instructions), state the issue, pick the "
+            "next-best approach, and continue.\n"
+            "\n" + " ".join(lines)
         )
 
     def _get_skills(self) -> Dict[str, Dict[str, str]]:
@@ -169,7 +168,10 @@ class SkillToolkit(BaseToolkit):
         return roots
 
     def _find_repo_root(self) -> Path:
-        for parent in (self.working_directory, *self.working_directory.parents):
+        for parent in (
+            self.working_directory,
+            *self.working_directory.parents,
+        ):
             if (parent / ".git").exists():
                 return parent
         return self.working_directory
