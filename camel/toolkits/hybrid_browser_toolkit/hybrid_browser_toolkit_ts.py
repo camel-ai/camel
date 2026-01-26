@@ -81,6 +81,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_mouse_control",
         "browser_mouse_drag",
         "browser_press_key",
+        "browser_upload_file",
         "browser_wait_user",
         "browser_switch_tab",
         "browser_close_tab",
@@ -1066,6 +1067,56 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
+    async def browser_upload_file(
+        self, *, ref: str, file_path: str
+    ) -> Dict[str, Any]:
+        r"""Uploads a file to a file input element on the page.
+
+        Args:
+            ref (str): The `ref` ID of the element near the file input.
+                This ID is obtained from a page snapshot (`get_page_snapshot`
+                or `get_som_screenshot`).
+            file_path (str): The absolute path to the file to upload.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the page after the upload.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.upload_file(ref, file_path)
+
+            tab_info = await ws_wrapper.get_tab_info()
+            result.update(
+                {
+                    "tabs": tab_info,
+                    "current_tab": next(
+                        (
+                            i
+                            for i, tab in enumerate(tab_info)
+                            if tab.get("is_current")
+                        ),
+                        0,
+                    ),
+                    "total_tabs": len(tab_info),
+                }
+            )
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to upload file: {e}")
+            return {
+                "result": f"Error uploading file: {e}",
+                "snapshot": "",
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+
     async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
 
@@ -1933,6 +1984,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_mouse_control": self.browser_mouse_control,
             "browser_mouse_drag": self.browser_mouse_drag,
             "browser_press_key": self.browser_press_key,
+            "browser_upload_file": self.browser_upload_file,
             "browser_wait_user": self.browser_wait_user,
             "browser_switch_tab": self.browser_switch_tab,
             "browser_close_tab": self.browser_close_tab,

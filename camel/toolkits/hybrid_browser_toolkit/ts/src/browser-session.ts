@@ -1,6 +1,7 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+import * as fs from 'fs';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
@@ -1281,6 +1282,97 @@ export class HybridBrowserSession {
     }
   }
 
+
+  /**
+   * Find the file input element that is closest to the element and upload file
+   */
+  private async performFileUpload(page: Page, ref: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Validate file exists before attempting upload
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: `File not found: ${filePath}` };
+      }
+
+      //  Ensure we have the latest snapshot and mapping
+      await this.getSnapshot(page);
+
+      //  Use Playwright's aria-ref selector engine
+      const selector = `aria-ref=${ref}`;
+
+      // Check if element exists
+      const element = await page.locator(selector).first();
+      const exists = await element.count() > 0;
+      if (!exists) {
+        return { success: false, error: `Element with ref ${ref} not found` };
+      }
+
+      const fileInputSelector = await element.evaluate((node: Element) => {
+        const findFileInputNearElement = (startNode: Element, maxHeight: number = 3, maxDescendantDepth: number = 3): Element | null => {
+          const findInDescendants = (el: Element, depth: number): Element | null => {
+            if (depth === 0) return null;
+            for (let i = 0; i < el.children.length; i++) {
+              const child = el.children[i];
+              if (child instanceof HTMLInputElement && child.type === 'file') {
+                return child;
+              }
+              const result = findInDescendants(child, depth - 1);
+              if (result) return result;
+            }
+            return null;
+          };
+
+          // Check if the start node itself is a file input
+          if (startNode instanceof HTMLInputElement && startNode.type === 'file') {
+            return startNode;
+          }
+
+          // First, search in descendants of the start node
+          const descendantResult = findInDescendants(startNode, maxDescendantDepth);
+          if (descendantResult) return descendantResult;
+
+          // Then traverse up the DOM tree
+          let currentNode: Element = startNode;
+          for (let i = 0; i < maxHeight; i++) {
+            const parent: Element | null = currentNode.parentElement;
+            if (!parent) break;
+
+            // Search in all siblings (parent's children) except the branch we came from
+            for (const sibling of Array.from(parent.children) as Element[]) {
+              if (sibling === currentNode) continue; // Skip the branch we came from
+              const result = findInDescendants(sibling, maxDescendantDepth);
+              if (result) return result;
+            }
+
+            currentNode = parent;
+          }
+          return null;
+        };
+
+        const fileInput = findFileInputNearElement(node);
+        if (!fileInput) return null;
+
+        const tempId = `temp-file-input-${Date.now()}`;
+        fileInput.setAttribute('data-temp-id', tempId);
+        return `[data-temp-id="${tempId}"]`;
+      });
+
+      if (!fileInputSelector) {
+        return { success: false, error: `File input element not found near element with ref ${ref}` };
+      }
+
+      await page.locator(fileInputSelector).setInputFiles(filePath);
+
+      await page.evaluate((sel: string) => {
+        const el = document.querySelector(sel);
+        if (el) el.removeAttribute('data-temp-id');
+      }, fileInputSelector);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `File upload failed: ${error}` };
+    }
+  }
+
   async executeAction(action: BrowserAction): Promise<ActionResult> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -1419,6 +1511,20 @@ export class HybridBrowserSession {
           const keys = action.keys.join('+');
           await page.keyboard.press(keys);
           actionExecutionTime = Date.now() - keyPressStart;
+          break;
+        }
+
+        case 'upload_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const uploadStart = Date.now();
+
+          const uploadResult = await this.performFileUpload(page, action.ref, action.filePath);
+
+          if (!uploadResult.success) {
+            throw new Error(`Upload failed: ${uploadResult.error}`);
+          }
+
+          actionExecutionTime = Date.now() - uploadStart;
           break;
         }
 

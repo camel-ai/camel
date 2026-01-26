@@ -357,6 +357,11 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
+  async uploadFile(ref: string, filePath: string): Promise<any> {
+    const action: BrowserAction = { type: 'upload_file', ref, filePath };
+    return this.executeActionWithSnapshot(action);
+  }
+
   async batchKeyboardInput(operations: Array<{type: string, keys?: string[], text?: string, delay?: number}>, skipStabilityWait: boolean = true): Promise<any> {
     return this.session.batchKeyboardInput(operations, skipStabilityWait);
   }
