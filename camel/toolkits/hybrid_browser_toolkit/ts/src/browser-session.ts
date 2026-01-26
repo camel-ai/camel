@@ -566,7 +566,18 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string; dialogMessage?: string }> {
+    // Track dialog (alert/confirm/prompt) that may appear during click
+    let dialogMessage: string | undefined;
+
+    const dialogHandler = (dialog: any) => {
+      dialogMessage = dialog.message();
+      // Auto-accept the dialog to prevent blocking
+      dialog.accept().catch(() => {});
+    };
+
+    // Set up dialog handler before clicking
+    page.on('dialog', dialogHandler);
 
     try {
       //  Ensure we have the latest snapshot and mapping
@@ -580,6 +591,7 @@ export class HybridBrowserSession {
       const exists = await element.count() > 0;
 
       if (!exists) {
+        page.off('dialog', dialogHandler);
         return { success: false, error: `Element with ref ${ref} not found` };
       }
 
@@ -624,28 +636,9 @@ export class HybridBrowserSession {
         (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
       );
 
-      //  Open ALL links in new tabs
-      // Check if this is a navigable link
-      const isNavigableLink = tagName === 'a' && href &&
-        !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
-        !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
-        href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
-        href !== browserConfig.anchorOnly; // Not just #
-
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
-
-
-      if (shouldOpenNewTab) {
-        //  Handle new tab opening
-        // If it's a link that doesn't naturally open in new tab, force it
-        if (isNavigableLink && !naturallyOpensNewTab) {
-          await element.evaluate((el, blankTarget) => {
-            if (el.tagName.toLowerCase() === 'a') {
-              el.setAttribute('target', blankTarget);
-            }
-          }, browserConfig.blankTarget);
-        }
-
+      // Only open new tab if element naturally opens one (has target="_blank" or window.open)
+      // Do NOT force all links to open in new tabs
+      if (naturallyOpensNewTab) {
         // Set up popup listener before clicking
         const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
 
@@ -673,9 +666,14 @@ export class HybridBrowserSession {
           // Wait for new page to be ready
           await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
 
-          return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref-newtab', newTabId, dialogMessage };
         } catch (popupError) {
-          return { success: true, method: 'playwright-aria-ref' };
+          // Popup didn't open within timeout - this is expected for elements that
+          // look like they might open popups but don't (e.g., JS intercepted the click)
+          // The click still executed successfully
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref', dialogMessage };
         }
       } else {
         //  Add options to prevent scrolling issues
@@ -700,16 +698,19 @@ export class HybridBrowserSession {
           }
 
           if (diffSnapshot && diffSnapshot.trim() !== '') {
-            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+            page.off('dialog', dialogHandler);
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot, dialogMessage };
           }
         }
 
-        return { success: true, method: 'playwright-aria-ref' };
+        page.off('dialog', dialogHandler);
+        return { success: true, method: 'playwright-aria-ref', dialogMessage };
       }
 
     } catch (error) {
+      page.off('dialog', dialogHandler);
       console.error('[performClick] Exception during click for ref: %s', ref, error);
-      return { success: false, error: `Click failed with exception: ${error}` };
+      return { success: false, error: `Click failed with exception: ${error}`, dialogMessage };
     }
   }
 
@@ -1313,9 +1314,12 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
 
-          // Capture diff snapshot if present
-          if (clickResult.diffSnapshot) {
-            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          // Capture diff snapshot and dialog message if present
+          if (clickResult.diffSnapshot || clickResult.dialogMessage) {
+            actionDetails = {
+              ...(clickResult.diffSnapshot && { diffSnapshot: clickResult.diffSnapshot }),
+              ...(clickResult.dialogMessage && { dialogMessage: clickResult.dialogMessage })
+            };
           }
 
           actionExecutionTime = Date.now() - clickStart;

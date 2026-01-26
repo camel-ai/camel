@@ -381,13 +381,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
-        if tools:
-            request_config["tools"] = tools
-
+        request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
 
         return self._client.chat.completions.create(
@@ -401,13 +395,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
-        if tools:
-            request_config["tools"] = tools
-
+        request_config = self._prepare_request_config(tools)
         request_config = self._sanitize_config(request_config)
 
         return await self._async_client.chat.completions.create(
@@ -422,17 +410,11 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         return self._client.beta.chat.completions.parse(
@@ -447,17 +429,11 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         return await self._async_client.beta.chat.completions.parse(
@@ -476,16 +452,9 @@ class OpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
-
         request_config = self._sanitize_config(request_config)
 
         # Use the beta streaming API for structured outputs
@@ -506,15 +475,9 @@ class OpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
 
         request_config = self._sanitize_config(request_config)
 
