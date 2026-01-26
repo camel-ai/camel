@@ -17,8 +17,6 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import yaml
-
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -184,6 +182,12 @@ class SkillToolkit(BaseToolkit):
         return any(part.startswith(".") for part in rel.parts)
 
     def _parse_skill(self, path: Path) -> Optional[Dict[str, str]]:
+        try:
+            import yaml  # type: ignore
+        except ImportError:
+            logger.warning("PyYAML is not available; skipping skills")
+            return None
+
         try:
             contents = path.read_text(encoding="utf-8")
         except OSError as exc:
