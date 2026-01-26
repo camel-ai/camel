@@ -15,7 +15,8 @@ Requires the Daytona server to be running and an API key configured.
 
 - **api_key** (Optional[str]): The Daytona API key for authentication. If not provided, it will try to use the DAYTONA_API_KEY environment variable. (default: :obj:`None`)
 - **api_url** (Optional[str]): The URL of the Daytona server. If not provided, it will try to use the DAYTONA_API_URL environment variable. If none is provided, it will use "http://localhost:8000". (default: :obj:`None`)
-- **language** (Optional[str]): The programming language for the sandbox. (default: :obj:`"python"`)
+- **language** (`Optional[Literal["python", "typescript", "javascript"]]`): The programming language for the sandbox. (default: :obj:`"python"`)
+- **image** (Optional[str]): The Docker image to use for the sandbox. If not provided, a default image based on the language will be used. (default: :obj:`None`)
 
 <a id="camel.runtimes.daytona_runtime.DaytonaRuntime.__init__"></a>
 
@@ -26,7 +27,8 @@ def __init__(
     self,
     api_key: Optional[str] = None,
     api_url: Optional[str] = None,
-    language: Optional[str] = 'python'
+    language: Optional[Literal['python', 'typescript', 'javascript']] = 'python',
+    image: Optional[str] = None
 ):
 ```
 
