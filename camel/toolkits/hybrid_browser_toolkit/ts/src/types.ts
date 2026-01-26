@@ -49,6 +49,7 @@ export interface ActionResult {
   details?: Record<string, any>;
   timing?: DetailedTiming;
   newTabId?: string;  // ID of newly opened tab if click opened a new tab
+  note?: string;
 }
 
 export interface TabInfo {

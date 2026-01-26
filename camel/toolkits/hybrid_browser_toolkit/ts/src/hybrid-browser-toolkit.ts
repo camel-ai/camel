@@ -302,6 +302,11 @@ export class HybridBrowserToolkit {
       }
     }
 
+    // Include note if present
+    if (result.note) {
+      response.note = result.note;
+    }
+
     return response;
   }
 

@@ -1448,6 +1448,7 @@ export class HybridBrowserSession {
           dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
           network_idle_time_ms: stabilityResult.networkIdleTime,
         },
+        note: stabilityResult.note,
         ...(newTabId && { newTabId }), //  Include new tab ID if present
         ...(actionDetails && { details: actionDetails }), // Include action details if present
       };
@@ -1469,9 +1470,10 @@ export class HybridBrowserSession {
   /**
    * Wait for DOM to stop changing for a specified duration
    */
-  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
+  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<{ hasLoadingElements: boolean }> {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stabilityThreshold = browserConfig.domStabilityThreshold; // Consider stable if no changes for configured duration
+    let hasLoadingElements = false;
 
     try {
       // Monitor DOM changes and loading elements
@@ -1588,12 +1590,17 @@ export class HybridBrowserSession {
           const timeSinceLastChange = Date.now() - check.lastChange;
           const isStable = timeSinceLastChange > threshold;
 
-          // Must be stable AND have no loading elements
-          return isStable && !check.hasLoadingElements;
+          return isStable;
         },
         stabilityThreshold,
         { timeout: Math.max(0, maxWaitTime) }
       ).catch(() => {});
+
+      // Check if any loading elements are present
+      hasLoadingElements = await page.evaluate(() => {
+        const check = (window as any).__domStabilityCheck;
+        return check ? check.hasLoadingElements : false;
+      });
     } finally {
       // Cleanup
       await page.evaluate(() => {
@@ -1603,12 +1610,14 @@ export class HybridBrowserSession {
         delete (window as any).__domStabilityCheck;
       }).catch(() => {});
     }
+    return { hasLoadingElements };
   }
 
   private async waitForPageStability(page: Page): Promise<{
     domContentLoadedTime: number;
     networkIdleTime: number;
     domStabilityTime: number;
+    note: string;
   }> {
     try {
       const browserConfig = this.configLoader.getBrowserConfig();
@@ -1636,23 +1645,32 @@ export class HybridBrowserSession {
       })();
       const domStabilityPromise = (async () => {
         const start = Date.now();
-        await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
+        const result = await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
 
-        return Date.now() - start;
+        return { time: Date.now() - start, hasLoadingElements: result.hasLoadingElements };
       })();
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('max timeout')), maxTimeout)
       );
 
-      const [networkIdleTime, domStabilityTime] = await Promise.race([
+      const [networkIdleTime, domStabilityResult] = await Promise.race([
         Promise.all([networkIdlePromise, domStabilityPromise]),
         timeoutPromise
       ]);
 
-      return { domContentLoadedTime, networkIdleTime, domStabilityTime };
+      const note = domStabilityResult.hasLoadingElements ?
+      'Loading-related elements were detected on this page. The page may still be in a loading or transitional state. The current snapshot of this page may not be accurate in the next action'
+      : '';
+
+      return {
+        domContentLoadedTime,
+        networkIdleTime,
+        domStabilityTime: domStabilityResult.time,
+        note
+      };
     } catch (error) {
-      return { domContentLoadedTime: 0, networkIdleTime: 0, domStabilityTime: 0 };
+      return { domContentLoadedTime: 0, networkIdleTime: 0, domStabilityTime: 0, note:'', };
     }
   }
 
@@ -1711,6 +1729,7 @@ export class HybridBrowserSession {
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
           },
+          note: stabilityResult.note,
         };
       } else {
         //  Open in new tab if current page has content
@@ -1787,6 +1806,7 @@ export class HybridBrowserSession {
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
           },
+          note: stabilityResult.note,
         };
       }
     } catch (error) {

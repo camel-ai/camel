@@ -663,6 +663,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -690,6 +691,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             if "timing" in result:
                 response["timing"] = result["timing"]
+
+            if "note" in result:
+                response["note"] = result["note"]
 
             return response
         except Exception as e:
@@ -736,6 +740,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "total_tabs" (int): Total number of open tabs.
                 - "details" (Dict[str, Any]): When using multiple inputs,
                   contains success/error status for each ref.
+                - "note" (str): A note about the loading status of the page.
+
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -793,6 +799,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -841,6 +848,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -888,6 +896,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -939,6 +948,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -987,6 +997,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
@@ -1035,6 +1046,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "note" (str): A note about the loading status of the page.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
