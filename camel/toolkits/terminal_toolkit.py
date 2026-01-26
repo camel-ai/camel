@@ -20,6 +20,7 @@ import uuid
 import shlex
 import tarfile
 import io
+import base64
 from queue import Queue, Empty
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -638,6 +639,94 @@ class TerminalToolkit(BaseToolkit):
         tar_stream.seek(0)
         self.container.put_archive(os.path.dirname(dest_path), tar_stream)
 
+    def _read_from_container(self, src_path: str) -> bytes:
+        """Helper method to read a file from a Docker container."""
+        try:
+            bits, stat = self.container.get_archive(src_path)
+            tar_stream = io.BytesIO()
+            for chunk in bits:
+                tar_stream.write(chunk)
+            tar_stream.seek(0)
+            
+            with tarfile.open(fileobj=tar_stream) as tar:
+                # The archive contains the file with its basename
+                member_name = os.path.basename(src_path)
+                # Note: get_archive might return a different name if path refers to a dir
+                # but for a single file it should be the basename.
+                # However, sometimes it's just the file itself in the tar.
+                member = tar.getmember(member_name)
+                f = tar.extractfile(member)
+                if f:
+                    return f.read()
+                else:
+                    raise RuntimeError(f"Could not extract file '{src_path}' from container.")
+        except Exception as e:
+            raise RuntimeError(f"Error reading from container: {e}")
+
+    def shell_read_image(self, file_path: str) -> str:
+        """
+        Reads an image file and returns its content as a base64 encoded string.
+        This is useful for multi-modal LLMs to process images from the environment.
+
+        Args:
+            file_path (str): The path to the image file to read.
+        
+        Returns:
+            str: The base64 encoded string of the image, or an error message.
+        """
+        # Determine MIME type from file extension
+        ext_to_mime = {
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.bmp': 'image/bmp',
+            '.svg': 'image/svg+xml',
+            '.ico': 'image/x-icon',
+        }
+        ext = os.path.splitext(file_path)[1].lower()
+        mime_type = ext_to_mime.get(ext)
+        
+        if not mime_type:
+            return f"Error: Unsupported image extension '{ext}'. Supported: {list(ext_to_mime.keys())}"
+        
+        if self.safe_mode and self.working_dir:
+            abs_file_path = os.path.abspath(file_path)
+            if not abs_file_path.startswith(self.working_dir):
+                return "Error: Cannot read a file outside of the working directory in safe mode."
+
+        try:
+            if self.use_docker_backend:
+                # Check if file exists in container
+                check_cmd = f"test -f {file_path} && echo 'exists' || echo 'not_found'"
+                exec_check = self.docker_api_client.exec_create(
+                    self.container.id, ['bash', '-c', check_cmd]
+                )
+                check_result = self.docker_api_client.exec_start(exec_check['Id']).decode('utf-8').strip()
+                
+                if check_result != 'exists':
+                    return f"Error: Image file '{file_path}' not found in container."
+                
+                # Base64 encode the image inside the container
+                b64_cmd = f"base64 -w0 {file_path}"
+                exec_b64 = self.docker_api_client.exec_create(
+                    self.container.id, ['bash', '-c', b64_cmd]
+                )
+                base64_string = self.docker_api_client.exec_start(exec_b64['Id']).decode('utf-8').strip()
+            else:
+                if not os.path.exists(file_path):
+                    return f"Error: Image file '{file_path}' not found."
+                    
+                with open(file_path, "rb") as f:
+                    content_bytes = f.read()
+                base64_string = base64.b64encode(content_bytes).decode('utf-8')
+
+            return f"data:{mime_type};base64,{base64_string}"
+
+        except Exception as e:
+            return f"Error reading image '{file_path}': {e}"
+
     def shell_write_content_to_file(self, content: str, file_path: str) -> str:
         """
         This function writes the specified content to a file at the given path.
@@ -710,5 +799,6 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.shell_write_content_to_file),
+            FunctionTool(self.shell_read_image),
             FunctionTool(self.shell_ask_user_for_help),
         ]
