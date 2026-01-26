@@ -86,7 +86,6 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.skills import SkillManager
 from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
@@ -462,8 +461,6 @@ class ChatAgent(BaseAgent):
             context window that can be occupied by summary information. Used
             to limit how much of the model's context is reserved for
             summarization results. (default: :obj:`0.6`)
-        skills_enabled (bool, optional): Whether to enable skill discovery
-            and injection into the model context. (default: :obj:`True`)
     """
 
     def __init__(
@@ -511,7 +508,6 @@ class ChatAgent(BaseAgent):
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
-        skills_enabled: bool = True,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -634,8 +630,6 @@ class ChatAgent(BaseAgent):
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
         self.summary_window_ratio = summary_window_ratio
-        self.skills_enabled = skills_enabled
-        self._skills_manager: Optional[SkillManager] = None
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1072,11 +1066,6 @@ class ChatAgent(BaseAgent):
 
         return openai_messages, num_tokens
 
-    def _get_skills_manager(self) -> SkillManager:
-        if self._skills_manager is None:
-            self._skills_manager = SkillManager()
-        return self._skills_manager
-
     def _count_tokens_for_messages(self, messages: List[OpenAIMessage]) -> int:
         if not messages:
             return 0
@@ -1104,31 +1093,6 @@ class ChatAgent(BaseAgent):
                 *openai_messages[1:],
             ]
         return [*extra_messages, *openai_messages]
-
-    def _build_skill_overview_messages(
-        self,
-    ) -> Tuple[List[OpenAIMessage], int]:
-        if not self.skills_enabled:
-            return [], 0
-
-        skills_manager = self._get_skills_manager()
-        messages, errors = skills_manager.build_overview_messages(Path.cwd())
-        for error in errors:
-            logger.warning(
-                "Failed to load skill at %s: %s",
-                error.source,
-                error.message,
-            )
-
-        if not messages:
-            return [], 0
-
-        openai_messages = [
-            msg.to_openai_message(OpenAIBackendRole.USER) for msg in messages
-        ]
-        return openai_messages, self._count_tokens_for_messages(
-            openai_messages
-        )
 
     def _calculate_next_summary_threshold(self) -> int:
         r"""Calculate the next token threshold that should trigger
@@ -1657,13 +1621,6 @@ class ChatAgent(BaseAgent):
             Optional[List[MemoryRecord]]: The records that were written when
             ``return_records`` is ``True``; otherwise ``None``.
         """
-        if isinstance(message.meta_dict, dict) and message.meta_dict.get(
-            "skill"
-        ):
-            if return_records:
-                return []
-            return None
-
         record = MemoryRecord(
             message=message,
             role_at_backend=role,
@@ -2955,10 +2912,6 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        skill_overview_messages, skill_overview_tokens = (
-            self._build_skill_overview_messages()
-        )
-
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
@@ -2990,12 +2943,6 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            if skill_overview_messages:
-                openai_messages = self._prepend_messages_after_system(
-                    openai_messages, skill_overview_messages
-                )
-                num_tokens += skill_overview_tokens
-                accumulated_context_tokens += skill_overview_tokens
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
@@ -3239,10 +3186,6 @@ class ChatAgent(BaseAgent):
 
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        skill_overview_messages, skill_overview_tokens = (
-            self._build_skill_overview_messages()
-        )
-
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
         accumulated_context_tokens = (
@@ -3272,12 +3215,6 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            if skill_overview_messages:
-                openai_messages = self._prepend_messages_after_system(
-                    openai_messages, skill_overview_messages
-                )
-                num_tokens += skill_overview_tokens
-                accumulated_context_tokens += skill_overview_tokens
             # Get response from model backend
             response = await self._aget_model_response(
                 openai_messages,
@@ -4243,10 +4180,6 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        skill_overview_messages, skill_overview_tokens = (
-            self._build_skill_overview_messages()
-        )
-
         # Get context for streaming
         try:
             openai_messages, num_tokens = (
@@ -4255,12 +4188,6 @@ class ChatAgent(BaseAgent):
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
-        if skill_overview_messages:
-            openai_messages = self._prepend_messages_after_system(
-                openai_messages, skill_overview_messages
-            )
-            num_tokens += skill_overview_tokens
-
         # Start streaming response
         yield from self._stream_response(
             openai_messages, num_tokens, response_format
@@ -5238,10 +5165,6 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        skill_overview_messages, skill_overview_tokens = (
-            self._build_skill_overview_messages()
-        )
-
         # Get context for streaming
         try:
             (
@@ -5251,12 +5174,6 @@ class ChatAgent(BaseAgent):
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
-        if skill_overview_messages:
-            openai_messages = self._prepend_messages_after_system(
-                openai_messages, skill_overview_messages
-            )
-            num_tokens += skill_overview_tokens
-
         # Start async streaming response
         last_response = None
         async for response in self._astream_response(
