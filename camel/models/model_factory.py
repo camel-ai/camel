@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 from typing import Any, ClassVar, Dict, Optional, Type, Union
@@ -19,6 +19,7 @@ from camel.models.aihubmix_model import AihubMixModel
 from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.atlascloud_model import AtlasCloudModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -97,6 +98,7 @@ class ModelFactory:
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.MINIMAX: MinimaxModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
+        ModelPlatformType.ATLASCLOUD: AtlasCloudModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
         ModelPlatformType.GEMINI: GeminiModel,
         ModelPlatformType.MISTRAL: MistralModel,

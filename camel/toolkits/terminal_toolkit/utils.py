@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import platform
@@ -297,6 +297,17 @@ def setup_initial_env_with_uv(
 ) -> bool:
     r"""Set up initial environment using uv."""
     try:
+        if platform.system() == 'Windows':
+            python_path = os.path.join(env_path, "Scripts", "python.exe")
+        else:
+            python_path = os.path.join(env_path, "bin", "python")
+
+        if os.path.exists(python_path):
+            if update_callback:
+                update_callback(
+                    "[UV] Environment already exists, skipping creation\n"
+                )
+            return True
         # Create virtual environment with Python 3.10 using uv
         subprocess.run(
             [uv_path, "venv", "--python", "3.10", env_path],
@@ -305,12 +316,6 @@ def setup_initial_env_with_uv(
             cwd=working_dir,
             timeout=300,
         )
-
-        # Get the python path from the new environment
-        if platform.system() == 'Windows':
-            python_path = os.path.join(env_path, "Scripts", "python.exe")
-        else:
-            python_path = os.path.join(env_path, "bin", "python")
 
         # Install essential packages using uv
         essential_packages = [
@@ -356,16 +361,37 @@ def setup_initial_env_with_venv(
 ) -> bool:
     r"""Set up initial environment using standard venv."""
     try:
-        # Create virtual environment with system Python
-        venv.create(
-            env_path, with_pip=True, system_site_packages=False, symlinks=False
-        )
-
         # Get pip path
         if platform.system() == 'Windows':
             pip_path = os.path.join(env_path, "Scripts", "pip.exe")
         else:
             pip_path = os.path.join(env_path, "bin", "pip")
+
+        # Check if environment already exists
+        if os.path.exists(pip_path):
+            if update_callback:
+                update_callback(
+                    "Environment already exists, skipping creation\n"
+                )
+            return True
+
+        # Create virtual environment with system Python
+        try:
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=True,
+            )
+        except Exception:
+            # Fallback to symlinks=False if symlinks=True fails
+            # (e.g., on some Windows configurations)
+            venv.create(
+                env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=False,
+            )
 
         # Upgrade pip and install essential packages
         essential_packages = [
@@ -526,8 +552,11 @@ def clone_current_environment(
                 update_callback(
                     "Falling back to standard venv for cloning environment\n"
                 )
-
-            venv.create(env_path, with_pip=True, symlinks=False)
+            try:
+                venv.create(env_path, with_pip=True, symlinks=True)
+            except Exception:
+                # Fallback to symlinks=False if symlinks=True fails
+                venv.create(env_path, with_pip=True, symlinks=False)
 
             # Get python/pip path
             if platform.system() == 'Windows':

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # ruff: noqa: I001
 from .function_tool import (
     FunctionTool,
@@ -43,6 +43,7 @@ from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
 from .wechat_official_toolkit import WeChatOfficialToolkit
 from .dingtalk import DingtalkToolkit
+from .lark_toolkit import LarkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -96,6 +97,7 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 
@@ -115,6 +117,7 @@ __all__ = [
     'WhatsAppToolkit',
     'WeChatOfficialToolkit',
     'DingtalkToolkit',
+    'LarkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -185,6 +188,7 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    'IMAPMailToolkit',
     "OutlookMailToolkit",
     'EarthScienceToolkit',
 ]

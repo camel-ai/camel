@@ -1,0 +1,251 @@
+<a id="camel.toolkits.lark_toolkit"></a>
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit"></a>
+
+## LarkToolkit
+
+```python
+class LarkToolkit(BaseToolkit):
+```
+
+A toolkit for Lark (Feishu) chat operations.
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    app_id: Optional[str] = None,
+    app_secret: Optional[str] = None,
+    use_feishu: bool = False,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the LarkToolkit.
+
+**Parameters:**
+
+- **app_id** (Optional[str]): The Lark application ID. If not provided, uses LARK_APP_ID environment variable.
+- **app_secret** (Optional[str]): The Lark application secret. If not provided, uses LARK_APP_SECRET environment variable.
+- **use_feishu** (bool): Set to True to use Feishu (China) API endpoints instead of Lark (international). (default: :obj:`False`)
+- **timeout** (Optional[float]): Request timeout in seconds.
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit._get_tenant_http_headers"></a>
+
+### _get_tenant_http_headers
+
+```python
+def _get_tenant_http_headers(self):
+```
+
+**Returns:**
+
+  Dict[str, str]: Headers dict with Content-Type and Authorization.
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit._convert_timestamp"></a>
+
+### _convert_timestamp
+
+```python
+def _convert_timestamp(self, ts: Any):
+```
+
+Convert millisecond timestamp to readable datetime string.
+
+**Parameters:**
+
+- **ts**: Timestamp value (can be string or int, in milliseconds).
+
+**Returns:**
+
+  str: ISO format datetime string, or original value if conversion
+fails.
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit._process_message_items"></a>
+
+### _process_message_items
+
+```python
+def _process_message_items(self, items: List[Dict[str, Any]]):
+```
+
+Process message items to agent-friendly format.
+
+**Parameters:**
+
+- **items**: List of message items from API response.
+
+**Returns:**
+
+  List[Dict[str, Any]]: Simplified items with only essential fields.
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_list_chats"></a>
+
+### lark_list_chats
+
+```python
+def lark_list_chats(
+    self,
+    sort_type: Literal['ByCreateTimeAsc', 'ByActiveTimeDesc'] = 'ByCreateTimeAsc',
+    page_size: int = 20,
+    page_token: Optional[str] = None
+):
+```
+
+Lists chats and groups that the user belongs to.
+
+Use this method to discover available chats and obtain chat_id values.
+
+**Parameters:**
+
+- **sort_type** (str): Sort order for chats. Options: - "ByCreateTimeAsc" (default) - "ByActiveTimeDesc"
+- **page_size** (int): Number of chats to return per page (max 100). (default: :obj:`20`)
+- **page_token** (Optional[str]): Token for pagination. Use the page_token from previous response to get next page.
+
+**Returns:**
+
+  Dict[str, object]: A dictionary containing:
+- chats: List of chat objects with chat_id and name
+- has_more: Whether there are more chats to fetch
+- page_token: Token to fetch the next page
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_get_chat_messages"></a>
+
+### lark_get_chat_messages
+
+```python
+def lark_get_chat_messages(
+    self,
+    container_id: str,
+    container_id_type: Literal['chat', 'thread'] = 'chat',
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    sort_type: Literal['ByCreateTimeAsc', 'ByCreateTimeDesc'] = 'ByCreateTimeAsc',
+    page_size: int = 20,
+    page_token: Optional[str] = None
+):
+```
+
+Gets message history from a chat with optional time filtering.
+
+Retrieves messages from a specific chat. Requires the bot to be a
+member of the chat.
+
+**Parameters:**
+
+- **container_id** (str): The container ID to retrieve messages from.
+- **container_id_type** (str): The container type. Options: - "chat": Chat (p2p or group) - "thread": Thread
+- **start_time** (Optional[str]): Start time filter (Unix timestamp in seconds, e.g., "1609459200"). Messages created after this time. Not supported for "thread" container type.
+- **end_time** (Optional[str]): End time filter (Unix timestamp in seconds). Messages created before this time. Not supported for "thread" container type.
+- **sort_type** (str): Sort order for messages. Options: - "ByCreateTimeAsc": Oldest first (default) - "ByCreateTimeDesc": Newest first
+- **page_size** (int): Number of messages to return per page (max 50). (default: :obj:`20`)
+- **page_token** (Optional[str]): Token for pagination. Use the page_token from previous response to get next page.
+
+**Returns:**
+
+  Dict[str, object]: A dictionary containing:
+- messages: List of processed message objects with fields:
+- message_id: Message identifier
+- msg_type: Message type (text, image, file, etc.)
+- text: Extracted message text content
+- time: Human-readable timestamp (UTC)
+- sender_id: Sender's user ID
+- sender_type: Type of sender
+- has_more: Whether there are more messages to fetch
+- page_token: Token to fetch the next page
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_send_message"></a>
+
+### lark_send_message
+
+```python
+def lark_send_message(
+    self,
+    receive_id: str,
+    text: str,
+    receive_id_type: Literal['open_id', 'user_id', 'union_id', 'email', 'chat_id'] = 'chat_id'
+):
+```
+
+Sends a message to a user or chat. If send message to
+a chat, use lark_list_chats to get chat_id first, if send
+message to a user, need user provide open_id, user_id,
+union_id or email.
+
+**Parameters:**
+
+- **receive_id** (str): The recipient identifier.
+- **text** (str): The text message content.
+- **receive_id_type** (str): The recipient ID type. Options: - "open_id" - "user_id" - "union_id" - "email" - "chat_id" (default)
+
+**Returns:**
+
+  Dict[str, object]: A dictionary containing:
+- message_id: The sent message ID
+- chat_id: The chat ID the message belongs to
+- msg_type: Message type (text)
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_get_message_resource"></a>
+
+### lark_get_message_resource
+
+```python
+def lark_get_message_resource(
+    self,
+    message_id: str,
+    file_key: str,
+    resource_type: Literal['image', 'file']
+):
+```
+
+Obtains resource files in messages, including audios, videos,
+images, and files. Emoji resources cannot be downloaded, and the
+resource files for download cannot exceed 100 MB.
+
+**Parameters:**
+
+- **message_id** (str): The message ID containing the resource.
+- **file_key** (str): The resource file key from message content.
+- **resource_type** (str): Resource type, either "image" or "file".
+
+**Returns:**
+
+  Dict[str, object]: A dictionary containing:
+- content_type: Response Content-Type header value
+- path: File path where content was saved
+- size: Content size in bytes
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.lark_get_message_resource_key"></a>
+
+### lark_get_message_resource_key
+
+```python
+def lark_get_message_resource_key(self, message_id: str):
+```
+
+Gets the resource key from a message's content.
+
+**Parameters:**
+
+- **message_id** (str): The message ID to fetch.
+
+**Returns:**
+
+  Dict[str, object]: A dictionary containing:
+- key: The resource key from message content
+
+<a id="camel.toolkits.lark_toolkit.LarkToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

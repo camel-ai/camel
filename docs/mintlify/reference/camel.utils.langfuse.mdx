@@ -47,7 +47,10 @@ Check if Langfuse is configured.
 def set_current_agent_session_id(session_id: str):
 ```
 
-Set the session ID for the current agent in thread-local storage.
+Set the session ID for the current agent in context-local storage.
+
+This is safe to use in both sync and async contexts.
+In async contexts, each coroutine maintains its own value.
 
 **Parameters:**
 

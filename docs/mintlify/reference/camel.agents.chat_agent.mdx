@@ -261,7 +261,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **token_limit** (int, optional): The maximum number of tokens allowed for the context window. If `None`, uses the model's default token limit. This can be used to restrict the context size below the model's maximum capacity. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agent. (default: :obj:`None`)
 - **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]], optional): List of toolkit instances that inherit from :obj:`RegisteredAgentToolkit`. The agent will register itself with these toolkits, allowing them to access the agent instance. Note: This does NOT add the toolkit's tools to the agent. To use tools from these toolkits, pass them explicitly via the `tools` parameter. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
-- **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
+- **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` to check if task is complete. When set, the agent will keep prompting the model until a terminator signals completion. Note: You must define the termination signal (e.g., a keyword) in your system prompt so the model knows what to output. (default: :obj:`None`)
 - **scheduling_strategy** (str): name of function that defines how to select the next model in ModelManager. (default: :str:`round_robin`)
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
@@ -274,7 +274,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **retry_attempts** (int, optional): Maximum number of retry attempts for rate limit errors. (default: :obj:`3`)
 - **retry_delay** (float, optional): Initial delay in seconds between retries. Uses exponential backoff. (default: :obj:`1.0`)
 - **step_timeout** (Optional[float], optional): Timeout in seconds for the entire step operation. If None, no timeout is applied. (default: :obj:`None`)
-- **stream_accumulate** (bool, optional): When True, partial streaming updates return accumulated content (current behavior). When False, partial updates return only the incremental delta. (default: :obj:`True`)
+- **stream_accumulate** (Optional[bool], optional): When True, partial streaming updates return accumulated content. When False, partial updates return only the incremental delta (recommended). If None, defaults to False with a deprecation warning for users who previously relied on the old default (True). (default: :obj:`None`, which behaves as :obj:`False`)
 - **summary_window_ratio** (float, optional): Maximum fraction of the total context window that can be occupied by summary information. Used to limit how much of the model's context is reserved for summarization results. (default: :obj:`0.6`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
@@ -307,7 +307,7 @@ def __init__(
     retry_attempts: int = 3,
     retry_delay: float = 1.0,
     step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
-    stream_accumulate: bool = True,
+    stream_accumulate: Optional[bool] = None,
     summary_window_ratio: float = 0.6
 ):
 ```
@@ -321,6 +321,21 @@ def reset(self):
 ```
 
 Resets the :obj:`ChatAgent` to its initial state.
+
+<a id="camel.agents.chat_agent.ChatAgent._update_token_cache"></a>
+
+### _update_token_cache
+
+```python
+def _update_token_cache(self, usage_dict: Dict[str, Any], message_count: int):
+```
+
+Update the token count cache from LLM response usage.
+
+**Parameters:**
+
+- **usage_dict** (Dict[str, Any]): Usage dictionary from LLM response.
+- **message_count** (int): Number of messages sent to the LLM.
 
 <a id="camel.agents.chat_agent.ChatAgent._resolve_models"></a>
 
@@ -440,7 +455,8 @@ def memory(self, value: AgentMemory):
 Set the agent memory.
 
 When setting a new memory, the system message is automatically
-re-added to ensure it's not lost.
+added after existing system messages, while preserving existing
+memory data.
 
 **Parameters:**
 
@@ -473,39 +489,6 @@ def _get_full_tool_schemas(self):
 
 Returns a list of tool schemas of all tools, including internal
 and external tools.
-
-<a id="camel.agents.chat_agent.ChatAgent._is_token_limit_error"></a>
-
-### _is_token_limit_error
-
-```python
-def _is_token_limit_error(error: Exception):
-```
-
-Return True when the exception message indicates a token limit.
-
-<a id="camel.agents.chat_agent.ChatAgent._is_tool_related_record"></a>
-
-### _is_tool_related_record
-
-```python
-def _is_tool_related_record(record: MemoryRecord):
-```
-
-Determine whether the given memory record
-belongs to a tool call.
-
-<a id="camel.agents.chat_agent.ChatAgent._find_indices_to_remove_for_last_tool_pair"></a>
-
-### _find_indices_to_remove_for_last_tool_pair
-
-```python
-def _find_indices_to_remove_for_last_tool_pair(self, recent_records: List[ContextRecord]):
-```
-
-**Returns:**
-
-  List[int]: Indices to remove (may be non-contiguous).
 
 <a id="camel.agents.chat_agent.ChatAgent._serialize_tool_args"></a>
 
@@ -541,14 +524,6 @@ def _update_last_tool_call_state(self, record: Optional[ToolCallingRecord]):
 
 Track the most recent tool call and its identifying signature.
 
-<a id="camel.agents.chat_agent.ChatAgent._format_tool_limit_notice"></a>
-
-### _format_tool_limit_notice
-
-```python
-def _format_tool_limit_notice(self):
-```
-
 <a id="camel.agents.chat_agent.ChatAgent._append_user_messages_section"></a>
 
 ### _append_user_messages_section
@@ -564,6 +539,16 @@ def _append_user_messages_section(summary_content: str, user_messages: List[str]
 ```python
 def _reset_summary_state(self):
 ```
+
+<a id="camel.agents.chat_agent.ChatAgent._get_context_with_summarization"></a>
+
+### _get_context_with_summarization
+
+```python
+def _get_context_with_summarization(self):
+```
+
+Get context and trigger summarization if needed.
 
 <a id="camel.agents.chat_agent.ChatAgent._calculate_next_summary_threshold"></a>
 
@@ -959,12 +944,14 @@ regular messages.
 ### clear_memory
 
 ```python
-def clear_memory(self):
+def clear_memory(self, reset_summary_state: bool = True):
 ```
 
-**Returns:**
+Clear the agent's memory and reset to initial state.
 
-  None
+**Parameters:**
+
+- **reset_summary_state** (bool): Whether to reset the summary token count. Set to False when preserving summary state during summarization. Defaults to True for full memory clearing.
 
 <a id="camel.agents.chat_agent.ChatAgent._generate_system_message_for_output_language"></a>
 
@@ -1286,7 +1273,6 @@ Log final messages or warnings about multiple responses.
 def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
-    num_tokens: int,
     current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
     tool_schemas: Optional[List[Dict[str, Any]]] = None,
@@ -1497,6 +1483,19 @@ def _get_token_count(self, content: str):
 ```
 
 Get token count for content with fallback.
+
+<a id="camel.agents.chat_agent.ChatAgent._warn_stream_accumulate_deprecation"></a>
+
+### _warn_stream_accumulate_deprecation
+
+```python
+def _warn_stream_accumulate_deprecation(self):
+```
+
+Issue deprecation warning for stream_accumulate default change.
+
+Only warns once per agent instance, and only if the user didn't
+explicitly set stream_accumulate.
 
 <a id="camel.agents.chat_agent.ChatAgent._stream_response"></a>
 
