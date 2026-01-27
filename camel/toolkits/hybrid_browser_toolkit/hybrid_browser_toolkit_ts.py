@@ -632,7 +632,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self,
         read_image: bool = True,
     ) -> "str | ToolResult":
-        r"""Captures a plain screenshot of the current page without SOM markers.
+        r"""Captures a plain screenshot of the current page without markers.
 
         This tool takes a screenshot without any visual annotations. Use this
         in full_visual_mode for visual analysis where element ref IDs are not
@@ -743,7 +743,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             elif ref is not None:
                 result = await ws_wrapper.click(ref)
             else:
-                raise ValueError("Must provide either 'ref' or both 'x' and 'y'")
+                raise ValueError(
+                    "Must provide either 'ref' or both 'x' and 'y'"
+                )
             return await self._build_action_response(result, ws_wrapper)
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
@@ -783,9 +785,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Pixel mode: click to focus, then type using keyboard
                 await ws_wrapper.mouse_control('click', x, y)
                 await asyncio.sleep(0.1)  # Wait for focus
-                result = await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {'operations': [{"type": "type", "text": text, "delay": 0}]},
+                result = await ws_wrapper.batch_keyboard_input(
+                    [{"type": "type", "text": text, "delay": 0}]
                 )
             elif ref is not None and text is not None:
                 result = await ws_wrapper.type(ref, text)
@@ -938,8 +939,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.mouse_drag(
-                from_ref=from_ref, to_ref=to_ref,
-                from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y
+                from_ref=from_ref,
+                to_ref=to_ref,
+                from_x=from_x,
+                from_y=from_y,
+                to_x=to_x,
+                to_y=to_y,
             )
             return await self._build_action_response(result, ws_wrapper)
         except Exception as e:
@@ -1301,9 +1306,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             for i in range(0, len(operations), CHUNK_SIZE):
                 chunk = operations[i : i + CHUNK_SIZE]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {'operations': chunk, 'skipStabilityWait': True},
+                await ws_wrapper.batch_keyboard_input(
+                    chunk, skip_stability_wait=True
                 )
                 # Small delay between chunks
                 await asyncio.sleep(0.2)
@@ -1519,22 +1523,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Meta", "c"]},
                 ]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
                 # Repeat to capture correct one
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
             else:
@@ -1543,22 +1539,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Control", "c"]},
                 ]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
                 # Repeat to capture correct one
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
@@ -1777,7 +1765,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode=self._full_visual_mode,
         )
 
-    # Tools not available in full_visual_mode (require ref, no pixel alternative)
+    # Tools not available in full_visual_mode (require ref, no pixel alt)
     _TOOLS_EXCLUDED_IN_VISUAL_MODE: ClassVar[List[str]] = [
         "browser_select",
         "browser_get_page_snapshot",
@@ -1800,11 +1788,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         if tool_name == "browser_click":
             if pixel_mode:
-                async def browser_click(*, x: float, y: float) -> Dict[str, Any]:
+
+                async def browser_click(
+                    *, x: float, y: float
+                ) -> Dict[str, Any]:
                     r"""Clicks at the specified pixel coordinates on the page.
 
-                    Use browser_get_screenshot to visually identify the target
-                    position, then provide the x,y coordinates of where to click.
+                    Use browser_get_screenshot to visually identify the
+                    target position, then provide the x,y coordinates.
 
                     Args:
                         x (float): X pixel coordinate (horizontal position from
@@ -1813,12 +1804,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                             top edge of viewport).
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(x=x, y=y)
+
                 return browser_click
             else:
-                async def browser_click(*, ref: str) -> Dict[str, Any]:  # noqa: F811
+
+                async def browser_click(*, ref: str) -> Dict[str, Any]:
                     r"""Clicks on an element identified by its ref ID.
 
                     The ref ID is obtained from a page snapshot
@@ -1828,13 +1821,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         ref (str): The ref ID of the element to click.
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(ref=ref)
+
                 return browser_click
 
         elif tool_name == "browser_type":
             if pixel_mode:
+
                 async def browser_type(
                     *, x: float, y: float, text: str
                 ) -> Dict[str, Any]:
@@ -1849,12 +1844,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         text (str): The text to type into the input field.
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(x=x, y=y, text=text)
+
                 return browser_type
             else:
-                async def browser_type(  # noqa: F811
+
+                async def browser_type(
                     *,
                     ref: Optional[str] = None,
                     text: Optional[str] = None,
@@ -1867,21 +1864,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     Args:
                         ref (Optional[str]): The ref ID of the input element.
                         text (Optional[str]): The text to type.
-                        inputs (Optional[List[Dict[str, str]]]): List of inputs,
-                            each with 'ref' and 'text' keys.
+                        inputs (Optional[List[Dict[str, str]]]): List of
+                            inputs, each with 'ref' and 'text' keys.
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(ref=ref, text=text, inputs=inputs)
+
                 return browser_type
 
         elif tool_name == "browser_mouse_drag":
             if pixel_mode:
+
                 async def browser_mouse_drag(
                     *, from_x: float, from_y: float, to_x: float, to_y: float
                 ) -> Dict[str, Any]:
-                    r"""Drags from one position to another using pixel coordinates.
+                    r"""Drags from one position to another using pixels.
 
                     Use browser_get_screenshot to identify element positions.
 
@@ -1892,14 +1891,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         to_y (float): Target Y pixel coordinate.
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(
                         from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y
                     )
+
                 return browser_mouse_drag
             else:
-                async def browser_mouse_drag(  # noqa: F811
+
+                async def browser_mouse_drag(
                     *, from_ref: str, to_ref: str
                 ) -> Dict[str, Any]:
                     r"""Drags from one element to another using ref IDs.
@@ -1911,9 +1912,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         to_ref (str): The ref ID of the target element.
 
                     Returns:
-                        Dict[str, Any]: A dictionary with the result of the action.
+                        Dict[str, Any]: Result of the action.
                     """
                     return await method(from_ref=from_ref, to_ref=to_ref)
+
                 return browser_mouse_drag
 
         return method
@@ -1952,8 +1954,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_sheet_read": self.browser_sheet_read,
         }
 
-        # Tools that need mode-specific wrappers (different signatures for each mode)
-        mode_specific_tools = {"browser_click", "browser_type", "browser_mouse_drag"}
+        # Tools that need mode-specific wrappers (different signatures)
+        mode_specific_tools = {
+            "browser_click",
+            "browser_type",
+            "browser_mouse_drag",
+        }
 
         enabled_tools = []
 
@@ -1963,9 +1969,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 self._full_visual_mode
                 and tool_name in self._TOOLS_EXCLUDED_IN_VISUAL_MODE
             ):
-                logger.debug(
-                    f"Skipping {tool_name} in full_visual_mode"
-                )
+                logger.debug(f"Skipping {tool_name} in full_visual_mode")
                 continue
 
             if tool_name not in tool_map:

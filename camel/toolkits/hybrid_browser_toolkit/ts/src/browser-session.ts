@@ -2155,6 +2155,7 @@ export class HybridBrowserSession {
   async takeScreenshot(): Promise<{
     buffer: Buffer;
     timing: { screenshot_time_ms: number };
+    viewport: { width: number; height: number };
   }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -2165,6 +2166,7 @@ export class HybridBrowserSession {
       fullPage: browserConfig.fullPageScreenshot
     });
 
+    const viewport = page.viewportSize() || browserConfig.viewport;
     const screenshotTime = Date.now() - startTime;
 
     return {
@@ -2172,6 +2174,7 @@ export class HybridBrowserSession {
       timing: {
         screenshot_time_ms: screenshotTime,
       },
+      viewport,
     };
   }
 

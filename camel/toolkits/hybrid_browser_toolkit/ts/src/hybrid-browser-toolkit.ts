@@ -235,9 +235,9 @@ export class HybridBrowserToolkit {
     }
   }
 
-  async getScreenshot(): Promise<VisualMarkResult & { timing: any }> {
+  async getScreenshot(): Promise<VisualMarkResult & { timing: any; viewport?: { width: number; height: number } }> {
     const startTime = Date.now();
-    console.log('[HybridBrowserToolkit] Starting getScreenshot (plain, no SOM)...');
+    console.log('[HybridBrowserToolkit] Starting getScreenshot...');
 
     try {
       const result = await this.session.takeScreenshot();
@@ -245,12 +245,13 @@ export class HybridBrowserToolkit {
       const totalTime = Date.now() - startTime;
 
       return {
-        text: `Screenshot captured successfully`,
+        text: `Screenshot captured successfully. Viewport size: ${result.viewport.width}x${result.viewport.height}. Valid coordinate range: x=[0, ${result.viewport.width}], y=[0, ${result.viewport.height}]`,
         images: [base64Image],
         timing: {
           total_time_ms: totalTime,
           screenshot_time_ms: result.timing.screenshot_time_ms,
         },
+        viewport: result.viewport,
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;

@@ -784,7 +784,9 @@ class WebSocketBrowserWrapper:
         response = await self._send_command('get_som_screenshot', {})
 
         end_time = time.time()
-        logger.info(f"SOM screenshot completed in {end_time - start_time:.2f}s")
+        logger.info(
+            f"SOM screenshot completed in {end_time - start_time:.2f}s"
+        )
 
         return ToolResult(text=response['text'], images=response['images'])
 
@@ -797,7 +799,9 @@ class WebSocketBrowserWrapper:
         response = await self._send_command('get_screenshot', {})
 
         end_time = time.time()
-        logger.info(f"Plain screenshot completed in {end_time - start_time:.2f}s")
+        logger.info(
+            f"Plain screenshot completed in {end_time - start_time:.2f}s"
+        )
 
         return ToolResult(text=response['text'], images=response['images'])
 
@@ -919,15 +923,38 @@ class WebSocketBrowserWrapper:
         if from_ref is not None and to_ref is not None:
             params = {'from_ref': from_ref, 'to_ref': to_ref}
         elif all(v is not None for v in [from_x, from_y, to_x, to_y]):
-            params = {'from_x': from_x, 'from_y': from_y, 'to_x': to_x, 'to_y': to_y}
+            params = {
+                'from_x': from_x,
+                'from_y': from_y,
+                'to_x': to_x,
+                'to_y': to_y,
+            }
         else:
-            raise ValueError("Provide (from_ref, to_ref) or (from_x, from_y, to_x, to_y)")
+            raise ValueError(
+                "Provide (from_ref, to_ref) or (from_x, from_y, to_x, to_y)"
+            )
         return await self._send_command('mouse_drag', params)
 
     @action_logger
     async def press_key(self, keys: List[str]) -> Dict[str, Any]:
         """Press key and key combinations."""
         response = await self._send_command('press_key', {'keys': keys})
+        return response
+
+    @action_logger
+    async def batch_keyboard_input(
+        self,
+        operations: List[Dict[str, Any]],
+        skip_stability_wait: bool = True,
+    ) -> Dict[str, Any]:
+        """Execute batch keyboard operations."""
+        response = await self._send_command(
+            'batch_keyboard_input',
+            {
+                'operations': operations,
+                'skipStabilityWait': skip_stability_wait,
+            },
+        )
         return response
 
     @action_logger
