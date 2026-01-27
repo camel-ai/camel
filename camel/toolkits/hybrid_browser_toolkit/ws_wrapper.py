@@ -202,6 +202,12 @@ class WebSocketBrowserWrapper:
 
         Args:
             config: Configuration dictionary for the browser toolkit
+                - disable_proxy_for_localhost (bool): If True, temporarily
+                  disables HTTP_PROXY and HTTPS_PROXY environment variables
+                  when connecting to localhost WebSocket server. This is
+                  necessary in environments with proxy configuration where
+                  localhost connections should not be routed through proxy.
+                  Default: True
         """
         if websockets is None:
             raise ImportError(
@@ -222,6 +228,11 @@ class WebSocketBrowserWrapper:
         self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
         self._browser_opened = False
         self._server_ready_future = None
+
+        # Proxy handling configuration
+        self.disable_proxy_for_localhost = self.config.get(
+            'disable_proxy_for_localhost', True
+        )
 
         self.browser_log_to_file = (config or {}).get(
             'browser_log_to_file', False
@@ -246,6 +257,51 @@ class WebSocketBrowserWrapper:
                 log_dir,
                 f"typescript_console_{timestamp}_{self.session_id}.log",
             )
+
+    @contextlib.asynccontextmanager
+    async def _proxy_context_manager(self):
+        """Context manager to handle proxy environment variables.
+
+        If disable_proxy_for_localhost is True, this temporarily removes
+        HTTP_PROXY, HTTPS_PROXY, http_proxy, and https_proxy from the
+        environment before entering the context, and restores them
+        when exiting.
+
+        Yields:
+            None
+        """
+        if not self.disable_proxy_for_localhost:
+            # Proxy handling disabled, yield immediately
+            yield
+            return
+
+        # Save current proxy environment variables
+        proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+        saved_values = {}
+
+        for var in proxy_vars:
+            value = os.environ.get(var)
+            if value:
+                saved_values[var] = value
+
+        # Remove proxy variables from environment
+        for var in proxy_vars:
+            os.environ.pop(var, None)
+
+        try:
+            if saved_values:
+                logger.info(
+                    f"Temporarily disabled proxy for localhost connection: "
+                    f"{list(saved_values.keys())}"
+                )
+            yield
+        finally:
+            # Restore original values
+            for var, value in saved_values.items():
+                os.environ[var] = value
+
+            if saved_values:
+                logger.info("Restored proxy environment variables")
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -358,68 +414,70 @@ class WebSocketBrowserWrapper:
         max_retries = 3
         retry_delays = [1, 2, 4]
 
-        for attempt in range(max_retries):
-            try:
-                connect_timeout = 10.0 + (attempt * 5.0)
+        # Use proxy context manager for WebSocket connection
+        async with self._proxy_context_manager():
+            for attempt in range(max_retries):
+                try:
+                    connect_timeout = 10.0 + (attempt * 5.0)
 
-                logger.info(
-                    f"Attempting to connect to WebSocket server "
-                    f"(attempt {attempt + 1}/{max_retries}, "
-                    f"timeout: {connect_timeout}s)"
-                )
-
-                self.websocket = await asyncio.wait_for(
-                    websockets.connect(
-                        f"ws://localhost:{self.server_port}",
-                        ping_interval=30,
-                        ping_timeout=10,
-                        max_size=50 * 1024 * 1024,
-                    ),
-                    timeout=connect_timeout,
-                )
-                logger.info("Connected to WebSocket server")
-                break
-
-            except asyncio.TimeoutError:
-                if attempt < max_retries - 1:
-                    delay = retry_delays[attempt]
-                    logger.warning(
-                        f"WebSocket handshake timeout "
-                        f"(attempt {attempt + 1}/{max_retries}). "
-                        f"Retrying in {delay} seconds..."
-                    )
-                    await asyncio.sleep(delay)
-                else:
-                    raise RuntimeError(
-                        f"Failed to connect to WebSocket server after "
-                        f"{max_retries} attempts: Handshake timeout"
+                    logger.info(
+                        f"Attempting to connect to WebSocket server "
+                        f"(attempt {attempt + 1}/{max_retries}, "
+                        f"timeout: {connect_timeout}s)"
                     )
 
-            except Exception as e:
-                if attempt < max_retries - 1 and "timed out" in str(e).lower():
-                    delay = retry_delays[attempt]
-                    logger.warning(
-                        f"WebSocket connection failed "
-                        f"(attempt {attempt + 1}/{max_retries}): {e}. "
-                        f"Retrying in {delay} seconds..."
+                    self.websocket = await asyncio.wait_for(
+                        websockets.connect(
+                            f"ws://localhost:{self.server_port}",
+                            ping_interval=30,
+                            ping_timeout=10,
+                            max_size=50 * 1024 * 1024,
+                        ),
+                        timeout=connect_timeout,
                     )
-                    await asyncio.sleep(delay)
-                else:
+                    logger.info("Connected to WebSocket server")
                     break
 
-        if not self.websocket:
-            await _cleanup_process_and_tasks(
-                self.process,
-                self._log_reader_task,
-                getattr(self, 'ts_log_file', None),
-            )
-            self.ts_log_file = None
-            self.process = None
+                except asyncio.TimeoutError:
+                    if attempt < max_retries - 1:
+                        delay = retry_delays[attempt]
+                        logger.warning(
+                            f"WebSocket handshake timeout "
+                            f"(attempt {attempt + 1}/{max_retries}). "
+                            f"Retrying in {delay} seconds..."
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        raise RuntimeError(
+                            f"Failed to connect to WebSocket server after "
+                            f"{max_retries} attempts: Handshake timeout"
+                        )
 
-            error_msg = _create_memory_aware_error(
-                "Failed to connect to WebSocket server after multiple attempts"
-            )
-            raise RuntimeError(error_msg)
+                except Exception as e:
+                    if attempt < max_retries - 1 and "timed out" in str(e).lower():
+                        delay = retry_delays[attempt]
+                        logger.warning(
+                            f"WebSocket connection failed "
+                            f"(attempt {attempt + 1}/{max_retries}): {e}. "
+                            f"Retrying in {delay} seconds..."
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        break
+
+            if not self.websocket:
+                await _cleanup_process_and_tasks(
+                    self.process,
+                    self._log_reader_task,
+                    getattr(self, 'ts_log_file', None),
+                )
+                self.ts_log_file = None
+                self.process = None
+
+                error_msg = _create_memory_aware_error(
+                    "Failed to connect to WebSocket server after multiple attempts"
+                )
+                raise RuntimeError(error_msg)
 
         self._receive_task = asyncio.create_task(self._receive_loop())
 
