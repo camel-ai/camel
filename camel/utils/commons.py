@@ -32,6 +32,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Set,
@@ -677,14 +678,30 @@ def handle_http_error(response: requests.Response) -> str:
 
 
 def retry_on_error(
-    max_retries: int = 3, initial_delay: float = 1.0
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+    backoff: Literal["exponential", "linear", "fixed"] = "exponential",
+    retry_on: tuple[type[Exception], ...] | None = None,
+    fallback: Any = None,
 ) -> Callable:
-    r"""Decorator to retry function calls on exception with exponential
-    backoff.
+    r"""Decorator to retry function calls on exception with configurable
+    backoff strategy.
 
     Args:
-        max_retries (int): Maximum number of retry attempts
-        initial_delay (float): Initial delay between retries in seconds
+        max_retries (int): Maximum number of retry attempts. (default:
+            :obj:`3`)
+        initial_delay (float): Initial delay between retries in seconds.
+            (default: :obj:`1.0`)
+        backoff (Literal["exponential", "linear", "fixed"]): Backoff strategy.
+            - "exponential": delay doubles each attempt (1, 2, 4, 8, ...)
+            - "linear": delay increases linearly (1, 2, 3, 4, ...)
+            - "fixed": delay stays constant
+            (default: :obj:`"exponential"`)
+        retry_on (tuple[type[Exception], ...] | None): Tuple of exception
+            types to retry on. If None, retries on all exceptions.
+            (default: :obj:`None`)
+        fallback (Any): Value to return if all retries fail. If None, the
+            last exception is raised. (default: :obj:`None`)
 
     Returns:
         Callable: Decorated function with retry logic
@@ -700,8 +717,22 @@ def retry_on_error(
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
+                    # Check if we should retry on this exception type
+                    if retry_on is not None and not isinstance(e, retry_on):
+                        raise
+
                     last_exception = e
                     if attempt == max_retries:
+                        if fallback is not None:
+                            logger.warning(
+                                f"Failed after {max_retries} retries: {e!s}. "
+                                f"Returning fallback value."
+                            )
+                            # Return a copy to avoid mutable default issues
+                            try:
+                                return fallback.copy()
+                            except AttributeError:
+                                return fallback
                         logger.error(
                             f"Failed after {max_retries} retries: {e!s}"
                         )
@@ -712,9 +743,21 @@ def retry_on_error(
                         f"Retrying in {delay:.1f}s..."
                     )
                     time.sleep(delay)
-                    delay *= 2  # Exponential backoff
 
-            raise last_exception
+                    # Apply backoff strategy
+                    if backoff == "exponential":
+                        delay *= 2
+                    elif backoff == "linear":
+                        delay = initial_delay * (attempt + 2)
+                    # "fixed" keeps delay unchanged
+
+            if fallback is not None:
+                # Return a copy to avoid mutable default issues
+                try:
+                    return fallback.copy()
+                except AttributeError:
+                    return fallback
+            raise last_exception  # type: ignore[misc]
 
         return wrapper
 

@@ -273,6 +273,112 @@ class TestRetryOnError(TestCase):
             always_failing_func()
         self.assertEqual(len(attempts), 3)  # Initial attempt + 2 retries
 
+    def test_retry_on_specific_exception(self):
+        """Test that retry_on only retries on specified exceptions."""
+        attempts = []
+
+        @retry_on_error(
+            max_retries=3, initial_delay=0.1, retry_on=(ValueError,)
+        )
+        def func_raises_type_error():
+            attempts.append(1)
+            raise TypeError("Should not retry")
+
+        with self.assertRaises(TypeError):
+            func_raises_type_error()
+        # Should fail immediately without retries
+        self.assertEqual(len(attempts), 1)
+
+    def test_retry_on_matching_exception(self):
+        """Test that retry_on retries when exception matches."""
+        attempts = []
+
+        @retry_on_error(
+            max_retries=3, initial_delay=0.1, retry_on=(ValueError,)
+        )
+        def func_raises_value_error():
+            attempts.append(1)
+            if len(attempts) < 3:
+                raise ValueError("Should retry")
+            return "success"
+
+        result = func_raises_value_error()
+        self.assertEqual(result, "success")
+        self.assertEqual(len(attempts), 3)
+
+    def test_fallback_value(self):
+        """Test that fallback value is returned after max retries."""
+
+        @retry_on_error(max_retries=2, initial_delay=0.1, fallback="fallback")
+        def always_fails():
+            raise ValueError("Always fails")
+
+        result = always_fails()
+        self.assertEqual(result, "fallback")
+
+    def test_fallback_list_not_shared(self):
+        """Test that mutable fallback values are not shared across calls."""
+
+        @retry_on_error(max_retries=1, initial_delay=0.1, fallback=[])
+        def always_fails():
+            raise ValueError("Always fails")
+
+        result1 = always_fails()
+        result1.append("item1")
+
+        result2 = always_fails()
+        # result2 should be a fresh empty list, not ['item1']
+        self.assertEqual(result2, [])
+
+    def test_linear_backoff(self):
+        """Test that linear backoff increases delay linearly."""
+        import time
+
+        delays = []
+        last_time = [time.time()]
+
+        @retry_on_error(
+            max_retries=3, initial_delay=0.1, backoff="linear", fallback="done"
+        )
+        def track_delays():
+            now = time.time()
+            if last_time[0] is not None:
+                delays.append(now - last_time[0])
+            last_time[0] = now
+            raise ValueError("fail")
+
+        track_delays()
+        # Delays should be approximately 0.1, 0.2, 0.3
+        # Allow for some timing variance
+        self.assertEqual(len(delays), 4)  # 1 initial + 3 retries
+        # Skip first delay (no sleep before first attempt)
+        self.assertAlmostEqual(delays[1], 0.1, delta=0.05)
+        self.assertAlmostEqual(delays[2], 0.2, delta=0.05)
+        self.assertAlmostEqual(delays[3], 0.3, delta=0.05)
+
+    def test_fixed_backoff(self):
+        """Test that fixed backoff keeps delay constant."""
+        import time
+
+        delays = []
+        last_time = [time.time()]
+
+        @retry_on_error(
+            max_retries=3, initial_delay=0.1, backoff="fixed", fallback="done"
+        )
+        def track_delays():
+            now = time.time()
+            delays.append(now - last_time[0])
+            last_time[0] = now
+            raise ValueError("fail")
+
+        track_delays()
+        # Delays should all be approximately 0.1
+        self.assertEqual(len(delays), 4)
+        # Skip first (no sleep before first attempt)
+        for delay in delays[1:]:
+            self.assertAlmostEqual(delay, 0.1, delta=0.05)
+
 
 class TestBatchProcessor(TestCase):
     def setUp(self):
