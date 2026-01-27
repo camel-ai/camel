@@ -14,34 +14,11 @@
 
 r"""String templates for ToolOutputOffloadToolkit."""
 
-# ========= list_offloadable_tool_outputs templates =========
-
-OFFLOADABLE_LIST_HEADER = (
-    "Found {count} offloadable tool outputs (min length: {min_length}):\n"
-)
-
-OFFLOADABLE_OUTPUT_ITEM = (
-    "\n[{index}] Tool: {tool_name}\n"
-    "    Length: {length} chars\n"
-    "    Preview: {preview}"
-)
-
-OFFLOADABLE_LIST_FOOTER = (
-    "\nUse offload_tool_output_with_summary(index, summary) to offload."
-)
-
-# ========= offload_tool_output_with_summary templates =========
+# ========= Auto-offload replacement template =========
 
 REPLACEMENT_CONTENT = (
-    "[SUMMARIZED OUTPUT - ID: {offload_id}]\n\n"
+    "[OFFLOADED OUTPUT - ID: {offload_id}]\n\n"
     "Summary: {summary}\n\n"
     "Original length: {original_length} chars\n"
     'Use retrieve_offloaded_tool_output("{offload_id}") to get full content.'
-)
-
-OFFLOAD_SUCCESS = (
-    "Successfully offloaded output from '{tool_name}'.\n"
-    "Offload ID: {offload_id}\n"
-    "Original: {original_length} chars -> Summary: {summary_length} chars\n"
-    'Use retrieve_offloaded_tool_output("{offload_id}") to retrieve original.'
 )

@@ -14,16 +14,11 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
-from uuid import UUID
 
-from camel.memories.records import MemoryRecord
-from camel.messages import FunctionCallingMessage
 from camel.toolkits.tool_output_offload_toolkit import (
     OffloadedOutput,
     ToolOutputOffloadToolkit,
 )
-from camel.types import OpenAIBackendRole, RoleType
 
 
 class TestToolOutputOffloadToolkit:
@@ -38,194 +33,151 @@ class TestToolOutputOffloadToolkit:
             assert toolkit.outputs_dir.exists()
             assert toolkit.session_dir.parent == Path(tmp_dir)
 
-    def test_init_with_default_min_length(self):
-        r"""Test default min_output_length value."""
+    def test_init_with_default_threshold(self):
+        r"""Test default auto_offload_threshold value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-            assert toolkit.min_output_length == 1000
+            assert toolkit.auto_offload_threshold == 5000
 
-    def test_init_with_custom_min_length(self):
-        r"""Test custom min_output_length value."""
+    def test_init_with_custom_threshold(self):
+        r"""Test custom auto_offload_threshold value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(
                 working_directory=tmp_dir,
-                min_output_length=500,
+                auto_offload_threshold=3000,
             )
-            assert toolkit.min_output_length == 500
+            assert toolkit.auto_offload_threshold == 3000
 
-    def test_list_offloadable_tool_outputs_no_agent(self):
-        r"""Test listing with no registered agent."""
+    def test_init_with_default_summary_length(self):
+        r"""Test default max_summary_length value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
+            assert toolkit.max_summary_length == 500
 
-            result = toolkit.list_offloadable_tool_outputs()
-
-            assert "No tool outputs found" in result
-            assert "Total tool outputs in memory: 0" in result
-
-    def test_list_offloadable_tool_outputs_empty_memory(self):
-        r"""Test listing with empty memory."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            # Mock agent with empty memory
-            mock_agent = MagicMock()
-            mock_memory = MagicMock()
-            mock_memory.get_records.return_value = []
-
-            mock_agent.memory = mock_memory
-            toolkit._agent = mock_agent
-
-            result = toolkit.list_offloadable_tool_outputs()
-
-            assert "No tool outputs found" in result
-
-    def test_list_offloadable_tool_outputs_filters_by_length(self):
-        r"""Test that outputs below min_length are excluded."""
+    def test_init_with_custom_summary_length(self):
+        r"""Test custom max_summary_length value."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             toolkit = ToolOutputOffloadToolkit(
                 working_directory=tmp_dir,
-                min_output_length=100,
+                max_summary_length=200,
+            )
+            assert toolkit.max_summary_length == 200
+
+    def test_generate_summary_short_content(self):
+        r"""Test that short content is not truncated."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                max_summary_length=100,
             )
 
-            # Mock agent with tool outputs of varying lengths
-            mock_agent = MagicMock()
-            mock_memory = MagicMock()
-            mock_memory.get_records.return_value = [
-                MemoryRecord(
-                    message=FunctionCallingMessage(
-                        role_name="assistant",
-                        role_type=RoleType.ASSISTANT,
-                        meta_dict=None,
-                        content="",
-                        func_name="short_tool",
-                        tool_call_id="call-1",
-                        result="short",
-                    ),
-                    role_at_backend=OpenAIBackendRole.FUNCTION,
-                ),
-                MemoryRecord(
-                    message=FunctionCallingMessage(
-                        role_name="assistant",
-                        role_type=RoleType.ASSISTANT,
-                        meta_dict=None,
-                        content="",
-                        func_name="long_tool",
-                        tool_call_id="call-2",
-                        result="x" * 200,
-                    ),
-                    role_at_backend=OpenAIBackendRole.FUNCTION,
-                ),
-            ]
+            content = "Short content"
+            summary = toolkit._generate_summary(content)
 
-            mock_agent.memory = mock_memory
-            toolkit._agent = mock_agent
+            assert summary == content
 
-            result = toolkit.list_offloadable_tool_outputs()
-
-            assert "long_tool" in result
-            assert "short_tool" not in result
-            assert "1 offloadable" in result
-
-    def test_offload_tool_output_with_summary_no_cached_list(self):
-        r"""Test error when no cached list exists."""
+    def test_generate_summary_long_content(self):
+        r"""Test that long content is truncated with ellipsis."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            result = toolkit.offload_tool_output_with_summary(0, "summary")
-
-            assert "No offloadable outputs cached" in result
-            assert "list_offloadable_tool_outputs()" in result
-
-    def test_offload_tool_output_with_summary_invalid_index(self):
-        r"""Test error handling for invalid index."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-            toolkit._last_offloadable_list = [{"test": "data"}]
-
-            result = toolkit.offload_tool_output_with_summary(5, "summary")
-
-            assert "Invalid index" in result
-
-    def test_offload_tool_output_with_summary_empty_summary(self):
-        r"""Test error when summary is empty."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-            toolkit._last_offloadable_list = [
-                {
-                    "index": 0,
-                    "uuid": "uuid-1",
-                    "tool_name": "test_tool",
-                    "tool_call_id": "call-1",
-                    "result": "x" * 10,
-                    "result_str": "x" * 10,
-                    "timestamp": 1000,
-                    "length": 10,
-                }
-            ]
-
-            result = toolkit.offload_tool_output_with_summary(0, "")
-
-            assert "Summary is required" in result
-
-    def test_offload_tool_output_with_summary_success(self):
-        r"""Test successful offload flow."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
-
-            record_uuid = "123e4567-e89b-12d3-a456-426614174000"
-            memory_record = MemoryRecord(
-                message=FunctionCallingMessage(
-                    role_name="assistant",
-                    role_type=RoleType.ASSISTANT,
-                    meta_dict=None,
-                    content="",
-                    func_name="test_tool",
-                    tool_call_id="call-1",
-                    result="x" * 20,
-                ),
-                role_at_backend=OpenAIBackendRole.FUNCTION,
-                uuid=UUID(record_uuid),
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                max_summary_length=20,
             )
 
-            mock_memory = MagicMock()
-            mock_memory.get_records.return_value = [memory_record]
-            mock_memory.replace_record_by_uuid.return_value = None
+            content = "This is a very long content that should be truncated"
+            summary = toolkit._generate_summary(content)
 
-            mock_agent = MagicMock()
-            mock_agent.memory = mock_memory
-            toolkit._agent = mock_agent
+            assert len(summary) == 20
+            assert summary.endswith("...")
+            assert summary == "This is a very lo..."
 
-            toolkit._last_offloadable_list = [
-                {
-                    "index": 0,
-                    "uuid": record_uuid,
-                    "tool_name": "test_tool",
-                    "tool_call_id": "call-1",
-                    "result": "x" * 20,
-                    "result_str": "x" * 20,
-                    "timestamp": 1000,
-                    "length": 20,
-                }
-            ]
-
-            result = toolkit.offload_tool_output_with_summary(
-                0, "short summary"
+    def test_process_tool_output_below_threshold(self):
+        r"""Test that output below threshold is not offloaded."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                auto_offload_threshold=100,
             )
 
-            assert "Successfully offloaded output" in result
-            assert "Offload ID:" in result
-            mock_memory.replace_record_by_uuid.assert_called_once()
+            output = "Short output"
+            result = toolkit.process_tool_output(
+                tool_name="test_tool",
+                tool_call_id="call-1",
+                output=output,
+            )
 
-            offload_id = ""
-            for line in result.splitlines():
-                if line.startswith("Offload ID:"):
-                    offload_id = line.split("Offload ID:", 1)[1].strip()
-                    break
+            assert result["offloaded"] is False
+            assert result["output"] == output
+            assert result["original_length"] == len(output)
+            assert "offload_id" not in result
 
-            assert offload_id
+    def test_process_tool_output_above_threshold(self):
+        r"""Test that output above threshold is offloaded."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                auto_offload_threshold=50,
+                max_summary_length=30,
+            )
+
+            output = "x" * 100  # 100 chars, above 50 threshold
+            result = toolkit.process_tool_output(
+                tool_name="test_tool",
+                tool_call_id="call-1",
+                output=output,
+            )
+
+            assert result["offloaded"] is True
+            assert "offload_id" in result
+            assert result["original_length"] == 100
+            assert "[OFFLOADED OUTPUT" in result["output"]
+            assert result["offload_id"] in result["output"]
+
+            # Verify file was created
+            offload_id = result["offload_id"]
             content_file = toolkit.outputs_dir / f"{offload_id}.txt"
             assert content_file.exists()
+            assert content_file.read_text() == output
+
+    def test_process_tool_output_disabled(self):
+        r"""Test that auto-offload can be disabled with threshold=0."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                auto_offload_threshold=0,  # Disabled
+            )
+
+            output = "x" * 10000  # Very long output
+            result = toolkit.process_tool_output(
+                tool_name="test_tool",
+                tool_call_id="call-1",
+                output=output,
+            )
+
+            assert result["offloaded"] is False
+            assert result["output"] == output
+
+    def test_process_tool_output_with_dict(self):
+        r"""Test that dict output is serialized to JSON."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                auto_offload_threshold=10,
+            )
+
+            output = {"key": "value", "nested": {"a": 1, "b": 2}}
+            result = toolkit.process_tool_output(
+                tool_name="test_tool",
+                tool_call_id="call-1",
+                output=output,
+            )
+
+            assert result["offloaded"] is True
+            # Verify JSON serialization
+            offload_id = result["offload_id"]
+            content_file = toolkit.outputs_dir / f"{offload_id}.txt"
+            content = content_file.read_text()
+            assert '"key": "value"' in content
 
     def test_retrieve_offloaded_tool_output_not_found(self):
         r"""Test error handling for missing offload_id."""
@@ -316,6 +268,51 @@ class TestToolOutputOffloadToolkit:
             assert item["summary"] == "Summary of tool A output"
             assert item["file_path"] == "/path/to/file"
             assert item["offloaded_at"] == "2024-01-01T00:00:00"
+
+    def test_get_tools_returns_only_retrieval_tools(self):
+        r"""Test that get_tools only returns retrieve and list tools."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(working_directory=tmp_dir)
+
+            tools = toolkit.get_tools()
+
+            assert len(tools) == 2
+            tool_names = [t.get_function_name() for t in tools]
+            assert "retrieve_offloaded_tool_output" in tool_names
+            assert "list_offloaded_tool_outputs" in tool_names
+
+    def test_end_to_end_offload_and_retrieve(self):
+        r"""Test complete flow: offload via process_tool_output, then retrieve."""  # noqa: E501
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            toolkit = ToolOutputOffloadToolkit(
+                working_directory=tmp_dir,
+                auto_offload_threshold=50,
+                max_summary_length=30,
+            )
+
+            # Step 1: Process a large output (triggers auto-offload)
+            original_output = "A" * 200
+            process_result = toolkit.process_tool_output(
+                tool_name="search",
+                tool_call_id="call-123",
+                output=original_output,
+            )
+
+            assert process_result["offloaded"] is True
+            offload_id = process_result["offload_id"]
+
+            # Step 2: List offloaded outputs
+            list_result = toolkit.list_offloaded_tool_outputs()
+            assert len(list_result) == 1
+            assert list_result[0]["offload_id"] == offload_id
+            assert list_result[0]["tool_name"] == "search"
+
+            # Step 3: Retrieve the original content
+            retrieve_result = toolkit.retrieve_offloaded_tool_output(
+                offload_id
+            )
+            assert retrieve_result["content"] == original_output
+            assert retrieve_result["original_length"] == 200
 
 
 class TestOffloadedOutput:
