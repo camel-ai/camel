@@ -1211,6 +1211,62 @@ export class HybridBrowserSession {
   }
 
   /**
+   *  Show highlight animation at given coordinates
+   */
+  private async showClickHighlight(page: Page, x: number, y: number): Promise<void> {
+    await page.evaluate(({ x, y }) => {
+      // Create highlight element
+      const highlight = document.createElement('div');
+      highlight.id = 'claude-click-highlight-' + Date.now();
+      highlight.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        width: 20px;
+        height: 20px;
+        margin-left: -10px;
+        margin-top: -10px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.5);
+        border: 2px solid rgba(59, 130, 246, 0.8);
+        pointer-events: none;
+        z-index: 2147483647;
+        animation: claude-highlight-pulse 0.6s ease-out forwards;
+      `;
+
+      // Add keyframes if not already present
+      if (!document.getElementById('claude-highlight-styles')) {
+        const style = document.createElement('style');
+        style.id = 'claude-highlight-styles';
+        style.textContent = `
+          @keyframes claude-highlight-pulse {
+            0% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(2);
+              opacity: 0.7;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      document.body.appendChild(highlight);
+
+      // Remove after animation
+      setTimeout(() => {
+        highlight.remove();
+      }, 600);
+    }, { x, y });
+  }
+
+  /**
    *  Simplified mouse control implementation
    */
   private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
@@ -1222,6 +1278,10 @@ export class HybridBrowserSession {
       if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
         return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
       }
+
+      // Show highlight animation at click position
+      await this.showClickHighlight(page, x, y);
+
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
@@ -1262,6 +1322,10 @@ export class HybridBrowserSession {
         fromY = action.from_y;
         toX = action.to_x;
         toY = action.to_y;
+
+        // Show highlight at start and end positions for pixel mode
+        await this.showClickHighlight(page, fromX, fromY);
+        await this.showClickHighlight(page, toX, toY);
       }
       // Ref mode: get coordinates from elements
       else if (action.from_ref && action.to_ref) {
