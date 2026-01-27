@@ -235,6 +235,35 @@ export class HybridBrowserToolkit {
     }
   }
 
+  async getScreenshot(): Promise<VisualMarkResult & { timing: any }> {
+    const startTime = Date.now();
+    console.log('[HybridBrowserToolkit] Starting getScreenshot (plain, no SOM)...');
+
+    try {
+      const result = await this.session.takeScreenshot();
+      const base64Image = `data:image/png;base64,${result.buffer.toString('base64')}`;
+      const totalTime = Date.now() - startTime;
+
+      return {
+        text: `Screenshot captured successfully`,
+        images: [base64Image],
+        timing: {
+          total_time_ms: totalTime,
+          screenshot_time_ms: result.timing.screenshot_time_ms,
+        },
+      };
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      return {
+        text: `Error capturing screenshot: ${error}`,
+        images: [],
+        timing: {
+          total_time_ms: totalTime,
+          screenshot_time_ms: 0,
+        },
+      };
+    }
+  }
 
   /**
    * Parse clickable elements from snapshot text
@@ -352,8 +381,15 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async mouseDrag(from_ref: string, to_ref: string): Promise<any> {
-    const action: BrowserAction = { type: 'mouse_drag', from_ref, to_ref };
+  async mouseDrag(params: {
+    from_ref?: string;
+    to_ref?: string;
+    from_x?: number;
+    from_y?: number;
+    to_x?: number;
+    to_y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_drag', ...params };
     return this.executeActionWithSnapshot(action);
   }
 

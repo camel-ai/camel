@@ -1246,53 +1246,61 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Enhanced mouse drag and drop implementation using ref IDs
+   *  Mouse drag and drop implementation supporting both ref and pixel modes
    */
-  private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
+  private async performMouseDrag(
+    page: Page,
+    action: { from_ref?: string; to_ref?: string; from_x?: number; from_y?: number; to_x?: number; to_y?: number }
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      // Ensure we have the latest snapshot
-      await this.getSnapshot(page);
+      let fromX: number, fromY: number, toX: number, toY: number;
 
-      // Get elements using Playwright's aria-ref selector
-      const fromSelector = `aria-ref=${fromRef}`;
-      const toSelector = `aria-ref=${toRef}`;
-
-      const fromElement = await page.locator(fromSelector).first();
-      const toElement = await page.locator(toSelector).first();
-
-      // Check if elements exist
-      const fromExists = await fromElement.count() > 0;
-      const toExists = await toElement.count() > 0;
-
-      if (!fromExists) {
-        return { success: false, error: `Source element with ref ${fromRef} not found` };
+      // Pixel mode: use coordinates directly
+      if (action.from_x !== undefined && action.from_y !== undefined &&
+          action.to_x !== undefined && action.to_y !== undefined) {
+        fromX = action.from_x;
+        fromY = action.from_y;
+        toX = action.to_x;
+        toY = action.to_y;
       }
+      // Ref mode: get coordinates from elements
+      else if (action.from_ref && action.to_ref) {
+        await this.getSnapshot(page);
 
-      if (!toExists) {
-        return { success: false, error: `Target element with ref ${toRef} not found` };
+        const fromSelector = `aria-ref=${action.from_ref}`;
+        const toSelector = `aria-ref=${action.to_ref}`;
+
+        const fromElement = await page.locator(fromSelector).first();
+        const toElement = await page.locator(toSelector).first();
+
+        if (await fromElement.count() === 0) {
+          return { success: false, error: `Source element with ref ${action.from_ref} not found` };
+        }
+        if (await toElement.count() === 0) {
+          return { success: false, error: `Target element with ref ${action.to_ref} not found` };
+        }
+
+        const fromBox = await fromElement.boundingBox();
+        const toBox = await toElement.boundingBox();
+
+        if (!fromBox) {
+          return { success: false, error: `Could not get bounding box for source element` };
+        }
+        if (!toBox) {
+          return { success: false, error: `Could not get bounding box for target element` };
+        }
+
+        fromX = fromBox.x + fromBox.width / 2;
+        fromY = fromBox.y + fromBox.height / 2;
+        toX = toBox.x + toBox.width / 2;
+        toY = toBox.y + toBox.height / 2;
+      } else {
+        return { success: false, error: 'Must provide either (from_ref, to_ref) or (from_x, from_y, to_x, to_y)' };
       }
-
-      // Get the center coordinates of both elements
-      const fromBox = await fromElement.boundingBox();
-      const toBox = await toElement.boundingBox();
-
-      if (!fromBox) {
-        return { success: false, error: `Could not get bounding box for source element with ref ${fromRef}` };
-      }
-
-      if (!toBox) {
-        return { success: false, error: `Could not get bounding box for target element with ref ${toRef}` };
-      }
-
-      const fromX = fromBox.x + fromBox.width / 2;
-      const fromY = fromBox.y + fromBox.height / 2;
-      const toX = toBox.x + toBox.width / 2;
-      const toY = toBox.y + toBox.height / 2;
 
       // Perform the drag operation
       await page.mouse.move(fromX, fromY);
       await page.mouse.down();
-      // Destination coordinates
       await page.mouse.move(toX, toY);
       await page.mouse.up();
 
@@ -1427,7 +1435,7 @@ export class HybridBrowserSession {
         case 'mouse_drag': {
           elementSearchTime = Date.now() - elementSearchStart;
           const mouseDragStart = Date.now();
-          const mouseDragResult = await this.performMouseDrag(page, action.from_ref, action.to_ref);
+          const mouseDragResult = await this.performMouseDrag(page, action);
 
           if (!mouseDragResult.success) {
             throw new Error(`Action failed: ${mouseDragResult.error}`);
@@ -2080,7 +2088,10 @@ export class HybridBrowserSession {
     return tabInfo;
   }
 
-  async takeScreenshot(): Promise<{ buffer: Buffer; timing: { screenshot_time_ms: number } }> {
+  async takeScreenshot(): Promise<{
+    buffer: Buffer;
+    timing: { screenshot_time_ms: number };
+  }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
 
