@@ -87,6 +87,37 @@ class ChatHistoryMemory(AgentMemory):
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
+    def get_records(self) -> List[MemoryRecord]:
+        r"""Get all chat history records from storage."""
+        record_dicts = self._chat_history_block.storage.load()
+        return [MemoryRecord.from_dict(record) for record in record_dicts]
+
+    def replace_record_by_uuid(
+        self, record_uuid: str, new_record: MemoryRecord
+    ) -> None:
+        r"""Replace a chat history record by UUID.
+
+        Raises:
+            ValueError: If the record with the given UUID is not found.
+        """
+        record_dicts = self._chat_history_block.storage.load()
+        if not record_dicts:
+            raise ValueError(f"Record with UUID {record_uuid} not found.")
+
+        new_record_dict = new_record.to_dict()
+        new_record_dict["uuid"] = record_uuid
+
+        # TODO: Current implementation has O(n) time complexity.
+        # Consider adding UUID indexing for O(1) lookups.
+        for i, record_dict in enumerate(record_dicts):
+            if record_dict.get("uuid") == record_uuid:
+                record_dicts[i] = new_record_dict
+                self._chat_history_block.storage.clear()
+                self._chat_history_block.storage.save(record_dicts)
+                return
+
+        raise ValueError(f"Record with UUID {record_uuid} not found.")
+
     def clear(self) -> None:
         self._chat_history_block.clear()
 
@@ -207,6 +238,20 @@ class VectorDBMemory(AgentMemory):
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
+    def get_records(self) -> List[MemoryRecord]:
+        r"""Get records is unsupported for vector database memory."""
+        raise NotImplementedError(
+            "VectorDBMemory does not support retrieving raw records."
+        )
+
+    def replace_record_by_uuid(
+        self, record_uuid: str, new_record: MemoryRecord
+    ) -> None:
+        r"""Replacing records is unsupported for vector database memory."""
+        raise NotImplementedError(
+            "VectorDBMemory does not support replacing records."
+        )
+
     def clear(self) -> None:
         r"""Removes all records from the vector database memory."""
         self._vectordb_block.clear()
@@ -274,6 +319,20 @@ class LongtermAgentMemory(AgentMemory):
             BaseContextCreator: The context creator used by the memory.
         """
         return self._context_creator
+
+    def get_records(self) -> List[MemoryRecord]:
+        r"""Get all chat history records from storage."""
+        raise NotImplementedError(
+            "LongtermAgentMemory does not support retrieving raw records."
+        )
+
+    def replace_record_by_uuid(
+        self, record_uuid: str, new_record: MemoryRecord
+    ) -> None:
+        r"""Replace a chat history record by UUID and sync vector DB."""
+        raise NotImplementedError(
+            "LongtermAgentMemory does not support replacing records."
+        )
 
     def retrieve(self) -> List[ContextRecord]:
         r"""Retrieves context records from both the chat history and the vector
