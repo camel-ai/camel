@@ -907,6 +907,14 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
+    async def upload_file(self, ref: str, file_path: str) -> Dict[str, Any]:
+        """Upload a file to a file input element."""
+        response = await self._send_command(
+            'upload_file', {'ref': ref, 'filePath': file_path}
+        )
+        return response
+
+    @action_logger
     async def back(self) -> Dict[str, Any]:
         """Navigate back."""
         response = await self._send_command('back', {})

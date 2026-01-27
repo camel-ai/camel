@@ -138,6 +138,12 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.upload_file = AsyncMock(
+        return_value={
+            "result": "File uploaded successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
 
     return mock_ws_wrapper
 
@@ -633,3 +639,21 @@ class TestHybridBrowserToolkit:
         assert "tabs" in result
         assert "current_tab" in result
         assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_upload_file_valid(self, browser_toolkit_fixture):
+        """Test file upload with valid ref and file path."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_upload_file(
+            ref="file_input", file_path="/path/to/test/file.txt"
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+        assert (
+            "uploaded" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
