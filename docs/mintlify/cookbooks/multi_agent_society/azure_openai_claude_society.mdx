@@ -266,7 +266,7 @@ def create_claude_agent(self, role_name: str, persona: str, specialization: str,
     # Configure Claude model
     model = ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_3_5_SONNET,
+        model_type=ModelType.CLAUDE_3_HAIKU,
     )
 
     agent = ChatAgent(
