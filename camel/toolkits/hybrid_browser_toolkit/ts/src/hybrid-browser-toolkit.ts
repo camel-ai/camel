@@ -1,5 +1,5 @@
 import {HybridBrowserSession} from './browser-session';
-import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
+import {ActionResult, BrowserAction, BrowserToolkitConfig, PageStabilityResult, SnapshotResult, TabInfo, VisualMarkResult} from './types';
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
 import {SomScreenshotInjected} from './som-screenshot-injected';
@@ -376,6 +376,9 @@ export class HybridBrowserToolkit {
       await page.goBack({ waitUntil: 'domcontentloaded' });
       const navigationTime = Date.now() - navigationStart;
 
+      // Wait for page stability after navigation
+      const stabilityResult = await this.session.waitForPageStability(page);
+
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -389,8 +392,12 @@ export class HybridBrowserToolkit {
         timing: {
           total_time_ms: totalTime,
           navigation_time_ms: navigationTime,
+          dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+          network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
           snapshot_time_ms: snapshotTime,
         },
+        note: stabilityResult.note,
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -416,6 +423,9 @@ export class HybridBrowserToolkit {
       await page.goForward({ waitUntil: 'domcontentloaded' });
       const navigationTime = Date.now() - navigationStart;
 
+      // Wait for page stability after navigation
+      const stabilityResult = await this.session.waitForPageStability(page);
+
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -429,8 +439,12 @@ export class HybridBrowserToolkit {
         timing: {
           total_time_ms: totalTime,
           navigation_time_ms: navigationTime,
+          dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+          network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
           snapshot_time_ms: snapshotTime,
         },
+        note: stabilityResult.note,
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -454,6 +468,11 @@ export class HybridBrowserToolkit {
       const success = await this.session.switchToTab(tabId);
 
       if (success) {
+        const page = await this.session.getCurrentPage();
+
+        // Wait for page stability after tab switch
+        const stabilityResult = await this.session.waitForPageStability(page);
+
         const snapshotStart = Date.now();
         const snapshot = await this.getPageSnapshot(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
@@ -465,8 +484,12 @@ export class HybridBrowserToolkit {
           snapshot: snapshot,
           timing: {
             total_time_ms: totalTime,
+            dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+            network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
             snapshot_time_ms: snapshotTime,
           },
+          note: stabilityResult.note,
         };
       } else {
         return {

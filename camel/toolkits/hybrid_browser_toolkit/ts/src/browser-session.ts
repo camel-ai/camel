@@ -1,6 +1,26 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
-import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
+import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+
+// Constants for loading element detection
+// Using word boundary patterns to avoid false positives like "unloading" or "windspinner"
+const LOADING_CLASS_PATTERNS = [
+  /\bloading\b/i,    // matches "loading", "is-loading", "loading-spinner" but not "unloading"
+  /\bloader\b/i,     // matches "loader", "page-loader" but not "preloader" (intentionally excluded)
+  /\bspinner\b/i,    // matches "spinner", "loading-spinner" but not "windspinner"
+  /\bspin\b/i,       // matches "spin", "spin-animation"
+];
+
+// CSS selector for querying loading elements - matches common loading class patterns
+const LOADING_ELEMENTS_SELECTOR = [
+  '[class*="loading"]:not([class*="unloading"]):not([class*="loaded"])',
+  '[class*="loader"]',
+  '[class*="spinner"]',
+  '[class*="spin"]:not([class*="spinach"])', // avoid false positives
+].join(', ');
+
+// Note message for loading state warning
+const LOADING_STATE_NOTE = 'Loading-related elements were detected on this page. The page may still be in a loading or transitional state. The current snapshot may not reflect the final state.';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
@@ -1447,10 +1467,11 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
           dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
           network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
         },
         note: stabilityResult.note,
-        ...(newTabId && { newTabId }), //  Include new tab ID if present
-        ...(actionDetails && { details: actionDetails }), // Include action details if present
+        ...(newTabId && { newTabId }),
+        ...(actionDetails && { details: actionDetails }),
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -1469,31 +1490,51 @@ export class HybridBrowserSession {
 
   /**
    * Wait for DOM to stop changing for a specified duration
+   * @param page - The Playwright page instance
+   * @param maxWaitTime - Maximum time to wait for stability in ms (uses config value)
+   * @returns Object indicating if loading elements were detected
    */
-  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<{ hasLoadingElements: boolean }> {
+  private async waitForDOMStability(page: Page, maxWaitTime: number): Promise<{ hasLoadingElements: boolean }> {
     const browserConfig = this.configLoader.getBrowserConfig();
-    const stabilityThreshold = browserConfig.domStabilityThreshold; // Consider stable if no changes for configured duration
+    const stabilityThreshold = browserConfig.domStabilityThreshold;
     let hasLoadingElements = false;
+
+    // Pass the selector as a parameter to avoid closure issues
+    const loadingSelector = LOADING_ELEMENTS_SELECTOR;
 
     try {
       // Monitor DOM changes and loading elements
-      await page.evaluate(() => {
-        // Helper function to check if className contains loading indicators
+      await page.evaluate((selector: string) => {
+        // Word boundary regex patterns for accurate loading class detection
+        const loadingPatterns = [
+          /\bloading\b/i,
+          /\bloader\b/i,
+          /\bspinner\b/i,
+          /\bspin\b/i,
+        ];
+
+        // Helper function to check if className contains loading indicators using word boundaries
         const hasLoadingClass = (className: string): boolean => {
-          const lowerClassName = className.toLowerCase();
-          return lowerClassName.includes('loading') || lowerClassName.includes('spin');
+          return loadingPatterns.some(pattern => pattern.test(className));
         };
 
         // Helper function to check if any loading elements exist in the DOM
         const checkForLoadingElements = (): boolean => {
-          const loadingElements = document.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
-          return loadingElements.length > 0;
+          const loadingElements = document.querySelectorAll(selector);
+          // Double-check with regex patterns to reduce false positives
+          for (const el of Array.from(loadingElements)) {
+            const cls = el.getAttribute('class') || '';
+            if (hasLoadingClass(cls)) {
+              return true;
+            }
+          }
+          return false;
         };
 
         (window as any).__domStabilityCheck = {
           changeCount: 0,
           lastChange: Date.now(),
-          hasLoadingElements: checkForLoadingElements() // Initial check
+          hasLoadingElements: checkForLoadingElements()
         };
 
         const observer = new MutationObserver((mutations: MutationRecord[]) => {
@@ -1501,7 +1542,6 @@ export class HybridBrowserSession {
           check.changeCount++;
           check.lastChange = Date.now();
 
-          // Check if any loading elements were added or removed
           let loadingAdded = false;
           let loadingRemoved = false;
 
@@ -1516,10 +1556,8 @@ export class HybridBrowserSession {
               const hasLoading = hasLoadingClass(newValue);
 
               if (!hadLoading && hasLoading) {
-                // Loading class was added
                 loadingAdded = true;
               } else if (hadLoading && !hasLoading) {
-                // Loading class was removed
                 loadingRemoved = true;
               }
             }
@@ -1532,39 +1570,43 @@ export class HybridBrowserSession {
                   const cls = el.getAttribute('class') || '';
                   if (hasLoadingClass(cls)) {
                     loadingAdded = true;
+                    break;
                   }
-                  // Also check descendants
-                  const loadingDescendants = el.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
-                  if (loadingDescendants.length > 0) {
-                    loadingAdded = true;
+                  // Check descendants
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingAdded = true;
+                      break;
+                    }
                   }
                 }
               }
 
-              // Check if loading elements were removed
               for (const node of Array.from(mutation.removedNodes)) {
                 if (node.nodeType === Node.ELEMENT_NODE) {
                   const el = node as Element;
                   const cls = el.getAttribute('class') || '';
                   if (hasLoadingClass(cls)) {
                     loadingRemoved = true;
+                    break;
                   }
-                  // Also check descendants of removed nodes
-                  const loadingDescendants = el.querySelectorAll('[class*="loading"], [class*="Loading"], [class*="spin"], [class*="Spin"]');
-                  if (loadingDescendants.length > 0) {
-                    loadingRemoved = true;
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingRemoved = true;
+                      break;
+                    }
                   }
                 }
               }
             }
           }
 
-          // Update loading state
           if (loadingAdded) {
             check.hasLoadingElements = true;
           }
 
-          // If loading was removed, re-check the entire DOM to confirm
           if (loadingRemoved) {
             check.hasLoadingElements = checkForLoadingElements();
           }
@@ -1574,35 +1616,31 @@ export class HybridBrowserSession {
           childList: true,
           subtree: true,
           attributes: true,
-          attributeOldValue: true, // Enable to get old class value
+          attributeOldValue: true,
           characterData: true
         });
 
         (window as any).__domStabilityObserver = observer;
-      });
+      }, loadingSelector);
 
-      // Wait until no changes for stabilityThreshold AND no loading elements, or timeout
+      // Wait until no changes for stabilityThreshold, or timeout
       await page.waitForFunction(
-        (threshold) => {
+        (threshold: number) => {
           const check = (window as any).__domStabilityCheck;
           if (!check) return true;
-
-          const timeSinceLastChange = Date.now() - check.lastChange;
-          const isStable = timeSinceLastChange > threshold;
-
-          return isStable;
+          return (Date.now() - check.lastChange) > threshold;
         },
         stabilityThreshold,
         { timeout: Math.max(0, maxWaitTime) }
       ).catch(() => {});
 
-      // Check if any loading elements are present
+      // Get final loading state
       hasLoadingElements = await page.evaluate(() => {
         const check = (window as any).__domStabilityCheck;
         return check ? check.hasLoadingElements : false;
       });
     } finally {
-      // Cleanup
+      // Cleanup observer
       await page.evaluate(() => {
         const observer = (window as any).__domStabilityObserver;
         if (observer) observer.disconnect();
@@ -1610,15 +1648,19 @@ export class HybridBrowserSession {
         delete (window as any).__domStabilityCheck;
       }).catch(() => {});
     }
+
     return { hasLoadingElements };
   }
 
-  private async waitForPageStability(page: Page): Promise<{
-    domContentLoadedTime: number;
-    networkIdleTime: number;
-    domStabilityTime: number;
-    note: string;
-  }> {
+  async waitForPageStability(page: Page): Promise<PageStabilityResult> {
+    const defaultResult: PageStabilityResult = {
+      domContentLoadedTime: 0,
+      networkIdleTime: 0,
+      domStabilityTime: 0,
+      hasLoadingElements: false,
+      note: ''
+    };
+
     try {
       const browserConfig = this.configLoader.getBrowserConfig();
 
@@ -1628,49 +1670,58 @@ export class HybridBrowserSession {
         browserConfig.domStabilityTimeout
       );
 
+      // Track timeout for cleanup
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
       const start = Date.now();
       await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
-          timeout: browserConfig.domContentLoadedTimeout
-        });
-
+        timeout: browserConfig.domContentLoadedTimeout
+      });
       const domContentLoadedTime = Date.now() - start;
 
       const networkIdlePromise = (async () => {
-        const start = Date.now();
+        const startTime = Date.now();
         await page.waitForLoadState(browserConfig.networkIdleState as any, {
-            timeout: browserConfig.networkIdleTimeout
-          });
-
-        return Date.now() - start;
+          timeout: browserConfig.networkIdleTimeout
+        });
+        return Date.now() - startTime;
       })();
+
       const domStabilityPromise = (async () => {
-        const start = Date.now();
+        const startTime = Date.now();
         const result = await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
-
-        return { time: Date.now() - start, hasLoadingElements: result.hasLoadingElements };
+        return {
+          time: Date.now() - startTime,
+          hasLoadingElements: result.hasLoadingElements
+        };
       })();
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('max timeout')), maxTimeout)
-      );
+      // Create timeout promise with cleanup capability
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('max timeout')), maxTimeout);
+      });
 
-      const [networkIdleTime, domStabilityResult] = await Promise.race([
-        Promise.all([networkIdlePromise, domStabilityPromise]),
-        timeoutPromise
-      ]);
+      try {
+        const [networkIdleTime, domStabilityResult] = await Promise.race([
+          Promise.all([networkIdlePromise, domStabilityPromise]),
+          timeoutPromise
+        ]);
 
-      const note = domStabilityResult.hasLoadingElements ?
-      'Loading-related elements were detected on this page. The page may still be in a loading or transitional state. The current snapshot of this page may not be accurate in the next action'
-      : '';
-
-      return {
-        domContentLoadedTime,
-        networkIdleTime,
-        domStabilityTime: domStabilityResult.time,
-        note
-      };
+        return {
+          domContentLoadedTime,
+          networkIdleTime,
+          domStabilityTime: domStabilityResult.time,
+          hasLoadingElements: domStabilityResult.hasLoadingElements,
+          note: domStabilityResult.hasLoadingElements ? LOADING_STATE_NOTE : ''
+        };
+      } finally {
+        // Clean up timeout to prevent memory leak
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      }
     } catch (error) {
-      return { domContentLoadedTime: 0, networkIdleTime: 0, domStabilityTime: 0, note:'', };
+      return defaultResult;
     }
   }
 
@@ -1728,6 +1779,7 @@ export class HybridBrowserSession {
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
           note: stabilityResult.note,
         };
@@ -1799,12 +1851,13 @@ export class HybridBrowserSession {
         return {
           success: true,
           message: `Opened ${url} in new tab`,
-          newTabId: newTabId, //  Include the new tab ID
+          newTabId: newTabId,
           timing: {
             total_time_ms: totalTime,
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
           note: stabilityResult.note,
         };
@@ -1819,6 +1872,7 @@ export class HybridBrowserSession {
           navigation_time_ms: 0,
           dom_content_loaded_time_ms: 0,
           network_idle_time_ms: 0,
+          dom_stability_time_ms: 0,
         },
       };
     }
