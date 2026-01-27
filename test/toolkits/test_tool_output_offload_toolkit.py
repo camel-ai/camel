@@ -234,8 +234,10 @@ class TestToolOutputOffloadToolkit:
 
             result = toolkit.retrieve_offloaded_tool_output("nonexistent-id")
 
-            assert "not found" in result
-            assert "list_offloaded_tool_outputs()" in result
+            assert isinstance(result, dict)
+            assert result["offload_id"] == "nonexistent-id"
+            assert "error" in result
+            assert "not found" in result["error"]
 
     def test_retrieve_offloaded_tool_output_success(self):
         r"""Test successful retrieval of offloaded content."""
@@ -264,8 +266,15 @@ class TestToolOutputOffloadToolkit:
 
             result = toolkit.retrieve_offloaded_tool_output(offload_id)
 
-            assert original_content in result
-            assert "Retrieved Original Content" in result
+            assert isinstance(result, dict)
+            assert result["offload_id"] == offload_id
+            assert result["tool_name"] == "test_tool"
+            assert result["content"] == original_content
+            assert result["original_length"] == len(original_content)
+            assert result["summary"] == "Test summary"
+            assert result["file_path"] == str(content_file)
+            assert result["offloaded_at"] == "2024-01-01T00:00:00"
+            assert "error" not in result
 
     def test_list_offloaded_tool_outputs_empty(self):
         r"""Test listing when no outputs have been offloaded."""
@@ -274,7 +283,8 @@ class TestToolOutputOffloadToolkit:
 
             result = toolkit.list_offloaded_tool_outputs()
 
-            assert "No outputs have been offloaded" in result
+            assert isinstance(result, list)
+            assert len(result) == 0
 
     def test_list_offloaded_tool_outputs_with_data(self):
         r"""Test listing with offloaded outputs."""
@@ -296,10 +306,16 @@ class TestToolOutputOffloadToolkit:
 
             result = toolkit.list_offloaded_tool_outputs()
 
-            assert "id-1" in result
-            assert "tool_a" in result
-            assert "5000" in result
-            assert "1 total" in result
+            assert isinstance(result, list)
+            assert len(result) == 1
+
+            item = result[0]
+            assert item["offload_id"] == "id-1"
+            assert item["tool_name"] == "tool_a"
+            assert item["original_length"] == 5000
+            assert item["summary"] == "Summary of tool A output"
+            assert item["file_path"] == "/path/to/file"
+            assert item["offloaded_at"] == "2024-01-01T00:00:00"
 
 
 class TestOffloadedOutput:

@@ -28,10 +28,7 @@ from camel.toolkits.tool_output_offload_templates import (
     OFFLOADABLE_LIST_FOOTER,
     OFFLOADABLE_LIST_HEADER,
     OFFLOADABLE_OUTPUT_ITEM,
-    OFFLOADED_LIST_HEADER,
-    OFFLOADED_OUTPUT_ITEM,
     REPLACEMENT_CONTENT,
-    RETRIEVED_CONTENT,
 )
 
 logger = get_logger(__name__)
@@ -460,7 +457,7 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
     def retrieve_offloaded_tool_output(
         self,
         offload_id: str,
-    ) -> str:
+    ) -> Dict[str, Any]:
         r"""Retrieve full original content of a previously offloaded output.
 
         Call this when you need to access the complete original tool output
@@ -475,12 +472,20 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                 was offloaded via offload_tool_output_with_summary().
 
         Returns:
-            str: The full original tool output content, or error message if
-                the offload_id is not found.
+            Dict[str, Any]: A dictionary containing:
+                - offload_id (str): The unique offload identifier.
+                - tool_name (str): Name of the tool that produced the output.
+                - content (str): The full original tool output content.
+                - original_length (int): Character length of the content.
+                - summary (str): The summary created during offload.
+                - file_path (str): Path where the content is stored.
+                - offloaded_at (str): ISO format timestamp of when offloaded.
+                - error (str, optional): Error message if retrieval failed.
         """
-        # Check in-memory cache
+        # Check in-memory cache first
+        metadata: Optional[OffloadedOutput] = None
         if offload_id in self._offloaded_outputs:
-            file_path = self._offloaded_outputs[offload_id].file_path
+            metadata = self._offloaded_outputs[offload_id]
         else:
             # Try to load from disk
             meta_file = self.outputs_dir / f"{offload_id}.meta.json"
@@ -489,22 +494,28 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                     meta_data = json.loads(
                         meta_file.read_text(encoding="utf-8")
                     )
-                    file_path = meta_data.get("file_path", "")
-                except Exception:
+                    metadata = OffloadedOutput(**meta_data)
+                    # Cache it
+                    self._offloaded_outputs[offload_id] = metadata
+                except Exception as e:
                     logger.error(
                         f"Error reading metadata file for "
-                        f"offload ID: {offload_id}"
+                        f"offload ID: {offload_id}: {e}"
                     )
-                    return (
-                        f"Error reading metadata for offload ID: {offload_id}"
-                    )
+                    return {
+                        "offload_id": offload_id,
+                        "error": f"Error reading metadata for offload ID: "
+                        f"{offload_id}",
+                    }
             else:
-                return (
-                    f"Offload ID '{offload_id}' not found. "
-                    f"Use list_offloaded_tool_outputs() to see available IDs."
-                )
+                return {
+                    "offload_id": offload_id,
+                    "error": f"Offload ID '{offload_id}' not found. "
+                    f"Use list_offloaded_tool_outputs() to see available IDs.",
+                }
 
         # Read content file
+        file_path = metadata.file_path
         content_file = Path(file_path)
         if not content_file.exists():
             content_file = self.outputs_dir / f"{offload_id}.txt"
@@ -512,32 +523,42 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         if content_file.exists():
             try:
                 content = content_file.read_text(encoding="utf-8")
-                return RETRIEVED_CONTENT.format(
-                    offload_id=offload_id, content=content
-                )
+                return {
+                    "offload_id": offload_id,
+                    "tool_name": metadata.tool_name,
+                    "content": content,
+                    "original_length": metadata.original_length,
+                    "summary": metadata.summary,
+                    "file_path": metadata.file_path,
+                    "offloaded_at": metadata.offloaded_at,
+                }
             except Exception as e:
                 logger.error(f"Error reading content file: {e}")
-                return f"Error reading content file: {e}"
+                return {
+                    "offload_id": offload_id,
+                    "error": f"Error reading content file: {e}",
+                }
         else:
-            return f"Content file not found for offload ID: {offload_id}"
+            return {
+                "offload_id": offload_id,
+                "error": f"File not found for offload ID: {offload_id}",
+            }
 
-    def list_offloaded_tool_outputs(
-        self,
-        summary_preview_length: int = 80,
-    ) -> str:
+    def list_offloaded_tool_outputs(self) -> List[Dict[str, Any]]:
         r"""List all tool outputs that have been offloaded in this session.
 
         Call this to see what outputs have been previously offloaded and their
         offload_ids. Use the offload_id with retrieve_offloaded_tool_output()
         to get the full original content when needed.
 
-        Args:
-            summary_preview_length (int): Maximum length of the summary preview
-                shown for each offloaded output. (default: :obj:`80`)
-
         Returns:
-            str: Formatted list showing offload_id, tool name, original size,
-                summary preview, and when it was offloaded.
+            List[Dict[str, Any]]: A list of dictionaries, each containing:
+                - offload_id (str): Unique identifier for retrieval.
+                - tool_name (str): Name of the tool that produced the output.
+                - original_length (int): Character length of original content.
+                - summary (str): The summary created during offload.
+                - file_path (str): Path where the content is stored.
+                - offloaded_at (str): ISO format timestamp of when offloaded.
         """
         if not self._offloaded_outputs:
             # Try to load from index file
@@ -551,29 +572,20 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                 except Exception as e:
                     logger.error(f"Error loading index: {e}")
 
-        if not self._offloaded_outputs:
-            return "No outputs have been offloaded in this session."
-
-        lines = [
-            OFFLOADED_LIST_HEADER.format(count=len(self._offloaded_outputs))
-        ]
-
+        result: List[Dict[str, Any]] = []
         for offload_id, meta in self._offloaded_outputs.items():
-            summary_preview = meta.summary[:summary_preview_length]
-            if len(meta.summary) > summary_preview_length:
-                summary_preview += "..."
-
-            lines.append(
-                OFFLOADED_OUTPUT_ITEM.format(
-                    offload_id=offload_id,
-                    tool_name=meta.tool_name,
-                    original_length=meta.original_length,
-                    summary_preview=summary_preview,
-                    offloaded_at=meta.offloaded_at,
-                )
+            result.append(
+                {
+                    "offload_id": offload_id,
+                    "tool_name": meta.tool_name,
+                    "original_length": meta.original_length,
+                    "summary": meta.summary,
+                    "file_path": meta.file_path,
+                    "offloaded_at": meta.offloaded_at,
+                }
             )
 
-        return "\n".join(lines)
+        return result
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects for the toolkit.

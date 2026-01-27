@@ -27,7 +27,7 @@ OFFLOADABLE_OUTPUT_ITEM = (
 )
 
 OFFLOADABLE_LIST_FOOTER = (
-    "\n\nUse offload_tool_output_with_summary(index, summary) to offload."
+    "\nUse offload_tool_output_with_summary(index, summary) to offload."
 )
 
 # ========= offload_tool_output_with_summary templates =========
@@ -44,21 +44,4 @@ OFFLOAD_SUCCESS = (
     "Offload ID: {offload_id}\n"
     "Original: {original_length} chars -> Summary: {summary_length} chars\n"
     'Use retrieve_offloaded_tool_output("{offload_id}") to retrieve original.'
-)
-
-# ========= retrieve_offloaded_tool_output templates =========
-
-RETRIEVED_CONTENT = (
-    "[Retrieved Original Content - ID: {offload_id}]\n\n{content}"
-)
-
-# ========= list_offloaded_tool_outputs templates =========
-
-OFFLOADED_LIST_HEADER = "Offloaded outputs ({count} total):\n"
-
-OFFLOADED_OUTPUT_ITEM = (
-    "\n[{offload_id}] Tool: {tool_name}\n"
-    "    Original size: {original_length} chars\n"
-    "    Summary: {summary_preview}\n"
-    "    Offloaded at: {offloaded_at}"
 )
