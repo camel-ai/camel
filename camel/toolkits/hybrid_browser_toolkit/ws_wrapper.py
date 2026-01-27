@@ -777,14 +777,27 @@ class WebSocketBrowserWrapper:
 
     @action_logger
     async def get_som_screenshot(self) -> ToolResult:
-        """Get screenshot."""
-        logger.info("Requesting screenshot via WebSocket...")
+        """Get screenshot with SOM markers."""
+        logger.info("Requesting SOM screenshot via WebSocket...")
         start_time = time.time()
 
         response = await self._send_command('get_som_screenshot', {})
 
         end_time = time.time()
-        logger.info(f"Screenshot completed in {end_time - start_time:.2f}s")
+        logger.info(f"SOM screenshot completed in {end_time - start_time:.2f}s")
+
+        return ToolResult(text=response['text'], images=response['images'])
+
+    @action_logger
+    async def get_screenshot(self) -> ToolResult:
+        """Get plain screenshot without SOM markers."""
+        logger.info("Requesting plain screenshot via WebSocket...")
+        start_time = time.time()
+
+        response = await self._send_command('get_screenshot', {})
+
+        end_time = time.time()
+        logger.info(f"Plain screenshot completed in {end_time - start_time:.2f}s")
 
         return ToolResult(text=response['text'], images=response['images'])
 
@@ -892,13 +905,24 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
-    async def mouse_drag(self, from_ref: str, to_ref: str) -> Dict[str, Any]:
-        """Control the mouse to drag and drop in the browser using ref IDs."""
-        response = await self._send_command(
-            'mouse_drag',
-            {'from_ref': from_ref, 'to_ref': to_ref},
-        )
-        return response
+    async def mouse_drag(
+        self,
+        from_ref: Optional[str] = None,
+        to_ref: Optional[str] = None,
+        from_x: Optional[float] = None,
+        from_y: Optional[float] = None,
+        to_x: Optional[float] = None,
+        to_y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Drag and drop using ref IDs or pixel coordinates."""
+        params: Dict[str, Any] = {}
+        if from_ref is not None and to_ref is not None:
+            params = {'from_ref': from_ref, 'to_ref': to_ref}
+        elif all(v is not None for v in [from_x, from_y, to_x, to_y]):
+            params = {'from_x': from_x, 'from_y': from_y, 'to_x': to_x, 'to_y': to_y}
+        else:
+            raise ValueError("Provide (from_ref, to_ref) or (from_x, from_y, to_x, to_y)")
+        return await self._send_command('mouse_drag', params)
 
     @action_logger
     async def press_key(self, keys: List[str]) -> Dict[str, Any]:
