@@ -1066,34 +1066,6 @@ class ChatAgent(BaseAgent):
 
         return openai_messages, num_tokens
 
-    def _count_tokens_for_messages(self, messages: List[OpenAIMessage]) -> int:
-        if not messages:
-            return 0
-        try:
-            return self.model_backend.token_counter.count_tokens_from_messages(
-                messages
-            )
-        except Exception:
-            return sum(
-                self._get_token_count(str(msg.get("content", "")))
-                for msg in messages
-            )
-
-    @staticmethod
-    def _prepend_messages_after_system(
-        openai_messages: List[OpenAIMessage],
-        extra_messages: List[OpenAIMessage],
-    ) -> List[OpenAIMessage]:
-        if not extra_messages:
-            return openai_messages
-        if openai_messages and openai_messages[0].get("role") == "system":
-            return [
-                openai_messages[0],
-                *extra_messages,
-                *openai_messages[1:],
-            ]
-        return [*extra_messages, *openai_messages]
-
     def _calculate_next_summary_threshold(self) -> int:
         r"""Calculate the next token threshold that should trigger
         summarization.
@@ -1330,7 +1302,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -4188,6 +4160,7 @@ class ChatAgent(BaseAgent):
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
+
         # Start streaming response
         yield from self._stream_response(
             openai_messages, num_tokens, response_format
@@ -4278,7 +4251,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -4325,8 +4297,11 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5174,6 +5149,7 @@ class ChatAgent(BaseAgent):
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
+
         # Start async streaming response
         last_response = None
         async for response in self._astream_response(
@@ -5241,7 +5217,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5299,9 +5274,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
