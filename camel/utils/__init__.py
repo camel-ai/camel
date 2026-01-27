@@ -56,6 +56,11 @@ from .langfuse import (
 )
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
+from .stream_utils import (
+    consume_response_content,
+    consume_response_content_async,
+    is_streaming_response,
+)
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -116,4 +121,7 @@ __all__ = [
     "get_langfuse_status",
     "get_current_agent_id",
     "set_current_agent_id",
+    "is_streaming_response",
+    "consume_response_content",
+    "consume_response_content_async",
 ]

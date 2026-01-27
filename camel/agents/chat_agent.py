@@ -4378,6 +4378,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -4566,6 +4569,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5356,6 +5362,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "stream_accumulate_mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5587,6 +5596,9 @@ class ChatAgent(BaseAgent):
                                 "external_tool_requests": None,
                                 "streaming": False,
                                 "partial": False,
+                                "mode": "accumulate"
+                                if self.stream_accumulate
+                                else "delta",
                             },
                         )
                         yield final_response
@@ -5735,6 +5747,9 @@ class ChatAgent(BaseAgent):
                 "external_tool_requests": None,
                 "streaming": True,
                 "partial": True,
+                "stream_accumulate_mode": "accumulate"
+                if self.stream_accumulate
+                else "delta",
             },
         )
 
