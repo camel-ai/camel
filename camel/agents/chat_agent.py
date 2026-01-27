@@ -1323,7 +1323,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -4290,7 +4290,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -4337,8 +4336,11 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5254,7 +5256,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5312,9 +5313,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
