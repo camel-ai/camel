@@ -12,12 +12,23 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import time
 from pathlib import Path
-from typing import List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import retry_on_error
+
+
+class FileNotReadyError(Exception):
+    r"""Raised when a file is not ready to be read."""
+
+    pass
+
+
+class InvalidNoteNameError(ValueError):
+    r"""Raised when a note name is invalid."""
+
+    pass
 
 
 class NoteTakingToolkit(BaseToolkit):
@@ -28,20 +39,30 @@ class NoteTakingToolkit(BaseToolkit):
     directory and are tracked in a registry.
     """
 
+    _REGISTRY_FILENAME = ".note_register"
+    _NOTE_EXT = ".md"
+    _MAX_NOTE_NAME_LENGTH = 255
+
+    # Invalid characters for filenames across different operating systems:
+    # < > : " / \ | ? * - Reserved characters on Windows
+    # \x00 (NUL) - Invalid on all systems (Unix, Windows, macOS)
+    # TODO: ensure these to all file name created by llm from other tools
+    _INVALID_CHARS = '<>:"/\\|?*\x00'
+
     def __init__(
         self,
-        working_directory: Optional[str] = None,
-        timeout: Optional[float] = None,
+        working_directory: str | None = None,
+        timeout: float | None = None,
     ) -> None:
         r"""Initialize the NoteTakingToolkit.
 
         Args:
             working_directory (str, optional): The directory path where notes
                 will be stored. If not provided, it will be determined by the
-                `CAMEL_WORKDIR` environment variable (if set). If the
+                :obj:`CAMEL_WORKDIR` environment variable (if set). If the
                 environment variable is not set, it defaults to
-                `camel_working_dir`.
-            timeout (Optional[float]): The timeout for the toolkit.
+                :obj:`camel_working_dir`.
+            timeout (float, optional): The timeout for the toolkit.
         """
         super().__init__(timeout=timeout)
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
@@ -54,18 +75,107 @@ class NoteTakingToolkit(BaseToolkit):
 
         self.working_directory = path
         self.working_directory.mkdir(parents=True, exist_ok=True)
-        self.registry_file = self.working_directory / ".note_register"
+        self.registry_file = self.working_directory / self._REGISTRY_FILENAME
         self._load_registry()
+
+    def _get_note_path(self, note_name: str) -> Path:
+        r"""Get the file path for a note.
+
+        Args:
+            note_name (str): The name of the note (without extension).
+
+        Returns:
+            Path: The full path to the note file.
+        """
+        return self.working_directory / f"{note_name}{self._NOTE_EXT}"
+
+    def _format_note_content(self, note_name: str, content: str) -> str:
+        r"""Format a note with header and content for display.
+
+        Args:
+            note_name (str): The name of the note file.
+            content (str): The content of the note.
+
+        Returns:
+            str: Formatted note like "=== note_name ===\ncontent".
+        """
+        return f"=== {note_name} ===\n{content}"
+
+    def _validate_note_name(self, note_name: str) -> str | None:
+        r"""Validate a note name for filesystem safety.
+
+        Args:
+            note_name (str): The note name to validate.
+
+        Returns:
+            str | None: An error message if validation fails, None if valid.
+        """
+        if not note_name or not note_name.strip():
+            return "Note name cannot be empty or whitespace only."
+
+        if len(note_name) > self._MAX_NOTE_NAME_LENGTH:
+            return (
+                f"Note name exceeds maximum length of "
+                f"{self._MAX_NOTE_NAME_LENGTH} characters."
+            )
+
+        # Check for invalid characters
+        for char in self._INVALID_CHARS:
+            if char in note_name:
+                return (
+                    f"Note name contains invalid character: "
+                    f"'{char}' (not allowed in filenames)."
+                )
+
+        # Check for path traversal attempts
+        if '..' in note_name or note_name.startswith('/'):
+            return "Note name cannot contain path traversal sequences."
+
+        # Check for reserved names on Windows
+        reserved_names = {
+            'CON',
+            'PRN',
+            'AUX',
+            'NUL',
+            'COM1',
+            'COM2',
+            'COM3',
+            'COM4',
+            'COM5',
+            'COM6',
+            'COM7',
+            'COM8',
+            'COM9',
+            'LPT1',
+            'LPT2',
+            'LPT3',
+            'LPT4',
+            'LPT5',
+            'LPT6',
+            'LPT7',
+            'LPT8',
+            'LPT9',
+        }
+        if note_name.upper() in reserved_names:
+            return f"Note name '{note_name}' is a reserved system name."
+
+        # Check for names that are only dots or spaces
+        if note_name.strip('.') == '' or note_name.strip() == '':
+            return "Note name cannot consist only of dots or spaces."
+
+        return None
 
     def append_note(self, note_name: str, content: str) -> str:
         r"""Appends content to a note.
 
         If the note does not exist, it will be created with the given content.
         If the note already exists, the new content will be added to the end of
-        the note.
+        the note specified by the :obj:`note_name`.
 
         Args:
             note_name (str): The name of the note (without the .md extension).
+                Should consist of letters, numbers, underscores, hyphens, or
+                spaces (e.g., "meeting_notes", "project-ideas").
             content (str): The content to append to the note.
 
         Returns:
@@ -73,62 +183,61 @@ class NoteTakingToolkit(BaseToolkit):
                  was created.
         """
         try:
+            validation_error = self._validate_note_name(note_name)
+            if validation_error:
+                return f"Error: {validation_error}"
+
             # Reload registry to get latest state
             self._load_registry()
-            note_path = self.working_directory / f"{note_name}.md"
+            note_path = self._get_note_path(note_name)
             if note_name not in self.registry or not note_path.exists():
                 self.create_note(note_name, content)
-                return f"Note '{note_name}' created with content added."
+                return (
+                    f"Note '{note_name}' is created "
+                    f"with the specified content."
+                )
 
             with note_path.open("a", encoding="utf-8") as f:
                 f.write(content + "\n")
-            return f"Content successfully appended to '{note_name}.md'."
+            return (
+                f"Content successfully appended to existing "
+                f"note '{note_path.name}'."
+            )
         except Exception as e:
             return f"Error appending note: {e}"
 
     def _load_registry(self) -> None:
         r"""Load the note registry from file."""
-        max_retries = 5
-        retry_delay = 0.1
+        self.registry = self._load_registry_content()
 
-        for attempt in range(max_retries):
-            try:
-                if self.registry_file.exists():
-                    content = self.registry_file.read_text(
-                        encoding='utf-8'
-                    ).strip()
-                    self.registry = content.split('\n') if content else []
-                else:
-                    self.registry = []
-                return
-            except (IOError, OSError):
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (attempt + 1))
-                else:
-                    # If all retries failed, initialize with empty registry
-                    self.registry = []
+    @retry_on_error(
+        max_retries=5,
+        initial_delay=0.1,
+        backoff="linear",
+        retry_on=(IOError, OSError, FileNotReadyError),
+        fallback=[],
+    )
+    def _load_registry_content(self) -> list[str]:
+        r"""Load the note registry content from file with retry logic."""
+        if not self.registry_file.exists():
+            raise FileNotReadyError("Registry file not yet available")
+        content = self.registry_file.read_text(encoding='utf-8').strip()
+        return content.split('\n') if content else []
 
+    @retry_on_error(
+        max_retries=5,
+        initial_delay=0.1,
+        backoff="linear",
+        retry_on=(IOError, OSError),
+    )
     def _save_registry(self) -> None:
         r"""Save the note registry to file using atomic write."""
-        max_retries = 5
-        retry_delay = 0.1
+        # Use atomic write with temporary file for all platforms
+        temp_file = self.registry_file.with_suffix('.tmp')
+        temp_file.write_text('\n'.join(self.registry), encoding='utf-8')
 
-        for attempt in range(max_retries):
-            try:
-                # Use atomic write with temporary file for all platforms
-                temp_file = self.registry_file.with_suffix('.tmp')
-                temp_file.write_text(
-                    '\n'.join(self.registry), encoding='utf-8'
-                )
-
-                # Atomic rename - works on all platforms
-                temp_file.replace(self.registry_file)
-                return
-            except (IOError, OSError):
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (attempt + 1))
-                else:
-                    raise
+        # Atomic rename - works on all platforms
+        temp_file.replace(self.registry_file)
 
     def _register_note(self, note_name: str) -> None:
         r"""Register a new note in the registry with thread-safe operations."""
@@ -139,19 +248,21 @@ class NoteTakingToolkit(BaseToolkit):
             self._save_registry()
 
     def create_note(
-        self, note_name: str, content: str, overwrite: bool = False
+        self,
+        note_name: str,
+        content: str,
+        overwrite: bool = False,
     ) -> str:
-        r"""Creates a new note with a unique name.
-
-        This function will create a new file for your note.
-        By default, you must provide a `note_name` that does not already exist.
-        If you want to add content to an existing note, use the `append_note`
-        function instead. If you want to overwrite an existing note, set
-        `overwrite=True`.
+        r"""Creates a new note with a unique note name, which will
+        create a new file for your note. You must provide a :obj:`note_name`
+        that does not already exist. If you want to add content to an
+        existing note, use the :func:`append_note` function instead.
 
         Args:
             note_name (str): The name for your new note (without the .md
                 extension). This name must be unique unless overwrite is True.
+                Should consist of letters, numbers, underscores, hyphens, or
+                spaces (e.g., "meeting_notes", "project-ideas").
             content (str): The initial content to write in the note.
             overwrite (bool): Whether to overwrite an existing note.
                 Defaults to False.
@@ -162,19 +273,23 @@ class NoteTakingToolkit(BaseToolkit):
                 (when overwrite=False).
         """
         try:
-            note_path = self.working_directory / f"{note_name}.md"
+            validation_error = self._validate_note_name(note_name)
+            if validation_error:
+                return f"Error: {validation_error}"
+
+            note_path = self._get_note_path(note_name)
             existed_before = note_path.exists()
 
             if existed_before and not overwrite:
-                return f"Error: Note '{note_name}.md' already exists."
+                return f"Error: Note '{note_path.name}' already exists."
 
             note_path.write_text(content, encoding="utf-8")
             self._register_note(note_name)
 
             if existed_before and overwrite:
-                return f"Note '{note_name}.md' successfully overwritten."
+                return f"Note '{note_path.name}' successfully overwritten."
             else:
-                return f"Note '{note_name}.md' successfully created."
+                return f"Note '{note_path.name}' successfully created."
         except Exception as e:
             return f"Error creating note: {e}"
 
@@ -197,18 +312,18 @@ class NoteTakingToolkit(BaseToolkit):
 
             notes_info = []
             for note_name in self.registry:
-                note_path = self.working_directory / f"{note_name}.md"
+                note_path = self._get_note_path(note_name)
                 if note_path.exists():
                     size = note_path.stat().st_size
-                    notes_info.append(f"- {note_name}.md ({size} bytes)")
+                    notes_info.append(f"- {note_path.name} ({size} bytes)")
                 else:
-                    notes_info.append(f"- {note_name}.md (file missing)")
+                    notes_info.append(f"- {note_path.name} (file missing)")
 
             return "Available notes:\n" + "\n".join(notes_info)
         except Exception as e:
             return f"Error listing notes: {e}"
 
-    def read_note(self, note_name: Optional[str] = "all_notes") -> str:
+    def read_note(self, note_name: str = "all_notes") -> str:
         r"""Reads the content of a specific note or all notes.
 
         You can use this function in two ways:
@@ -219,7 +334,7 @@ class NoteTakingToolkit(BaseToolkit):
             together.
 
         Args:
-            note_name (str, optional): The name of the note you want to read.
+            note_name (str): The name of the note you want to read.
                 Defaults to "all_notes" which reads all notes.
 
         Returns:
@@ -229,13 +344,13 @@ class NoteTakingToolkit(BaseToolkit):
         try:
             # Reload registry to get latest state
             self._load_registry()
-            if note_name and note_name != "all_notes":
+            if note_name != "all_notes":
                 if note_name not in self.registry:
                     return (
                         f"Error: Note '{note_name}' is not registered "
                         f"or was not created by this toolkit."
                     )
-                note_path = self.working_directory / f"{note_name}.md"
+                note_path = self._get_note_path(note_name)
                 if not note_path.exists():
                     return f"Note file '{note_path.name}' does not exist."
                 return note_path.read_text(encoding="utf-8")
@@ -245,29 +360,25 @@ class NoteTakingToolkit(BaseToolkit):
 
                 all_notes = []
                 for registered_note in self.registry:
-                    note_path = (
-                        self.working_directory / f"{registered_note}.md"
-                    )
+                    note_path = self._get_note_path(registered_note)
                     if note_path.exists():
                         content = note_path.read_text(encoding="utf-8")
-                        all_notes.append(
-                            f"=== {registered_note}.md ===\n{content}"
-                        )
                     else:
-                        all_notes.append(
-                            f"=== {registered_note}.md ===\n[File not found]"
-                        )
+                        content = "[File not found]"
+                    all_notes.append(
+                        self._format_note_content(note_path.name, content)
+                    )
 
                 return "\n\n".join(all_notes)
         except Exception as e:
             return f"Error reading note: {e}"
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Return a list of FunctionTool objects representing the functions
-        in the toolkit.
+    def get_tools(self) -> list[FunctionTool]:
+        r"""Return a list of :obj:`FunctionTool` objects representing the
+        functions in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects.
+            List of FunctionTool: A list of :obj:`FunctionTool` objects.
         """
         return [
             FunctionTool(self.append_note),
