@@ -275,8 +275,8 @@ def test_inner_product_distance_metrics():
                     assert ip_storage.distance == "inner_product"
 
                     # Sigmoid conversion: sigmoid(0) = 0.5
-                    ip_sim_zero = (
-                        ip_storage._convert_distance_to_similarity(0.0)
+                    ip_sim_zero = ip_storage._convert_distance_to_similarity(
+                        0.0
                     )
                     assert ip_sim_zero == pytest.approx(0.5)
 
@@ -307,8 +307,8 @@ def test_inner_product_distance_metrics():
                     # For negative IP: similarity = sigmoid(-neg_ip)
                     # neg_ip = -IP, so sigmoid(-neg_ip) = sigmoid(IP)
                     # When neg_ip = 0: similarity = 0.5
-                    nip_sim_zero = (
-                        nip_storage._convert_distance_to_similarity(0.0)
+                    nip_sim_zero = nip_storage._convert_distance_to_similarity(
+                        0.0
                     )
                     assert nip_sim_zero == pytest.approx(0.5)
 

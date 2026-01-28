@@ -14,6 +14,8 @@
 
 import random
 
+from sqlalchemy import text
+
 from camel.storages.vectordb_storages import (
     OceanBaseStorage,
     VectorDBQuery,
@@ -114,8 +116,162 @@ def main():
     print(f"Vector count after clearing: {status.vector_count}")
 
 
+def example_filtered_query():
+    """Example demonstrating filtered ANN query using where_clause.
+
+    This example shows how to use the where_clause parameter to filter
+    results based on metadata using SQLAlchemy expressions.
+    """
+    print("\n" + "=" * 70)
+    print("FILTERED ANN QUERY EXAMPLE")
+    print("=" * 70)
+
+    # Create storage with cosine distance
+    ob_storage = OceanBaseStorage(
+        vector_dim=4,
+        table_name="filtered_query_example",
+        uri=OB_URI,
+        user=OB_USER,
+        password=OB_PASSWORD,
+        db_name=OB_DB_NAME,
+        distance="cosine",
+        delete_table_on_del=True,  # Auto-cleanup
+    )
+
+    # Add vectors with different categories in metadata
+    random.seed(42)
+    records = []
+    categories = ["electronics", "clothing", "books", "electronics", "books"]
+    prices = [199, 49, 25, 599, 15]
+
+    for i, (category, price) in enumerate(zip(categories, prices)):
+        records.append(
+            VectorRecord(
+                vector=[random.uniform(-1, 1) for _ in range(4)],
+                payload={
+                    "item_id": i,
+                    "category": category,
+                    "price": price,
+                },
+            )
+        )
+
+    ob_storage.add(records)
+    print(f"Added {len(records)} records with categories: {categories}")
+
+    # Query without filter - returns all matching results
+    query_vector = records[0].vector
+    print("\n1. Query WITHOUT filter:")
+    results = ob_storage.query(
+        VectorDBQuery(query_vector=query_vector, top_k=5)
+    )
+    for r in results:
+        print(f"   - {r.record.payload}")
+
+    # Query with category filter using where_clause
+    print("\n2. Query WITH category filter (electronics only):")
+    results = ob_storage.query(
+        VectorDBQuery(query_vector=query_vector, top_k=5),
+        where_clause=[text("metadata->>'$.category' = 'electronics'")],
+    )
+    for r in results:
+        print(f"   - {r.record.payload}")
+
+    # Query with price filter
+    print("\n3. Query WITH price filter (price < 100):")
+    results = ob_storage.query(
+        VectorDBQuery(query_vector=query_vector, top_k=5),
+        where_clause=[text("CAST(metadata->>'$.price' AS SIGNED) < 100")],
+    )
+    for r in results:
+        print(f"   - {r.record.payload}")
+
+    # Query with multiple conditions (AND)
+    print("\n4. Query WITH multiple conditions (books AND price<30):")
+    results = ob_storage.query(
+        VectorDBQuery(query_vector=query_vector, top_k=5),
+        where_clause=[
+            text("metadata->>'$.category' = 'books'"),
+            text("CAST(metadata->>'$.price' AS SIGNED) < 30"),
+        ],
+    )
+    for r in results:
+        print(f"   - {r.record.payload}")
+
+    print("\nFiltered query example completed.")
+
+
+def example_distance_metrics():
+    """Example demonstrating different distance metrics.
+
+    OceanBase supports four distance metrics:
+    - l2: Euclidean distance (lower = more similar)
+    - cosine: Cosine distance (lower = more similar)
+    - inner_product: Inner product (higher = more similar)
+    - negative_inner_product: Negative inner product (lower = more similar)
+    """
+    print("\n" + "=" * 70)
+    print("DISTANCE METRICS EXAMPLE")
+    print("=" * 70)
+
+    random.seed(123)
+    test_vector = [0.5, 0.5, 0.5, 0.5]
+
+    for distance_metric in [
+        "l2",
+        "cosine",
+        "inner_product",
+        "negative_inner_product",
+    ]:
+        print(f"\n--- Distance metric: {distance_metric} ---")
+
+        ob_storage = OceanBaseStorage(
+            vector_dim=4,
+            table_name=f"distance_example_{distance_metric}",
+            uri=OB_URI,
+            user=OB_USER,
+            password=OB_PASSWORD,
+            db_name=OB_DB_NAME,
+            distance=distance_metric,
+            delete_table_on_del=True,
+        )
+
+        # Add some test vectors
+        records = [
+            VectorRecord(
+                vector=[1.0, 0.0, 0.0, 0.0], payload={"name": "unit_x"}
+            ),
+            VectorRecord(
+                vector=[0.0, 1.0, 0.0, 0.0], payload={"name": "unit_y"}
+            ),
+            VectorRecord(
+                vector=[0.5, 0.5, 0.5, 0.5], payload={"name": "same_as_query"}
+            ),
+            VectorRecord(
+                vector=[-0.5, -0.5, -0.5, -0.5], payload={"name": "opposite"}
+            ),
+        ]
+        ob_storage.add(records)
+
+        # Query and show results
+        results = ob_storage.query(
+            VectorDBQuery(query_vector=test_vector, top_k=4)
+        )
+
+        print(f"  Query vector: {test_vector}")
+        print("  Results (ordered by similarity):")
+        for i, r in enumerate(results):
+            name = r.record.payload['name']
+            print(f"    {i + 1}. {name}: sim={r.similarity:.4f}")
+
+    print("\nDistance metrics example completed.")
+
+
 if __name__ == "__main__":
     main()
+    # Uncomment to run additional examples:
+    # example_filtered_query()
+    # example_distance_metrics()
 
 '''
 ===============================================================================
