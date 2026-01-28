@@ -1407,6 +1407,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.GLM_4_1V_THINKING_FLASHX,
             ModelType.GLM_4_1V_THINKING_FLASH,
+            ModelType.GLM_4_5V,
         }:
             return 64_000
         elif self in {
@@ -1471,7 +1472,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
             ModelType.GLM_4_5_FLASH,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
             ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASHX,
             ModelType.GLM_4_6V_FLASH,
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
@@ -1641,6 +1645,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
+            ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
             ModelType.AMD_GPT4,
