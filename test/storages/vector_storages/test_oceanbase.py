@@ -245,3 +245,226 @@ def test_distance_to_similarity_conversion():
                     )
                     l2_sim = l2_storage._convert_distance_to_similarity(0.2)
                     assert l2_sim == pytest.approx(math.exp(-0.2))
+
+
+def test_inner_product_distance_metrics():
+    """Test initialization and similarity conversion for inner product
+    distance metrics.
+    """
+    import math
+
+    def create_mock_index_params():
+        mock_index_param = MagicMock()
+        mock_index_params = MagicMock()
+        mock_index_params.__iter__.return_value = iter([mock_index_param])
+        return mock_index_params
+
+    with patch('pyobvector.client.ObVecClient'):
+        with patch('pyobvector.schema.VECTOR'):
+            with patch(
+                'pyobvector.client.index_param.IndexParams',
+                side_effect=create_mock_index_params,
+            ):
+                with patch('pyobvector.client.index_param.IndexParam'):
+                    # Test inner_product distance metric
+                    ip_storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        distance="inner_product",
+                    )
+                    assert ip_storage.distance == "inner_product"
+
+                    # Sigmoid conversion: sigmoid(0) = 0.5
+                    ip_sim_zero = (
+                        ip_storage._convert_distance_to_similarity(0.0)
+                    )
+                    assert ip_sim_zero == pytest.approx(0.5)
+
+                    # Positive score -> higher similarity (> 0.5)
+                    ip_sim_positive = (
+                        ip_storage._convert_distance_to_similarity(2.0)
+                    )
+                    expected_positive = 1.0 / (1.0 + math.exp(-2.0))
+                    assert ip_sim_positive == pytest.approx(expected_positive)
+                    assert ip_sim_positive > 0.5
+
+                    # Negative score -> lower similarity (< 0.5)
+                    ip_sim_negative = (
+                        ip_storage._convert_distance_to_similarity(-2.0)
+                    )
+                    expected_negative = 1.0 / (1.0 + math.exp(2.0))
+                    assert ip_sim_negative == pytest.approx(expected_negative)
+                    assert ip_sim_negative < 0.5
+
+                    # Test negative_inner_product distance metric
+                    nip_storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        distance="negative_inner_product",
+                    )
+                    assert nip_storage.distance == "negative_inner_product"
+
+                    # For negative IP: similarity = sigmoid(-neg_ip)
+                    # neg_ip = -IP, so sigmoid(-neg_ip) = sigmoid(IP)
+                    # When neg_ip = 0: similarity = 0.5
+                    nip_sim_zero = (
+                        nip_storage._convert_distance_to_similarity(0.0)
+                    )
+                    assert nip_sim_zero == pytest.approx(0.5)
+
+                    # Positive neg_ip (negative IP) -> lower similarity
+                    nip_sim_positive = (
+                        nip_storage._convert_distance_to_similarity(2.0)
+                    )
+                    expected_nip_positive = 1.0 / (1.0 + math.exp(2.0))
+                    assert nip_sim_positive == pytest.approx(
+                        expected_nip_positive
+                    )
+                    assert nip_sim_positive < 0.5
+
+                    # Negative neg_ip (positive IP) -> higher similarity
+                    nip_sim_negative = (
+                        nip_storage._convert_distance_to_similarity(-2.0)
+                    )
+                    expected_nip_negative = 1.0 / (1.0 + math.exp(-2.0))
+                    assert nip_sim_negative == pytest.approx(
+                        expected_nip_negative
+                    )
+                    assert nip_sim_negative > 0.5
+
+
+def test_query_with_where_clause(mock_ob_client):
+    """Test that where_clause parameter is passed to ann_search."""
+    from sqlalchemy import text
+
+    def create_mock_index_params():
+        mock_index_param = MagicMock()
+        mock_index_params = MagicMock()
+        mock_index_params.__iter__.return_value = iter([mock_index_param])
+        return mock_index_params
+
+    with patch('pyobvector.schema.VECTOR'):
+        with patch(
+            'pyobvector.client.index_param.IndexParams',
+            side_effect=create_mock_index_params,
+        ):
+            with patch('pyobvector.client.index_param.IndexParam'):
+                with patch('sqlalchemy.func'):
+                    # Setup mock for query results
+                    mock_result = MagicMock()
+                    mock_result._mapping = {
+                        "id": 1,
+                        "embedding": [0.1, 0.2, 0.3, 0.4],
+                        "metadata": {"category": "electronics"},
+                        "l2_distance": 0.3,
+                    }
+                    mock_ob_client.ann_search.return_value = [mock_result]
+
+                    # Initialize storage
+                    storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        uri="127.0.0.1:2881",
+                    )
+
+                    # Test query with where_clause
+                    query = VectorDBQuery(
+                        query_vector=[0.1, 0.2, 0.3, 0.4], top_k=5
+                    )
+                    filter_clause = [
+                        text("metadata->>'$.category' = 'electronics'")
+                    ]
+
+                    results = storage.query(query, where_clause=filter_clause)
+
+                    # Verify ann_search was called with where_clause
+                    call_kwargs = mock_ob_client.ann_search.call_args.kwargs
+                    assert 'where_clause' in call_kwargs
+                    assert call_kwargs['where_clause'] == filter_clause
+
+                    # Verify results are returned
+                    assert len(results) == 1
+                    assert results[0].record.payload == {
+                        "category": "electronics"
+                    }
+
+
+def test_query_without_where_clause(mock_ob_client):
+    """Test that query works correctly without where_clause."""
+
+    def create_mock_index_params():
+        mock_index_param = MagicMock()
+        mock_index_params = MagicMock()
+        mock_index_params.__iter__.return_value = iter([mock_index_param])
+        return mock_index_params
+
+    with patch('pyobvector.schema.VECTOR'):
+        with patch(
+            'pyobvector.client.index_param.IndexParams',
+            side_effect=create_mock_index_params,
+        ):
+            with patch('pyobvector.client.index_param.IndexParam'):
+                with patch('sqlalchemy.func'):
+                    # Setup mock for query results
+                    mock_result = MagicMock()
+                    mock_result._mapping = {
+                        "id": 1,
+                        "embedding": [0.1, 0.2, 0.3, 0.4],
+                        "metadata": {"text": "test"},
+                        "l2_distance": 0.1,
+                    }
+                    mock_ob_client.ann_search.return_value = [mock_result]
+
+                    # Initialize storage
+                    storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        uri="127.0.0.1:2881",
+                    )
+
+                    # Test query without where_clause
+                    query = VectorDBQuery(
+                        query_vector=[0.1, 0.2, 0.3, 0.4], top_k=1
+                    )
+                    results = storage.query(query)
+
+                    # Verify ann_search was called with where_clause=None
+                    call_kwargs = mock_ob_client.ann_search.call_args.kwargs
+                    assert call_kwargs.get('where_clause') is None
+
+                    # Verify results are returned
+                    assert len(results) == 1
+
+
+@pytest.mark.parametrize(
+    "distance",
+    ["l2", "cosine", "inner_product", "negative_inner_product"],
+)
+def test_all_distance_metrics_initialization(distance):
+    """Test initialization with all supported distance metrics."""
+
+    def create_mock_index_params():
+        mock_index_param = MagicMock()
+        mock_index_params = MagicMock()
+        mock_index_params.__iter__.return_value = iter([mock_index_param])
+        return mock_index_params
+
+    with patch('pyobvector.client.ObVecClient'):
+        with patch('pyobvector.schema.VECTOR'):
+            with patch(
+                'pyobvector.client.index_param.IndexParams',
+                side_effect=create_mock_index_params,
+            ):
+                with patch('pyobvector.client.index_param.IndexParam'):
+                    storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        distance=distance,
+                    )
+                    assert storage.distance == distance
+
+                    # Verify the distance function mapping exists
+                    assert distance in storage._distance_func_map or any(
+                        distance in key
+                        for key in storage._distance_func_map.keys()
+                    )
