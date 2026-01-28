@@ -47,6 +47,11 @@ class MoonshotConfig(BaseConfig):
         stop (Optional[Union[str, List[str]]], optional): Up to 4 sequences
             where the API will stop generating further tokens.
             (default: :obj:`None`)
+        interleaved_thinking (Optional[bool], optional): Whether to enable
+            interleaved thinking mode for Kimi K2 thinking models. When
+            enabled, the model performs step-by-step reasoning while
+            dynamically invoking tools.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -58,6 +63,7 @@ class MoonshotConfig(BaseConfig):
     presence_penalty: Optional[float] = None
     frequency_penalty: Optional[float] = None
     stop: Optional[Union[str, List[str]]] = None
+    interleaved_thinking: Optional[bool] = None
 
 
 MOONSHOT_API_PARAMS = {param for param in MoonshotConfig.model_fields.keys()}
