@@ -14,6 +14,7 @@
 
 import json
 import logging
+import math
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
 if TYPE_CHECKING:
@@ -45,8 +46,10 @@ class OceanBaseStorage(BaseVectorStorage):
         password (str): Password for the user. (default: :obj:`""`)
         db_name (str): Database name in OceanBase.
             (default: :obj:`"test"`)
-        distance (Literal["l2", "cosine"], optional): The distance metric for
-            vector comparison. Options: "l2", "cosine". (default: :obj:`"l2"`)
+        distance (Literal["l2", "cosine", "inner_product",
+            "negative_inner_product"], optional): The distance metric for
+            vector comparison. Options: "l2", "cosine", "inner_product",
+            "negative_inner_product". (default: :obj:`"l2"`)
         delete_table_on_del (bool, optional): Flag to determine if the
             table should be deleted upon object destruction.
             (default: :obj:`False`)
@@ -66,7 +69,9 @@ class OceanBaseStorage(BaseVectorStorage):
         user: str = "root@test",
         password: str = "",
         db_name: str = "test",
-        distance: Literal["l2", "cosine"] = "l2",
+        distance: Literal[
+            "l2", "cosine", "inner_product", "negative_inner_product"
+        ] = "l2",
         delete_table_on_del: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -81,7 +86,9 @@ class OceanBaseStorage(BaseVectorStorage):
 
         self.vector_dim: int = vector_dim
         self.table_name: str = table_name
-        self.distance: Literal["l2", "cosine"] = distance
+        self.distance: Literal[
+            "l2", "cosine", "inner_product", "negative_inner_product"
+        ] = distance
         self.delete_table_on_del: bool = delete_table_on_del
 
         # Create client
@@ -91,8 +98,10 @@ class OceanBaseStorage(BaseVectorStorage):
 
         # Map distance to distance function in OceanBase
         self._distance_func_map: Dict[str, str] = {
-            "cosine": "cosine_distance",
             "l2": "l2_distance",
+            "cosine": "cosine_distance",
+            "inner_product": "inner_product",
+            "negative_inner_product": "negative_inner_product",
         }
 
         # Check or create table with vector index
@@ -281,6 +290,7 @@ class OceanBaseStorage(BaseVectorStorage):
     def query(
         self,
         query: VectorDBQuery,
+        where_clause: Optional[List[Any]] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the
@@ -289,6 +299,12 @@ class OceanBaseStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            where_clause (Optional[List[Any]], optional): A list of SQLAlchemy
+                expressions to filter the query results. These are passed
+                directly to pyobvector's ann_search(). Use sqlalchemy.text()
+                for raw SQL conditions. Example:
+                ``[text("metadata->>'$.category' = 'electronics'")]``.
+                (default: :obj:`None`)
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -325,6 +341,7 @@ class OceanBaseStorage(BaseVectorStorage):
                 with_dist=True,
                 topk=query.top_k,
                 output_column_names=["id", "embedding", "metadata"],
+                where_clause=where_clause,
             )
 
             # Convert results to VectorDBQueryResult format
@@ -419,21 +436,45 @@ class OceanBaseStorage(BaseVectorStorage):
             raise RuntimeError(error_msg)
 
     def _convert_distance_to_similarity(self, distance: float) -> float:
-        r"""Converts distance to similarity score based on distance metric."""
-        # Ensure distance is non-negative
-        distance = max(0.0, distance)
+        r"""Converts distance/score to similarity score based on distance
+        metric.
 
+        For L2 and cosine distance, lower values mean more similar, so we
+        clamp negative distances to 0 before conversion.
+
+        For inner product metrics, the raw score can be negative (indicating
+        opposite directions), so we do NOT clamp the distance and use sigmoid
+        to map the full range to [0, 1].
+
+        Args:
+            distance (float): The distance or score value from the query.
+
+        Returns:
+            float: A similarity score, typically in the range [0, 1].
+        """
         if self.distance == "cosine":
-            # Cosine distance = 1 - cosine similarity
-            # Ensure similarity is between 0 and 1
+            # Cosine distance = 1 - cosine similarity, range [0, 2]
+            # Clamp to non-negative before conversion
+            distance = max(0.0, distance)
             return max(0.0, min(1.0, 1.0 - distance))
         elif self.distance == "l2":
-            import math
-
-            # Exponential decay function for L2 distance
+            # Exponential decay for L2 distance
+            # Clamp to non-negative before conversion
+            distance = max(0.0, distance)
             return math.exp(-distance)
+        elif self.distance == "inner_product":
+            # Inner product can be negative (opposite directions)
+            # Use sigmoid to map (-inf, +inf) to (0, 1)
+            # Higher IP -> higher similarity
+            return 1.0 / (1.0 + math.exp(-distance))
+        elif self.distance == "negative_inner_product":
+            # Negative inner product: neg_ip = -IP
+            # Use sigmoid: similarity = sigmoid(-neg_ip) = sigmoid(IP)
+            # Lower neg_ip (higher IP) -> higher similarity
+            return 1.0 / (1.0 + math.exp(distance))
         else:
-            # Default normalization, ensure result is between 0 and 1
+            # Default: treat as distance where lower = more similar
+            distance = max(0.0, distance)
             return max(0.0, min(1.0, 1.0 - min(1.0, distance)))
 
     def clear(self) -> None:
