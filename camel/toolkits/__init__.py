@@ -100,6 +100,7 @@ from .minimax_mcp_toolkit import MinimaxMCPToolkit
 from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
+from .microsoft_outlook_toolkits import OutlookCalendarToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -191,4 +192,5 @@ __all__ = [
     'IMAPMailToolkit',
     "OutlookMailToolkit",
     'EarthScienceToolkit',
+    "OutlookCalendarToolkit",
 ]
