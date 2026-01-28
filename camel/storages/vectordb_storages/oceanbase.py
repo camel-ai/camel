@@ -75,8 +75,6 @@ class OceanBaseStorage(BaseVectorStorage):
         delete_table_on_del: bool = False,
         **kwargs: Any,
     ) -> None:
-        from sqlalchemy import JSON, Column, Integer
-
         from pyobvector.client import (
             ObVecClient,
         )
@@ -84,6 +82,7 @@ class OceanBaseStorage(BaseVectorStorage):
             IndexParams,
         )
         from pyobvector.schema import VECTOR
+        from sqlalchemy import JSON, Column, Integer
 
         self.vector_dim: int = vector_dim
         self.table_name: str = table_name
@@ -440,9 +439,12 @@ class OceanBaseStorage(BaseVectorStorage):
         r"""Converts distance/score to similarity score based on distance
         metric.
 
-        For L2 and cosine distance, lower values mean more similar.
-        For inner product, higher values mean more similar.
-        For negative inner product, lower values mean more similar.
+        For L2 and cosine distance, lower values mean more similar, so we
+        clamp negative distances to 0 before conversion.
+
+        For inner product metrics, the raw score can be negative (indicating
+        opposite directions), so we do NOT clamp the distance and use sigmoid
+        to map the full range to [0, 1].
 
         Args:
             distance (float): The distance or score value from the query.
@@ -451,24 +453,29 @@ class OceanBaseStorage(BaseVectorStorage):
             float: A similarity score, typically in the range [0, 1].
         """
         if self.distance == "cosine":
-            # Cosine distance = 1 - cosine similarity
-            # Ensure similarity is between 0 and 1
-            return max(0.0, min(1.0, 1.0 - max(0.0, distance)))
+            # Cosine distance = 1 - cosine similarity, range [0, 2]
+            # Clamp to non-negative before conversion
+            distance = max(0.0, distance)
+            return max(0.0, min(1.0, 1.0 - distance))
         elif self.distance == "l2":
-            # Exponential decay function for L2 distance
-            # Ensure distance is non-negative
-            return math.exp(-max(0.0, distance))
+            # Exponential decay for L2 distance
+            # Clamp to non-negative before conversion
+            distance = max(0.0, distance)
+            return math.exp(-distance)
         elif self.distance == "inner_product":
-            # Inner product: higher values = more similar
-            # Use sigmoid to normalize to [0, 1]
+            # Inner product can be negative (opposite directions)
+            # Use sigmoid to map (-inf, +inf) to (0, 1)
+            # Higher IP -> higher similarity
             return 1.0 / (1.0 + math.exp(-distance))
         elif self.distance == "negative_inner_product":
             # Negative inner product: neg_ip = -IP
-            # So similarity = sigmoid(-neg_ip) = sigmoid(IP)
+            # Use sigmoid: similarity = sigmoid(-neg_ip) = sigmoid(IP)
+            # Lower neg_ip (higher IP) -> higher similarity
             return 1.0 / (1.0 + math.exp(distance))
         else:
-            # Default normalization, ensure result is between 0 and 1
-            return max(0.0, min(1.0, 1.0 - min(1.0, max(0.0, distance))))
+            # Default: treat as distance where lower = more similar
+            distance = max(0.0, distance)
+            return max(0.0, min(1.0, 1.0 - min(1.0, distance)))
 
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""

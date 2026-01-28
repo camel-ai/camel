@@ -122,9 +122,7 @@ def example_filtered_query():
     This example shows how to use the where_clause parameter to filter
     results based on metadata using SQLAlchemy expressions.
     """
-    print("\n" + "=" * 70)
-    print("FILTERED ANN QUERY EXAMPLE")
-    print("=" * 70)
+    print("\n=== Filtered ANN Query Example ===")
 
     # Create storage with cosine distance
     ob_storage = OceanBaseStorage(
@@ -210,9 +208,7 @@ def example_distance_metrics():
     - inner_product: Inner product (higher = more similar)
     - negative_inner_product: Negative inner product (lower = more similar)
     """
-    print("\n" + "=" * 70)
-    print("DISTANCE METRICS EXAMPLE")
-    print("=" * 70)
+    print("\n=== Distance Metrics Example ===")
 
     random.seed(123)
     test_vector = [0.5, 0.5, 0.5, 0.5]
@@ -275,6 +271,8 @@ if __name__ == "__main__":
 
 '''
 ===============================================================================
+Example output from main():
+
 Vector dimension: 4
 Initial vector count: 0
 
@@ -283,27 +281,94 @@ Vector count after adding batch: 1000
 
 Querying similar vectors...
 Result 1:
-  ID: f33f008d-688a-468a-9a2d-e005d27ad9d8
+  ID: e8de28c7-4ec1-4fba-b71c-b9640d11c2d7
   Payload: {'idx': 496, 'batch': 'example'}
   Similarity: 0.9847431876706196
 Result 2:
-  ID: 0946ca4a-9129-4343-b339-b2f13a64c827
+  ID: 62755df8-8f8e-41db-87bc-206f54d324a6
   Payload: {'idx': 306, 'batch': 'example'}
   Similarity: 0.9598140307734809
 Result 3:
-  ID: e2505cc3-7bee-433e-a723-c830b9404f61
+  ID: 9a9dec55-cfc0-4323-a874-eb38269dc965
   Payload: {'idx': 654, 'batch': 'example'}
   Similarity: 0.9548076959468635
 Result 4:
-  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcc
+  ID: fd579792-dba1-4aab-8338-8b504f1b5419
   Payload: {'idx': 914, 'batch': 'example'}
   Similarity: 0.9496165658207311
 Result 5:
-  ID: 45cef390-3e1f-4e16-8375-b4108951a93b
+  ID: 76a4f991-c5a7-4a68-9d40-d28311f18f32
   Payload: {'idx': 806, 'batch': 'example'}
   Similarity: 0.9485824622759768
 
 Clearing vectors...
 Vector count after clearing: 0
+
+-------------------------------------------------------------------------------
+Example output from example_filtered_query():
+
+=== Filtered ANN Query Example ===
+Added 5 records with categories: ['electronics', 'clothing', 'books', ...]
+
+1. Query WITHOUT filter:
+   - {'price': 199, 'item_id': 0, 'category': 'electronics'}
+   - {'price': 25, 'item_id': 2, 'category': 'books'}
+   - {'price': 599, 'item_id': 3, 'category': 'electronics'}
+   - {'price': 15, 'item_id': 4, 'category': 'books'}
+   - {'price': 49, 'item_id': 1, 'category': 'clothing'}
+
+2. Query WITH category filter (electronics only):
+   - {'price': 199, 'item_id': 0, 'category': 'electronics'}
+   - {'price': 599, 'item_id': 3, 'category': 'electronics'}
+
+3. Query WITH price filter (price < 100):
+   - {'price': 25, 'item_id': 2, 'category': 'books'}
+   - {'price': 15, 'item_id': 4, 'category': 'books'}
+   - {'price': 49, 'item_id': 1, 'category': 'clothing'}
+
+4. Query WITH multiple conditions (books AND price<30):
+   - {'price': 25, 'item_id': 2, 'category': 'books'}
+   - {'price': 15, 'item_id': 4, 'category': 'books'}
+
+Filtered query example completed.
+
+-------------------------------------------------------------------------------
+Example output from example_distance_metrics():
+
+=== Distance Metrics Example ===
+
+--- Distance metric: l2 ---
+  Query vector: [0.5, 0.5, 0.5, 0.5]
+  Results (ordered by similarity):
+    1. same_as_query: sim=1.0000
+    2. unit_x: sim=0.3679
+    3. unit_y: sim=0.3679
+    4. opposite: sim=0.1353
+
+--- Distance metric: cosine ---
+  Query vector: [0.5, 0.5, 0.5, 0.5]
+  Results (ordered by similarity):
+    1. same_as_query: sim=1.0000
+    2. unit_x: sim=0.5000
+    3. unit_y: sim=0.5000
+    4. opposite: sim=0.0000
+
+--- Distance metric: inner_product ---
+  Query vector: [0.5, 0.5, 0.5, 0.5]
+  Results (ordered by similarity):
+    1. opposite: sim=0.2689
+    2. unit_y: sim=0.6225
+    3. unit_x: sim=0.6225
+    4. same_as_query: sim=0.7311
+
+--- Distance metric: negative_inner_product ---
+  Query vector: [0.5, 0.5, 0.5, 0.5]
+  Results (ordered by similarity):
+    1. same_as_query: sim=0.7311
+    2. unit_x: sim=0.6225
+    3. unit_y: sim=0.6225
+    4. opposite: sim=0.2689
+
+Distance metrics example completed.
 ===============================================================================
 '''
