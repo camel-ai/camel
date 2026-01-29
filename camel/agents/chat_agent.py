@@ -138,7 +138,12 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 # Langfuse decorator setting
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+if os.environ.get("LOGFIRE_TOKEN") is not None:
+    import logfire
+
+    logfire.configure(scrubbing=False)
+    observe = logfire.instrument
+elif os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
@@ -3909,6 +3914,7 @@ class ChatAgent(BaseAgent):
             extra_content=tool_call_request.extra_content,
         )
 
+    @observe()
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,

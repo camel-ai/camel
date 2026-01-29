@@ -23,11 +23,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from run_navi_bench_tasks import (  # type: ignore
+from run_navi_bench_tasks import (
     NaviBenchRunner,
     _resolve_run_dir,
-    load_dataset_items_from_jsonl,
     _select_items,
+    load_dataset_items_from_jsonl,
 )
 
 
@@ -46,6 +46,9 @@ async def _amain() -> int:
     parser.add_argument("--disable-skills", action="store_true")
     parser.add_argument("--disable-skill-extraction", action="store_true")
     args = parser.parse_args()
+    if not args.task_id.strip():
+        print("--task-id must be a non-empty string.")
+        return 2
 
     jsonl_path = Path(args.jsonl).expanduser().resolve()
     run_dir = _resolve_run_dir(args.out_dir or None)

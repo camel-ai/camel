@@ -24,6 +24,7 @@ import json
 import shutil
 import sys
 import tempfile
+import traceback
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -43,7 +44,7 @@ from utils import (
     get_timestamp_iso,
 )
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, observe
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits.hybrid_browser_toolkit import (
@@ -189,7 +190,9 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: https://www.apartments.com/",
             "- Use site search/filters on the page; avoid external search.",
-            "- Use short keywords to search, the search input accepts multiple regions search, Click the dropdown suggestions to confirm one search region, and repeatly add multiple demand regions.",
+            "- Use short keywords to search, the search input accepts multiple regions search, Click the dropdown suggestions to confirm one search region, ",
+            "and repeatly add multiple demand regions, until you've confirmed all required regions are added.",
+            "- Only if you've add all regions, you can continue to configure other filter conditions.",
             "- Navi-Bench often verifies the FINAL URL; apply only the filters required by the task (avoid extra filters).",
             "- After applying filters, call browser_get_tab_info to confirm the URL reflects the required constraints.",
             "- If results use infinite scroll or lazy loading, scroll a bit to ensure listings are loaded before you stop.",
@@ -209,6 +212,8 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: OpenTable",
             "- Ensure location/restaurant, date, time, and party size are correctly set (use the UI controls).",
+            "- For dropdown/combobox controls (party size, time, filters), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
+            "- After changing key constraints (date/time/party size), call browser_get_tab_info and confirm the URL/state reflects the requested constraints before moving on.",
             "- If the task is about availability, stay on the results/reservation page that shows available times (or the no-availability message).",
             "- Scroll within results so availability/no-availability sections are visible before finishing.",
             "- Avoid navigating away at the end; keep the final page on the relevant OpenTable results/restaurant page.",
@@ -218,6 +223,9 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: Resy",
             "- Ensure venue/date/time/party size are correctly set (use the UI controls).",
+            "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
+            "- Resy tasks are often verified via the FINAL URL query (e.g., seats/date/time). After setting party size/date/time, call browser_get_tab_info and confirm URL query matches the task (e.g., seats=11, time=1630, date=YYYY-MM-DD).",
+            "- If the UI only provides an approximate option, still ensure the URL uses the exact required value. If it doesn't, directly visit the correct URL.",
             "- If there is no availability, confirm the page shows the no-availability indicator (may require scrolling).",
             "- If a specific time is requested but not available, ensure nearby time slots are visible so the page clearly indicates unavailability.",
             "- Avoid navigating away at the end; keep the final page on the relevant Resy booking page.",
@@ -817,6 +825,7 @@ class SkillsAgent:
             "browser_forward",
             "browser_click",
             "browser_type",
+            "browser_select",
             "browser_switch_tab",
             "browser_get_tab_info",
             "browser_enter",
@@ -969,7 +978,7 @@ class SkillsAgent:
 
         print("✓ Model created")
 
-        # Get toolkit tools - use them directly without wrapping
+        # Get toolkit tools - use them directly
         # FunctionTool objects already have proper signatures
         browser_tools = self.toolkit.get_tools()
         print(f"✓ Got {len(browser_tools)} browser tools")
@@ -1103,6 +1112,7 @@ async def subtask_{subtask_func.subtask_id}():
             system_message=system_message,
             step_timeout=self.step_timeout,
             tool_execution_timeout=self.tool_execution_timeout,
+            enable_snapshot_clean=False,
             response_terminators=[
                 ResponseWordsTerminator({self._TASK_DONE_TOKEN: 1})
             ],
@@ -1156,6 +1166,9 @@ async def subtask_{subtask_func.subtask_id}():
                 "2. Your FIRST action MUST be calling browser_get_page_snapshot.",
                 "3. If you are not on the target website, navigate there using browser_visit_page.",
                 "4. After key actions (navigation/click/type), call browser_get_page_snapshot to verify state.",
+                "4b. For dropdown/combobox interactions: use browser_select(ref=..., value=...).",
+                "   - Do NOT repeatedly click a combobox hoping an option will be selected.",
+                "   - If the options you need are visible in the snapshot but have no [ref=...], you cannot click them directly; use browser_select.",
                 "5. Do NOT give a final answer unless a page snapshot clearly contains the requested information.",
                 "   - If the result is still loading or missing, keep using tools (snapshot/scroll/click) until it appears.",
                 "6. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
@@ -1239,6 +1252,7 @@ async def subtask_{subtask_func.subtask_id}():
 
         return "\n".join(prompt_parts)
 
+    @observe()
     async def run(self, user_task: str):
         """Run the agent with a user task.
 
@@ -1757,26 +1771,15 @@ async def subtask_{subtask_func.subtask_id}():
         if str(toolkits_dir) not in sys.path:
             sys.path.insert(0, str(toolkits_dir))
 
+        from analyze_session import analyze_session
+
+        print(f"\n🔍 Analyzing session: {self.session_log_dir}")
+
         try:
-            # Import the analyze_session module
-            from analyze_session import analyze_session
-
-            print(f"\n🔍 Analyzing session: {self.session_log_dir}")
-
-            # Run the analysis
             analyze_session(str(self.session_log_dir))
-
             print("\n✅ Timeline analysis completed successfully!")
-
-        except ImportError as e:
-            print(f"\n⚠️  Could not import analyze_session module: {e}")
-            print(
-                "   Make sure analyze_session.py is in the same directory as this script"
-            )
         except Exception as e:
             print(f"\n⚠️  Error during timeline analysis: {e}")
-            import traceback
-
             traceback.print_exc()
 
 

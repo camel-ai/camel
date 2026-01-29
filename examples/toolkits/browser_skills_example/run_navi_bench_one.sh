@@ -23,10 +23,23 @@ JSONL="${JSONL:-$SCRIPT_DIR/navi_bench_data.jsonl}"
 # If TASK_ID is set, run that single task end-to-end (2 runs + skill extraction).
 # If TASK_ID is empty, run ONE task per domain (prompt smoke test; no skill extraction).
 TASK_ID="${TASK_ID:-}"
+# Optional: when TASK_ID is empty, restrict the smoke test to one or more domains.
+# Examples:
+#   DOMAIN_FILTER=opentable bash .../run_navi_bench_one.sh
+#   DOMAIN_FILTER=opentable,resy bash .../run_navi_bench_one.sh
+DOMAIN_FILTER="${DOMAIN_FILTER:-${DOMAIN:-}}"
 
-TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
-SKILLS_ROOT="${SKILLS_ROOT:-$TMP_DIR/browser_skills}"
-OUT_DIR="${OUT_DIR:-$TMP_DIR/navi_runs}"
+# By default, write *all* run artifacts under the repo session_logs dir so the
+# user can inspect/debug after the script exits.
+SESSION_LOGS_DIR="${SESSION_LOGS_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
+RUN_STAMP="${RUN_STAMP:-$(date +%Y%m%d_%H%M%S)}"
+RUN_ROOT="${RUN_ROOT:-$SESSION_LOGS_DIR/navi_bench_one_$RUN_STAMP}"
+
+# TMP_DIR is used for run logs and skill extraction logs. Keep the name for
+# backward compatibility with existing log messages/env overrides.
+TMP_DIR="${TMP_DIR:-$RUN_ROOT}"
+SKILLS_ROOT="${SKILLS_ROOT:-$RUN_ROOT/browser_skills}"
+OUT_DIR="${OUT_DIR:-$RUN_ROOT/navi_runs}"
 CDP_PORT="${CDP_PORT:-9223}"
 
 MAX_ATTEMPTS_PER_TASK="${MAX_ATTEMPTS_PER_TASK:-1}" # this script orchestrates the second run explicitly
@@ -38,9 +51,11 @@ mkdir -p "$SKILLS_ROOT" "$OUT_DIR"
 
 echo "Repo:         $ROOT_DIR"
 echo "UV_CACHE_DIR: $UV_CACHE_DIR"
-echo "Temp:         $TMP_DIR"
+echo "RUN_ROOT:     $RUN_ROOT"
+echo "Logs dir:     $TMP_DIR"
 echo "JSONL:        $JSONL"
 echo "TASK_ID:      ${TASK_ID:-<auto: one per domain>}"
+echo "DOMAIN_FILTER:${DOMAIN_FILTER:-<none>}"
 echo "SKILLS_ROOT:  $SKILLS_ROOT"
 echo "OUT_DIR:      $OUT_DIR"
 echo "CDP_PORT:     $CDP_PORT"
@@ -236,8 +251,8 @@ if [[ -n "${TASK_ID}" ]]; then
 
   echo
   echo "Done."
-  echo "Temp dir:"
-  echo "  - $TMP_DIR"
+  echo "Run dir:"
+  echo "  - $RUN_ROOT"
   echo "Run logs:"
   echo "  - $RUN1_LOG"
   echo "  - $RUN2_LOG"
@@ -251,16 +266,28 @@ fi
 
 echo "Prompt smoke test: running ONE case per domain from:"
 echo "  $JSONL"
+if [[ -n "$DOMAIN_FILTER" ]]; then
+  echo "Domain filter:"
+  echo "  $DOMAIN_FILTER"
+fi
 echo
 
 DOMAINS_AND_TASKS="$(
-  UV_CACHE_DIR="$UV_CACHE_DIR" uv run python - "$JSONL" <<'PY'
+  UV_CACHE_DIR="$UV_CACHE_DIR" uv run python - "$JSONL" "$DOMAIN_FILTER" <<'PY'
 import json
 import sys
 from collections import OrderedDict
 from pathlib import Path
 
 p = Path(sys.argv[1])
+domain_filter_raw = (sys.argv[2] if len(sys.argv) > 2 else "").strip()
+domain_allow = None
+if domain_filter_raw:
+    # Comma-separated list of domains (e.g., "opentable,resy").
+    domain_allow = {d.strip() for d in domain_filter_raw.split(",") if d.strip()}
+    if not domain_allow:
+        domain_allow = None
+
 seen = OrderedDict()
 for line in p.read_text(encoding="utf-8").splitlines():
     line = line.strip()
@@ -269,10 +296,13 @@ for line in p.read_text(encoding="utf-8").splitlines():
     row = json.loads(line)
     domain = (row.get("domain") or "").strip()
     task_id = (row.get("task_id") or "").strip()
+    if domain_allow is not None and domain not in domain_allow:
+        continue
     if domain and task_id and domain not in seen:
         seen[domain] = task_id
 for domain, task_id in seen.items():
-    print(f"{domain}\\t{task_id}")
+    # Print a *real* tab so bash can split with IFS=$'\\t'.
+    print(f"{domain}\t{task_id}")
 PY
 )"
 
