@@ -292,10 +292,11 @@ def test_inner_product_distance_metrics():
     distance metrics.
 
     Note: For inner_product distance metric, the search uses
-    negative_inner_product function internally, so _convert_distance_to_similarity
-    receives neg_ip = -IP and computes sigmoid(-neg_ip) = sigmoid(IP).
-    This means positive input (neg_ip > 0) -> low similarity,
-    and negative input (neg_ip < 0, i.e., high IP) -> high similarity.
+    negative_inner_product function internally, so
+    _convert_distance_to_similarity receives neg_ip = -IP and computes
+    sigmoid(-neg_ip) = sigmoid(IP). This means positive input
+    (neg_ip > 0) -> low similarity, and negative input
+    (neg_ip < 0, i.e., high IP) -> high similarity.
     """
     import math
 

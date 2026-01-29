@@ -263,11 +263,72 @@ def example_distance_metrics():
     print("\nDistance metrics example completed.")
 
 
+def example_arbitrary_distance_metrics():
+    """Example with arbitrary vector values to demonstrate distance metrics."""
+    print("\n=== Arbitrary Distance Metrics Example ===")
+
+    # Arbitrary query vector
+    query = [0.3, -0.7, 0.2, 0.8]
+
+    # Various test vectors with different relationships to query
+    records = [
+        VectorRecord(
+            vector=[0.3, -0.7, 0.2, 0.8], payload={"name": "exact_match"}
+        ),
+        VectorRecord(
+            vector=[0.6, -1.4, 0.4, 1.6], payload={"name": "scaled_2x"}
+        ),
+        VectorRecord(
+            vector=[0.1, -0.3, 0.1, 0.4], payload={"name": "similar_dir"}
+        ),
+        VectorRecord(
+            vector=[-0.3, 0.7, -0.2, -0.8], payload={"name": "opposite"}
+        ),
+        VectorRecord(
+            vector=[0.8, 0.2, -0.5, 0.1], payload={"name": "orthogonal"}
+        ),
+        VectorRecord(vector=[0.0, 0.0, 0.0, 1.0], payload={"name": "unit_w"}),
+    ]
+
+    for distance_metric in [
+        "inner_product",
+        "negative_inner_product",
+        "cosine",
+        "l2",
+    ]:
+        print(f"\n--- Distance metric: {distance_metric} ---")
+
+        ob_storage = OceanBaseStorage(
+            vector_dim=4,
+            table_name=f"arbitrary_example_{distance_metric}",
+            uri=OB_URI,
+            user=OB_USER,
+            password=OB_PASSWORD,
+            db_name=OB_DB_NAME,
+            distance=distance_metric,
+            delete_table_on_del=True,
+        )
+
+        ob_storage.add(records)
+
+        results = ob_storage.query(VectorDBQuery(query_vector=query, top_k=6))
+
+        print(f"  Query: {query}")
+        print("  Results:")
+        for i, r in enumerate(results):
+            name = r.record.payload['name']
+            vec = r.record.vector
+            print(f"    {i + 1}. {name}: sim={r.similarity:.4f}, vec={vec}")
+
+    print("\nArbitrary distance metrics example completed.")
+
+
 if __name__ == "__main__":
     main()
     # Uncomment to run additional examples:
     # example_filtered_query()
     # example_distance_metrics()
+    # example_arbitrary_distance_metrics()
 
 '''
 ===============================================================================
@@ -370,5 +431,52 @@ Example output from example_distance_metrics():
     4. opposite: sim=0.2689
 
 Distance metrics example completed.
+
+-------------------------------------------------------------------------------
+Example output from example_arbitrary_distance_metrics():
+
+=== Arbitrary Distance Metrics Example ===
+
+--- Distance metric: inner_product ---
+  Query: [0.3, -0.7, 0.2, 0.8]
+  Results:
+    1. scaled_2x: sim=0.9255, vec=[0.6, -1.4, 0.4, 1.6]
+    2. exact_match: sim=0.7790, vec=[0.3, -0.7, 0.2, 0.8]
+    3. unit_w: sim=0.6900, vec=[0.0, 0.0, 0.0, 1.0]
+    4. similar_dir: sim=0.6411, vec=[0.1, -0.3, 0.1, 0.4]
+    5. orthogonal: sim=0.5200, vec=[0.8, 0.2, -0.5, 0.1]
+    6. opposite: sim=0.2210, vec=[-0.3, 0.7, -0.2, -0.8]
+
+--- Distance metric: negative_inner_product ---
+  Query: [0.3, -0.7, 0.2, 0.8]
+  Results:
+    1. scaled_2x: sim=0.9255, vec=[0.6, -1.4, 0.4, 1.6]
+    2. exact_match: sim=0.7790, vec=[0.3, -0.7, 0.2, 0.8]
+    3. unit_w: sim=0.6900, vec=[0.0, 0.0, 0.0, 1.0]
+    4. similar_dir: sim=0.6411, vec=[0.1, -0.3, 0.1, 0.4]
+    5. orthogonal: sim=0.5200, vec=[0.8, 0.2, -0.5, 0.1]
+    6. opposite: sim=0.2210, vec=[-0.3, 0.7, -0.2, -0.8]
+
+--- Distance metric: cosine ---
+  Query: [0.3, -0.7, 0.2, 0.8]
+  Results:
+    1. scaled_2x: sim=1.0000, vec=[0.6, -1.4, 0.4, 1.6]
+    2. exact_match: sim=1.0000, vec=[0.3, -0.7, 0.2, 0.8]
+    3. similar_dir: sim=0.9944, vec=[0.1, -0.3, 0.1, 0.4]
+    4. unit_w: sim=0.7127, vec=[0.0, 0.0, 0.0, 1.0]
+    5. orthogonal: sim=0.0735, vec=[0.8, 0.2, -0.5, 0.1]
+    6. opposite: sim=0.0000, vec=[-0.3, 0.7, -0.2, -0.8]
+
+--- Distance metric: l2 ---
+  Query: [0.3, -0.7, 0.2, 0.8]
+  Results:
+    1. exact_match: sim=1.0000, vec=[0.3, -0.7, 0.2, 0.8]
+    2. similar_dir: sim=0.5443, vec=[0.1, -0.3, 0.1, 0.4]
+    3. unit_w: sim=0.4438, vec=[0.0, 0.0, 0.0, 1.0]
+    4. scaled_2x: sim=0.3255, vec=[0.6, -1.4, 0.4, 1.6]
+    5. orthogonal: sim=0.2397, vec=[0.8, 0.2, -0.5, 0.1]
+    6. opposite: sim=0.1059, vec=[-0.3, 0.7, -0.2, -0.8]
+
+Arbitrary distance metrics example completed.
 ===============================================================================
 '''
