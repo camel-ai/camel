@@ -6,14 +6,19 @@ cd "$ROOT_DIR"
 
 CDP_PORT="${CDP_PORT:-9223}"
 
-# {"web_name": "Google Flights", "id": "Google Flights--1", "ques": "Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.", "web": "https://www.google.com/travel/flights/"}
-CASE_WEB_NAME="${CASE_WEB_NAME:-Google Flights}"
-CASE_ID="${CASE_ID:-Google Flights--1}"
-CASE_QUES="${CASE_QUES:-Show me the list of one-way flights on January 17, 2026 from Chicago to Paris.}"
-CASE_WEB="${CASE_WEB:-https://www.google.com/travel/flights/}"
+# {"web_name": "Google Flights", "id": "Google Flights--1", "ques": "Show me the list of one-way flights on January 25, 2026 from Chicago to Paris.", "web": "https://www.google.com/travel/flights/"}
+# {"web_name": "Booking", "id": "Booking--0", "ques": "Find a Mexico hotel with deals for Dec 20-22 2026.", "web": "https://www.booking.com/"}
+# {"web_name": "Coursera", "id": "Coursera--0", "ques": "Find a beginner-level online course about '3d printing' which lasts 1-3 months, and is provided by a renowned university.", "web": "https://www.coursera.org/"}
+# {"web_name": "ESPN", "id": "ESPN--0", "ques": "Look up the current standings for the NBA Eastern Conference on ESPN.", "web": "https://www.espn.com/"}
+CASE_WEB_NAME="${CASE_WEB_NAME:-ESPN}"
+CASE_ID="${CASE_ID:-ESPN--0}"
+CASE_QUES="${CASE_QUES:-Look up the current standings for the NBA Eastern Conference on ESPN.}"
+CASE_WEB="${CASE_WEB:-https://www.espn.com/}"
 
 TMP_DIR="${TMP_DIR:-$(mktemp -d)}"
-SKILLS_DIR="${SKILLS_DIR:-$TMP_DIR/browser_skills}"
+SKILLS_ROOT="${SKILLS_ROOT:-$TMP_DIR/browser_skills}"
+WEBSITE_SLUG="$(echo "$CASE_WEB_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g; s/_+/_/g')"
+SKILLS_DIR="${SKILLS_DIR:-$SKILLS_ROOT/$WEBSITE_SLUG}"
 UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 
 mkdir -p "$SKILLS_DIR"
@@ -22,7 +27,8 @@ mkdir -p "$UV_CACHE_DIR"
 echo "Repo: $ROOT_DIR"
 echo "Temp: $TMP_DIR"
 echo "Case: $CASE_ID ($CASE_WEB_NAME) — $CASE_WEB"
-echo "Skills dir: $SKILLS_DIR"
+echo "Skills root: $SKILLS_ROOT"
+echo "Skills dir:  $SKILLS_DIR"
 echo
 
 check_cdp() {
@@ -47,8 +53,8 @@ check_cdp "$CDP_PORT" || {
 echo
 echo "Step 1/4: First run with EMPTY skills dir (expect: few/no subtask functions)."
 RUN1_LOG="$TMP_DIR/run1.log"
-STEP_TIMEOUT="${STEP_TIMEOUT:-360}"
-TOOL_TIMEOUT="${TOOL_TIMEOUT:-360}"
+STEP_TIMEOUT="${STEP_TIMEOUT:-3600}"
+TOOL_TIMEOUT="${TOOL_TIMEOUT:-300}"
 PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
@@ -118,7 +124,7 @@ echo
 echo "Second run session: $SESSION2"
 
 echo
-echo "Step 4/4: Evidence of skill reuse (any of these is sufficient)."
+echo "Step 4/5: Evidence of skill reuse (any of these is sufficient)."
 echo "To inspect subtask reuse, open:"
 echo "  - $SESSION2/action_timeline.json  (look for timeline[].action_type == \"subtask_replay\")"
 echo "  - $SESSION2/agent_communication_log.json  (look for communications[].type == \"subtask_call\")"
@@ -151,6 +157,27 @@ echo "  - subtask_replay entries (action_timeline.json): $SUBTASK_REPLAY_ENTRIES
 if [[ "$SUBTASK_CALLS" -eq 0 && "$REPLAY_FILES" -eq 0 && "$SUBTASK_REPLAY_ENTRIES" -eq 0 ]]; then
   echo "WARNING: No clear reuse evidence detected in this session."
 fi
+
+echo
+echo "Step 5/5: Verify task success (Vision-WebJudge) for the run WITH skills."
+VERDICT2_JSON="$TMP_DIR/verdict2.json"
+VERDICT2_OUT_JSON="$SESSION2/verdict2.json"
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/eval_webjudge_session.py \
+  "$SESSION2" \
+  --out "$VERDICT2_JSON"
+
+cp -f "$VERDICT2_JSON" "$VERDICT2_OUT_JSON"
+
+if ! grep -Eq '"success"[[:space:]]*:[[:space:]]*true' "$VERDICT2_JSON"; then
+  echo "❌ Second run (WITH skills) is NOT verified successful."
+  echo "Verdict JSON: $VERDICT2_JSON"
+  echo "Verdict JSON (out-dir): $VERDICT2_OUT_JSON"
+  exit 1
+fi
+
+echo "✅ Second run (WITH skills) verified successful."
+echo "Verdict JSON (tmp): $VERDICT2_JSON"
+echo "Verdict JSON (session): $VERDICT2_OUT_JSON"
 
 echo
 echo "Done."

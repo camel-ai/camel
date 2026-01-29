@@ -65,13 +65,14 @@ class WebJudgeVisionConfig:
             "parallel_tool_calls": False,
         }
     )
-    step_timeout: Optional[float] = 360.0
-    tool_execution_timeout: Optional[float] = 360.0
+    step_timeout: Optional[float] = 600.0
+    tool_execution_timeout: Optional[float] = 600.0
     max_frames: int = 10_000
     action_history_max_chars: int = 4000
     evidence_score_threshold: int = 3
     evidence_top_k: int = 4
-    max_images_for_outcome: int = 50
+    min_images_for_outcome: int = 3
+    max_images_for_outcome: int = 16
     include_raw: bool = False
 
     def __post_init__(self) -> None:
@@ -81,7 +82,13 @@ class WebJudgeVisionConfig:
         )
         self.evidence_score_threshold = int(self.evidence_score_threshold)
         self.evidence_top_k = max(1, int(self.evidence_top_k))
+        self.min_images_for_outcome = max(
+            1, int(self.min_images_for_outcome)
+        )
         self.max_images_for_outcome = max(1, int(self.max_images_for_outcome))
+        self.max_images_for_outcome = max(
+            self.max_images_for_outcome, self.min_images_for_outcome
+        )
         if self.step_timeout is not None:
             self.step_timeout = float(self.step_timeout)
         if self.tool_execution_timeout is not None:
@@ -180,16 +187,30 @@ class WebJudgeVisionEvaluator:
                 task, key_points_text, candidates
             )
             debug_payload["stages"]["evidence_scoring"] = raw_scores
+            debug_payload["artifacts"]["evidence_scoring_compact"] = [
+                {
+                    "evidence_no": pf.get("evidence_no"),
+                    "frame_id": pf.get("frame_id"),
+                    "parsed_score": (
+                        (pf.get("parsed") or {}).get("score")
+                        if isinstance(pf.get("parsed"), dict)
+                        else None
+                    ),
+                    "response": pf.get("response", ""),
+                }
+                for pf in (raw_scores.get("per_frame") or [])
+                if isinstance(pf, dict)
+            ]
             debug_payload["artifacts"]["evidence_scores"] = scores
             debug_payload["artifacts"]["evidence_thoughts"] = score_thoughts
             if self.config.include_raw:
                 raw["evidence_scoring"] = raw_scores
 
-            selected = self._select_evidence(candidates, scores)
-            selected = selected[: self.config.max_images_for_outcome]
+            selected, selected_meta = self._select_evidence(candidates, scores)
             debug_payload["artifacts"]["selected_evidence"] = [
                 f.frame_id for f in selected
             ]
+            debug_payload["artifacts"]["selected_evidence_meta"] = selected_meta
             selected_thoughts = [
                 {
                     "frame_id": f.frame_id,
@@ -379,7 +400,7 @@ class WebJudgeVisionEvaluator:
         thoughts: Dict[str, str] = {}
         per_frame: List[Dict[str, Any]] = []
 
-        for f in frames:
+        for evidence_no, f in enumerate(frames, start=1):
             agent = self._make_agent(
                 role_name="WebJudge(Vision): Evidence Scorer",
                 system_content=system_msg,
@@ -403,7 +424,9 @@ class WebJudgeVisionEvaluator:
 
             per_frame.append(
                 {
+                    "evidence_no": evidence_no,
                     "frame_id": f.frame_id,
+                    "screenshot_path": f.screenshot_path,
                     "prompt": prompt,
                     "response": response_text,
                     "parsed": {"score": score, "reasoning": reasoning},
@@ -515,13 +538,35 @@ class WebJudgeVisionEvaluator:
 
     def _select_evidence(
         self, frames: List[VisionEvidenceFrame], scores: Dict[str, int]
-    ) -> List[VisionEvidenceFrame]:
-        return [
-            f
-            for f in frames
-            if scores.get(f.frame_id, 0)
-            >= int(self.config.evidence_score_threshold)
+    ) -> Tuple[List[VisionEvidenceFrame], Dict[str, Any]]:
+        threshold = int(self.config.evidence_score_threshold)
+        selected_by_score = [
+            f for f in frames if scores.get(f.frame_id, 0) >= threshold
         ]
+
+        padded_ids: List[str] = []
+        selected_ids = {f.frame_id for f in selected_by_score}
+        selected = list(selected_by_score)
+        if len(selected) < int(self.config.min_images_for_outcome):
+            for f in reversed(frames):
+                if f.frame_id in selected_ids:
+                    continue
+                selected.append(f)
+                selected_ids.add(f.frame_id)
+                padded_ids.append(f.frame_id)
+                if len(selected) >= int(self.config.min_images_for_outcome):
+                    break
+
+        selected = sorted(selected, key=lambda x: x.action_step)[
+            : int(self.config.max_images_for_outcome)
+        ]
+        return selected, {
+            "threshold": threshold,
+            "min_images_for_outcome": int(self.config.min_images_for_outcome),
+            "max_images_for_outcome": int(self.config.max_images_for_outcome),
+            "selected_by_score": [f.frame_id for f in selected_by_score],
+            "padded_with_tail": padded_ids,
+        }
 
     def _select_candidate_subset(
         self, frames: List[VisionEvidenceFrame]

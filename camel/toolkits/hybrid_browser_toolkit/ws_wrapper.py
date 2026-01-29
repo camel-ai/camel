@@ -25,7 +25,15 @@ import uuid
 from contextvars import ContextVar
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+)
 
 if TYPE_CHECKING:
     import websockets
@@ -46,6 +54,10 @@ logger = get_logger(__name__)
 _in_high_level_action: ContextVar[bool] = ContextVar(
     '_in_high_level_action', default=False
 )
+
+# Context variable to prevent hook recursion. Hook code may call "quiet" APIs
+# that should not trigger hook callbacks or get logged into action history.
+_in_action_hook: ContextVar[bool] = ContextVar('_in_action_hook', default=False)
 
 
 def _create_memory_aware_error(base_msg: str) -> str:
@@ -127,6 +139,12 @@ def action_logger(func):
                 pre_capture=pre_capture,
             )
 
+            await self._maybe_call_action_hook(
+                action_name=action_name,
+                inputs=inputs,
+                outputs=result,
+                error=None,
+            )
             return result
 
         except Exception as e:
@@ -142,6 +160,12 @@ def action_logger(func):
                 pre_capture=pre_capture,
             )
 
+            await self._maybe_call_action_hook(
+                action_name=action_name,
+                inputs=inputs,
+                outputs=None,
+                error=error_msg,
+            )
             raise
 
     return wrapper
@@ -251,6 +275,10 @@ class WebSocketBrowserWrapper:
 
         self.cache_dir = (config or {}).get('cache_dir', None)
 
+        self._action_hook: Optional[
+            Callable[[Dict[str, Any]], Awaitable[None]]
+        ] = None
+
         evidence_capture = (config or {}).get("evidence_capture") or {}
         if not isinstance(evidence_capture, dict):
             raise TypeError(
@@ -287,6 +315,95 @@ class WebSocketBrowserWrapper:
                 log_dir,
                 f"typescript_console_{timestamp}_{self.session_id}.log",
             )
+
+    def set_action_hook(
+        self, hook: Optional[Callable[[Dict[str, Any]], Awaitable[None]]]
+    ) -> None:
+        """Register (or clear) a post-action callback.
+
+        The hook is invoked after a state-changing action finishes and is
+        intended for external runners to do per-step evaluation/verification.
+        """
+        self._action_hook = hook
+
+    def _should_trigger_action_hook(self, action_name: str) -> bool:
+        # Skip read-only and meta actions to reduce overhead/noise.
+        # NOTE: keep action names in sync with ws_wrapper methods (no "browser_"
+        # prefix - those live on HybridBrowserToolkit).
+        skip = {
+            "open_browser",
+            "close_browser",
+            "get_tab_info",
+            "get_page_snapshot",
+            "get_snapshot_for_ai",
+            "get_som_screenshot",
+            "console_view",
+            "console_exec",
+            "wait_user",
+        }
+        return action_name not in skip
+
+    @staticmethod
+    def _extract_current_url_from_tab_info(
+        tabs: Any,
+    ) -> Optional[str]:
+        if not isinstance(tabs, list):
+            return None
+        for tab in tabs:
+            if isinstance(tab, dict) and tab.get("is_current"):
+                url = tab.get("url")
+                return url if isinstance(url, str) else None
+        return None
+
+    def _extract_current_url_from_outputs(self, outputs: Any) -> Optional[str]:
+        # Some actions return {"tabs": [...]} while get_tab_info returns [...]
+        if isinstance(outputs, dict) and "tabs" in outputs:
+            return self._extract_current_url_from_tab_info(outputs.get("tabs"))
+        return self._extract_current_url_from_tab_info(outputs)
+
+    async def _maybe_call_action_hook(
+        self,
+        *,
+        action_name: str,
+        inputs: Dict[str, Any],
+        outputs: Any,
+        error: Optional[str],
+    ) -> None:
+        hook = self._action_hook
+        if hook is None:
+            return
+        if _in_action_hook.get():
+            return
+        if not self._should_trigger_action_hook(action_name):
+            return
+
+        current_url = self._extract_current_url_from_outputs(outputs)
+        if current_url is None:
+            try:
+                tabs = await self.get_tab_info_quiet()
+                current_url = self._extract_current_url_from_tab_info(tabs)
+            except Exception:
+                current_url = None
+
+        event = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "action": action_name,
+            "inputs": inputs,
+            "outputs": outputs,
+            "error": error,
+            "current_url": current_url,
+        }
+
+        token = _in_action_hook.set(True)
+        try:
+            await hook(event)
+        except Exception as e:
+            logger.warning(
+                f"Action hook failed for {action_name}: "
+                f"{type(e).__name__}: {e}"
+            )
+        finally:
+            _in_action_hook.reset(token)
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -1286,6 +1403,13 @@ class WebSocketBrowserWrapper:
         # Fallback if wrapped in an object
         return response.get('tabs', [])
 
+    async def get_tab_info_quiet(self) -> List[Dict[str, Any]]:
+        """Get tab information without emitting an action log entry."""
+        response = await self._send_command('get_tab_info', {})
+        if isinstance(response, list):
+            return response
+        return response.get('tabs', [])
+
     @action_logger
     async def console_view(self) -> List[Dict[str, Any]]:
         """Get current page console view"""
@@ -1299,6 +1423,15 @@ class WebSocketBrowserWrapper:
     @action_logger
     async def console_exec(self, code: str) -> Dict[str, Any]:
         """Execute javascript code and get result."""
+        response = await self._send_command('console_exec', {'code': code})
+        return response
+
+    async def console_exec_quiet(self, code: str) -> Dict[str, Any]:
+        """Execute JS without emitting an action log entry.
+
+        Used by evaluators/runners to inspect the page without polluting
+        the action timeline or mined skills.
+        """
         response = await self._send_command('console_exec', {'code': code})
         return response
 
