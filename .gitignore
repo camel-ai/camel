@@ -480,3 +480,5 @@ yarn-error.log*
 # local working directories
 working_dir/
 tmp/
+session*
+archive/
