@@ -21,6 +21,7 @@ subtasks based on existing subtask patterns.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -28,7 +29,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 from skill_loader import parse_skill_md
 from skill_store import SkillStore
-from utils import create_chat_agent, resolve_website_skills_leaf_dir
+from utils import create_chat_agent
 
 from camel.messages import BaseMessage
 
@@ -58,6 +59,27 @@ def extract_consecutive_individual_actions(timeline_path: str):
         data = json.load(f)
 
     timeline = data.get('timeline', [])
+
+    ignored_actions_env = os.getenv("SKILL_MINING_IGNORE_ACTIONS", "").strip()
+    ignored_actions = {"console_exec", "console_view"}
+    if ignored_actions_env:
+        ignored_actions = {
+            token.strip()
+            for token in ignored_actions_env.split(",")
+            if token.strip()
+        }
+
+    # Safety net: ignore evaluator-only actions even if they made it into the
+    # timeline (e.g., older sessions or accidental use of logged console_exec).
+    filtered_timeline = []
+    for entry in timeline:
+        if (
+            entry.get("action_type") == "individual_action"
+            and entry.get("action") in ignored_actions
+        ):
+            continue
+        filtered_timeline.append(entry)
+    timeline = filtered_timeline
 
     # Find consecutive individual_action groups
     consecutive_groups = []
@@ -558,13 +580,7 @@ def analyze_with_agent(
     if website:
         print(f"Website: {website}\n")
 
-    resolved_skills_dir: str | None = None
-    if skills_dir is not None and website:
-        resolved_skills_dir = str(
-            resolve_website_skills_leaf_dir(Path(skills_dir), website)
-        )
-    else:
-        resolved_skills_dir = skills_dir
+    resolved_skills_dir = skills_dir
 
     # Step 3: Load existing subtasks
     print("Step 3: Loading existing subtasks...")

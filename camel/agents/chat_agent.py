@@ -49,6 +49,7 @@ from typing import (
     cast,
 )
 
+from json_repair import repair_json
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -137,7 +138,12 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 # Langfuse decorator setting
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+if os.environ.get("LOGFIRE_TOKEN") is not None:
+    import logfire
+
+    logfire.configure(scrubbing=False)
+    observe = logfire.instrument
+elif os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
@@ -843,14 +849,69 @@ class ChatAgent(BaseAgent):
         r"""Set the agent memory.
 
         When setting a new memory, the system message is automatically
-        re-added to ensure it's not lost.
+        added after existing system messages, while preserving existing
+        memory data.
 
         Args:
             value (AgentMemory): The new agent memory to use.
         """
         self._memory = value
-        # Ensure the new memory has the system message
-        self.init_messages()
+
+        # Reset summary state for the new memory
+        self._reset_summary_state()
+
+        # Clear token cache for the new memory
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'clear_cache'):
+            context_creator.clear_cache()
+
+        if self.system_message is None:
+            return
+
+        # Get existing records from new memory
+        existing_records = self.memory.retrieve()
+
+        # Fast path: empty memory, just write system message
+        if not existing_records:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+            return
+
+        # Separate system messages and other messages in one pass
+        existing_system_records = []
+        other_records = []
+        for r in existing_records:
+            if r.memory_record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                existing_system_records.append(r.memory_record)
+            else:
+                other_records.append(r.memory_record)
+
+        # Clear and rewrite in correct order
+        self.memory.clear()
+
+        # 1. Write existing system messages first
+        if existing_system_records:
+            self.memory.write_records(existing_system_records)
+
+        # 2. Write current agent's system message
+        self.memory.write_record(
+            MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=time.time_ns() / 1_000_000_000,
+                agent_id=self.agent_id,
+            )
+        )
+
+        # 3. Write other records
+        if other_records:
+            self.memory.write_records(other_records)
 
     def set_context_utility(
         self, context_utility: Optional[ContextUtility]
@@ -1252,7 +1313,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -3746,6 +3807,16 @@ class ChatAgent(BaseAgent):
         Returns:
             _ModelResponse: parsed model response.
         """
+        if response.choices is None:
+            return ModelResponse(
+                response=response,
+                tool_call_requests=None,
+                output_messages=[],
+                finish_reasons=[],
+                usage_dict={},
+                response_id=response.id or "",
+            )
+
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
             # Skip messages with no meaningful content
@@ -3784,20 +3855,24 @@ class ChatAgent(BaseAgent):
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
+            try:
+                tool_call_requests = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call.function.name  # type: ignore[union-attr]
+                    tool_call_id = tool_call.id
+                    args = json.loads(repair_json(tool_call.function.arguments or "{}")) # type: ignore[union-attr] some models return '' as {}
+                    extra_content = getattr(tool_call, 'extra_content', None)
 
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                tool_call_requests.append(tool_call_request)
+                    tool_call_request = ToolCallRequest(
+                        tool_name=tool_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                        extra_content=extra_content,
+                    )
+                    tool_call_requests.append(tool_call_request)
+            except (AttributeError, IndexError, json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Error parsing tool calls: {e!s}. Raw tool calls: {tool_calls!s}")
+                raise e
 
         return ModelResponse(
             response=response,
@@ -3901,6 +3976,7 @@ class ChatAgent(BaseAgent):
             extra_content=tool_call_request.extra_content,
         )
 
+    @observe()
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -4258,7 +4334,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -4305,8 +4380,11 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5222,7 +5300,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5280,9 +5357,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 

@@ -12,9 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model configuration for browser_skills_example."""
+import os
+
+from dotenv import load_dotenv
 
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
+
+load_dotenv()
 
 # === Single source of truth for the example scripts ===
 # DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
