@@ -68,14 +68,18 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
     ),
     "google flights": "\n".join(
         [
-            "- Target site: Google Flights",
-            "- https://www.google.com/travel/flights/?hl=en-US use this link for the web to get the best experience",
-            "- All tasks are to be performed on Google Flights",
-            "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
-            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then Click Search to initiate the search.(Only works when all necessary information has been entered, and date selector is invisible).",
-            "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
-            "- The date is for days in 2026 unless otherwise specified.",
-            "- Before extract information, you need to click the search button to get the results after entering all the details. Do not assume that the results are already displayed after entering the information.",
+            "- Target site: Google Flights (https://www.google.com/travel/flights)",
+            "- All tasks must be performed exclusively on Google Flights",
+            "- Handle consent dialogs: If any cookie, privacy, or consent pop-ups appear, accept or dismiss them before continuing",
+            "- When entering the origin and destination, typing the city name only is sufficient (airport codes are not required)",
+            "- The date is for days in 2026 unless otherwise specified",
+            "- Date entry procedure: Click the date input field, type the departure date and then the return date into their respective fields, press Enter to confirm the dates, press Enter again to exit the date selector, and ensure the date selector is no longer visible before proceeding",
+            "- After entering the origin, destination, and dates, you must explicitly click the Search button to initiate the search; do not assume results are shown automatically",
+            "- Before extracting any information, ensure the search results page has loaded",
+            "- If you need to check the current page state, call browser_get_page_snapshot",
+            "- If the Search button is visible in the page snapshot, this indicates you are still on the input page; verify that all required fields are completed and click the Search button",
+            "- Never extract information from the pre-search or input page"
+            "- Do use get_page_snapshot consequently as they will have the same results if you do not do any other actions in between",
         ]
     ),
     "amazon": "\n".join(
@@ -134,6 +138,7 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
             "- Search strategy: Use the site's search bar to enter relevant keywords. Apply available filters (topic, level, language, duration, etc.) when they help narrow down results.",
             "- Execute search: After filling the search field and/or configuring filters, explicitly click the search button to load the results page.",
             "- Data extraction: From the course page, extract key details such as instructor(s), syllabus, ratings, and other relevant metadata.",
+            "- Once one the course page, we can just do the extraction without searching again and give me the response directly.",
         ]
     ),
     "espn": "\n".join(
@@ -463,10 +468,9 @@ class SkillsAgent:
         website: str,
         session_log_dir: str | Path | None = None,
         start_url: str | None = None,
-        cdp_port: int = 9223,
         use_agent_recovery: bool = True,
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
-        step_timeout_max_retries: int = 10,
+        step_timeout_max_retries: int = 0,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
     ):
         """Initialize the SkillsAgent.
@@ -475,16 +479,14 @@ class SkillsAgent:
             skills_dir: Path to skills storage directory. Supports:
                 - Skills folders: `<skills_dir>/*/SKILL.md` (+ actions.json)
                 - Legacy configs: `<skills_dir>/*_subtasks.json`
-            cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
             start_url: Optional URL to navigate to before executing tasks
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
-            step_timeout_max_retries: Maximum retry attempts when a step times out. (default: 10)
+            step_timeout_max_retries: Maximum retry attempts when a step times out. (default: 0)
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
         """
         self.skills_dir = Path(skills_dir)
-        self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
         self.website = website.strip()
         if not self.website:
@@ -842,7 +844,6 @@ class SkillsAgent:
                 # Create replayer instance for this subtask
                 replayer = ActionReplayer(
                     log_file=log_file,
-                    cdp_port=self.cdp_port,
                     subtask_config=temp_config_path,
                     subtask_id=subtask_id,
                     use_agent_recovery=self.use_agent_recovery,
@@ -1082,7 +1083,7 @@ async def subtask_{subtask_func.subtask_id}():
                 "3. If you are not on the target website, navigate there using browser_visit_page.",
                 "4. After key actions (navigation/click/type), call browser_get_page_snapshot to verify state.",
                 "5. Do NOT give a final answer unless a page snapshot clearly contains the requested information.",
-                "   - If the result is still loading or missing, keep using tools (snapshot/scroll/click) until it appears.",
+                "   - If the result is still loading or missing, try other pages.",
                 "6. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
                 f"   {self._TASK_DONE_TOKEN}",
                 "",
@@ -1134,19 +1135,20 @@ async def subtask_{subtask_func.subtask_id}():
                     "   - Fine-grained, manual control of page interactions is required.",
                     "   - A subtask function has failed and manual recovery is necessary.",
                     "   Tool usage constraints:"
-                    "   - Do not call browser_get_page_snapshot consecutively. Consecutive calls are redundant because the page state does not change without an intervening action.",
-                    "   - Minimize snapshot calls, as they are token-expensive and should only be used when the page state is expected to change.",
+                    "   - Do not call browser_get_page_snapshot consecutively! Consecutive calls are redundant because the page state does not change without an intervening action.",
+                    "   - Minimize browser_get_page_snapshot calls, as they are token-expensive and should only be used when the page state is expected to change, or you need to get the current state.",
                     "",
                     "4. After executing a subtask function, you will receive:",
                     "   - Status (success/error)",
                     "   - Message describing the result",
-                    "   - Current page snapshot",
+                    "   - Current page browser_get_page_snapshot",
                     "   - Variables that were used",
                     "",
                     "5. If a subtask fails, you can either:",
                     "   - Retry with different variables",
                     "   - Use low-level browser tools to fix the issue",
                     "   - Ask for clarification",
+                    "   - If a subtask fails repeatedly, consider using browser tools to manually achieve the goal or use alternative subtasks.",
                     "",
                     "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
                     "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",

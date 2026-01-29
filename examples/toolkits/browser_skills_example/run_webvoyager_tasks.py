@@ -249,7 +249,7 @@ class WebVoyagerRunner:
             session_log_dir=session_log_dir,
             start_url=start_url,
             step_timeout=self.step_timeout,
-            step_timeout_max_retries=10,  # Retry 10 times on step timeout
+            step_timeout_max_retries=0,  # Retry 1 times on step timeout
             tool_execution_timeout=self.tool_execution_timeout,
         )
 

@@ -61,8 +61,9 @@ WEBSITE_GUIDELINES: dict[str, str] = {
             "- All tasks are to be performed on Google Flights",
             "- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).",
             "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
-            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then click Search to initiate the search.",
+            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then Click Search to initiate the search.(Only works when all necessary information has been entered, and date selector is invisible).",
             "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
+            "- The date is for days in 2026 unless otherwise specified.",
         ]
     ),
     "amazon": "\n".join(
@@ -100,9 +101,16 @@ WEBSITE_GUIDELINES: dict[str, str] = {
     "booking": "\n".join(
         [
             "- Target site: Booking.com",
-            "- Start by calling browser_get_page_snapshot to see where you are",
-            "- Fill required fields carefully (destination, dates, guests)",
-            "- Use filters/sorting to find the best match",
+            "- Always start by calling browser_get_page_snapshot to check the current page state.",
+            "- If a cookies/privacy prompt appears, accept it. If a sign-up or account creation window appears, close it.",
+            "- Carefully fill in all required fields: destination, dates, and number of guests.",
+            "- For date selection:",
+            "   • Click the calendar search box to open the calendar widget. once opened, the current month is displayed. now you should select the check-in and check-out dates first without click other element outside the calender, the calendar will close if you do that.",
+            "   • To change months, click 'next month' or 'previous month' as needed. You can click these buttons multiple times.",
+            "   • Select the check-in date first, then the check-out date in the calendar.",
+            "   • To close the calendar widget, click any other element on the page.",
+            "- Use available filters and sorting options to find the best match for your criteria.",
+            "- Before extracting hotel or property details, open the specific hotel/property page.",
         ]
     ),
     "cambridge dictionary": "\n".join(
@@ -119,6 +127,7 @@ WEBSITE_GUIDELINES: dict[str, str] = {
             "- Start by calling browser_get_page_snapshot to see where you are",
             "- Use the site search and filters (level, language, duration) when helpful",
             "- Open the course page before extracting details (instructor, syllabus, ratings)",
+            "- If there are cookies/privacy popups, close them before proceeding",
         ]
     ),
     "espn": "\n".join(

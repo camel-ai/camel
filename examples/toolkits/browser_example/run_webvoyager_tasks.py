@@ -358,7 +358,7 @@ class WebVoyagerRunner:
             import traceback
 
             traceback.print_exc()
-
+            agent.close()
             return {
                 'task_id': task_id,
                 'attempt': attempt,

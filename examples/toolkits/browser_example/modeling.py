@@ -19,8 +19,14 @@ import dotenv
 dotenv.load_dotenv()
 
 # === Single source of truth for the example scripts ===
+# DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.VLLM
+# DEFAULT_MODEL_TYPE: ModelType = "qwen/qwen3-vl-8b-instruct"
+
 DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
 DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
+
+# DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
+# DEFAULT_MODEL_TYPE: ModelType = "qwen3-235b-a22b"
 
 
 def create_default_model():

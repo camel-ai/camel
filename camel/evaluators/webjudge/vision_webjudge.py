@@ -64,14 +64,8 @@ class WebJudgeVisionConfig:
         vision_type: Type of vision input, either 'image' or 'dom'.
             image will use screenshots, dom will use DOM snapshots.
     """
-    model_platform: ModelPlatformType = ModelPlatformType.OPENAI
+    model_platform: ModelPlatformType = ModelPlatformType.AZURE
     model_type: ModelType = ModelType.GPT_4_1
-    model_config_dict: Dict[str, Any] = field(
-        default_factory=lambda: {
-            "temperature": 0.0,
-            "parallel_tool_calls": False,
-        }
-    ),
     vision_type: Literal["image", "dom"] = "dom"
     step_timeout: Optional[float] = 360.0
     tool_execution_timeout: Optional[float] = 360.0
@@ -115,7 +109,9 @@ class WebJudgeVisionEvaluator:
         self._model = ModelFactory.create(
             model_platform=self.config.model_platform,
             model_type=self.config.model_type,
-            model_config_dict=self.config.model_config_dict,
+            model_config_dict={
+                "temperature": 0.0,
+                "parallel_tool_calls": False},
         )
 
     def evaluate_session(
@@ -327,13 +323,15 @@ class WebJudgeVisionEvaluator:
                     for i, img in enumerate(images)
                 )
                 content = f"{content}\n\n{dom_blocks}"
-            return BaseMessage.make_user_message(
-                role_name="User", content=content
-            )
+                return BaseMessage.make_user_message(
+                    role_name="User", content=content
+                )
+            else:
+                return BaseMessage.make_user_message(
+                    role_name="User", content=content
+                )
         else:
-            return BaseMessage.make_user_message(
-                role_name="User", content=content
-            )
+            raise ValueError(f"Unsupported vision_type: {self.config.vision_type}")
 
 
     def _identify_key_points(
@@ -355,8 +353,17 @@ class WebJudgeVisionEvaluator:
             ),
         )
         prompt = f"Task: {task}"
-        resp = agent.step(self._user_message(prompt))
-        response_text = resp.msg.content or ""
+        try:
+            user_message = self._user_message(prompt)
+            resp = agent.step(user_message)
+            response_text = resp.msg.content or ""
+        except Exception as ex:
+            raise WebJudgeStageError(
+                stage="key_points",
+                prompt=prompt,
+                response="",
+                parse_error=f"agent.step failed: {ex}",
+            )
         key_points_text = self._normalize_key_points_text(response_text)
         key_points = self._key_points_text_to_list(key_points_text)
         return (
@@ -538,10 +545,11 @@ class WebJudgeVisionEvaluator:
         )
         response_text = resp.msg.content or ""
         success = self._extract_success_from_status(response_text)
+        raison = response_text.strip()
         verdict = {
             "success": bool(success),
-            "reasoning": response_text.strip(),
-            "suggestions": "",
+            "reasoning": raison,
+            "suggestions": raison,
             "key_point_checks": [],
             "frame_descriptions": [],
         }
