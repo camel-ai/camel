@@ -183,7 +183,7 @@ class SkillToolkit(BaseToolkit):
 
     def _parse_skill(self, path: Path) -> Optional[Dict[str, str]]:
         try:
-            import yaml  # type: ignore
+            import yaml  # type: ignore[import-not-found]
         except ImportError:
             logger.warning("PyYAML is not available; skipping skills")
             return None
