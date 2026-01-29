@@ -838,14 +838,69 @@ class ChatAgent(BaseAgent):
         r"""Set the agent memory.
 
         When setting a new memory, the system message is automatically
-        re-added to ensure it's not lost.
+        added after existing system messages, while preserving existing
+        memory data.
 
         Args:
             value (AgentMemory): The new agent memory to use.
         """
         self._memory = value
-        # Ensure the new memory has the system message
-        self.init_messages()
+
+        # Reset summary state for the new memory
+        self._reset_summary_state()
+
+        # Clear token cache for the new memory
+        context_creator = self.memory.get_context_creator()
+        if hasattr(context_creator, 'clear_cache'):
+            context_creator.clear_cache()
+
+        if self.system_message is None:
+            return
+
+        # Get existing records from new memory
+        existing_records = self.memory.retrieve()
+
+        # Fast path: empty memory, just write system message
+        if not existing_records:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+            return
+
+        # Separate system messages and other messages in one pass
+        existing_system_records = []
+        other_records = []
+        for r in existing_records:
+            if r.memory_record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                existing_system_records.append(r.memory_record)
+            else:
+                other_records.append(r.memory_record)
+
+        # Clear and rewrite in correct order
+        self.memory.clear()
+
+        # 1. Write existing system messages first
+        if existing_system_records:
+            self.memory.write_records(existing_system_records)
+
+        # 2. Write current agent's system message
+        self.memory.write_record(
+            MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=time.time_ns() / 1_000_000_000,
+                agent_id=self.agent_id,
+            )
+        )
+
+        # 3. Write other records
+        if other_records:
+            self.memory.write_records(other_records)
 
     def set_context_utility(
         self, context_utility: Optional[ContextUtility]
@@ -1247,7 +1302,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -4196,7 +4251,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -4243,8 +4297,11 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5160,7 +5217,6 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
@@ -5218,9 +5274,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
