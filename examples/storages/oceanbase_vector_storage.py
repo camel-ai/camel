@@ -356,10 +356,10 @@ Example output from example_distance_metrics():
 --- Distance metric: inner_product ---
   Query vector: [0.5, 0.5, 0.5, 0.5]
   Results (ordered by similarity):
-    1. opposite: sim=0.2689
-    2. unit_y: sim=0.6225
-    3. unit_x: sim=0.6225
-    4. same_as_query: sim=0.7311
+    1. same_as_query: sim=0.7311
+    2. unit_x: sim=0.6225
+    3. unit_y: sim=0.6225
+    4. opposite: sim=0.2689
 
 --- Distance metric: negative_inner_product ---
   Query vector: [0.5, 0.5, 0.5, 0.5]

@@ -247,9 +247,55 @@ def test_distance_to_similarity_conversion():
                     assert l2_sim == pytest.approx(math.exp(-0.2))
 
 
+def test_stable_sigmoid_overflow():
+    """Test that _stable_sigmoid handles large values without overflow."""
+
+    def create_mock_index_params():
+        mock_index_param = MagicMock()
+        mock_index_params = MagicMock()
+        mock_index_params.__iter__.return_value = iter([mock_index_param])
+        return mock_index_params
+
+    with patch('pyobvector.client.ObVecClient'):
+        with patch('pyobvector.schema.VECTOR'):
+            with patch(
+                'pyobvector.client.index_param.IndexParams',
+                side_effect=create_mock_index_params,
+            ):
+                with patch('pyobvector.client.index_param.IndexParam'):
+                    storage = OceanBaseStorage(
+                        vector_dim=4,
+                        table_name="test_table",
+                        distance="inner_product",
+                    )
+
+                    # Test large positive value (should approach 1.0)
+                    large_positive = storage._stable_sigmoid(1000.0)
+                    assert large_positive == pytest.approx(1.0)
+                    assert large_positive <= 1.0
+
+                    # Test large negative value (should approach 0.0)
+                    large_negative = storage._stable_sigmoid(-1000.0)
+                    assert large_negative == pytest.approx(0.0)
+                    assert large_negative >= 0.0
+
+                    # Ensure no OverflowError is raised
+                    try:
+                        storage._stable_sigmoid(10000.0)
+                        storage._stable_sigmoid(-10000.0)
+                    except OverflowError:
+                        pytest.fail("_stable_sigmoid raised OverflowError")
+
+
 def test_inner_product_distance_metrics():
     """Test initialization and similarity conversion for inner product
     distance metrics.
+
+    Note: For inner_product distance metric, the search uses
+    negative_inner_product function internally, so _convert_distance_to_similarity
+    receives neg_ip = -IP and computes sigmoid(-neg_ip) = sigmoid(IP).
+    This means positive input (neg_ip > 0) -> low similarity,
+    and negative input (neg_ip < 0, i.e., high IP) -> high similarity.
     """
     import math
 
@@ -274,29 +320,35 @@ def test_inner_product_distance_metrics():
                     )
                     assert ip_storage.distance == "inner_product"
 
-                    # Sigmoid conversion: sigmoid(0) = 0.5
+                    # For inner_product, input is neg_ip = -IP
+                    # similarity = sigmoid(-neg_ip) = sigmoid(IP)
+                    # When neg_ip = 0 (IP = 0): sigmoid(0) = 0.5
                     ip_sim_zero = ip_storage._convert_distance_to_similarity(
                         0.0
                     )
                     assert ip_sim_zero == pytest.approx(0.5)
 
-                    # Positive score -> higher similarity (> 0.5)
+                    # neg_ip = -2.0 means IP = 2.0 (high similarity)
+                    # similarity = sigmoid(2.0) > 0.5
                     ip_sim_positive = (
-                        ip_storage._convert_distance_to_similarity(2.0)
+                        ip_storage._convert_distance_to_similarity(-2.0)
                     )
                     expected_positive = 1.0 / (1.0 + math.exp(-2.0))
                     assert ip_sim_positive == pytest.approx(expected_positive)
                     assert ip_sim_positive > 0.5
 
-                    # Negative score -> lower similarity (< 0.5)
+                    # neg_ip = 2.0 means IP = -2.0 (low similarity)
+                    # similarity = sigmoid(-2.0) < 0.5
                     ip_sim_negative = (
-                        ip_storage._convert_distance_to_similarity(-2.0)
+                        ip_storage._convert_distance_to_similarity(2.0)
                     )
                     expected_negative = 1.0 / (1.0 + math.exp(2.0))
                     assert ip_sim_negative == pytest.approx(expected_negative)
                     assert ip_sim_negative < 0.5
 
                     # Test negative_inner_product distance metric
+                    # For negative_inner_product, search also uses
+                    # negative_inner_product, so input is neg_ip = -IP
                     nip_storage = OceanBaseStorage(
                         vector_dim=4,
                         table_name="test_table",
@@ -304,15 +356,15 @@ def test_inner_product_distance_metrics():
                     )
                     assert nip_storage.distance == "negative_inner_product"
 
-                    # For negative IP: similarity = sigmoid(-neg_ip)
-                    # neg_ip = -IP, so sigmoid(-neg_ip) = sigmoid(IP)
-                    # When neg_ip = 0: similarity = 0.5
+                    # similarity = sigmoid(-neg_ip) = sigmoid(IP)
+                    # When neg_ip = 0: sigmoid(0) = 0.5
                     nip_sim_zero = nip_storage._convert_distance_to_similarity(
                         0.0
                     )
                     assert nip_sim_zero == pytest.approx(0.5)
 
-                    # Positive neg_ip (negative IP) -> lower similarity
+                    # neg_ip = 2.0 means IP = -2.0 (low similarity)
+                    # similarity = sigmoid(-2.0) < 0.5
                     nip_sim_positive = (
                         nip_storage._convert_distance_to_similarity(2.0)
                     )
@@ -322,7 +374,8 @@ def test_inner_product_distance_metrics():
                     )
                     assert nip_sim_positive < 0.5
 
-                    # Negative neg_ip (positive IP) -> higher similarity
+                    # neg_ip = -2.0 means IP = 2.0 (high similarity)
+                    # similarity = sigmoid(2.0) > 0.5
                     nip_sim_negative = (
                         nip_storage._convert_distance_to_similarity(-2.0)
                     )

@@ -319,11 +319,13 @@ class OceanBaseStorage(BaseVectorStorage):
         from sqlalchemy import func
 
         try:
-            # Get distance function name
-            distance_func_name: str = self._distance_func_map.get(
+            # For inner_product, use negative_inner_product in search so
+            # ascending order returns most similar first
+            distance_func_name = self._distance_func_map.get(
                 self.distance, "l2_distance"
             )
-
+            if self.distance == "inner_product":
+                distance_func_name = "negative_inner_product"
             distance_func = getattr(func, distance_func_name)
 
             # Validate query vector dimensions
@@ -435,6 +437,24 @@ class OceanBaseStorage(BaseVectorStorage):
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
+    def _stable_sigmoid(self, x: float) -> float:
+        r"""Computes sigmoid function in a numerically stable way.
+
+        Uses the identity: sigmoid(x) = exp(x) / (1 + exp(x)) for x < 0
+        and sigmoid(x) = 1 / (1 + exp(-x)) for x >= 0, to avoid overflow.
+
+        Args:
+            x (float): The input value.
+
+        Returns:
+            float: The sigmoid of x, in the range (0, 1).
+        """
+        if x >= 0:
+            return 1.0 / (1.0 + math.exp(-x))
+        else:
+            exp_x = math.exp(x)
+            return exp_x / (1.0 + exp_x)
+
     def _convert_distance_to_similarity(self, distance: float) -> float:
         r"""Converts distance/score to similarity score based on distance
         metric.
@@ -463,15 +483,11 @@ class OceanBaseStorage(BaseVectorStorage):
             distance = max(0.0, distance)
             return math.exp(-distance)
         elif self.distance == "inner_product":
-            # Inner product can be negative (opposite directions)
-            # Use sigmoid to map (-inf, +inf) to (0, 1)
-            # Higher IP -> higher similarity
-            return 1.0 / (1.0 + math.exp(-distance))
+            # Search uses negative_inner_product, so distance = -IP
+            return self._stable_sigmoid(-distance)
         elif self.distance == "negative_inner_product":
-            # Negative inner product: neg_ip = -IP
-            # Use sigmoid: similarity = sigmoid(-neg_ip) = sigmoid(IP)
-            # Lower neg_ip (higher IP) -> higher similarity
-            return 1.0 / (1.0 + math.exp(distance))
+            # distance = -IP, similarity = sigmoid(IP)
+            return self._stable_sigmoid(-distance)
         else:
             # Default: treat as distance where lower = more similar
             distance = max(0.0, distance)
