@@ -538,7 +538,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_get_page_snapshot(self) -> str:
+    async def browser_get_page_snapshot(
+        self, viewport_limit: Optional[bool] = None
+    ) -> str:
         r"""Gets a textual snapshot of the page's interactive elements.
 
         The snapshot lists elements like buttons, links, and inputs,
@@ -548,8 +550,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         visual information.
 
         If viewport_limit is enabled, only elements within the current
-        viewport
-        will be included in the snapshot.
+        viewport will be included in the snapshot. If viewport_limit is not
+        provided, the toolkit default (configured at initialization) is used.
 
         Returns:
             str: A formatted string representing the interactive elements and
@@ -559,7 +561,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            return await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            use_viewport_limit = (
+                self._viewport_limit
+                if viewport_limit is None
+                else bool(viewport_limit)
+            )
+            return await ws_wrapper.get_page_snapshot(use_viewport_limit)
         except Exception as e:
             logger.error(f"Failed to get page snapshot: {e}")
             return f"Error capturing snapshot: {e}"

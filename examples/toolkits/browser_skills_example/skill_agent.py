@@ -56,7 +56,7 @@ from camel.utils.constants import Constants
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
 
-WEBSITE_GUIDELINES: Dict[str, str] = {
+WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     "allrecipes": "\n".join(
         [
             "- Target site: Allrecipes",
@@ -180,8 +180,53 @@ WEBSITE_GUIDELINES: Dict[str, str] = {
             "- Enter the query precisely and run it",
             "- Extract the relevant result pod(s) matching the question",
         ]
-    ),
+    )
 }
+
+
+NAVI_BENCH_GUIDELINES: Dict[str, str] = {
+    "apartments.com": "\n".join(
+        [
+            "- Target site: https://www.apartments.com/",
+            "- Use site search/filters on the page; avoid external search.",
+            "- Use short keywords to search, the search input accepts multiple regions search, Click the dropdown suggestions to confirm one search region, and repeatly add multiple demand regions.",
+            "- Navi-Bench often verifies the FINAL URL; apply only the filters required by the task (avoid extra filters).",
+            "- After applying filters, call browser_get_tab_info to confirm the URL reflects the required constraints.",
+            "- If results use infinite scroll or lazy loading, scroll a bit to ensure listings are loaded before you stop.",
+            "- If the task asks for an overview, base it on visible results (do not guess counts).",
+        ]
+    ),
+    "craigslist": "\n".join(
+        [
+            "- Target site: Craigslist",
+            "- Prefer applying filters directly on the search page (price, bedrooms, posted today, rent period, etc.)",
+            "- Navi-Bench commonly verifies the URL query parameters EXACTLY; apply only the filters required by the task (avoid extra filters).",
+            "- After applying filters, call browser_get_tab_info and confirm the URL query parameters reflect the required constraints.",
+            "- If asked to extract listing details, open each listing page and capture the required fields + URL",
+        ]
+    ),
+    "opentable": "\n".join(
+        [
+            "- Target site: OpenTable",
+            "- Ensure location/restaurant, date, time, and party size are correctly set (use the UI controls).",
+            "- If the task is about availability, stay on the results/reservation page that shows available times (or the no-availability message).",
+            "- Scroll within results so availability/no-availability sections are visible before finishing.",
+            "- Avoid navigating away at the end; keep the final page on the relevant OpenTable results/restaurant page.",
+        ]
+    ),
+    "resy": "\n".join(
+        [
+            "- Target site: Resy",
+            "- Ensure venue/date/time/party size are correctly set (use the UI controls).",
+            "- If there is no availability, confirm the page shows the no-availability indicator (may require scrolling).",
+            "- If a specific time is requested but not available, ensure nearby time slots are visible so the page clearly indicates unavailability.",
+            "- Avoid navigating away at the end; keep the final page on the relevant Resy booking page.",
+        ]
+    )
+}
+
+
+WEBSITE_GUIDELINES = WEB_VOYAGER_GUIDELINES | NAVI_BENCH_GUIDELINES
 
 
 class SubtaskFunction:

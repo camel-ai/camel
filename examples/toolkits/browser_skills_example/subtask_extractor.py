@@ -21,6 +21,7 @@ subtasks based on existing subtask patterns.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -58,6 +59,27 @@ def extract_consecutive_individual_actions(timeline_path: str):
         data = json.load(f)
 
     timeline = data.get('timeline', [])
+
+    ignored_actions_env = os.getenv("SKILL_MINING_IGNORE_ACTIONS", "").strip()
+    ignored_actions = {"console_exec", "console_view"}
+    if ignored_actions_env:
+        ignored_actions = {
+            token.strip()
+            for token in ignored_actions_env.split(",")
+            if token.strip()
+        }
+
+    # Safety net: ignore evaluator-only actions even if they made it into the
+    # timeline (e.g., older sessions or accidental use of logged console_exec).
+    filtered_timeline = []
+    for entry in timeline:
+        if (
+            entry.get("action_type") == "individual_action"
+            and entry.get("action") in ignored_actions
+        ):
+            continue
+        filtered_timeline.append(entry)
+    timeline = filtered_timeline
 
     # Find consecutive individual_action groups
     consecutive_groups = []

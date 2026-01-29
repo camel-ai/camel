@@ -21,6 +21,7 @@ Usage:
 """
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -294,11 +295,24 @@ def analyze_session(session_dir: str):
     if not subtask_files:
         print("Warning: No subtask files found")
 
-    # Actions to exclude from timeline
+    # Actions to exclude from timeline.
+    #
+    # `SKILL_MINING_IGNORE_ACTIONS` is a comma-separated allow-override to
+    # avoid polluting skill mining with evaluator/auxiliary actions.
+    ignored_actions_env = os.getenv("SKILL_MINING_IGNORE_ACTIONS", "").strip()
+    ignored_actions = {"console_exec", "console_view"}
+    if ignored_actions_env:
+        ignored_actions = {
+            token.strip()
+            for token in ignored_actions_env.split(",")
+            if token.strip()
+        }
+
     excluded_actions = {
         'get_tab_info',
         'get_page_snapshot',
         'get_som_screenshot',
+        *ignored_actions,
     }
 
     # Load task description from agent communication log if available

@@ -22,7 +22,7 @@ from camel.types import ModelPlatformType, ModelType
 load_dotenv()
 
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
 DEFAULT_MODEL_TYPE = ModelType.GPT_4_1
 
 
