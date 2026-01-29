@@ -958,6 +958,32 @@ export class HybridBrowserSession {
             }
 
             if (fillSuccess) {
+              // Nudge key events after fill to trigger sites that rely on keydown/keyup rather than input/change.
+              // Safety: only press Backspace if Space actually appended a space to the value.
+              try {
+                await element.focus();
+                const before = await element.evaluate((el: any) => {
+                  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value ?? '';
+                  if (el && el.isContentEditable) return el.textContent ?? '';
+                  if (typeof el?.value === 'string') return el.value;
+                  return el?.textContent ?? '';
+                });
+                await page.keyboard.press('Space');
+                const after = await element.evaluate((el: any) => {
+                  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value ?? '';
+                  if (el && el.isContentEditable) return el.textContent ?? '';
+                  if (typeof el?.value === 'string') return el.value;
+                  return el?.textContent ?? '';
+                });
+                if (after === `${before} `) {
+                  await page.keyboard.press('Backspace');
+                } else {
+                  console.log(`Keyboard nudge: skip Backspace for ref=${ref} (value not appended with space)`);
+                }
+              } catch (e) {
+                console.log(`Warning: keyboard nudge failed for ref=${ref}: ${e}`);
+              }
+
               // If this element might show dropdown, wait and check for new elements
               if (shouldCheckDiff) {
                 await page.waitForTimeout(300);
@@ -1010,6 +1036,32 @@ export class HybridBrowserSession {
               console.log(`Found input element within ref ${ref}, attempting to fill`);
               try {
                 await inputElement.fill(text, { force: true });
+
+                // Nudge key events after fill for event-driven inputs.
+                // Safety: only press Backspace if Space actually appended a space to the value.
+                try {
+                  await inputElement.focus();
+                  const before = await inputElement.evaluate((el: any) => {
+                    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value ?? '';
+                    if (el && el.isContentEditable) return el.textContent ?? '';
+                    if (typeof el?.value === 'string') return el.value;
+                    return el?.textContent ?? '';
+                  });
+                  await page.keyboard.press('Space');
+                  const after = await inputElement.evaluate((el: any) => {
+                    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value ?? '';
+                    if (el && el.isContentEditable) return el.textContent ?? '';
+                    if (typeof el?.value === 'string') return el.value;
+                    return el?.textContent ?? '';
+                  });
+                  if (after === `${before} `) {
+                    await page.keyboard.press('Backspace');
+                  } else {
+                    console.log(`Keyboard nudge: skip Backspace for child input ref=${ref} (value not appended with space)`);
+                  }
+                } catch (e) {
+                  console.log(`Warning: keyboard nudge failed for child input ref=${ref}: ${e}`);
+                }
 
                 // If element might show dropdown, check for new elements
                 if (shouldCheckDiff) {
