@@ -1,6 +1,26 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
-import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
+import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+
+// Constants for loading element detection
+// Using word boundary patterns to avoid false positives like "unloading" or "windspinner"
+const LOADING_CLASS_PATTERNS = [
+  /\bloading\b/i,    // matches "loading", "is-loading", "loading-spinner" but not "unloading"
+  /\bloader\b/i,     // matches "loader", "page-loader" but not "preloader" (intentionally excluded)
+  /\bspinner\b/i,    // matches "spinner", "loading-spinner" but not "windspinner"
+  /\bspin\b/i,       // matches "spin", "spin-animation"
+];
+
+// CSS selector for querying loading elements - matches common loading class patterns
+const LOADING_ELEMENTS_SELECTOR = [
+  '[class*="loading"]:not([class*="unloading"]):not([class*="loaded"])',
+  '[class*="loader"]',
+  '[class*="spinner"]',
+  '[class*="spin"]:not([class*="spinach"])', // avoid false positives
+].join(', ');
+
+// Note message for loading state warning
+const LOADING_STATE_NOTE = 'Loading-related elements were detected on this page. The page may still be in a loading or transitional state. The current snapshot may not reflect the final state.';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
@@ -566,7 +586,18 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string; dialogMessage?: string }> {
+    // Track dialog (alert/confirm/prompt) that may appear during click
+    let dialogMessage: string | undefined;
+
+    const dialogHandler = (dialog: any) => {
+      dialogMessage = dialog.message();
+      // Auto-accept the dialog to prevent blocking
+      dialog.accept().catch(() => {});
+    };
+
+    // Set up dialog handler before clicking
+    page.on('dialog', dialogHandler);
 
     try {
       //  Ensure we have the latest snapshot and mapping
@@ -580,6 +611,7 @@ export class HybridBrowserSession {
       const exists = await element.count() > 0;
 
       if (!exists) {
+        page.off('dialog', dialogHandler);
         return { success: false, error: `Element with ref ${ref} not found` };
       }
 
@@ -624,28 +656,9 @@ export class HybridBrowserSession {
         (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
       );
 
-      //  Open ALL links in new tabs
-      // Check if this is a navigable link
-      const isNavigableLink = tagName === 'a' && href &&
-        !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
-        !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
-        href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
-        href !== browserConfig.anchorOnly; // Not just #
-
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
-
-
-      if (shouldOpenNewTab) {
-        //  Handle new tab opening
-        // If it's a link that doesn't naturally open in new tab, force it
-        if (isNavigableLink && !naturallyOpensNewTab) {
-          await element.evaluate((el, blankTarget) => {
-            if (el.tagName.toLowerCase() === 'a') {
-              el.setAttribute('target', blankTarget);
-            }
-          }, browserConfig.blankTarget);
-        }
-
+      // Only open new tab if element naturally opens one (has target="_blank" or window.open)
+      // Do NOT force all links to open in new tabs
+      if (naturallyOpensNewTab) {
         // Set up popup listener before clicking
         const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
 
@@ -673,9 +686,14 @@ export class HybridBrowserSession {
           // Wait for new page to be ready
           await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
 
-          return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref-newtab', newTabId, dialogMessage };
         } catch (popupError) {
-          return { success: true, method: 'playwright-aria-ref' };
+          // Popup didn't open within timeout - this is expected for elements that
+          // look like they might open popups but don't (e.g., JS intercepted the click)
+          // The click still executed successfully
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref', dialogMessage };
         }
       } else {
         //  Add options to prevent scrolling issues
@@ -700,16 +718,19 @@ export class HybridBrowserSession {
           }
 
           if (diffSnapshot && diffSnapshot.trim() !== '') {
-            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+            page.off('dialog', dialogHandler);
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot, dialogMessage };
           }
         }
 
-        return { success: true, method: 'playwright-aria-ref' };
+        page.off('dialog', dialogHandler);
+        return { success: true, method: 'playwright-aria-ref', dialogMessage };
       }
 
     } catch (error) {
+      page.off('dialog', dialogHandler);
       console.error('[performClick] Exception during click for ref: %s', ref, error);
-      return { success: false, error: `Click failed with exception: ${error}` };
+      return { success: false, error: `Click failed with exception: ${error}`, dialogMessage };
     }
   }
 
@@ -1313,9 +1334,12 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
 
-          // Capture diff snapshot if present
-          if (clickResult.diffSnapshot) {
-            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          // Capture diff snapshot and dialog message if present
+          if (clickResult.diffSnapshot || clickResult.dialogMessage) {
+            actionDetails = {
+              ...(clickResult.diffSnapshot && { diffSnapshot: clickResult.diffSnapshot }),
+              ...(clickResult.dialogMessage && { dialogMessage: clickResult.dialogMessage })
+            };
           }
 
           actionExecutionTime = Date.now() - clickStart;
@@ -1443,9 +1467,11 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
           dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
           network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
         },
-        ...(newTabId && { newTabId }), //  Include new tab ID if present
-        ...(actionDetails && { details: actionDetails }), // Include action details if present
+        note: stabilityResult.note,
+        ...(newTabId && { newTabId }),
+        ...(actionDetails && { details: actionDetails }),
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -1464,44 +1490,157 @@ export class HybridBrowserSession {
 
   /**
    * Wait for DOM to stop changing for a specified duration
+   * @param page - The Playwright page instance
+   * @param maxWaitTime - Maximum time to wait for stability in ms (uses config value)
+   * @returns Object indicating if loading elements were detected
    */
-  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
-    const startTime = Date.now();
-    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
-    let lastChangeTime = Date.now();
+  private async waitForDOMStability(page: Page, maxWaitTime: number): Promise<{ hasLoadingElements: boolean }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const stabilityThreshold = browserConfig.domStabilityThreshold;
+    let hasLoadingElements = false;
+
+    // Pass the selector as a parameter to avoid closure issues
+    const loadingSelector = LOADING_ELEMENTS_SELECTOR;
 
     try {
-      // Monitor DOM changes
-      await page.evaluate(() => {
-        let changeCount = 0;
-        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+      // Monitor DOM changes and loading elements
+      await page.evaluate((selector: string) => {
+        // Word boundary regex patterns for accurate loading class detection
+        const loadingPatterns = [
+          /\bloading\b/i,
+          /\bloader\b/i,
+          /\bspinner\b/i,
+          /\bspin\b/i,
+        ];
 
-        const observer = new MutationObserver(() => {
-          (window as any).__domStabilityCheck.changeCount++;
-          (window as any).__domStabilityCheck.lastChange = Date.now();
+        // Helper function to check if className contains loading indicators using word boundaries
+        const hasLoadingClass = (className: string): boolean => {
+          return loadingPatterns.some(pattern => pattern.test(className));
+        };
+
+        // Helper function to check if any loading elements exist in the DOM
+        const checkForLoadingElements = (): boolean => {
+          const loadingElements = document.querySelectorAll(selector);
+          // Double-check with regex patterns to reduce false positives
+          for (const el of Array.from(loadingElements)) {
+            const cls = el.getAttribute('class') || '';
+            if (hasLoadingClass(cls)) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        (window as any).__domStabilityCheck = {
+          changeCount: 0,
+          lastChange: Date.now(),
+          hasLoadingElements: checkForLoadingElements()
+        };
+
+        const observer = new MutationObserver((mutations: MutationRecord[]) => {
+          const check = (window as any).__domStabilityCheck;
+          check.changeCount++;
+          check.lastChange = Date.now();
+
+          let loadingAdded = false;
+          let loadingRemoved = false;
+
+          for (const mutation of mutations) {
+            // Check if class attribute changed to add/remove loading
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              const target = mutation.target as Element;
+              const oldValue = mutation.oldValue || '';
+              const newValue = target.getAttribute('class') || '';
+
+              const hadLoading = hasLoadingClass(oldValue);
+              const hasLoading = hasLoadingClass(newValue);
+
+              if (!hadLoading && hasLoading) {
+                loadingAdded = true;
+              } else if (hadLoading && !hasLoading) {
+                loadingRemoved = true;
+              }
+            }
+
+            // Check added/removed nodes for loading elements
+            if (mutation.type === 'childList') {
+              for (const node of Array.from(mutation.addedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingAdded = true;
+                    break;
+                  }
+                  // Check descendants
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingAdded = true;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              for (const node of Array.from(mutation.removedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingRemoved = true;
+                    break;
+                  }
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingRemoved = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (loadingAdded) {
+            check.hasLoadingElements = true;
+          }
+
+          if (loadingRemoved) {
+            check.hasLoadingElements = checkForLoadingElements();
+          }
         });
 
         observer.observe(document.body, {
           childList: true,
           subtree: true,
           attributes: true,
+          attributeOldValue: true,
           characterData: true
         });
 
         (window as any).__domStabilityObserver = observer;
-      });
+      }, loadingSelector);
 
-      // Wait until no changes for stabilityThreshold or timeout
+      // Wait until no changes for stabilityThreshold, or timeout
       await page.waitForFunction(
-        (threshold) => {
+        (threshold: number) => {
           const check = (window as any).__domStabilityCheck;
-          return check && (Date.now() - check.lastChange) > threshold;
+          if (!check) return true;
+          return (Date.now() - check.lastChange) > threshold;
         },
         stabilityThreshold,
         { timeout: Math.max(0, maxWaitTime) }
       ).catch(() => {});
+
+      // Get final loading state
+      hasLoadingElements = await page.evaluate(() => {
+        const check = (window as any).__domStabilityCheck;
+        return check ? check.hasLoadingElements : false;
+      });
     } finally {
-      // Cleanup
+      // Cleanup observer
       await page.evaluate(() => {
         const observer = (window as any).__domStabilityObserver;
         if (observer) observer.disconnect();
@@ -1509,26 +1648,81 @@ export class HybridBrowserSession {
         delete (window as any).__domStabilityCheck;
       }).catch(() => {});
     }
+
+    return { hasLoadingElements };
   }
 
-  private async waitForPageStability(page: Page): Promise<{ domContentLoadedTime: number; networkIdleTime: number }> {
-    let domContentLoadedTime = 0;
-    let networkIdleTime = 0;
+  async waitForPageStability(page: Page): Promise<PageStabilityResult> {
+    const defaultResult: PageStabilityResult = {
+      domContentLoadedTime: 0,
+      networkIdleTime: 0,
+      domStabilityTime: 0,
+      hasLoadingElements: false,
+      note: ''
+    };
 
     try {
-      const domStart = Date.now();
       const browserConfig = this.configLoader.getBrowserConfig();
-      await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
-      domContentLoadedTime = Date.now() - domStart;
 
-      const networkStart = Date.now();
-      await page.waitForLoadState(browserConfig.networkIdleState as any, { timeout: browserConfig.networkIdleTimeout });
-      networkIdleTime = Date.now() - networkStart;
+      const maxTimeout = Math.max(
+        browserConfig.domContentLoadedTimeout,
+        browserConfig.networkIdleTimeout,
+        browserConfig.domStabilityTimeout
+      );
+
+      // Track timeout for cleanup
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      const start = Date.now();
+      await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
+        timeout: browserConfig.domContentLoadedTimeout
+      });
+      const domContentLoadedTime = Date.now() - start;
+
+      const networkIdlePromise = (async () => {
+        const startTime = Date.now();
+        await page.waitForLoadState(browserConfig.networkIdleState as any, {
+          timeout: browserConfig.networkIdleTimeout
+        });
+        return Date.now() - startTime;
+      })();
+
+      const domStabilityPromise = (async () => {
+        const startTime = Date.now();
+        const result = await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
+        return {
+          time: Date.now() - startTime,
+          hasLoadingElements: result.hasLoadingElements
+        };
+      })();
+
+      // Create timeout promise with cleanup capability
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('max timeout')), maxTimeout);
+      });
+
+      try {
+        const [networkIdleTime, domStabilityResult] = await Promise.race([
+          Promise.all([networkIdlePromise, domStabilityPromise]),
+          timeoutPromise
+        ]);
+
+        return {
+          domContentLoadedTime,
+          networkIdleTime,
+          domStabilityTime: domStabilityResult.time,
+          hasLoadingElements: domStabilityResult.hasLoadingElements,
+          note: domStabilityResult.hasLoadingElements ? LOADING_STATE_NOTE : ''
+        };
+      } finally {
+        // Clean up timeout to prevent memory leak
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      }
     } catch (error) {
-      // Continue even if stability wait fails
+      return defaultResult;
     }
-
-    return { domContentLoadedTime, networkIdleTime };
   }
 
   async visitPage(url: string): Promise<ActionResult & { newTabId?: string }> {
@@ -1585,7 +1779,9 @@ export class HybridBrowserSession {
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
+          note: stabilityResult.note,
         };
       } else {
         //  Open in new tab if current page has content
@@ -1655,13 +1851,15 @@ export class HybridBrowserSession {
         return {
           success: true,
           message: `Opened ${url} in new tab`,
-          newTabId: newTabId, //  Include the new tab ID
+          newTabId: newTabId,
           timing: {
             total_time_ms: totalTime,
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
+          note: stabilityResult.note,
         };
       }
     } catch (error) {
@@ -1674,6 +1872,7 @@ export class HybridBrowserSession {
           navigation_time_ms: 0,
           dom_content_loaded_time_ms: 0,
           network_idle_time_ms: 0,
+          dom_stability_time_ms: 0,
         },
       };
     }
@@ -1820,7 +2019,7 @@ export class HybridBrowserSession {
 
         try {
           const browserConfig = this.configLoader.getBrowserConfig();
-          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
+          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.domContentLoadedTimeout });
           stabilityResult.domContentLoadedTime = Date.now() - stabilityStart;
         } catch (error) {
         }
