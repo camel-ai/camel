@@ -27,6 +27,11 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR.parent / "utils"))
+
 from skill_loader import parse_skill_md
 from skill_store import SkillStore
 from utils import create_chat_agent

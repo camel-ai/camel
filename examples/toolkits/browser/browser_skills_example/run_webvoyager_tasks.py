@@ -34,8 +34,12 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
-# Add path first
-sys.path.insert(0, str(Path(__file__).parent))
+script_dir = Path(__file__).resolve().parent
+utils_dir = script_dir.parent / "utils"
+
+# Add paths first (scripts + shared utils)
+sys.path.insert(0, str(script_dir))
+sys.path.insert(0, str(utils_dir))
 
 from skill_agent import SkillsAgent
 from utils import (
@@ -119,6 +123,7 @@ class WebVoyagerRunner:
         run_dir: Path | None = None,
         step_timeout: float | None = 180.0,
         tool_execution_timeout: float | None = 180.0,
+        enable_skills: bool = True,
         auto_save_skills: bool = True,
     ):
         """
@@ -154,7 +159,7 @@ class WebVoyagerRunner:
         self.run_dir = run_dir
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
-        self.enable_skills = enable_skills
+        self.enable_skills = bool(enable_skills)
         self.verifier = WebJudgeTaskVerifier()
 
         # Ensure skills directories exist
@@ -939,10 +944,9 @@ async def main():
     import argparse
 
     # Calculate default paths using relative path
-    script_dir = Path(__file__).resolve().parent
     default_session_logs_root = script_dir.parent / "session_logs"
     default_jsonl_candidates = [
-        script_dir / "WebVoyager_data.jsonl",
+        script_dir.parent / "data" / "WebVoyager_data.jsonl",
         Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl",
     ]
     default_jsonl = str(
@@ -1009,13 +1013,18 @@ async def main():
         "--step-timeout",
         type=float,
         default=600.0,
-        help="ChatAgent step timeout in seconds (0 disables). Default: 180.",
+        help="ChatAgent step timeout in seconds (0 disables). Default: 600.",
     )
     parser.add_argument(
         "--tool-timeout",
         type=float,
         default=600.0,
-        help="Per-tool execution timeout in seconds (0 disables). Default: 180.",
+        help="Per-tool execution timeout in seconds (0 disables). Default: 600.",
+    )
+    parser.add_argument(
+        "--disable-skills",
+        action="store_true",
+        help="Disable skill loading/usage/mining; run with only atomic tools.",
     )
     parser.add_argument(
         "--out-dir",
@@ -1097,6 +1106,7 @@ async def main():
         tool_execution_timeout=None
         if args.tool_timeout <= 0
         else args.tool_timeout,
+        enable_skills=not args.disable_skills,
         auto_save_skills=args.auto_save_skills,
     )
 

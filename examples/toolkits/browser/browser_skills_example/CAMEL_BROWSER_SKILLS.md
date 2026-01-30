@@ -43,17 +43,13 @@ The core concept is: **progressively transforming Agent's exploratory execution 
 
 ```
 browser_skills_example/
-├── browser_skills/                    # Bundled Skill library (by website)
-│   ├── google_flights/
-│   │   ├── initialize-flight-search-page/
-│   │   │   ├── SKILL.md
-│   │   │   └── actions.json
-│   │   └── ...
 ├── skills_store/                      # Generated skills (by website; default for WebVoyager)
 │   ├── google_flights/
 │   │   └── 001-.../ (SKILL.md + actions.json)
 │   └── wolfram_alpha/
 │       └── 001-.../ (SKILL.md + actions.json)
+├── browser_skills/                    # Optional: bundled skill library (by website)
+│   └── <website>/*/ (SKILL.md + actions.json)
 │
 │ ## Core Files
 ├── skill_agent.py                    # Main Agent (SkillsAgent)
@@ -64,7 +60,7 @@ browser_skills_example/
 │
 │ ## Utilities
 ├── run_webvoyager_tasks.py            # Batch testing
-└── utils.py                           # Helper functions
+└── ../utils/utils.py                  # Shared helper functions (imported as `utils`)
 ```
 
 ---

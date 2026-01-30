@@ -135,20 +135,21 @@ def get_url_before_after(
     return url_before, url_after
 
 
-def split_line(line):
-    """ Split a line into leading spaces and the rest of the line."""
+def split_line(line: str) -> Tuple[str, str]:
+    """Split a line into leading spaces and the rest of the line."""
     # Find the index of the first non-whitespace character
     index = len(line) - len(line.lstrip())
     # Split the line into leading spaces and the rest
-    leading_spaces = line[:index] if index > 0 else ""  # Return empty string if no leading spaces
+    leading_spaces = line[:index] if index > 0 else ""
     rest_of_line = line[index:].lstrip()  # Remove leading spaces from the rest
     return leading_spaces, rest_of_line
 
 
-def clean_lines(content:str) -> str:
-    """ Keep only the meaningful web content for judging.
-        Args:
-            content (str): The raw web snapshot content from browser toolkit to be cleaned.
+def clean_lines(content: str) -> str:
+    """Keep only the meaningful web content for judging.
+
+    Args:
+        content: The raw web snapshot content from browser toolkit.
     """
     if not content:
         return ""
@@ -156,10 +157,10 @@ def clean_lines(content:str) -> str:
     for line in content.splitlines():
         leading_spaces, line = split_line(line)
         # Remove everything in square brackets, including the brackets
-        line = re.sub(r'\[.*?\]', '', line)
-        
+        line = re.sub(r"\[.*?\]", "", line)
+
         # Handle "- img" lines separately (no colon required)
-        img_match = re.match(r'^-\s*img\s*(.*)', line)
+        img_match = re.match(r"^-\s*img\s*(.*)", line)
         if img_match:
             content_text = img_match.group(1).strip()
             # Skip if no meaningful content after "- img"
@@ -167,7 +168,7 @@ def clean_lines(content:str) -> str:
                 continue
             result.append(leading_spaces + f"img: {content_text}")
             continue
-        link_match = re.match(r'^-\s*link\s+(.*)', line)
+        link_match = re.match(r"^-\s*link\s+(.*)", line)
         if link_match:
             content_text = link_match.group(1).strip()
             # Skip if no meaningful content after "- link"
@@ -177,7 +178,7 @@ def clean_lines(content:str) -> str:
             continue
         
         # Handle other lines with "- label: content" pattern
-        match = re.match(r'^-\s*([^:\s]+)\s*:\s*(.*)', line)
+        match = re.match(r"^-\s*([^:\s]+)\s*:\s*(.*)", line)
         if not match:
             continue
         
@@ -198,13 +199,4 @@ def clean_lines(content:str) -> str:
         else:
             result.append(leading_spaces + f"{label}:")
     
-    return '\n'.join(result)
-
-
-if __name__ == "__main__":
-    path = Path(r"C:\Users\moizh\workspace\camel\examples\toolkits\session_logs_little_model\session_20260118_212413_gpt4.1\task_Allrecipes--1_attempt_1\evidence\pre_step_0003.snapshot.txt")
-    # path = Path(r"camel\evaluators\webjudge\test.txt")
-    dom = path.read_text(encoding="utf-8", errors="ignore")
-    cleaned = clean_lines(dom)
-    with open("cleaned.txt", "w", encoding="utf-8") as f:
-        f.write(cleaned)
+    return "\n".join(result)

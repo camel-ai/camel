@@ -41,6 +41,7 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(script_dir))
+sys.path.insert(0, str(script_dir.parent / "utils"))
 
 from utils import create_default_model, extract_token_usage, get_timestamp_iso
 

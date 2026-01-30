@@ -24,6 +24,7 @@ class BrowserConfig:
     user_data_dir: Optional[str] = None
     stealth: bool = False
     console_log_limit: int = 1000
+    locale: Optional[str] = None
 
     # Default settings
     default_start_url: str = "https://google.com/"
@@ -163,6 +164,7 @@ class ConfigLoader:
             "headless": self.browser_config.headless,
             "userDataDir": self.browser_config.user_data_dir,
             "stealth": self.browser_config.stealth,
+            "locale": self.browser_config.locale,
             "defaultStartUrl": self.browser_config.default_start_url,
             "navigationTimeout": self.browser_config.navigation_timeout,
             "networkIdleTimeout": self.browser_config.network_idle_timeout,

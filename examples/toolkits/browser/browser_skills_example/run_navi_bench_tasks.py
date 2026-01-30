@@ -46,6 +46,7 @@ REPO_ROOT = SCRIPT_DIR.parents[2]
 
 # Allow importing local Browser Skills modules (skill_agent.py, utils.py, ...).
 sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR.parent / "utils"))
 
 # Allow importing local `navi_bench` package living under `navi-bench/`.
 NAVI_BENCH_DIR = REPO_ROOT / "navi-bench"

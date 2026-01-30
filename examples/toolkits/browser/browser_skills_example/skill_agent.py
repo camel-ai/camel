@@ -19,7 +19,6 @@
 This module provides `SkillsAgent`, which wraps reusable subtasks as callable
 functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
-from datetime import datetime
 import json
 import shutil
 import sys
@@ -34,6 +33,7 @@ from typing import Any, Dict, Optional
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(script_dir.parent / "utils"))
 
 from urllib.parse import urlparse
 

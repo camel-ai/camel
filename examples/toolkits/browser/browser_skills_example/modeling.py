@@ -12,8 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model configuration for browser_skills_example."""
-import os
-
 from dotenv import load_dotenv
 
 from camel.models import ModelFactory
@@ -25,7 +23,7 @@ load_dotenv()
 # DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
 # DEFAULT_MODEL_TYPE: ModelType = "qwen-flash"
 
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
 DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
 def create_default_model():
@@ -40,8 +38,10 @@ def create_default_model():
     )
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv()
     model = create_default_model()
-    reponse = model.run(messages=[{"role": "user", "content": "Do you support function calling?"}])
-    print(reponse)
+    response = model.run(
+        messages=[
+            {"role": "user", "content": "Do you support function calling?"}
+        ]
+    )
+    print(response)

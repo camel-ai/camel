@@ -64,11 +64,12 @@ class WebJudgeVisionConfig:
         vision_type: Type of vision input, either 'image' or 'dom'.
             image will use screenshots, dom will use DOM snapshots.
     """
-    model_platform: ModelPlatformType = ModelPlatformType.AZURE
+    model_platform: ModelPlatformType = ModelPlatformType.OPENAI
     model_type: ModelType = ModelType.GPT_4_1
     vision_type: Literal["image", "dom"] = "dom"
     step_timeout: Optional[float] = 360.0
     tool_execution_timeout: Optional[float] = 360.0
+    persist_cleaned_dom: bool = False
     max_frames: int = 10_000
     action_history_max_chars: int = 4000
     evidence_score_threshold: int = 3
@@ -911,10 +912,9 @@ class WebJudgeVisionEvaluator:
         try:
             dom = path.read_text(encoding="utf-8", errors="ignore")
             cleaned = clean_lines(dom)
-            name = path.stem + ".cleaned.txt"
-            with open(path.parent/name, "w", encoding="utf-8") as f:
-                f.write(cleaned)
+            if self.config.persist_cleaned_dom:
+                name = path.stem + ".cleaned.txt"
+                (path.parent / name).write_text(cleaned, encoding="utf-8")
             return cleaned
         except Exception:
             return ""
-        

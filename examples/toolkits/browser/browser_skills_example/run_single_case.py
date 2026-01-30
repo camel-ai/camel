@@ -7,6 +7,10 @@ import json
 import sys
 from pathlib import Path
 
+script_dir = Path(__file__).resolve().parent
+sys.path.insert(0, str(script_dir))
+sys.path.insert(0, str(script_dir.parent / "utils"))
+
 from skill_agent import SkillsAgent
 from utils import (
     compute_session_summary,
