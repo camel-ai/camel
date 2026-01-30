@@ -62,6 +62,7 @@ class MarkItDownLoader:
         ".xml",
         ".zip",
         ".txt",
+        ".md",
     ]
 
     def __init__(
