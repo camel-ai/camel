@@ -603,51 +603,7 @@ class NaviBenchRunner:
                         session_dir=str(session_dir),
                     )
 
-                # Failed attempt; build retry notes focused on common Navi-Bench
-                # failure modes (usually: not covering all required URL/query
-                # groups in the same attempt).
-                required_groups = _infer_required_url_groups(
-                    getattr(task_config, "eval_config", None)
-                )
-                covered_groups: Optional[int] = None
-                if (
-                    required_groups
-                    and isinstance(score, (int, float))
-                    and required_groups > 0
-                ):
-                    covered_groups = round(float(score) * required_groups)
-                    covered_groups = max(
-                        0, min(required_groups, covered_groups)
-                    )
-
                 suggestions_parts: List[str] = []
-                if required_groups and required_groups > 1:
-                    prefix = "- Coverage (URL/query targets):"
-                    if covered_groups is not None:
-                        prefix += (
-                            f" {covered_groups}/{required_groups} covered."
-                        )
-                    else:
-                        prefix += f" need {required_groups}/{required_groups}."
-                    suggestions_parts.append(prefix)
-                    suggestions_parts.append(
-                        "- This evaluator requires covering *all* targets (AND across groups). "
-                        "For each group, matching any one acceptable URL is enough (OR within group)."
-                    )
-                    suggestions_parts.append(
-                        "- Treat each target as a checklist item: navigate to it, wait for the page to fully load, "
-                        "and confirm the URL/state in the address bar before moving on."
-                    )
-                    suggestions_parts.append(
-                        "- Do not stop after reaching only one target; make sure you reach every required target "
-                        "within the same attempt."
-                    )
-                else:
-                    suggestions_parts.append(
-                        "- Navi-Bench often verifies the final URL/state. "
-                        "Make sure the URL reflects *only* the required constraints (avoid extra filters), "
-                        "and the page is fully loaded before stopping."
-                    )
                 suggestions_parts.append(
                     "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )

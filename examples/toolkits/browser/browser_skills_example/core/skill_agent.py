@@ -903,7 +903,6 @@ class SkillsAgent:
                     # Create replayer instance for this subtask
                     replayer = ActionReplayer(
                         log_file=log_file,
-                        cdp_port=self.cdp_port,
                         subtask_config=temp_config_path,
                         subtask_id=subtask_id,
                         use_agent_recovery=self.use_agent_recovery,
