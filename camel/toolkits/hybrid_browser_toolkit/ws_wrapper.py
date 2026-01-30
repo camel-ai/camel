@@ -117,7 +117,8 @@ def action_logger(func):
             try:
                 if self._should_capture_pre_step_evidence(action_name):
                     pre_capture = await self._capture_pre_step_evidence(
-                        next_action=action_name
+                        next_action=action_name,
+                        next_action_inputs=inputs,
                     )
             except Exception as e:
                 pre_capture = {"pre_capture_error": f"{type(e).__name__}: {e}"}
@@ -817,7 +818,10 @@ class WebSocketBrowserWrapper:
         return str(path)
 
     async def _capture_pre_step_evidence(
-        self, *, next_action: str
+        self,
+        *,
+        next_action: str,
+        next_action_inputs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         evidence_dir = self._get_evidence_dir()
         evidence_dir.mkdir(parents=True, exist_ok=True)
@@ -901,6 +905,7 @@ class WebSocketBrowserWrapper:
                 "prefix": prefix,
                 "captured_at": captured_at,
                 "next_action": next_action,
+                "next_action_args": next_action_inputs,
                 "tab_id": tab_id,
                 "url": url,
                 "snapshot_sha1": snapshot_sha1,
@@ -918,6 +923,7 @@ class WebSocketBrowserWrapper:
                 "pre_capture_prefix": prefix,
                 "pre_capture_captured_at": captured_at,
                 "pre_capture_next_action": next_action,
+                "pre_capture_next_action_args": metadata["next_action_args"],
                 "pre_capture_tab_id": tab_id,
                 "pre_capture_url": url,
                 "pre_capture_metadata_path": self._path_for_log(metadata_file),
