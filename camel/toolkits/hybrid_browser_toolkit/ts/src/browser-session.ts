@@ -104,8 +104,10 @@ export class HybridBrowserSession {
           }
         }
       } else {
+        const locale = browserConfig.locale ?? 'en-US';
         const contextOptions: any = {
-          viewport: browserConfig.viewport
+          viewport: browserConfig.viewport,
+          locale,
         };
 
         // Apply stealth headers and UA if configured
@@ -201,6 +203,7 @@ export class HybridBrowserSession {
       if (browserConfig.userDataDir) {
         // Ensure viewport is honored in persistent context
         launchOptions.viewport = browserConfig.viewport;
+        launchOptions.locale = browserConfig.locale ?? 'en-US';
         this.context = await chromium.launchPersistentContext(
           browserConfig.userDataDir,
           launchOptions
@@ -215,8 +218,10 @@ export class HybridBrowserSession {
         }
       } else {
         this.browser = await chromium.launch(launchOptions);
+        const locale = browserConfig.locale ?? 'en-US';
         const contextOptions: any = {
-          viewport: browserConfig.viewport
+          viewport: browserConfig.viewport,
+          locale,
         };
 
         // Apply stealth headers and UA if configured

@@ -388,7 +388,7 @@ class ContextUtility:
 
     def structured_output_to_markdown(
         self,
-        structured_data: BaseModel,
+        structured_data: BaseModel | Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None,
         title: Optional[str] = None,
         field_mappings: Optional[Dict[str, str]] = None,
@@ -421,11 +421,19 @@ class ContextUtility:
         if title:
             markdown_content.extend([f"## {title}", ""])
         else:
-            model_name = structured_data.__class__.__name__
+            model_name = (
+                structured_data.__class__.__name__
+                if isinstance(structured_data, BaseModel)
+                else "StructuredOutput"
+            )
             markdown_content.extend([f"## {model_name}", ""])
 
         # Get model fields and values
-        model_dict = structured_data.model_dump()
+        model_dict = (
+            structured_data.model_dump()
+            if isinstance(structured_data, BaseModel)
+            else structured_data
+        )
         exclude_set = set(exclude_fields) if exclude_fields else set()
 
         for field_name, field_value in model_dict.items():
