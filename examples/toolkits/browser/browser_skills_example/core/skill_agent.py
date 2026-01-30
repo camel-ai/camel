@@ -240,7 +240,8 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
             f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
             "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
             "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
-            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
+            "- When you see Form, the Click the time-slot selector first to expand all time-slot options, and then select your demand time-slot.",
+            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options.",
             "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to select the corresponding date to prove your conclusion.",
         ]
     ),
