@@ -241,8 +241,9 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
             "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
             "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
             "- When you see Form, the Click the time-slot selector first to expand all time-slot options, and then select your demand time-slot.",
-            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options.",
-            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to select the corresponding date to prove your conclusion.",
+            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to click every corresponding date in the calendar to prove your conclusion.",
+            "- You need to expand the calendar, see what date is currently selected, get snapshot to locate the date button, and click the next date to check, and so on, until you reach the last date to check. Every button of data is 100% clickable. You must repeat the above steps for each check, opening the corresponding page one by one.",
+            "- Finally, you need to include in your answer whether you have clicked on each date that needs to be checked. List all the dates you have viewed by **clicking**. And make sure all checks have been performed using the click action."
         ]
     ),
 }
