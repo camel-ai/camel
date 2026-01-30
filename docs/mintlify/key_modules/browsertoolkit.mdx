@@ -102,26 +102,146 @@ If the `web_agent` gets stuck, the `planning_agent` can re-evaluate the situatio
 
 ## Advanced Usage
 
-### Persistent Sessions
-You can maintain login sessions across runs by providing a path to a `cookies.json` file or a `user_data_dir`.
+### Persistent Sessions (Cookies vs User Data Directory)
+You can maintain login sessions across runs by providing either a `cookie_json_path` (storage state) or a `user_data_dir` (full browser profile).
 
-<Card title="Using a Persistent Session" icon="cookie">
+**How to choose**
+- `cookie_json_path`: lightweight and headless-friendly. Loads a saved storage state (cookies/localStorage) into a fresh context. Ideal for CI or short-lived sessions.
+- `user_data_dir`: persistent browser profile folder. Keeps cookies, localStorage, cache, and site settings across runs. Ideal when you need a full profile or repeated interactive sessions.
+
+**Important note**: `cookie_json_path` is *loaded* by `BrowserToolkit`. To *create* it, you should first save a storage state (see below).
+
+<Tabs>
+<Tab title="cookie_json_path">
 ```python
-# The toolkit will save cookies and local storage to this file
+# The toolkit will load storage state (cookies/localStorage) from this file.
+# Useful for headless or CI runs where you don't want a full profile.
 cookie_path = "./my_browser_session.json"
 
-# First run: Log in to a website
-# browser_toolkit = BrowserToolkit(cookie_json_path=cookie_path)
+# First run: log in (manual/assisted), then save the storage state
+# browser_toolkit = BrowserToolkit(headless=False, cookie_json_path=cookie_path)
 # browser_toolkit.browse_url(task_prompt="Log in to my account...", start_url="...")
 
-# Subsequent runs: The agent will be logged in automatically
+# Subsequent runs: the agent will be logged in automatically
 browser_toolkit_loggedin = BrowserToolkit(cookie_json_path=cookie_path)
 ```
+</Tab>
+<Tab title="user_data_dir">
+```python
+# The toolkit will reuse a full browser profile directory.
+# This persists cookies, localStorage, cache, and site settings.
+browser_toolkit = BrowserToolkit(
+    headless=False,
+    user_data_dir="./my_browser_profile",
+)
+```
+</Tab>
+</Tabs>
+
+<Card title="Create a cookie_json_path (first-time login)" icon="key">
+```python
+from camel.utils import browser_toolkit_save_auth_cookie
+
+# Opens a browser window so you can log in manually,
+# then saves storage state to a JSON file.
+browser_toolkit_save_auth_cookie(
+    cookie_json_path="cookie.json",
+    url="https://example.com/login",
+    wait_time=60,
+)
+```
 </Card>
+
+### Manual Control with `BaseBrowser`
+For precise, deterministic steps, you can access the underlying `BaseBrowser` via `browser_toolkit.browser`. This is useful for debugging, single-step scraping, or file downloads.
+
+**What this gives you**
+- Visual debugging with SoM screenshots (interactive elements highlighted).
+- Element-level actions by id (`click_id`, `fill_input_id`, `hover_id`).
+- Direct content extraction (`get_webpage_content`) in Markdown form.
+  
+**Tip**: Element ids are generated per page state. After navigation or heavy
+DOM changes, re-run `get_som_screenshot` or `get_interactive_elements` to
+get fresh ids.
+
+<Card title="Element-Level Actions + Markdown Extraction" icon="mouse-pointer">
+```python
+from camel.toolkits import BrowserToolkit
+
+browser_toolkit = BrowserToolkit(headless=False, cache_dir="./browser_cache")
+browser = browser_toolkit.browser
+
+browser.init()
+browser.visit_page("https://example.com")
+
+# Visual debugging helpers
+som_img, som_path = browser.get_som_screenshot(save_image=True)
+elements = browser.get_interactive_elements()
+print(list(elements.keys())[:5])  # element ids
+
+# Element-level actions
+browser.click_id("12")
+browser.fill_input_id("34", "search terms")
+browser.find_text_on_page("pricing")
+
+# Extract page content as Markdown
+markdown = browser.get_webpage_content()
+print(markdown[:500])
+
+browser.close()
+```
+</Card>
+
+### Full-Page Capture and Downloads
+For long pages or downloadable assets, use full-page capture and download helpers.
+
+**Notes**
+- Screenshots are saved under `cache_dir`.
+- `download_file_id` saves to `cache_dir` and returns the local path.
+- If a page is highly dynamic, adjust `scroll_ratio` or add waits.
+
+<Card title="Capture + Download" icon="camera">
+```python
+browser_toolkit = BrowserToolkit(headless=True, cache_dir="./browser_cache")
+browser = browser_toolkit.browser
+
+browser.init()
+browser.visit_page("https://example.com/reports")
+
+# Capture full-page screenshots
+paths = browser.capture_full_page_screenshots(scroll_ratio=0.7)
+print(paths)
+
+# Download a file by element id (from SoM / interactive elements)
+result = browser.download_file_id("78")
+print(result)
+
+browser.close()
+```
+</Card>
+
+### Control Budget and Language
+Tune exploration limits and output language when tasks are complex or multilingual.
+
+**Tips**
+- Increase `round_limit` for multi-step forms or deep navigation.
+- Use `output_language` to force the final response language.
+
+```python
+browser_toolkit = BrowserToolkit(output_language="en", headless=True)
+result = browser_toolkit.browse_url(
+    task_prompt="Summarize the main conclusions on the page",
+    start_url="https://example.com",
+    round_limit=20,
+)
+```
 
 ### Video Analysis
 
 The toolkit can answer questions about videos on a webpage.
+
+**Note**: Video analysis may be slow, and the tool will ask for confirmation
+before running.
 
 <Card title="Asking a Question About a YouTube Video" icon="video">
 ```python
@@ -130,10 +250,16 @@ browser_toolkit.browse_url(task_prompt="Navigate to a specific YouTube video", s
 
 # Then, ask a question about it
 # Note: This is an example of how you might use the underlying BaseBrowser.
-# The browse_url function would orchestrate this automatically.
 question = "What is the main topic of this video?"
 answer = browser_toolkit.browser.ask_question_about_video(question=question)
 
 print(answer)
 ```
 </Card>
+
+## References
+- `camel/toolkits/browser_toolkit.py`
+- `examples/toolkits/browser_toolkit.py`
+- `examples/toolkits/browser_toolkit_with_cookie.py`
+- `examples/toolkits/browser_toolkit_with_user_data_dir.py`
+- `camel/utils/commons.py`
