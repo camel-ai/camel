@@ -26,6 +26,7 @@ import sys
 import tempfile
 import traceback
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -212,7 +213,9 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: OpenTable",
             "- Ensure location/restaurant, date, time, and party size are correctly set (use the UI controls).",
+            f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
             "- For dropdown/combobox controls (party size, time, filters), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
+            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
             "- After changing key constraints (date/time/party size), call browser_get_tab_info and confirm the URL/state reflects the requested constraints before moving on.",
             "- If the task is about availability, stay on the results/reservation page that shows available times (or the no-availability message).",
             "- Scroll within results so availability/no-availability sections are visible before finishing.",
@@ -223,12 +226,11 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
         [
             "- Target site: Resy",
             "- Ensure venue/date/time/party size are correctly set (use the UI controls).",
-            "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
-            "- Resy tasks are often verified via the FINAL URL query (e.g., seats/date/time). After setting party size/date/time, call browser_get_tab_info and confirm URL query matches the task (e.g., seats=11, time=1630, date=YYYY-MM-DD).",
-            "- If the UI only provides an approximate option, still ensure the URL uses the exact required value. If it doesn't, directly visit the correct URL.",
-            "- If there is no availability, confirm the page shows the no-availability indicator (may require scrolling).",
-            "- If a specific time is requested but not available, ensure nearby time slots are visible so the page clearly indicates unavailability.",
-            "- Avoid navigating away at the end; keep the final page on the relevant Resy booking page.",
+            f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
+            "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
+            "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
+            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
+            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to select the corresponding date to prove your conclusion."
         ]
     )
 }
