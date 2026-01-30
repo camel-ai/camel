@@ -22,21 +22,17 @@ subtasks based on existing subtask patterns.
 
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(SCRIPT_DIR.parent / "utils"))
-
-from skill_loader import parse_skill_md
-from skill_store import SkillStore
-from utils import create_chat_agent
-
 from camel.messages import BaseMessage
+from examples.toolkits.browser.utils.utils import create_chat_agent
+
+from .modeling import create_default_model
+from .skill_loader import parse_skill_md
+from .skill_store import SkillStore
 
 load_dotenv()
 
@@ -547,9 +543,9 @@ def analyze_with_agent(
     Returns:
         Dictionary containing analysis results and token usage
     """
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("SUBTASK CANDIDATE ANALYZER")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     # Step 1: Extract consecutive individual actions
     print("Step 1: Extracting consecutive individual actions...")
@@ -591,9 +587,7 @@ def analyze_with_agent(
     print("Step 3: Loading existing subtasks...")
     if resolved_skills_dir is None:
         existing_subtasks: List[Dict[str, Any]] = []
-        print(
-            "⚠️  No skills_dir provided; skipping existing-skill loading."
-        )
+        print("⚠️  No skills_dir provided; skipping existing-skill loading.")
     else:
         existing_subtasks = load_all_existing_subtasks_from_skills_dir(
             resolved_skills_dir
@@ -605,6 +599,7 @@ def analyze_with_agent(
     agent = create_chat_agent(
         role_name="Subtask Analyzer",
         system_content="You are an expert at analyzing browser automation workflows and identifying reusable subtask patterns.",
+        model=create_default_model(),
     )
     print("✓ ChatAgent initialized\n")
 
@@ -637,26 +632,26 @@ def analyze_with_agent(
 
     # Step 7: Parse and display results
     print("Step 7: Parsing results...")
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("AGENT RESPONSE")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
     print(response.msg.content)
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
 
     # Try to parse structured results
     results = parse_agent_response(response.msg.content)
 
     if results:
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("PARSED RESULTS")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
         print(json.dumps(results, indent=2))
 
         # Summary
         reusable_count = sum(1 for r in results if r.get('can_be_subtask'))
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("SUMMARY")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Total action groups analyzed: {len(results)}")
         print(f"Can be made into subtasks: {reusable_count}")
         print(f"Cannot be made into subtasks: {len(results) - reusable_count}")
@@ -676,20 +671,22 @@ def analyze_with_agent(
         # Step 8: Save new subtasks if auto_save is enabled
         if auto_save and reusable_count > 0:
             if resolved_skills_dir is None:
-                print(f"\n{'='*80}")
+                print(f"\n{'=' * 80}")
                 print("Step 8: Saving new subtasks...")
-                print(f"{'='*80}\n")
+                print(f"{'=' * 80}\n")
                 print(
                     "⚠️  Auto-save skipped: provide skills_dir to persist skills."
                 )
             else:
-                print(f"\n{'='*80}")
+                print(f"\n{'=' * 80}")
                 print("Step 8: Saving new skills...")
-                print(f"{'='*80}\n")
+                print(f"{'=' * 80}\n")
 
                 # Enrich subtasks: expand agent's simplified output to full definition
                 print("Enriching subtask definitions...")
-                new_subtasks = enrich_subtask_definitions(results, action_groups)
+                new_subtasks = enrich_subtask_definitions(
+                    results, action_groups
+                )
                 print(
                     f"✓ Enriched {len(new_subtasks)} subtask(s) with auto-generated fields"
                 )
@@ -720,11 +717,11 @@ def analyze_with_agent(
                         print(f"  - {err}")
 
         elif not auto_save and reusable_count > 0:
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print(
                 "NOTE: Auto-save is disabled. Use auto_save=True to save results."
             )
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
 
         # Save analysis report to session folder
         analysis_report = {
@@ -749,9 +746,9 @@ def analyze_with_agent(
         with open(report_path, 'w', encoding='utf-8') as f:
             json.dump(analysis_report, f, indent=2, ensure_ascii=False)
 
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Analysis report saved to: {report_path}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         return {
             'success': True,
@@ -802,30 +799,3 @@ def analyze_with_agent(
             },
             'report_path': str(report_path),
         }
-
-
-def main():
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python subtask_extractor.py <session_folder_path> [skills_dir]"
-        )
-        print("\nExample:")
-        print(
-            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455"
-        )
-        print("\nOptional:")
-        print(
-            "  python subtask_extractor.py /path/to/session_logs/session_20251229_164455 /path/to/browser_skills"
-        )
-        sys.exit(1)
-
-    session_folder = sys.argv[1]
-
-    # Use command line argument if provided, otherwise skip saving.
-    skills_dir = sys.argv[2] if len(sys.argv) > 2 else None
-
-    analyze_with_agent(session_folder, skills_dir)
-
-
-if __name__ == "__main__":
-    main()

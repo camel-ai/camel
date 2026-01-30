@@ -10,12 +10,19 @@ cd "$ROOT_DIR"
 UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 mkdir -p "$UV_CACHE_DIR"
 
-# Path to a JSONL of Navi-Bench DatasetItem rows (like WebVoyager_data.jsonl).
-# Default to the repo-local dataset export, but allow overriding via $1.
-JSONL="${1:-$SCRIPT_DIR/navi_bench_data.jsonl}"
+# Optional local dependency: if a `navi-bench/` checkout exists, put it on
+# PYTHONPATH so Python can import `navi_bench` without in-code sys.path hacks.
+if [[ -d "$ROOT_DIR/navi-bench" ]]; then
+  export PYTHONPATH="$ROOT_DIR/navi-bench${PYTHONPATH:+:$PYTHONPATH}"
+fi
 
-SKILLS_ROOT="${SKILLS_ROOT:-$SCRIPT_DIR/skills_store}"
-OUT_DIR="${OUT_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
+EXAMPLE_ROOT="$ROOT_DIR/toolkits/browser/browser_skills_example"
+
+# Path to a JSONL of Navi-Bench DatasetItem rows.
+JSONL="${1:-$ROOT_DIR/toolkits/browser/data/navi_bench_data.jsonl}"
+
+SKILLS_ROOT="${SKILLS_ROOT:-$EXAMPLE_ROOT/skills_store}"
+OUT_DIR="${OUT_DIR:-$ROOT_DIR/toolkits/session_logs}"
 
 # Filter by domain (optional): google_flights|opentable|resy|craigslist|apartments
 DOMAIN="${DOMAIN:-}"
@@ -62,7 +69,7 @@ echo "Note: Requires Chrome/Chromium running with CDP on :$CDP_PORT (and model e
 echo
 
 ARGS=(
-  "$SCRIPT_DIR/run_navi_bench_tasks.py"
+  -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_tasks
   --jsonl "$JSONL"
   --skills-root "$SKILLS_ROOT"
   --out-dir "$OUT_DIR"

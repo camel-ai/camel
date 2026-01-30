@@ -21,7 +21,7 @@ The core concept is: **progressively transforming Agent's exploratory execution 
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  1. EXTRACT: Log → Skills Folder                            │               │
-│     ┌──────────────┐     subtask_extractor.py      ┌──────────────────┐    │
+│     ┌──────────────┐     cli/subtask_extractor.py  ┌──────────────────┐    │
 │     │ session_logs │  ─────────────────────────►   │ skills_store/<web│    │
 │     │ (raw logs)   │                               │ site>/*/SKILL.md │    │
 │     └──────────────┘                               │ + actions.json   │    │
@@ -30,8 +30,8 @@ The core concept is: **progressively transforming Agent's exploratory execution 
 │  2. USE: Load Skill → Execute                               │               │
 │                                                             ▼               │
 │     ┌─────────────────────────────────────────────────────────────────┐    │
-│     │  skill_agent.py (SkillsAgent)                                   │    │
-│     │    └── skill_loader.py → action_replayer.py                     │    │
+│     │  core/skill_agent.py (SkillsAgent)                              │    │
+│     │    └── core/skill_loader.py → core/action_replayer.py           │    │
 │     └─────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -51,15 +51,19 @@ browser_skills_example/
 ├── browser_skills/                    # Optional: bundled skill library (by website)
 │   └── <website>/*/ (SKILL.md + actions.json)
 │
-│ ## Core Files
-├── skill_agent.py                    # Main Agent (SkillsAgent)
-├── subtask_extractor.py               # Extract subtasks from logs
-├── skill_store.py                     # Persist extracted skills (SKILL.md + actions.json)
-├── skill_loader.py                    # Load skills
-├── action_replayer.py                 # Replay actions (with Recovery Agent)
+├── core/                              # Core logic (importable modules)
+│   ├── skill_agent.py                 # Main Agent (SkillsAgent)
+│   ├── subtask_extractor.py           # Mine subtasks from logs
+│   ├── skill_store.py                 # Persist extracted skills (SKILL.md + actions.json)
+│   ├── skill_loader.py                # Load skills
+│   └── action_replayer.py             # Replay actions (with Recovery Agent)
 │
-│ ## Utilities
-├── run_webvoyager_tasks.py            # Batch testing
+├── cli/                               # CLI thin wrappers
+│   ├── run_webvoyager_tasks.py        # Batch testing (WebVoyager)
+│   ├── run_single_case.py             # Run one task
+│   ├── run_navi_bench_tasks.py        # Batch testing (Navi-Bench)
+│   └── subtask_extractor.py           # Mine skills from a session folder
+│
 └── ../utils/utils.py                  # Shared helper functions (imported as `utils`)
 ```
 
@@ -69,7 +73,7 @@ browser_skills_example/
 
 ### 1. Main Agent
 
-**File**: `skill_agent.py`
+**File**: `core/skill_agent.py`
 
 The Main Agent is the core of task execution, responsible for:
 - Receiving user tasks and planning execution strategies
@@ -78,7 +82,7 @@ The Main Agent is the core of task execution, responsible for:
 
 ### 2. Subtask Extractor (Task Agent)
 
-**File**: `subtask_extractor.py`
+**File**: `core/subtask_extractor.py` (CLI: `cli/subtask_extractor.py`)
 
 The Task Agent analyzes successfully executed task logs and splits them into reusable subtasks:
 
@@ -91,7 +95,7 @@ The Task Agent analyzes successfully executed task logs and splits them into reu
 
 ### 3. Recovery Agent
 
-**File**: `action_replayer.py`
+**File**: `core/action_replayer.py` (CLI: `cli/action_replayer.py`)
 
 When element location fails during Skill replay, the Recovery Agent intervenes:
 
@@ -455,7 +459,7 @@ Same with CAMEL framework.
 ### 2. Run Task (Using Existing Skills)
 
 ```python
-from skill_agent import SkillsAgent
+from core.skill_agent import SkillsAgent
 import asyncio
 
 
@@ -492,10 +496,10 @@ if __name__ == "__main__":
 ```bash
 # 1. First ensure task executes successfully and generates logs
 # 2. Run extraction script (pass session folder path as argument)
-python subtask_extractor.py ./session_logs/session_xxx
+python -m examples.toolkits.browser.browser_skills_example.cli.subtask_extractor ./session_logs/session_xxx
 
 # Optional: specify custom subtask_configs directory
-python subtask_extractor.py ./session_logs/session_xxx ./subtask_configs
+python -m examples.toolkits.browser.browser_skills_example.cli.subtask_extractor ./session_logs/session_xxx ./subtask_configs
 ```
 
 ### 4. Verify Skill Loading

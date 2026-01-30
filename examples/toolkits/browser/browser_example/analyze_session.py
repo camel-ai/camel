@@ -316,7 +316,6 @@ def analyze_session(session_dir: str):
     # Generate timeline with all actions in chronological order
     timeline = []
 
-
     for action_index, action in enumerate(main_actions):
         action_name = action.get('action', '')
 
@@ -350,9 +349,7 @@ def analyze_session(session_dir: str):
                         break
 
         # Get URL before and after this action
-        url_info = get_url_before_and_after_action(
-            main_actions, action_index
-        )
+        url_info = get_url_before_and_after_action(main_actions, action_index)
 
         timeline.append(
             {

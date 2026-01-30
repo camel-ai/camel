@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model configuration for browser_skills_example."""
+
+from __future__ import annotations
+
 from dotenv import load_dotenv
 
 from camel.models import ModelFactory
@@ -26,6 +29,7 @@ load_dotenv()
 DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
 DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
+
 def create_default_model():
     """Create the default model used by the example scripts."""
     return ModelFactory.create(
@@ -36,6 +40,7 @@ def create_default_model():
             "parallel_tool_calls": False,
         },
     )
+
 
 if __name__ == "__main__":
     model = create_default_model()

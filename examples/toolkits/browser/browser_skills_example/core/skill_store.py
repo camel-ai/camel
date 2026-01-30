@@ -24,8 +24,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
-from skill_loader import parse_skill_md
-from subtask_to_skill_converter import (
+from .skill_loader import parse_skill_md
+from .subtask_to_skill_converter import (
     generate_actions_json,
     generate_skill_md,
     slugify,
@@ -105,9 +105,15 @@ class SkillStore:
         if "id" not in subtask:
             raise ValueError("subtask is missing required field: id")
         if "name" not in subtask or "description" not in subtask:
-            raise ValueError("subtask is missing required fields: name/description")
-        if "actions" not in subtask or not isinstance(subtask["actions"], list):
-            raise ValueError("subtask is missing required field: actions (list)")
+            raise ValueError(
+                "subtask is missing required fields: name/description"
+            )
+        if "actions" not in subtask or not isinstance(
+            subtask["actions"], list
+        ):
+            raise ValueError(
+                "subtask is missing required field: actions (list)"
+            )
 
         slug = slugify(str(subtask["name"]))
         prefix = self._format_id_prefix(int(subtask["id"]))
@@ -123,7 +129,8 @@ class SkillStore:
 
         actions = generate_actions_json(subtask)
         (skill_dir / "actions.json").write_text(
-            __import__("json").dumps(actions, indent=2, ensure_ascii=False) + "\n",
+            __import__("json").dumps(actions, indent=2, ensure_ascii=False)
+            + "\n",
             encoding="utf-8",
         )
         return skill_dir
@@ -171,4 +178,3 @@ class SkillStore:
             "errors": errors,
             "skills_dir": str(self.skills_dir),
         }
-

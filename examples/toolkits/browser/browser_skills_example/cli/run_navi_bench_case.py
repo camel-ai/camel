@@ -17,13 +17,12 @@
 
 import argparse
 import asyncio
-import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPT_DIR))
+EXAMPLE_ROOT = SCRIPT_DIR.parent
 
-from run_navi_bench_tasks import (
+from examples.toolkits.browser.browser_skills_example.core.navi_bench_runner import (
     NaviBenchRunner,
     _resolve_run_dir,
     _select_items,
@@ -68,7 +67,9 @@ async def _amain() -> int:
         run_dir=run_dir,
         cdp_port=args.cdp_port,
         step_timeout=(None if args.step_timeout <= 0 else args.step_timeout),
-        tool_execution_timeout=(None if args.tool_timeout <= 0 else args.tool_timeout),
+        tool_execution_timeout=(
+            None if args.tool_timeout <= 0 else args.tool_timeout
+        ),
         enable_skills=not args.disable_skills,
         enable_skill_extraction=not args.disable_skill_extraction,
     )

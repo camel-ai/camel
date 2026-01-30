@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from examples.toolkits.browser_skills_example.skill_agent import (
+from examples.toolkits.browser.browser_skills_example.core.skill_agent import (
     WEBSITE_GUIDELINES,
 )
 
@@ -145,7 +145,9 @@ def main() -> None:
             display, guideline_key = _infer_website_from_row(row)
             stats = by_display.get(display)
             if stats is None:
-                stats = WebsiteStats(display=display, guideline_key=guideline_key)
+                stats = WebsiteStats(
+                    display=display, guideline_key=guideline_key
+                )
                 by_display[display] = stats
 
             stats.count += 1
@@ -162,7 +164,9 @@ def main() -> None:
                 sample_id = str(row.get("id") or "").strip()
             else:
                 sample_id = str(row.get("task_id") or "").strip()
-            if sample_id and len(stats.samples) < max(0, int(args.show_samples)):
+            if sample_id and len(stats.samples) < max(
+                0, int(args.show_samples)
+            ):
                 stats.samples.append(sample_id)
 
     missing = []
@@ -178,12 +182,18 @@ def main() -> None:
     print()
 
     print(f"Websites: {len(by_display)}")
-    for display, stats in sorted(by_display.items(), key=lambda kv: (-kv[1].count, kv[0].lower())):
-        top_url = stats.start_urls.most_common(1)[0][0] if stats.start_urls else ""
+    for display, stats in sorted(
+        by_display.items(), key=lambda kv: (-kv[1].count, kv[0].lower())
+    ):
+        top_url = (
+            stats.start_urls.most_common(1)[0][0] if stats.start_urls else ""
+        )
         top_host = stats.hosts.most_common(1)[0][0] if stats.hosts else ""
         sample = stats.samples[0] if stats.samples else ""
         ok = "yes" if stats.guideline_key in WEBSITE_GUIDELINES else "NO"
-        print(f"- {display}: {stats.count}  (guidelines_key={stats.guideline_key!r}, covered={ok})")
+        print(
+            f"- {display}: {stats.count}  (guidelines_key={stats.guideline_key!r}, covered={ok})"
+        )
         if top_host or top_url:
             print(f"  start_host={top_host or '-'}")
             print(f"  start_url={top_url or '-'}")
@@ -193,7 +203,9 @@ def main() -> None:
 
     if missing:
         print("Missing WEBSITE_GUIDELINES entries (after normalization):")
-        for display, key, count in sorted(missing, key=lambda x: (-x[2], x[0].lower())):
+        for display, key, count in sorted(
+            missing, key=lambda x: (-x[2], x[0].lower())
+        ):
             print(f"- {display} (normalized key={key!r}): {count}")
         raise SystemExit(2)
 
@@ -202,4 +214,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

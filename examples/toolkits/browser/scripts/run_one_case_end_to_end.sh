@@ -55,7 +55,7 @@ echo "Step 1/4: First run with EMPTY skills dir (expect: few/no subtask function
 RUN1_LOG="$TMP_DIR/run1.log"
 STEP_TIMEOUT="${STEP_TIMEOUT:-3600}"
 TOOL_TIMEOUT="${TOOL_TIMEOUT:-300}"
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python -m examples.toolkits.browser.browser_skills_example.cli.run_single_case \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
@@ -81,7 +81,7 @@ echo
 echo "Step 2/4: Verify task success (Vision-WebJudge)."
 VERDICT1_JSON="$TMP_DIR/verdict1.json"
 VERDICT1_OUT_JSON="$SESSION1/verdict1.json"
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/eval_webjudge_session.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python -m examples.toolkits.browser.browser_skills_example.cli.eval_webjudge_session \
   "$SESSION1" \
   --out "$VERDICT1_JSON"
 
@@ -95,7 +95,7 @@ if ! grep -Eq '"success"[[:space:]]*:[[:space:]]*true' "$VERDICT1_JSON"; then
 fi
 
 echo "✅ Verified success. Extracting skills into SKILLS_DIR."
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/subtask_extractor.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python -m examples.toolkits.browser.browser_skills_example.cli.subtask_extractor \
   "$SESSION1" "$SKILLS_DIR" \
   | tee "$TMP_DIR/skill_extract.log"
 
@@ -106,7 +106,7 @@ ls -la "$SKILLS_DIR"
 echo
 echo "Step 3/4: Second run WITH skills (expect: subtask reuse)."
 RUN2_LOG="$TMP_DIR/run2.log"
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/run_single_case.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python -m examples.toolkits.browser.browser_skills_example.cli.run_single_case \
   --skills-dir "$SKILLS_DIR" \
   --web-name "$CASE_WEB_NAME" \
   --web "$CASE_WEB" \
@@ -162,7 +162,7 @@ echo
 echo "Step 5/5: Verify task success (Vision-WebJudge) for the run WITH skills."
 VERDICT2_JSON="$TMP_DIR/verdict2.json"
 VERDICT2_OUT_JSON="$SESSION2/verdict2.json"
-PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python examples/toolkits/browser_skills_example/eval_webjudge_session.py \
+PYTHONUNBUFFERED=1 UV_CACHE_DIR="$UV_CACHE_DIR" uv run python -m examples.toolkits.browser.browser_skills_example.cli.eval_webjudge_session \
   "$SESSION2" \
   --out "$VERDICT2_JSON"
 

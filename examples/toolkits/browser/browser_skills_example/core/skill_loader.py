@@ -18,6 +18,8 @@ This module reads skills from the skills/ directory and converts them
 to a format compatible with the existing SkillsAgent system.
 """
 
+from __future__ import annotations
+
 import json
 import re
 from pathlib import Path

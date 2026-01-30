@@ -17,7 +17,7 @@
 Analyze a session directory with browser log and subtask replay logs.
 
 Usage:
-    python analyze_session.py <session_directory>
+    python -m examples.toolkits.browser.browser_skills_example.cli.analyze_session <session_directory>
 """
 
 import json
@@ -599,10 +599,12 @@ def analyze_session(session_dir: str):
 def main():
     """Main entry point."""
     if len(sys.argv) < 2:
-        print("Usage: python analyze_session.py <session_directory>")
+        print(
+            "Usage: python -m examples.toolkits.browser.browser_skills_example.cli.analyze_session <session_directory>"
+        )
         print("\nExample:")
         print(
-            "  python analyze_session.py /path/to/session_logs/session_20251228_194306"
+            "  python -m examples.toolkits.browser.browser_skills_example.cli.analyze_session /path/to/session_logs/session_20251228_194306"
         )
         sys.exit(1)
 

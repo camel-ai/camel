@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Common utility functions for subtask toolkit."""
-from typing import Any
-import re
+
 import datetime
-from pathlib import Path
 import json
+import re
+from pathlib import Path
+from typing import Any
 
 
 # === Timestamps ===
@@ -126,7 +127,7 @@ def _parse_json_objects_log(log_path: Path) -> list[dict[str, Any]]:
 def compute_session_summary(
     *,
     session_dir: Path,
-    task_id: str|None = None,
+    task_id: str | None = None,
 ) -> dict[str, Any]:
     """
     Compute a structured summary for a single session directory.
@@ -148,9 +149,15 @@ def compute_session_summary(
     if agent_comm_path.exists():
         try:
             comm_data = load_json(str(agent_comm_path))
-            comm_summary = comm_data.get("summary", {}) if isinstance(comm_data, dict) else {}
+            comm_summary = (
+                comm_data.get("summary", {})
+                if isinstance(comm_data, dict)
+                else {}
+            )
             if isinstance(comm_summary, dict):
-                browser_tool_calls = int(comm_summary.get("browser_tool_calls", 0) or 0)
+                browser_tool_calls = int(
+                    comm_summary.get("browser_tool_calls", 0) or 0
+                )
         except Exception:
             pass
 

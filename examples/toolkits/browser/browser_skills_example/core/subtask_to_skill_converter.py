@@ -21,6 +21,8 @@ and converts them to the standard Skills format with:
 - actions.json with the action sequence
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -309,9 +311,8 @@ def convert_subtask_configs_to_skills(
                 print(f"    Skipping {skill_dir_name} (already exists)")
                 stats['skills_skipped'] += 1
                 continue
-            
-            try:
 
+            try:
                 # Generate and write actions.json
                 actions = generate_actions_json(subtask)
                 if not actions:

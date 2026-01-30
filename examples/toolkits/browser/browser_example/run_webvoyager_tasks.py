@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E402
 #!/usr/bin/env python3
 """
 Run WebVoyager tasks with browser toolkit agent and analyze results.
@@ -29,26 +28,20 @@ import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List
-from dotenv import load_dotenv
-
-load_dotenv()
 
 from camel.evaluators.webjudge import (
     WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
 )
-
-from modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
-
-from camel.evaluators.webjudge import (
-    WebJudgeVisionConfig,
-    WebJudgeVisionEvaluator,
+from examples.toolkits.browser.browser_example.agent import BrowserAgent
+from examples.toolkits.browser.browser_example.modeling import (
+    DEFAULT_MODEL_PLATFORM,
+    DEFAULT_MODEL_TYPE,
 )
-from agent import BrowserAgent
-from utils import (
-    get_timestamp_iso,
+from examples.toolkits.browser.browser_example.utils import (
+    compute_session_summary,
     get_timestamp_filename,
-    compute_session_summary
+    get_timestamp_iso,
 )
 
 _SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
@@ -124,7 +117,9 @@ class WebVoyagerRunner:
         self.run_summary_out = (
             run_summary_out.strip() or "browser_webvoyager_run_summary.json"
         )
-        self.results_out = results_out.strip() or "browser_webvoyager_results_1.json"
+        self.results_out = (
+            results_out.strip() or "browser_webvoyager_results_1.json"
+        )
         self.run_dir = run_dir
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
@@ -146,7 +141,7 @@ class WebVoyagerRunner:
                 if line:
                     tasks.append(json.loads(line))
         return tasks
-  
+
     async def run_single_task(
         self,
         task: Dict[str, Any],
@@ -298,7 +293,6 @@ class WebVoyagerRunner:
             if verification.get('suggestions'):
                 print(f"  Suggestions: {verification['suggestions']}")
 
-
             result = {
                 'task_id': task_id,
                 'task_description': task_description,
@@ -347,7 +341,7 @@ class WebVoyagerRunner:
                 website_bucket["attempts"] += 1
                 if verification.get("success"):
                     website_bucket["tasks"] += 1
-            
+
             return result
 
         except asyncio.TimeoutError as e:
@@ -387,7 +381,6 @@ class WebVoyagerRunner:
                 if session_log_dir is not None
                 else None,
             }
-        
 
     async def run_task_with_retries(
         self, task: Dict[str, Any]
@@ -475,7 +468,7 @@ class WebVoyagerRunner:
         return result
 
     async def run_all_tasks(
-        self, start_index: int = 0, max_tasks: int|None = None
+        self, start_index: int = 0, max_tasks: int | None = None
     ):
         """
         Run all tasks from the JSONL file.

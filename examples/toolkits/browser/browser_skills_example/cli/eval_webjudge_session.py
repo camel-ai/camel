@@ -18,11 +18,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from dotenv import load_dotenv
-from modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
 
 from camel.evaluators.webjudge import (
     WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
+)
+from examples.toolkits.browser.browser_skills_example.core.modeling import (
+    DEFAULT_MODEL_PLATFORM,
+    DEFAULT_MODEL_TYPE,
 )
 
 load_dotenv()

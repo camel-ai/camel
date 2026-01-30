@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -29,24 +28,20 @@ the actions by:
 import asyncio
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.request import urlopen
 
 from dotenv import load_dotenv
 
-# Add paths first
-script_dir = Path(__file__).resolve().parent
-project_root = script_dir.parent.parent.parent
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(script_dir))
-sys.path.insert(0, str(script_dir.parent / "utils"))
-
-from utils import create_default_model, extract_token_usage, get_timestamp_iso
-
 from camel.agents import ChatAgent
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+from examples.toolkits.browser.utils.utils import (
+    extract_token_usage,
+    get_timestamp_iso,
+)
+
+from .modeling import create_default_model
 
 load_dotenv()  # Load environment variables from .env.test file
 
@@ -1693,143 +1688,3 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             print("\nCleaning up...")
             # await self.toolkit.browser_close()
             print("Done!")
-
-
-async def main():
-    """Main entry point."""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Replay browser actions from log file",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Replay entire log
-  python action_replayer.py my_log.log
-
-  # Replay specific subtask
-  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location
-
-  # Replay subtask with variable overrides
-  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 02_enter_departure_location --var departure_city="London"
-
-  # Multiple variables
-  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --subtask-id 04_set_travel_dates --var departure_date="2026-01-15" --var return_date="2026-01-20"
-
-  # List available subtasks
-  python action_replayer.py my_log.log --subtask-config my_log_subtasks.json --list-subtasks
-        """,
-    )
-    parser.add_argument('log_file', help='Path to the log file to replay')
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=9223,
-        help='CDP port number (default: 9223)',
-    )
-    parser.add_argument(
-        '--subtask-config',
-        help='Path to subtask configuration JSON file',
-    )
-    parser.add_argument(
-        '--subtask-id',
-        help='ID of specific subtask to replay',
-    )
-    parser.add_argument(
-        '--var',
-        action='append',
-        help='Variable override in format key=value (can be used multiple times)',
-    )
-    parser.add_argument(
-        '--list-subtasks',
-        action='store_true',
-        help='List available subtasks and exit',
-    )
-    parser.add_argument(
-        '--use-agent-recovery',
-        action='store_true',
-        help='Use ChatAgent for intelligent error recovery when elements are not found',
-    )
-
-    args = parser.parse_args()
-
-    # Check if log file exists
-    if not Path(args.log_file).exists():
-        print(f"Error: Log file not found: {args.log_file}")
-        sys.exit(1)
-
-    # List subtasks if requested
-    if args.list_subtasks:
-        if not args.subtask_config:
-            print("Error: --subtask-config required with --list-subtasks")
-            sys.exit(1)
-
-        with open(args.subtask_config, 'r') as f:
-            config = json.load(f)
-
-        print("=" * 80)
-        print("AVAILABLE SUBTASKS")
-        print("=" * 80)
-        print(f"Log file: {config.get('log_file', 'N/A')}")
-        print(f"Task: {config.get('task_description', 'N/A')}")
-        print()
-
-        subtasks = config.get('subtasks', [])
-        for i, subtask in enumerate(subtasks, 1):
-            print(f"{i}. {subtask['id']}")
-            print(f"   Name: {subtask['name']}")
-            print(f"   Description: {subtask['description']}")
-            print(
-                f"   Actions: {subtask['start_index']}-{subtask['end_index']} ({subtask['end_index'] - subtask['start_index'] + 1} total)"
-            )
-            if 'notes' in subtask:
-                print(f"   Notes: {subtask['notes']}")
-
-            # Show variables if any
-            if 'variables' in subtask:
-                print("   Variables:")
-                for var_name, var_config in subtask['variables'].items():
-                    print(
-                        f"     {var_name}: {var_config['description']} (default: {var_config['default_value']})"
-                    )
-            print()
-
-        sys.exit(0)
-
-    # Parse variable overrides
-    variables = {}
-    if args.var:
-        for var_str in args.var:
-            if '=' not in var_str:
-                print(
-                    f"Error: Invalid variable format '{var_str}'. Expected format: key=value"
-                )
-                sys.exit(1)
-            key, value = var_str.split('=', 1)
-            # Remove quotes if present
-            value = value.strip('"').strip("'")
-            variables[key.strip()] = value
-
-    # Create replayer and run
-    replayer = ActionReplayer(
-        log_file=args.log_file,
-        cdp_port=args.port,
-        subtask_config=args.subtask_config,
-        subtask_id=args.subtask_id,
-        variables=variables,
-        use_agent_recovery=args.use_agent_recovery,
-    )
-    await replayer.replay_all()
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nReplay interrupted by user")
-    except Exception as e:
-        print(f"Replay failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)

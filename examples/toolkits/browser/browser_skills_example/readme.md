@@ -14,4 +14,4 @@ When you run the experiments make sure following settings are correct:
 3. In modeling.py, make sure the DEFAULT_MODEL_PLATFORM and DEFAULT_MODEL_TYPE are the correct ones you want to use.
 
 # Commands to run the experiments
-python run_webvoyager_tasks.py --jsonl ../data/WebVoyager_data.jsonl --skills-root skills_store --start 301 --max-tasks 42
+python -m examples.toolkits.browser.browser_skills_example.cli.run_webvoyager_tasks --jsonl examples/toolkits/browser/data/WebVoyager_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --start 301 --max-tasks 42

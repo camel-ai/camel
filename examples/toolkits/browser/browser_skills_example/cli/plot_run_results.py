@@ -4,7 +4,7 @@
 Plot metrics for a `run_webvoyager_tasks.py` run.
 
 Example:
-  python examples/toolkits/browser_skills_example/plot_run_results.py \
+  python -m examples.toolkits.browser.browser_skills_example.cli.plot_run_results \
     --run-dir examples/toolkits/browser_skills_example/runs/run_20260108_184446
 """
 
@@ -196,7 +196,7 @@ def _aggregate_subtask_stats_by_name(
                 agg[k] += v
 
     out: List[Dict[str, Any]] = []
-    for name, agg in by_name.items():
+    for _name, agg in by_name.items():
         total = agg["calls_total"]
         success_rate = (agg["success"] / total) if total else 0.0
         partial_rate = (agg["partial_success"] / total) if total else 0.0

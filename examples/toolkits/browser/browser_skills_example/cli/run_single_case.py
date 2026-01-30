@@ -7,12 +7,10 @@ import json
 import sys
 from pathlib import Path
 
-script_dir = Path(__file__).resolve().parent
-sys.path.insert(0, str(script_dir))
-sys.path.insert(0, str(script_dir.parent / "utils"))
-
-from skill_agent import SkillsAgent
-from utils import (
+from examples.toolkits.browser.browser_skills_example.core.skill_agent import (
+    SkillsAgent,
+)
+from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     count_skills_in_dir,
     count_subtasks_in_dir,
@@ -51,8 +49,7 @@ def _get_log_paths(agent: SkillsAgent) -> tuple[Path | None, Path | None]:
 async def _amain() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Run a single browser task with"
-            "SkillsAgent and write session logs."
+            "Run a single browser task withSkillsAgent and write session logs."
         ),
     )
     parser.add_argument(
@@ -130,7 +127,6 @@ async def _amain() -> int:
 
     agent = SkillsAgent(
         skills_dir=str(skills_dir),
-        cdp_port=args.cdp_port,
         use_agent_recovery=not args.no_recovery,
         website=website,
         start_url=args.web.strip() or None,

@@ -19,8 +19,6 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from modeling import create_default_model
-
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 
@@ -45,7 +43,10 @@ def create_chat_agent(
         Configured ChatAgent
     """
     if model is None:
-        model = create_default_model()
+        raise ValueError(
+            "create_chat_agent requires an explicit `model`. "
+            "Pass a model instance (e.g. from your example's `modeling.create_default_model()`)."
+        )
 
     system_message = BaseMessage.make_assistant_message(
         role_name=role_name, content=system_content
@@ -192,7 +193,9 @@ def resolve_website_skills_dir(skills_root: Path, website: str) -> Path:
     return website_dir
 
 
-def resolve_website_skills_leaf_dir(skills_root_or_leaf: Path, website: str) -> Path:
+def resolve_website_skills_leaf_dir(
+    skills_root_or_leaf: Path, website: str
+) -> Path:
     """Resolve a directory to a per-website skills directory.
 
     - If `skills_root_or_leaf` already contains Skills folders (`*/SKILL.md`)
@@ -203,7 +206,9 @@ def resolve_website_skills_leaf_dir(skills_root_or_leaf: Path, website: str) -> 
     base = Path(skills_root_or_leaf).expanduser()
     # Leaf detection: direct Skills folders or legacy subtasks configs.
     try:
-        if any((p.is_dir() and (p / "SKILL.md").exists()) for p in base.iterdir()):
+        if any(
+            (p.is_dir() and (p / "SKILL.md").exists()) for p in base.iterdir()
+        ):
             return base
     except FileNotFoundError:
         pass
@@ -331,12 +336,22 @@ def compute_session_summary(
     if agent_comm_path.exists():
         try:
             comm_data = load_json(str(agent_comm_path))
-            comm_summary = comm_data.get("summary", {}) if isinstance(comm_data, dict) else {}
-            communications = comm_data.get("communications", []) if isinstance(comm_data, dict) else []
+            comm_summary = (
+                comm_data.get("summary", {})
+                if isinstance(comm_data, dict)
+                else {}
+            )
+            communications = (
+                comm_data.get("communications", [])
+                if isinstance(comm_data, dict)
+                else []
+            )
 
             if isinstance(comm_summary, dict):
                 subtask_calls = int(comm_summary.get("subtask_calls", 0) or 0)
-                browser_tool_calls = int(comm_summary.get("browser_tool_calls", 0) or 0)
+                browser_tool_calls = int(
+                    comm_summary.get("browser_tool_calls", 0) or 0
+                )
 
             denom = subtask_calls + browser_tool_calls
             reuse_ratio_calls = (subtask_calls / denom) if denom else 0.0
@@ -350,7 +365,11 @@ def compute_session_summary(
 
                     subtask_id = str(entry.get("subtask_id", "unknown"))
                     subtask_name = entry.get("subtask_name", "")
-                    result = entry.get("result", {}) if isinstance(entry.get("result", {}), dict) else {}
+                    result = (
+                        entry.get("result", {})
+                        if isinstance(entry.get("result", {}), dict)
+                        else {}
+                    )
                     status = str(result.get("status", "unknown"))
 
                     stats = per_subtask.setdefault(
@@ -378,9 +397,8 @@ def compute_session_summary(
         if calls_total:
             stats["success_rate"] = stats.get("success", 0) / calls_total
             stats["failure_rate"] = (
-                (stats.get("partial_success", 0) + stats.get("error", 0))
-                / calls_total
-            )
+                stats.get("partial_success", 0) + stats.get("error", 0)
+            ) / calls_total
         else:
             stats["success_rate"] = 0.0
             stats["failure_rate"] = 0.0
@@ -398,7 +416,9 @@ def compute_session_summary(
     return {
         "task_id": task_id,
         "session_dir": str(session_dir),
-        "skills_dir": str(skills_dir.resolve()) if skills_dir is not None else None,
+        "skills_dir": str(skills_dir.resolve())
+        if skills_dir is not None
+        else None,
         "subtasks_available": subtasks_available,
         "reuse": {
             "actions_total": actions_total,
@@ -409,7 +429,11 @@ def compute_session_summary(
             "reuse_ratio_calls": reuse_ratio_calls,
         },
         "subtask_stats": sorted(
-            per_subtask.values(), key=lambda d: (d.get("calls_total", 0) * -1, d.get("subtask_id", ""))
+            per_subtask.values(),
+            key=lambda d: (
+                d.get("calls_total", 0) * -1,
+                d.get("subtask_id", ""),
+            ),
         ),
         "agent_comm_summary": comm_summary,
     }
@@ -454,15 +478,25 @@ def update_cumulative_subtask_stats(
                 "other": 0,
             },
         )
-        entry["subtask_name"] = s.get("subtask_name", entry.get("subtask_name", ""))
-        for key in ("calls_total", "success", "partial_success", "error", "other"):
+        entry["subtask_name"] = s.get(
+            "subtask_name", entry.get("subtask_name", "")
+        )
+        for key in (
+            "calls_total",
+            "success",
+            "partial_success",
+            "error",
+            "other",
+        ):
             entry[key] = int(entry.get(key, 0) or 0) + int(s.get(key, 0) or 0)
 
     # Recompute derived rates
     for entry in subtasks.values():
         calls_total = int(entry.get("calls_total", 0) or 0)
         if calls_total:
-            entry["success_rate"] = int(entry.get("success", 0) or 0) / calls_total
+            entry["success_rate"] = (
+                int(entry.get("success", 0) or 0) / calls_total
+            )
             entry["failure_rate"] = (
                 int(entry.get("partial_success", 0) or 0)
                 + int(entry.get("error", 0) or 0)

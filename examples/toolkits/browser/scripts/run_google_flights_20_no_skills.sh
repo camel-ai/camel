@@ -5,9 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$ROOT_DIR"
 
-JSONL="${1:-$SCRIPT_DIR/WebVoyager_data.jsonl}"
-SKILLS_ROOT="${SKILLS_ROOT:-$SCRIPT_DIR/skills_store}"
-OUT_DIR="${OUT_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
+EXAMPLE_ROOT="$ROOT_DIR/toolkits/browser/browser_skills_example"
+
+JSONL="${1:-$ROOT_DIR/toolkits/browser/data/WebVoyager_data.jsonl}"
+SKILLS_ROOT="${SKILLS_ROOT:-$EXAMPLE_ROOT/skills_store}"
+OUT_DIR="${OUT_DIR:-$ROOT_DIR/toolkits/session_logs}"
 MAX_RETRIES="${MAX_RETRIES:-0}"
 MAX_ATTEMPTS_PER_TASK="${MAX_ATTEMPTS_PER_TASK:-}"
 STEP_TIMEOUT="${STEP_TIMEOUT:-600}"
@@ -35,7 +37,7 @@ echo "Note: Requires Chrome/Chromium running with CDP on :9223 (and model env va
 echo
 
 PYTHONUNBUFFERED=1 \
-python "$SCRIPT_DIR/run_webvoyager_tasks.py" \
+python -m examples.toolkits.browser.browser_skills_example.cli.run_webvoyager_tasks \
   --jsonl "$JSONL" \
   --skills-root "$SKILLS_ROOT" \
   --website-filter "Google Flights" \

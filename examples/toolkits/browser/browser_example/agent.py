@@ -11,24 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Browser Agent utilities.
 This module provides Browser agent with low-level `HybridBrowserToolkit` tools.
 """
-import sys
+
+import json
 import shutil
 import uuid
-import json
 from pathlib import Path
-# Add project root to path first (before camel imports)
-script_dir = Path(__file__).resolve().parent
-project_root = script_dir.parent.parent
-sys.path.insert(0, str(project_root))
-
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -38,9 +31,19 @@ from camel.toolkits.hybrid_browser_toolkit import (
     HybridBrowserToolkit,
 )
 from camel.utils.constants import Constants
+from examples.toolkits.browser.browser_example.analyze_session import (
+    analyze_session,
+)
+from examples.toolkits.browser.browser_example.modeling import (
+    create_default_model,
+    extract_token_usage,
+)
+from examples.toolkits.browser.browser_example.utils import (
+    get_timestamp_filename,
+    get_timestamp_iso,
+)
 
-from modeling import create_default_model, extract_token_usage
-from utils import get_timestamp_filename, get_timestamp_iso
+script_dir = Path(__file__).resolve().parent
 
 # Define default directories using relative paths
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
@@ -183,6 +186,7 @@ WEBSITE_GUIDELINES: dict[str, str] = {
 
 class BrowserAgent:
     """A simple browser agent."""
+
     _TASK_DONE_TOKEN = "##TASK_DONE##"
 
     def __init__(
@@ -217,15 +221,15 @@ class BrowserAgent:
         self.tool_execution_timeout = tool_execution_timeout
 
         # Initialize components
-        self.toolkit: HybridBrowserToolkit|None = None
-        self.agent: ChatAgent|None = None
+        self.toolkit: HybridBrowserToolkit | None = None
+        self.agent: ChatAgent | None = None
 
         # Session log directory for this run
         self.session_timestamp = get_timestamp_filename()
         self.toolkit_session_id = (
             f"{self.session_timestamp}_{uuid.uuid4().hex[:8]}"
         )
-        self.session_log_dir: Path|None = (
+        self.session_log_dir: Path | None = (
             Path(session_log_dir).expanduser().resolve()
             if session_log_dir is not None
             else None
@@ -236,7 +240,7 @@ class BrowserAgent:
 
         # Store current user task (actual task being executed)
         self.current_user_task = None
-        self.task_start_iso: str|None = None
+        self.task_start_iso: str | None = None
 
         # Statistics tracking
         self.stats = {
@@ -257,7 +261,6 @@ class BrowserAgent:
         # Store system prompt and tool definitions for logging
         self.system_prompt = None
         self.tool_definitions = []
-
 
     async def close(self) -> None:
         """Cleanup toolkit resources for this run.
@@ -463,7 +466,6 @@ class BrowserAgent:
             }
             self.tool_definitions.append(tool_info)
         return True
-    
 
     def get_system_message(self) -> str:
         """Get the system message for the agent."""
@@ -514,7 +516,6 @@ class BrowserAgent:
         )
         return "\n".join(prompt_parts)
 
-
     async def run(self, user_task: str):
         """Run the agent with a user task.
 
@@ -559,9 +560,9 @@ class BrowserAgent:
         if response.msgs:
             for msg in response.msgs:
                 content = msg.content or ""
-                communication_entry['response'] = (
-                    content.replace(self._TASK_DONE_TOKEN, "").strip()
-                )
+                communication_entry['response'] = content.replace(
+                    self._TASK_DONE_TOKEN, ""
+                ).strip()
 
                 # Extract tool calls from the message
                 if hasattr(msg, 'info') and msg.info:
@@ -737,9 +738,6 @@ class BrowserAgent:
 
             if not action_timestamp:
                 continue
-
-            # Check if this action matches a replay action
-            ts_seconds = action_timestamp[:19]
 
             # This is an agent-initiated action
             agent_initiated_actions.append(
@@ -917,15 +915,7 @@ class BrowserAgent:
         print("📊 GENERATING TIMELINE ANALYSIS")
         print("=" * 80)
 
-        # Add the toolkits directory to path if needed
-        toolkits_dir = Path(__file__).parent
-        if str(toolkits_dir) not in sys.path:
-            sys.path.insert(0, str(toolkits_dir))
-
         try:
-            # Import the analyze_session module
-            from analyze_session import analyze_session
-
             print(f"\n🔍 Analyzing session: {self.session_log_dir}")
 
             # Run the analysis
@@ -933,11 +923,6 @@ class BrowserAgent:
 
             print("\n✅ Timeline analysis completed successfully!")
 
-        except ImportError as e:
-            print(f"\n⚠️  Could not import analyze_session module: {e}")
-            print(
-                "   Make sure analyze_session.py is in the same directory as this script"
-            )
         except Exception as e:
             print(f"\n⚠️  Error during timeline analysis: {e}")
             import traceback
@@ -949,5 +934,6 @@ class BrowserAgent:
         if not path:
             path = self.session_log_dir / "agent_memory.json"
         self.agent.save_memory(path)
+
 
 __all__ = ["BrowserAgent"]

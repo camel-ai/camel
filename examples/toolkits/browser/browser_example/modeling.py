@@ -13,9 +13,11 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """Model configuration for browser_example."""
 
+import dotenv
+
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-import dotenv
+
 dotenv.load_dotenv()
 
 # === Single source of truth for the example scripts ===

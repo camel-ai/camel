@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E402
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """SkillsAgent utilities for `browser_skills_example`.
@@ -19,30 +18,16 @@
 This module provides `SkillsAgent`, which wraps reusable subtasks as callable
 functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
+
 import json
 import shutil
-import sys
 import tempfile
 import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-
-# Add project root to path first (before camel imports)
-script_dir = Path(__file__).resolve().parent
-project_root = script_dir.parent.parent
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(script_dir.parent / "utils"))
-
 from urllib.parse import urlparse
-
-from utils import (
-    create_default_model,
-    extract_token_usage,
-    get_timestamp_filename,
-    get_timestamp_iso,
-)
 
 from camel.agents import ChatAgent, observe
 from camel.messages import BaseMessage
@@ -52,10 +37,25 @@ from camel.toolkits.hybrid_browser_toolkit import (
     HybridBrowserToolkit,
 )
 from camel.utils.constants import Constants
+from examples.toolkits.browser.browser_skills_example.cli.analyze_session import (
+    analyze_session,
+)
+from examples.toolkits.browser.browser_skills_example.core.skill_loader import (
+    SkillLoader,
+)
+from examples.toolkits.browser.utils.utils import (
+    extract_token_usage,
+    get_timestamp_filename,
+    get_timestamp_iso,
+)
+
+from .modeling import create_default_model
+
+module_dir = Path(__file__).resolve().parent
 
 # Define default directories using relative paths
-DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
-DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
+DEFAULT_BROWSER_LOG_DIR = module_dir.parent / "browser_log"
+DEFAULT_SESSION_LOGS_DIR = module_dir.parent / "session_logs"
 
 WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     "allrecipes": "\n".join(
@@ -191,7 +191,7 @@ WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
             "- Enter the query precisely and run it",
             "- Extract the relevant result pod(s) matching the question",
         ]
-    )
+    ),
 }
 
 
@@ -239,9 +239,9 @@ NAVI_BENCH_GUIDELINES: Dict[str, str] = {
             "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
             "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
             "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
-            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to select the corresponding date to prove your conclusion."
+            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to select the corresponding date to prove your conclusion.",
         ]
-    )
+    ),
 }
 
 
@@ -637,8 +637,6 @@ class SkillsAgent:
             ]
         )
         if skill_dirs:
-            from skill_loader import SkillLoader
-
             loader = SkillLoader(str(self.skills_dir))
             all_subtasks = loader.load_all_skills()
 
@@ -809,8 +807,7 @@ class SkillsAgent:
         browser_log_dir = self.session_log_dir / "browser_log"
         browser_log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Import ActionReplayer
-        from action_replayer import ActionReplayer
+        from .action_replayer import ActionReplayer
 
         custom_tools = [
             "browser_open",
@@ -879,7 +876,9 @@ class SkillsAgent:
                 with tempfile.NamedTemporaryFile(
                     mode='w', suffix='.json', delete=False, encoding='utf-8'
                 ) as temp_config:
-                    json.dump(config, temp_config, indent=2, ensure_ascii=False)
+                    json.dump(
+                        config, temp_config, indent=2, ensure_ascii=False
+                    )
                     temp_config_path = temp_config.name
 
                 for subtask in config.get('subtasks', []):
@@ -1145,7 +1144,9 @@ async def subtask_{subtask_func.subtask_id}():
                 wrapper = local_vars[f"subtask_{subtask_func.subtask_id}"]
 
                 subtask_tools.append(wrapper)
-                print(f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}")
+                print(
+                    f"  ✓ Created wrapper for {subtask_id}: {wrapper.__name__}"
+                )
 
         # Combine all tools
         all_tools = [*browser_tools, *subtask_tools]
@@ -1831,13 +1832,6 @@ async def subtask_{subtask_func.subtask_id}():
         print("\n" + "=" * 80)
         print("📊 GENERATING TIMELINE ANALYSIS")
         print("=" * 80)
-
-        # Add the toolkits directory to path if needed
-        toolkits_dir = Path(__file__).parent
-        if str(toolkits_dir) not in sys.path:
-            sys.path.insert(0, str(toolkits_dir))
-
-        from analyze_session import analyze_session
 
         print(f"\n🔍 Analyzing session: {self.session_log_dir}")
 

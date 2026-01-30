@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-# ruff: noqa: E402
 #!/usr/bin/env python3
 """Run Navi-Bench tasks using the Browser Skills agent (with online evaluator).
 
@@ -27,12 +26,8 @@ Important:
 - Skill mining filters out evaluator-only console actions to avoid pollution.
 """
 
-import argparse
-import asyncio
 import json
-import os
 import re
-import sys
 import time
 import traceback
 from dataclasses import dataclass
@@ -40,27 +35,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[2]
-
-# Allow importing local Browser Skills modules (skill_agent.py, utils.py, ...).
-sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(SCRIPT_DIR.parent / "utils"))
-
-# Allow importing local `navi_bench` package living under `navi-bench/`.
-NAVI_BENCH_DIR = REPO_ROOT / "navi-bench"
-if NAVI_BENCH_DIR.exists():
-    sys.path.insert(0, str(NAVI_BENCH_DIR))
-
 from navi_bench.base import DatasetItem, instantiate
-from navi_bench_eval_hook import (
-    NaviBenchEvalStats,
-    navi_bench_on_action_update,
-)
-from skill_agent import SkillsAgent
-from subtask_extractor import analyze_with_agent
-from utils import (
+
+from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     count_skills_in_dir,
     count_subtasks_in_dir,
@@ -68,6 +45,13 @@ from utils import (
     get_timestamp_iso,
     resolve_website_skills_dir,
 )
+
+from .navi_bench_eval_hook import (
+    NaviBenchEvalStats,
+    navi_bench_on_action_update,
+)
+from .skill_agent import SkillsAgent
+from .subtask_extractor import analyze_with_agent
 
 load_dotenv()
 
@@ -108,7 +92,45 @@ def _score_from_result(result: Any) -> Optional[float]:
     return None
 
 
-def _extract_token_usage_from_payload(payload: Any) -> Optional[Dict[str, Any]]:
+def _infer_required_url_groups(eval_config: Any) -> Optional[int]:
+    """Infer how many URL/Query groups must be covered for a perfect score.
+
+    Many Navi-Bench evaluators implement AND->OR matching:
+      - `gt_urls`: list[list[str]]  (all outer groups required; any inner URL ok)
+      - `queries`: list[list[str]]  (same idea)
+
+    Return:
+      - number of required groups (outer list length) when detectable
+      - 1 when the evaluator expects a single URL/state match
+      - None when unknown
+    """
+    if not isinstance(eval_config, dict):
+        return None
+
+    for key in ("gt_urls", "queries"):
+        raw = eval_config.get(key)
+        if isinstance(raw, list):
+            if raw and all(isinstance(group, list) for group in raw):
+                return len(raw)
+            if raw and all(isinstance(value, str) for value in raw):
+                return 1
+
+    raw = eval_config.get("gt_url")
+    if isinstance(raw, str):
+        return 1
+    if (
+        isinstance(raw, list)
+        and raw
+        and all(isinstance(value, str) for value in raw)
+    ):
+        return 1
+
+    return None
+
+
+def _extract_token_usage_from_payload(
+    payload: Any,
+) -> Optional[Dict[str, Any]]:
     """Best-effort extraction of LLM token usage from nested payloads."""
 
     def _merge(dst: Dict[str, Any], src: Dict[str, Any]) -> None:
@@ -197,7 +219,9 @@ def _select_items(
 
     if domain_filter.strip():
         wanted = domain_filter.strip().lower()
-        selected = [it for it in selected if (it.domain or "").lower() == wanted]
+        selected = [
+            it for it in selected if (it.domain or "").lower() == wanted
+        ]
 
     if start > 0:
         selected = selected[start:]
@@ -277,7 +301,12 @@ class NaviBenchRunner:
             self.skills_root.mkdir(parents=True, exist_ok=True)
 
     def _website_attempts_used(self, website: str) -> int:
-        return int(self._website_attempt_counts.get(_normalize_website_key(website), 0) or 0)
+        return int(
+            self._website_attempt_counts.get(
+                _normalize_website_key(website), 0
+            )
+            or 0
+        )
 
     def _reserve_website_attempt(self, website: str) -> bool:
         key = _normalize_website_key(website)
@@ -292,7 +321,9 @@ class NaviBenchRunner:
             return self.skills_dir_override
         return resolve_website_skills_dir(self.skills_root, website)
 
-    async def run_single_dataset_item(self, item: DatasetItem) -> AttemptResult:
+    async def run_single_dataset_item(
+        self, item: DatasetItem
+    ) -> AttemptResult:
         task_id = item.task_id
         domain = (item.domain or "").strip()
         website = _domain_to_website(domain)
@@ -350,7 +381,6 @@ class NaviBenchRunner:
                 website=website,
                 session_log_dir=session_log_dir,
                 start_url=task_config.url,
-                cdp_port=self.cdp_port,
                 use_agent_recovery=True,
                 step_timeout=self.step_timeout,
                 tool_execution_timeout=self.tool_execution_timeout,
@@ -379,7 +409,13 @@ class NaviBenchRunner:
                 ws_wrapper = await agent.toolkit._get_ws_wrapper()
                 eval_stats = NaviBenchEvalStats()
 
-                async def _hook(event: Dict[str, Any]) -> None:
+                async def _hook(
+                    event: Dict[str, Any],
+                    *,
+                    ws_wrapper=ws_wrapper,
+                    eval_stats=eval_stats,
+                    evaluator=evaluator,
+                ) -> None:
                     await navi_bench_on_action_update(
                         evaluator=evaluator,
                         ws_wrapper=ws_wrapper,
@@ -401,7 +437,7 @@ class NaviBenchRunner:
                         f"{previous_suggestions}"
                     )
 
-                response = await agent.run(full_task)
+                await agent.run(full_task)
 
                 # Best-effort: capture evidence.
                 try:
@@ -510,7 +546,8 @@ class NaviBenchRunner:
                 }
                 eval_path = session_dir / "navi_bench_eval_result.json"
                 eval_path.write_text(
-                    json.dumps(eval_payload, indent=2, ensure_ascii=False) + "\n",
+                    json.dumps(eval_payload, indent=2, ensure_ascii=False)
+                    + "\n",
                     encoding="utf-8",
                 )
                 eval_result_path = str(eval_path)
@@ -551,7 +588,9 @@ class NaviBenchRunner:
                         except Exception as e:
                             print(f"⚠️  Skill extraction failed: {e}")
                     else:
-                        print("⚠️  Skill extraction disabled: skipping skill mining.")
+                        print(
+                            "⚠️  Skill extraction disabled: skipping skill mining."
+                        )
 
                     return AttemptResult(
                         task_id=task_id,
@@ -564,20 +603,53 @@ class NaviBenchRunner:
                         session_dir=str(session_dir),
                     )
 
-                # Failed attempt; build simple suggestions for next round.
-                reasoning = ""
-                if isinstance(eval_payload.get("raw_result"), dict):
-                    reasoning = str(eval_payload["raw_result"].get("reasoning") or "")
-                suggested_hint = (item.suggested_hint or "").strip()
+                # Failed attempt; build retry notes focused on common Navi-Bench
+                # failure modes (usually: not covering all required URL/query
+                # groups in the same attempt).
+                required_groups = _infer_required_url_groups(
+                    getattr(task_config, "eval_config", None)
+                )
+                covered_groups: Optional[int] = None
+                if (
+                    required_groups
+                    and isinstance(score, (int, float))
+                    and required_groups > 0
+                ):
+                    covered_groups = round(float(score) * required_groups)
+                    covered_groups = max(
+                        0, min(required_groups, covered_groups)
+                    )
 
-                suggestions_parts = []
-                if reasoning:
-                    suggestions_parts.append(f"- Evaluator reasoning: {reasoning}")
-                if suggested_hint:
-                    suggestions_parts.append(f"- Suggested hint: {suggested_hint}")
+                suggestions_parts: List[str] = []
+                if required_groups and required_groups > 1:
+                    prefix = "- Coverage (URL/query targets):"
+                    if covered_groups is not None:
+                        prefix += (
+                            f" {covered_groups}/{required_groups} covered."
+                        )
+                    else:
+                        prefix += f" need {required_groups}/{required_groups}."
+                    suggestions_parts.append(prefix)
+                    suggestions_parts.append(
+                        "- This evaluator requires covering *all* targets (AND across groups). "
+                        "For each group, matching any one acceptable URL is enough (OR within group)."
+                    )
+                    suggestions_parts.append(
+                        "- Treat each target as a checklist item: navigate to it, wait for the page to fully load, "
+                        "and confirm the URL/state in the address bar before moving on."
+                    )
+                    suggestions_parts.append(
+                        "- Do not stop after reaching only one target; make sure you reach every required target "
+                        "within the same attempt."
+                    )
+                else:
+                    suggestions_parts.append(
+                        "- Navi-Bench often verifies the final URL/state. "
+                        "Make sure the URL reflects *only* the required constraints (avoid extra filters), "
+                        "and the page is fully loaded before stopping."
+                    )
                 suggestions_parts.append(
-                    "- Make sure you end on the correct page/state before stopping. "
-                    "Avoid navigating away at the end."
+                    "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )
                 previous_suggestions = "\n".join(suggestions_parts).strip()
 
@@ -633,8 +705,14 @@ class NaviBenchRunner:
 
 
 def _resolve_run_dir(out_dir: Optional[str]) -> Path:
-    default_session_logs_root = SCRIPT_DIR.parent / "session_logs"
-    out_root = Path(out_dir).expanduser().resolve() if out_dir else default_session_logs_root
+    default_session_logs_root = (
+        Path(__file__).resolve().parents[1] / "session_logs"
+    )
+    out_root = (
+        Path(out_dir).expanduser().resolve()
+        if out_dir
+        else default_session_logs_root
+    )
     out_root.mkdir(parents=True, exist_ok=True)
 
     session_dir_pattern = re.compile(r"^session_\\d{8}_\\d{6}$")
@@ -646,90 +724,10 @@ def _resolve_run_dir(out_dir: Optional[str]) -> Path:
     return run_dir
 
 
-async def _amain() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--jsonl", type=str, required=True, help="Path to a JSONL of navi-bench DatasetItem rows.")
-    parser.add_argument("--skills-root", type=str, required=True, help="Root directory for per-website skills.")
-    parser.add_argument("--skills-dir", type=str, default="", help="Optional leaf skills dir (requires --domain).")
-    parser.add_argument("--domain", type=str, default="", help="Filter by DatasetItem.domain (e.g., google_flights).")
-    parser.add_argument("--task-id", type=str, default="", help="Run a single task by task_id.")
-    parser.add_argument("--start", type=int, default=0, help="Start index for selected items.")
-    parser.add_argument("--max-tasks", type=int, default=0, help="Max tasks to run (0 = all).")
-    parser.add_argument("--out-dir", type=str, default="", help="Output dir root; creates a session_*/ folder inside.")
-    parser.add_argument("--cdp-port", type=int, default=9223)
-    parser.add_argument("--max-attempts-per-task", type=int, default=5)
-    parser.add_argument("--max-attempts-per-website", type=int, default=100)
-    parser.add_argument("--step-timeout", type=float, default=600.0)
-    parser.add_argument("--tool-timeout", type=float, default=180.0)
-    parser.add_argument("--disable-skills", action="store_true")
-    parser.add_argument("--disable-skill-extraction", action="store_true")
-    args = parser.parse_args()
-
-    jsonl_path = Path(args.jsonl).expanduser().resolve()
-    run_dir = _resolve_run_dir(args.out_dir or None)
-
-    # Ensure skill mining ignores evaluator-only console actions by default.
-    os.environ.setdefault("SKILL_MINING_IGNORE_ACTIONS", "console_exec,console_view")
-
-    items = load_dataset_items_from_jsonl(jsonl_path)
-    selected = _select_items(
-        items,
-        domain_filter=args.domain,
-        task_id=args.task_id,
-        start=int(args.start or 0),
-        max_tasks=(int(args.max_tasks) if int(args.max_tasks or 0) > 0 else None),
-    )
-    if not selected:
-        print("No tasks selected. Check --domain/--task-id/--start/--max-tasks.")
-        return 2
-
-    print(f"Run dir: {run_dir}")
-    print(f"Selected tasks: {len(selected)} (from {jsonl_path})")
-
-    runner = NaviBenchRunner(
-        skills_root=args.skills_root,
-        skills_dir=args.skills_dir,
-        domain_filter=args.domain,
-        max_attempts_per_task=args.max_attempts_per_task,
-        max_attempts_per_website=args.max_attempts_per_website,
-        run_dir=run_dir,
-        cdp_port=args.cdp_port,
-        step_timeout=(None if args.step_timeout <= 0 else args.step_timeout),
-        tool_execution_timeout=(None if args.tool_timeout <= 0 else args.tool_timeout),
-        enable_skills=not args.disable_skills,
-        enable_skill_extraction=not args.disable_skill_extraction,
-    )
-
-    results: List[Dict[str, Any]] = []
-    for item in selected:
-        r = await runner.run_single_dataset_item(item)
-        results.append(
-            {
-                "task_id": r.task_id,
-                "domain": r.domain,
-                "website": r.website,
-                "attempt": r.attempt,
-                "success": r.success,
-                "score": r.score,
-                "session_dir": r.session_dir,
-                "eval_result_path": r.eval_result_path,
-                "error": r.error,
-            }
-        )
-
-    out_path = run_dir / "navi_bench_results.json"
-    out_path.write_text(
-        json.dumps(results, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-
-    print(f"\nResults written to: {out_path}")
-    return 0
-
-
-def main() -> None:
-    raise SystemExit(asyncio.run(_amain()))
-
-
-if __name__ == "__main__":
-    main()
+__all__ = [
+    "AttemptResult",
+    "NaviBenchRunner",
+    "_resolve_run_dir",
+    "_select_items",
+    "load_dataset_items_from_jsonl",
+]

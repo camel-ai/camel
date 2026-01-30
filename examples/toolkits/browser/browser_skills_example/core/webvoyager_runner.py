@@ -20,46 +20,38 @@ This script:
 1. Reads tasks from WebVoyager JSONL file
 2. Executes each task with skill_agent.py
 3. Uses WebJudge to verify if task requirements are met
-4. If met: runs subtask_extractor.py on the session
+4. If met: runs cli/subtask_extractor.py on the session
 5. If not met: provides suggestions and retries the task
 """
 
 import asyncio
 import json
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
-script_dir = Path(__file__).resolve().parent
-utils_dir = script_dir.parent / "utils"
-
-# Add paths first (scripts + shared utils)
-sys.path.insert(0, str(script_dir))
-sys.path.insert(0, str(utils_dir))
-
-from skill_agent import SkillsAgent
-from utils import (
+from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     count_skills_in_dir,
     count_subtasks_in_dir,
-    get_timestamp_filename,
     get_timestamp_iso,
     resolve_website_skills_dir,
     update_cumulative_subtask_stats,
 )
 
-load_dotenv()
+from .skill_agent import SkillsAgent
 
-from modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
+load_dotenv()
 
 from camel.evaluators.webjudge import (
     WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
 )
+
+from .modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
 
 _SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
 
@@ -373,7 +365,11 @@ class WebVoyagerRunner:
             # Extract subtasks ONLY after we have a verified successful run.
             # This prevents unstable/failed trajectories from polluting skills.
             subtask_analysis = None
-            if self.enable_skills and session_dir and verification.get("success"):
+            if (
+                self.enable_skills
+                and session_dir
+                and verification.get("success")
+            ):
                 print(f"\n{'=' * 80}")
                 print("🔎 EXTRACTING SUBTASKS (SKILLS)")
                 print(f"{'=' * 80}")
@@ -394,13 +390,17 @@ class WebVoyagerRunner:
                         "status": "failed",
                         "error": str(e),
                     }
-            elif not self.enable_skills and session_dir and verification.get("success"):
+            elif (
+                not self.enable_skills
+                and session_dir
+                and verification.get("success")
+            ):
                 # Skills disabled - skip extraction
                 subtask_analysis = {
                     "status": "skipped",
                     "reason": "skills_disabled",
                 }
-                print(f"\n⚠️  Skills disabled: Skipping subtask extraction\n")
+                print("\n⚠️  Skills disabled: Skipping subtask extraction\n")
             elif session_dir:
                 subtask_analysis = {
                     "status": "skipped",
@@ -554,6 +554,7 @@ class WebVoyagerRunner:
             print(f"⏱️  Task execution timeout: {e}")
             print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
+
             traceback.print_exc()
 
             # Save communication log
@@ -581,6 +582,7 @@ class WebVoyagerRunner:
             print(f"❌ Task execution failed: {e}")
             print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
+
             traceback.print_exc()
 
             return {
@@ -770,9 +772,7 @@ class WebVoyagerRunner:
         print(
             f"Max attempts per task: {self.max_retries + 1} (max_retries={self.max_retries})"
         )
-        print(
-            f"Max attempts per website: {self.max_attempts_per_website}"
-        )
+        print(f"Max attempts per website: {self.max_attempts_per_website}")
         if self.website_filter:
             print(f"Website filter: {self.website_filter}")
         print(f"Skills root: {self.skills_root}")
@@ -937,191 +937,3 @@ class WebVoyagerRunner:
                     print(
                         f"  - {r['task_id']}: succeeded on attempt {r.get('total_attempts', 1)}"
                     )
-
-
-async def main():
-    """Main entry point."""
-    import argparse
-
-    # Calculate default paths using relative path
-    default_session_logs_root = script_dir.parent / "session_logs"
-    default_jsonl_candidates = [
-        script_dir.parent / "data" / "WebVoyager_data.jsonl",
-        Path.home() / "Downloads" / "WebVoyager_data_08312025_updated.jsonl",
-    ]
-    default_jsonl = str(
-        next(
-            (p for p in default_jsonl_candidates if p.exists()),
-            default_jsonl_candidates[0],
-        )
-    )
-
-    parser = argparse.ArgumentParser(
-        description="Run WebVoyager tasks with subtask agent"
-    )
-    parser.add_argument(
-        "--jsonl",
-        default=default_jsonl,
-        help="Path to WebVoyager JSONL file",
-    )
-    parser.add_argument(
-        "--skills-root",
-        default=str(script_dir / "skills_store"),
-        help="Root directory for per-website skills.",
-    )
-    parser.add_argument(
-        "--skills-dir",
-        default="",
-        help=(
-            "Directory for a single website's skills (leaf). "
-            "Use together with --website-filter to avoid accidental double nesting."
-        ),
-    )
-    parser.add_argument(
-        "--website-filter",
-        default="",
-        help="Run only tasks whose web_name matches exactly (case-insensitive).",
-    )
-    parser.add_argument(
-        "--start", type=int, default=0, help="Start from task index"
-    )
-    parser.add_argument(
-        "--max-tasks", type=int, default=None, help="Maximum tasks to run"
-    )
-    parser.add_argument(
-        "--max-attempts-per-task",
-        type=int,
-        default=5,
-        help="Maximum total runs per task (including the first attempt).",
-    )
-    parser.add_argument(
-        "--max-retries",
-        type=int,
-        default=None,
-        help=(
-            "DEPRECATED: Maximum retry attempts per task (total attempts = max_retries + 1). "
-            "Overrides --max-attempts-per-task when set."
-        ),
-    )
-    parser.add_argument(
-        "--max-attempts-per-website",
-        type=int,
-        default=100,
-        help="Maximum total runs per website (web_name) across all tasks.",
-    )
-    parser.add_argument(
-        "--step-timeout",
-        type=float,
-        default=600.0,
-        help="ChatAgent step timeout in seconds (0 disables). Default: 600.",
-    )
-    parser.add_argument(
-        "--tool-timeout",
-        type=float,
-        default=600.0,
-        help="Per-tool execution timeout in seconds (0 disables). Default: 600.",
-    )
-    parser.add_argument(
-        "--disable-skills",
-        action="store_true",
-        help="Disable skill loading/usage/mining; run with only atomic tools.",
-    )
-    parser.add_argument(
-        "--out-dir",
-        default="",
-        help=(
-            "Output directory for both results and run summary. "
-            "When set, writes `results.json` and `run_summary.json` under this directory. "
-            "Do not combine with --results-out/--run-summary-out."
-        ),
-    )
-    parser.add_argument(
-        "--run-summary-out",
-        default="",
-        help="Write a concise run summary JSON to this path.",
-    )
-    parser.add_argument(
-        "--results-out",
-        default="",
-        help="Write the raw per-attempt results JSON to this path.",
-    )
-    parser.add_argument(
-        "--auto-save-skills",
-        action="store_true",
-    )
-
-    args = parser.parse_args()
-
-    max_attempts_per_task = int(args.max_attempts_per_task)
-    if max_attempts_per_task <= 0:
-        parser.error("--max-attempts-per-task must be > 0")
-    if args.max_retries is not None:
-        if args.max_retries < 0:
-            parser.error("--max-retries must be >= 0")
-        max_attempts_per_task = int(args.max_retries) + 1
-
-    max_retries = max(0, max_attempts_per_task - 1)
-
-    # Unify all outputs under one run folder: <out-root>/session_<timestamp>/...
-    # If --out-dir is not provided, default to examples/toolkits/session_logs.
-    out_root = (
-        Path(args.out_dir).expanduser().resolve()
-        if args.out_dir.strip()
-        else default_session_logs_root
-    )
-
-    if args.out_dir.strip() and (
-        args.run_summary_out.strip() or args.results_out.strip()
-    ):
-        parser.error(
-            "--out-dir cannot be combined with --run-summary-out or --results-out"
-        )
-
-    # If user provided a directory already named like session_YYYYMMDD_HHMMSS,
-    # treat it as the run folder. Otherwise, create a new session_ folder under it.
-    session_dir_pattern = re.compile(r"^session_\\d{8}_\\d{6}$")
-    if session_dir_pattern.match(out_root.name):
-        run_dir = out_root
-    else:
-        run_dir = out_root / f"session_{get_timestamp_filename()}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    # Always write run-level outputs into the run folder unless explicitly overridden.
-    if not args.run_summary_out.strip():
-        args.run_summary_out = str(run_dir / "run_summary.json")
-    if not args.results_out.strip():
-        args.results_out = str(run_dir / "results.json")
-
-    runner = WebVoyagerRunner(
-        jsonl_file=args.jsonl,
-        skills_root=args.skills_root,
-        skills_dir=args.skills_dir,
-        website_filter=args.website_filter,
-        max_retries=max_retries,
-        max_attempts_per_website=args.max_attempts_per_website,
-        run_summary_out=args.run_summary_out,
-        results_out=args.results_out,
-        run_dir=run_dir,
-        step_timeout=None if args.step_timeout <= 0 else args.step_timeout,
-        tool_execution_timeout=None
-        if args.tool_timeout <= 0
-        else args.tool_timeout,
-        enable_skills=not args.disable_skills,
-        auto_save_skills=args.auto_save_skills,
-    )
-
-    await runner.run_all_tasks(
-        start_index=args.start, max_tasks=args.max_tasks
-    )
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n\n⚠️  Interrupted by user")
-    except Exception as e:
-        print(f"\n\n❌ Error: {e}")
-        import traceback
-
-        traceback.print_exc()

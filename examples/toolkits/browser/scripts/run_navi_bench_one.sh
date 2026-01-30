@@ -18,8 +18,14 @@ UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.tmp/uv-cache}"
 PYTHONUNBUFFERED="${PYTHONUNBUFFERED:-1}"
 mkdir -p "$UV_CACHE_DIR"
 
+# Optional local dependency: if a `navi-bench/` checkout exists, put it on
+# PYTHONPATH so Python can import `navi_bench` without in-code sys.path hacks.
+if [[ -d "$ROOT_DIR/navi-bench" ]]; then
+  export PYTHONPATH="$ROOT_DIR/navi-bench${PYTHONPATH:+:$PYTHONPATH}"
+fi
+
 # Defaults: run the small one-task JSONL checked in for quick iteration.
-JSONL="${JSONL:-$SCRIPT_DIR/navi_bench_data.jsonl}"
+JSONL="${1:-$ROOT_DIR/toolkits/browser/data/navi_bench_data.jsonl}"
 # If TASK_ID is set, run that single task end-to-end (2 runs + skill extraction).
 # If TASK_ID is empty, run ONE task per domain (prompt smoke test; no skill extraction).
 TASK_ID="${TASK_ID:-}"
@@ -31,7 +37,7 @@ DOMAIN_FILTER="${DOMAIN_FILTER:-${DOMAIN:-}}"
 
 # By default, write *all* run artifacts under the repo session_logs dir so the
 # user can inspect/debug after the script exits.
-SESSION_LOGS_DIR="${SESSION_LOGS_DIR:-$ROOT_DIR/examples/toolkits/session_logs}"
+SESSION_LOGS_DIR="${SESSION_LOGS_DIR:-$ROOT_DIR/toolkits/session_logs}"
 RUN_STAMP="${RUN_STAMP:-$(date +%Y%m%d_%H%M%S)}"
 RUN_ROOT="${RUN_ROOT:-$SESSION_LOGS_DIR/navi_bench_one_$RUN_STAMP}"
 
@@ -132,7 +138,7 @@ if [[ -n "${TASK_ID}" ]]; then
   echo
   echo "Step 1/5: First run with EMPTY skills dir (expect: few/no subtask functions)."
   RUN1_LOG="$TMP_DIR/run1.log"
-  if ! run_case "$RUN1_LOG" examples/toolkits/browser_skills_example/run_navi_bench_case.py \
+  if ! run_case "$RUN1_LOG" -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_case \
       --jsonl "$JSONL" \
       --task-id "$TASK_ID" \
       --skills-root "$SKILLS_ROOT" \
@@ -169,7 +175,7 @@ if [[ -n "${TASK_ID}" ]]; then
 
   echo
   echo "Step 3/5: Extracting skills into SKILLS_DIR."
-  UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONUNBUFFERED="$PYTHONUNBUFFERED" uv run python examples/toolkits/browser_skills_example/subtask_extractor.py \
+  UV_CACHE_DIR="$UV_CACHE_DIR" PYTHONUNBUFFERED="$PYTHONUNBUFFERED" uv run python -m examples.toolkits.browser.browser_skills_example.cli.subtask_extractor \
     "$SESSION1" "$SKILLS_DIR" \
     | tee "$TMP_DIR/skill_extract.log"
 
@@ -180,7 +186,7 @@ if [[ -n "${TASK_ID}" ]]; then
   echo
   echo "Step 4/5: Second run WITH skills (expect: subtask reuse)."
   RUN2_LOG="$TMP_DIR/run2.log"
-  if ! run_case "$RUN2_LOG" examples/toolkits/browser_skills_example/run_navi_bench_case.py \
+  if ! run_case "$RUN2_LOG" -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_case \
       --jsonl "$JSONL" \
       --task-id "$TASK_ID" \
       --skills-root "$SKILLS_ROOT" \
@@ -321,7 +327,7 @@ while IFS=$'\t' read -r DOMAIN TASK_ID_SELECTED; do
   mkdir -p "$SKILLS_DIR"
 
   RUN_LOG="$TMP_DIR/${WEBSITE_SLUG}.log"
-  if ! run_case "$RUN_LOG" examples/toolkits/browser_skills_example/run_navi_bench_case.py \
+  if ! run_case "$RUN_LOG" -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_case \
       --jsonl "$JSONL" \
       --task-id "$TASK_ID_SELECTED" \
       --skills-root "$SKILLS_ROOT" \
