@@ -14,6 +14,8 @@
 import os
 from pathlib import Path
 
+from filelock import FileLock
+
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import retry_on_error
@@ -21,12 +23,6 @@ from camel.utils import retry_on_error
 
 class FileNotReadyError(Exception):
     r"""Raised when a file is not ready to be read."""
-
-    pass
-
-
-class InvalidNoteNameError(ValueError):
-    r"""Raised when a note name is invalid."""
 
     pass
 
@@ -53,6 +49,7 @@ class NoteTakingToolkit(BaseToolkit):
         self,
         working_directory: str | None = None,
         timeout: float | None = None,
+        max_retries: int = 5,
     ) -> None:
         r"""Initialize the NoteTakingToolkit.
 
@@ -63,8 +60,11 @@ class NoteTakingToolkit(BaseToolkit):
                 environment variable is not set, it defaults to
                 :obj:`camel_working_dir`.
             timeout (float, optional): The timeout for the toolkit.
+            max_retries (int): Maximum number of retries for registry I/O
+                operations. Defaults to 5.
         """
         super().__init__(timeout=timeout)
+        self.max_retries = max_retries
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
         if working_directory:
             path = Path(working_directory)
@@ -88,6 +88,17 @@ class NoteTakingToolkit(BaseToolkit):
             Path: The full path to the note file.
         """
         return self.working_directory / f"{note_name}{self._NOTE_EXT}"
+
+    def _get_note_lock_path(self, note_name: str) -> Path:
+        r"""Get the lock file path for a note.
+
+        Args:
+            note_name (str): The name of the note (without extension).
+
+        Returns:
+            Path: The full path to the note lock file.
+        """
+        return self.working_directory / f".{note_name}.lock"
 
     def _format_note_content(self, note_name: str, content: str) -> str:
         r"""Format a note with header and content for display.
@@ -191,11 +202,7 @@ class NoteTakingToolkit(BaseToolkit):
             self._load_registry()
             note_path = self._get_note_path(note_name)
             if note_name not in self.registry or not note_path.exists():
-                self.create_note(note_name, content)
-                return (
-                    f"Note '{note_name}' is created "
-                    f"with the specified content."
-                )
+                return self.create_note(note_name, content)
 
             with note_path.open("a", encoding="utf-8") as f:
                 f.write(content + "\n")
@@ -210,34 +217,40 @@ class NoteTakingToolkit(BaseToolkit):
         r"""Load the note registry from file."""
         self.registry = self._load_registry_content()
 
-    @retry_on_error(
-        max_retries=5,
-        initial_delay=0.1,
-        backoff="linear",
-        retry_on=(IOError, OSError, FileNotReadyError),
-        fallback=[],
-    )
     def _load_registry_content(self) -> list[str]:
         r"""Load the note registry content from file with retry logic."""
-        if not self.registry_file.exists():
-            raise FileNotReadyError("Registry file not yet available")
-        content = self.registry_file.read_text(encoding='utf-8').strip()
-        return content.split('\n') if content else []
 
-    @retry_on_error(
-        max_retries=5,
-        initial_delay=0.1,
-        backoff="linear",
-        retry_on=(IOError, OSError),
-    )
+        @retry_on_error(
+            max_retries=self.max_retries,
+            initial_delay=0.1,
+            backoff="linear",
+            retry_on=(IOError, OSError, FileNotReadyError),
+            fallback=[],
+        )
+        def _read() -> list[str]:
+            if not self.registry_file.exists():
+                raise FileNotReadyError("Registry file not yet available")
+            content = self.registry_file.read_text(encoding='utf-8').strip()
+            return content.split('\n') if content else []
+
+        return _read()
+
     def _save_registry(self) -> None:
         r"""Save the note registry to file using atomic write."""
-        # Use atomic write with temporary file for all platforms
-        temp_file = self.registry_file.with_suffix('.tmp')
-        temp_file.write_text('\n'.join(self.registry), encoding='utf-8')
 
-        # Atomic rename - works on all platforms
-        temp_file.replace(self.registry_file)
+        @retry_on_error(
+            max_retries=self.max_retries,
+            initial_delay=0.1,
+            backoff="linear",
+            retry_on=(IOError, OSError),
+        )
+        def _write() -> None:
+            temp_file = self.registry_file.with_suffix('.tmp')
+            temp_file.write_text('\n'.join(self.registry), encoding='utf-8')
+            # Atomic rename - works on all platforms
+            temp_file.replace(self.registry_file)
+
+        _write()
 
     def _register_note(self, note_name: str) -> None:
         r"""Register a new note in the registry with thread-safe operations."""
@@ -278,17 +291,29 @@ class NoteTakingToolkit(BaseToolkit):
                 return f"Error: {validation_error}"
 
             note_path = self._get_note_path(note_name)
-            existed_before = note_path.exists()
 
-            if existed_before and not overwrite:
-                return f"Error: Note '{note_path.name}' already exists."
-
-            note_path.write_text(content, encoding="utf-8")
-            self._register_note(note_name)
-
-            if existed_before and overwrite:
-                return f"Note '{note_path.name}' successfully overwritten."
+            if overwrite:
+                with FileLock(self._get_note_lock_path(note_name)):
+                    existed_before = note_path.exists()
+                    note_path.write_text(content, encoding="utf-8")
+                    self._register_note(note_name)
+                    if existed_before:
+                        return (
+                            f"Note '{note_path.name}' "
+                            f"successfully overwritten."
+                        )
+                    return f"Note '{note_path.name}' successfully created."
             else:
+                try:
+                    fd = os.open(
+                        str(note_path),
+                        os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                    )
+                except FileExistsError:
+                    return f"Error: Note '{note_path.name}' already exists."
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(content)
+                self._register_note(note_name)
                 return f"Note '{note_path.name}' successfully created."
         except Exception as e:
             return f"Error creating note: {e}"
