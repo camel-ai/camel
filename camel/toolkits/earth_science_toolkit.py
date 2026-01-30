@@ -2882,7 +2882,7 @@ class EarthScienceToolkit(BaseToolkit):
 
     def count_spikes_from_values(
         self,
-        values: list | float,
+        values: list[float],
         spike_threshold: float = 0.1,
         verbose: bool = True
     ):
@@ -4032,8 +4032,8 @@ class EarthScienceToolkit(BaseToolkit):
         self,
         image_path1: str,
         image_path2: Optional[str] = None,
-        band1: Optional[str] = 1,
-        band2: Optional[str] = 2
+        band1: Optional[int] = 1,
+        band2: Optional[int] = 2
     ):
         """
         Description:
@@ -5059,7 +5059,7 @@ class EarthScienceToolkit(BaseToolkit):
                 dst.write(result, 1)
         return f'Result save at {output_path_full}'
 
-    def calculate_area(self, input_image_path: str, gsd: float):
+    def calculate_area(self, input_image_path: str, gsd: Optional[float]):
         """
         Description:
         This function calculates the area of non-zero pixels in the input
