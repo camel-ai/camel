@@ -27,7 +27,7 @@ load_dotenv()
 # DEFAULT_MODEL_TYPE: ModelType = "qwen-flash"
 
 DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
-DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
+DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_5_2
 
 
 def create_default_model():

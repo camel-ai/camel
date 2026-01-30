@@ -42,6 +42,9 @@ class BrowserConfig:
 
     # Viewport configuration
     viewport_limit: bool = False
+    viewport: Dict[str, int] = field(
+        default_factory=lambda: {"width": 1280, "height": 720}
+    )
 
     # CDP connection configuration
     connect_over_cdp: bool = False
@@ -126,6 +129,8 @@ class ConfigLoader:
                 browser_kwargs["dom_content_loaded_timeout"] = value
             elif key == "viewportLimit":
                 browser_kwargs["viewport_limit"] = value
+            elif key == "viewport":
+                browser_kwargs["viewport"] = value
             elif key == "connectOverCdp":
                 browser_kwargs["connect_over_cdp"] = value
             elif key == "cdpUrl":
@@ -175,6 +180,7 @@ class ConfigLoader:
             ),
             "domStabilityTimeout": self.browser_config.dom_stability_timeout,
             "viewport_limit": self.browser_config.viewport_limit,
+            "viewport": self.browser_config.viewport,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,

@@ -20,6 +20,7 @@ functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
 
 import json
+import os
 import shutil
 import tempfile
 import traceback
@@ -56,6 +57,7 @@ module_dir = Path(__file__).resolve().parent
 # Define default directories using relative paths
 DEFAULT_BROWSER_LOG_DIR = module_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = module_dir.parent / "session_logs"
+DEFAULT_USER_DATA_DIR = module_dir.parent / "user_data_dir"
 
 WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     "allrecipes": "\n".join(
@@ -833,6 +835,15 @@ class SkillsAgent:
         # directory is portable and can be evaluated offline.
         evidence_dir = Path(self.session_log_dir) / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
+
+        user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR")
+        user_data_dir_path = (
+            Path(user_data_dir).expanduser().resolve()
+            if user_data_dir
+            else DEFAULT_USER_DATA_DIR
+        )
+        user_data_dir_path.mkdir(parents=True, exist_ok=True)
+
         # Initialize toolkit - launches its own browser (no CDP)
         # Browser language is set to English in browser-session.ts
         self.toolkit = HybridBrowserToolkit(
@@ -840,12 +851,14 @@ class SkillsAgent:
             headless=False,
             stealth=True,
             cache_dir=str(evidence_dir),
+            user_data_dir=str(user_data_dir_path),
             evidence_capture=EvidenceCaptureConfig(
                 enabled=True, snapshot=True, screenshot=True
             ),
             browser_log_to_file=True,
             log_dir=str(browser_log_dir),
             viewport_limit=False,
+            viewport={"width": 1920, "height": 1080},
             session_id=self.toolkit_session_id,
             connect_over_cdp=False,  # Launch own browser instead of CDP
             default_start_url=None,

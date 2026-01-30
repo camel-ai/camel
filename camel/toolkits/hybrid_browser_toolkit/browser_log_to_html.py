@@ -17,7 +17,6 @@ import os
 import re
 import sys
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 
@@ -44,7 +43,7 @@ def parse_log_file(log_path: str) -> list[dict[str, Any]]:
             actions.append(obj)
             # raw_decode 返回的 end_pos 是绝对位置
             pos = end_pos
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             # 尝试找到下一个 { 字符
             next_brace = content.find('{', pos + 1)
             if next_brace == -1:
@@ -165,7 +164,6 @@ def parse_ref_info(snapshot: str, ref_id: str) -> dict | None:
     if not snapshot or not ref_id:
         return None
 
-    import re
 
     # 找到包含该 ref 的行
     lines = snapshot.split('\n')
@@ -1853,7 +1851,7 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
 
     # 生成 HTML
-    print(f"Generating HTML visualization...")
+    print("Generating HTML visualization...")
     html_content = generate_html(actions, session_id, log_filename)
 
     # 写入文件

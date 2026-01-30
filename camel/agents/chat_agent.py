@@ -105,6 +105,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.langfuse import set_current_agent_session_id
 from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
@@ -668,10 +669,9 @@ class ChatAgent(BaseAgent):
 
         total_tokens = prompt_tokens + completion_tokens
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'set_cached_token_count'):
-            context_creator.set_cached_token_count(
-                total_tokens, message_count + 1
-            )
+        set_cached = getattr(context_creator, "set_cached_token_count", None)
+        if callable(set_cached):
+            set_cached(total_tokens, message_count + 1)
 
     def _resolve_models(
         self,
@@ -862,8 +862,9 @@ class ChatAgent(BaseAgent):
 
         # Clear token cache for the new memory
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
-            context_creator.clear_cache()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
 
         if self.system_message is None:
             return
@@ -1343,8 +1344,6 @@ class ChatAgent(BaseAgent):
             The cleaned content with deduplicated lines.
         """
         try:
-            import json
-
             data = json.loads(content)
             modified = False
 
@@ -1842,7 +1841,7 @@ class ChatAgent(BaseAgent):
                 return result
 
             # handle structured output if response_format was provided
-            structured_output = None
+            structured_output: BaseModel | dict[str, Any] | None = None
             if response_format and response.msgs[-1].parsed:
                 structured_output = response.msgs[-1].parsed
 
@@ -1850,18 +1849,21 @@ class ChatAgent(BaseAgent):
             # structured output, or generate timestamp
             if filename:
                 base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
-                # use task_title from structured output for filename
-                task_title = structured_output.task_title
+            else:
+                task_title = ""
+                if isinstance(structured_output, BaseModel):
+                    task_title = str(getattr(structured_output, "task_title", ""))
+                elif isinstance(structured_output, dict):
+                    task_title = str(structured_output.get("task_title") or "")
+
+            if not filename and task_title:
                 clean_title = ContextUtility.sanitize_workflow_filename(
                     task_title
                 )
                 base_filename = (
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
-            else:
+            elif not filename:
                 base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
@@ -1880,10 +1882,16 @@ class ChatAgent(BaseAgent):
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
                 exclude_fields = []
-                if hasattr(structured_output, 'operation_mode'):
-                    exclude_fields.append('operation_mode')
-                if hasattr(structured_output, 'target_workflow_filename'):
-                    exclude_fields.append('target_workflow_filename')
+                if isinstance(structured_output, BaseModel):
+                    if hasattr(structured_output, 'operation_mode'):
+                        exclude_fields.append('operation_mode')
+                    if hasattr(structured_output, 'target_workflow_filename'):
+                        exclude_fields.append('target_workflow_filename')
+                elif isinstance(structured_output, dict):
+                    if "operation_mode" in structured_output:
+                        exclude_fields.append("operation_mode")
+                    if "target_workflow_filename" in structured_output:
+                        exclude_fields.append("target_workflow_filename")
 
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output,
@@ -1991,8 +1999,6 @@ class ChatAgent(BaseAgent):
 
                     # Parse and format arguments for readability
                     try:
-                        import json
-
                         args_dict = json.loads(func_args_str)
                         args_formatted = ', '.join(
                             f"{k}={v}" for k, v in args_dict.items()
@@ -2394,8 +2400,9 @@ class ChatAgent(BaseAgent):
 
         # Reset token cache when memory is cleared
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
-            context_creator.clear_cache()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
 
         if self.system_message is not None:
             self.memory.write_record(
@@ -2895,12 +2902,7 @@ class ChatAgent(BaseAgent):
         set_current_agent_id(self.agent_id)
 
         # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3130,13 +3132,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
@@ -3200,13 +3196,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
@@ -3996,19 +3986,21 @@ class ChatAgent(BaseAgent):
         else:
             try:
                 # Try different invocation paths in order of preference
-                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                tool_func = getattr(tool, "func", None)
+                func_async_call = getattr(tool_func, "async_call", None)
+                tool_async_call = getattr(tool, "async_call", None)
+
+                if callable(func_async_call):
                     # Case: FunctionTool wrapping an MCP tool
-                    raw_result = await tool.func.async_call(**args)
+                    raw_result = await func_async_call(**args)
 
-                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                elif callable(tool_async_call):
                     # Case: tool itself has async_call
-                    raw_result = await tool.async_call(**args)
+                    raw_result = await tool_async_call(**args)
 
-                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                    tool.func
-                ):
+                elif asyncio.iscoroutinefunction(tool_func):
                     # Case: tool wraps a direct async function
-                    raw_result = await tool.func(**args)
+                    raw_result = await tool_func(**args)
 
                 elif asyncio.iscoroutinefunction(tool):
                     # Case: tool is itself a coroutine function
@@ -4138,14 +4130,13 @@ class ChatAgent(BaseAgent):
 
         if isinstance(result, ToolResult) and result.images:
             try:
-                import base64
                 import io
 
                 try:
                     from PIL import Image
                 except ImportError:
                     logger.warning(
-                        f"Tool '{func_name}' returned images but PIL "
+                        f"Tool '{func_name}' returned images but Pillow "
                         "is not installed. Install with: pip install "
                         "Pillow. Skipping visual context injection."
                     )
@@ -4337,10 +4328,7 @@ class ChatAgent(BaseAgent):
                     and not isinstance(response, ChatCompletion)
                 )
             ):
-                (
-                    stream_completed,
-                    tool_calls_complete,
-                ) = yield from self._process_stream_chunks_with_accumulator(
+                _, tool_calls_complete = yield from self._process_stream_chunks_with_accumulator(
                     response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
@@ -4512,12 +4500,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -4527,7 +4513,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -4555,7 +4541,6 @@ class ChatAgent(BaseAgent):
                 # Check if stream is complete
                 if choice.finish_reason:
                     stream_completed = True
-
                     # If we have complete tool calls, execute them with
                     # sync status updates
                     if accumulated_tool_calls:
@@ -5042,23 +5027,21 @@ class ChatAgent(BaseAgent):
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
-                    if hasattr(tool, 'func') and hasattr(
-                        tool.func, 'async_call'
-                    ):
+                    tool_func = getattr(tool, "func", None)
+                    func_async_call = getattr(tool_func, "async_call", None)
+                    tool_async_call = getattr(tool, "async_call", None)
+
+                    if callable(func_async_call):
                         # Case: FunctionTool wrapping an MCP tool
-                        result = await tool.func.async_call(**args)
+                        result = await func_async_call(**args)
 
-                    elif hasattr(tool, 'async_call') and callable(
-                        tool.async_call
-                    ):
+                    elif callable(tool_async_call):
                         # Case: tool itself has async_call
-                        result = await tool.async_call(**args)
+                        result = await tool_async_call(**args)
 
-                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                        tool.func
-                    ):
+                    elif asyncio.iscoroutinefunction(tool_func):
                         # Case: tool wraps a direct async function
-                        result = await tool.func(**args)
+                        result = await tool_func(**args)
 
                     elif asyncio.iscoroutinefunction(tool):
                         # Case: tool is itself a coroutine function
@@ -5303,7 +5286,6 @@ class ChatAgent(BaseAgent):
                     and not isinstance(response, ChatCompletion)
                 )
             ):
-                stream_completed = False
                 tool_calls_complete = False
 
                 # Process chunks and forward them
@@ -5320,7 +5302,7 @@ class ChatAgent(BaseAgent):
                     if isinstance(item, tuple):
                         # This is the final return value (stream_completed,
                         # tool_calls_complete)
-                        stream_completed, tool_calls_complete = item
+                        _, tool_calls_complete = item
                         break
                     else:
                         # This is a ChatAgentResponse to be yielded
@@ -5536,12 +5518,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -5551,7 +5531,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -5936,16 +5916,14 @@ class ChatAgent(BaseAgent):
 
         for tool in self._internal_tools.values():
             # Check if this tool is a method bound to a toolkit instance
-            if hasattr(tool.func, '__self__'):
-                toolkit_instance = tool.func.__self__
+            toolkit_instance = getattr(getattr(tool, "func", None), "__self__", None)
+            if toolkit_instance is not None:
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
                     # Check if the toolkit has a clone method
                     if hasattr(toolkit_instance, 'clone_for_new_session'):
                         try:
-                            import uuid
-
                             new_session_id = str(uuid.uuid4())[:8]
                             new_toolkit = (
                                 toolkit_instance.clone_for_new_session(
@@ -6097,6 +6075,7 @@ class ChatAgent(BaseAgent):
                     "DynamicResponseFormat", response_format
                 )
             response = await agent_instance.astep(message, format_cls)
+            response = cast(ChatAgentResponse, response)
             return {
                 "status": "success",
                 "messages": [msg.to_dict() for msg in response.msgs],
@@ -6144,10 +6123,11 @@ class ChatAgent(BaseAgent):
                     "content": msg.get("content", ""),
                 }
                 # Include function calls if present
-                if "function_call" in msg:
+                function_call = msg.get("function_call")
+                if isinstance(function_call, dict):
                     msg_dict["function_call"] = {
-                        "name": msg["function_call"].get("name", ""),
-                        "arguments": msg["function_call"].get("arguments", ""),
+                        "name": function_call.get("name", ""),
+                        "arguments": function_call.get("arguments", ""),
                     }
                 messages.append(msg_dict)
             return messages

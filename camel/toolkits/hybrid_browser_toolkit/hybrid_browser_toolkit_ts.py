@@ -113,6 +113,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        viewport: Optional[Dict[str, int]] = None,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
@@ -157,6 +158,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 bounds will be included in snapshots.
                 When False (default), all elements on the page are
                 included. Defaults to False.
+            viewport (Optional[Dict[str, int]]): Playwright viewport size, e.g.
+                {"width": 1920, "height": 1080}. If not provided, uses the
+                toolkit default.
             connect_over_cdp (bool): Whether to connect to an existing
             browser via Chrome DevTools Protocol. Defaults to False.
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
@@ -184,6 +188,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             page_stability_timeout=page_stability_timeout,
             dom_content_loaded_timeout=dom_content_loaded_timeout,
             viewport_limit=viewport_limit,
+            viewport=viewport,
             cache_dir=cache_dir,
             evidence_capture=evidence_capture,
             browser_log_to_file=browser_log_to_file,
@@ -1626,8 +1631,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except asyncio.TimeoutError:
             wait_time = timeout_sec or 0.0
             logger.info(
-                f"User input timeout reached after {wait_time}s, "
-                f"auto-resuming"
+                f"User input timeout reached after {wait_time}s, auto-resuming"
             )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
@@ -1668,8 +1672,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             headless=self._headless,
             user_data_dir=self._user_data_dir,
             stealth=self._stealth,
-            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
-            f"{new_session_id}/",
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,

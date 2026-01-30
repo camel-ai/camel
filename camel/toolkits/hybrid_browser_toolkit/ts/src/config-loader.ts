@@ -220,6 +220,7 @@ export class ConfigLoader {
     if (config.domStabilityThreshold !== undefined) browserConfig.domStabilityThreshold = config.domStabilityThreshold;
     if (config.domStabilityTimeout !== undefined) browserConfig.domStabilityTimeout = config.domStabilityTimeout;
     if (config.locale !== undefined) browserConfig.locale = config.locale;
+    if (config.viewport !== undefined) browserConfig.viewport = config.viewport;
 
     if (config.browser_log_to_file !== undefined) wsConfig.browser_log_to_file = config.browser_log_to_file;
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;

@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 
@@ -105,6 +105,7 @@ class HybridBrowserToolkit(BaseToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        viewport: Optional[Dict[str, int]] = None,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
@@ -194,6 +195,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 page_stability_timeout=page_stability_timeout,
                 dom_content_loaded_timeout=dom_content_loaded_timeout,
                 viewport_limit=viewport_limit,
+                viewport=viewport,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
                 cdp_keep_current_page=cdp_keep_current_page,
@@ -218,6 +220,14 @@ class HybridBrowserToolkit(BaseToolkit):
                 warnings.warn(
                     "viewport_limit is not supported "
                     "in Python mode and will be ignored",
+                    UserWarning,
+                )
+            if viewport is not None:
+                import warnings
+
+                warnings.warn(
+                    "viewport is not configurable in Python mode via "
+                    "HybridBrowserToolkit and will be ignored",
                     UserWarning,
                 )
 
