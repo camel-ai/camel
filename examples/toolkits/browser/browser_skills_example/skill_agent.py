@@ -19,7 +19,7 @@
 This module provides `SkillsAgent`, which wraps reusable subtasks as callable
 functions and combines them with low-level `HybridBrowserToolkit` tools.
 """
-
+from datetime import datetime
 import json
 import shutil
 import sys
@@ -36,7 +36,6 @@ project_root = script_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from utils import (
     create_default_model,
@@ -70,11 +69,18 @@ WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     ),
     "google flights": "\n".join(
         [
-            "- All tasks are to be performed on Google Flights",
-            "- When entering the date, make sure to click on the date input field first and then type the date in the textbox. Both the date and the departure/destination fields can be confirmed by pressing Enter (enter after input).",
-            "- When entering the origin and destination, you do not need to be overly specific; entering the city name is sufficient.",
-            "- The date entry process is as follows: first click on the date input field, then type the departure date and the return date into the date fields respectively. Press Enter to confirm the date input and Press Enter to exit the date selection field, and then Click Search to initiate the search.(Only works when all necessary information has been entered, and date selector is invisible).",
-            "- If you want to check the current state of the page, call browser_get_page_snapshot. If the Search button is visible in snapshot, this indicates that you have not yet entered the results page. In that case, ensure that all required information (departure, destination, and date) has been fully entered, and then click the Search button to initiate the search.",
+            "- Target site: Google Flights (https://www.google.com/travel/flights)",
+            "- All tasks must be performed exclusively on Google Flights",
+            "- Handle consent dialogs: If any cookie, privacy, or consent pop-ups appear, accept or dismiss them before continuing",
+            "- When entering the origin and destination, typing the city name only is sufficient (airport codes are not required)",
+            "- The date is for days in 2026 unless otherwise specified",
+            "- Date entry procedure: Click the date input field, type the departure date and then the return date into their respective fields, press Enter to confirm the dates, press Enter again to exit the date selector, and ensure the date selector is no longer visible before proceeding",
+            "- After entering the origin, destination, and dates, you must explicitly click the Search button to initiate the search; do not assume results are shown automatically",
+            "- Before extracting any information, ensure the search results page has loaded",
+            "- If you need to check the current page state, call browser_get_page_snapshot",
+            "- If the Search button is visible in the page snapshot, this indicates you are still on the input page; verify that all required fields are completed and click the Search button",
+            "- Never extract information from the pre-search or input page"
+            "- Do use get_page_snapshot consequently as they will have the same results if you do not do any other actions in between",
         ]
     ),
     "amazon": "\n".join(
@@ -130,9 +136,12 @@ WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     "coursera": "\n".join(
         [
             "- Target site: Coursera",
-            "- Start by calling browser_get_page_snapshot to see where you are",
-            "- Use the site search and filters (level, language, duration) when helpful",
-            "- Open the course page before extracting details (instructor, syllabus, ratings)",
+            "- Handle consent dialogs: If any cookie, privacy, or consent pop-ups appear, accept or dismiss them before continuing",
+            "- Initial state check: Start by calling browser_get_page_snapshot to understand the current page structure and available elements.",
+            "- Search strategy: Use the site's search bar to enter relevant keywords. Apply available filters (topic, level, language, duration, etc.) when they help narrow down results.",
+            "- Execute search: After filling the search field and/or configuring filters, explicitly click the search button to load the results page.",
+            "- Data extraction: From the course page, extract key details such as instructor(s), syllabus, ratings, and other relevant metadata.",
+            "- Once one the course page, we can just do the extraction without searching again and give me the response directly.",
         ]
     ),
     "espn": "\n".join(
@@ -515,9 +524,9 @@ class SkillsAgent:
         website: str,
         session_log_dir: str | Path | None = None,
         start_url: str | None = None,
-        cdp_port: int = 9223,
         use_agent_recovery: bool = True,
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
+        step_timeout_max_retries: int = 0,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
         enable_skills: bool = True,
     ):
@@ -527,16 +536,15 @@ class SkillsAgent:
             skills_dir: Path to skills storage directory. Supports:
                 - Skills folders: `<skills_dir>/*/SKILL.md` (+ actions.json)
                 - Legacy configs: `<skills_dir>/*_subtasks.json`
-            cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
             start_url: Optional URL to navigate to before executing tasks
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
+            step_timeout_max_retries: Maximum retry attempts when a step times out. (default: 0)
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
             enable_skills: Enable skill loading, usage, and generation (default: True)
         """
         self.skills_dir = Path(skills_dir)
-        self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
         self.website = website.strip()
         if not self.website:
@@ -545,6 +553,7 @@ class SkillsAgent:
             )
         self.start_url = start_url.strip() if start_url else None
         self.step_timeout = step_timeout
+        self.step_timeout_max_retries = step_timeout_max_retries
         self.tool_execution_timeout = tool_execution_timeout
         self.enable_skills = enable_skills
 
@@ -715,19 +724,24 @@ class SkillsAgent:
         )
 
     async def close(self) -> None:
-        """Cleanup toolkit resources for this run.
+        """Cleanup toolkit resources and close the browser.
 
-        In CDP mode, this disconnects the toolkit without closing the browser.
+        This closes the browser completely to ensure a fresh state for the next task.
         """
         if not self.toolkit:
             return
 
         try:
+            # Close the browser completely
+            await self.toolkit.browser_close()
+            print("✓ Browser closed successfully")
+        except Exception as e:
+            print(f"⚠️  Browser close failed: {e}")
+
+        try:
             await self.toolkit.disconnect_websocket()
         except AttributeError:
-            print(
-                "⚠️  Python Toolkit does not have disconnect_websocket method"
-            )
+            pass  # Expected if browser already closed
         except Exception as e:
             print(f"⚠️  Toolkit cleanup failed: {e}")
         finally:
@@ -796,32 +810,11 @@ class SkillsAgent:
         browser_log_dir.mkdir(parents=True, exist_ok=True)
 
         # Import ActionReplayer
-        # sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'camel' / 'toolkits' / 'hybrid_browser_toolkit'))
-        # Connect to browser - get browser endpoint, not page endpoint
-
         from action_replayer import ActionReplayer
 
-        cdp_url = None
-        try:
-            # Use /json/version to get the browser-level WebSocket endpoint
-            with urlopen(
-                f'http://localhost:{self.cdp_port}/json/version', timeout=5
-            ) as response:
-                version_info = json.loads(response.read().decode('utf-8'))
-                cdp_url = version_info.get('webSocketDebuggerUrl')
-                print(
-                    f"✓ Connected to browser: {version_info.get('Browser', 'N/A')}"
-                )
-                print(f"   CDP endpoint: {cdp_url}")
-        except Exception as e:
-            print(f"Error connecting to browser: {e}")
-            return False
-
-        if not cdp_url:
-            print("Error: Could not get browser CDP endpoint")
-            return False
-
         custom_tools = [
+            "browser_open",
+            "browser_close",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
@@ -843,7 +836,8 @@ class SkillsAgent:
         # directory is portable and can be evaluated offline.
         evidence_dir = Path(self.session_log_dir) / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
-        # Initialize toolkit (single instance, shared by agent and replay)
+        # Initialize toolkit - launches its own browser (no CDP)
+        # Browser language is set to English in browser-session.ts
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
@@ -856,15 +850,13 @@ class SkillsAgent:
             log_dir=str(browser_log_dir),
             viewport_limit=False,
             session_id=self.toolkit_session_id,
-            connect_over_cdp=True,
-            cdp_url=cdp_url,
+            connect_over_cdp=False,  # Launch own browser instead of CDP
             default_start_url=None,
-            # cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
         )
 
-        # When connecting via CDP, browser is already open, no need to call browser_open()
-        # await self.toolkit.browser_open()
-        print("✓ Browser connected via CDP")
+        # Open browser - this starts a fresh browser instance
+        await self.toolkit.browser_open()
+        print("✓ Browser launched (language: English)")
 
         # Create subtask functions from all configs
         if self.enable_skills and self.subtask_configs:
@@ -959,17 +951,84 @@ class SkillsAgent:
             print(
                 f"\n✅ Total subtask functions created: {len(self.subtask_functions)}"
             )
-        elif not self.enable_skills:
-            print("\n" + "=" * 80)
-            print("SKILLS DISABLED - SKIPPING SUBTASK FUNCTIONS")
-            print("=" * 80)
-            print("   Agent will use browser tools only\n")
-        else:
-            print("\n" + "=" * 80)
-            print("NO SUBTASKS AVAILABLE")
-            print("=" * 80)
-            print(f"   No skills found in: {self.skills_dir}")
-            print("   Agent will operate without pre-existing subtasks\n")
+            print(f"   Type: {config_name}")
+
+            # Save config to temp file for ActionReplayer
+            # (ActionReplayer expects a file path, not a dict)
+            with tempfile.NamedTemporaryFile(
+                mode='w', suffix='.json', delete=False, encoding='utf-8'
+            ) as temp_config:
+                json.dump(config, temp_config, indent=2, ensure_ascii=False)
+                temp_config_path = temp_config.name
+
+            for subtask in config.get('subtasks', []):
+                subtask_id = subtask['id']
+                name = subtask['name']
+                description = subtask['description']
+                variables = subtask.get('variables', {})
+
+                # Skip if subtask already exists (first config wins)
+                if subtask_id in self.subtask_functions:
+                    print(f"  ⚠️  Skipping duplicate subtask: {subtask_id}")
+                    continue
+
+                if not log_file and not bool(subtask.get('actions', [])):
+                    print(
+                        f"  ⚠️  Subtask {subtask_id} has no log file and no embedded actions"
+                    )
+                    raise ValueError(
+                        f"Subtask {subtask_id} has no log file and no embedded actions"
+                    )
+
+                # Create replayer instance for this subtask
+                replayer = ActionReplayer(
+                    log_file=log_file,
+                    subtask_config=temp_config_path,
+                    subtask_id=subtask_id,
+                    use_agent_recovery=self.use_agent_recovery,
+                )
+                # Share the same toolkit to avoid WebSocket conflicts
+                replayer.toolkit = self.toolkit
+
+                # Check if subtask has embedded actions
+                subtask_has_actions = bool(subtask.get('actions', []))
+
+                if subtask_has_actions:
+                    # Initialize with empty list - will be populated by load_subtask_config()
+                    replayer.actions = []
+                    print(
+                        f"  [Info] Subtask {subtask_id} has embedded actions, skipping log file load"
+                    )
+                else:
+                    # Load from log file for backward compatibility
+                    replayer.actions = replayer.load_log_file()
+                    print(
+                        f"  [Info] Subtask {subtask_id} loading actions from log file"
+                    )
+
+                # Create subtask function with stats tracker and session log dir
+                subtask_func = SubtaskFunction(
+                    subtask_id=subtask_id,
+                    name=name,
+                    description=description,
+                    variables=variables,
+                    replayer=replayer,
+                    stats_tracker=self.stats,
+                    session_log_dir=self.session_log_dir,
+                )
+
+                self.subtask_functions[subtask_id] = subtask_func
+
+                if variables:
+                    print(f"  ✓ Created function: {subtask_id}")
+                    print(f"     Variables: {list(variables.keys())}")
+                else:
+                    print(f"  ✓ Created function: {subtask_id}")
+                    print("     No variables (fixed operation)")
+
+        print(
+            f"\n✅ Total subtask functions created: {len(self.subtask_functions)}"
+        )
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)
@@ -1113,6 +1172,7 @@ async def subtask_{subtask_func.subtask_id}():
             tools=all_tools,
             system_message=system_message,
             step_timeout=self.step_timeout,
+            step_timeout_max_retries=self.step_timeout_max_retries,
             tool_execution_timeout=self.tool_execution_timeout,
             enable_snapshot_clean=False,
             response_terminators=[
@@ -1172,7 +1232,7 @@ async def subtask_{subtask_func.subtask_id}():
                 "   - Do NOT repeatedly click a combobox hoping an option will be selected.",
                 "   - If the options you need are visible in the snapshot but have no [ref=...], you cannot click them directly; use browser_select.",
                 "5. Do NOT give a final answer unless a page snapshot clearly contains the requested information.",
-                "   - If the result is still loading or missing, keep using tools (snapshot/scroll/click) until it appears.",
+                "   - If the result is still loading or missing, try other pages.",
                 "6. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
                 f"   {self._TASK_DONE_TOKEN}",
                 "",
@@ -1219,21 +1279,25 @@ async def subtask_{subtask_func.subtask_id}():
                     "   - Each subtask has an 'Execution page' specified in its description",
                     "   - Before calling a subtask, verify you are on the correct page using browser_get_page_snapshot",
                     "   - Do not call subtasks designed for different pages (e.g., don't call a subtask for Google Flights when on Google Search)",
-                    "3. Use low-level browser tools only when:",
-                    "   - No suitable subtask function exists",
-                    "   - You need fine-grained control",
-                    "   - The subtask function failed and you need to recover",
+                    "3. Use low-level browser tools only under the following conditions:",
+                    "   - No suitable high-level subtask function is available.",
+                    "   - Fine-grained, manual control of page interactions is required.",
+                    "   - A subtask function has failed and manual recovery is necessary.",
+                    "   Tool usage constraints:"
+                    "   - Do not call browser_get_page_snapshot consecutively! Consecutive calls are redundant because the page state does not change without an intervening action.",
+                    "   - Minimize browser_get_page_snapshot calls, as they are token-expensive and should only be used when the page state is expected to change, or you need to get the current state.",
                     "",
                     "4. After executing a subtask function, you will receive:",
                     "   - Status (success/error)",
                     "   - Message describing the result",
-                    "   - Current page snapshot",
+                    "   - Current page browser_get_page_snapshot",
                     "   - Variables that were used",
                     "",
                     "5. If a subtask fails, you can either:",
                     "   - Retry with different variables",
                     "   - Use low-level browser tools to fix the issue",
                     "   - Ask for clarification",
+                    "   - If a subtask fails repeatedly, consider using browser tools to manually achieve the goal or use alternative subtasks.",
                     "",
                     "Remember: Subtask functions are your first choice - they encapsulate complex multi-step operations!",
                     "If you find some subtask may not finished by reusing previous subtask, you need to do it by yourself!",
@@ -1783,6 +1847,12 @@ async def subtask_{subtask_func.subtask_id}():
         except Exception as e:
             print(f"\n⚠️  Error during timeline analysis: {e}")
             traceback.print_exc()
+
+    def save_memory(self, path: Path | str | None = None):
+        """Save agent memory to a file (if applicable)."""
+        if not path:
+            path = self.session_log_dir / "agent_memory.json"
+        self.agent.save_memory(path)
 
 
 __all__ = ["SkillsAgent", "SubtaskFunction"]

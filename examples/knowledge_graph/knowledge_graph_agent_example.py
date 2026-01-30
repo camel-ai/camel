@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from camel.agents import KnowledgeGraphAgent
 from camel.loaders import UnstructuredIO
 
+
 load_dotenv()
 
 # Set instance

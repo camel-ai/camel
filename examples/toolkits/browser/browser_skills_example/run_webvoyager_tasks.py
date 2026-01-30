@@ -28,7 +28,7 @@ import asyncio
 import json
 import re
 import sys
-import traceback
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -119,7 +119,7 @@ class WebVoyagerRunner:
         run_dir: Path | None = None,
         step_timeout: float | None = 180.0,
         tool_execution_timeout: float | None = 180.0,
-        enable_skills: bool = True,
+        auto_save_skills: bool = True,
     ):
         """
         Initialize the runner.
@@ -166,38 +166,7 @@ class WebVoyagerRunner:
             "generated_at": get_timestamp_iso(),
             "websites": {},
         }
-        self._website_attempt_counts: Dict[str, int] = {}
-
-    @staticmethod
-    def _normalize_website_key(website: str) -> str:
-        return " ".join((website or "").strip().lower().split())
-
-    def _website_attempts_used(self, website: str) -> int:
-        return int(
-            self._website_attempt_counts.get(
-                self._normalize_website_key(website), 0
-            )
-            or 0
-        )
-
-    def _reserve_website_attempt(self, website: str) -> bool:
-        website_key = self._normalize_website_key(website)
-        used = int(self._website_attempt_counts.get(website_key, 0) or 0)
-        if used >= self.max_attempts_per_website:
-            return False
-        self._website_attempt_counts[website_key] = used + 1
-        return True
-
-    def _ensure_skills_dirs_exist(self):
-        """Ensure configured skills directories exist."""
-        if self.skills_dir_override is not None:
-            if not self.website_filter:
-                raise ValueError(
-                    "skills_dir can only be used together with --website-filter "
-                    "(because WebVoyager tasks can span multiple websites)."
-                )
-            self.skills_dir_override.mkdir(parents=True, exist_ok=True)
-            return
+        self.auto_save_skills = auto_save_skills
 
         base_path = self.skills_root
 
@@ -247,6 +216,10 @@ class WebVoyagerRunner:
         task_id = task.get('id', 'unknown')
         task_description = task.get('ques', '')
 
+        # Record task start time
+        task_start_time = time.time()
+        task_start_iso = get_timestamp_iso()
+
         print(f"\n{'=' * 80}")
         print(
             f"RUNNING TASK: {task_id} (Attempt {attempt}/{self.max_retries + 1})"
@@ -291,6 +264,7 @@ class WebVoyagerRunner:
             session_log_dir=session_log_dir,
             start_url=start_url,
             step_timeout=self.step_timeout,
+            step_timeout_max_retries=0,  # Retry 1 times on step timeout
             tool_execution_timeout=self.tool_execution_timeout,
             enable_skills=self.enable_skills,
         )
@@ -317,8 +291,9 @@ class WebVoyagerRunner:
             # Get results
             session_dir = agent.session_log_dir
 
-            # Save communication log
+            # Save communication log and whole memory
             agent.save_communication_log()
+            agent.save_memory()
 
             # Write a first-pass summary (before subtask extraction), if possible
             summary_path = None
@@ -361,14 +336,7 @@ class WebVoyagerRunner:
                 except Exception as e:
                     print(f"⚠️  Could not capture final evidence: {e}")
 
-            # Close browser completely after each task
-            print("\n🧹 Closing browser...")
-            if agent.toolkit:
-                try:
-                    await agent.toolkit.browser_close()
-                    print("✓ Browser closed successfully")
-                except Exception as e:
-                    print(f"⚠️  Browser close failed: {e}")
+            # Browser will be closed at the end of the task (in finally block)
 
             # Get agent's response content
             agent_response = "Task completed."
@@ -410,7 +378,7 @@ class WebVoyagerRunner:
                     subtask_analysis = analyze_with_agent(
                         session_folder=str(session_dir),
                         skills_dir=str(skills_dir),
-                        auto_save=True,
+                        auto_save=self.auto_save_skills,
                     )
                 except Exception as e:
                     print(f"⚠️  Subtask extraction failed: {e}")
@@ -434,6 +402,10 @@ class WebVoyagerRunner:
                     "reason": "task_not_successful",
                 }
 
+            # Calculate task duration
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
+
             result = {
                 'task_id': task_id,
                 'task_description': task_description,
@@ -448,16 +420,11 @@ class WebVoyagerRunner:
                 'session_dir': str(session_dir) if session_dir else None,
                 'summary_path': str(summary_path) if summary_path else None,
                 'subtask_analysis': subtask_analysis,
-                'started_at': started_at,
-                'finished_at': get_timestamp_iso(),
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
-            if session_dir:
-                debug_path = Path(session_dir) / "webjudge_debug.json"
-                result["webjudge_debug_path"] = (
-                    str(debug_path) if debug_path.exists() else None
-                )
-            else:
-                result["webjudge_debug_path"] = None
+            print(f"\n⏱️  Task completed in {task_duration_seconds:.1f}s")
 
             # Update summary after verification/analysis
             if session_dir:
@@ -577,7 +544,10 @@ class WebVoyagerRunner:
             return result
 
         except asyncio.TimeoutError as e:
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
             print(f"⏱️  Task execution timeout: {e}")
+            print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
             traceback.print_exc()
 
@@ -595,13 +565,16 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
-                'traceback': traceback.format_exc(),
-                'started_at': started_at,
-                'finished_at': get_timestamp_iso(),
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
 
         except Exception as e:
+            task_end_time = time.time()
+            task_duration_seconds = task_end_time - task_start_time
             print(f"❌ Task execution failed: {e}")
+            print(f"⏱️  Task failed after {task_duration_seconds:.1f}s")
             import traceback
             traceback.print_exc()
 
@@ -615,10 +588,21 @@ class WebVoyagerRunner:
                 'session_dir': str(session_log_dir)
                 if session_log_dir is not None
                 else None,
-                'traceback': traceback.format_exc(),
-                'started_at': started_at,
-                'finished_at': get_timestamp_iso(),
+                'start_time': task_start_iso,
+                'end_time': get_timestamp_iso(),
+                'duration_seconds': round(task_duration_seconds, 2),
             }
+        finally:
+            # Save communication log and whole memory, ensure they are saved again even there was an exception
+            agent.save_communication_log()
+            agent.save_memory()
+            # Close the browser completely for this task
+            print("\n🧹 Closing browser...")
+            try:
+                await agent.close()
+                print("✓ Browser closed successfully")
+            except Exception as e:
+                print(f"⚠️  Browser close failed: {e}")
 
     async def run_task_with_retries(
         self, task: Dict[str, Any]
@@ -909,6 +893,23 @@ class WebVoyagerRunner:
             f"Tasks succeeded after retry: {succeeded_after_retry}/{tasks_with_retries if tasks_with_retries > 0 else 0}"
         )
 
+        # Time statistics
+        durations = [
+            r.get('duration_seconds', 0)
+            for r in self.results
+            if r.get('duration_seconds') is not None
+        ]
+        if durations:
+            total_time = sum(durations)
+            avg_time = total_time / len(durations)
+            min_time = min(durations)
+            max_time = max(durations)
+            print("\n⏱️  Time Statistics:")
+            print(f"Total time: {total_time:.1f}s ({total_time / 60:.1f}min)")
+            print(f"Average time per task: {avg_time:.1f}s")
+            print(f"Min time: {min_time:.1f}s")
+            print(f"Max time: {max_time:.1f}s")
+
         # Show failed tasks
         if failed > 0:
             print("\n❌ Failed tasks:")
@@ -1036,9 +1037,8 @@ async def main():
         help="Write the raw per-attempt results JSON to this path.",
     )
     parser.add_argument(
-        "--disable-skills",
+        "--auto-save-skills",
         action="store_true",
-        help="Disable skill loading, usage, and generation (agent uses only browser tools)",
     )
 
     args = parser.parse_args()
@@ -1097,7 +1097,7 @@ async def main():
         tool_execution_timeout=None
         if args.tool_timeout <= 0
         else args.tool_timeout,
-        enable_skills=not args.disable_skills,
+        auto_save_skills=args.auto_save_skills,
     )
 
     await runner.run_all_tasks(

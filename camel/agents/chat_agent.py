@@ -457,6 +457,9 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        step_timeout_max_retries (int, optional): Maximum number of retry
+            attempts when a step times out. Set to 0 to disable retries.
+            (default: :obj:`0`)
         stream_accumulate (Optional[bool], optional): When True, partial
             streaming updates return accumulated content. When False, partial
             updates return only the incremental delta (recommended).
@@ -512,6 +515,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        step_timeout_max_retries: int = 0,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -624,6 +628,7 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self.step_timeout_max_retries = max(0, step_timeout_max_retries)
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -2834,19 +2839,47 @@ class ChatAgent(BaseAgent):
 
         # Execute with timeout if configured
         if self.step_timeout is not None:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1
-            ) as executor:
-                future = executor.submit(
-                    self._step_impl, input_message, response_format
-                )
-                try:
-                    return future.result(timeout=self.step_timeout)
-                except concurrent.futures.TimeoutError:
-                    future.cancel()
-                    raise TimeoutError(
-                        f"Step timed out after {self.step_timeout}s"
+            # Retry loop for timeout errors
+            max_retries = self.step_timeout_max_retries
+            last_error: Optional[TimeoutError] = None
+
+            for attempt in range(max_retries + 1):
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=1
+                ) as executor:
+                    future = executor.submit(
+                        self._step_impl, input_message, response_format
                     )
+                    try:
+                        return future.result(timeout=self.step_timeout)
+                    except concurrent.futures.TimeoutError:
+                        future.cancel()
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Step timed out after {self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            import time
+
+                            time.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                    f" (exhausted {max_retries + 1} attempts)"
+                                )
+                            else:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                )
+                            raise last_error
+
+            # This should not be reached, but just in case
+            if last_error:
+                raise last_error
+            raise RuntimeError("Unexpected state in step retry loop")
         else:
             return self._step_impl(input_message, response_format)
 
@@ -3111,17 +3144,46 @@ class ChatAgent(BaseAgent):
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
             if self.step_timeout is not None:
-                try:
-                    return await asyncio.wait_for(
-                        self._astep_non_streaming_task(
-                            input_message, response_format
-                        ),
-                        timeout=self.step_timeout,
-                    )
-                except asyncio.TimeoutError:
-                    raise asyncio.TimeoutError(
-                        f"Async step timed out after {self.step_timeout}s"
-                    )
+                # Retry loop for timeout errors
+                max_retries = self.step_timeout_max_retries
+                last_error: Optional[asyncio.TimeoutError] = None
+
+                for attempt in range(max_retries + 1):
+                    try:
+                        return await asyncio.wait_for(
+                            self._astep_non_streaming_task(
+                                input_message, response_format
+                            ),
+                            timeout=self.step_timeout,
+                        )
+                    except asyncio.TimeoutError as e:
+                        last_error = e
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Async step timed out after "
+                                f"{self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            await asyncio.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s "
+                                    f"(exhausted {max_retries + 1} attempts)"
+                                ) from last_error
+                            else:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s"
+                                ) from last_error
+
+                # This should not be reached, but just in case
+                if last_error:
+                    raise last_error
+                raise RuntimeError("Unexpected state in astep retry loop")
             else:
                 return await self._astep_non_streaming_task(
                     input_message, response_format

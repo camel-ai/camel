@@ -133,3 +133,78 @@ def get_url_before_after(
             break
 
     return url_before, url_after
+
+
+def split_line(line):
+    """ Split a line into leading spaces and the rest of the line."""
+    # Find the index of the first non-whitespace character
+    index = len(line) - len(line.lstrip())
+    # Split the line into leading spaces and the rest
+    leading_spaces = line[:index] if index > 0 else ""  # Return empty string if no leading spaces
+    rest_of_line = line[index:].lstrip()  # Remove leading spaces from the rest
+    return leading_spaces, rest_of_line
+
+
+def clean_lines(content:str) -> str:
+    """ Keep only the meaningful web content for judging.
+        Args:
+            content (str): The raw web snapshot content from browser toolkit to be cleaned.
+    """
+    if not content:
+        return ""
+    result = []
+    for line in content.splitlines():
+        leading_spaces, line = split_line(line)
+        # Remove everything in square brackets, including the brackets
+        line = re.sub(r'\[.*?\]', '', line)
+        
+        # Handle "- img" lines separately (no colon required)
+        img_match = re.match(r'^-\s*img\s*(.*)', line)
+        if img_match:
+            content_text = img_match.group(1).strip()
+            # Skip if no meaningful content after "- img"
+            if not content_text or content_text.lower() == ":":
+                continue
+            result.append(leading_spaces + f"img: {content_text}")
+            continue
+        link_match = re.match(r'^-\s*link\s+(.*)', line)
+        if link_match:
+            content_text = link_match.group(1).strip()
+            # Skip if no meaningful content after "- link"
+            if not content_text:
+                continue
+            result.append(leading_spaces + f"link: {content_text}")
+            continue
+        
+        # Handle other lines with "- label: content" pattern
+        match = re.match(r'^-\s*([^:\s]+)\s*:\s*(.*)', line)
+        if not match:
+            continue
+        
+        label = match.group(1).strip()
+        content_text = match.group(2).strip()
+        
+        # Skip if label is "url"
+        if label.lower() == "url":
+            continue
+        
+        # Skip if label is "generic"
+        if (label.lower() == "generic") and (not content_text):
+            continue
+        
+        # Keep the line with label and content
+        if content_text:
+            result.append(leading_spaces + f"{label}: {content_text}")
+        else:
+            result.append(leading_spaces + f"{label}:")
+    
+    return '\n'.join(result)
+
+
+if __name__ == "__main__":
+    path = Path(r"C:\Users\moizh\workspace\camel\examples\toolkits\session_logs_little_model\session_20260118_212413_gpt4.1\task_Allrecipes--1_attempt_1\evidence\pre_step_0003.snapshot.txt")
+    # path = Path(r"camel\evaluators\webjudge\test.txt")
+    dom = path.read_text(encoding="utf-8", errors="ignore")
+    cleaned = clean_lines(dom)
+    with open("cleaned.txt", "w", encoding="utf-8") as f:
+        f.write(cleaned)

@@ -22,33 +22,26 @@ from camel.types import ModelPlatformType, ModelType
 load_dotenv()
 
 # === Single source of truth for the example scripts ===
-DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.OPENAI
-DEFAULT_MODEL_TYPE = ModelType.GPT_4_1
+# DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
+# DEFAULT_MODEL_TYPE: ModelType = "qwen-flash"
 
-
+DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
+DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
 
 def create_default_model():
     """Create the default model used by the example scripts."""
-    if DEFAULT_MODEL_PLATFORM == ModelPlatformType.AZURE:
-        return ModelFactory.create(
-            model_platform=DEFAULT_MODEL_PLATFORM,
-            model_type=DEFAULT_MODEL_TYPE,
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-            url=os.getenv("AZURE_OPENAI_BASE_URL"),
-            api_version=os.getenv("AZURE_API_VERSION"),
-            model_config_dict={
-                "temperature": 0.0,
-                "parallel_tool_calls": False,
-            },
-        )
-    else:
-        return ModelFactory.create(
-            model_platform=DEFAULT_MODEL_PLATFORM,
-            model_type=DEFAULT_MODEL_TYPE,
-            api_key=os.getenv("OPENAI_API_KEY"),
-            url=os.getenv("OPENAI_BASE_URL"),
-            model_config_dict={
-                "temperature": 0.0,
-                "parallel_tool_calls": False,
-            },
-        )
+    return ModelFactory.create(
+        model_platform=DEFAULT_MODEL_PLATFORM,
+        model_type=DEFAULT_MODEL_TYPE,
+        model_config_dict={
+            "temperature": 0.0,
+            "parallel_tool_calls": False,
+        },
+    )
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+    model = create_default_model()
+    reponse = model.run(messages=[{"role": "user", "content": "Do you support function calling?"}])
+    print(reponse)

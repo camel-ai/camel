@@ -309,22 +309,23 @@ def convert_subtask_configs_to_skills(
                 print(f"    Skipping {skill_dir_name} (already exists)")
                 stats['skills_skipped'] += 1
                 continue
-
+            
             try:
+
+                # Generate and write actions.json
+                actions = generate_actions_json(subtask)
+                if not actions:
+                    continue  # Skip if no actions defined
                 # Create skill directory
                 skill_dir.mkdir(parents=True, exist_ok=True)
-
+                actions_json_path = skill_dir / "actions.json"
+                with open(actions_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(actions, f, indent=2, ensure_ascii=False)
                 # Generate and write SKILL.md
                 skill_md = generate_skill_md(subtask, source_info)
                 skill_md_path = skill_dir / "SKILL.md"
                 with open(skill_md_path, 'w', encoding='utf-8') as f:
                     f.write(skill_md)
-
-                # Generate and write actions.json
-                actions = generate_actions_json(subtask)
-                actions_json_path = skill_dir / "actions.json"
-                with open(actions_json_path, 'w', encoding='utf-8') as f:
-                    json.dump(actions, f, indent=2, ensure_ascii=False)
 
                 print(f"    Created: {skill_dir_name}/")
                 stats['skills_created'] += 1
