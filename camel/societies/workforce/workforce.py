@@ -2362,6 +2362,7 @@ class Workforce(BaseNode):
             batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
+                # model_dump
                 f"{json.dumps(batch_result.dict(), indent=2)}"
             )
             for assignment in batch_result.assignments:
