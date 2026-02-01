@@ -58,22 +58,37 @@ export class HybridBrowserSession {
    * Refs without frame prefix (e.g., "e5") return frameIndex: 0
    */
   private parseFrameRef(ref: string): { frameIndex: number; localRef: string } {
-    // Pattern: f<number>e<rest> for iframe elements, e<rest> for main frame
     const frameMatch = ref.match(/^f(\d+)(e.*)$/);
     if (frameMatch) {
       return {
         frameIndex: parseInt(frameMatch[1], 10),
-        localRef: frameMatch[2]  // e.g., "e5"
+        localRef: frameMatch[2]
       };
     }
-    // No frame prefix - main frame element
     return { frameIndex: 0, localRef: ref };
   }
 
   /**
-   * Find an element by aria-ref selector across all frames (including iframes)
-   * Handles Playwright's frame-prefixed refs (e.g., "f1e5" for elements in first iframe)
-   * Returns the locator and the frame it was found in, or null if not found
+   * Try to find element in a specific frame with given selector
+   */
+  private async tryFindInFrame(
+    frame: Frame,
+    selector: string
+  ): Promise<ReturnType<Frame['locator']> | null> {
+    try {
+      const element = frame.locator(selector).first();
+      if (await element.count() > 0) {
+        return element;
+      }
+    } catch {
+      // Frame might be detached or selector invalid
+    }
+    return null;
+  }
+
+  /**
+   * Find element across frames with optimized search strategy
+   * Search order: 1) Target frame with localRef, 2) All frames with full ref
    */
   private async findElementAcrossFrames(
     page: Page,
@@ -82,52 +97,40 @@ export class HybridBrowserSession {
     const allFrames = page.frames();
     const { frameIndex, localRef } = this.parseFrameRef(ref);
 
-    // If ref has frame prefix, try that specific frame first
+    // Strategy 1: If ref has frame prefix, try target frame with localRef
     if (frameIndex > 0 && frameIndex < allFrames.length) {
       const targetFrame = allFrames[frameIndex];
-      try {
-        const selector = `aria-ref=${localRef}`;
-        const element = await targetFrame.locator(selector).first();
-        const exists = await element.count() > 0;
-        if (exists) {
-          return { locator: element, frame: targetFrame };
-        }
-      } catch (error) {
-        // Will try fallback below
+      const element = await this.tryFindInFrame(targetFrame, `aria-ref=${localRef}`);
+      if (element) {
+        return { locator: element, frame: targetFrame };
       }
     }
 
-    // Try with original ref in all frames (for refs without frame prefix or fallback)
-    const selector = `aria-ref=${ref}`;
+    // Strategy 2: Search all frames with full ref
     for (const frame of allFrames) {
-      try {
-        const element = await frame.locator(selector).first();
-        const exists = await element.count() > 0;
-        if (exists) {
-          return { locator: element, frame };
-        }
-      } catch (error) {
-        continue;
-      }
-    }
-
-    // Also try with localRef in all frames as final fallback
-    if (localRef !== ref) {
-      const localSelector = `aria-ref=${localRef}`;
-      for (const frame of allFrames) {
-        try {
-          const element = await frame.locator(localSelector).first();
-          const exists = await element.count() > 0;
-          if (exists) {
-            return { locator: element, frame };
-          }
-        } catch (error) {
-          continue;
-        }
+      const element = await this.tryFindInFrame(frame, `aria-ref=${ref}`);
+      if (element) {
+        return { locator: element, frame };
       }
     }
 
     return null;
+  }
+
+  /**
+   * Get element coordinates from boundingBox
+   */
+  private async getElementCoordinates(
+    element: ReturnType<Frame['locator']>
+  ): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    const box = await element.boundingBox();
+    if (!box) return null;
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height)
+    };
   }
 
   private registerNewPage(tabId: string, page: Page): void {
@@ -576,89 +579,26 @@ export class HybridBrowserSession {
       }
 
       if (includeCoordinates) {
-        // Get all frames including main page and iframes
-        const allFrames = page.frames();
-
-        // Get coordinates for each ref using aria-ref selector
-        // Search across all frames to handle elements inside iframes
-        // Handle frame-prefixed refs (e.g., "f1e5" for elements in first iframe)
-        for (const ref of refs) {
-          let found = false;
-          const { frameIndex, localRef } = this.parseFrameRef(ref);
-
-          // If ref has frame prefix, try that specific frame first with localRef
-          if (frameIndex > 0 && frameIndex < allFrames.length) {
-            const targetFrame = allFrames[frameIndex];
-            try {
-              const selector = `aria-ref=${localRef}`;
-              const element = await targetFrame.locator(selector).first();
-              const exists = await element.count() > 0;
-
-              if (exists) {
-                const boundingBox = await element.boundingBox();
-                if (boundingBox) {
-                  playwrightMapping[ref] = {
-                    ...playwrightMapping[ref],
-                    coordinates: {
-                      x: Math.round(boundingBox.x),
-                      y: Math.round(boundingBox.y),
-                      width: Math.round(boundingBox.width),
-                      height: Math.round(boundingBox.height)
-                    },
-                    frameIndex,
-                    frameUrl: targetFrame.url()
-                  };
-                  found = true;
-                }
-              }
-            } catch (error) {
-              // Will try fallback below
-            }
-          }
-
-          // Fallback: search all frames with original ref
-          if (!found) {
-            for (const frame of allFrames) {
-              try {
-                const selector = `aria-ref=${ref}`;
-                const element = await frame.locator(selector).first();
-                const exists = await element.count() > 0;
-
-                if (exists) {
-                  // Get bounding box - Playwright returns coordinates relative to main viewport
-                  // even for elements inside iframes
-                  const boundingBox = await element.boundingBox();
-
-                  if (boundingBox) {
-                    // Add coordinates to existing element info
-                    // For iframe elements (ref starts with 'f'), also set frameIndex
-                    const isIframeElement = ref.match(/^f(\d+)/);
-                    playwrightMapping[ref] = {
-                      ...playwrightMapping[ref],
-                      coordinates: {
-                        x: Math.round(boundingBox.x),
-                        y: Math.round(boundingBox.y),
-                        width: Math.round(boundingBox.width),
-                        height: Math.round(boundingBox.height)
-                      },
-                      // Track which frame the element is in
-                      frameIndex: isIframeElement ? parseInt(isIframeElement[1], 10) : 0,
-                      frameUrl: frame.url() !== page.url() ? frame.url() : undefined
-                    };
-                    found = true;
-                    break; // Found the element, no need to search other frames
-                  }
-                }
-              } catch (error) {
-                // Continue to next frame if this one fails
-                continue;
+        // Enrich elements with coordinates using parallel processing
+        // Process in batches to avoid overwhelming the browser
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < refs.length; i += BATCH_SIZE) {
+          const batch = refs.slice(i, i + BATCH_SIZE);
+          await Promise.all(batch.map(async (ref) => {
+            const result = await this.findElementAcrossFrames(page, ref);
+            if (result) {
+              const coords = await this.getElementCoordinates(result.locator);
+              if (coords) {
+                const { frameIndex } = this.parseFrameRef(ref);
+                playwrightMapping[ref] = {
+                  ...playwrightMapping[ref],
+                  coordinates: coords,
+                  frameIndex,
+                  frameUrl: frameIndex > 0 ? result.frame.url() : undefined
+                };
               }
             }
-          }
-
-          if (!found) {
-            console.warn(`[getSnapshotForAINative] Element with ref ${ref} not found in any frame`);
-          }
+          }));
         }
       }
 
