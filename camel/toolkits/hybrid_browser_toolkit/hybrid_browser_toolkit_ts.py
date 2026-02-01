@@ -34,6 +34,7 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 
 def _add_rulers_to_image(
@@ -78,6 +79,7 @@ def _add_rulers_to_image(
     draw = ImageDraw.Draw(new_image)
 
     # Try to load a font, fall back to default if not available
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont
     try:
         font = ImageFont.truetype(
             "/System/Library/Fonts/Helvetica.ttc", font_size
@@ -242,8 +244,6 @@ def _add_rulers_to_image(
     new_image.save(output, format='PNG')
     return output.getvalue()
 
-
-from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
 
@@ -2021,7 +2021,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         if tool_name == "browser_click":
             if pixel_mode:
 
-                async def browser_click(
+                async def browser_click_pixel(
                     *, x: float, y: float
                 ) -> Dict[str, Any]:
                     r"""Clicks at the specified pixel coordinates on the page.
@@ -2040,10 +2040,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     """
                     return await method(x=x, y=y)
 
-                return browser_click
+                browser_click_pixel.__name__ = "browser_click"
+                return browser_click_pixel
             else:
 
-                async def browser_click(*, ref: str) -> Dict[str, Any]:
+                async def browser_click_ref(*, ref: str) -> Dict[str, Any]:
                     r"""Clicks on an element identified by its ref ID.
 
                     The ref ID is obtained from a page snapshot
@@ -2057,12 +2058,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     """
                     return await method(ref=ref)
 
-                return browser_click
+                browser_click_ref.__name__ = "browser_click"
+                return browser_click_ref
 
         elif tool_name == "browser_type":
             if pixel_mode:
 
-                async def browser_type(
+                async def browser_type_pixel(
                     *, x: float, y: float, text: str
                 ) -> Dict[str, Any]:
                     r"""Types text at the specified pixel coordinates.
@@ -2080,10 +2082,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     """
                     return await method(x=x, y=y, text=text)
 
-                return browser_type
+                browser_type_pixel.__name__ = "browser_type"
+                return browser_type_pixel
             else:
 
-                async def browser_type(
+                async def browser_type_ref(
                     *,
                     ref: Optional[str] = None,
                     text: Optional[str] = None,
@@ -2104,12 +2107,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     """
                     return await method(ref=ref, text=text, inputs=inputs)
 
-                return browser_type
+                browser_type_ref.__name__ = "browser_type"
+                return browser_type_ref
 
         elif tool_name == "browser_mouse_drag":
             if pixel_mode:
 
-                async def browser_mouse_drag(
+                async def browser_mouse_drag_pixel(
                     *, from_x: float, from_y: float, to_x: float, to_y: float
                 ) -> Dict[str, Any]:
                     r"""Drags from one position to another using pixels.
@@ -2129,10 +2133,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y
                     )
 
-                return browser_mouse_drag
+                browser_mouse_drag_pixel.__name__ = "browser_mouse_drag"
+                return browser_mouse_drag_pixel
             else:
 
-                async def browser_mouse_drag(
+                async def browser_mouse_drag_ref(
                     *, from_ref: str, to_ref: str
                 ) -> Dict[str, Any]:
                     r"""Drags from one element to another using ref IDs.
@@ -2148,7 +2153,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     """
                     return await method(from_ref=from_ref, to_ref=to_ref)
 
-                return browser_mouse_drag
+                browser_mouse_drag_ref.__name__ = "browser_mouse_drag"
+                return browser_mouse_drag_ref
 
         return method
 
