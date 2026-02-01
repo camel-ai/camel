@@ -34,6 +34,215 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
+
+
+def _add_rulers_to_image(
+    image_bytes: bytes, tick_interval: int = 100
+) -> bytes:
+    r"""Add rulers with tick marks to an image (like a real measuring ruler).
+
+    Adds horizontal ruler at the top and vertical ruler on the left side,
+    with multi-level tick marks like a real ruler:
+    - Every 100 pixels: longest tick + number label
+    - Every 50 pixels: long tick (no label)
+    - Every 10 pixels: medium tick
+    - Every 5 pixels: short tick
+
+    Args:
+        image_bytes: The original image as bytes.
+        tick_interval: Major interval for number labels (default: 100).
+
+    Returns:
+        The modified image with rulers as bytes.
+    """
+    from io import BytesIO
+
+    from PIL import Image, ImageDraw, ImageFont
+
+    # Load the original image
+    original = Image.open(BytesIO(image_bytes))
+    orig_width, orig_height = original.size
+
+    # Ruler dimensions
+    ruler_thickness = 30  # Increased for better visibility
+    font_size = 9
+
+    # Create new image with space for rulers
+    new_width = orig_width + ruler_thickness
+    new_height = orig_height + ruler_thickness
+    new_image = Image.new('RGB', (new_width, new_height), 'white')
+
+    # Paste original image offset by ruler thickness
+    new_image.paste(original, (ruler_thickness, ruler_thickness))
+
+    draw = ImageDraw.Draw(new_image)
+
+    # Try to load a font, fall back to default if not available
+    try:
+        font = ImageFont.truetype(
+            "/System/Library/Fonts/Helvetica.ttc", font_size
+        )
+    except (IOError, OSError):
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except (IOError, OSError):
+            font = ImageFont.load_default()
+
+    # Colors
+    ruler_bg_color = (245, 245, 245)  # Light gray background
+    tick_color = (80, 80, 80)  # Dark gray for ticks
+    minor_tick_color = (160, 160, 160)  # Lighter gray for minor ticks
+    text_color = (40, 40, 40)  # Darker gray for text
+
+    # Draw horizontal ruler background (top)
+    draw.rectangle(
+        [ruler_thickness, 0, new_width, ruler_thickness], fill=ruler_bg_color
+    )
+
+    # Draw vertical ruler background (left)
+    draw.rectangle(
+        [0, ruler_thickness, ruler_thickness, new_height], fill=ruler_bg_color
+    )
+
+    # Draw corner square
+    draw.rectangle(
+        [0, 0, ruler_thickness, ruler_thickness], fill=ruler_bg_color
+    )
+
+    # Tick heights for different intervals (from ruler bottom)
+    tick_100 = 18  # Every 100px - longest, with number
+    tick_50 = 14  # Every 50px - long
+    tick_10 = 10  # Every 10px - medium
+    tick_5 = 6  # Every 5px - short
+
+    # Draw horizontal tick marks and labels (top ruler)
+    for x in range(0, orig_width + 1):
+        tick_x = x + ruler_thickness
+
+        if x % tick_interval == 0:
+            # Major tick (every 100px) - longest with label
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_100),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+            # Draw number label
+            label = str(x)
+            bbox = draw.textbbox((0, 0), label, font=font)
+            text_width = bbox[2] - bbox[0]
+            draw.text(
+                (tick_x - text_width // 2, 1),
+                label,
+                fill=text_color,
+                font=font,
+            )
+        elif x % 50 == 0:
+            # Half tick (every 50px) - long, no label
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_50),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif x % 10 == 0:
+            # Medium tick (every 10px)
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_10),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif x % 5 == 0:
+            # Small tick (every 5px)
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_5),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=minor_tick_color,
+                width=1,
+            )
+
+    # Draw vertical tick marks and labels (left ruler)
+    for y in range(0, orig_height + 1):
+        tick_y = y + ruler_thickness
+
+        if y % tick_interval == 0:
+            # Major tick (every 100px) - longest with label
+            draw.line(
+                [
+                    (ruler_thickness - tick_100, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+            # Draw number label
+            label = str(y)
+            bbox = draw.textbbox((0, 0), label, font=font)
+            text_height = bbox[3] - bbox[1]
+            draw.text(
+                (2, tick_y - text_height // 2),
+                label,
+                fill=text_color,
+                font=font,
+            )
+        elif y % 50 == 0:
+            # Half tick (every 50px) - long, no label
+            draw.line(
+                [
+                    (ruler_thickness - tick_50, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif y % 10 == 0:
+            # Medium tick (every 10px)
+            draw.line(
+                [
+                    (ruler_thickness - tick_10, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif y % 5 == 0:
+            # Small tick (every 5px)
+            draw.line(
+                [
+                    (ruler_thickness - tick_5, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=minor_tick_color,
+                width=1,
+            )
+
+    # Draw border lines for rulers
+    draw.line(
+        [(ruler_thickness, ruler_thickness), (new_width, ruler_thickness)],
+        fill=tick_color,
+        width=1,
+    )
+    draw.line(
+        [(ruler_thickness, ruler_thickness), (ruler_thickness, new_height)],
+        fill=tick_color,
+        width=1,
+    )
+
+    # Save to bytes
+    output = BytesIO()
+    new_image.save(output, format='PNG')
+    return output.getvalue()
+
+
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
 logger = get_logger(__name__)
@@ -687,11 +896,28 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     cache_dir, f"{url_name}_{timestamp}.png"
                 )
 
+                # Process images and optionally add rulers
+                processed_images = []
                 for _, image_data in enumerate(result.images):
                     if image_data.startswith('data:image/png;base64,'):
                         base64_data = image_data.split(',', 1)[1]
-
                         image_bytes = base64.b64decode(base64_data)
+
+                        # Add rulers in full_visual_mode
+                        if self._full_visual_mode:
+                            image_bytes = _add_rulers_to_image(
+                                image_bytes, tick_interval=100
+                            )
+                            # Re-encode to base64 for the processed image
+                            processed_base64 = base64.b64encode(
+                                image_bytes
+                            ).decode('utf-8')
+                            processed_images.append(
+                                f'data:image/png;base64,{processed_base64}'
+                            )
+                        else:
+                            processed_images.append(image_data)
+
                         with open(file_path, 'wb') as f:
                             f.write(image_bytes)
 
@@ -705,9 +931,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     f"Returning ToolResult with {len(result.images)} image(s) "
                     "for agent context"
                 )
+                # Use processed images (with rulers) if in full_visual_mode
+                images_to_return = (
+                    processed_images
+                    if self._full_visual_mode and processed_images
+                    else result.images
+                )
                 return ToolResult(
                     text=result_text,
-                    images=result.images,
+                    images=images_to_return,
                 )
             else:
                 return result_text
