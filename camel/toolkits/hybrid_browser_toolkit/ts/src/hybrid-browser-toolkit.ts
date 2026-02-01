@@ -1,5 +1,5 @@
 import {HybridBrowserSession} from './browser-session';
-import {ActionResult, BrowserAction, BrowserToolkitConfig, PageStabilityResult, SnapshotResult, TabInfo, VisualMarkResult} from './types';
+import {ActionResult, BrowserAction, BrowserToolkitConfig, PageStabilityResult, SnapshotResult, TabInfo, VisualMarkResult, INTERACTIVE_ROLES} from './types';
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
 import {SomScreenshotInjected} from './som-screenshot-injected';
@@ -268,16 +268,8 @@ export class HybridBrowserToolkit {
    */
   private parseClickableElements(snapshotText: string): Set<string> {
     const clickableElements = new Set<string>();
-    const lines = snapshotText.split('\n');
 
-    // Interactive roles that should always be marked (form elements, etc.)
-    const INTERACTIVE_ROLES = new Set([
-      'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
-      'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem',
-      'menuitemcheckbox', 'menuitemradio', 'option', 'tab'
-    ]);
-
-    for (const line of lines) {
+    for (const line of snapshotText.split('\n')) {
       const refMatch = line.match(/\[ref=([^\]]+)\]/);
       if (!refMatch) continue;
 
@@ -289,8 +281,7 @@ export class HybridBrowserToolkit {
         continue;
       }
 
-      // Include interactive form elements by role
-      // Format: "- role description" or "  - role description"
+      // Include interactive form elements by role (uses shared INTERACTIVE_ROLES)
       const roleMatch = line.match(/^\s*-\s+(\w+)\s/);
       if (roleMatch && INTERACTIVE_ROLES.has(roleMatch[1])) {
         clickableElements.add(ref);
