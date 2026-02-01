@@ -21,10 +21,6 @@ export class SomScreenshotInjected {
     const startTime = Date.now();
 
     try {
-      // Use the already filtered clickableElements directly
-      const filterStartTime = Date.now();
-      const filterTime = Date.now() - filterStartTime;
-
       // Prepare element geometry data for export
       const elementGeometry: any[] = [];
       // Inject and capture in one go
@@ -52,29 +48,22 @@ export class SomScreenshotInjected {
 
           // For elements inside iframes (indicated by frameIndex or frameUrl),
           // we cannot use document.elementsFromPoint() to check visibility
-          // because it doesn't penetrate iframes. Instead, check if the element
-          // is within an iframe's visible bounds.
+          // because it doesn't penetrate iframes. Check if an iframe exists
+          // at the element's position.
           if (elementInfo?.frameIndex > 0 || elementInfo?.frameUrl) {
-            // Element is in an iframe - check if iframe itself is visible
             const centerX = coords.x + coords.width * 0.5;
             const centerY = coords.y + coords.height * 0.5;
 
-            // Check if the point is within the viewport
-            if (centerX >= 0 && centerX <= window.innerWidth &&
-                centerY >= 0 && centerY <= window.innerHeight) {
-              // Check if there's an iframe at this position
-              const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
-              for (const elem of elementsAtCenter) {
-                if (elem.tagName.toUpperCase() === 'IFRAME') {
-                  // Found an iframe at this position - element is likely visible
-                  return 'visible';
-                }
+            // Check if there's an iframe at this position
+            const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
+            for (const elem of elementsAtCenter) {
+              if (elem.tagName.toUpperCase() === 'IFRAME') {
+                return 'visible';
               }
-              // No iframe found but element has frame info - still consider visible
-              // (the iframe might be scrolled or the check is imprecise)
-              return 'visible';
             }
-            return 'hidden';
+            // Element has frame info but no iframe found at position -
+            // still consider visible as iframe might be transformed/scrolled
+            return 'visible';
           }
 
           // Simple approach: just check the center point
@@ -556,8 +545,8 @@ export class SomScreenshotInjected {
           injection_method: 'optimized',
           elements_count: result.elementCount,
           display_duration_ms: 1000, // Time the overlay is kept visible
-          parent_child_filter_time_ms: filterTime,
-          filtered_count: 0 // Filtering is done before this method is called
+          parent_child_filter_time_ms: 0, // Filtering is done before this method
+          filtered_count: 0
         }
       };
 
