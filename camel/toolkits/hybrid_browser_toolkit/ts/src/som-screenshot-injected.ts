@@ -62,7 +62,11 @@ export class SomScreenshotInjected {
               }
             }
             // Element has frame info but no iframe found at position -
-            // still consider visible as iframe might be transformed/scrolled
+            // still consider visible as iframe might be transformed/scrolled.
+            // NOTE: Returning 'partial' here would cause false negatives because
+            // elementsFromPoint() cannot detect iframes that are CSS-transformed,
+            // scrolled, or have complex stacking contexts. Keeping 'visible' is
+            // the safer choice to avoid incorrectly hiding valid iframe elements.
             return 'visible';
           }
 

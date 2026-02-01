@@ -709,6 +709,12 @@ export class HybridBrowserSession {
             if (result) {
               const coords = await this.getElementCoordinates(result.locator);
               if (coords) {
+                // NOTE: We use parseFrameRef(ref) to get frameIndex from the ref string,
+                // not from result.frame. This is correct because Playwright's snapshot
+                // automatically prefixes refs with frame info (e.g., "f1e5" for iframe 1).
+                // Using result.frame directly via indexOf() causes issues with object
+                // reference comparison and can incorrectly set frameIndex to 0 for all
+                // elements, breaking iframe visibility detection in SOM screenshots.
                 const { frameIndex } = this.parseFrameRef(ref);
                 playwrightMapping[ref] = {
                   ...playwrightMapping[ref],
@@ -1556,6 +1562,18 @@ export class HybridBrowserSession {
         fromY = action.from_y;
         toX = action.to_x;
         toY = action.to_y;
+
+        // Validate coordinates are within viewport bounds
+        const viewport = page.viewportSize();
+        if (!viewport) {
+          return { success: false, error: 'Viewport size not available from page.' };
+        }
+        if (fromX < 0 || fromY < 0 || fromX > viewport.width || fromY > viewport.height) {
+          return { success: false, error: `Invalid from coordinates (${fromX}, ${fromY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
+        if (toX < 0 || toY < 0 || toX > viewport.width || toY > viewport.height) {
+          return { success: false, error: `Invalid to coordinates (${toX}, ${toY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
 
         // Show highlight at start and end positions for pixel mode
         await this.showClickHighlight(page, fromX, fromY);

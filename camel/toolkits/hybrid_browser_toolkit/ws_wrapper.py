@@ -918,7 +918,15 @@ class WebSocketBrowserWrapper:
         to_x: Optional[float] = None,
         to_y: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Drag and drop using ref IDs or pixel coordinates."""
+        """Drag and drop using ref IDs or pixel coordinates.
+
+        NOTE: This method accepts both ref and pixel parameters, but mixing
+        them is prevented at a higher level. The toolkit's _create_mode_wrapper
+        generates mode-specific wrappers with exclusive signatures:
+        - full_visual_mode: only (from_x, from_y, to_x, to_y) exposed
+        - normal mode: only (from_ref, to_ref) exposed
+        So users cannot mix ref and coordinate modes through the toolkit API.
+        """
         params: Dict[str, Any] = {}
         if from_ref is not None and to_ref is not None:
             params = {'from_ref': from_ref, 'to_ref': to_ref}
