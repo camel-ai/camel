@@ -53,6 +53,83 @@ export class HybridBrowserSession {
     return typeof result === 'string' ? result : result.full;
   }
 
+  /**
+   * Parse frame prefix from ref (e.g., "f1e5" -> { frameIndex: 1, localRef: "e5" })
+   * Refs without frame prefix (e.g., "e5") return frameIndex: 0
+   */
+  private parseFrameRef(ref: string): { frameIndex: number; localRef: string } {
+    // Pattern: f<number>e<rest> for iframe elements, e<rest> for main frame
+    const frameMatch = ref.match(/^f(\d+)(e.*)$/);
+    if (frameMatch) {
+      return {
+        frameIndex: parseInt(frameMatch[1], 10),
+        localRef: frameMatch[2]  // e.g., "e5"
+      };
+    }
+    // No frame prefix - main frame element
+    return { frameIndex: 0, localRef: ref };
+  }
+
+  /**
+   * Find an element by aria-ref selector across all frames (including iframes)
+   * Handles Playwright's frame-prefixed refs (e.g., "f1e5" for elements in first iframe)
+   * Returns the locator and the frame it was found in, or null if not found
+   */
+  private async findElementAcrossFrames(
+    page: Page,
+    ref: string
+  ): Promise<{ locator: ReturnType<Frame['locator']>; frame: Frame } | null> {
+    const allFrames = page.frames();
+    const { frameIndex, localRef } = this.parseFrameRef(ref);
+
+    // If ref has frame prefix, try that specific frame first
+    if (frameIndex > 0 && frameIndex < allFrames.length) {
+      const targetFrame = allFrames[frameIndex];
+      try {
+        const selector = `aria-ref=${localRef}`;
+        const element = await targetFrame.locator(selector).first();
+        const exists = await element.count() > 0;
+        if (exists) {
+          return { locator: element, frame: targetFrame };
+        }
+      } catch (error) {
+        // Will try fallback below
+      }
+    }
+
+    // Try with original ref in all frames (for refs without frame prefix or fallback)
+    const selector = `aria-ref=${ref}`;
+    for (const frame of allFrames) {
+      try {
+        const element = await frame.locator(selector).first();
+        const exists = await element.count() > 0;
+        if (exists) {
+          return { locator: element, frame };
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+
+    // Also try with localRef in all frames as final fallback
+    if (localRef !== ref) {
+      const localSelector = `aria-ref=${localRef}`;
+      for (const frame of allFrames) {
+        try {
+          const element = await frame.locator(localSelector).first();
+          const exists = await element.count() > 0;
+          if (exists) {
+            return { locator: element, frame };
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+    }
+
+    return null;
+  }
+
   private registerNewPage(tabId: string, page: Page): void {
     // Register page and logs with tabId
     this.pages.set(tabId, page);
@@ -499,32 +576,88 @@ export class HybridBrowserSession {
       }
 
       if (includeCoordinates) {
+        // Get all frames including main page and iframes
+        const allFrames = page.frames();
+
         // Get coordinates for each ref using aria-ref selector
+        // Search across all frames to handle elements inside iframes
+        // Handle frame-prefixed refs (e.g., "f1e5" for elements in first iframe)
         for (const ref of refs) {
-          try {
-            const selector = `aria-ref=${ref}`;
-            const element = await page.locator(selector).first();
-            const exists = await element.count() > 0;
+          let found = false;
+          const { frameIndex, localRef } = this.parseFrameRef(ref);
 
-            if (exists) {
-              // Get bounding box
-              const boundingBox = await element.boundingBox();
+          // If ref has frame prefix, try that specific frame first with localRef
+          if (frameIndex > 0 && frameIndex < allFrames.length) {
+            const targetFrame = allFrames[frameIndex];
+            try {
+              const selector = `aria-ref=${localRef}`;
+              const element = await targetFrame.locator(selector).first();
+              const exists = await element.count() > 0;
 
-              if (boundingBox) {
-                // Add coordinates to existing element info
-                playwrightMapping[ref] = {
-                  ...playwrightMapping[ref],
-                  coordinates: {
-                    x: Math.round(boundingBox.x),
-                    y: Math.round(boundingBox.y),
-                    width: Math.round(boundingBox.width),
-                    height: Math.round(boundingBox.height)
+              if (exists) {
+                const boundingBox = await element.boundingBox();
+                if (boundingBox) {
+                  playwrightMapping[ref] = {
+                    ...playwrightMapping[ref],
+                    coordinates: {
+                      x: Math.round(boundingBox.x),
+                      y: Math.round(boundingBox.y),
+                      width: Math.round(boundingBox.width),
+                      height: Math.round(boundingBox.height)
+                    },
+                    frameIndex,
+                    frameUrl: targetFrame.url()
+                  };
+                  found = true;
+                }
+              }
+            } catch (error) {
+              // Will try fallback below
+            }
+          }
+
+          // Fallback: search all frames with original ref
+          if (!found) {
+            for (const frame of allFrames) {
+              try {
+                const selector = `aria-ref=${ref}`;
+                const element = await frame.locator(selector).first();
+                const exists = await element.count() > 0;
+
+                if (exists) {
+                  // Get bounding box - Playwright returns coordinates relative to main viewport
+                  // even for elements inside iframes
+                  const boundingBox = await element.boundingBox();
+
+                  if (boundingBox) {
+                    // Add coordinates to existing element info
+                    // For iframe elements (ref starts with 'f'), also set frameIndex
+                    const isIframeElement = ref.match(/^f(\d+)/);
+                    playwrightMapping[ref] = {
+                      ...playwrightMapping[ref],
+                      coordinates: {
+                        x: Math.round(boundingBox.x),
+                        y: Math.round(boundingBox.y),
+                        width: Math.round(boundingBox.width),
+                        height: Math.round(boundingBox.height)
+                      },
+                      // Track which frame the element is in
+                      frameIndex: isIframeElement ? parseInt(isIframeElement[1], 10) : 0,
+                      frameUrl: frame.url() !== page.url() ? frame.url() : undefined
+                    };
+                    found = true;
+                    break; // Found the element, no need to search other frames
                   }
-                };
+                }
+              } catch (error) {
+                // Continue to next frame if this one fails
+                continue;
               }
             }
-          } catch (error) {
-            console.warn(`Failed to get coordinates for ref ${ref}:`, error);
+          }
+
+          if (!found) {
+            console.warn(`[getSnapshotForAINative] Element with ref ${ref} not found in any frame`);
           }
         }
       }
@@ -603,18 +736,15 @@ export class HybridBrowserSession {
       //  Ensure we have the latest snapshot and mapping
       await this.getSnapshot(page);
 
-      //  Use Playwright's aria-ref selector engine
-      const selector = `aria-ref=${ref}`;
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      // Check if element exists
-      const element = await page.locator(selector).first();
-      const exists = await element.count() > 0;
-
-      if (!exists) {
+      if (!result) {
         page.off('dialog', dialogHandler);
-        return { success: false, error: `Element with ref ${ref} not found` };
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
 
+      const element = result.locator;
       const role = await element.getAttribute('role');
       const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
       const isCombobox = role === 'combobox' || elementTagName === 'combobox';
@@ -857,13 +987,14 @@ export class HybridBrowserSession {
 
       // Handle single input (backward compatibility)
       if (ref && text !== undefined) {
-        const selector = `aria-ref=${ref}`;
-        const element = await page.locator(selector).first();
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const result = await this.findElementAcrossFrames(page, ref);
 
-        const exists = await element.count() > 0;
-        if (!exists) {
-          return { success: false, error: `Element with ref ${ref} not found` };
+        if (!result) {
+          return { success: false, error: `Element with ref ${ref} not found in any frame` };
         }
+
+        const element = result.locator;
 
         // Get element attributes to check if it's readonly or a special input type
         let originalPlaceholder: string | null = null;
@@ -1192,14 +1323,14 @@ export class HybridBrowserSession {
       // Ensure we have the latest snapshot
       await this.getSnapshot(page);
 
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      if (!result) {
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
+
+      const element = result.locator;
 
       // Select value using Playwright's built-in selectOption method
       await element.selectOption(value);
@@ -1327,25 +1458,23 @@ export class HybridBrowserSession {
         await this.showClickHighlight(page, fromX, fromY);
         await this.showClickHighlight(page, toX, toY);
       }
-      // Ref mode: get coordinates from elements
+      // Ref mode: get coordinates from elements (supports iframes)
       else if (action.from_ref && action.to_ref) {
         await this.getSnapshot(page);
 
-        const fromSelector = `aria-ref=${action.from_ref}`;
-        const toSelector = `aria-ref=${action.to_ref}`;
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const fromResult = await this.findElementAcrossFrames(page, action.from_ref);
+        const toResult = await this.findElementAcrossFrames(page, action.to_ref);
 
-        const fromElement = await page.locator(fromSelector).first();
-        const toElement = await page.locator(toSelector).first();
-
-        if (await fromElement.count() === 0) {
-          return { success: false, error: `Source element with ref ${action.from_ref} not found` };
+        if (!fromResult) {
+          return { success: false, error: `Source element with ref ${action.from_ref} not found in any frame` };
         }
-        if (await toElement.count() === 0) {
-          return { success: false, error: `Target element with ref ${action.to_ref} not found` };
+        if (!toResult) {
+          return { success: false, error: `Target element with ref ${action.to_ref} not found in any frame` };
         }
 
-        const fromBox = await fromElement.boundingBox();
-        const toBox = await toElement.boundingBox();
+        const fromBox = await fromResult.locator.boundingBox();
+        const toBox = await toResult.locator.boundingBox();
 
         if (!fromBox) {
           return { success: false, error: `Could not get bounding box for source element` };

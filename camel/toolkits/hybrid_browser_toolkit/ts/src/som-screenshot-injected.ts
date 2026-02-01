@@ -24,7 +24,6 @@ export class SomScreenshotInjected {
       // Use the already filtered clickableElements directly
       const filterStartTime = Date.now();
       const filterTime = Date.now() - filterStartTime;
-      console.log(`Using pre-filtered clickable elements: ${clickableElements.size} elements`);
 
       // Prepare element geometry data for export
       const elementGeometry: any[] = [];
@@ -48,6 +47,33 @@ export class SomScreenshotInjected {
           // Skip if element is outside viewport
           if (coords.y + coords.height < 0 || coords.y > window.innerHeight ||
               coords.x + coords.width < 0 || coords.x > window.innerWidth) {
+            return 'hidden';
+          }
+
+          // For elements inside iframes (indicated by frameIndex or frameUrl),
+          // we cannot use document.elementsFromPoint() to check visibility
+          // because it doesn't penetrate iframes. Instead, check if the element
+          // is within an iframe's visible bounds.
+          if (elementInfo?.frameIndex > 0 || elementInfo?.frameUrl) {
+            // Element is in an iframe - check if iframe itself is visible
+            const centerX = coords.x + coords.width * 0.5;
+            const centerY = coords.y + coords.height * 0.5;
+
+            // Check if the point is within the viewport
+            if (centerX >= 0 && centerX <= window.innerWidth &&
+                centerY >= 0 && centerY <= window.innerHeight) {
+              // Check if there's an iframe at this position
+              const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
+              for (const elem of elementsAtCenter) {
+                if (elem.tagName.toUpperCase() === 'IFRAME') {
+                  // Found an iframe at this position - element is likely visible
+                  return 'visible';
+                }
+              }
+              // No iframe found but element has frame info - still consider visible
+              // (the iframe might be scrolled or the check is imprecise)
+              return 'visible';
+            }
             return 'hidden';
           }
 

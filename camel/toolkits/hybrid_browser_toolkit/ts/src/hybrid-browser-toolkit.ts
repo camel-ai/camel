@@ -191,7 +191,6 @@ export class HybridBrowserToolkit {
 
   async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
-    console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
 
     try {
       // Get page and snapshot data
@@ -200,11 +199,9 @@ export class HybridBrowserToolkit {
 
       // Parse clickable elements from snapshot text
       const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
-      console.log(`[HybridBrowserToolkit] Found ${clickableElements.size} clickable elements`);
 
       // Apply hierarchy-based filtering
       const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
-      console.log(`[HybridBrowserToolkit] After filtering: ${filteredElements.size} elements remain`);
 
       // Use injected SOM-screenshot method without export path
       const result = await SomScreenshotInjected.captureOptimized(
@@ -267,19 +264,36 @@ export class HybridBrowserToolkit {
   }
 
   /**
-   * Parse clickable elements from snapshot text
+   * Parse clickable/interactive elements from snapshot text
    */
   private parseClickableElements(snapshotText: string): Set<string> {
     const clickableElements = new Set<string>();
     const lines = snapshotText.split('\n');
 
+    // Interactive roles that should always be marked (form elements, etc.)
+    const INTERACTIVE_ROLES = new Set([
+      'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
+      'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem',
+      'menuitemcheckbox', 'menuitemradio', 'option', 'tab'
+    ]);
+
     for (const line of lines) {
-      // Look for lines containing [cursor=pointer] or [active] and extract ref
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (!refMatch) continue;
+
+      const ref = refMatch[1];
+
+      // Include elements with cursor=pointer or active state
       if (line.includes('[cursor=pointer]') || line.includes('[active]')) {
-        const refMatch = line.match(/\[ref=([^\]]+)\]/);
-        if (refMatch) {
-          clickableElements.add(refMatch[1]);
-        }
+        clickableElements.add(ref);
+        continue;
+      }
+
+      // Include interactive form elements by role
+      // Format: "- role description" or "  - role description"
+      const roleMatch = line.match(/^\s*-\s+(\w+)\s/);
+      if (roleMatch && INTERACTIVE_ROLES.has(roleMatch[1])) {
+        clickableElements.add(ref);
       }
     }
 
