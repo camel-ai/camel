@@ -344,7 +344,8 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
-    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0905-Preview"
+    MOONSHOT_KIMI_K2_5 = "kimi-k2.5"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -1043,6 +1044,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }
 
     @property
@@ -1470,7 +1472,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
-            ModelType.MOONSHOT_KIMI_K2,
             ModelType.NEBIUS_GLM_4_5,
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
@@ -1592,6 +1593,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+            ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }:
             return 256_000
 
