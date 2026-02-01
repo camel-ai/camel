@@ -1,5 +1,5 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
-import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult } from './types';
+import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult, INTERACTIVE_ROLES, NearestElementInfo } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
 // Constants for loading element detection
@@ -148,7 +148,6 @@ export class HybridBrowserSession {
 
   /**
    * Find N nearest interactive elements to a given point
-   * Reuses visual marking screenshot's coordinate mechanism
    * Returns elements with clickable center coordinates and aria info
    */
   private findNearestElements(
@@ -157,75 +156,52 @@ export class HybridBrowserSession {
     x: number,
     y: number,
     count: number = 5
-  ): Array<{
-    ref: string;
-    role: string;
-    name: string;
-    distance: number;
-    clickableCoord: { x: number; y: number };
-    boundingBox: { x: number; y: number; width: number; height: number };
-  }> {
-    // Filter interactive roles (same as visual marking screenshot)
-    const INTERACTIVE_ROLES = new Set([
-      'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
-      'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem', 'tab', 'option'
-    ]);
-
+  ): NearestElementInfo[] {
     // Parse aria-label/name from snapshot text
-    // Format: - role "name" [ref=xxx] or - role [ref=xxx]
-    const elementNames: Map<string, string> = new Map();
-    const lines = snapshot.split('\n');
-    for (const line of lines) {
-      const refMatch = line.match(/\[ref=([^\]]+)\]/);
-      if (refMatch) {
-        const ref = refMatch[1];
-        // Extract name from quotes: - role "name" [ref=...]
-        const nameMatch = line.match(/-\s+\w+\s+"([^"]+)"/);
-        if (nameMatch) {
-          elementNames.set(ref, nameMatch[1]);
-        }
-      }
-    }
+    const elementNames = this.parseElementNamesFromSnapshot(snapshot);
 
-    const elementsWithDistance: Array<{
-      ref: string;
-      role: string;
-      name: string;
-      distance: number;
-      clickableCoord: { x: number; y: number };
-      boundingBox: { x: number; y: number; width: number; height: number };
-    }> = [];
+    const elementsWithDistance: NearestElementInfo[] = [];
 
     for (const [ref, element] of Object.entries(elements)) {
       if (!element.coordinates) continue;
 
-      // Only include interactive elements
       const role = element.role || 'unknown';
       if (!INTERACTIVE_ROLES.has(role)) continue;
 
       const coords = element.coordinates;
-      const distance = this.distanceToElement(x, y, coords);
-
-      // Calculate clickable center coordinate
-      const clickableCoord = {
-        x: Math.round(coords.x + coords.width / 2),
-        y: Math.round(coords.y + coords.height / 2)
-      };
-
       elementsWithDistance.push({
         ref,
         role,
         name: elementNames.get(ref) || '',
-        distance: Math.round(distance),
-        clickableCoord,
+        distance: Math.round(this.distanceToElement(x, y, coords)),
+        clickableCoord: {
+          x: Math.round(coords.x + coords.width / 2),
+          y: Math.round(coords.y + coords.height / 2)
+        },
         boundingBox: coords
       });
     }
 
-    // Sort by distance and return top N
     return elementsWithDistance
       .sort((a, b) => a.distance - b.distance)
       .slice(0, count);
+  }
+
+  /**
+   * Parse element names/labels from snapshot text
+   */
+  private parseElementNamesFromSnapshot(snapshot: string): Map<string, string> {
+    const elementNames = new Map<string, string>();
+    for (const line of snapshot.split('\n')) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch) {
+        const nameMatch = line.match(/-\s+\w+\s+"([^"]+)"/);
+        if (nameMatch) {
+          elementNames.set(refMatch[1], nameMatch[1]);
+        }
+      }
+    }
+    return elementNames;
   }
 
   /**
@@ -234,14 +210,7 @@ export class HybridBrowserSession {
   private formatNearestElementsMessage(
     clickX: number,
     clickY: number,
-    nearestElements: Array<{
-      ref: string;
-      role: string;
-      name: string;
-      distance: number;
-      clickableCoord: { x: number; y: number };
-      boundingBox: { x: number; y: number; width: number; height: number };
-    }>
+    nearestElements: NearestElementInfo[]
   ): string {
     const lines: string[] = [
       `Click at (${clickX}, ${clickY}) may be ineffective - page content unchanged.`,
