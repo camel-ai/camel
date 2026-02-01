@@ -133,6 +133,157 @@ export class HybridBrowserSession {
     };
   }
 
+  /**
+   * Calculate distance from point to element center
+   */
+  private distanceToElement(
+    x: number,
+    y: number,
+    coords: { x: number; y: number; width: number; height: number }
+  ): number {
+    const centerX = coords.x + coords.width / 2;
+    const centerY = coords.y + coords.height / 2;
+    return Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+  }
+
+  /**
+   * Find N nearest interactive elements to a given point
+   * Reuses visual marking screenshot's coordinate mechanism
+   * Returns elements with clickable center coordinates and aria info
+   */
+  private findNearestElements(
+    elements: Record<string, any>,
+    snapshot: string,
+    x: number,
+    y: number,
+    count: number = 5
+  ): Array<{
+    ref: string;
+    role: string;
+    name: string;
+    distance: number;
+    clickableCoord: { x: number; y: number };
+    boundingBox: { x: number; y: number; width: number; height: number };
+  }> {
+    // Filter interactive roles (same as visual marking screenshot)
+    const INTERACTIVE_ROLES = new Set([
+      'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
+      'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem', 'tab', 'option'
+    ]);
+
+    // Parse aria-label/name from snapshot text
+    // Format: - role "name" [ref=xxx] or - role [ref=xxx]
+    const elementNames: Map<string, string> = new Map();
+    const lines = snapshot.split('\n');
+    for (const line of lines) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch) {
+        const ref = refMatch[1];
+        // Extract name from quotes: - role "name" [ref=...]
+        const nameMatch = line.match(/-\s+\w+\s+"([^"]+)"/);
+        if (nameMatch) {
+          elementNames.set(ref, nameMatch[1]);
+        }
+      }
+    }
+
+    const elementsWithDistance: Array<{
+      ref: string;
+      role: string;
+      name: string;
+      distance: number;
+      clickableCoord: { x: number; y: number };
+      boundingBox: { x: number; y: number; width: number; height: number };
+    }> = [];
+
+    for (const [ref, element] of Object.entries(elements)) {
+      if (!element.coordinates) continue;
+
+      // Only include interactive elements
+      const role = element.role || 'unknown';
+      if (!INTERACTIVE_ROLES.has(role)) continue;
+
+      const coords = element.coordinates;
+      const distance = this.distanceToElement(x, y, coords);
+
+      // Calculate clickable center coordinate
+      const clickableCoord = {
+        x: Math.round(coords.x + coords.width / 2),
+        y: Math.round(coords.y + coords.height / 2)
+      };
+
+      elementsWithDistance.push({
+        ref,
+        role,
+        name: elementNames.get(ref) || '',
+        distance: Math.round(distance),
+        clickableCoord,
+        boundingBox: coords
+      });
+    }
+
+    // Sort by distance and return top N
+    return elementsWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, count);
+  }
+
+  /**
+   * Format nearest elements as readable text for LLM
+   */
+  private formatNearestElementsMessage(
+    clickX: number,
+    clickY: number,
+    nearestElements: Array<{
+      ref: string;
+      role: string;
+      name: string;
+      distance: number;
+      clickableCoord: { x: number; y: number };
+      boundingBox: { x: number; y: number; width: number; height: number };
+    }>
+  ): string {
+    const lines: string[] = [
+      `Click at (${clickX}, ${clickY}) may be ineffective - page content unchanged.`,
+      `Nearest interactive elements:`
+    ];
+
+    for (let i = 0; i < nearestElements.length; i++) {
+      const el = nearestElements[i];
+      const nameStr = el.name ? ` "${el.name}"` : '';
+      const box = el.boundingBox;
+      lines.push(
+        `  ${i + 1}. [${el.role}]${nameStr} - click at (${el.clickableCoord.x}, ${el.clickableCoord.y}), ` +
+        `area: (${box.x}, ${box.y}) to (${box.x + box.width}, ${box.y + box.height})`
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Check if a point is within a canvas element
+   */
+  private async isPointOnCanvas(page: Page, x: number, y: number): Promise<boolean> {
+    return await page.evaluate(({ x, y }) => {
+      const element = document.elementFromPoint(x, y);
+      if (!element) return false;
+      // Check if element is canvas or inside canvas
+      return element.tagName.toUpperCase() === 'CANVAS' ||
+             element.closest('canvas') !== null;
+    }, { x, y });
+  }
+
+  /**
+   * Compare two snapshots to detect if page changed
+   * Returns true if snapshots are meaningfully different
+   */
+  private snapshotsAreDifferent(before: string, after: string): boolean {
+    // Normalize whitespace and compare
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    return normalize(before) !== normalize(after);
+  }
+
   private registerNewPage(tabId: string, page: Page): void {
     // Register page and logs with tabId
     this.pages.set(tabId, page);
@@ -1338,9 +1489,19 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Simplified mouse control implementation
+   *  Mouse control implementation with ineffective click detection
+   *  For full visual mode: detects when click has no effect and suggests nearest elements
    */
-  private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
+  private async performMouseControl(
+    page: Page,
+    control: string,
+    x: number,
+    y: number
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    resultMessage?: string;  // Custom result message for ineffective clicks
+  }> {
     try {
       const viewport = page.viewportSize();
       if (!viewport) {
@@ -1350,9 +1511,23 @@ export class HybridBrowserSession {
         return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
       }
 
+      // Check if clicking on canvas element
+      const isOnCanvas = await this.isPointOnCanvas(page, x, y);
+
+      // Get snapshot before click (with coordinates for nearest element calculation)
+      let snapshotBefore: string | null = null;
+      let elementsWithCoords: Record<string, any> | null = null;
+
+      if (!isOnCanvas && control === 'click') {
+        const snapshotResult = await this.getSnapshotForAINative(true, false);
+        snapshotBefore = snapshotResult.snapshot;
+        elementsWithCoords = snapshotResult.elements;
+      }
+
       // Show highlight animation at click position
       await this.showClickHighlight(page, x, y);
 
+      // Perform the click action
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
@@ -1368,6 +1543,25 @@ export class HybridBrowserSession {
         }
         default:
           return { success: false, error: `Invalid control action: ${control}` };
+      }
+
+      // For non-canvas clicks, check if the click had any effect
+      if (!isOnCanvas && control === 'click' && snapshotBefore && elementsWithCoords) {
+        // Wait a moment for any UI changes
+        await page.waitForTimeout(100);
+
+        // Get snapshot after click
+        const snapshotAfter = await this.getSnapshot(page);
+
+        // Check if snapshot changed
+        if (!this.snapshotsAreDifferent(snapshotBefore, snapshotAfter)) {
+          // Click had no effect - find nearest interactive elements and format message
+          const nearestCount = this.configLoader.getWebSocketConfig().nearestElementsCount;
+          const nearestElements = this.findNearestElements(elementsWithCoords, snapshotBefore, x, y, nearestCount);
+          const resultMessage = this.formatNearestElementsMessage(x, y, nearestElements);
+
+          return { success: true, resultMessage };
+        }
       }
 
       return { success: true };
@@ -1561,6 +1755,12 @@ export class HybridBrowserSession {
           if (!mouseControlResult.success) {
             throw new Error(`Action failed: ${mouseControlResult.error}`);
           }
+
+          // Use custom result message if click was ineffective
+          if (mouseControlResult.resultMessage) {
+            customMessage = mouseControlResult.resultMessage;
+          }
+
           actionExecutionTime = Date.now() - mouseControlStart;
           break;
         }
