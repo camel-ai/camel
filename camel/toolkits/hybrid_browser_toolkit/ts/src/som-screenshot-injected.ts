@@ -130,6 +130,27 @@ export class SomScreenshotInjected {
               const tagName = topElement.tagName.toUpperCase();
               const topRect = topElement.getBoundingClientRect();
 
+              // Check if topElement is a Web Component (custom element with Shadow DOM)
+              // Custom elements have a hyphen in their tag name (e.g., NTP-APP, MY-COMPONENT)
+              const isCustomElement = tagName.includes('-');
+              // Also check if it's a shadow host
+              const isShadowHost = !!(topElement as any).shadowRoot;
+
+              // If the top element is a Web Component that covers our target area,
+              // assume the target is visible inside the shadow DOM
+              if (isCustomElement || isShadowHost) {
+                // Check if our target coords are within the custom element's bounds
+                const targetInCustomElement =
+                  coords.x >= topRect.left - 5 &&
+                  coords.y >= topRect.top - 5 &&
+                  coords.x + coords.width <= topRect.right + 5 &&
+                  coords.y + coords.height <= topRect.bottom + 5;
+
+                if (targetInCustomElement) {
+                  return { visibility: 'visible', elementsAtCenter };
+                }
+              }
+
               // Get element role/type for better decision making
               const elementRole = elementInfo?.role || '';
               const elementTagName = elementInfo?.tagName || '';
@@ -484,7 +505,7 @@ export class SomScreenshotInjected {
         elements: snapshotResult.elements,
         clickable: Array.from(clickableElements),
         filterDebugInfo: [],
-        enableDebug: !!exportPath  // Only enable debug info collection when exporting
+        enableDebug: !!exportPath  // Only enable debug when exporting
       });
 
       // Take screenshot immediately (no need to wait)
