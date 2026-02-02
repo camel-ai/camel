@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import pytest
 from mock import MagicMock, patch
 
@@ -22,9 +23,15 @@ from camel.types import ModelPlatformType, ModelType
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
+        pytest.param(
+            lambda: ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.STUB,
+            ),
+            marks=pytest.mark.skipif(
+                not os.environ.get("OPENAI_API_KEY"),
+                reason="OPENAI_API_KEY not found",
+            ),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -33,6 +40,7 @@ parametrize = pytest.mark.parametrize(
 
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
+    model = model() if callable(model) else model
     r"""Test that the BabyAGI example structure works without actually running
     the resource-intensive parts.
     """
@@ -66,6 +74,7 @@ def test_ai_society_babyagi_playing_example(model):
 
 @parametrize
 def test_babyagi_initialization(model):
+    model = model() if callable(model) else model
     r"""Test that BabyAGI initializes with correct parameters."""
     task_prompt = "Test task prompt"
     assistant_role = "Test Assistant"
@@ -113,6 +122,7 @@ def test_babyagi_initialization(model):
 
 @parametrize
 def test_babyagi_step_functionality(model):
+    model = model() if callable(model) else model
     r"""Test that BabyAGI step method works as expected."""
     with patch(
         'examples.ai_society.babyagi_playing.BabyAGI'
@@ -153,6 +163,7 @@ def test_babyagi_step_functionality(model):
 
 @parametrize
 def test_babyagi_termination(model):
+    model = model() if callable(model) else model
     r"""Test that BabyAGI terminates correctly when response indicates
     termination.
     """

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import pytest
 
 import examples.agents.single_agent
@@ -24,9 +25,15 @@ from camel.types import ModelPlatformType, ModelType
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            ModelPlatformType.STUB,
-            model_type=ModelType.STUB,
+        pytest.param(
+            lambda: ModelFactory.create(
+                ModelPlatformType.STUB,
+                model_type=ModelType.STUB,
+            ),
+            marks=pytest.mark.skipif(
+                not os.environ.get("OPENAI_API_KEY"),
+                reason="OPENAI_API_KEY not found",
+            ),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -35,40 +42,57 @@ parametrize = pytest.mark.parametrize(
 
 @parametrize
 def test_single_agent(model):
+    model = model() if callable(model) else model
     examples.agents.single_agent.main(model=model)
 
 
 @pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            ModelPlatformType.STUB,
-            model_type=ModelType.STUB,
+        pytest.param(
+            lambda: ModelFactory.create(
+                ModelPlatformType.STUB,
+                model_type=ModelType.STUB,
+            ),
+            marks=pytest.mark.skipif(
+                not os.environ.get("OPENAI_API_KEY"),
+                reason="OPENAI_API_KEY not found",
+            ),
         )
     ],
 )
 def test_misalignment_single_agent(model):
+    model = model() if callable(model) else model
     examples.misalignment.single_agent.main(model=model)
 
 
 @parametrize
 def test_evaluation_single_agent(model):
+    model = model() if callable(model) else model
     examples.evaluation.single_agent.main(model=model)
 
 
 @parametrize
 def test_code_generate_metadata(model):
+    model = model() if callable(model) else model
     examples.code.generate_meta_data.main(model=model)
 
 
 @pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
+        pytest.param(
+            lambda: ModelFactory.create(
+                ModelPlatformType.OPENAI,
+                model_type=ModelType.STUB,
+            ),
+            marks=pytest.mark.skipif(
+                not os.environ.get("OPENAI_API_KEY"),
+                reason="OPENAI_API_KEY not found",
+            ),
         )
     ],
 )
 def test_code_task_generation(model):
+    model = model() if callable(model) else model
     examples.code.task_generation.main(model=model)
