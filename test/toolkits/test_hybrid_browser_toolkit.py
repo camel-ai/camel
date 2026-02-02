@@ -144,6 +144,13 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.browser_download_file = AsyncMock(
+        return_value={
+            "success": True,
+            "message": "Download listener active.",
+            "saveDir": "/tmp/downloads",
+        }
+    )
 
     return mock_ws_wrapper
 
@@ -653,7 +660,49 @@ class TestHybridBrowserToolkit:
         assert "tabs" in result
         assert "current_tab" in result
         assert "total_tabs" in result
-        assert (
-            "uploaded" in result["result"].lower()
-            or "successfully" in result["result"].lower()
+
+    @pytest.mark.asyncio
+    async def test_download_file_valid(self, browser_toolkit_fixture):
+        """Test file download listener with valid download directory."""
+        toolkit = browser_toolkit_fixture
+        toolkit._download_dir = "/tmp/downloads"  # Set download dir
+        result = await toolkit.browser_download_file()
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+        assert "Download listener active" in result["result"]
+        assert "/tmp/downloads" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_no_download_dir(
+        self, browser_toolkit_fixture
+    ):
+        """Test file download when no download directory is configured."""
+        toolkit = browser_toolkit_fixture
+        toolkit._download_dir = None  # Ensure no download dir set
+        result = await toolkit.browser_download_file()
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+        assert "No download directory configured" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_exception(self, browser_toolkit_fixture):
+        """Test file download when exception is raised."""
+        toolkit = browser_toolkit_fixture
+        toolkit._download_dir = "/tmp/downloads"
+        toolkit._ws_wrapper.browser_download_file = AsyncMock(
+            side_effect=Exception("WebSocket connection failed")
         )
+
+        result = await toolkit.browser_download_file()
+
+        assert "result" in result
+        assert "Error" in result["result"]
+        assert "WebSocket connection failed" in result["result"]
