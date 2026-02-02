@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
+import os
 from copy import deepcopy
 from io import BytesIO
 from typing import List
@@ -81,9 +82,15 @@ model_backend_rsp_base = ChatCompletion(
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.DEFAULT,
+        pytest.param(
+            lambda: ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.DEFAULT,
+            ),
+            marks=pytest.mark.skipif(
+                not os.environ.get("OPENAI_API_KEY"),
+                reason="OPENAI_API_KEY not found",
+            ),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -92,7 +99,7 @@ parametrize = pytest.mark.parametrize(
 
 @parametrize
 def test_chat_agent(model, step_call_count=3):
-    model = model
+    model = model() if callable(model) else model
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(

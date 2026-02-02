@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock
 
 import pytest
@@ -32,10 +33,16 @@ from camel.types import (
     TaskType,
 )
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.DEFAULT,
-)
+
+@pytest.fixture
+def model():
+    if not os.environ.get("OPENAI_API_KEY"):
+        return None
+    return ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.DEFAULT,
+    )
+
 
 model_backend_rsp = ChatCompletion(
     id="mock_response_id",
@@ -63,12 +70,16 @@ model_backend_rsp = ChatCompletion(
 )
 
 
-@pytest.mark.parametrize("model", [None, model])
+@pytest.mark.parametrize("model_param", ["none", "model"])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
-    if model is not None:
+def test_role_playing_init(model, model_param, critic_role_name, with_critic_in_the_loop):
+    if model_param == "model":
+        if model is None:
+            pytest.skip("OPENAI_API_KEY not found")
         model.run = MagicMock(return_value=model_backend_rsp)
+    else:
+        model = None
 
     role_playing = RolePlaying(
         assistant_role_name="assistant",

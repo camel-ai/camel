@@ -11,7 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import AsyncMock, Mock, patch
+
+# Set mock API keys before importing agent_config to avoid initialization errors
+os.environ["OPENROUTER_API_KEY"] = "mock_key"
+os.environ["DEEPSEEK_API_KEY"] = "mock_key"
+os.environ["OPENAI_API_KEY"] = "mock_key"
 
 import pytest
 from mcp.server.fastmcp import Context
