@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This example demonstrates how to use the CAMEL ChatAgent with the OpenAI
 Responses API model. It covers:
@@ -199,16 +199,16 @@ if __name__ == "__main__":
 === Basic Chat ===
 Sure! Here's a camel joke for you:
 
-Why do camels make terrible secret agents?  
+Why do camels make terrible secret agents?
 Because they always let the hump out of the bag!
 
 === Structured Output Chat ===
 Structured Output: name='France' capital='Paris' population=67081000
 
 === Streaming Chat ===
-Streaming Result: Golden hues ignite the sky,  
-Whispers of dawn begin to fly.  
-Night retreats with gentle grace,  
+Streaming Result: Golden hues ignite the sky,
+Whispers of dawn begin to fly.
+Night retreats with gentle grace,
 Sunrise paints a warm embrace.
 
 === Tool Call Chat ===

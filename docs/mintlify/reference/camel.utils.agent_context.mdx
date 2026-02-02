@@ -1,0 +1,30 @@
+<a id="camel.utils.agent_context"></a>
+
+<a id="camel.utils.agent_context.set_current_agent_id"></a>
+
+## set_current_agent_id
+
+```python
+def set_current_agent_id(agent_id: str):
+```
+
+Set the current agent ID in context-local storage.
+
+This is safe to use in both sync and async contexts.
+In async contexts, each coroutine maintains its own value.
+
+**Parameters:**
+
+- **agent_id** (str): The agent ID to set.
+
+<a id="camel.utils.agent_context.get_current_agent_id"></a>
+
+## get_current_agent_id
+
+```python
+def get_current_agent_id():
+```
+
+**Returns:**
+
+  Optional[str]: The agent ID if set, None otherwise.

@@ -1,0 +1,127 @@
+# Performance profiling workflow - runs every 2 days to detect performance regressions
+
+name: Performance Profiling
+
+on:
+  schedule:
+    - cron: '0 0 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profiling:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        benchmark:
+          - name: chatagent_overhead
+            script: profiling/chatagent_overhead.py
+            description: "ChatAgent overhead vs direct API calls"
+            num_runs: 20
+            threshold: 2.0
+    env:
+      RESULT_FILE: profiling/results/${{ matrix.benchmark.name }}.json
+      BASELINE_FILE: profiling/baselines/${{ matrix.benchmark.name }}.json
+
+    steps:
+    - uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+    - uses: ./.github/actions/camel_install
+      with:
+        python-version: "3.10"
+
+    - run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all]"
+
+    - uses: actions/cache@v4
+      with:
+        path: ${{ env.BASELINE_FILE }}
+        key: profiling-${{ matrix.benchmark.name }}-${{ github.ref_name }}
+        restore-keys: profiling-${{ matrix.benchmark.name }}-
+
+    - name: Run benchmark
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        source .venv/bin/activate
+        mkdir -p profiling/results profiling/baselines
+        python ${{ matrix.benchmark.script }} --num-runs ${{ matrix.benchmark.num_runs }} --output "$RESULT_FILE" --quiet
+
+    - name: Check regression and create summary
+      env:
+        THRESHOLD: ${{ matrix.benchmark.threshold }}
+      run: |
+        echo "## ${{ matrix.benchmark.description }}" >> $GITHUB_STEP_SUMMARY
+
+        if [ ! -f "$RESULT_FILE" ]; then
+          echo "❌ Benchmark failed" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+        # Show current results
+        echo "### Results (threshold: ${THRESHOLD}x)" >> $GITHUB_STEP_SUMMARY
+        echo "| Mode | Current (ms) | Baseline (ms) | Ratio | API Calls | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|--------------|---------------|-------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+        FAILED=false
+        for mode in $(jq -r '.metrics | keys[]' "$RESULT_FILE"); do
+          CURRENT=$(jq -r ".metrics.\"$mode\".avg_overhead_ms" "$RESULT_FILE")
+          EXPECTED_CALLS=$(jq -r ".metrics.\"$mode\".expected_api_calls" "$RESULT_FILE")
+          INVALID_RUNS=$(jq -r ".metrics.\"$mode\".invalid_api_call_runs" "$RESULT_FILE")
+
+          # Check API call count
+          if [ "$INVALID_RUNS" -gt 0 ]; then
+            API_STATUS="❌ ${INVALID_RUNS} invalid"
+            FAILED=true
+          else
+            API_STATUS="✅ ${EXPECTED_CALLS}/call"
+          fi
+
+          # Check regression
+          if [ -f "$BASELINE_FILE" ]; then
+            BASELINE=$(jq -r ".metrics.\"$mode\".avg_overhead_ms // empty" "$BASELINE_FILE")
+            if [ -n "$BASELINE" ] && [ "$BASELINE" != "null" ]; then
+              RATIO=$(awk "BEGIN {printf \"%.2f\", $CURRENT / $BASELINE}")
+              if awk "BEGIN {exit !($RATIO > $THRESHOLD)}"; then
+                STATUS="❌ REGRESSION"
+                FAILED=true
+              else
+                STATUS="✅ OK"
+              fi
+              echo "| $mode | $CURRENT | $BASELINE | ${RATIO}x | $API_STATUS | $STATUS |" >> $GITHUB_STEP_SUMMARY
+              continue
+            fi
+          fi
+          echo "| $mode | $CURRENT | - | - | $API_STATUS | 🆕 New |" >> $GITHUB_STEP_SUMMARY
+        done
+
+        if [ "$FAILED" = "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ **Check failed!**" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+    - name: Update baseline
+      if: success()
+      run: cp "$RESULT_FILE" "$BASELINE_FILE"
+
+    - uses: actions/cache/save@v4
+      if: success()
+      with:
+        path: ${{ env.BASELINE_FILE }}
+        key: profiling-${{ matrix.benchmark.name }}-${{ github.ref_name }}-${{ github.run_id }}
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: profiling-${{ matrix.benchmark.name }}
+        path: profiling/results/${{ matrix.benchmark.name }}.json
+        retention-days: 90
