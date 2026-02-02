@@ -596,9 +596,10 @@ class ChatAgent(BaseAgent):
 
         # Generic tool output processor hook - can be installed by toolkits
         # via register_agent(). The processor is a callable that takes
-        # (tool_name, tool_call_id, output) and returns a dict with "output".
+        # (tool_name, tool_call_id, output) and returns a dict with "output"
+        # or None to skip processing.
         self._tool_output_processor: Optional[
-            Callable[[str, str, Any], Dict[str, Any]]
+            Callable[[str, str, Any], Optional[Dict[str, Any]]]
         ] = None
 
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
@@ -3871,6 +3872,7 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        extra_assistant_message = None
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -3895,7 +3897,15 @@ class ChatAgent(BaseAgent):
                             tool_call_id,
                             raw_result,
                         )
-                        result = processed["output"]
+                        # None means no hint needed (e.g., output was None)
+                        if processed is None:
+                            result = raw_result
+                            extra_assistant_message = None
+                        else:
+                            result = processed.get("output", raw_result)
+                            extra_assistant_message = processed.get(
+                                "hint_message"
+                            )
                     else:
                         result = raw_result
             except Exception as e:
@@ -3911,6 +3921,7 @@ class ChatAgent(BaseAgent):
             tool_call_id,
             mask_output=mask_flag,
             extra_content=tool_call_request.extra_content,
+            extra_assistant_message=extra_assistant_message,
         )
 
     async def _aexecute_tool(
@@ -3924,6 +3935,7 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        extra_assistant_message = None
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -3974,7 +3986,15 @@ class ChatAgent(BaseAgent):
                             tool_call_id,
                             raw_result,
                         )
-                        result = processed["output"]
+                        # None means no hint needed (e.g., output was None)
+                        if processed is None:
+                            result = raw_result
+                            extra_assistant_message = None
+                        else:
+                            result = processed.get("output", raw_result)
+                            extra_assistant_message = processed.get(
+                                "hint_message"
+                            )
                     else:
                         result = raw_result
 
@@ -3990,6 +4010,7 @@ class ChatAgent(BaseAgent):
             tool_call_id,
             mask_output=mask_flag,
             extra_content=tool_call_request.extra_content,
+            extra_assistant_message=extra_assistant_message,
         )
 
     def _record_tool_calling(
@@ -4000,6 +4021,7 @@ class ChatAgent(BaseAgent):
         tool_call_id: str,
         mask_output: bool = False,
         extra_content: Optional[Dict[str, Any]] = None,
+        extra_assistant_message: Optional[str] = None,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -4070,6 +4092,17 @@ class ChatAgent(BaseAgent):
             timestamp=base_timestamp + 1e-6,
             return_records=self._enable_snapshot_clean,
         )
+
+        if extra_assistant_message:
+            hint_msg = BaseMessage.make_assistant_message(
+                role_name=self.role_name,
+                content=extra_assistant_message,
+            )
+            self.update_memory(
+                hint_msg,
+                OpenAIBackendRole.ASSISTANT,
+                timestamp=base_timestamp + 2e-6,
+            )
 
         # Register tool output for snapshot cleaning if enabled
         if self._enable_snapshot_clean and not mask_output and func_records:

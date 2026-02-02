@@ -15,14 +15,22 @@
 """
 Example demonstrating the ToolOutputOffloadToolkit.
 
-This toolkit allows agents to manage memory by:
-1. Listing recent tool outputs that could be summarized/offloaded
-2. Summarizing specific tool outputs and storing originals externally
-3. Retrieving original content when needed
+This toolkit enables model-driven memory management:
+1. The model sees full tool outputs first
+2. The model can call summarize_and_offload() with its own summary
+3. Original content is saved to disk and can be retrieved later
 
-This is useful when tool outputs are very large and consume too much
-context window space.
+Key benefits:
+- Model sees complete content before any compression
+- Model writes task-relevant summaries (not generic truncation)
+- No separate LLM call needed (summarization piggybacks on next step)
 """
+
+import os
+
+os.environ["CAMEL_MODEL_LOG_ENABLED"] = "true"
+os.environ["CAMEL_LOG_DIR"] = "camel_logs"
+
 
 import asyncio
 import logging
@@ -49,9 +57,9 @@ async def main():
     )
     print("Browser toolkit created (Python mode)")
 
-    # Create the offload toolkit for managing large tool outputs
-    # - min_output_length: Only show outputs >= 1000 chars as offloadable
-    offload_toolkit = ToolOutputOffloadToolkit(auto_offload_threshold=500)
+    # Create the offload toolkit for model-driven memory management
+    # The model can call summarize_and_offload() to compress large outputs
+    offload_toolkit = ToolOutputOffloadToolkit()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

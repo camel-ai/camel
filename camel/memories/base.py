@@ -175,30 +175,6 @@ class AgentMemory(MemoryBlock, ABC):
         """
         return self.get_context_creator().create_context(self.retrieve())
 
-    @abstractmethod
-    def get_records(self) -> List[MemoryRecord]:
-        r"""Get all records stored in the memory (not windowed).
-
-        Returns:
-            List[MemoryRecord]: All memory records in storage order.
-        """
-        pass
-
-    @abstractmethod
-    def replace_record_by_uuid(
-        self, record_uuid: str, new_record: MemoryRecord
-    ) -> None:
-        r"""Replace a stored record by UUID.
-
-        Args:
-            record_uuid (str): UUID of the record to replace.
-            new_record (MemoryRecord): The new record to persist.
-
-        Raises:
-            ValueError: If the record with the given UUID is not found.
-        """
-        pass
-
     def clean_tool_calls(self) -> None:
         r"""Removes tool call messages from memory.
         This is an optional method that can be overridden by subclasses
