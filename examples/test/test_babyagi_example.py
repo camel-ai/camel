@@ -33,7 +33,16 @@ parametrize = pytest.mark.parametrize(
                 reason="OPENAI_API_KEY not found",
             ),
         ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        pytest.param(
+            None,
+            marks=[
+                pytest.mark.model_backend,
+                pytest.mark.skipif(
+                    not os.environ.get("OPENAI_API_KEY"),
+                    reason="OPENAI_API_KEY not found",
+                ),
+            ],
+        ),
     ],
 )
 
