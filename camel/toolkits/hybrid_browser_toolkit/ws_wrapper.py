@@ -915,6 +915,16 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
+    async def browser_download_file(
+        self, save_dir: str, timeout: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Start listening for file download events."""
+        response = await self._send_command(
+            'browser_download_file', {'saveDir': save_dir, 'timeout': timeout}
+        )
+        return response
+
+    @action_logger
     async def back(self) -> Dict[str, Any]:
         """Navigate back."""
         response = await self._send_command('back', {})

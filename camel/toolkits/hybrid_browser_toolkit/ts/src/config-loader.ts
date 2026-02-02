@@ -22,6 +22,7 @@ export interface BrowserConfig {
   screenshotTimeout: number;
   pageStabilityTimeout: number;
   domContentLoadedTimeout: number;
+  downloadTimeout: number;
 
   // Action timeouts
   popupTimeout: number;
@@ -112,6 +113,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     screenshotTimeout: 15000,
     pageStabilityTimeout: 1500,
     domContentLoadedTimeout: 5000,
+    downloadTimeout: 30000,
     popupTimeout: 5000,
     clickTimeout: 3000,
     tabIdPrefix: 'tab-',

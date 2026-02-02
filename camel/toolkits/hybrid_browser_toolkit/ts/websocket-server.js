@@ -207,6 +207,10 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.uploadFile(params.ref, params.filePath);
 
+      case 'browser_download_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.browserDownloadFile(params.saveDir, params.timeout);
+
       case 'batch_keyboard_input':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         const skipStabilityWait = params.skipStabilityWait !== undefined ? params.skipStabilityWait : true;

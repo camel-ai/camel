@@ -36,6 +36,7 @@ class BrowserConfig:
     screenshot_timeout: int = 15000
     page_stability_timeout: int = 1500
     dom_content_loaded_timeout: int = 5000
+    download_timeout: int = 30000
 
     # Viewport configuration
     viewport_limit: bool = False
@@ -54,6 +55,7 @@ class ToolkitConfig:
     """Toolkit-specific configuration."""
 
     cache_dir: str = "tmp/"
+    download_dir: Optional[str] = None
     browser_log_to_file: bool = False
     log_dir: Optional[str] = None
     session_id: Optional[str] = None

@@ -2,6 +2,7 @@ import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from '
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
@@ -2004,6 +2005,46 @@ export class HybridBrowserSession {
       timing: {
         screenshot_time_ms: screenshotTime,
       },
+    };
+  }
+
+
+  /**
+   * Start a download listener that will save downloaded files to the specified directory.
+   * Must be called BEFORE clicking a download button.
+   */
+  async browserDownloadFile(saveDir: string, timeout?: number): Promise<{
+    success: boolean;
+    message: string;
+    saveDir: string;
+  }> {
+    const page = await this.getCurrentPage();
+    const downloadTimeout = timeout ?? this.configLoader.getBrowserConfig().downloadTimeout ?? 30000;
+
+    if (!fs.existsSync(saveDir)) {
+      throw new Error(`Download directory does not exist: ${saveDir}`);
+    }
+
+    page.once('download', async (download) => {
+      const fileName = download.suggestedFilename();
+      const savePath = path.join(saveDir, fileName);
+
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Download timeout after ${downloadTimeout}ms`)), downloadTimeout)
+        );
+
+        await Promise.race([download.saveAs(savePath), timeoutPromise]);
+        console.log(`[Download] Saved: ${savePath}`);
+      } catch (error) {
+        console.error(`[Download] Failed to save file: ${error}`);
+      }
+    });
+
+    return {
+      success: true,
+      message: `Download listener active. Files will be saved to: ${saveDir}`,
+      saveDir
     };
   }
 

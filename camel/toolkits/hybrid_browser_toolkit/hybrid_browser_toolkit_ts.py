@@ -82,6 +82,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_mouse_drag",
         "browser_press_key",
         "browser_upload_file",
+        "browser_download_file",
         "browser_wait_user",
         "browser_switch_tab",
         "browser_close_tab",
@@ -116,6 +117,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        download_dir: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -166,6 +168,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
+            download_dir (Optional[str]): Directory path where downloaded
+            files will be saved when using browser_download_file tool.
+            Defaults to None.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -192,6 +197,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url=cdp_url,
             cdp_keep_current_page=cdp_keep_current_page,
             full_visual_mode=full_visual_mode,
+            download_dir=download_dir,
         )
 
         browser_config = self.config_loader.get_browser_config()
@@ -212,6 +218,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._user_data_dir = browser_config.user_data_dir
         self._stealth = browser_config.stealth
         self._cache_dir = toolkit_config.cache_dir
+        self._download_dir = toolkit_config.download_dir
         self._browser_log_to_file = toolkit_config.browser_log_to_file
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
@@ -1117,6 +1124,68 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
+    async def browser_download_file(self) -> Dict[str, Any]:
+        r"""Enables download capture. Call BEFORE clicking the download button.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action with download
+                  directory info.
+                - "snapshot" (str): A snapshot of the page (empty for this
+                  action).
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        if self._download_dir is None:
+            return {
+                "result": "Error: No download directory configured. ",
+                "snapshot": "",
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            response = await ws_wrapper.browser_download_file(
+                self._download_dir
+            )
+
+            # Extract info from TypeScript response
+            success = response.get("success", False)
+            message = response.get("message", "")
+            save_dir = response.get("saveDir", self._download_dir)
+
+            if success:
+                result_msg = f"{message} Save directory: {save_dir}"
+            else:
+                result_msg = f"Error: {message}"
+
+            tab_info = await ws_wrapper.get_tab_info()
+            return {
+                "result": result_msg,
+                "snapshot": "",
+                "tabs": tab_info,
+                "current_tab": next(
+                    (
+                        i
+                        for i, tab in enumerate(tab_info)
+                        if tab.get("is_current")
+                    ),
+                    0,
+                ),
+                "total_tabs": len(tab_info),
+            }
+        except Exception as e:
+            logger.error(f"Failed to start download listener: {e}")
+            return {
+                "result": f"Error starting download listener: {e}",
+                "snapshot": "",
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+
     async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
 
@@ -1985,6 +2054,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_mouse_drag": self.browser_mouse_drag,
             "browser_press_key": self.browser_press_key,
             "browser_upload_file": self.browser_upload_file,
+            "browser_download_file": self.browser_download_file,
             "browser_wait_user": self.browser_wait_user,
             "browser_switch_tab": self.browser_switch_tab,
             "browser_close_tab": self.browser_close_tab,
