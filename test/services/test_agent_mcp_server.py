@@ -14,7 +14,8 @@
 import os
 from unittest.mock import AsyncMock, Mock, patch
 
-# Set mock API keys before importing agent_config to avoid initialization errors
+# Set mock API keys before importing agent_config
+# to avoid initialization errors
 os.environ["OPENROUTER_API_KEY"] = "mock_key"
 os.environ["DEEPSEEK_API_KEY"] = "mock_key"
 os.environ["OPENAI_API_KEY"] = "mock_key"

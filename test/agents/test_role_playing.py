@@ -73,7 +73,9 @@ model_backend_rsp = ChatCompletion(
 @pytest.mark.parametrize("model_param", ["none", "model"])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(model, model_param, critic_role_name, with_critic_in_the_loop):
+def test_role_playing_init(
+    model, model_param, critic_role_name, with_critic_in_the_loop
+):
     if model_param == "model":
         if model is None:
             pytest.skip("OPENAI_API_KEY not found")
