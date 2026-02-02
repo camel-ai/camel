@@ -11,12 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+import sys
+
 from camel.agents import ChatAgent
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
 
 def main(key: str = 'generate_users', num_roles: int = 50, model=None):
+    if model is None and not os.environ.get("OPENAI_API_KEY"):
+        print("OPENAI_API_KEY not found, skipping example execution.")
+        sys.exit(0)
+
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.AI_SOCIETY, key
     )
