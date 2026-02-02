@@ -28,22 +28,26 @@ export class SomScreenshotInjected {
       const visibilityDebugInfo: any[] = [];
 
       const result = await page.evaluate(async (data) => {
-        const { elements, clickable, filterDebugInfo } = data;
+        const { elements, clickable, filterDebugInfo, enableDebug } = data;
         const markedElements: any[] = [];
 
-        // Debug info collector - include filter debug info
-        const debugInfo: any[] = [...filterDebugInfo];
+        // Use Set for O(1) lookup instead of Array.includes O(n)
+        const clickableSet = new Set(clickable);
+
+        // Debug info collector - only if enabled
+        const debugInfo: any[] = enableDebug ? [...filterDebugInfo] : [];
 
         // Helper function to check element visibility based on coordinates
+        // Returns both visibility result and cached elementsAtCenter for reuse
         function checkElementVisibilityByCoords(
           coords: { x: number, y: number, width: number, height: number },
           ref: string,
           elementInfo: any
-        ): 'visible' | 'partial' | 'hidden' {
+        ): { visibility: 'visible' | 'partial' | 'hidden', elementsAtCenter: Element[] | null } {
           // Skip if element is outside viewport
           if (coords.y + coords.height < 0 || coords.y > window.innerHeight ||
               coords.x + coords.width < 0 || coords.x > window.innerWidth) {
-            return 'hidden';
+            return { visibility: 'hidden', elementsAtCenter: null };
           }
 
           // For elements inside iframes (indicated by frameIndex or frameUrl),
@@ -55,19 +59,15 @@ export class SomScreenshotInjected {
             const centerY = coords.y + coords.height * 0.5;
 
             // Check if there's an iframe at this position
-            const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
-            for (const elem of elementsAtCenter) {
+            const iframeElements = document.elementsFromPoint(centerX, centerY);
+            for (const elem of iframeElements) {
               if (elem.tagName.toUpperCase() === 'IFRAME') {
-                return 'visible';
+                return { visibility: 'visible', elementsAtCenter: iframeElements };
               }
             }
             // Element has frame info but no iframe found at position -
             // still consider visible as iframe might be transformed/scrolled.
-            // NOTE: Returning 'partial' here would cause false negatives because
-            // elementsFromPoint() cannot detect iframes that are CSS-transformed,
-            // scrolled, or have complex stacking contexts. Keeping 'visible' is
-            // the safer choice to avoid incorrectly hiding valid iframe elements.
-            return 'visible';
+            return { visibility: 'visible', elementsAtCenter: iframeElements };
           }
 
           // Simple approach: just check the center point
@@ -78,7 +78,7 @@ export class SomScreenshotInjected {
           try {
             const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
             if (!elementsAtCenter || elementsAtCenter.length === 0) {
-              return 'hidden';
+              return { visibility: 'hidden', elementsAtCenter: null };
             }
 
             // Find our target element in the stack
@@ -99,18 +99,27 @@ export class SomScreenshotInjected {
 
                 // If target is topmost, it's definitely visible
                 if (targetIsTopmost) {
-                  return 'visible';
+                  return { visibility: 'visible', elementsAtCenter };
                 }
 
                 // If not topmost, check if the topmost element is a child of our target
                 const topmostElem = elementsAtCenter[0];
-                if (elem.contains(topmostElem)) {
-                  // Topmost is our child - element is visible
-                  return 'visible';
+                const containsTopmost = elem.contains(topmostElem);
+
+                // Also check if they share a common parent (sibling relationship in composite widgets)
+                // This handles Material Design buttons where DIV (ripple) and SPAN (text) are siblings
+                const shareParent = elem.parentElement && elem.parentElement.contains(topmostElem);
+                const isCompositeWidget = shareParent &&
+                  ['DIV', 'SPAN', 'I', 'SVG', 'IMG'].includes(topmostElem.tagName.toUpperCase()) &&
+                  ['DIV', 'SPAN', 'BUTTON', 'A'].includes(elem.tagName.toUpperCase());
+
+                if (containsTopmost || isCompositeWidget) {
+                  // Topmost is our child or sibling in composite widget - element is visible
+                  return { visibility: 'visible', elementsAtCenter };
                 }
 
                 // Otherwise, we're obscured
-                return 'hidden';
+                return { visibility: 'hidden', elementsAtCenter };
               }
             }
 
@@ -119,10 +128,40 @@ export class SomScreenshotInjected {
               // Special handling for composite widgets
               const topElement = elementsAtCenter[0];
               const tagName = topElement.tagName.toUpperCase();
+              const topRect = topElement.getBoundingClientRect();
 
               // Get element role/type for better decision making
               const elementRole = elementInfo?.role || '';
               const elementTagName = elementInfo?.tagName || '';
+
+              // Check if topElement is likely a child of our target element using multiple strategies:
+              // 1. Check if topElement center is within target bounds (most reliable)
+              const topCenterX = topRect.left + topRect.width / 2;
+              const topCenterY = topRect.top + topRect.height / 2;
+              const topCenterInTarget =
+                topCenterX >= coords.x - 5 &&
+                topCenterX <= coords.x + coords.width + 5 &&
+                topCenterY >= coords.y - 5 &&
+                topCenterY <= coords.y + coords.height + 5;
+
+              // 2. Check for significant overlap between topElement and target
+              const overlapLeft = Math.max(topRect.left, coords.x);
+              const overlapRight = Math.min(topRect.right, coords.x + coords.width);
+              const overlapTop = Math.max(topRect.top, coords.y);
+              const overlapBottom = Math.min(topRect.bottom, coords.y + coords.height);
+              const overlapWidth = Math.max(0, overlapRight - overlapLeft);
+              const overlapHeight = Math.max(0, overlapBottom - overlapTop);
+              const overlapArea = overlapWidth * overlapHeight;
+              const topArea = topRect.width * topRect.height;
+              const significantOverlap = topArea > 0 && (overlapArea / topArea) > 0.5;
+
+              // If top element overlaps significantly with our target (like SPAN/DIV inside button),
+              // consider the target visible
+              if ((topCenterInTarget || significantOverlap) &&
+                  (elementRole === 'button' || elementRole === 'link' ||
+                   elementTagName.toUpperCase() === 'BUTTON' || elementTagName.toUpperCase() === 'A')) {
+                return { visibility: 'visible', elementsAtCenter };
+              }
 
               // Only apply special handling for form controls that are part of composite widgets
               if (['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON'].includes(tagName)) {
@@ -138,49 +177,44 @@ export class SomScreenshotInjected {
                   // Check for specific composite widget patterns
                   // For combobox with search input (like Amazon search)
                   if (elementRole === 'combobox' && tagName === 'INPUT') {
-                    // This is likely a search box with category selector - mark as visible
-                    return 'visible';
+                    return { visibility: 'visible', elementsAtCenter };
                   }
 
                   // For button/generic elements covered by INPUT with exact same bounds
-                  // This usually indicates the INPUT is the actual interactive element for the button
                   if ((elementRole === 'button' || elementRole === 'generic') && tagName === 'INPUT') {
                     const rectMatch = Math.abs(rect.left - coords.x) < 2 &&
                                       Math.abs(rect.top - coords.y) < 2 &&
                                       Math.abs(rect.width - coords.width) < 2 &&
                                       Math.abs(rect.height - coords.height) < 2;
                     if (rectMatch) {
-                      // The INPUT is the actual interactive element for this button
-                      return 'visible';
+                      return { visibility: 'visible', elementsAtCenter };
                     }
                   }
 
-                  // For other form-related elements, only mark as visible if they share similar positioning
-                  // (i.e., they're likely part of the same widget)
+                  // For other form-related elements with similar positioning
                   const sizeDiff = Math.abs(rect.width - coords.width) + Math.abs(rect.height - coords.height);
-                  if (sizeDiff < 50) {  // Tolerance for size difference
-                    return 'visible';
+                  if (sizeDiff < 50) {
+                    return { visibility: 'visible', elementsAtCenter };
                   }
                 }
               }
 
-              return 'hidden';
+              return { visibility: 'hidden', elementsAtCenter };
             }
 
-            return 'partial';
+            return { visibility: 'partial', elementsAtCenter };
 
           } catch (e) {
             // Fallback: use simple elementFromPoint check
             const elem = document.elementFromPoint(centerX, centerY);
-            if (!elem) return 'hidden';
+            if (!elem) return { visibility: 'hidden', elementsAtCenter: null };
 
             const rect = elem.getBoundingClientRect();
-            // Check if the element at center matches our bounds
             if (Math.abs(rect.left - coords.x) < 5 &&
                 Math.abs(rect.top - coords.y) < 5) {
-              return 'visible';
+              return { visibility: 'visible', elementsAtCenter: null };
             }
-            return 'partial';
+            return { visibility: 'partial', elementsAtCenter: null };
           }
         }
 
@@ -202,40 +236,31 @@ export class SomScreenshotInjected {
         const elementStates = new Map<string, 'visible' | 'partial' | 'hidden'>();
 
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
-          if (element.coordinates && clickable.includes(ref)) {
-            const visibility = checkElementVisibilityByCoords(element.coordinates, ref, element);
-            elementStates.set(ref, visibility);
+          // Use Set for O(1) lookup
+          if (element.coordinates && clickableSet.has(ref)) {
+            const result = checkElementVisibilityByCoords(element.coordinates, ref, element);
+            elementStates.set(ref, result.visibility);
 
-            // Add debug info
-            const centerX = element.coordinates.x + element.coordinates.width * 0.5;
-            const centerY = element.coordinates.y + element.coordinates.height * 0.5;
-
-            try {
-              const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
-              const topmostElement = elementsAtCenter[0];
+            // Add debug info only if enabled (reuse cached elementsAtCenter)
+            if (enableDebug) {
+              const centerX = element.coordinates.x + element.coordinates.width * 0.5;
+              const centerY = element.coordinates.y + element.coordinates.height * 0.5;
+              const elementsAtCenter = result.elementsAtCenter;
+              const topmostElement = elementsAtCenter?.[0];
 
               debugInfo.push({
                 ref,
                 coords: element.coordinates,
                 centerPoint: { x: centerX, y: centerY },
-                visibilityResult: visibility,
+                visibilityResult: result.visibility,
                 elementRole: element.role || 'unknown',
                 elementTagName: element.tagName || '',
                 topmostElement: topmostElement ? {
                   tagName: topmostElement.tagName,
-                  className: topmostElement.className,
+                  className: (topmostElement as HTMLElement).className || '',
                   id: topmostElement.id
                 } : null,
-                elementsAtCenterCount: elementsAtCenter.length
-              });
-            } catch (e) {
-              debugInfo.push({
-                ref,
-                coords: element.coordinates,
-                visibilityResult: visibility,
-                elementRole: element.role || 'unknown',
-                elementTagName: element.tagName || '',
-                error: 'Failed to get elements at center'
+                elementsAtCenterCount: elementsAtCenter?.length || 0
               });
             }
           }
@@ -349,7 +374,7 @@ export class SomScreenshotInjected {
 
         // Add labels and collect geometry data (only for filtered elements)
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
-          if (element.coordinates && clickable.includes(ref)) {
+          if (element.coordinates && clickableSet.has(ref)) {
             const state = elementStates.get(ref);
 
             // Skip completely hidden elements
@@ -450,7 +475,7 @@ export class SomScreenshotInjected {
         await new Promise(resolve => requestAnimationFrame(resolve));
 
         return {
-          overlayId: overlay.id,  // Use the ID that was set earlier
+          overlayId: overlay.id,
           elementCount: overlay.children.length,
           markedElements,
           debugInfo
@@ -458,19 +483,17 @@ export class SomScreenshotInjected {
       }, {
         elements: snapshotResult.elements,
         clickable: Array.from(clickableElements),
-        filterDebugInfo: []
+        filterDebugInfo: [],
+        enableDebug: !!exportPath  // Only enable debug info collection when exporting
       });
 
-      // Take screenshot
+      // Take screenshot immediately (no need to wait)
       const screenshotBuffer = await page.screenshot({
         fullPage: false,
         type: 'png'
       });
 
-      // Keep the overlay visible for 1 second before cleanup
-      await page.waitForTimeout(1000);
-
-      // Clean up
+      // Clean up overlay immediately after screenshot
       await page.evaluate((overlayId) => {
         const overlay = document.getElementById(overlayId);
         if (overlay) overlay.remove();
@@ -542,13 +565,13 @@ export class SomScreenshotInjected {
         images: [dataUrl],
         timing: {
           total_time_ms: Date.now() - startTime,
-          screenshot_time_ms: Date.now() - startTime - 1100, // Approximate screenshot time (excluding 1s wait)
+          screenshot_time_ms: Date.now() - startTime,
           snapshot_time_ms: 0, // Will be filled by caller
           coordinate_enrichment_time_ms: 0, // Will be filled by caller
-          visual_marking_time_ms: 1100, // Injection, rendering and 1s display time
+          visual_marking_time_ms: Date.now() - startTime,
           injection_method: 'optimized',
           elements_count: result.elementCount,
-          display_duration_ms: 1000, // Time the overlay is kept visible
+          display_duration_ms: 0, // No artificial wait
           parent_child_filter_time_ms: 0, // Filtering is done before this method
           filtered_count: 0
         }
