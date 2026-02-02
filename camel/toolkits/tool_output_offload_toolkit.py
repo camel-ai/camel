@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
@@ -139,6 +140,25 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         self.index_file = self.session_dir / "index.json"
 
         logger.info(f"ToolOutputOffloadToolkit storage: {self.session_dir}")
+
+    def register_agent(self, agent: "ChatAgent") -> None:
+        r"""Register a ChatAgent and install this toolkit as the tool output
+        processor.
+
+        This method overrides the base class to additionally install this
+        toolkit's `process_tool_output` method as the agent's tool output
+        processor. This allows automatic offloading of large tool outputs
+        without requiring a dedicated constructor parameter in ChatAgent.
+
+        Args:
+            agent (ChatAgent): The ChatAgent instance to register.
+        """
+        super().register_agent(agent)
+        # Install this toolkit as the agent's tool output processor
+        agent._tool_output_processor = self.process_tool_output
+        logger.info(
+            f"Installed {self.__class__.__name__} as tool output processor"
+        )
 
     def _get_tool_outputs_from_memory(self) -> List[Dict[str, Any]]:
         r"""Extract tool output records from agent's memory.

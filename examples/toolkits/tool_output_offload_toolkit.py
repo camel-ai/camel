@@ -27,14 +27,14 @@ context window space.
 import asyncio
 import logging
 
-# Enable debug logging to see what's happening
-logging.basicConfig(level=logging.DEBUG)
-
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import HybridBrowserToolkit, ToolOutputOffloadToolkit
 from camel.types import ModelPlatformType, ModelType
+
+# Enable debug logging to see what's happening
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def main():
@@ -71,12 +71,12 @@ async def main():
         model=model,
         tools=[*browser_toolkit.get_tools(), *offload_toolkit.get_tools()],
         toolkits_to_register_agent=[offload_toolkit],
-        tool_output_offload_toolkit= offload_toolkit,
     )
 
     # Test with a simpler task first to avoid complex navigation
     response = await agent.astep(
-        "search information about camel-ai.org, go to the blog they wrote, check first 5, give me a summary"
+        "search information about camel-ai.org, go to the blog they wrote, "
+        "check first 5, give me a summary"
     )
     print(response.msgs[0].content)
 

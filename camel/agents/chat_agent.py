@@ -90,7 +90,6 @@ from camel.storages import JsonStorage
 from camel.toolkits import (
     FunctionTool,
     RegisteredAgentToolkit,
-    ToolOutputOffloadToolkit,
 )
 from camel.types import (
     ChatCompletion,
@@ -407,12 +406,6 @@ class ChatAgent(BaseAgent):
             This does NOT add the toolkit's tools to the agent. To use tools
             from these toolkits, pass them explicitly via the `tools`
             parameter. (default: :obj:`None`)
-        tool_output_offload_toolkit (Optional[ToolOutputOffloadToolkit],
-            optional): Toolkit for automatic offloading of large tool outputs.
-            When provided, tool outputs exceeding the toolkit's threshold will
-            be automatically offloaded to disk and replaced with summaries.
-            The agent can retrieve the full content using the toolkit's
-            retrieval tools. (default: :obj:`None`)
         external_tools (Optional[List[Union[FunctionTool, Callable,
             Dict[str, Any]]]], optional): List of external tools
             (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`)
@@ -500,7 +493,6 @@ class ChatAgent(BaseAgent):
         toolkits_to_register_agent: Optional[
             List[RegisteredAgentToolkit]
         ] = None,
-        tool_output_offload_toolkit: Optional[ToolOutputOffloadToolkit] = None,
         external_tools: Optional[
             List[Union[FunctionTool, Callable, Dict[str, Any]]]
         ] = None,
@@ -602,21 +594,18 @@ class ChatAgent(BaseAgent):
             ]
         }
 
+        # Generic tool output processor hook - can be installed by toolkits
+        # via register_agent(). The processor is a callable that takes
+        # (tool_name, tool_call_id, output) and returns a dict with "output".
+        self._tool_output_processor: Optional[
+            Callable[[str, str, Any], Dict[str, Any]]
+        ] = None
+
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
         if toolkits_to_register_agent:
             for toolkit in toolkits_to_register_agent:
                 if isinstance(toolkit, RegisteredAgentToolkit):
                     toolkit.register_agent(self)
-
-        # Store tool output offload toolkit for automatic offloading
-        self._tool_output_offload_toolkit = tool_output_offload_toolkit
-        if tool_output_offload_toolkit is not None:
-            # Also register agent with the offload toolkit if not already done
-            if (
-                isinstance(tool_output_offload_toolkit, RegisteredAgentToolkit)
-                and tool_output_offload_toolkit._agent is None
-            ):
-                tool_output_offload_toolkit.register_agent(self)
 
         self._external_tool_schemas = {
             tool_schema["function"]["name"]: tool_schema
@@ -3899,14 +3888,14 @@ class ChatAgent(BaseAgent):
                     )
                     mask_flag = True
                 else:
-                    # Process with offload toolkit if available
-                    if self._tool_output_offload_toolkit is not None:
-                        offload_result = self._tool_output_offload_toolkit.process_tool_output(  # noqa: E501
-                            tool_name=func_name,
-                            tool_call_id=tool_call_id,
-                            output=raw_result,
+                    # Process with tool output processor if available
+                    if self._tool_output_processor is not None:
+                        processed = self._tool_output_processor(
+                            func_name,
+                            tool_call_id,
+                            raw_result,
                         )
-                        result = offload_result["output"]
+                        result = processed["output"]
                     else:
                         result = raw_result
             except Exception as e:
@@ -3978,14 +3967,14 @@ class ChatAgent(BaseAgent):
                     )
                     mask_flag = True
                 else:
-                    # Process with offload toolkit if available
-                    if self._tool_output_offload_toolkit is not None:
-                        offload_result = self._tool_output_offload_toolkit.process_tool_output(  # noqa: E501
-                            tool_name=func_name,
-                            tool_call_id=tool_call_id,
-                            output=raw_result,
+                    # Process with tool output processor if available
+                    if self._tool_output_processor is not None:
+                        processed = self._tool_output_processor(
+                            func_name,
+                            tool_call_id,
+                            raw_result,
                         )
-                        result = offload_result["output"]
+                        result = processed["output"]
                     else:
                         result = raw_result
 
