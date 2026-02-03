@@ -70,7 +70,8 @@ class A2AAgent(Worker):
         agent_card: "AgentCard",
         http_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
-        from a2a.client import A2ACardResolver, A2AClient
+        from a2a.client import A2ACardResolver, ClientConfig, ClientFactory
+        from a2a.types import TransportProtocol
 
         self.base_url = base_url.rstrip("/")
         http_kwargs = http_kwargs or {}
@@ -82,9 +83,13 @@ class A2AAgent(Worker):
         description = self.agent_card.description
         node_id = getattr(agent_card, 'id', f"a2a_{uuid.uuid4()}")
         super().__init__(description, node_id=node_id)
-        self.client = A2AClient(
-            httpx_client=self.http_client, agent_card=agent_card
+        client_config = ClientConfig(
+            httpx_client=self.http_client,
+            streaming=False,
+            polling=False,
+            supported_transports=[TransportProtocol.jsonrpc],
         )
+        self.client = ClientFactory(client_config).create(agent_card)
         self.context_id: Optional[str] = None
 
     @classmethod
@@ -193,7 +198,11 @@ class A2AAgent(Worker):
 
     async def aclose(self):
         r"""Close the underlying HTTP client and cleanup resources."""
-        await self.http_client.aclose()
+        try:
+            if hasattr(self, 'client') and self.client is not None:
+                await self.client.close()
+        finally:
+            await self.http_client.aclose()
 
     async def __aenter__(self):
         return self
@@ -204,9 +213,10 @@ class A2AAgent(Worker):
     async def cleanup(self):
         r"""Explicit cleanup method for better resource management."""
         try:
-            if hasattr(self, 'http_client'):
-                if not self.http_client.is_closed:
-                    await self.http_client.aclose()
+            if hasattr(self, 'client') and self.client is not None:
+                await self.client.close()
+            if hasattr(self, 'http_client') and not self.http_client.is_closed:
+                await self.http_client.aclose()
         except Exception as e:
             logger.error(f"Error during A2A agent cleanup: {e}")
 
@@ -291,69 +301,64 @@ class A2AAgent(Worker):
             Dictionary containing token usage information.
         """
         token_count = 0
-        if response and hasattr(response, 'result') and response.result:
-            # Try to get token_count directly
-            token_count = getattr(response.result, 'token_count', 0)
-            # Try to get from usage object
-            if token_count == 0 and hasattr(response.result, 'usage'):
-                token_count = getattr(
-                    response.result.usage, 'total_tokens', 0
-                )
+        if response:
+            # New client returns Task/Message directly
+            token_count = getattr(response, 'token_count', 0)
+            if token_count == 0 and hasattr(response, 'usage'):
+                token_count = getattr(response.usage, 'total_tokens', 0)
+
+            # Backward compatibility with legacy response wrapper
+            if token_count == 0 and hasattr(response, 'result') and response.result:
+                token_count = getattr(response.result, 'token_count', 0)
+                if token_count == 0 and hasattr(response.result, 'usage'):
+                    token_count = getattr(
+                        response.result.usage, 'total_tokens', 0
+                    )
         return {"total_tokens": token_count}
 
     async def _send_a2a_message(
         self, message: str
-    ) -> "SendMessageSuccessResponse | InvalidAgentResponseError":
+    ) -> Any:
         r"""Sends a message to the A2A agent and returns the structured
         response.
         
         Raises:
             A2AResponseError: If the response is unexpected or invalid.
         """
-        from a2a.types import (
-            InvalidAgentResponseError,
-            JSONRPCErrorResponse,
-            Message,
-            MessageSendParams,
-            Part,
-            Role,
-            SendMessageRequest,
-            SendMessageSuccessResponse,
-            TextPart,
-        )
+        from a2a.client.errors import A2AClientHTTPError, A2AClientJSONError
+        from a2a.client.helpers import create_text_message_object
+        from a2a.types import InvalidAgentResponseError, Role
 
-        msg_obj = Message(
-            role=Role.user,
-            parts=[Part(root=TextPart(kind="text", text=message))],
-            message_id=str(uuid.uuid4()),
-            context_id=self.context_id,
+        msg_obj = create_text_message_object(
+            role=Role.user, content=message
         )
-        params = MessageSendParams(message=msg_obj)
-        request = SendMessageRequest(
-            id=str(uuid.uuid4()),
-            method="message/send",
-            params=params,
-        )
-        response = await self.client.send_message(request)
+        if self.context_id:
+            if hasattr(msg_obj, 'context_id'):
+                msg_obj.context_id = self.context_id
+            elif hasattr(msg_obj, 'contextId'):
+                setattr(msg_obj, 'contextId', self.context_id)
 
-        if isinstance(
-            response.root,
-            (SendMessageSuccessResponse, InvalidAgentResponseError),
-        ):
-            return response.root
-        elif isinstance(response.root, JSONRPCErrorResponse):
-            error_msg = (
-                f"A2A JSONRPC Error: {response.root.error.message}"
-                if hasattr(response.root, 'error') and hasattr(response.root.error, 'message')
-                else f"A2A JSONRPC Error: {response.root}"
-            )
-            raise A2AResponseError(error_msg) from None
-        else:
-            error_msg = (
-                f"Unexpected response type: {type(response.root).__name__}, "
-                f"response: {response.root}"
-            )
-            raise A2AResponseError(error_msg)
+        try:
+            last_result: Optional[Any] = None
+            async for event in self.client.send_message(msg_obj):
+                if isinstance(event, tuple) and event:
+                    last_result = event[0]
+                else:
+                    last_result = event
+
+            if last_result is None:
+                raise A2AResponseError("Empty response from A2A agent")
+
+            if isinstance(last_result, InvalidAgentResponseError):
+                return last_result
+
+            return last_result
+        except (A2AClientHTTPError, A2AClientJSONError) as e:
+            error_msg = f"A2A client error: {type(e).__name__}: {str(e)}"
+            raise A2AMessageError(error_msg) from e
+        except Exception as e:
+            error_msg = f"A2A client error: {type(e).__name__}: {str(e)}"
+            raise A2AResponseError(error_msg) from e
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
@@ -369,10 +374,7 @@ class A2AAgent(Worker):
         Returns:
             TaskState: The final state of the task after processing.
         """
-        from a2a.types import (
-            InvalidAgentResponseError,
-            SendMessageSuccessResponse,
-        )
+        from a2a.types import InvalidAgentResponseError
 
         response = None
         try:
@@ -388,16 +390,25 @@ class A2AAgent(Worker):
             response = await self._send_a2a_message(prompt)
 
             # Update context ID safely using getattr
-            context_id = getattr(
-                getattr(response, 'result', None), 'contextId', None
-            )
+            context_id = getattr(response, 'context_id', None)
+            if context_id is None:
+                context_id = getattr(response, 'contextId', None)
             if context_id:
                 self.context_id = context_id
                 logger.debug(f"Updated context_id: {self.context_id}")
 
-            if isinstance(response, SendMessageSuccessResponse):
-                result_task = response.result
-                task_result_content = self._extract_result_content(result_task)
+            if isinstance(response, InvalidAgentResponseError):
+                error_obj = getattr(response, "error", None)
+                error_msg = (
+                    f"Error from A2A Agent: {error_obj.message}"
+                    if error_obj and hasattr(error_obj, "message")
+                    else f"Error from A2A Agent: {response!s}"
+                )
+                task.result = error_msg
+                logger.error(f"A2A agent error for task {task.id}: {error_msg}")
+                return TaskState.FAILED
+            else:
+                task_result_content = self._extract_result_content(response)
 
                 if not task_result_content:
                     task_result_content = (
@@ -409,17 +420,6 @@ class A2AAgent(Worker):
                     f"Task {task.id} completed successfully. "
                     f"Result length: {len(task_result_content)}"
                 )
-
-            elif isinstance(response, InvalidAgentResponseError):
-                error_obj = getattr(response, "error", None)
-                error_msg = (
-                    f"Error from A2A Agent: {error_obj.message}"
-                    if error_obj and hasattr(error_obj, "message")
-                    else f"Error from A2A Agent: {response!s}"
-                )
-                task.result = error_msg
-                logger.error(f"A2A agent error for task {task.id}: {error_msg}")
-                return TaskState.FAILED
 
         except A2AMessageError as e:
             error_msg = f"A2A message error: {str(e)}"
