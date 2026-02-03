@@ -75,10 +75,11 @@ def test_anthropic_model_uses_provided_token_counter():
 
 def test_anthropic_model_cache_control_valid_and_invalid():
     # Valid cache_control values should configure _cache_control_config
+    model_config = AnthropicConfig(cache_control="5m").as_dict()
     model = AnthropicModel(
         ModelType.CLAUDE_3_HAIKU,
+        model_config_dict=model_config,
         api_key="dummy_api_key",
-        cache_control="5m",
     )
     assert model._cache_control_config == {
         "type": "ephemeral",
@@ -87,11 +88,25 @@ def test_anthropic_model_cache_control_valid_and_invalid():
 
     # Invalid cache_control should raise ValueError
     with pytest.raises(ValueError):
+        invalid_config = AnthropicConfig(cache_control="10m").as_dict()
         AnthropicModel(
             ModelType.CLAUDE_3_HAIKU,
+            model_config_dict=invalid_config,
             api_key="dummy_api_key",
-            cache_control="10m",
         )
+
+
+def test_anthropic_model_cache_control_from_config():
+    model_config = AnthropicConfig(cache_control="1h").as_dict()
+    model = AnthropicModel(
+        ModelType.CLAUDE_3_HAIKU,
+        model_config_dict=model_config,
+        api_key="dummy_api_key",
+    )
+    assert model._cache_control_config == {
+        "type": "ephemeral",
+        "ttl": "1h",
+    }
 
 
 def test_anthropic_model_stream_property():

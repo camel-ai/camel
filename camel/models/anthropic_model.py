@@ -15,7 +15,7 @@ import json
 import os
 import time
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -119,9 +119,6 @@ class AnthropicModel(BaseModelBackend):
         async_client (Optional[Any], optional): A custom asynchronous Anthropic
             client instance. If provided, this client will be used instead of
             creating a new one. (default: :obj:`None`)
-        cache_control (Optional[Literal["5m", "1h"]], optional): The cache
-            control TTL for prompt caching. Use '5m' for 5-minute cache or
-            '1h' for 1-hour cache. (default: :obj:`None`)
         use_beta_for_structured_outputs (bool, optional): Whether to use the
             beta API for structured outputs. (default: :obj:`False`)
         **kwargs (Any): Additional arguments to pass to the client
@@ -145,7 +142,6 @@ class AnthropicModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
-        cache_control: Optional[Literal["5m", "1h"]] = None,
         use_beta_for_structured_outputs: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -154,6 +150,8 @@ class AnthropicModel(BaseModelBackend):
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+
+        cache_control = model_config_dict.get("cache_control")
 
         super().__init__(
             model_type=model_type,

@@ -106,8 +106,11 @@ def main() -> None:
     model_with_cache = ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
         model_type=ModelType.CLAUDE_SONNET_4_5,
-        model_config_dict=model_config,
-        cache_control="5m",
+        model_config_dict=AnthropicConfig(
+            temperature=0.2,
+            max_tokens=512,
+            cache_control="5m",
+        ).as_dict(),
     )
 
     agent_no_cache = ChatAgent(
