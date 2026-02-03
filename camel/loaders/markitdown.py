@@ -62,6 +62,7 @@ class MarkItDownLoader:
         ".xml",
         ".zip",
         ".txt",
+        # the file_paths may be markdown files when using FileToolkit.read_file
         ".md",
     ]
 
