@@ -29,6 +29,7 @@ from camel.messages import OpenAIMessage
 from camel.models._utils import convert_openai_tools_to_responses_format
 from camel.models.base_model import BaseModelBackend
 from camel.responses.adapters.responses_adapter import (
+    async_responses_stream_to_chunks,
     responses_stream_to_chunks,
     responses_to_camel_response,
 )
@@ -223,7 +224,8 @@ class OpenAIResponsesModel(BaseModelBackend):
             stream = await self._async_client.responses.create(
                 model=self.model_type, **request_dict
             )
-            return responses_stream_to_chunks(stream)  # type: ignore[return-value]
+            # Use async version for proper async iteration
+            return async_responses_stream_to_chunks(stream)  # type: ignore[return-value]
 
         if response_format is not None:
             parse_fn = getattr(self._async_client.responses, "parse", None)

@@ -18,7 +18,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from typing import Any, Dict, Iterator, List, Optional, Type
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Type
 
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -29,6 +29,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import BaseModel
 
+from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.responses.model_response import (
     CamelModelResponse,
@@ -36,6 +37,31 @@ from camel.responses.model_response import (
     CamelUsage,
 )
 from camel.types import RoleType
+
+logger = get_logger(__name__)
+
+
+def _get_attr(obj: Any, key: str, default: Any = None) -> Any:
+    """Get attribute from object or dict uniformly.
+
+    This helper handles the common pattern where an item can be either
+    a Pydantic model (with attributes) or a plain dict. It first tries
+    getattr, then falls back to dict.get if the object is a dict.
+
+    Args:
+        obj: The object to get the attribute from (can be object or dict).
+        key: The attribute/key name to retrieve.
+        default: Default value if attribute/key is not found.
+
+    Returns:
+        The attribute value, or default if not found.
+    """
+    val = getattr(obj, key, None)
+    if val is not None:
+        return val
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return default
 
 
 def responses_to_camel_response(
@@ -52,14 +78,10 @@ def responses_to_camel_response(
     output = getattr(resp, "output", None)
     if isinstance(output, list):
         for item in output:
-            content = getattr(item, "content", None) or (
-                item.get("content") if isinstance(item, dict) else None
-            )
+            content = _get_attr(item, "content")
             if isinstance(content, list):
                 for chunk in content:
-                    chunk_type = None
-                    if isinstance(chunk, dict):
-                        chunk_type = chunk.get("type")
+                    chunk_type = _get_attr(chunk, "type")
 
                     if chunk_type in ("output_text", "text", "input_text"):
                         val = chunk.get("text") or chunk.get("output_text")
@@ -79,8 +101,12 @@ def responses_to_camel_response(
                             if b64_data:
                                 try:
                                     audio_bytes = base64.b64decode(b64_data)
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.warning(
+                                        "Failed to decode audio data from "
+                                        "base64: %s. Audio data will be None.",
+                                        e,
+                                    )
                             transcript = audio.get("transcript")
                             if transcript:
                                 audio_transcript = transcript
@@ -105,28 +131,34 @@ def responses_to_camel_response(
         for item in output:
             # Check if item is a tool call
             # The item might be an object or dict
-            item_type = getattr(item, "type", None) or (
-                item.get("type") if isinstance(item, dict) else None
-            )
+            item_type = _get_attr(item, "type")
 
             if item_type == "function_call":
-                call_id = getattr(item, "call_id", None) or (
-                    item.get("call_id") if isinstance(item, dict) else None
-                )
-                name = getattr(item, "name", None) or (
-                    item.get("name") if isinstance(item, dict) else None
-                )
-                arguments = getattr(item, "arguments", None) or (
-                    item.get("arguments") if isinstance(item, dict) else None
-                )
+                call_id = _get_attr(item, "call_id")
+                name = _get_attr(item, "name")
+                arguments = _get_attr(item, "arguments")
 
                 if call_id and name:
                     args_dict = {}
                     if arguments:
                         try:
                             args_dict = json.loads(arguments)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            # Log warning with truncated arguments.
+                            args_snippet = (
+                                arguments[:200] + "..."
+                                if len(arguments) > 200
+                                else arguments
+                            )
+                            logger.warning(
+                                "Failed to parse tool call arguments as JSON "
+                                "for function '%s' (call_id=%s): %s. "
+                                "Arguments snippet: %s",
+                                name,
+                                call_id,
+                                e,
+                                args_snippet,
+                            )
 
                     tool_call_requests.append(
                         CamelToolCall(id=call_id, name=name, args=args_dict)
@@ -137,26 +169,19 @@ def responses_to_camel_response(
 
     parsed_obj = None
     if expected_parsed_type is not None:
-        parsed_obj = getattr(resp, "output_parsed", None)
+        parsed_obj = _get_attr(resp, "output_parsed")
         if parsed_obj is None:
-            parsed_obj = getattr(resp, "parsed", None)
+            parsed_obj = _get_attr(resp, "parsed")
         if parsed_obj is None:
-            output = getattr(resp, "output", None)
+            output = _get_attr(resp, "output")
             if isinstance(output, list) and output:
                 first = output[0]
-                parsed_obj = getattr(first, "parsed", None)
-                if parsed_obj is None and isinstance(first, dict):
-                    parsed_obj = first.get("parsed")
+                parsed_obj = _get_attr(first, "parsed")
                 if parsed_obj is None:
-                    content = getattr(first, "content", None) or (
-                        first.get("content")
-                        if isinstance(first, dict)
-                        else None
-                    )
+                    content = _get_attr(first, "content")
                     if isinstance(content, list) and content:
                         first_content = content[0]
-                        if isinstance(first_content, dict):
-                            parsed_obj = first_content.get("parsed")
+                        parsed_obj = _get_attr(first_content, "parsed")
 
     message = BaseMessage(
         role_name="assistant",
@@ -191,10 +216,17 @@ def responses_to_camel_response(
     try:
         if usage_obj is not None:
             if hasattr(usage_obj, "model_dump"):
-                usage_raw = usage_obj.model_dump()  # type: ignore[no-any-return]
+                usage_raw = (
+                    usage_obj.model_dump()  # type: ignore[no-any-return]
+                )
             elif isinstance(usage_obj, dict):
                 usage_raw = dict(usage_obj)
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Failed to extract usage information from response: %s. "
+            "Usage data will be None.",
+            e,
+        )
         usage_raw = None
 
     usage_dict = usage_raw or {}
@@ -232,75 +264,66 @@ def responses_to_camel_response(
     )
 
 
-def responses_stream_to_chunks(
-    stream: Iterator[Any],
-) -> Iterator[ChatCompletionChunk]:
-    """Convert a Responses API stream into ChatCompletionChunk iterator.
+def _process_stream_chunk(
+    chunk: Any,
+    response_id: str,
+    model: str,
+    created: int,
+) -> tuple[Optional[ChatCompletionChunk], str, str, int]:
+    """Process a single stream chunk and return the result.
 
-    This allows existing streaming consumers (like ChatAgent) to consume
-    Responses API streams without modification.
+    This helper extracts the common logic for processing Responses API
+    stream chunks, used by both sync and async stream processors.
+
+    Args:
+        chunk: The stream chunk to process.
+        response_id: Current response ID.
+        model: Current model name.
+        created: Current created timestamp.
+
+    Returns:
+        A tuple of (
+            chunk_result,
+            updated_response_id,
+            updated_model,
+            updated_created,
+        ).
+        chunk_result is None if no ChatCompletionChunk should be yielded.
     """
-    response_id = ""
-    model = ""
-    created = int(time.time())
+    chunk_type = _get_attr(chunk, "type")
 
-    for chunk in stream:
-        chunk_type = getattr(chunk, "type", None)
+    # Update common fields if available
+    resp = _get_attr(chunk, "response")
+    if resp is not None:
+        resp_id = _get_attr(resp, "id")
+        if resp_id:
+            response_id = resp_id
+        resp_model = _get_attr(resp, "model")
+        if resp_model:
+            model = resp_model
+        resp_created = _get_attr(resp, "created_at")
+        if resp_created:
+            created = int(resp_created)
 
-        # Update common fields if available
-        if hasattr(chunk, "response"):
-            resp = chunk.response
-            if hasattr(resp, "id"):
-                response_id = resp.id
-            if hasattr(resp, "model"):
-                model = resp.model
-            if hasattr(resp, "created_at"):
-                created = int(resp.created_at)
+    result: Optional[ChatCompletionChunk] = None
 
-        if chunk_type == "response.output_item.added":
-            item = getattr(chunk, "item", None)
-            item_type = getattr(item, "type", None)
-            output_index = getattr(chunk, "output_index", 0)
+    if chunk_type == "response.output_item.added":
+        item = _get_attr(chunk, "item")
+        item_type = _get_attr(item, "type")
+        output_index = _get_attr(chunk, "output_index", 0)
 
-            if item_type == "function_call":
-                # Start of a tool call
-                call_id = getattr(item, "call_id", None)
-                name = getattr(item, "name", None)
-
-                tool_call = ChoiceDeltaToolCall(
-                    index=output_index,  # Use output_index as tool_call index?
-                    id=call_id,
-                    type="function",
-                    function=ChoiceDeltaToolCallFunction(
-                        name=name, arguments=""
-                    ),
-                )
-
-                yield ChatCompletionChunk(
-                    id=response_id,
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(tool_calls=[tool_call]),
-                            finish_reason=None,
-                            index=0,
-                            logprobs=None,
-                        )
-                    ],
-                    created=created,
-                    model=model,
-                    object="chat.completion.chunk",
-                )
-
-        elif chunk_type == "response.function_call_arguments.delta":
-            delta_arg = getattr(chunk, "delta", "")
-            output_index = getattr(chunk, "output_index", 0)
+        if item_type == "function_call":
+            call_id = _get_attr(item, "call_id")
+            name = _get_attr(item, "name")
 
             tool_call = ChoiceDeltaToolCall(
                 index=output_index,
-                function=ChoiceDeltaToolCallFunction(arguments=delta_arg),
+                id=call_id,
+                type="function",
+                function=ChoiceDeltaToolCallFunction(name=name, arguments=""),
             )
 
-            yield ChatCompletionChunk(
+            result = ChatCompletionChunk(
                 id=response_id,
                 choices=[
                     Choice(
@@ -315,39 +338,120 @@ def responses_stream_to_chunks(
                 object="chat.completion.chunk",
             )
 
-        elif chunk_type == "response.output_text.delta":
-            delta_text = getattr(chunk, "delta", "")
+    elif chunk_type == "response.function_call_arguments.delta":
+        delta_arg = _get_attr(chunk, "delta", "")
+        output_index = _get_attr(chunk, "output_index", 0)
 
-            yield ChatCompletionChunk(
-                id=response_id,
-                choices=[
-                    Choice(
-                        delta=ChoiceDelta(content=delta_text),
-                        finish_reason=None,
-                        index=0,
-                        logprobs=None,
-                    )
-                ],
-                created=created,
-                model=model,
-                object="chat.completion.chunk",
-            )
+        tool_call = ChoiceDeltaToolCall(
+            index=output_index,
+            function=ChoiceDeltaToolCallFunction(arguments=delta_arg),
+        )
 
-        elif chunk_type == "response.output_item.done":
-            pass
+        result = ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(tool_calls=[tool_call]),
+                    finish_reason=None,
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=created,
+            model=model,
+            object="chat.completion.chunk",
+        )
 
-        elif chunk_type == "response.completed":
-            yield ChatCompletionChunk(
-                id=response_id,
-                choices=[
-                    Choice(
-                        delta=ChoiceDelta(),
-                        finish_reason="stop",
-                        index=0,
-                        logprobs=None,
-                    )
-                ],
-                created=created,
-                model=model,
-                object="chat.completion.chunk",
-            )
+    elif chunk_type == "response.output_text.delta":
+        delta_text = _get_attr(chunk, "delta", "")
+
+        result = ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(content=delta_text),
+                    finish_reason=None,
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=created,
+            model=model,
+            object="chat.completion.chunk",
+        )
+
+    elif chunk_type == "response.output_item.done":
+        pass  # No output needed
+
+    elif chunk_type == "response.completed":
+        result = ChatCompletionChunk(
+            id=response_id,
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(),
+                    finish_reason="stop",
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=created,
+            model=model,
+            object="chat.completion.chunk",
+        )
+
+    return result, response_id, model, created
+
+
+def responses_stream_to_chunks(
+    stream: Iterator[Any],
+) -> Iterator[ChatCompletionChunk]:
+    """Convert a Responses API stream into ChatCompletionChunk iterator.
+
+    This allows existing streaming consumers (like ChatAgent) to consume
+    Responses API streams without modification.
+
+    Args:
+        stream: Synchronous iterator of Responses API stream chunks.
+
+    Yields:
+        ChatCompletionChunk objects compatible with existing streaming
+        consumers.
+    """
+    response_id = ""
+    model = ""
+    created = int(time.time())
+
+    for chunk in stream:
+        result, response_id, model, created = _process_stream_chunk(
+            chunk, response_id, model, created
+        )
+        if result is not None:
+            yield result
+
+
+async def async_responses_stream_to_chunks(
+    stream: AsyncIterator[Any],
+) -> AsyncIterator[ChatCompletionChunk]:
+    """Convert an async Responses API stream into async
+    ChatCompletionChunk iterator.
+
+    This is the async version of responses_stream_to_chunks, for use with
+    async streaming consumers.
+
+    Args:
+        stream: Asynchronous iterator of Responses API stream chunks.
+
+    Yields:
+        ChatCompletionChunk objects compatible with existing streaming
+        consumers.
+    """
+    response_id = ""
+    model = ""
+    created = int(time.time())
+
+    async for chunk in stream:
+        result, response_id, model, created = _process_stream_chunk(
+            chunk, response_id, model, created
+        )
+        if result is not None:
+            yield result
