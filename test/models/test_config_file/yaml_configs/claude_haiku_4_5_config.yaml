@@ -1,5 +1,5 @@
 model_platform: ANTHROPIC
-model_type: CLAUDE_3_HAIKU
+model_type: CLAUDE_HAIKU_4_5
 model_config_dict:
   temperature: 0.7
   top_p: 0.9
