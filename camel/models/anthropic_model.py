@@ -466,7 +466,11 @@ class AnthropicModel(BaseModelBackend):
         )
 
     def _convert_anthropic_stream_to_openai_chunk(
-        self, chunk: Any, model: str, tool_call_index: Dict[str, int]
+        self,
+        chunk: Any,
+        model: str,
+        tool_call_index: Dict[str, int],
+        finish_reason_sent: bool = False,
     ) -> ChatCompletionChunk:
         r"""Convert Anthropic streaming chunk to OpenAI ChatCompletionChunk.
 
@@ -484,6 +488,7 @@ class AnthropicModel(BaseModelBackend):
         tool_calls = None
         finish_reason = None
         chunk_id = ""
+        usage = None
 
         if hasattr(chunk, "type"):
             chunk_type = chunk.type
@@ -507,8 +512,17 @@ class AnthropicModel(BaseModelBackend):
                         tool_id = getattr(block, "id", "")
                         tool_name = getattr(block, "name", "")
                         # Assign index for this tool call
-                        idx = len(tool_call_index)
+                        idx = len(
+                            [
+                                k
+                                for k in tool_call_index
+                                if not k.startswith("_")
+                            ]
+                        )
                         tool_call_index[tool_id] = idx
+                        # Also map by chunk.index for content_block_delta
+                        chunk_idx = getattr(chunk, "index", 0)
+                        tool_call_index[f"_chunk_{chunk_idx}"] = idx
                         tool_calls = [
                             {
                                 "index": idx,
@@ -543,10 +557,14 @@ class AnthropicModel(BaseModelBackend):
                         # Tool input arguments delta
                         partial_json = getattr(delta_obj, "partial_json", "")
                         # Get the current tool call index from chunk.index
-                        block_index = getattr(chunk, "index", 0)
+                        # Map Anthropic's chunk.index to our tool call index
+                        chunk_idx = getattr(chunk, "index", 0)
+                        mapped_idx = tool_call_index.get(
+                            f"_chunk_{chunk_idx}", chunk_idx
+                        )
                         tool_calls = [
                             {
-                                "index": block_index,
+                                "index": mapped_idx,
                                 "function": {
                                     "arguments": partial_json,
                                 },
@@ -575,12 +593,28 @@ class AnthropicModel(BaseModelBackend):
                         finish_reason = "stop"
                     elif stop_reason == "tool_use":
                         finish_reason = "tool_calls"
+                # Extract usage info from message_delta
+                if hasattr(chunk, "usage") and chunk.usage:
+                    usage_obj = chunk.usage
+                    input_tokens = getattr(usage_obj, "input_tokens", 0)
+                    output_tokens = getattr(usage_obj, "output_tokens", 0)
+                    usage = {
+                        "prompt_tokens": input_tokens,
+                        "completion_tokens": output_tokens,
+                        "total_tokens": input_tokens + output_tokens,
+                    }
             elif chunk_type == "message_stop":
-                # Message finished
+                # Message finished - only set finish_reason if not already sent
+                # This prevents duplicate finish_reason triggers in chat_agent
+                final_finish_reason = None if finish_reason_sent else "stop"
                 return ChatCompletionChunk.construct(
                     id=chunk_id,
                     choices=[
-                        {"index": 0, "delta": {}, "finish_reason": "stop"}
+                        {
+                            "index": 0,
+                            "delta": {},
+                            "finish_reason": final_finish_reason,
+                        }
                     ],
                     created=int(time.time()),
                     model=model,
@@ -601,6 +635,7 @@ class AnthropicModel(BaseModelBackend):
             created=int(time.time()),
             model=model,
             object="chat.completion.chunk",
+            usage=usage,
         )
 
     def _convert_openai_tools_to_anthropic(
@@ -899,10 +934,22 @@ class AnthropicModel(BaseModelBackend):
 
         def _generate_chunks():
             tool_call_index: Dict[str, int] = {}
+            finish_reason_sent = False
             for chunk in stream:
-                yield self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index
+                converted = self._convert_anthropic_stream_to_openai_chunk(
+                    chunk, model, tool_call_index, finish_reason_sent
                 )
+                # Track if we've sent a finish_reason to avoid duplicates
+                if converted.choices:
+                    choice = converted.choices[0]
+                    fr = (
+                        choice.get("finish_reason")
+                        if isinstance(choice, dict)
+                        else getattr(choice, "finish_reason", None)
+                    )
+                    if fr is not None:
+                        finish_reason_sent = True
+                yield converted
 
         return cast(Stream[ChatCompletionChunk], _generate_chunks())
 
@@ -921,10 +968,22 @@ class AnthropicModel(BaseModelBackend):
 
         async def _generate_chunks():
             tool_call_index: Dict[str, int] = {}
+            finish_reason_sent = False
             async for chunk in stream:
-                yield self._convert_anthropic_stream_to_openai_chunk(
-                    chunk, model, tool_call_index
+                converted = self._convert_anthropic_stream_to_openai_chunk(
+                    chunk, model, tool_call_index, finish_reason_sent
                 )
+                # Track if we've sent a finish_reason to avoid duplicates
+                if converted.choices:
+                    choice = converted.choices[0]
+                    fr = (
+                        choice.get("finish_reason")
+                        if isinstance(choice, dict)
+                        else getattr(choice, "finish_reason", None)
+                    )
+                    if fr is not None:
+                        finish_reason_sent = True
+                yield converted
 
         return cast(AsyncStream[ChatCompletionChunk], _generate_chunks())
 
