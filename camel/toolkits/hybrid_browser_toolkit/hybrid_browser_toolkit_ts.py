@@ -1077,12 +1077,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_upload_file(
         self, *, ref: str, file_path: str
     ) -> Dict[str, Any]:
-        r"""Uploads a file to a file input element on the page.
+        r"""Uploads a file by clicking the element
+         that triggers a file chooser.
 
         Args:
-            ref (str): The `ref` ID of the element near the file input.
-                This ID is obtained from a page snapshot (`get_page_snapshot`
-                or `get_som_screenshot`).
+            ref (str): The `ref` ID of the clickable upload element (e.g.,
+                a "Choose File" button). This ID is obtained from a page
+                snapshot (`get_page_snapshot` or `get_som_screenshot`).
             file_path (str): The absolute path to the file to upload.
 
         Returns:

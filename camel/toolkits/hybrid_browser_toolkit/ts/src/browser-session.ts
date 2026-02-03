@@ -1310,14 +1310,13 @@ export class HybridBrowserSession {
         return { success: true };
       } catch {
         // File chooser not triggered, fall back to finding a file input on the page
+        const fileInput = page.locator('input[type="file"]');
+        if (await fileInput.count() === 0) {
+          return { success: false, error: 'No file input found on page' };
+        }
+        await fileInput.last().setInputFiles(filePath);
+        return { success: true };
       }
-
-      const fileInput = page.locator('input[type="file"]');
-      if (await fileInput.count() === 0) {
-        return { success: false, error: 'No file input found on page' };
-      }
-      await fileInput.last().setInputFiles(filePath);
-      return { success: true };
     } catch (error) {
       return { success: false, error: `File upload failed: ${error}` };
     }
