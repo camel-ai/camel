@@ -122,6 +122,10 @@ class TestA2AProtocol:
     
 
     
+    @pytest.mark.skipif(
+        os.getenv("GEMINI_API_KEY") is None,
+        reason="Skipping workforce integration test because GEMINI_API_KEY is not set",
+    )
     @pytest.mark.asyncio
     async def test_a2a_workforce_integration(self, mock_server):
         """Test A2A protocol with Workforce integration"""

@@ -110,6 +110,16 @@ class A2AMockHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": "Not found"}).encode())
     
+    def do_HEAD(self):
+        """Handle HEAD requests"""
+        if self.path == "/.well-known/agent-card.json":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+    
     def do_POST(self):
         """Handle POST requests - A2A uses JSON-RPC protocol !!!!!"""
         content_length = int(self.headers.get("Content-Length", 0))

@@ -34,13 +34,15 @@ Tests the ability to connect to and interact with an A2A service.
 **Usage:**
 ```bash
 # Terminal 1: Start mock service
+# In this case you don't need gemini key
 python mock_a2a.py
 
 # Terminal 2: Run test
 python test_a2a_mock.py
 
 # run test a2a_protocol.py directly
-or run a2a_ptrotocol.py 
+# If you dont have gemini key, the test_a2a_workforce_integration will be passed
+or python -m dotenv run -- python examples/protocol/a2a_protocol/a2a_protocol.py
 ```
 
 **Expected Output:**
