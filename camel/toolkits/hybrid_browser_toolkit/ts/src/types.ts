@@ -33,6 +33,7 @@ export interface DetailedTiming {
   stability_wait_time_ms?: number;
   dom_content_loaded_time_ms?: number;
   network_idle_time_ms?: number;
+  dom_stability_time_ms?: number;
   snapshot_time_ms?: number;
   element_search_time_ms?: number;
   action_execution_time_ms?: number;
@@ -49,6 +50,16 @@ export interface ActionResult {
   details?: Record<string, any>;
   timing?: DetailedTiming;
   newTabId?: string;  // ID of newly opened tab if click opened a new tab
+  note?: string;
+}
+
+// Result of page stability check after actions
+export interface PageStabilityResult {
+  domContentLoadedTime: number;
+  networkIdleTime: number;
+  domStabilityTime: number;
+  hasLoadingElements: boolean;
+  note: string;
 }
 
 export interface TabInfo {
@@ -69,6 +80,8 @@ export interface BrowserToolkitConfig {
   networkIdleTimeout?: number;
   screenshotTimeout?: number;
   pageStabilityTimeout?: number;
+  domStabilityThreshold?: number;
+  domStabilityTimeout?: number;
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
