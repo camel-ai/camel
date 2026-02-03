@@ -32,11 +32,10 @@ pytest.importorskip("anthropic", reason="anthropic package is required")
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.CLAUDE_3_HAIKU,
-        ModelType.CLAUDE_3_5_HAIKU,
         ModelType.CLAUDE_3_7_SONNET,
         ModelType.CLAUDE_SONNET_4_5,
         ModelType.CLAUDE_OPUS_4_5,
+        ModelType.CLAUDE_HAIKU_4_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,
         ModelType.CLAUDE_OPUS_4_1,
@@ -64,7 +63,7 @@ def test_anthropic_model_uses_provided_token_counter():
 
     token_counter = DummyTokenCounter()
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         model_config_dict=AnthropicConfig().as_dict(),
         api_key="dummy_api_key",
         token_counter=token_counter,
@@ -77,7 +76,7 @@ def test_anthropic_model_cache_control_valid_and_invalid():
     # Valid cache_control values should configure _cache_control_config
     model_config = AnthropicConfig(cache_control="5m").as_dict()
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         model_config_dict=model_config,
         api_key="dummy_api_key",
     )
@@ -90,7 +89,7 @@ def test_anthropic_model_cache_control_valid_and_invalid():
     with pytest.raises(ValueError):
         invalid_config = AnthropicConfig(cache_control="10m").as_dict()
         AnthropicModel(
-            ModelType.CLAUDE_3_HAIKU,
+            ModelType.CLAUDE_HAIKU_4_5,
             model_config_dict=invalid_config,
             api_key="dummy_api_key",
         )
@@ -99,7 +98,7 @@ def test_anthropic_model_cache_control_valid_and_invalid():
 def test_anthropic_model_cache_control_from_config():
     model_config = AnthropicConfig(cache_control="1h").as_dict()
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         model_config_dict=model_config,
         api_key="dummy_api_key",
     )
@@ -111,14 +110,14 @@ def test_anthropic_model_cache_control_from_config():
 
 def test_anthropic_model_stream_property():
     model_stream = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         model_config_dict={"stream": True},
         api_key="dummy_api_key",
     )
     assert model_stream.stream is True
 
     model_non_stream = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         model_config_dict={"stream": False},
         api_key="dummy_api_key",
     )
@@ -186,7 +185,7 @@ def test_strip_trailing_whitespace_none_content():
 def test_convert_openai_to_anthropic_system_message():
     """Test conversion of system message."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
     messages = [
@@ -207,7 +206,7 @@ def test_convert_openai_to_anthropic_system_message():
 def test_convert_openai_to_anthropic_system_message_list_content():
     """Test conversion of system message with list content."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
     messages = [
@@ -231,7 +230,7 @@ def test_convert_openai_to_anthropic_system_message_list_content():
 def test_convert_openai_to_anthropic_tool_calls():
     """Test conversion of assistant message with tool calls."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
     messages = [
@@ -267,7 +266,7 @@ def test_convert_openai_to_anthropic_tool_calls():
 def test_convert_openai_to_anthropic_tool_response():
     """Test conversion of tool response message."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
     messages = [
@@ -292,7 +291,7 @@ def test_convert_openai_to_anthropic_tool_response():
 def test_convert_anthropic_response_text_only():
     """Test conversion of text-only response."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -309,7 +308,7 @@ def test_convert_anthropic_response_text_only():
     mock_response.usage.output_tokens = 5
 
     result = model._convert_anthropic_to_openai_response(
-        mock_response, "claude-3-haiku"
+        mock_response, "claude-haiku-4-5"
     )
 
     assert result.choices[0].message.content == "Hello, how can I help?"
@@ -323,7 +322,7 @@ def test_convert_anthropic_response_text_only():
 def test_convert_anthropic_response_with_tool_use():
     """Test conversion of response with tool use."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -347,7 +346,7 @@ def test_convert_anthropic_response_with_tool_use():
     mock_response.usage.output_tokens = 5
 
     result = model._convert_anthropic_to_openai_response(
-        mock_response, "claude-3-haiku"
+        mock_response, "claude-haiku-4-5"
     )
 
     assert result.choices[0].message.content == "I'll search for that."
@@ -362,7 +361,7 @@ def test_convert_anthropic_response_with_tool_use():
 def test_convert_anthropic_response_stop_reasons():
     """Test conversion of different stop reasons."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -383,7 +382,7 @@ def test_convert_anthropic_response_stop_reasons():
         mock_response.usage.output_tokens = 0
 
         result = model._convert_anthropic_to_openai_response(
-            mock_response, "claude-3-haiku"
+            mock_response, "claude-haiku-4-5"
         )
         assert result.choices[0].finish_reason == openai_reason
 
@@ -391,7 +390,7 @@ def test_convert_anthropic_response_stop_reasons():
 def test_convert_tools_none():
     """Test conversion of None tools."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -402,7 +401,7 @@ def test_convert_tools_none():
 def test_convert_tools_empty():
     """Test conversion of empty tools list."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -413,7 +412,7 @@ def test_convert_tools_empty():
 def test_convert_tools_basic():
     """Test basic tool conversion."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -445,7 +444,7 @@ def test_convert_tools_basic():
 def test_convert_tools_with_beta_structured_outputs():
     """Test tool conversion with beta structured outputs enabled."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
         use_beta_for_structured_outputs=True,
     )
@@ -470,7 +469,7 @@ def test_convert_tools_with_beta_structured_outputs():
 def test_convert_stream_chunk_message_start():
     """Test conversion of message_start chunk."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -481,7 +480,7 @@ def test_convert_stream_chunk_message_start():
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.id == "msg_123"
@@ -492,7 +491,7 @@ def test_convert_stream_chunk_message_start():
 def test_convert_stream_chunk_content_block_delta_text():
     """Test conversion of text content_block_delta chunk."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -504,7 +503,7 @@ def test_convert_stream_chunk_content_block_delta_text():
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.choices[0].delta.content == "Hello"
@@ -513,7 +512,7 @@ def test_convert_stream_chunk_content_block_delta_text():
 def test_convert_stream_chunk_tool_use_start():
     """Test conversion of tool_use content_block_start chunk."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -526,7 +525,7 @@ def test_convert_stream_chunk_tool_use_start():
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.choices[0].delta.tool_calls is not None
@@ -542,7 +541,7 @@ def test_convert_stream_chunk_tool_use_start():
 def test_convert_stream_chunk_tool_use_delta():
     """Test conversion of tool_use input_json_delta chunk."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -559,7 +558,7 @@ def test_convert_stream_chunk_tool_use_delta():
 
     tool_call_index = {"tool_123": 0}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.choices[0].delta.tool_calls is not None
@@ -570,7 +569,7 @@ def test_convert_stream_chunk_tool_use_delta():
 def test_convert_stream_chunk_message_delta_stop():
     """Test conversion of message_delta chunk with stop reason."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -581,7 +580,7 @@ def test_convert_stream_chunk_message_delta_stop():
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.choices[0].finish_reason == "stop"
@@ -590,7 +589,7 @@ def test_convert_stream_chunk_message_delta_stop():
 def test_convert_stream_chunk_message_stop():
     """Test conversion of message_stop chunk."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
     )
 
@@ -599,7 +598,7 @@ def test_convert_stream_chunk_message_stop():
 
     tool_call_index = {}
     result = model._convert_anthropic_stream_to_openai_chunk(
-        mock_chunk, "claude-3-haiku", tool_call_index
+        mock_chunk, "claude-haiku-4-5", tool_call_index
     )
 
     assert result.choices[0].finish_reason == "stop"
@@ -608,7 +607,7 @@ def test_convert_stream_chunk_message_stop():
 def test_use_beta_for_structured_outputs():
     """Test that beta API is used when configured."""
     model = AnthropicModel(
-        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_HAIKU_4_5,
         api_key="dummy_api_key",
         use_beta_for_structured_outputs=True,
     )

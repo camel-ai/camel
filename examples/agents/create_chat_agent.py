@@ -29,7 +29,7 @@ agent_2 = ChatAgent(
 # Method 3: Initialize the agent with a tuple (platform, model)
 agent_3 = ChatAgent(
     "You are a helpful assistant.",
-    model=("anthropic", "claude-3-5-sonnet-latest"),
+    model=("anthropic", "claude-sonnet-4-5"),
 )
 
 # Method 4: Initialize the agent with a `tuple` of `enum`
@@ -56,7 +56,7 @@ model = ModelFactory.create(
 agent_7 = ChatAgent("You are a helpful assistant.", model=model)
 
 
-# Test with a simple question with agent3(Anthropic, claude-3-5-sonnet-latest)
+# Test with a simple question with agent3(Anthropic, claude-sonnet-4-5)
 user_msg = "Which model are you?"
 
 # Get the response from one of the agents

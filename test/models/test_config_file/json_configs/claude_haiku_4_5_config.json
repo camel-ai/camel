@@ -1,6 +1,6 @@
 {
     "model_platform": "anthropic",
-    "model_type": "claude-3-haiku-20240307",
+    "model_type": "claude-haiku-4-5",
     "model_config_dict": {
         "temperature": 0.6,
         "max_tokens": 2000
