@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """OpenAI Responses API backend in a unified BaseModelBackend interface."""
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ from camel.messages import OpenAIMessage
 from camel.models._utils import convert_openai_tools_to_responses_format
 from camel.models.base_model import BaseModelBackend
 from camel.responses.adapters.responses_adapter import (
+    async_responses_stream_to_chunks,
     responses_stream_to_chunks,
     responses_to_camel_response,
 )
@@ -223,7 +224,8 @@ class OpenAIResponsesModel(BaseModelBackend):
             stream = await self._async_client.responses.create(
                 model=self.model_type, **request_dict
             )
-            return responses_stream_to_chunks(stream)  # type: ignore[return-value]
+            # Use async version for proper async iteration
+            return async_responses_stream_to_chunks(stream)  # type: ignore[return-value]
 
         if response_format is not None:
             parse_fn = getattr(self._async_client.responses, "parse", None)

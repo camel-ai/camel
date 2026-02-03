@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import asyncio
 import functools
 import inspect
 import logging
 import textwrap
+import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
@@ -36,6 +37,10 @@ logger = logging.getLogger(__name__)
 
 # Shared thread pool for running sync tools without blocking the event loop
 _SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
+
+# Persistent event loop to avoid httpx connection pool issues
+_PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
+_PERSISTENT_LOOP_LOCK = threading.Lock()
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -482,37 +487,102 @@ class FunctionTool:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        else:
-            # Pass the extracted arguments to the indicated function
+
+        # Call the function first
+        try:
+            result = self.func(*args, **kwargs)
+        except Exception as e:
+            parts = []
+            if args:
+                parts.append(f"args={args}")
+            if kwargs:
+                parts.append(f"kwargs={kwargs}")
+            args_str = ", ".join(parts) if parts else "no arguments"
+            raise ValueError(
+                f"Execution of function {self.func.__name__} failed with "
+                f"{args_str}. Error: {e}"
+            )
+
+        # Handle coroutine result (from async function or sync wrapper
+        # returning coroutine)
+        if inspect.iscoroutine(result):
+            # Check if there's already a running event loop
             try:
-                result = self.func(*args, **kwargs)
-                return result
-            except Exception as e:
-                parts = []
-                if args:
-                    parts.append(f"args={args}")
-                if kwargs:
-                    parts.append(f"kwargs={kwargs}")
-                args_str = ", ".join(parts) if parts else "no arguments"
-                raise ValueError(
-                    f"Execution of function {self.func.__name__} failed with "
-                    f"{args_str}. Error: {e}"
+                asyncio.get_running_loop()
+                has_running_loop = True
+            except RuntimeError:
+                has_running_loop = False
+
+            if has_running_loop:
+                # Already in an async context
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously within an async context. Consider using "
+                    f"'await tool.async_call()' or 'await agent.astep()' for "
+                    f"better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
+                # Must run in separate thread to avoid blocking current loop
+                future = _SYNC_TOOL_EXECUTOR.submit(
+                    self._run_async_in_persistent_loop, result
+                )
+                return future.result()
+            else:
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously. Consider using 'await tool.async_call()' "
+                    f"or 'await agent.astep()' for better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return self._run_async_in_persistent_loop(result)
+
+        return result
+
+    @staticmethod
+    def _run_async_in_persistent_loop(coro):
+        r"""Run coroutine in persistent loop to preserve httpx connections."""
+        global _PERSISTENT_LOOP
+        with _PERSISTENT_LOOP_LOCK:
+            need_new_loop = (
+                _PERSISTENT_LOOP is None
+                or _PERSISTENT_LOOP.is_closed()
+                or not _PERSISTENT_LOOP.is_running()
+            )
+            if need_new_loop:
+                _PERSISTENT_LOOP = asyncio.new_event_loop()
+                t = threading.Thread(
+                    target=_PERSISTENT_LOOP.run_forever, daemon=True
+                )
+                t.start()
+                while not _PERSISTENT_LOOP.is_running():
+                    pass  # Wait for loop to start
+        future = asyncio.run_coroutine_threadsafe(coro, _PERSISTENT_LOOP)
+        return future.result()
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        if self.is_async:
+
+        # Check if the function itself (not unwrapped) is a coroutine function
+        if inspect.iscoroutinefunction(self.func):
             return await self.func(*args, **kwargs)
-        else:
-            # Run sync function in executor to avoid blocking event loop
-            # Use functools.partial to properly capture args/kwargs
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                _SYNC_TOOL_EXECUTOR,
-                functools.partial(self.func, *args, **kwargs),
-            )
+
+        # For sync functions (including sync wrappers around async functions),
+        # run in executor to avoid blocking
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            _SYNC_TOOL_EXECUTOR,
+            functools.partial(self.func, *args, **kwargs),
+        )
+
+        # If the sync wrapper returned a coroutine, await it
+        if inspect.iscoroutine(result):
+            return await result
+
+        return result
 
     @property
     def is_async(self) -> bool:

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
-import json
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 from functools import wraps
 from typing import List, Optional, Union
@@ -153,19 +152,19 @@ class LLMGuardRuntime(BaseRuntime):
                     Kwargs: {kwargs}
                     """
                 )
-                tool_call = resp.info.get("external_tool_request", None)
+                tool_call = resp.info.get("external_tool_call_requests", None)
                 if not tool_call:
                     logger.error("No tool call found in response.")
                     return {
                         "error": "Risk assessment failed. Disabling function."
                     }
-                data = tool_call.function.arguments
-                data = json.loads(data)
-                if threshold < data["score"]:
+                score = tool_call[0].args["score"]
+                reason = tool_call[0].args["reason"]
+                if threshold < score:
                     message = (
                         f"Risk assessment not passed for {function_name}."
-                        f"Score: {data['score']} > Threshold: {threshold}"
-                        f"\nReason: {data['reason']}"
+                        f"Score: {score} > Threshold: {threshold}"
+                        f"\nReason: {reason}"
                     )
                     logger.warning(message)
                     return {"error": message}
@@ -173,14 +172,14 @@ class LLMGuardRuntime(BaseRuntime):
                 logger.info(
                     (
                         f"Function {function_name} passed risk assessment."
-                        f"Score: {data['score']}, Reason: {data['reason']}"
+                        f"Score: {score}, Reason: {reason}"
                     )
                 )
                 if self.verbose:
                     print(
                         (
                             f"Function {function_name} passed risk assessment."
-                            f"Score: {data['score']}, Reason: {data['reason']}"
+                            f"Score: {score}, Reason: {reason}"
                         )
                     )
                 return inner_func(*args, **kwargs)

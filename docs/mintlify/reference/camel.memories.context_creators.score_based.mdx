@@ -10,6 +10,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
 A context creation strategy that orders records chronologically.
 
+This class supports token count estimation to reduce expensive repeated
+token counting. When a cached token count is available, it estimates
+new message tokens using character-based approximation instead of
+calling the token counter for every message.
+
 **Parameters:**
 
 - **token_counter** (BaseTokenCounter): Token counter instance used to compute the combined token count of the returned messages.
@@ -38,6 +43,52 @@ def token_counter(self):
 ```python
 def token_limit(self):
 ```
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.set_cached_token_count"></a>
+
+### set_cached_token_count
+
+```python
+def set_cached_token_count(self, token_count: int, message_count: int):
+```
+
+Set the cached token count from LLM response usage.
+
+**Parameters:**
+
+- **token_count** (int): The total token count (prompt + completion) from LLM response usage.
+- **message_count** (int): The number of messages including the assistant response that will be added to memory.
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.clear_cache"></a>
+
+### clear_cache
+
+```python
+def clear_cache(self):
+```
+
+Clear the cached token count.
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._estimate_message_tokens"></a>
+
+### _estimate_message_tokens
+
+```python
+def _estimate_message_tokens(self, message: OpenAIMessage):
+```
+
+Estimate token count for a single message.
+
+Uses ~2 chars/token as a conservative approximation to handle both
+ASCII (~4 chars/token) and CJK text (~1-2 chars/token).
+
+**Parameters:**
+
+- **message**: The OpenAI message to estimate.
+
+**Returns:**
+
+  Estimated token count (intentionally conservative).
 
 <a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.create_context"></a>
 
