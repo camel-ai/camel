@@ -127,7 +127,12 @@ export interface UploadFileAction {
   filePath: string;
 }
 
-export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction | UploadFileAction;
+export interface DownloadFileAction {
+  type: 'download_file';
+  ref: string;
+}
+
+export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction | UploadFileAction | DownloadFileAction;
 
 export interface VisualMarkResult {
   text: string;

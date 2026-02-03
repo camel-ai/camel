@@ -362,8 +362,9 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async browserDownloadFile(saveDir: string, timeout?: number): Promise<any> {
-    return await this.session.browserDownloadFile(saveDir, timeout);
+  async downloadFile(ref: string): Promise<any> {
+    const action: BrowserAction = { type: 'download_file', ref };
+    return this.executeActionWithSnapshot(action);
   }
 
   async batchKeyboardInput(operations: Array<{type: string, keys?: string[], text?: string, delay?: number}>, skipStabilityWait: boolean = true): Promise<any> {

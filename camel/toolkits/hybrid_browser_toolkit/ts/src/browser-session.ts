@@ -1322,6 +1322,53 @@ export class HybridBrowserSession {
     }
   }
 
+    /**
+   * Download a file by clicking the ref element and waiting for the download to complete.
+   * Save directory and timeout are read from config.
+   */
+  private async performFileDownload(page: Page, ref: string): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const saveDir = browserConfig.downloadDir;
+    const downloadTimeout = browserConfig.downloadTimeout ?? 30000;
+
+    if (!saveDir) {
+      return { success: false, error: 'No download directory configured. Set download_dir when initializing the toolkit.' };
+    }
+
+    if (!fs.existsSync(saveDir)) {
+      return { success: false, error: `Download directory does not exist: ${saveDir}` };
+    }
+
+    await this.getSnapshot(page);
+
+    const element = page.locator(`aria-ref=${ref}`).first();
+    if (await element.count() === 0) {
+      return { success: false, error: `Element with ref ${ref} not found` };
+    }
+
+    try {
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: downloadTimeout }),
+        element.click(),
+      ]);
+
+      const fileName = download.suggestedFilename();
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
+      let savePath = path.join(saveDir, fileName);
+      let counter = 1;
+      while (fs.existsSync(savePath)) {
+        savePath = path.join(saveDir, `${base} (${counter})${ext}`);
+        counter++;
+      }
+      await download.saveAs(savePath);
+
+      return { success: true, fileName, savePath };
+    } catch (error) {
+      return { success: false, error: `Download failed: ${error}` };
+    }
+  }
+
   async executeAction(action: BrowserAction): Promise<ActionResult> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -1474,6 +1521,21 @@ export class HybridBrowserSession {
           }
 
           actionExecutionTime = Date.now() - uploadStart;
+          break;
+        }
+
+        case 'download_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const downloadStart = Date.now();
+
+          const downloadResult = await this.performFileDownload(page, action.ref);
+
+          if (!downloadResult.success) {
+            throw new Error(`Download failed: ${downloadResult.error}`);
+          }
+
+          customMessage = `File downloaded: ${downloadResult.fileName} -> ${downloadResult.savePath}`;
+          actionExecutionTime = Date.now() - downloadStart;
           break;
         }
 
@@ -1956,45 +2018,6 @@ export class HybridBrowserSession {
     };
   }
 
-
-  /**
-   * Start a download listener that will save downloaded files to the specified directory.
-   * Must be called BEFORE clicking a download button.
-   */
-  async browserDownloadFile(saveDir: string, timeout?: number): Promise<{
-    success: boolean;
-    message: string;
-    saveDir: string;
-  }> {
-    const page = await this.getCurrentPage();
-    const downloadTimeout = timeout ?? this.configLoader.getBrowserConfig().downloadTimeout ?? 30000;
-
-    if (!fs.existsSync(saveDir)) {
-      throw new Error(`Download directory does not exist: ${saveDir}`);
-    }
-
-    page.once('download', async (download) => {
-      const fileName = download.suggestedFilename();
-      const savePath = path.join(saveDir, fileName);
-
-      try {
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Download timeout after ${downloadTimeout}ms`)), downloadTimeout)
-        );
-
-        await Promise.race([download.saveAs(savePath), timeoutPromise]);
-        console.log(`[Download] Saved: ${savePath}`);
-      } catch (error) {
-        console.error(`[Download] Failed to save file: ${error}`);
-      }
-    });
-
-    return {
-      success: true,
-      message: `Download listener active. Files will be saved to: ${saveDir}`,
-      saveDir
-    };
-  }
 
   async close(): Promise<void> {
     const browserConfig = this.configLoader.getBrowserConfig();

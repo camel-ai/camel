@@ -75,6 +75,9 @@ export interface BrowserConfig {
   connectOverCdp: boolean;
   cdpUrl?: string;
   cdpKeepCurrentPage: boolean;
+
+  // Download file configuration
+  downloadDir?: string;
 }
 
 export interface WebSocketConfig {
@@ -223,6 +226,7 @@ export class ConfigLoader {
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
     if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
+    if (config.downloadDir !== undefined) browserConfig.downloadDir = config.downloadDir;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }

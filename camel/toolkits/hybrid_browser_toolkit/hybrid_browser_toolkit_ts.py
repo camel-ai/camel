@@ -1125,62 +1125,47 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_download_file(self) -> Dict[str, Any]:
-        r"""Enables download capture. Call BEFORE clicking the download button.
+    async def browser_download_file(self, *, ref: str) -> Dict[str, Any]:
+        r"""Downloads a file by clicking the element that triggers a download.
+
+        Args:
+            ref (str): The `ref` ID of the clickable download element (e.g.,
+                a "Download" button or link). This ID is obtained from a page
+                snapshot (`get_page_snapshot` or `get_som_screenshot`).
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action with download
-                  directory info.
-                - "snapshot" (str): A snapshot of the page (empty for this
-                  action).
+                - "result" (str): Confirmation with file name and save path.
+                - "snapshot" (str): A snapshot of the page after the download.
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if self._download_dir is None:
-            return {
-                "result": "Error: No download directory configured. ",
-                "snapshot": "",
-                "tabs": [],
-                "current_tab": 0,
-                "total_tabs": 0,
-            }
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            response = await ws_wrapper.browser_download_file(
-                self._download_dir
-            )
-
-            # Extract info from TypeScript response
-            success = response.get("success", False)
-            message = response.get("message", "")
-            save_dir = response.get("saveDir", self._download_dir)
-
-            if success:
-                result_msg = f"{message} Save directory: {save_dir}"
-            else:
-                result_msg = f"Error: {message}"
+            result = await ws_wrapper.download_file(ref)
 
             tab_info = await ws_wrapper.get_tab_info()
-            return {
-                "result": result_msg,
-                "snapshot": "",
-                "tabs": tab_info,
-                "current_tab": next(
-                    (
-                        i
-                        for i, tab in enumerate(tab_info)
-                        if tab.get("is_current")
+            result.update(
+                {
+                    "tabs": tab_info,
+                    "current_tab": next(
+                        (
+                            i
+                            for i, tab in enumerate(tab_info)
+                            if tab.get("is_current")
+                        ),
+                        0,
                     ),
-                    0,
-                ),
-                "total_tabs": len(tab_info),
-            }
+                    "total_tabs": len(tab_info),
+                }
+            )
+
+            return result
         except Exception as e:
-            logger.error(f"Failed to start download listener: {e}")
+            logger.error(f"Failed to download file: {e}")
             return {
-                "result": f"Error starting download listener: {e}",
+                "result": f"Error downloading file: {e}",
                 "snapshot": "",
                 "tabs": [],
                 "current_tab": 0,
