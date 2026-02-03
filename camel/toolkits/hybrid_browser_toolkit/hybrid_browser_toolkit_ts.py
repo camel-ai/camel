@@ -899,33 +899,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.upload_file(ref, file_path)
-
-            tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
+            return await self._build_action_response(
+                result, ws_wrapper, include_note=False
             )
-
-            return result
         except Exception as e:
             logger.error(f"Failed to upload file: {e}")
-            return {
-                "result": f"Error uploading file: {e}",
-                "snapshot": "",
-                "tabs": [],
-                "current_tab": 0,
-                "total_tabs": 0,
-            }
+            return self._build_error_response(
+                f"Error uploading file: {e}", include_note=False
+            )
 
     async def browser_download_file(self, *, ref: str) -> Dict[str, Any]:
         r"""Downloads a file by clicking the element that triggers a download.
@@ -946,33 +927,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.download_file(ref)
-
-            tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
+            return await self._build_action_response(
+                result, ws_wrapper, include_note=False
             )
-
-            return result
         except Exception as e:
             logger.error(f"Failed to download file: {e}")
-            return {
-                "result": f"Error downloading file: {e}",
-                "snapshot": "",
-                "tabs": [],
-                "current_tab": 0,
-                "total_tabs": 0,
-            }
+            return self._build_error_response(
+                f"Error downloading file: {e}", include_note=False
+            )
 
     async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
