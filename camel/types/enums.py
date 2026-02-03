@@ -212,8 +212,6 @@ class ModelType(UnifiedModelType, Enum):
     STUB = "stub"
 
     # Claude models
-    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
@@ -701,8 +699,6 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is anthropic.
         """
         return self in {
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
@@ -1542,8 +1538,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O3_MINI,
             ModelType.O3_PRO,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,

@@ -148,7 +148,7 @@ def my_add(a: int, b: int) -> int:
 
 anthropic_model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_3_5_HAIKU,
+    model_type=ModelType.CLAUDE_HAIKU_4_5,
     model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
 

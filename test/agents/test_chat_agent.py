@@ -1387,21 +1387,21 @@ def test_chat_agent_creation_methods():
     # Method 3: Initialize with a tuple of strings (platform, model)
     agent_3 = ChatAgent(
         "You are a helpful assistant.",
-        model=("anthropic", "claude-3-5-sonnet-latest"),
+        model=("anthropic", "claude-3-7-sonnet-latest"),
     )
-    assert agent_3.model_type.value == "claude-3-5-sonnet-latest"
+    assert agent_3.model_type.value == "claude-3-7-sonnet-latest"
     assert (
         agent_3.model_backend.models[0].model_type.value
-        == "claude-3-5-sonnet-latest"
+        == "claude-3-7-sonnet-latest"
     )
     assert isinstance(agent_3.model_backend.models[0], AnthropicModel)
 
     # Method 4: Initialize with a tuple of enums
     agent_4 = ChatAgent(
         "You are a helpful assistant.",
-        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_HAIKU),
+        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_HAIKU_4_5),
     )
-    assert agent_4.model_type.value == "claude-3-5-sonnet-latest"
+    assert agent_4.model_type.value == "claude-haiku-4-5"
     assert isinstance(agent_4.model_backend.models[0], AnthropicModel)
 
     # Method 5: Default model when none is specified
