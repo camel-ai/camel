@@ -82,15 +82,15 @@ parameterize_token_counter = pytest.mark.parametrize(
         # Anthropic model uses AnthropicTokenCounter as default
         (
             ModelPlatformType.ANTHROPIC,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_3_HAIKU,
             AnthropicConfig().as_dict(),
             None,
             AnthropicTokenCounter,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_3_HAIKU,
         ),
         (
             ModelPlatformType.ANTHROPIC,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_3_HAIKU,
             AnthropicConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_3_5_TURBO),
             OpenAITokenCounter,
