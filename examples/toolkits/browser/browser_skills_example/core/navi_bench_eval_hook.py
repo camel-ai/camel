@@ -31,6 +31,7 @@ from camel.toolkits.hybrid_browser_toolkit.ws_wrapper import (
     WebSocketBrowserWrapper,
 )
 
+
 logger = get_logger(__name__)
 
 

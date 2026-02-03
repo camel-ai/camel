@@ -14,4 +14,16 @@ When you run the experiments make sure following settings are correct:
 3. In modeling.py, make sure the DEFAULT_MODEL_PLATFORM and DEFAULT_MODEL_TYPE are the correct ones you want to use.
 
 # Commands to run the experiments
+
+## WebVoyager
 python -m examples.toolkits.browser.browser_skills_example.cli.run_webvoyager_tasks --jsonl examples/toolkits/browser/data/WebVoyager_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --start 301 --max-tasks 42
+
+## Navi-bench
+```bash
+python -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_case --jsonl examples\toolkits\browser\data\navi_bench_data.jsonl --skills-root examples\toolkits\browser\browser_skills_example\skills_store --task-id navi_bench/apartments/ny_multi_region_search/12
+
+
+python -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_tasks --jsonl examples\toolkits\browser\data\navi_bench_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --start 0 --max-tasks 10
+
+python -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_tasks --jsonl examples\toolkits\browser\data\navi_bench_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --domain apartments
+```

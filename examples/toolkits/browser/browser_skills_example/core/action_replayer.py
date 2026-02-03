@@ -1563,7 +1563,7 @@ Your response should be a single line with just the ref, SKIP, or NONE.
             print("Error: Could not connect to browser")
             print("Please ensure Chrome is running with:")
             print(
-                "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9223"
+                "  /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9223 --user-data-dir=camel\tmp --lang=en --accept-lang=en-US,en"
             )
             return
 

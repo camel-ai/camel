@@ -37,6 +37,11 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 from navi_bench.base import DatasetItem, instantiate
 
+from camel.evaluators.webjudge import (
+    WebJudgeVisionConfig,
+    WebJudgeVisionEvaluator,
+)
+
 from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     count_skills_in_dir,
@@ -52,10 +57,55 @@ from .navi_bench_eval_hook import (
 )
 from .skill_agent import SkillsAgent
 from .subtask_extractor import analyze_with_agent
+from .modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
 
 load_dotenv()
 
 _SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
+
+
+class WebJudgeTaskVerifier:
+    """WebJudge-based verifier using session evidence (vision-only)."""
+
+    def __init__(
+        self,
+        *,
+        vision_config: WebJudgeVisionConfig | None = None,
+    ):
+        resolved_config = vision_config or WebJudgeVisionConfig(
+            model_platform=DEFAULT_MODEL_PLATFORM,
+            model_type=DEFAULT_MODEL_TYPE,
+        )
+        self.vision_evaluator = WebJudgeVisionEvaluator(config=resolved_config)
+
+    def verify_task(
+        self,
+        task_description: str,
+        agent_response: str,
+        *,
+        session_dir: Path | None = None,
+        website: str | None = None,
+    ):
+        """Verify task completion using WebJudge.
+        
+        Returns:
+            WebJudgeEvaluationResult dataclass with success, reasoning, suggestions,
+            execution_time, token_usage, etc.
+        """
+        if session_dir is None:
+            from camel.evaluators.webjudge.vision_webjudge import WebJudgeEvaluationResult
+            return WebJudgeEvaluationResult(
+                success=False,
+                reasoning="WebJudge verifier requires session_dir evidence",
+                suggestions="Re-run with session logging enabled and pass session_dir to the verifier.",
+                debug_path="",
+            )
+        return self.vision_evaluator.evaluate_session(
+            task=task_description,
+            session_dir=session_dir,
+            agent_response=agent_response,
+            website=website,
+        )
 
 
 def safe_name(value: str) -> str:
@@ -286,6 +336,9 @@ class NaviBenchRunner:
         self.tool_execution_timeout = tool_execution_timeout
         self.enable_skills = enable_skills
         self.enable_skill_extraction = enable_skill_extraction
+        
+        # Initialize WebJudge verifier
+        self.webjudge_verifier = WebJudgeTaskVerifier()
 
         self._website_attempt_counts: Dict[str, int] = {}
 
@@ -390,6 +443,7 @@ class NaviBenchRunner:
             score: Optional[float] = None
             eval_result_path: Optional[str] = None
             session_dir: Optional[Path] = None
+            attempt_start_time = time.perf_counter()
 
             try:
                 ok = await agent.initialize()
@@ -437,14 +491,47 @@ class NaviBenchRunner:
                         f"{previous_suggestions}"
                     )
 
-                await agent.run(full_task)
+                response = await agent.run(full_task)
 
                 # Best-effort: capture evidence.
                 try:
                     await agent.toolkit.capture_final_evidence()
                 except Exception as e:
                     print(f"⚠️  Could not capture final evidence: {e}")
+                
+                # Get agent's response content
+                agent_response = "Task completed."
+                if response and response.msgs:
+                    agent_response = response.msgs[-1].content or "Task completed."
+                elif agent.agent_communication_log:
+                    last_entry = agent.agent_communication_log[-1]
+                    agent_response = last_entry.get("assistant_response", "Task completed.")
+                
+                # WebJudge verification (vision-based)
+                print(f"\n{'=' * 80}")
+                print("🔍 WEBJUDGE VERIFICATION")
+                print(f"{'=' * 80}")
+                
+                webjudge_result = self.webjudge_verifier.verify_task(
+                    full_task,
+                    agent_response,
+                    session_dir=session_dir,
+                    website=website,
+                )
+                
+                print("\n✓ WebJudge verification complete:")
+                print(f"  Success: {webjudge_result.success}")
+                print(f"  Reasoning: {webjudge_result.reasoning}")
+                print(f"  Execution time: {webjudge_result.execution_time:.2f}s")
+                print(f"  Tokens used: {webjudge_result.token_usage['total']}")
+                if webjudge_result.suggestions:
+                    print(f"  Suggestions: {webjudge_result.suggestions}")
 
+                # Navi-Bench evaluation (original programmatic evaluator)
+                print(f"\n{'=' * 80}")
+                print("🧪 NAVI-BENCH EVALUATION")
+                print(f"{'=' * 80}")
+                
                 # Best-effort: force a final update before compute.
                 final_url = ""
                 try:
@@ -471,7 +558,7 @@ class NaviBenchRunner:
                 eval_stats.compute_calls += 1
                 eval_stats.compute_time_s += time.time() - t_compute0
                 score = _score_from_result(eval_result)
-                success = bool(score is not None and abs(score - 1.0) < 1e-9)
+                navi_bench_success = bool(score is not None and abs(score - 1.0) < 1e-9)
 
                 if eval_stats.llm_usage is None:
                     eval_stats.llm_usage = _extract_token_usage_from_payload(
@@ -494,6 +581,7 @@ class NaviBenchRunner:
 
                 # Save communication log + timeline (calls analyze_session).
                 agent.save_communication_log()
+                agent.save_memory()
 
                 # Write attempt summary (pre-extract) for debugging.
                 summary = compute_session_summary(
@@ -513,22 +601,24 @@ class NaviBenchRunner:
                 )
                 summary["phase"] = "post_run_pre_extract"
                 summary["generated_at"] = get_timestamp_iso()
+                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
                 (session_dir / "summary.json").write_text(
                     json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
                     encoding="utf-8",
                 )
 
-                # Write evaluator result.
+                # Write evaluator result.success is the navi_bench success indicator.
                 eval_payload = {
                     "task_id": task_id,
                     "domain": domain,
                     "website": website,
                     "attempt": attempt,
+                    "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
                     "score": score,
-                    "success": success,
+                    "success": navi_bench_success,
                     "final_url": final_url,
                     "raw_result": _pydantic_dump(eval_result),
-                    "evaluator_stats": {
+                    "navi_bench_evaluator_stats": {
                         "reset_calls": eval_stats.reset_calls,
                         "update_calls": eval_stats.update_calls,
                         "compute_calls": eval_stats.compute_calls,
@@ -542,6 +632,16 @@ class NaviBenchRunner:
                         "last_error": eval_stats.last_error,
                         "llm_usage": eval_stats.llm_usage,
                         "llm_usage_source": llm_usage_source,
+                    },
+                    "webjudge_evaluation": {
+                        "success": webjudge_result.success,
+                        "reasoning": webjudge_result.reasoning,
+                        "suggestions": webjudge_result.suggestions,
+                        "execution_time": webjudge_result.execution_time,
+                        "token_usage": webjudge_result.token_usage,
+                        "key_points": webjudge_result.key_points,
+                        "evidence_count": len(webjudge_result.evidence),
+                        "debug_path": webjudge_result.debug_path,
                     },
                 }
                 eval_path = session_dir / "navi_bench_eval_result.json"
@@ -560,13 +660,23 @@ class NaviBenchRunner:
                 if tokens_hint is None:
                     tokens_hint = llm_usage.get("input_tokens")
                 print(
-                    "\n🧪 Evaluator stats: "
+                    "\n🧪 Navi-Bench evaluator stats: "
                     f"updates={eval_stats.update_calls} "
                     f"js_eval={eval_stats.js_evaluate_calls} "
                     f"update_time={eval_stats.update_time_s:.2f}s "
                     f"compute_time={eval_stats.compute_time_s:.2f}s "
                     f"llm_tokens={tokens_hint!r}"
                 )
+                
+                # Print comparison
+                print(f"\n{'=' * 80}")
+                print("📊 EVALUATION COMPARISON")
+                print(f"{'=' * 80}")
+                print(f"Navi-Bench: {'✅ Success' if navi_bench_success else '❌ Failed'} (score={score})")
+                print(f"WebJudge:   {'✅ Success' if webjudge_result.success else '❌ Failed'}")
+                if navi_bench_success != webjudge_result.success:
+                    print("⚠️  Evaluators disagree on task success!")
+                print(f"{'=' * 80}\n")
 
                 # Close browser after evaluation.
                 print("\n🧹 Closing browser...")
@@ -576,8 +686,10 @@ class NaviBenchRunner:
                 except Exception as e:
                     print(f"⚠️  Browser close failed: {e}")
 
-                if success:
-                    print("\n✅ Verified successful (score == 1.0).")
+                # At least one evaluator says success: accept it. the webjudge_result to make skill generation easier.
+                # Navi-Bench score is recorded for evalution purposes.
+                if webjudge_result.success or navi_bench_success:
+                    print("\n✅ WebJudge verified successful.")
                     if self.enable_skill_extraction:
                         try:
                             analyze_with_agent(
@@ -591,7 +703,7 @@ class NaviBenchRunner:
                         print(
                             "⚠️  Skill extraction disabled: skipping skill mining."
                         )
-
+                if navi_bench_success:
                     return AttemptResult(
                         task_id=task_id,
                         domain=domain,
@@ -602,13 +714,16 @@ class NaviBenchRunner:
                         eval_result_path=eval_result_path,
                         session_dir=str(session_dir),
                     )
-
-                suggestions_parts: List[str] = []
+                
+                # If Navi-Bench says success but WebJudge disagrees, use WebJudge's reasoning
+                if not webjudge_result.success:
+                    print("\n⚠️  Navi-Bench succeeded but WebJudge failed.")
+                    print(f"WebJudge reasoning: {webjudge_result.reasoning}")
+                    suggestions_parts = [webjudge_result.suggestions or ""]
                 suggestions_parts.append(
                     "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )
                 previous_suggestions = "\n".join(suggestions_parts).strip()
-
                 print("\n❌ Verified failed.")
                 print(f"score={score!r}")
                 print("Notes for retry:\n" + previous_suggestions)
@@ -629,6 +744,7 @@ class NaviBenchRunner:
                 # Best-effort: save logs and close browser.
                 try:
                     agent.save_communication_log()
+                    agent.save_memory()
                 except Exception:
                     pass
                 try:
@@ -642,9 +758,67 @@ class NaviBenchRunner:
                     "and if the site is stuck, try refreshing or reopening the page."
                 )
 
+                # CRITICAL: Write fallback JSON files even on crash
                 if session_dir is not None:
                     crash_path = session_dir / "navi_bench_crash.txt"
-                    crash_path.write_text(err + "\n", encoding="utf-8")
+                    crash_path.write_text(err + "\n" + traceback.format_exc(), encoding="utf-8")
+                    
+                    # Write fallback summary.json
+                    try:
+                        crash_summary = {
+                            "task_id": str(task_id),
+                            "website": website,
+                            "domain": domain,
+                            "start_url": task_config.url,
+                            "attempt": attempt,
+                            "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                            "subtasks_available_before": subtasks_before,
+                            "phase": "crashed",
+                            "generated_at": get_timestamp_iso(),
+                            "error": err,
+                            "error_type": type(e).__name__,
+                        }
+                        (session_dir / "summary.json").write_text(
+                            json.dumps(crash_summary, indent=2, ensure_ascii=False) + "\n",
+                            encoding="utf-8",
+                        )
+                    except Exception as write_err:
+                        print(f"⚠️  Failed to write crash summary.json: {write_err}")
+                    
+                    # Write fallback navi_bench_eval_result.json
+                    try:
+                        crash_eval = {
+                            "task_id": task_id,
+                            "domain": domain,
+                            "website": website,
+                            "attempt": attempt,
+                            "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                            "score": None,
+                            "success": False,
+                            "final_url": "",
+                            "error": err,
+                            "error_type": type(e).__name__,
+                            "raw_result": None,
+                            "navi_bench_evaluator_stats": {
+                                "error": "Attempt crashed before evaluation"
+                            },
+                            "webjudge_evaluation": {
+                                "success": False,
+                                "reasoning": f"Attempt crashed: {err}",
+                                "suggestions": previous_suggestions,
+                                "execution_time": 0.0,
+                                "token_usage": {"prompt": 0, "completion": 0, "total": 0},
+                                "key_points": [],
+                                "evidence_count": 0,
+                                "debug_path": "",
+                            },
+                        }
+                        (session_dir / "navi_bench_eval_result.json").write_text(
+                            json.dumps(crash_eval, indent=2, ensure_ascii=False) + "\n",
+                            encoding="utf-8",
+                        )
+                    except Exception as write_err:
+                        print(f"⚠️  Failed to write crash navi_bench_eval_result.json: {write_err}")
 
         return AttemptResult(
             task_id=task_id,

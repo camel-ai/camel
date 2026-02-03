@@ -16,7 +16,8 @@ import base64
 import datetime
 import json
 import re
-from dataclasses import dataclass, field
+import time
+from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Literal
 
@@ -55,6 +56,40 @@ class VisionEvidenceFrame:
     url_after: Optional[str]
     screenshot_path: str
     snapshot_path: Optional[str] = None
+
+
+@dataclass
+class EvidenceItem:
+    """Individual evidence item with scoring information."""
+    frame_id: str
+    action_step: int
+    timestamp: str
+    action: str
+    url_before: Optional[str]
+    url_after: Optional[str]
+    screenshot_path: str
+    snapshot_path: Optional[str]
+    score: Optional[int]
+
+
+@dataclass
+class WebJudgeEvaluationResult:
+    """Result of Vision-WebJudge evaluation."""
+    success: bool
+    reasoning: str
+    suggestions: str
+    debug_path: str
+    key_points: List[str] = field(default_factory=list)
+    evidence: List[EvidenceItem] = field(default_factory=list)
+    key_point_checks: List[Any] = field(default_factory=list)
+    frame_descriptions: List[Any] = field(default_factory=list)
+    raw: Optional[Dict[str, Any]] = None
+    execution_time: float = 0.0
+    token_usage: Dict[str, int] = field(default_factory=lambda: {
+        'prompt': 0,
+        'completion': 0,
+        'total': 0
+    })
 
 
 @dataclass
@@ -129,7 +164,10 @@ class WebJudgeVisionEvaluator:
         session_dir: Path,
         agent_response: str = "",
         website: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> WebJudgeEvaluationResult:
+        start_time = time.perf_counter()
+        total_token_usage = {'prompt': 0, 'completion': 0, 'total': 0}
+        
         session_dir = Path(session_dir).expanduser().resolve()
         debug_path = session_dir / "webjudge_debug.json"
         debug_payload: Dict[str, Any] = {
@@ -165,21 +203,27 @@ class WebJudgeVisionEvaluator:
             }
 
             if not candidates:
-                result = {
-                    "success": False,
-                    "reasoning": "No screenshot evidence found in session logs.",
-                    "suggestions": "Enable pre-capture evidence (session_dir/evidence) and re-run.",
-                    "debug_path": str(debug_path),
-                }
-                debug_payload["result"] = result
+                execution_time = time.perf_counter() - start_time
+                result = WebJudgeEvaluationResult(
+                    success=False,
+                    reasoning="No screenshot evidence found in session logs.",
+                    suggestions="Enable pre-capture evidence (session_dir/evidence) and re-run.",
+                    debug_path=str(debug_path),
+                    execution_time=execution_time,
+                    token_usage=total_token_usage,
+                )
+                debug_payload["result"] = asdict(result)
                 self._try_write_debug_json(debug_path, debug_payload)
                 return result
 
             raw: Dict[str, Any] = {}
 
-            key_points, key_points_text, raw_kp = self._identify_key_points(
+            key_points, key_points_text, raw_kp, kp_tokens = self._identify_key_points(
                 task
             )
+            total_token_usage['prompt'] += kp_tokens['prompt']
+            total_token_usage['completion'] += kp_tokens['completion']
+            total_token_usage['total'] += kp_tokens['total']
             debug_payload["stages"]["key_points"] = raw_kp
             if self.config.include_raw:
                 raw["key_points"] = raw_kp
@@ -188,9 +232,12 @@ class WebJudgeVisionEvaluator:
             debug_payload["artifacts"]["candidate_subset"] = [
                 f.frame_id for f in candidates
             ]
-            scores, score_thoughts, raw_scores = self._score_evidence(
+            scores, score_thoughts, raw_scores, score_tokens = self._score_evidence(
                 task, key_points_text, candidates
             )
+            total_token_usage['prompt'] += score_tokens['prompt']
+            total_token_usage['completion'] += score_tokens['completion']
+            total_token_usage['total'] += score_tokens['total']
             debug_payload["stages"]["evidence_scoring"] = raw_scores
             debug_payload["artifacts"]["evidence_scoring_compact"] = [
                 {
@@ -228,77 +275,87 @@ class WebJudgeVisionEvaluator:
                 selected_thoughts
             )
 
-            verdict, raw_verdict = self._judge_outcome(
+            verdict, raw_verdict, verdict_tokens = self._judge_outcome(
                 task=task,
                 action_history=action_history,
                 key_points_text=key_points_text,
                 evidence=selected,
                 evidence_thoughts=selected_thoughts,
             )
+            total_token_usage['prompt'] += verdict_tokens['prompt']
+            total_token_usage['completion'] += verdict_tokens['completion']
+            total_token_usage['total'] += verdict_tokens['total']
             debug_payload["stages"]["outcome"] = raw_verdict
             if self.config.include_raw:
                 raw["outcome"] = raw_verdict
 
-            result = {
-                "success": bool(verdict.get("success", False)),
-                "reasoning": str(verdict.get("reasoning", "")),
-                "suggestions": str(verdict.get("suggestions", "")),
-                "key_points": key_points,
-                "evidence": [
-                    {
-                        "frame_id": f.frame_id,
-                        "action_step": f.action_step,
-                        "timestamp": f.timestamp,
-                        "action": f.action,
-                        "url_before": f.url_before,
-                        "url_after": f.url_after,
-                        "screenshot_path": f.screenshot_path,
-                        "snapshot_path": f.snapshot_path,
-                        "score": scores.get(f.frame_id),
-                    }
+            execution_time = time.perf_counter() - start_time
+            result = WebJudgeEvaluationResult(
+                success=bool(verdict.get("success", False)),
+                reasoning=str(verdict.get("reasoning", "")),
+                suggestions=str(verdict.get("suggestions", "")),
+                key_points=key_points,
+                evidence=[
+                    EvidenceItem(
+                        frame_id=f.frame_id,
+                        action_step=f.action_step,
+                        timestamp=f.timestamp,
+                        action=f.action,
+                        url_before=f.url_before,
+                        url_after=f.url_after,
+                        screenshot_path=f.screenshot_path,
+                        snapshot_path=f.snapshot_path,
+                        score=scores.get(f.frame_id),
+                    )
                     for f in selected
                 ],
-                # Rich outcome details (when provided by the judge model).
-                "key_point_checks": verdict.get("key_point_checks", []),
-                "frame_descriptions": verdict.get("frame_descriptions", []),
-                "debug_path": str(debug_path),
-            }
-            if self.config.include_raw:
-                result["raw"] = raw
-            debug_payload["result"] = result
+                key_point_checks=verdict.get("key_point_checks", []),
+                frame_descriptions=verdict.get("frame_descriptions", []),
+                debug_path=str(debug_path),
+                raw=raw if self.config.include_raw else None,
+                execution_time=execution_time,
+                token_usage=total_token_usage,
+            )
+            debug_payload["result"] = asdict(result)
             self._try_write_debug_json(debug_path, debug_payload)
             return result
         except WebJudgeStageError as e:
+            execution_time = time.perf_counter() - start_time
             debug_payload["stages"][e.stage] = {
                 "prompt": e.prompt,
                 "response": e.response,
                 "parse_error": e.parse_error,
             }
-            result = {
-                "success": False,
-                "reasoning": f"Vision-WebJudge evaluation failed: {e!s}",
-                "suggestions": "Check session_dir evidence and retry.",
-                "debug_path": str(debug_path),
-            }
+            result = WebJudgeEvaluationResult(
+                success=False,
+                reasoning=f"Vision-WebJudge evaluation failed: {e!s}",
+                suggestions="Check session_dir evidence and retry.",
+                debug_path=str(debug_path),
+                execution_time=execution_time,
+                token_usage=total_token_usage,
+            )
             debug_payload["error"] = {
                 "type": type(e).__name__,
                 "message": str(e),
             }
-            debug_payload["result"] = result
+            debug_payload["result"] = asdict(result)
             self._try_write_debug_json(debug_path, debug_payload)
             return result
         except Exception as e:
-            result = {
-                "success": False,
-                "reasoning": f"Vision-WebJudge evaluation failed: {e!s}",
-                "suggestions": "Check session_dir evidence and retry.",
-                "debug_path": str(debug_path),
-            }
+            execution_time = time.perf_counter() - start_time
+            result = WebJudgeEvaluationResult(
+                success=False,
+                reasoning=f"Vision-WebJudge evaluation failed: {e!s}",
+                suggestions="Check session_dir evidence and retry.",
+                debug_path=str(debug_path),
+                execution_time=execution_time,
+                token_usage=total_token_usage,
+            )
             debug_payload["error"] = {
                 "type": type(e).__name__,
                 "message": str(e),
             }
-            debug_payload["result"] = result
+            debug_payload["result"] = asdict(result)
             self._try_write_debug_json(debug_path, debug_payload)
             return result
 
@@ -306,12 +363,54 @@ class WebJudgeVisionEvaluator:
         self, path: Path, payload: Dict[str, Any]
     ) -> None:
         try:
+            # Ensure parent directory exists
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
-        except Exception:
+        except Exception as e:
+            print(f"⚠️  Failed to write webjudge_debug.json to {path}: {e}")
             return
+
+    def _extract_token_usage(self, response: Any) -> Dict[str, int]:
+        """Extract token usage from agent response.
+        
+        Args:
+            response: Agent response object
+            
+        Returns:
+            Dictionary with prompt, completion, and total token counts
+        """
+        token_usage = {'prompt': 0, 'completion': 0, 'total': 0}
+        
+        try:
+            if hasattr(response, 'info') and response.info:
+                usage = response.info.get('usage', {})
+                if usage:
+                    # Try different token field names
+                    prompt_tokens = (
+                        usage.get('prompt_tokens') or 
+                        usage.get('input_tokens') or 0
+                    )
+                    completion_tokens = (
+                        usage.get('completion_tokens') or 
+                        usage.get('output_tokens') or 0
+                    )
+                    total_tokens = (
+                        usage.get('total_tokens') or 
+                        prompt_tokens + completion_tokens
+                    )
+                    
+                    token_usage = {
+                        'prompt': int(prompt_tokens),
+                        'completion': int(completion_tokens),
+                        'total': int(total_tokens)
+                    }
+        except Exception:
+            pass
+        
+        return token_usage
 
     def _make_agent(
         self, *, role_name: str, system_content: str
@@ -358,7 +457,7 @@ class WebJudgeVisionEvaluator:
 
     def _identify_key_points(
         self, task: str
-    ) -> Tuple[List[str], str, Dict[str, Any]]:
+    ) -> Tuple[List[str], str, Dict[str, Any], Dict[str, int]]:
         agent = self._make_agent(
             role_name="WebJudge: Key Point Identifier",
             system_content=(
@@ -379,6 +478,7 @@ class WebJudgeVisionEvaluator:
             user_message = self._user_message(prompt)
             resp = agent.step(user_message)
             response_text = resp.msg.content or ""
+            token_usage = self._extract_token_usage(resp)
         except Exception as ex:
             raise WebJudgeStageError(
                 stage="key_points",
@@ -396,6 +496,7 @@ class WebJudgeVisionEvaluator:
                 "response": response_text,
                 "key_points_text": key_points_text,
             },
+            token_usage,
         )
 
     def _score_evidence(
@@ -403,7 +504,7 @@ class WebJudgeVisionEvaluator:
         task: str,
         key_points_text: str,
         frames: List[VisionEvidenceFrame],
-    ) -> Tuple[Dict[str, int], Dict[str, str], Dict[str, Any]]:
+    ) -> Tuple[Dict[str, int], Dict[str, str], Dict[str, Any], Dict[str, int]]:
         data = "image" if self.config.vision_type == "image" else "DOM snapshot"
         system_msg = (
             f"You are an expert evaluator tasked with determining whether an {data} or text from DOM contains information about the necessary steps to complete a task.\n\n"
@@ -431,6 +532,7 @@ class WebJudgeVisionEvaluator:
         scores: Dict[str, int] = {}
         thoughts: Dict[str, str] = {}
         per_frame: List[Dict[str, Any]] = []
+        total_tokens = {'prompt': 0, 'completion': 0, 'total': 0}
 
         for evidence_no, f in enumerate(frames, start=1):
             agent = self._make_agent(
@@ -456,6 +558,11 @@ class WebJudgeVisionEvaluator:
             )
             resp = agent.step(self._user_message(prompt, images=images))
             response_text = resp.msg.content or ""
+            frame_tokens = self._extract_token_usage(resp)
+            total_tokens['prompt'] += frame_tokens['prompt']
+            total_tokens['completion'] += frame_tokens['completion']
+            total_tokens['total'] += frame_tokens['total']
+            
             score, reasoning = self._parse_score_reasoning(response_text)
             if score is not None:
                 scores[f.frame_id] = max(1, min(5, score))
@@ -479,6 +586,7 @@ class WebJudgeVisionEvaluator:
             {
                 "per_frame": per_frame,
             },
+            total_tokens,
         )
 
     def _judge_outcome(
@@ -489,7 +597,7 @@ class WebJudgeVisionEvaluator:
         key_points_text: str,
         evidence: List[VisionEvidenceFrame],
         evidence_thoughts: List[Dict[str, Any]],
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, int]]:
         agent = self._make_agent(
             role_name="WebJudge: Outcome Judge",
             system_content=(
@@ -568,6 +676,8 @@ class WebJudgeVisionEvaluator:
             self._user_message(prompt, images=images if images else None)
         )
         response_text = resp.msg.content or ""
+        token_usage = self._extract_token_usage(resp)
+        
         success = self._extract_success_from_status(response_text)
         raison = response_text.strip()
         verdict = {
@@ -581,7 +691,7 @@ class WebJudgeVisionEvaluator:
             "prompt": prompt,
             "response": response_text,
             "parsed": verdict,
-        }
+        }, token_usage
 
     def _select_evidence(
         self, frames: List[VisionEvidenceFrame], scores: Dict[str, int]

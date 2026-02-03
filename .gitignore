@@ -485,3 +485,4 @@ session_logs/
 session_logs*/
 examples/toolkits/browser/browser_skills_example/user_data_dir/
 archive/
+skills_store/
