@@ -227,6 +227,7 @@ export class ConfigLoader {
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
     if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
     if (config.downloadDir !== undefined) browserConfig.downloadDir = config.downloadDir;
+    if (config.downloadTimeout !== undefined) browserConfig.downloadTimeout = config.downloadTimeout;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }

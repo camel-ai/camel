@@ -158,6 +158,7 @@ class ConfigLoader:
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
             "downloadDir": self.toolkit_config.download_dir,
+            "downloadTimeout": self.browser_config.download_timeout,
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,

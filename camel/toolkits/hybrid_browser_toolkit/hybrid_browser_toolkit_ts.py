@@ -112,6 +112,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         screenshot_timeout: Optional[int] = None,
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
+        download_timeout: Optional[int] = None,
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
@@ -152,6 +153,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             in milliseconds. Defaults to None.
             dom_content_loaded_timeout (Optional[int]): DOM content loaded
             timeout in milliseconds. Defaults to None.
+            download_timeout (Optional[int]): Download timeout in
+            milliseconds. Defaults to None.
             viewport_limit (bool): Whether to filter page snapshot
             elements to only those visible in the current viewport.
                 When True, only elements within the current viewport
@@ -187,6 +190,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=screenshot_timeout,
             page_stability_timeout=page_stability_timeout,
             dom_content_loaded_timeout=dom_content_loaded_timeout,
+            download_timeout=download_timeout,
             viewport_limit=viewport_limit,
             cache_dir=cache_dir,
             browser_log_to_file=browser_log_to_file,

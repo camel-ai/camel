@@ -1300,7 +1300,6 @@ export class HybridBrowserSession {
         return { success: false, error: `Element with ref ${ref} not found` };
       }
 
-      // Try intercepting the file chooser triggered by clicking the element
       try {
         const [fileChooser] = await Promise.all([
           page.waitForEvent('filechooser', { timeout: 3000 }),
@@ -1309,7 +1308,6 @@ export class HybridBrowserSession {
         await fileChooser.setFiles(filePath);
         return { success: true };
       } catch {
-        // File chooser not triggered, fall back to finding a file input on the page
         const fileInput = page.locator('input[type="file"]');
         if (await fileInput.count() === 0) {
           return { success: false, error: 'No file input found on page' };
@@ -1322,14 +1320,13 @@ export class HybridBrowserSession {
     }
   }
 
-    /**
+  /**
    * Download a file by clicking the ref element and waiting for the download to complete.
-   * Save directory and timeout are read from config.
    */
   private async performFileDownload(page: Page, ref: string): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
     const browserConfig = this.configLoader.getBrowserConfig();
     const saveDir = browserConfig.downloadDir;
-    const downloadTimeout = browserConfig.downloadTimeout ?? 30000;
+    const downloadTimeout = browserConfig.downloadTimeout;
 
     if (!saveDir) {
       return { success: false, error: 'No download directory configured. Set download_dir when initializing the toolkit.' };
@@ -2017,7 +2014,6 @@ export class HybridBrowserSession {
       },
     };
   }
-
 
   async close(): Promise<void> {
     const browserConfig = this.configLoader.getBrowserConfig();
