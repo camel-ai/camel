@@ -3756,62 +3756,39 @@ class ChatAgent(BaseAgent):
     def _handle_camel_response(
         self, response: CamelModelResponse
     ) -> ModelResponse:
-        """Process a CamelModelResponse and build the legacy ModelResponse."""
-        output_messages: List[BaseMessage] = []
+        """Process a CamelModelResponse and build the ModelResponse.
+
+        Args:
+            response: The CamelModelResponse from the adapter layer.
+
+        Returns:
+            A ModelResponse wrapping the processed CamelModelResponse.
+        """
+        # Re-wrap messages to preserve agent role naming convention
+        processed_messages: List[BaseMessage] = []
         for msg in response.output_messages:
-            # Re-wrap to preserve agent role naming convention
             chat_message = replace(
                 msg,
                 role_name=self.role_name,
                 role_type=self.role_type,
             )
-            output_messages.append(chat_message)
+            processed_messages.append(chat_message)
 
-        finish_reasons = response.finish_reasons or []
-
-        usage: Dict[str, Any] = {}
-        if response.usage and response.usage.raw:
-            usage = dict(response.usage.raw)
-        else:
-            # Synthesize from normalized fields if raw missing
-            usage = {
-                "prompt_tokens": response.usage.input_tokens
-                if response.usage
-                else 0,
-                "completion_tokens": response.usage.output_tokens
-                if response.usage
-                else 0,
-                "total_tokens": response.usage.total_tokens
-                if response.usage
-                else 0,
-            }
-
-        tool_call_requests: Optional[List[ToolCallRequest]] = None
-        if response.tool_call_requests:
-            tool_call_requests = []
-            for tc in response.tool_call_requests:
-                tool_call_requests.append(
-                    ToolCallRequest(
-                        tool_name=tc.name,
-                        args=tc.args,
-                        tool_call_id=tc.id,
-                    )
-                )
-
-        # For compatibility, return original provider payload when available
-        provider_payload = getattr(response, "raw", None)
-        response_id = response.id or ""
-
-        return ModelResponse(
-            response=provider_payload
-            if provider_payload is not None
-            else response,
-            tool_call_requests=tool_call_requests,
-            output_messages=output_messages,
-            finish_reasons=finish_reasons,
-            usage_dict=usage,
-            response_id=response_id,
+        # Create a new CamelModelResponse with processed messages
+        processed_response = CamelModelResponse(
+            id=response.id,
+            model=response.model,
+            created=response.created,
+            output_messages=processed_messages,
+            tool_call_requests=response.tool_call_requests,
+            finish_reasons=response.finish_reasons,
+            usage=response.usage,
+            logprobs=response.logprobs,
+            raw=response.raw,
         )
+
+        # Wrap in ModelResponse using composition pattern
+        return ModelResponse(model_response=processed_response)
 
     def _step_terminate(
         self,
