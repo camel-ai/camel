@@ -12,14 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import pytest
-
 from camel.runtimes import BaseRuntime
 from camel.toolkits import FunctionTool
 
 
 class _ConcreteRuntime(BaseRuntime):
-    r"""Minimal concrete runtime for testing base cleanup/stop/context manager."""
+    r"""Minimal concrete runtime for testing base cleanup/stop/context
+    manager."""
 
     def __init__(self):
         super().__init__()
@@ -62,7 +61,8 @@ def test_base_runtime_stop_calls_cleanup():
 
 
 def test_base_runtime_context_manager_calls_cleanup():
-    r"""Test that using the runtime as a context manager calls cleanup on exit."""
+    r"""Test that using the runtime as a context manager calls cleanup on
+    exit."""
     runtime = _ConcreteRuntime()
     assert not runtime.cleanup_called
     with runtime:

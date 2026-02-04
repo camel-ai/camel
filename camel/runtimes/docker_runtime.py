@@ -408,7 +408,7 @@ class DockerRuntime(BaseRuntime):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         r"""Exit the context manager."""
-        self.stop()
+        self.cleanup()
 
     @property
     def docs(self) -> str:
