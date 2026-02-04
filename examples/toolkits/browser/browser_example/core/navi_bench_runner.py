@@ -617,10 +617,11 @@ class NaviBenchRunner:
                     )
                 
                 # If Navi-Bench says success but WebJudge disagrees, use WebJudge's reasoning
+                suggestions_parts: List[str] = []
                 if navi_bench_success:
                     print("\n⚠️  Navi-Bench succeeded but WebJudge failed.")
                     print(f"WebJudge reasoning: {webjudge_result.reasoning}")
-                    suggestions_parts = [webjudge_result.suggestions or ""]
+                    suggestions_parts.append(webjudge_result.suggestions or "")
                 suggestions_parts.append(
                     "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )
