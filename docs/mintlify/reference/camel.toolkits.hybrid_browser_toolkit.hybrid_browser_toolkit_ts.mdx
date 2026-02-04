@@ -1,5 +1,31 @@
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts"></a>
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts._add_rulers_to_image"></a>
+
+## _add_rulers_to_image
+
+```python
+def _add_rulers_to_image(image_bytes: bytes, tick_interval: int = 100):
+```
+
+Add rulers with tick marks to an image (like a real measuring ruler).
+
+Adds horizontal ruler at the top and vertical ruler on the left side,
+with multi-level tick marks like a real ruler:
+- Every 100 pixels: longest tick + number label
+- Every 50 pixels: long tick (no label)
+- Every 10 pixels: medium tick
+- Every 5 pixels: short tick
+
+**Parameters:**
+
+- **image_bytes**: The original image as bytes.
+- **tick_interval**: Major interval for number labels (default: 100). (default: 100)
+
+**Returns:**
+
+  The modified image with rulers as bytes.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.SheetCell"></a>
 
 ## SheetCell
@@ -139,6 +165,27 @@ session.
   A new HybridBrowserToolkit instance with the same configuration
 but a different session.
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit._create_mode_wrapper"></a>
+
+### _create_mode_wrapper
+
+```python
+def _create_mode_wrapper(
+    self,
+    method: Callable[..., Any],
+    tool_name: str,
+    pixel_mode: bool
+):
+```
+
+Create a wrapper with mode-specific signature and docstring.
+
+**Parameters:**
+
+- **method**: The original method to wrap.
+- **tool_name**: Name of the tool.
+- **pixel_mode**: If True, create pixel-coordinate wrapper. If False, create ref-based wrapper.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.get_tools"></a>
 
 ### get_tools
@@ -147,5 +194,8 @@ but a different session.
 def get_tools(self):
 ```
 
-Get available function tools based
-on enabled_tools configuration.
+Get available function tools based on enabled_tools configuration.
+
+In full_visual_mode:
+- Tools requiring ref with no pixel alternative are excluded
+- browser_click and browser_type use pixel coordinates instead of ref
