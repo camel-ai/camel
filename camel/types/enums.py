@@ -211,22 +211,12 @@ class ModelType(UnifiedModelType, Enum):
 
     STUB = "stub"
 
-    # Legacy anthropic models
-    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
-    CLAUDE_2_1 = "claude-2.1"
-    CLAUDE_2_0 = "claude-2.0"
-    CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
-
     # Claude models
-    CLAUDE_3_OPUS = "claude-3-opus-latest"
-    CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
-    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
-    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
 
@@ -344,7 +334,8 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
-    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0905-Preview"
+    MOONSHOT_KIMI_K2_5 = "kimi-k2.5"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -708,18 +699,11 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is anthropic.
         """
         return self in {
-            ModelType.CLAUDE_INSTANT_1_2,
-            ModelType.CLAUDE_2_0,
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
         }
@@ -1043,6 +1027,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }
 
     @property
@@ -1406,11 +1391,6 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 96_000
         elif self in {
-            ModelType.CLAUDE_2_0,
-            ModelType.CLAUDE_INSTANT_1_2,
-        }:
-            return 100_000
-        elif self in {
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
             ModelType.GPT_4O,
@@ -1470,7 +1450,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
-            ModelType.MOONSHOT_KIMI_K2,
             ModelType.NEBIUS_GLM_4_5,
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
@@ -1559,16 +1538,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O3_MINI,
             ModelType.O3_PRO,
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
             ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
             ModelType.ATLASCLOUD_GLM_4_7,
@@ -1592,6 +1566,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+            ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }:
             return 256_000
 
