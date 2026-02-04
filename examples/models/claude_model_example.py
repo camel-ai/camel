@@ -45,7 +45,9 @@ tools = [
 model_opus_4_5 = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
     model_type=ModelType.CLAUDE_OPUS_4_5,
-    model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
+    model_config_dict=AnthropicConfig(
+        temperature=0.2, max_tokens=8192
+    ).as_dict(),
 )
 
 user_msg = """

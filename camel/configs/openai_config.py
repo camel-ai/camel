@@ -104,6 +104,9 @@ class ChatGPTConfig(BaseConfig):
         parallel_tool_calls (bool, optional): A parameter specifying whether
             the model should call tools in parallel or not.
             (default: :obj:`None`)
+        prompt_cache_key (str, optional): A key used by the OpenAI Prompt
+            Caching system to identify and reuse cached prompt segments.
+            (default: :obj:`None`)
         extra_headers: Optional[Dict[str, str]]: Extra headers to use for the
             model. (default: :obj:`None`)
     """
@@ -124,6 +127,7 @@ class ChatGPTConfig(BaseConfig):
     ] = None
     reasoning_effort: Optional[str] = None
     parallel_tool_calls: Optional[bool] = None
+    prompt_cache_key: Optional[str] = None
     extra_headers: Optional[Dict[str, str]] = None
 
 
