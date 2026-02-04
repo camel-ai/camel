@@ -1,0 +1,288 @@
+{
+  "task_description": "Search for Economy class flights from VIE to MCO for 2 adult passengers for the date range July 28th-31st, 2026. What is the total price for the cheapest departure and return flight?",
+  "website": "Google Flights",
+  "start_url": "https://www.google.com/travel/flights",
+  "toolkit_session_id": "20260203_210121_d98772b6",
+  "task_start": "2026-02-03T21:01:25.824072",
+  "timeline": [
+    {
+      "action_step": 0,
+      "timestamp": "2026-02-03T21:01:25.071912",
+      "action_type": "individual_action",
+      "action": "open_browser",
+      "element_label": null,
+      "args": [
+        "https://google.com/"
+      ],
+      "url_before": null,
+      "url_after": "https://www.google.com/"
+    },
+    {
+      "action_step": 3,
+      "timestamp": "2026-02-03T21:01:26.988107",
+      "action_type": "individual_action",
+      "action": "visit_page",
+      "element_label": null,
+      "args": [
+        "https://www.google.com/travel/flights"
+      ],
+      "url_before": "https://www.google.com/",
+      "url_after": "https://www.google.com/travel/flights"
+    },
+    {
+      "action_step": 5,
+      "timestamp": "2026-02-03T21:01:30.136142",
+      "action_type": "individual_action",
+      "action": "open_browser",
+      "element_label": null,
+      "args": [
+        "https://google.com/"
+      ],
+      "url_before": "https://www.google.com/travel/flights",
+      "url_after": "https://www.google.com/"
+    },
+    {
+      "action_step": 8,
+      "timestamp": "2026-02-03T21:01:33.245151",
+      "action_type": "individual_action",
+      "action": "switch_tab",
+      "element_label": null,
+      "args": [
+        "tab-002"
+      ],
+      "url_before": "https://www.google.com/",
+      "url_after": "https://www.google.com/travel/flights"
+    },
+    {
+      "action_step": 11,
+      "timestamp": "2026-02-03T21:01:38.013467",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "1 passenger, change number of passengers.",
+      "args": [
+        "e122"
+      ],
+      "url_before": "https://www.google.com/travel/flights",
+      "url_after": "https://www.google.com/travel/flights"
+    },
+    {
+      "action_step": 13,
+      "timestamp": "2026-02-03T21:01:40.261870",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Add adult",
+      "args": [
+        "e560"
+      ],
+      "url_before": "https://www.google.com/travel/flights",
+      "url_after": "https://www.google.com/travel/flights"
+    },
+    {
+      "action_step": 15,
+      "timestamp": "2026-02-03T21:01:45.927581",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Done",
+      "args": [
+        "e631"
+      ],
+      "url_before": "https://www.google.com/travel/flights",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw"
+    },
+    {
+      "action_step": 17,
+      "timestamp": "2026-02-03T21:01:48.887758",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Where from?",
+      "args": [
+        "e729"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw"
+    },
+    {
+      "action_step": 19,
+      "timestamp": "2026-02-03T21:01:53.372754",
+      "action_type": "individual_action",
+      "action": "type",
+      "element_label": "Where else?",
+      "args": [
+        "e827",
+        "Vienna VIE"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw"
+    },
+    {
+      "action_step": 22,
+      "timestamp": "2026-02-03T21:01:58.542923",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Vienna Hauptbahnhof",
+      "args": [
+        "e1012"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoOagwIAhIIL20vMDVxdGoaDnIMCAISCC9tLzA1cXRqQAFAAUgBcAGCAQsI____________AZgBAQ&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 24,
+      "timestamp": "2026-02-03T21:02:02.058146",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Where from? Vienna XWC",
+      "args": [
+        "e1036"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 26,
+      "timestamp": "2026-02-03T21:02:09.326048",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Vienna International Airport (VIE)",
+      "args": [
+        "e1142"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDWFdDGglyBwgBEgNYV0NAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 28,
+      "timestamp": "2026-02-03T21:02:12.260692",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Where to?",
+      "args": [
+        "e1296"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 30,
+      "timestamp": "2026-02-03T21:02:15.467385",
+      "action_type": "individual_action",
+      "action": "type",
+      "element_label": "Where to?",
+      "args": [
+        "e1393",
+        "Orlando MCO"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 32,
+      "timestamp": "2026-02-03T21:02:19.046025",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Where to?",
+      "args": [
+        "e1393"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 34,
+      "timestamp": "2026-02-03T21:02:22.379726",
+      "action_type": "individual_action",
+      "action": "type",
+      "element_label": "Where to?",
+      "args": [
+        "e1393",
+        "MCO"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 36,
+      "timestamp": "2026-02-03T21:02:25.343144",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Orlando International Airport (MCO)",
+      "args": [
+        "e1527"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 38,
+      "timestamp": "2026-02-03T21:02:28.948749",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Departure",
+      "args": [
+        "e1558"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 40,
+      "timestamp": "2026-02-03T21:02:33.808801",
+      "action_type": "individual_action",
+      "action": "type",
+      "element_label": "Departure",
+      "args": [
+        "e1663",
+        "Jul 28, 2026"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 42,
+      "timestamp": "2026-02-03T21:02:39.256839",
+      "action_type": "individual_action",
+      "action": "type",
+      "element_label": "Return",
+      "args": [
+        "e1668",
+        "Jul 31, 2026"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 44,
+      "timestamp": "2026-02-03T21:02:44.189692",
+      "action_type": "individual_action",
+      "action": "enter",
+      "element_label": null,
+      "args": [],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 47,
+      "timestamp": "2026-02-03T21:03:07.488638",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Done. Search for round trip flights, departing on July 28, 2026 and returning on July 31, 2026",
+      "args": [
+        "e4028"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoSagcIARIDVklFcgcIARIDTUNPGhJqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights?tfs=CBwQARoeEgoyMDI2LTA3LTI4agcIARIDVklFcgcIARIDTUNPGh4SCjIwMjYtMDctMzFqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw"
+    },
+    {
+      "action_step": 50,
+      "timestamp": "2026-02-03T21:03:15.402812",
+      "action_type": "individual_action",
+      "action": "click",
+      "element_label": "Search",
+      "args": [
+        "e4079"
+      ],
+      "url_before": "https://www.google.com/travel/flights?tfs=CBwQARoeEgoyMDI2LTA3LTI4agcIARIDVklFcgcIARIDTUNPGh4SCjIwMjYtMDctMzFqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+      "url_after": "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTA3LTI4agcIARIDVklFcgcIARIDTUNPGh4SCjIwMjYtMDctMzFqBwgBEgNNQ09yBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB"
+    }
+  ]
+}

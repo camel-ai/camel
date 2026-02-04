@@ -1,0 +1,58 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - link "À propos" [ref=e4] [cursor=pointer]:
+      - /url: https://about.google/?fg=1&utm_source=google-FR&utm_medium=referral&utm_campaign=hp-header
+    - link "Google Store" [ref=e5] [cursor=pointer]:
+      - /url: https://store.google.com/FR?utm_source=hp_header&utm_medium=google_ooo&utm_campaign=GS100042&hl=fr-FR
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - link "Gmail" [ref=e10] [cursor=pointer]:
+          - /url: https://mail.google.com/mail/&ogbl
+        - link "Rechercher des images" [ref=e12] [cursor=pointer]:
+          - /url: https://www.google.com/imghp?hl=fr&ogbl
+          - text: Images
+      - button "Applications Google" [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+      - link "Connexion" [ref=e20] [cursor=pointer]:
+        - /url: https://accounts.google.com/ServiceLogin?hl=fr&passive=true&continue=https://www.google.com/&ec=futura_exp_og_so_72776762_e
+  - img "Google" [ref=e23]
+  - search [ref=e31]:
+    - generic [ref=e33]:
+      - generic [ref=e35]:
+        - img [ref=e39]
+        - combobox "Rech." [active] [ref=e42]
+        - generic [ref=e44]:
+          - button "Utiliser la recherche vocale" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Rechercher par image" [ref=e48] [cursor=pointer]:
+            - img [ref=e49]
+      - generic [ref=e52]:
+        - button "Recherche Google" [ref=e53] [cursor=pointer]
+        - button "J'ai de la chance" [ref=e54] [cursor=pointer]
+  - generic [ref=e57]:
+    - text: "Google disponible en :"
+    - link "English" [ref=e58] [cursor=pointer]:
+      - /url: https://www.google.com/setprefs?sig=0_pZtjWY8qFpvgrbns-uOmPcVGXVg%3D&hl=en&source=homepage&sa=X&ved=0ahUKEwiSiLa-jr6SAxVvU6QEHSQYK6YQ2ZgBCBc
+  - contentinfo [ref=e60]:
+    - generic [ref=e61]: France
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - link "Publicité" [ref=e64] [cursor=pointer]:
+          - /url: https://www.google.com/intl/fr_fr/ads/?subid=ww-ww-et-g-awa-a-g_hpafoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpafooter&fg=1
+        - link "Entreprise" [ref=e65] [cursor=pointer]:
+          - /url: https://www.google.com/services/?subid=ww-ww-et-g-awa-a-g_hpbfoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpbfooter&fg=1
+        - link "Comment fonctionne la recherche Google ?" [ref=e66] [cursor=pointer]:
+          - /url: https://google.com/search/howsearchworks/?fg=1
+      - link "Notre troisième décennie d'action pour le climat" [ref=e68] [cursor=pointer]:
+        - /url: https://sustainability.google/intl/fr_fr/?utm_source=googlehpfooter&utm_medium=housepromos&utm_campaign=bottom-footer&utm_content=
+      - generic [ref=e69]:
+        - link "Signaler un contenu inapproprié" [ref=e70] [cursor=pointer]:
+          - /url: https://support.google.com/legal/answer/3110420?hl=fr&fg=1
+        - link "Info consommateurs" [ref=e71] [cursor=pointer]:
+          - /url: https://support.google.com/websearch?p=fr_consumer_info&hl=fr&fg=1
+        - link "Confidentialité" [ref=e72] [cursor=pointer]:
+          - /url: https://policies.google.com/privacy?hl=fr&fg=1
+        - link "Conditions" [ref=e73] [cursor=pointer]:
+          - /url: https://policies.google.com/terms?hl=fr&fg=1
+        - button "Paramètres" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]: Paramètres

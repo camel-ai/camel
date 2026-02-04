@@ -12,18 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 #!/usr/bin/env python3
-"""Run Navi-Bench tasks using the Browser Skills agent (with online evaluator).
+"""Run Navi-Bench tasks using the Browser agent (with online evaluator).
 
-Flow (aligned with WebVoyager runner):
-1) Run one task case (SkillsAgent)
+Flow:
+1) Run one task case (BrowserAgent)
 2) Verify once via navi-bench evaluator (per-step update + final compute)
-3) If success: mine skill from the session timeline
-4) If fail: retry (per-task <= 5, per-website <= 100)
+3) If fail: retry (per-task <= 5, per-website <= 100)
 
 Important:
 - Evaluator JS execution is done via *quiet* ws_wrapper calls and is NOT exposed
   as tools to the agent.
-- Skill mining filters out evaluator-only console actions to avoid pollution.
+- This is a simplified version without skill-related components.
 """
 
 import json
@@ -42,22 +41,21 @@ from camel.evaluators.webjudge import (
     WebJudgeVisionEvaluator,
 )
 
+from examples.toolkits.browser.browser_example.core.agent import BrowserAgent
+from examples.toolkits.browser.browser_example.core.modeling import (
+    DEFAULT_MODEL_PLATFORM,
+    DEFAULT_MODEL_TYPE,
+)
 from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
-    count_skills_in_dir,
-    count_subtasks_in_dir,
     get_timestamp_filename,
     get_timestamp_iso,
-    resolve_website_skills_dir,
 )
 
 from examples.toolkits.browser.utils.navi_bench_eval_hook import (
     NaviBenchEvalStats,
     navi_bench_on_action_update,
 )
-from .skill_agent import SkillsAgent
-from .subtask_extractor import analyze_with_agent
-from .modeling import DEFAULT_MODEL_PLATFORM, DEFAULT_MODEL_TYPE
 
 load_dotenv()
 
@@ -139,42 +137,6 @@ def _score_from_result(result: Any) -> Optional[float]:
         raw = result.get("score")
         if isinstance(raw, (int, float)):
             return float(raw)
-    return None
-
-
-def _infer_required_url_groups(eval_config: Any) -> Optional[int]:
-    """Infer how many URL/Query groups must be covered for a perfect score.
-
-    Many Navi-Bench evaluators implement AND->OR matching:
-      - `gt_urls`: list[list[str]]  (all outer groups required; any inner URL ok)
-      - `queries`: list[list[str]]  (same idea)
-
-    Return:
-      - number of required groups (outer list length) when detectable
-      - 1 when the evaluator expects a single URL/state match
-      - None when unknown
-    """
-    if not isinstance(eval_config, dict):
-        return None
-
-    for key in ("gt_urls", "queries"):
-        raw = eval_config.get(key)
-        if isinstance(raw, list):
-            if raw and all(isinstance(group, list) for group in raw):
-                return len(raw)
-            if raw and all(isinstance(value, str) for value in raw):
-                return 1
-
-    raw = eval_config.get("gt_url")
-    if isinstance(raw, str):
-        return 1
-    if (
-        isinstance(raw, list)
-        and raw
-        and all(isinstance(value, str) for value in raw)
-    ):
-        return 1
-
     return None
 
 
@@ -300,8 +262,6 @@ class NaviBenchRunner:
     def __init__(
         self,
         *,
-        skills_root: str,
-        skills_dir: str = "",
         domain_filter: str = "",
         max_attempts_per_task: int = 5,
         max_attempts_per_website: int = 100,
@@ -309,18 +269,7 @@ class NaviBenchRunner:
         cdp_port: int = 9223,
         step_timeout: float | None = None,
         tool_execution_timeout: float | None = None,
-        enable_skills: bool = True,
-        enable_skill_extraction: bool = True,
     ) -> None:
-        resolved_root = skills_root.strip()
-        if not resolved_root:
-            raise ValueError("skills_root must be a non-empty path.")
-        self.skills_root = Path(resolved_root).expanduser()
-        self.skills_dir_override = (
-            Path(skills_dir).expanduser().resolve()
-            if skills_dir.strip()
-            else None
-        )
         self.domain_filter = domain_filter.strip()
 
         self.max_attempts_per_task = int(max_attempts_per_task)
@@ -334,24 +283,11 @@ class NaviBenchRunner:
         self.cdp_port = int(cdp_port)
         self.step_timeout = step_timeout
         self.tool_execution_timeout = tool_execution_timeout
-        self.enable_skills = enable_skills
-        self.enable_skill_extraction = enable_skill_extraction
         
         # Initialize WebJudge verifier
         self.webjudge_verifier = WebJudgeTaskVerifier()
 
         self._website_attempt_counts: Dict[str, int] = {}
-
-        if self.skills_dir_override is not None:
-            # Only safe if user runs a single-domain slice.
-            if not self.domain_filter:
-                raise ValueError(
-                    "skills_dir can only be used together with --domain "
-                    "(because Navi-Bench tasks can span multiple websites)."
-                )
-            self.skills_dir_override.mkdir(parents=True, exist_ok=True)
-        else:
-            self.skills_root.mkdir(parents=True, exist_ok=True)
 
     def _website_attempts_used(self, website: str) -> int:
         return int(
@@ -369,24 +305,12 @@ class NaviBenchRunner:
         self._website_attempt_counts[key] = used + 1
         return True
 
-    def _resolve_skills_dir_for_task(self, website: str) -> Path:
-        if self.skills_dir_override is not None:
-            return self.skills_dir_override
-        return resolve_website_skills_dir(self.skills_root, website)
-
     async def run_single_dataset_item(
         self, item: DatasetItem
     ) -> AttemptResult:
         task_id = item.task_id
         domain = (item.domain or "").strip()
         website = _domain_to_website(domain)
-        skills_dir = self._resolve_skills_dir_for_task(website)
-
-        subtasks_before = (
-            count_skills_in_dir(skills_dir)
-            if any(skills_dir.glob("*/SKILL.md"))
-            else count_subtasks_in_dir(skills_dir)
-        )
 
         task_config = item.generate_task_config()
         evaluator = instantiate(task_config.eval_config)
@@ -429,15 +353,13 @@ class NaviBenchRunner:
                     / f"task_{safe_name(task_id)}_attempt_{attempt}"
                 )
 
-            agent = SkillsAgent(
-                skills_dir=str(skills_dir),
+            agent = BrowserAgent(
                 website=website,
                 session_log_dir=session_log_dir,
                 start_url=task_config.url,
                 use_agent_recovery=True,
                 step_timeout=self.step_timeout,
                 tool_execution_timeout=self.tool_execution_timeout,
-                enable_skills=self.enable_skills,
             )
 
             score: Optional[float] = None
@@ -478,10 +400,10 @@ class NaviBenchRunner:
                     )
 
                 # Evaluator reset (record timing for debug).
-                t_reset0 = time.time()
+                t_reset0 = time.perf_counter()
                 await evaluator.reset()
                 eval_stats.reset_calls += 1
-                eval_stats.reset_time_s += time.time() - t_reset0
+                eval_stats.reset_time_s += time.perf_counter() - t_reset0
                 ws_wrapper.set_action_hook(_hook)
 
                 full_task = task_config.task
@@ -553,10 +475,10 @@ class NaviBenchRunner:
                 except Exception:
                     pass
 
-                t_compute0 = time.time()
+                t_compute0 = time.perf_counter()
                 eval_result = await evaluator.compute()
                 eval_stats.compute_calls += 1
-                eval_stats.compute_time_s += time.time() - t_compute0
+                eval_stats.compute_time_s += time.perf_counter() - t_compute0
                 score = _score_from_result(eval_result)
                 navi_bench_success = bool(score is not None and abs(score - 1.0) < 1e-9)
 
@@ -586,22 +508,15 @@ class NaviBenchRunner:
                 # Write attempt summary (pre-extract) for debugging.
                 summary = compute_session_summary(
                     session_dir=session_dir,
-                    skills_dir=skills_dir,
                     task_id=str(task_id),
                 )
                 summary["website"] = website
                 summary["domain"] = domain
                 summary["start_url"] = task_config.url
                 summary["attempt"] = attempt
-                summary["subtasks_available_before"] = subtasks_before
-                summary["subtasks_available_after"] = (
-                    count_skills_in_dir(skills_dir)
-                    if any(skills_dir.glob("*/SKILL.md"))
-                    else count_subtasks_in_dir(skills_dir)
-                )
+                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
                 summary["phase"] = "post_run_pre_extract"
                 summary["generated_at"] = get_timestamp_iso()
-                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
                 (session_dir / "summary.json").write_text(
                     json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
                     encoding="utf-8",
@@ -686,24 +601,10 @@ class NaviBenchRunner:
                 except Exception as e:
                     print(f"⚠️  Browser close failed: {e}")
 
-                # At least one evaluator says success: accept it. the webjudge_result to make skill generation easier.
-                # Navi-Bench score is recorded for evalution purposes.
-                if webjudge_result.success or navi_bench_success:
+                # Use WebJudge result as primary success indicator.
+                # Navi-Bench score is still recorded for evaluation purposes.
+                if webjudge_result.success:
                     print("\n✅ WebJudge verified successful.")
-                    if self.enable_skill_extraction:
-                        try:
-                            analyze_with_agent(
-                                session_folder=str(session_dir),
-                                skills_dir=str(skills_dir),
-                                auto_save=True,
-                            )
-                        except Exception as e:
-                            print(f"⚠️  Skill extraction failed: {e}")
-                    else:
-                        print(
-                            "⚠️  Skill extraction disabled: skipping skill mining."
-                        )
-                if navi_bench_success:
                     return AttemptResult(
                         task_id=task_id,
                         domain=domain,
@@ -716,15 +617,15 @@ class NaviBenchRunner:
                     )
                 
                 # If Navi-Bench says success but WebJudge disagrees, use WebJudge's reasoning
-                if not webjudge_result.success:
-                    print("\n⚠️WebJudge failed.")
+                if navi_bench_success:
+                    print("\n⚠️  Navi-Bench succeeded but WebJudge failed.")
                     print(f"WebJudge reasoning: {webjudge_result.reasoning}")
                     suggestions_parts = [webjudge_result.suggestions or ""]
                 suggestions_parts.append(
                     "- End the attempt on the relevant final page/state and avoid navigating away right before stopping."
                 )
                 previous_suggestions = "\n".join(suggestions_parts).strip()
-                print("\n❌ Navi Bench Verified failed.")
+                print("\n❌ Verified failed.")
                 print(f"score={score!r}")
                 print("Notes for retry:\n" + previous_suggestions)
 
@@ -772,7 +673,6 @@ class NaviBenchRunner:
                             "start_url": task_config.url,
                             "attempt": attempt,
                             "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
-                            "subtasks_available_before": subtasks_before,
                             "phase": "crashed",
                             "generated_at": get_timestamp_iso(),
                             "error": err,
@@ -836,7 +736,7 @@ class NaviBenchRunner:
 
 def _resolve_run_dir(out_dir: Optional[str]) -> Path:
     default_session_logs_root = (
-        Path(__file__).resolve().parents[1] / "session_logs"
+        Path(__file__).resolve().parents[0] / "session_logs"
     )
     out_root = (
         Path(out_dir).expanduser().resolve()

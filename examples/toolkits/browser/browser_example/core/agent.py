@@ -31,14 +31,14 @@ from camel.toolkits.hybrid_browser_toolkit import (
     HybridBrowserToolkit,
 )
 from camel.utils.constants import Constants
-from examples.toolkits.browser.browser_example.analyze_session import (
+from examples.toolkits.browser.browser_example.cli.analyze_session import (
     analyze_session,
 )
-from examples.toolkits.browser.browser_example.modeling import (
+from examples.toolkits.browser.browser_example.core.modeling import (
     create_default_model,
     extract_token_usage,
 )
-from examples.toolkits.browser.browser_example.utils import (
+from examples.toolkits.browser.utils.utils import (
     get_timestamp_filename,
     get_timestamp_iso,
 )

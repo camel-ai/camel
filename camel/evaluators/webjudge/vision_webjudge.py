@@ -104,7 +104,7 @@ class WebJudgeVisionConfig:
     vision_type: Literal["image", "dom"] = "dom"
     step_timeout: Optional[float] = 360.0
     tool_execution_timeout: Optional[float] = 360.0
-    persist_cleaned_dom: bool = False
+    persist_cleaned_dom: bool = True
     max_frames: int = 10_000
     action_history_max_chars: int = 4000
     evidence_score_threshold: int = 3

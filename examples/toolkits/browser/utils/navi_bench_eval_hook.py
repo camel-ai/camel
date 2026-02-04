@@ -16,7 +16,7 @@
 
 This module intentionally does NOT expose any JS execution tool to the agent.
 Instead, it provides a Page-like adapter that calls the WebSocket wrapper via
-"quiet" APIs so evaluator JS does not pollute action logs or mined skills.
+"quiet" APIs so evaluator JS does not pollute action logs.
 """
 
 from __future__ import annotations
@@ -159,8 +159,8 @@ class WsPageAdapter:
 
     async def evaluate(self, script: str) -> Any:
         # Navi-Bench evaluators typically pass a JS string that returns JSON-like
-        # data. We execute via a "quiet" call to avoid polluting logs/skills.
-        t0 = time.time()
+        # data. We execute via a "quiet" call to avoid polluting logs.
+        t0 = time.perf_counter()
         if self._stats is not None:
             self._stats.js_evaluate_calls += 1
             self._stats.js_code_chars_total += len(script or "")
@@ -179,7 +179,7 @@ class WsPageAdapter:
                 )
             return None
         if self._stats is not None:
-            self._stats.js_evaluate_time_s += time.time() - t0
+            self._stats.js_evaluate_time_s += time.perf_counter() - t0
         return _parse_console_exec_result(resp)
 
 
@@ -198,7 +198,7 @@ async def navi_bench_on_action_update(
     page = WsPageAdapter(ws_wrapper, stats=stats)
 
     # Be permissive about evaluator.update signatures.
-    t0 = time.time()
+    t0 = time.perf_counter()
     try:
         await evaluator.update(url=url, page=page)
     except TypeError:
@@ -208,7 +208,7 @@ async def navi_bench_on_action_update(
             await evaluator.update(page=page)
     if stats is not None:
         stats.update_calls += 1
-        stats.update_time_s += time.time() - t0
+        stats.update_time_s += time.perf_counter() - t0
         # Some evaluators might expose usage as they run.
         if stats.llm_usage is None:
             stats.llm_usage = _extract_token_usage(evaluator)

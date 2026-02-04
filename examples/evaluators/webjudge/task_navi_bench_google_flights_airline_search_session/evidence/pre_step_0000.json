@@ -1,0 +1,20 @@
+{
+  "type": "pre_capture",
+  "index": 0,
+  "prefix": "pre_step_0000",
+  "captured_at": "2026-02-03T21:01:32.904371",
+  "next_action": "switch_tab",
+  "next_action_args": {
+    "args": [
+      "tab-002"
+    ],
+    "kwargs": {}
+  },
+  "tab_id": "tab-003",
+  "url": "https://www.google.com/",
+  "snapshot_sha1": "8eb3f03aa1474a69dcb0666d1f9fbb535a55bccb",
+  "screenshot_sha1": "df5d1106d16133ea14781deae9b294f373d21497",
+  "timing": {
+    "screenshot_time_ms": 90
+  }
+}

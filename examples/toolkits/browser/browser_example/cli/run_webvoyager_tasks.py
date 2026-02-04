@@ -26,6 +26,8 @@ This script:
 import asyncio
 import json
 import re
+import time
+import traceback
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -33,12 +35,12 @@ from camel.evaluators.webjudge import (
     WebJudgeVisionConfig,
     WebJudgeVisionEvaluator,
 )
-from examples.toolkits.browser.browser_example.agent import BrowserAgent
-from examples.toolkits.browser.browser_example.modeling import (
+from examples.toolkits.browser.browser_example.core.agent import BrowserAgent
+from examples.toolkits.browser.browser_example.core.modeling import (
     DEFAULT_MODEL_PLATFORM,
     DEFAULT_MODEL_TYPE,
 )
-from examples.toolkits.browser.browser_example.utils import (
+from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     get_timestamp_filename,
     get_timestamp_iso,
@@ -182,6 +184,7 @@ class WebVoyagerRunner:
             }
 
         start_url = (task.get('web') or '').strip() or None
+        attempt_start_time = time.perf_counter()
         session_log_dir = None
         if self.run_dir is not None:
             session_log_dir = (
@@ -234,6 +237,7 @@ class WebVoyagerRunner:
                 summary["website"] = website
                 summary["start_url"] = start_url
                 summary["attempt"] = attempt
+                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
                 summary["phase"] = "post_run_pre_extract"
                 summary["generated_at"] = get_timestamp_iso()
 
@@ -298,6 +302,7 @@ class WebVoyagerRunner:
                 'task_description': task_description,
                 'website': website,
                 'attempt': attempt,
+                'attempt_runtime_seconds': time.perf_counter() - attempt_start_time,
                 'success': verification['success'],
                 'reasoning': verification['reasoning'],
                 'suggestions': verification.get('suggestions', ''),
@@ -319,6 +324,7 @@ class WebVoyagerRunner:
                 summary["website"] = website
                 summary["start_url"] = start_url
                 summary["attempt"] = attempt
+                summary["attempt_runtime_seconds"] = time.perf_counter() - attempt_start_time
                 summary["verification"] = verification
                 summary["subtask_analysis"] = result.get("subtask_analysis")
                 summary["phase"] = "final"
@@ -349,13 +355,34 @@ class WebVoyagerRunner:
             # Save communication log
             agent.save_communication_log()
             print(f"⏱️  Task execution timeout: {e}")
-            import traceback
-
             traceback.print_exc()
             agent.close()
+            
+            # Write crash summary and verification result on timeout
+            if session_log_dir is not None:
+                try:
+                    crash_summary = {
+                        "task_id": str(task_id),
+                        "website": website,
+                        "start_url": start_url,
+                        "attempt": attempt,
+                        "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                        "phase": "timeout",
+                        "generated_at": get_timestamp_iso(),
+                        "error": f"TimeoutError: {e}",
+                        "error_type": "TimeoutError",
+                    }
+                    (session_log_dir / "summary.json").write_text(
+                        json.dumps(crash_summary, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8",
+                    )
+                except Exception as write_err:
+                    print(f"⚠️  Failed to write timeout summary.json: {write_err}")
+            
             return {
                 'task_id': task_id,
                 'attempt': attempt,
+                'attempt_runtime_seconds': time.perf_counter() - attempt_start_time,
                 'success': False,
                 'error': f'TimeoutError: {e}',
                 'is_timeout': True,
@@ -367,13 +394,49 @@ class WebVoyagerRunner:
 
         except Exception as e:
             print(f"❌ Task execution failed: {e}")
-            import traceback
-
             traceback.print_exc()
+            
+            # Best-effort: save logs
+            try:
+                agent.save_memory()
+                agent.save_communication_log()
+            except Exception:
+                pass
+            
+            # Write crash summary and crash file
+            if session_log_dir is not None:
+                try:
+                    crash_path = session_log_dir / "task_crash.txt"
+                    crash_path.write_text(
+                        f"{type(e).__name__}: {e}\n" + traceback.format_exc(),
+                        encoding="utf-8"
+                    )
+                except Exception as write_err:
+                    print(f"⚠️  Failed to write crash file: {write_err}")
+                
+                try:
+                    crash_summary = {
+                        "task_id": str(task_id),
+                        "website": website,
+                        "start_url": start_url,
+                        "attempt": attempt,
+                        "attempt_runtime_seconds": time.perf_counter() - attempt_start_time,
+                        "phase": "crashed",
+                        "generated_at": get_timestamp_iso(),
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    }
+                    (session_log_dir / "summary.json").write_text(
+                        json.dumps(crash_summary, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8",
+                    )
+                except Exception as write_err:
+                    print(f"⚠️  Failed to write crash summary.json: {write_err}")
 
             return {
                 'task_id': task_id,
                 'attempt': attempt,
+                'attempt_runtime_seconds': time.perf_counter() - attempt_start_time,
                 'success': False,
                 'error': str(e),
                 'website': website,
