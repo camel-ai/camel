@@ -26,20 +26,13 @@ Important:
 """
 
 import json
-import re
 import time
 import traceback
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from navi_bench.base import DatasetItem, instantiate
-
-from camel.evaluators.webjudge import (
-    WebJudgeVisionConfig,
-    WebJudgeVisionEvaluator,
-)
 
 from examples.toolkits.browser.browser_example.core.agent import BrowserAgent
 from examples.toolkits.browser.browser_example.core.modeling import (
@@ -59,203 +52,16 @@ from examples.toolkits.browser.utils.navi_bench_eval_hook import (
 
 load_dotenv()
 
-_SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_.-]+")
-
-
-class WebJudgeTaskVerifier:
-    """WebJudge-based verifier using session evidence (vision-only)."""
-
-    def __init__(
-        self,
-        *,
-        vision_config: WebJudgeVisionConfig | None = None,
-    ):
-        resolved_config = vision_config or WebJudgeVisionConfig(
-            model_platform=DEFAULT_MODEL_PLATFORM,
-            model_type=DEFAULT_MODEL_TYPE,
-        )
-        self.vision_evaluator = WebJudgeVisionEvaluator(config=resolved_config)
-
-    def verify_task(
-        self,
-        task_description: str,
-        agent_response: str,
-        *,
-        session_dir: Path | None = None,
-        website: str | None = None,
-    ):
-        """Verify task completion using WebJudge.
-        
-        Returns:
-            WebJudgeEvaluationResult dataclass with success, reasoning, suggestions,
-            execution_time, token_usage, etc.
-        """
-        if session_dir is None:
-            from camel.evaluators.webjudge.vision_webjudge import WebJudgeEvaluationResult
-            return WebJudgeEvaluationResult(
-                success=False,
-                reasoning="WebJudge verifier requires session_dir evidence",
-                suggestions="Re-run with session logging enabled and pass session_dir to the verifier.",
-                debug_path="",
-            )
-        return self.vision_evaluator.evaluate_session(
-            task=task_description,
-            session_dir=session_dir,
-            agent_response=agent_response,
-            website=website,
-        )
-
-
-def safe_name(value: str) -> str:
-    value = (value or "").strip()
-    value = _SAFE_NAME_RE.sub("_", value)
-    value = re.sub(r"_+", "_", value).strip("_")
-    return value or "unknown"
-
-
-def _pydantic_dump(obj: Any) -> Any:
-    # pydantic v2: model_dump(); v1: dict().
-    if hasattr(obj, "model_dump"):
-        try:
-            return obj.model_dump()
-        except Exception:
-            pass
-    if hasattr(obj, "dict"):
-        try:
-            return obj.dict()
-        except Exception:
-            pass
-    return obj
-
-
-def _score_from_result(result: Any) -> Optional[float]:
-    # Most navi-bench evaluators return pydantic models with `.score`.
-    score = getattr(result, "score", None)
-    if isinstance(score, (int, float)):
-        return float(score)
-    if isinstance(result, dict):
-        raw = result.get("score")
-        if isinstance(raw, (int, float)):
-            return float(raw)
-    return None
-
-
-def _extract_token_usage_from_payload(
-    payload: Any,
-) -> Optional[Dict[str, Any]]:
-    """Best-effort extraction of LLM token usage from nested payloads."""
-
-    def _merge(dst: Dict[str, Any], src: Dict[str, Any]) -> None:
-        for k, v in src.items():
-            if k not in dst:
-                dst[k] = v
-
-    def _walk(obj: Any) -> Dict[str, Any]:
-        out: Dict[str, Any] = {}
-        if obj is None:
-            return out
-
-        if isinstance(obj, dict):
-            usage = obj.get("usage")
-            if isinstance(usage, dict):
-                _merge(out, usage)
-            for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                if isinstance(obj.get(k), (int, float)):
-                    out[k] = obj[k]
-            for k in ("input_tokens", "output_tokens"):
-                if isinstance(obj.get(k), (int, float)):
-                    out[k] = obj[k]
-            for v in obj.values():
-                _merge(out, _walk(v))
-            return out
-
-        if isinstance(obj, (list, tuple)):
-            for v in obj:
-                _merge(out, _walk(v))
-            return out
-
-        return out
-
-    extracted = _walk(payload)
-    return extracted or None
-
-
-def _normalize_website_key(website: str) -> str:
-    return " ".join((website or "").strip().lower().split())
-
-
-def _domain_to_website(domain: str) -> str:
-    d = (domain or "").strip().lower()
-    mapping = {
-        "google_flights": "Google Flights",
-        "opentable": "OpenTable",
-        "craigslist": "Craigslist",
-        "resy": "Resy",
-        "apartments": "Apartments.com",
-    }
-    return mapping.get(d, (domain or "").strip() or "Unknown")
-
-
-def load_dataset_items_from_jsonl(jsonl_path: Path) -> List[DatasetItem]:
-    rows: List[DatasetItem] = []
-    with open(jsonl_path, "r", encoding="utf-8") as f:
-        for line_no, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
-            raw = json.loads(line)
-            try:
-                rows.append(DatasetItem.model_validate(raw))
-            except Exception as e:
-                raise ValueError(
-                    f"Invalid DatasetItem at {jsonl_path}:{line_no}: "
-                    f"{type(e).__name__}: {e}"
-                ) from e
-    return rows
-
-
-def _select_items(
-    items: List[DatasetItem],
-    *,
-    domain_filter: str = "",
-    task_id: str = "",
-    start: int = 0,
-    max_tasks: Optional[int] = None,
-) -> List[DatasetItem]:
-    selected = items
-
-    if task_id.strip():
-        wanted = task_id.strip()
-        selected = [it for it in selected if it.task_id == wanted]
-        return selected
-
-    if domain_filter.strip():
-        wanted = domain_filter.strip().lower()
-        selected = [
-            it for it in selected if (it.domain or "").lower() == wanted
-        ]
-
-    if start > 0:
-        selected = selected[start:]
-
-    if max_tasks is not None:
-        selected = selected[: max(0, int(max_tasks))]
-
-    return selected
-
-
-@dataclass
-class AttemptResult:
-    task_id: str
-    domain: str
-    website: str
-    attempt: int
-    success: bool
-    score: Optional[float]
-    eval_result_path: Optional[str]
-    session_dir: Optional[str]
-    error: Optional[str] = None
-    suggestions: str = ""
+from examples.toolkits.browser.utils.navi_bench_common import (
+    AttemptResult,
+    safe_name,
+    pydantic_dump,
+    score_from_result,
+    extract_token_usage_from_payload,
+    normalize_website_key,
+    domain_to_website,
+    WebJudgeTaskVerifier,
+)
 
 
 class NaviBenchRunner:
@@ -285,20 +91,23 @@ class NaviBenchRunner:
         self.tool_execution_timeout = tool_execution_timeout
         
         # Initialize WebJudge verifier
-        self.webjudge_verifier = WebJudgeTaskVerifier()
+        self.webjudge_verifier = WebJudgeTaskVerifier(
+            model_platform=DEFAULT_MODEL_PLATFORM,
+            model_type=DEFAULT_MODEL_TYPE,
+        )
 
         self._website_attempt_counts: Dict[str, int] = {}
 
     def _website_attempts_used(self, website: str) -> int:
         return int(
             self._website_attempt_counts.get(
-                _normalize_website_key(website), 0
+                normalize_website_key(website), 0
             )
             or 0
         )
 
     def _reserve_website_attempt(self, website: str) -> bool:
-        key = _normalize_website_key(website)
+        key = normalize_website_key(website)
         used = int(self._website_attempt_counts.get(key, 0) or 0)
         if used >= self.max_attempts_per_website:
             return False
@@ -310,7 +119,7 @@ class NaviBenchRunner:
     ) -> AttemptResult:
         task_id = item.task_id
         domain = (item.domain or "").strip()
-        website = _domain_to_website(domain)
+        website = domain_to_website(domain)
 
         task_config = item.generate_task_config()
         evaluator = instantiate(task_config.eval_config)
@@ -479,12 +288,12 @@ class NaviBenchRunner:
                 eval_result = await evaluator.compute()
                 eval_stats.compute_calls += 1
                 eval_stats.compute_time_s += time.perf_counter() - t_compute0
-                score = _score_from_result(eval_result)
+                score = score_from_result(eval_result)
                 navi_bench_success = bool(score is not None and abs(score - 1.0) < 1e-9)
 
                 if eval_stats.llm_usage is None:
-                    eval_stats.llm_usage = _extract_token_usage_from_payload(
-                        _pydantic_dump(eval_result)
+                    eval_stats.llm_usage = extract_token_usage_from_payload(
+                        pydantic_dump(eval_result)
                     )
 
                 llm_usage_source = "extracted"
@@ -532,7 +341,7 @@ class NaviBenchRunner:
                     "score": score,
                     "success": navi_bench_success,
                     "final_url": final_url,
-                    "raw_result": _pydantic_dump(eval_result),
+                    "raw_result": pydantic_dump(eval_result),
                     "navi_bench_evaluator_stats": {
                         "reset_calls": eval_stats.reset_calls,
                         "update_calls": eval_stats.update_calls,
@@ -734,15 +543,11 @@ class NaviBenchRunner:
             suggestions=previous_suggestions,
         )
 
-
-def _resolve_run_dir(out_dir: Optional[str]) -> Path:
-    return resolve_run_dir(out_dir, base_file=__file__)
+    @staticmethod
+    def resolve_run_dir(out_dir: Optional[str]) -> Path:
+        return resolve_run_dir(out_dir, base_file=__file__)
 
 
 __all__ = [
-    "AttemptResult",
     "NaviBenchRunner",
-    "_resolve_run_dir",
-    "_select_items",
-    "load_dataset_items_from_jsonl",
 ]

@@ -20,7 +20,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
@@ -30,11 +29,12 @@ EXAMPLE_ROOT = SCRIPT_DIR.parent
 
 from examples.toolkits.browser.browser_example.core.navi_bench_runner import (
     NaviBenchRunner,
-    _resolve_run_dir,
-    _select_items,
-    load_dataset_items_from_jsonl,
 )
 
+from examples.toolkits.browser.utils.navi_bench_common import (
+    select_items,
+    load_dataset_items_from_jsonl,
+)
 
 async def _amain() -> int:
     parser = argparse.ArgumentParser()
@@ -73,10 +73,10 @@ async def _amain() -> int:
     args = parser.parse_args()
 
     jsonl_path = Path(args.jsonl).expanduser().resolve()
-    run_dir = _resolve_run_dir(args.out_dir or None)
+    run_dir = NaviBenchRunner.resolve_run_dir(args.out_dir or None)
 
     items = load_dataset_items_from_jsonl(jsonl_path)
-    selected = _select_items(
+    selected = select_items(
         items,
         domain_filter=args.domain,
         task_id=args.task_id,
