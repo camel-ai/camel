@@ -14,7 +14,7 @@
 
 import os
 import tempfile
-from typing import List
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,6 +24,9 @@ from camel.messages.base import BaseMessage
 from camel.societies.workforce import Workforce
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.tasks.task import Task, TaskState
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +73,12 @@ class MockSingleAgentWorker(SingleAgentWorker):
         super().__init__(description, agent)
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         """Mock task processing with simulated conversation."""
         # Simulate some conversation history

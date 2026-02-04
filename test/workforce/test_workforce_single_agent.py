@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
-from typing import List
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional
 from unittest.mock import patch
 
 import pytest
@@ -22,6 +22,9 @@ from camel.messages.base import BaseMessage
 from camel.societies.workforce import Workforce
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.tasks.task import Task, TaskState
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 
 class AlwaysFailingWorker(SingleAgentWorker):
@@ -36,7 +39,12 @@ class AlwaysFailingWorker(SingleAgentWorker):
         super().__init__(description, agent)
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         """Always return failed task."""
         task.state = TaskState.FAILED

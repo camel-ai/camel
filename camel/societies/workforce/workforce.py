@@ -91,7 +91,11 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.utils import dependencies_required
+from camel.utils import (
+    consume_response_content,
+    consume_response_content_async,
+    dependencies_required,
+)
 
 from .events import (
     AllTasksCompletedEvent,
@@ -1190,6 +1194,22 @@ class Workforce(BaseNode):
 
         return shared_memory
 
+    def _on_stream_callback(self, chunk: ChatAgentResponse) -> None:
+        # TODO Integrate with WorkforceCallback so streaming metrics/events
+        #  flow through the central callback pipeline
+        now = time.monotonic()
+        if not hasattr(self, "_stream_start_ts"):
+            self._stream_start_ts = now
+            self._stream_chars = 0
+        content = chunk.msg.content or ""
+        self._stream_chars += len(content)
+        elapsed = now - self._stream_start_ts
+        if elapsed > 0:
+            speed = self._stream_chars / elapsed  # chars per second
+            print(
+                f"Stream Speed: {speed:.1f} chars/s (elapsed {elapsed:.2f}s)"
+            )
+
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]
     ) -> None:
@@ -1605,9 +1625,12 @@ class Workforce(BaseNode):
 
                 self.task_agent.reset()
                 response = self.task_agent.step(enhanced_prompt)
+                response, response_content = consume_response_content(
+                    response, self._on_stream_callback
+                )
 
                 result = self.structured_handler.parse_structured_response(
-                    response.msg.content if response.msg else "",
+                    response_content,
                     schema=result_schema,
                     fallback_values=fallback_values,
                 )
@@ -1623,6 +1646,9 @@ class Workforce(BaseNode):
                 self.task_agent.reset()
                 response = self.task_agent.step(
                     analysis_prompt, response_format=result_schema
+                )
+                response, _ = consume_response_content(
+                    response, self._on_stream_callback
                 )
                 return response.msg.parsed
 
@@ -1766,7 +1792,9 @@ class Workforce(BaseNode):
                 logger.info(
                     f"Task {task.id} will be decomposed due to {reason}"
                 )
-                subtasks_result = self._decompose_task(task)
+                subtasks_result = self._decompose_task(
+                    task, self._on_stream_callback
+                )
 
                 # Handle both streaming and non-streaming results
                 if isinstance(subtasks_result, Generator):
@@ -2432,7 +2460,7 @@ class Workforce(BaseNode):
 
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task, self._on_stream_callback)
 
         # Handle both streaming and non-streaming results
         if isinstance(subtasks_result, Generator):
@@ -3602,8 +3630,11 @@ class Workforce(BaseNode):
 
             # Get response without structured format
             response = self.coordinator_agent.step(enhanced_prompt)
+            response, response_content = consume_response_content(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "task assignment"
@@ -3612,7 +3643,7 @@ class Workforce(BaseNode):
 
             # Parse with structured handler
             result = self.structured_handler.parse_structured_response(
-                response.msg.content,
+                response_content,
                 schema=TaskAssignResult,
                 fallback_values={"assignments": []},
             )
@@ -3628,8 +3659,11 @@ class Workforce(BaseNode):
             response = self.coordinator_agent.step(
                 prompt, response_format=TaskAssignResult
             )
+            response, response_content = consume_response_content(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "task assignment"
@@ -3637,13 +3671,13 @@ class Workforce(BaseNode):
                 return TaskAssignResult(assignments=[])
 
             try:
-                result_dict = json.loads(response.msg.content, parse_int=str)
+                result_dict = json.loads(response_content, parse_int=str)
                 return TaskAssignResult(**result_dict)
             except json.JSONDecodeError as e:
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
                     f"format - {e}. Response content: "
-                    f"{response.msg.content}"
+                    f"{response_content}"
                 )
                 return TaskAssignResult(assignments=[])
 
@@ -3986,8 +4020,11 @@ class Workforce(BaseNode):
             )
 
             response = self.coordinator_agent.step(enhanced_prompt)
+            response, response_content = await consume_response_content_async(
+                response, self._on_stream_callback
+            )
 
-            if response.msg is None or response.msg.content is None:
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "worker creation"
@@ -4000,7 +4037,7 @@ class Workforce(BaseNode):
                 )
             else:
                 result = self.structured_handler.parse_structured_response(
-                    response.msg.content,
+                    response_content,
                     schema=WorkerConf,
                     fallback_values={
                         "description": f"Worker for task: {task.content}",
@@ -4024,7 +4061,10 @@ class Workforce(BaseNode):
             response = self.coordinator_agent.step(
                 prompt, response_format=WorkerConf
             )
-            if response.msg is None or response.msg.content is None:
+            response, response_content = await consume_response_content_async(
+                response, self._on_stream_callback
+            )
+            if response.msg is None or response_content is None:
                 logger.error(
                     "Coordinator agent returned empty response for "
                     "worker creation"
@@ -4038,13 +4078,13 @@ class Workforce(BaseNode):
                 )
             else:
                 try:
-                    result_dict = json.loads(response.msg.content)
+                    result_dict = json.loads(response_content)
                     new_node_conf = WorkerConf(**result_dict)
                 except json.JSONDecodeError as e:
                     logger.error(
                         f"JSON parsing error in worker creation: Invalid "
                         f"response format - {e}. Response content: "
-                        f"{response.msg.content}"
+                        f"{response_content}"
                     )
                     raise RuntimeError(
                         f"Failed to create worker for task {task.id}: "
