@@ -46,9 +46,9 @@ from examples.toolkits.browser.utils.utils import (
     compute_session_summary,
     count_skills_in_dir,
     count_subtasks_in_dir,
-    get_timestamp_filename,
     get_timestamp_iso,
     resolve_website_skills_dir,
+    resolve_run_dir,
 )
 
 from examples.toolkits.browser.utils.navi_bench_eval_hook import (
@@ -835,23 +835,7 @@ class NaviBenchRunner:
 
 
 def _resolve_run_dir(out_dir: Optional[str]) -> Path:
-    default_session_logs_root = (
-        Path(__file__).resolve().parents[1] / "session_logs"
-    )
-    out_root = (
-        Path(out_dir).expanduser().resolve()
-        if out_dir
-        else default_session_logs_root
-    )
-    out_root.mkdir(parents=True, exist_ok=True)
-
-    session_dir_pattern = re.compile(r"^session_\\d{8}_\\d{6}$")
-    if session_dir_pattern.match(out_root.name):
-        return out_root
-
-    run_dir = out_root / f"session_{get_timestamp_filename()}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir
+    return resolve_run_dir(out_dir, base_file=__file__)
 
 
 __all__ = [

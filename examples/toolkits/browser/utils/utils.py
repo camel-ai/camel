@@ -514,3 +514,32 @@ def update_cumulative_subtask_stats(
         encoding="utf-8",
     )
     return data
+
+
+def resolve_run_dir(out_dir: Optional[str], *, base_file: str | Path) -> Path:
+    """Resolve a run directory using the caller's file location.
+
+    Args:
+        out_dir: Optional output directory override.
+        base_file: The caller's __file__ (used to locate session_logs).
+
+    Returns:
+        A session directory path.
+    """
+    default_session_logs_root = (
+        Path(base_file).resolve().parents[1] / "session_logs"
+    )
+    out_root = (
+        Path(out_dir).expanduser().resolve()
+        if out_dir
+        else default_session_logs_root
+    )
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    session_dir_pattern = re.compile(r"^session_\d{8}_\d{6}$")
+    if session_dir_pattern.match(out_root.name):
+        return out_root
+
+    run_dir = out_root / f"session_{get_timestamp_filename()}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
