@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 from camel.toolkits import FunctionTool
 
@@ -44,8 +44,10 @@ class BaseRuntime(ABC):
     def cleanup(self) -> None:
         r"""Releases resources (containers, processes, connections, etc.).
 
-        Subclasses must implement this method. Runtimes can be used as
-        context managers so that cleanup is called automatically on exit.
+        Public part of the runtime lifecycle API: callers may call
+        :meth:`cleanup` or use the runtime as a context manager
+        (``with runtime:``) for deterministic teardown. Subclasses must
+        implement this method.
         """
         pass
 
@@ -64,9 +66,9 @@ class BaseRuntime(ABC):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> None:
         r"""Exit the context manager; ensures cleanup is called."""
         self.cleanup()
