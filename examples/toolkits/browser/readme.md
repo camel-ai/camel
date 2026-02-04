@@ -1,5 +1,7 @@
 # Introduction
-This is folder for the skill-based browser agent expriments.
+This is folder for the browser agent expriments.
+- browser_example: non-skill version with pure toolkit agent
+- browser_skills_example: skill version with toolkit agent + browser skills
 
 For now we have benchmarks for:
 - [Webvoayer](https://github.com/MinorJerry/WebVoyager/blob/main/data/WebVoyager_data.jsonl): google flights, coursera
@@ -12,7 +14,15 @@ When you run the experiments make sure following settings are correct:
 1. Setup the api keys in the .env file.
 2. browser_example has the non-skill version with pure toolkit agent and browser_skills_example has the skill version. Make sure you run the correct one.
 3. In modeling.py, make sure the DEFAULT_MODEL_PLATFORM and DEFAULT_MODEL_TYPE are the correct ones you want to use.
-
+4. get the submodules if you need to run the navi-bench related experiments:
+    ```bash
+    git submodule update --init examples/toolkits/browser/navi-bench
+    ```
+  Install the navi-bench package with uv:
+    ```bash
+    cd examples/toolkits/browser/navi-bench
+    uv pip install .
+    ```
 # Commands to run the experiments
 
 ## WebVoyager

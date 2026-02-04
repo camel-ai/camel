@@ -285,7 +285,7 @@ class NaviBenchRunner:
                     pass
 
                 t_compute0 = time.perf_counter()
-                eval_result = await evaluator.compute()
+                eval_result = await evaluator.compute(include_gt_in_result=True)
                 eval_stats.compute_calls += 1
                 eval_stats.compute_time_s += time.perf_counter() - t_compute0
                 score = score_from_result(eval_result)

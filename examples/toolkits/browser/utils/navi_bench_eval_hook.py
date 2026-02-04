@@ -200,12 +200,12 @@ async def navi_bench_on_action_update(
     # Be permissive about evaluator.update signatures.
     t0 = time.perf_counter()
     try:
-        await evaluator.update(url=url, page=page)
+        await evaluator.update(url=url, page=page, store_observed=True)
     except TypeError:
         try:
-            await evaluator.update(url=url)
+            await evaluator.update(url=url, store_observed=True)
         except TypeError:
-            await evaluator.update(page=page)
+            await evaluator.update(page=page, store_observed=True)
     if stats is not None:
         stats.update_calls += 1
         stats.update_time_s += time.perf_counter() - t0
