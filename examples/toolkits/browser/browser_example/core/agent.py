@@ -18,6 +18,7 @@ This module provides Browser agent with low-level `HybridBrowserToolkit` tools.
 """
 
 import json
+import os
 import shutil
 import uuid
 from datetime import datetime
@@ -35,20 +36,20 @@ from camel.utils.constants import Constants
 from examples.toolkits.browser.browser_example.cli.analyze_session import (
     analyze_session,
 )
-from examples.toolkits.browser.browser_example.core.modeling import (
-    create_default_model,
-    extract_token_usage,
-)
 from examples.toolkits.browser.utils.utils import (
+    extract_token_usage,
     get_timestamp_filename,
     get_timestamp_iso,
 )
+from .modeling import create_default_model
 
-script_dir = Path(__file__).resolve().parent
+
+module_dir = Path(__file__).resolve().parent
 
 # Define default directories using relative paths
-DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
-DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
+DEFAULT_BROWSER_LOG_DIR = module_dir.parent / "browser_log"
+DEFAULT_SESSION_LOGS_DIR = module_dir.parent / "session_logs"
+DEFAULT_USER_DATA_DIR = module_dir.parent / "user_data_dir"
 
 WEB_VOYAGER_GUIDELINES: dict[str, str] = {
     "allrecipes": "\n".join(
@@ -252,21 +253,18 @@ class BrowserAgent:
         website: str,
         session_log_dir: str | Path | None = None,
         start_url: str | None = None,
-        cdp_port: int = 9223,
         use_agent_recovery: bool = True,
         step_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
         tool_execution_timeout: float | None = Constants.TIMEOUT_THRESHOLD,
     ):
-        """Initialize the SkillsAgent.
+        """Initialize the BrowserAgent.
         Args:
-            cdp_port: CDP port number
             use_agent_recovery: Use agent recovery for errors
             website: Website name (e.g., "Allrecipes", "Google Flights")
             start_url: Optional URL to navigate to before executing tasks
             step_timeout: Timeout (seconds) for a single ChatAgent step. Use None to disable.
             tool_execution_timeout: Timeout (seconds) for individual tool calls. Use None to disable.
         """
-        self.cdp_port = cdp_port
         self.use_agent_recovery = use_agent_recovery
         self.website = website.strip()
         if not self.website:
@@ -320,9 +318,9 @@ class BrowserAgent:
         self.tool_definitions = []
 
     async def close(self) -> None:
-        """Cleanup toolkit resources for this run.
+        """Cleanup toolkit resources and close the browser.
 
-        In CDP mode, this disconnects the toolkit without closing the browser.
+        This closes the browser completely to ensure a fresh state for the next task.
         """
         if not self.toolkit:
             return
@@ -400,32 +398,16 @@ class BrowserAgent:
         browser_log_dir = self.session_log_dir / "browser_log"
         browser_log_dir.mkdir(parents=True, exist_ok=True)
         print(f"📁 Browser log directory: {browser_log_dir}\n")
-        # cdp_url = None
-        # try:
-        #     # Use /json/version to get the browser-level WebSocket endpoint
-        #     with urlopen(
-        #         f'http://localhost:{self.cdp_port}/json/version', timeout=5
-        #     ) as response:
-        #         version_info = json.loads(response.read().decode('utf-8'))
-        #         cdp_url = version_info.get('webSocketDebuggerUrl')
-        #         print(
-        #             f"✓ Connected to browser: {version_info.get('Browser', 'N/A')}"
-        #         )
-        #         print(f"   CDP endpoint: {cdp_url}")
-        # except Exception as e:
-        #     print(f"Error connecting to browser: {e}")
-        #     return False
-
-        # if not cdp_url:
-        #     print("Error: Could not get browser CDP endpoint")
-        #     return False
 
         custom_tools = [
+            "browser_open",
+            "browser_close",
             "browser_visit_page",
             "browser_back",
             "browser_forward",
             "browser_click",
             "browser_type",
+            "browser_select",
             "browser_switch_tab",
             "browser_get_tab_info",
             "browser_enter",
@@ -441,28 +423,38 @@ class BrowserAgent:
         # directory is portable and can be evaluated offline.
         evidence_dir = Path(self.session_log_dir) / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
-        # Initialize toolkit (single instance, shared by agent and replay)
+
+        user_data_dir = os.getenv("CAMEL_BROWSER_USER_DATA_DIR")
+        user_data_dir_path = (
+            Path(user_data_dir).expanduser().resolve()
+            if user_data_dir
+            else DEFAULT_USER_DATA_DIR
+        )
+        user_data_dir_path.mkdir(parents=True, exist_ok=True)
+
+        # Initialize toolkit - launches its own browser (no CDP)
+        # Browser language is set to English in browser-session.ts
         self.toolkit = HybridBrowserToolkit(
             enabled_tools=custom_tools,
             headless=False,
             stealth=True,
             cache_dir=str(evidence_dir),
+            user_data_dir=str(user_data_dir_path),
             evidence_capture=EvidenceCaptureConfig(
                 enabled=True, snapshot=True, screenshot=True
             ),
             browser_log_to_file=True,
             log_dir=str(browser_log_dir),
             viewport_limit=False,
+            viewport={"width": 1920, "height": 1080},
             session_id=self.toolkit_session_id,
-            connect_over_cdp=True,
-            # cdp_url=cdp_url,
+            connect_over_cdp=False,  # Launch own browser instead of CDP
             default_start_url=None,
-            # cdp_keep_current_page=True,  # Important: Keep existing page when connecting via CDP
         )
 
-        # When connecting via CDP, browser is already open, no need to call browser_open()
-        # await self.toolkit.browser_open()
-        print("✓ Browser connected via CDP")
+        # Open browser - this starts a fresh browser instance
+        await self.toolkit.browser_open()
+        print("✓ Browser launched (language: English)")
 
         # Create ChatAgent with both subtask functions and toolkit
         print("\n" + "=" * 80)

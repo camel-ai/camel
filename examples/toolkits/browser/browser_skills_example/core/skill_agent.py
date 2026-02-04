@@ -49,7 +49,6 @@ from examples.toolkits.browser.utils.utils import (
     get_timestamp_filename,
     get_timestamp_iso,
 )
-
 from .modeling import create_default_model
 
 module_dir = Path(__file__).resolve().parent

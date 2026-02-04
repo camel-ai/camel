@@ -25,7 +25,7 @@ dotenv.load_dotenv()
 # DEFAULT_MODEL_TYPE: ModelType = "qwen/qwen3-vl-8b-instruct"
 
 DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.AZURE
-DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_4_1
+DEFAULT_MODEL_TYPE: ModelType = ModelType.GPT_5_2
 
 # DEFAULT_MODEL_PLATFORM: ModelPlatformType = ModelPlatformType.QWEN
 # DEFAULT_MODEL_TYPE: ModelType = "qwen3-235b-a22b"
@@ -41,31 +41,3 @@ def create_default_model():
             "parallel_tool_calls": False,
         },
     )
-
-
-# === Token Usage ===
-def extract_token_usage(usage) -> dict[str, int]:
-    """
-    Extract token usage from response usage object.
-
-    Args:
-        usage: Usage object or dict from model response
-
-    Returns:
-        Dict with 'prompt', 'completion', and 'total' token counts
-    """
-    if hasattr(usage, 'prompt_tokens') and hasattr(usage, 'completion_tokens'):
-        prompt_tokens = usage.prompt_tokens
-        completion_tokens = usage.completion_tokens
-    elif isinstance(usage, dict):
-        prompt_tokens = usage.get('prompt_tokens', 0)
-        completion_tokens = usage.get('completion_tokens', 0)
-    else:
-        prompt_tokens = 0
-        completion_tokens = 0
-
-    return {
-        'prompt': prompt_tokens,
-        'completion': completion_tokens,
-        'total': prompt_tokens + completion_tokens,
-    }
