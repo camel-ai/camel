@@ -87,6 +87,7 @@ export interface WebSocketConfig {
   session_id?: string;
   viewport_limit: boolean;
   fullVisualMode?: boolean;
+  nearestElementsCount: number;  // Number of nearest elements to show for ineffective clicks
 }
 
 // Default stealth configuration
@@ -157,7 +158,8 @@ function getDefaultBrowserConfig(): BrowserConfig {
 function getDefaultWebSocketConfig(): WebSocketConfig {
   return {
     browser_log_to_file: false,
-    viewport_limit: false
+    viewport_limit: false,
+    nearestElementsCount: 5  // Default number of nearest elements for ineffective click detection
   };
 }
 
@@ -227,6 +229,7 @@ export class ConfigLoader {
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
     if (config.viewport_limit !== undefined) wsConfig.viewport_limit = config.viewport_limit;
     if (config.fullVisualMode !== undefined) wsConfig.fullVisualMode = config.fullVisualMode;
+    if (config.nearestElementsCount !== undefined) wsConfig.nearestElementsCount = config.nearestElementsCount;
 
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;

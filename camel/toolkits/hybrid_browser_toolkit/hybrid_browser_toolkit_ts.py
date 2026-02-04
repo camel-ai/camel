@@ -36,6 +36,215 @@ from camel.utils.tool_result import ToolResult
 from .config_loader import ConfigLoader
 from .ws_wrapper import WebSocketBrowserWrapper, high_level_action
 
+
+def _add_rulers_to_image(
+    image_bytes: bytes, tick_interval: int = 100
+) -> bytes:
+    r"""Add rulers with tick marks to an image (like a real measuring ruler).
+
+    Adds horizontal ruler at the top and vertical ruler on the left side,
+    with multi-level tick marks like a real ruler:
+    - Every 100 pixels: longest tick + number label
+    - Every 50 pixels: long tick (no label)
+    - Every 10 pixels: medium tick
+    - Every 5 pixels: short tick
+
+    Args:
+        image_bytes: The original image as bytes.
+        tick_interval: Major interval for number labels (default: 100).
+
+    Returns:
+        The modified image with rulers as bytes.
+    """
+    from io import BytesIO
+
+    from PIL import Image, ImageDraw, ImageFont
+
+    # Load the original image
+    original = Image.open(BytesIO(image_bytes))
+    orig_width, orig_height = original.size
+
+    # Ruler dimensions
+    ruler_thickness = 30  # Increased for better visibility
+    font_size = 9
+
+    # Create new image with space for rulers
+    new_width = orig_width + ruler_thickness
+    new_height = orig_height + ruler_thickness
+    new_image = Image.new('RGB', (new_width, new_height), 'white')
+
+    # Paste original image offset by ruler thickness
+    new_image.paste(original, (ruler_thickness, ruler_thickness))
+
+    draw = ImageDraw.Draw(new_image)
+
+    # Try to load a font, fall back to default if not available
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont
+    try:
+        font = ImageFont.truetype(
+            "/System/Library/Fonts/Helvetica.ttc", font_size
+        )
+    except (IOError, OSError):
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except (IOError, OSError):
+            font = ImageFont.load_default()
+
+    # Colors
+    ruler_bg_color = (245, 245, 245)  # Light gray background
+    tick_color = (80, 80, 80)  # Dark gray for ticks
+    minor_tick_color = (160, 160, 160)  # Lighter gray for minor ticks
+    text_color = (40, 40, 40)  # Darker gray for text
+
+    # Draw horizontal ruler background (top)
+    draw.rectangle(
+        [ruler_thickness, 0, new_width, ruler_thickness], fill=ruler_bg_color
+    )
+
+    # Draw vertical ruler background (left)
+    draw.rectangle(
+        [0, ruler_thickness, ruler_thickness, new_height], fill=ruler_bg_color
+    )
+
+    # Draw corner square
+    draw.rectangle(
+        [0, 0, ruler_thickness, ruler_thickness], fill=ruler_bg_color
+    )
+
+    # Tick heights for different intervals (from ruler bottom)
+    tick_100 = 18  # Every 100px - longest, with number
+    tick_50 = 14  # Every 50px - long
+    tick_10 = 10  # Every 10px - medium
+    tick_5 = 6  # Every 5px - short
+
+    # Draw horizontal tick marks and labels (top ruler)
+    for x in range(0, orig_width + 1):
+        tick_x = x + ruler_thickness
+
+        if x % tick_interval == 0:
+            # Major tick (every 100px) - longest with label
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_100),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+            # Draw number label
+            label = str(x)
+            bbox = draw.textbbox((0, 0), label, font=font)
+            text_width = bbox[2] - bbox[0]
+            draw.text(
+                (tick_x - text_width // 2, 1),
+                label,
+                fill=text_color,
+                font=font,
+            )
+        elif x % 50 == 0:
+            # Half tick (every 50px) - long, no label
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_50),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif x % 10 == 0:
+            # Medium tick (every 10px)
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_10),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif x % 5 == 0:
+            # Small tick (every 5px)
+            draw.line(
+                [
+                    (tick_x, ruler_thickness - tick_5),
+                    (tick_x, ruler_thickness),
+                ],
+                fill=minor_tick_color,
+                width=1,
+            )
+
+    # Draw vertical tick marks and labels (left ruler)
+    for y in range(0, orig_height + 1):
+        tick_y = y + ruler_thickness
+
+        if y % tick_interval == 0:
+            # Major tick (every 100px) - longest with label
+            draw.line(
+                [
+                    (ruler_thickness - tick_100, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+            # Draw number label
+            label = str(y)
+            bbox = draw.textbbox((0, 0), label, font=font)
+            text_height = bbox[3] - bbox[1]
+            draw.text(
+                (2, tick_y - text_height // 2),
+                label,
+                fill=text_color,
+                font=font,
+            )
+        elif y % 50 == 0:
+            # Half tick (every 50px) - long, no label
+            draw.line(
+                [
+                    (ruler_thickness - tick_50, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif y % 10 == 0:
+            # Medium tick (every 10px)
+            draw.line(
+                [
+                    (ruler_thickness - tick_10, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=tick_color,
+                width=1,
+            )
+        elif y % 5 == 0:
+            # Small tick (every 5px)
+            draw.line(
+                [
+                    (ruler_thickness - tick_5, tick_y),
+                    (ruler_thickness, tick_y),
+                ],
+                fill=minor_tick_color,
+                width=1,
+            )
+
+    # Draw border lines for rulers
+    draw.line(
+        [(ruler_thickness, ruler_thickness), (new_width, ruler_thickness)],
+        fill=tick_color,
+        width=1,
+    )
+    draw.line(
+        [(ruler_thickness, ruler_thickness), (ruler_thickness, new_height)],
+        fill=tick_color,
+        width=1,
+    )
+
+    # Save to bytes
+    output = BytesIO()
+    new_image.save(output, format='PNG')
+    return output.getvalue()
+
+
 logger = get_logger(__name__)
 
 
@@ -74,6 +283,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_forward",
         "browser_get_page_snapshot",
         "browser_get_som_screenshot",
+        "browser_get_screenshot",
         "browser_click",
         "browser_type",
         "browser_select",
@@ -348,6 +558,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ),
             "total_tabs": len(tab_info),
         }
+
+        # In full_visual_mode, clear the snapshot
+        if self._full_visual_mode:
+            response["snapshot"] = ""
 
         # Always include note field for consistency (empty if not present)
         if include_note:
@@ -635,28 +849,147 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
 
-    async def browser_click(self, *, ref: str) -> Dict[str, Any]:
-        r"""Performs a click on an element on the page.
+    async def browser_get_screenshot(
+        self,
+        read_image: bool = True,
+    ) -> "str | ToolResult":
+        r"""Captures a plain screenshot of the current page without markers.
+
+        This tool takes a screenshot without any visual annotations. Use this
+        in full_visual_mode for visual analysis where element ref IDs are not
+        needed.
 
         Args:
-            ref (str): The `ref` ID of the element to click. This ID is
-                obtained from a page snapshot (`get_page_snapshot` or
-                `get_som_screenshot`).
+            read_image (bool, optional): If `True`, the screenshot image will
+                be included in the agent's context for direct visual analysis.
+                If `False`, only a text message (including the saved file
+                path) will be returned.
+                (default: :obj:`True`)
 
         Returns:
-            Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A textual snapshot of the page after the
-                  click.
-                - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab.
-                - "total_tabs" (int): Total number of open tabs.
-                - "note" (str): A note about the loading status of the page.
-                - "timing" (Dict): Timing information for the action.
+            str | ToolResult: If `read_image` is `True`, returns a ToolResult
+                containing the text message and the screenshot image. If
+                `False`, returns a string with the file path only.
+        """
+        import base64
+        import datetime
+        import os
+        import urllib.parse
+
+        from camel.utils import sanitize_filename
+
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.get_screenshot()
+
+            result_text = result.text
+            file_path = None
+
+            if result.images:
+                cache_dir = os.path.abspath(self._cache_dir)
+                os.makedirs(cache_dir, exist_ok=True)
+
+                try:
+                    page_info = await ws_wrapper.get_tab_info()
+                    current_tab = next(
+                        (tab for tab in page_info if tab.get('is_current')),
+                        None,
+                    )
+                    url = current_tab['url'] if current_tab else 'unknown'
+                except Exception:
+                    url = 'unknown'
+
+                parsed_url = urllib.parse.urlparse(url)
+                url_name = sanitize_filename(
+                    str(parsed_url.path) or 'homepage', max_length=241
+                )
+                timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
+                file_path = os.path.join(
+                    cache_dir, f"{url_name}_{timestamp}.png"
+                )
+
+                # Process images and optionally add rulers
+                processed_images = []
+                for _, image_data in enumerate(result.images):
+                    if image_data.startswith('data:image/png;base64,'):
+                        base64_data = image_data.split(',', 1)[1]
+                        image_bytes = base64.b64decode(base64_data)
+
+                        # Add rulers in full_visual_mode
+                        if self._full_visual_mode:
+                            image_bytes = _add_rulers_to_image(
+                                image_bytes, tick_interval=100
+                            )
+                            # Re-encode to base64 for the processed image
+                            processed_base64 = base64.b64encode(
+                                image_bytes
+                            ).decode('utf-8')
+                            processed_images.append(
+                                f'data:image/png;base64,{processed_base64}'
+                            )
+                        else:
+                            processed_images.append(image_data)
+
+                        with open(file_path, 'wb') as f:
+                            f.write(image_bytes)
+
+                        logger.info(f"Screenshot saved to: {file_path}")
+
+                        result_text += f" (saved to: {file_path})"
+                        break
+
+            if read_image and result.images:
+                logger.info(
+                    f"Returning ToolResult with {len(result.images)} image(s) "
+                    "for agent context"
+                )
+                # Use processed images (with rulers) if in full_visual_mode
+                images_to_return = (
+                    processed_images
+                    if self._full_visual_mode and processed_images
+                    else result.images
+                )
+                return ToolResult(
+                    text=result_text,
+                    images=images_to_return,
+                )
+            else:
+                return result_text
+        except Exception as e:
+            logger.error(f"Failed to get screenshot: {e}")
+            return f"Error capturing screenshot: {e}"
+
+    async def browser_click(
+        self,
+        *,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        r"""Performs a click on an element on the page.
+
+        Supports two modes:
+        - Ref mode: Click by element ref ID (from snapshot)
+        - Pixel mode: Click by x, y pixel coordinates
+
+        Args:
+            ref (Optional[str]): The `ref` ID of the element to click.
+            x (Optional[float]): X pixel coordinate for click.
+            y (Optional[float]): Y pixel coordinate for click.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.click(ref)
+            if x is not None and y is not None:
+                result = await ws_wrapper.mouse_control('click', x, y)
+            elif ref is not None:
+                result = await ws_wrapper.click(ref)
+            else:
+                raise ValueError(
+                    "Must provide either 'ref' or both 'x' and 'y'"
+                )
             return await self._build_action_response(result, ws_wrapper)
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
@@ -668,47 +1001,45 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         ref: Optional[str] = None,
         text: Optional[str] = None,
         inputs: Optional[List[Dict[str, str]]] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
     ) -> Dict[str, Any]:
         r"""Types text into one or more input elements on the page.
 
-        This method supports two modes:
-        1. Single input mode (backward compatible): Provide 'ref' and 'text'
-        2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
-           with 'ref' and 'text' keys
+        Supports multiple modes:
+        - Ref mode: Provide 'ref' and 'text'
+        - Pixel mode: Provide 'x', 'y' and 'text' (clicks to focus, then types)
+        - Multiple inputs mode: Provide 'inputs' list
 
         Args:
-            ref (Optional[str]): The `ref` ID of the input element, from a
-                snapshot. Required when using single input mode.
-            text (Optional[str]): The text to type into the element. Required
-                when using single input mode.
-            inputs (Optional[List[Dict[str, str]]]): List of dictionaries,
-                each containing 'ref' and 'text' keys for typing into multiple
-                elements. Example: [{'ref': '1', 'text': 'username'},
-                {'ref': '2', 'text': 'password'}]
+            ref (Optional[str]): The `ref` ID of the input element.
+            text (Optional[str]): The text to type.
+            inputs (Optional[List[Dict[str, str]]]): List of inputs with
+                'ref' and 'text' keys.
+            x (Optional[float]): X pixel coordinate of input field.
+            y (Optional[float]): Y pixel coordinate of input field.
 
         Returns:
-            Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A textual snapshot of the page after
-                  typing.
-                - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab.
-                - "total_tabs" (int): Total number of open tabs.
-                - "details" (Dict[str, Any]): When using multiple inputs,
-                  contains success/error status for each ref.
-                - "note" (str): A note about the loading status of the page.
+            Dict[str, Any]: A dictionary with the result of the action.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
 
-            if ref is not None and text is not None:
+            if x is not None and y is not None and text is not None:
+                # Pixel mode: click to focus, then type using keyboard
+                await ws_wrapper.mouse_control('click', x, y)
+                await asyncio.sleep(0.1)  # Wait for focus
+                result = await ws_wrapper.batch_keyboard_input(
+                    [{"type": "type", "text": text, "delay": 0}]
+                )
+            elif ref is not None and text is not None:
                 result = await ws_wrapper.type(ref, text)
             elif inputs is not None:
                 result = await ws_wrapper.type_multiple(inputs)
             else:
                 raise ValueError(
-                    "Either provide 'ref' and 'text' for single input, "
-                    "or 'inputs' for multiple inputs"
+                    "Provide 'ref' and 'text', or 'x', 'y' and 'text', "
+                    "or 'inputs' list"
                 )
 
             return await self._build_action_response(result, ws_wrapper)
@@ -823,26 +1154,42 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return self._build_error_response(f"Error with mouse control: {e}")
 
     async def browser_mouse_drag(
-        self, *, from_ref: str, to_ref: str
+        self,
+        *,
+        from_ref: Optional[str] = None,
+        to_ref: Optional[str] = None,
+        from_x: Optional[float] = None,
+        from_y: Optional[float] = None,
+        to_x: Optional[float] = None,
+        to_y: Optional[float] = None,
     ) -> Dict[str, Any]:
-        r"""Control the mouse to drag and drop in the browser using ref IDs.
+        r"""Drag and drop in the browser using ref IDs or pixel coordinates.
+
+        Supports two modes:
+        - Ref mode: Provide from_ref and to_ref
+        - Pixel mode: Provide from_x, from_y, to_x, to_y
 
         Args:
-            from_ref (str): The `ref` ID of the source element to drag from.
-            to_ref (str): The `ref` ID of the target element to drag to.
+            from_ref (Optional[str]): The ref ID of the source element.
+            to_ref (Optional[str]): The ref ID of the target element.
+            from_x (Optional[float]): Source X pixel coordinate.
+            from_y (Optional[float]): Source Y pixel coordinate.
+            to_x (Optional[float]): Target X pixel coordinate.
+            to_y (Optional[float]): Target Y pixel coordinate.
 
         Returns:
-            Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A new page snapshot.
-                - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab.
-                - "total_tabs" (int): Total number of open tabs.
-                - "note" (str): A note about the loading status of the page.
+            Dict[str, Any]: A dictionary with the result of the action.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.mouse_drag(from_ref, to_ref)
+            result = await ws_wrapper.mouse_drag(
+                from_ref=from_ref,
+                to_ref=to_ref,
+                from_x=from_x,
+                from_y=from_y,
+                to_x=to_x,
+                to_y=to_y,
+            )
             return await self._build_action_response(result, ws_wrapper)
         except Exception as e:
             logger.error(f"Error with mouse drag and drop: {e}")
@@ -1263,9 +1610,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             for i in range(0, len(operations), CHUNK_SIZE):
                 chunk = operations[i : i + CHUNK_SIZE]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {'operations': chunk, 'skipStabilityWait': True},
+                await ws_wrapper.batch_keyboard_input(
+                    chunk, skip_stability_wait=True
                 )
                 # Small delay between chunks
                 await asyncio.sleep(0.2)
@@ -1481,22 +1827,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Meta", "c"]},
                 ]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
                 # Repeat to capture correct one
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
             else:
@@ -1505,22 +1843,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     {"type": "wait", "delay": 100},
                     {"type": "press", "keys": ["Control", "c"]},
                 ]
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
                 # Repeat to capture correct one
-                await ws_wrapper._send_command(
-                    'batch_keyboard_input',
-                    {
-                        'operations': select_all_copy_ops,
-                        'skipStabilityWait': True,
-                    },
+                await ws_wrapper.batch_keyboard_input(
+                    select_all_copy_ops, skip_stability_wait=True
                 )
                 await asyncio.sleep(0.2)
 
@@ -1739,10 +2069,174 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             full_visual_mode=self._full_visual_mode,
         )
 
+    # Tools not available in full_visual_mode (require ref, no pixel alt)
+    _TOOLS_EXCLUDED_IN_VISUAL_MODE: ClassVar[List[str]] = [
+        "browser_select",
+        "browser_get_page_snapshot",
+        "browser_get_som_screenshot",
+    ]
+
+    def _create_mode_wrapper(
+        self,
+        method: Callable[..., Any],
+        tool_name: str,
+        pixel_mode: bool,
+    ) -> Callable[..., Any]:
+        """Create a wrapper with mode-specific signature and docstring.
+
+        Args:
+            method: The original method to wrap.
+            tool_name: Name of the tool.
+            pixel_mode: If True, create pixel-coordinate wrapper.
+                        If False, create ref-based wrapper.
+        """
+        if tool_name == "browser_click":
+            if pixel_mode:
+
+                async def browser_click_pixel(
+                    *, x: float, y: float
+                ) -> Dict[str, Any]:
+                    r"""Clicks at the specified pixel coordinates on the page.
+
+                    Use browser_get_screenshot to visually identify the
+                    target position, then provide the x,y coordinates.
+
+                    Args:
+                        x (float): X pixel coordinate (horizontal position from
+                            left edge of viewport).
+                        y (float): Y pixel coordinate (vertical position from
+                            top edge of viewport).
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(x=x, y=y)
+
+                browser_click_pixel.__name__ = "browser_click"
+                return browser_click_pixel
+            else:
+
+                async def browser_click_ref(*, ref: str) -> Dict[str, Any]:
+                    r"""Clicks on an element identified by its ref ID.
+
+                    The ref ID is obtained from a page snapshot
+                    (browser_get_page_snapshot or browser_get_som_screenshot).
+
+                    Args:
+                        ref (str): The ref ID of the element to click.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(ref=ref)
+
+                browser_click_ref.__name__ = "browser_click"
+                return browser_click_ref
+
+        elif tool_name == "browser_type":
+            if pixel_mode:
+
+                async def browser_type_pixel(
+                    *, x: float, y: float, text: str
+                ) -> Dict[str, Any]:
+                    r"""Types text at the specified pixel coordinates.
+
+                    Clicks at the coordinates to focus the input field, then
+                    types the given text.
+
+                    Args:
+                        x (float): X pixel coordinate of the input field.
+                        y (float): Y pixel coordinate of the input field.
+                        text (str): The text to type into the input field.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(x=x, y=y, text=text)
+
+                browser_type_pixel.__name__ = "browser_type"
+                return browser_type_pixel
+            else:
+
+                async def browser_type_ref(
+                    *,
+                    ref: Optional[str] = None,
+                    text: Optional[str] = None,
+                    inputs: Optional[List[Dict[str, str]]] = None,
+                ) -> Dict[str, Any]:
+                    r"""Types text into input elements identified by ref ID.
+
+                    Supports single input (ref + text) or multiple inputs.
+
+                    Args:
+                        ref (Optional[str]): The ref ID of the input element.
+                        text (Optional[str]): The text to type.
+                        inputs (Optional[List[Dict[str, str]]]): List of
+                            inputs, each with 'ref' and 'text' keys.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(ref=ref, text=text, inputs=inputs)
+
+                browser_type_ref.__name__ = "browser_type"
+                return browser_type_ref
+
+        elif tool_name == "browser_mouse_drag":
+            if pixel_mode:
+
+                async def browser_mouse_drag_pixel(
+                    *, from_x: float, from_y: float, to_x: float, to_y: float
+                ) -> Dict[str, Any]:
+                    r"""Drags from one position to another using pixels.
+
+                    Use browser_get_screenshot to identify element positions.
+
+                    Args:
+                        from_x (float): Source X pixel coordinate.
+                        from_y (float): Source Y pixel coordinate.
+                        to_x (float): Target X pixel coordinate.
+                        to_y (float): Target Y pixel coordinate.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(
+                        from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y
+                    )
+
+                browser_mouse_drag_pixel.__name__ = "browser_mouse_drag"
+                return browser_mouse_drag_pixel
+            else:
+
+                async def browser_mouse_drag_ref(
+                    *, from_ref: str, to_ref: str
+                ) -> Dict[str, Any]:
+                    r"""Drags from one element to another using ref IDs.
+
+                    The ref IDs are obtained from a page snapshot.
+
+                    Args:
+                        from_ref (str): The ref ID of the source element.
+                        to_ref (str): The ref ID of the target element.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(from_ref=from_ref, to_ref=to_ref)
+
+                browser_mouse_drag_ref.__name__ = "browser_mouse_drag"
+                return browser_mouse_drag_ref
+
+        return method
+
     def get_tools(self) -> List[FunctionTool]:
-        r"""Get available function tools based
-        on enabled_tools configuration."""
-        # Map tool names to their corresponding methods
+        r"""Get available function tools based on enabled_tools configuration.
+
+        In full_visual_mode:
+        - Tools requiring ref with no pixel alternative are excluded
+        - browser_click and browser_type use pixel coordinates instead of ref
+        """
         tool_map = {
             "browser_open": self.browser_open,
             "browser_close": self.browser_close,
@@ -1751,6 +2245,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_forward": self.browser_forward,
             "browser_get_page_snapshot": self.browser_get_page_snapshot,
             "browser_get_som_screenshot": self.browser_get_som_screenshot,
+            "browser_get_screenshot": self.browser_get_screenshot,
             "browser_click": self.browser_click,
             "browser_type": self.browser_type,
             "browser_select": self.browser_select,
@@ -1771,16 +2266,38 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_sheet_read": self.browser_sheet_read,
         }
 
+        # Tools that need mode-specific wrappers (different signatures)
+        mode_specific_tools = {
+            "browser_click",
+            "browser_type",
+            "browser_mouse_drag",
+        }
+
         enabled_tools = []
 
         for tool_name in self.enabled_tools:
-            if tool_name in tool_map:
-                tool = FunctionTool(
-                    cast(Callable[..., Any], tool_map[tool_name])
-                )
-                enabled_tools.append(tool)
-            else:
+            # Skip tools not available in full_visual_mode
+            if (
+                self._full_visual_mode
+                and tool_name in self._TOOLS_EXCLUDED_IN_VISUAL_MODE
+            ):
+                logger.debug(f"Skipping {tool_name} in full_visual_mode")
+                continue
+
+            if tool_name not in tool_map:
                 logger.warning(f"Unknown tool name: {tool_name}")
+                continue
+
+            method = tool_map[tool_name]
+
+            # Apply mode-specific wrapper for tools with different signatures
+            if tool_name in mode_specific_tools:
+                method = self._create_mode_wrapper(
+                    method, tool_name, pixel_mode=self._full_visual_mode
+                )
+
+            tool = FunctionTool(cast(Callable[..., Any], method))
+            enabled_tools.append(tool)
 
         logger.info(f"Returning {len(enabled_tools)} enabled tools")
         return enabled_tools
