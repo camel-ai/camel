@@ -27,7 +27,7 @@ import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 from camel.agents import ChatAgent, observe
@@ -59,7 +59,7 @@ DEFAULT_BROWSER_LOG_DIR = module_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = module_dir.parent / "session_logs"
 DEFAULT_USER_DATA_DIR = module_dir.parent / "user_data_dir"
 
-WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
+WEB_VOYAGER_GUIDELINES: dict[str, str] = {
     "allrecipes": "\n".join(
         [
             "- Target site: Allrecipes",
@@ -129,7 +129,7 @@ WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
     ),
     "cambridge dictionary": "\n".join(
         [
-            "- Target site: Cambridge Dictionary",
+            "- Target site: Cambridge dictionary",
             "- Start by calling browser_get_page_snapshot to see where you are",
             "- Use the dictionary search box to find the word/phrase",
             "- Extract the relevant sense/definition matching the question context",
@@ -197,7 +197,7 @@ WEB_VOYAGER_GUIDELINES: Dict[str, str] = {
 }
 
 
-NAVI_BENCH_GUIDELINES: Dict[str, str] = {
+NAVI_BENCH_GUIDELINES: dict[str, str] = {
     "apartments.com": "\n".join(
         [
             "- Target site: https://www.apartments.com/",
@@ -260,9 +260,9 @@ class SubtaskFunction:
         subtask_id: str,
         name: str,
         description: str,
-        variables: Dict[str, Any],
+        variables: dict[str, Any],
         replayer: Any,
-        stats_tracker: Optional[Dict[str, Any]] = None,
+        stats_tracker: Optional[dict[str, Any]] = None,
         session_log_dir: Optional[Path] = None,
     ):
         """Initialize subtask function.
@@ -285,7 +285,7 @@ class SubtaskFunction:
         self.stats_tracker = stats_tracker
         self.session_log_dir = session_log_dir
 
-    async def execute(self, **kwargs) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> dict[str, Any]:
         """Execute the subtask with given variable values.
 
         Args:
@@ -487,7 +487,7 @@ class SubtaskFunction:
             self.last_result = result
             return result
 
-    def get_function_schema(self) -> Dict[str, Any]:
+    def get_function_schema(self) -> dict[str, Any]:
         """Get the function schema for this subtask.
 
         Returns:
@@ -573,7 +573,7 @@ class SkillsAgent:
         # Initialize components
         self.toolkit: Optional[HybridBrowserToolkit] = None
         self.agent: Optional[ChatAgent] = None
-        self.subtask_functions: Dict[str, SubtaskFunction] = {}
+        self.subtask_functions: dict[str, SubtaskFunction] = {}
 
         # Session log directory for this run
         self.session_timestamp = get_timestamp_filename()

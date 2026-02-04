@@ -20,6 +20,7 @@ This module provides Browser agent with low-level `HybridBrowserToolkit` tools.
 import json
 import shutil
 import uuid
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -49,7 +50,7 @@ script_dir = Path(__file__).resolve().parent
 DEFAULT_BROWSER_LOG_DIR = script_dir.parent / "browser_log"
 DEFAULT_SESSION_LOGS_DIR = script_dir.parent / "session_logs"
 
-WEBSITE_GUIDELINES: dict[str, str] = {
+WEB_VOYAGER_GUIDELINES: dict[str, str] = {
     "allrecipes": "\n".join(
         [
             "- Target site: Allrecipes",
@@ -182,6 +183,62 @@ WEBSITE_GUIDELINES: dict[str, str] = {
         ]
     ),
 }
+
+
+
+NAVI_BENCH_GUIDELINES: dict[str, str] = {
+    "apartments.com": "\n".join(
+        [
+            "- Target site: https://www.apartments.com/",
+            "- Use site search/filters on the page; avoid external search.",
+            "- Use short keywords to search, the search input accepts multiple regions search, Click the dropdown suggestions to confirm one search region, ",
+            "and repeatly add multiple demand regions, until you've confirmed all required regions are added.",
+            "- Only if you've add all regions, you can continue to configure other filter conditions.",
+            "- Navi-Bench often verifies the FINAL URL; apply only the filters required by the task (avoid extra filters).",
+            "- After applying filters, call browser_get_tab_info to confirm the URL reflects the required constraints.",
+            "- If results use infinite scroll or lazy loading, scroll a bit to ensure listings are loaded before you stop.",
+            "- If the task asks for an overview, base it on visible results (do not guess counts).",
+        ]
+    ),
+    "craigslist": "\n".join(
+        [
+            "- Target site: Craigslist",
+            "- Prefer applying filters directly on the search page (price, bedrooms, posted today, rent period, etc.)",
+            "- Navi-Bench commonly verifies the URL query parameters EXACTLY; apply only the filters required by the task (avoid extra filters).",
+            "- After applying filters, call browser_get_tab_info and confirm the URL query parameters reflect the required constraints.",
+            "- If asked to extract listing details, open each listing page and capture the required fields + URL",
+        ]
+    ),
+    "opentable": "\n".join(
+        [
+            "- Target site: OpenTable",
+            "- Ensure location/restaurant, date, time, and party size are correctly set (use the UI controls).",
+            f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
+            "- For dropdown/combobox controls (party size, time, filters), prefer browser_select(ref=..., value=...) instead of repeatedly clicking; options may not have clickable refs.",
+            "- You will only see the pre-selected results under the corresponding conditions after you have selected all the options."
+            "- After changing key constraints (date/time/party size), call browser_get_tab_info and confirm the URL/state reflects the requested constraints before moving on.",
+            "- If the task is about availability, stay on the results/reservation page that shows available times (or the no-availability message).",
+            "- Scroll within results so availability/no-availability sections are visible before finishing.",
+            "- Avoid navigating away at the end; keep the final page on the relevant OpenTable results/restaurant page.",
+        ]
+    ),
+    "resy": "\n".join(
+        [
+            "- Target site: Resy",
+            "- Ensure venue/date/time/party size are correctly set (use the UI controls).",
+            f"- Today is {datetime.now().strftime('%d/%m/%Y')}",
+            "- For dropdown/combobox controls (Guests, Date, Time), prefer browser_select(ref=..., value=...) instead of repeatedly clicking, and `value` arg need to be exact match; options may not have clickable refs.",
+            "- Resy may not display the correct availability information, but you still need to check the availability of all possible options. Do not stop checking until all options are confirmed.",
+            "- When you see Form, the Click the time-slot selector first to expand all time-slot options, and then select your demand time-slot.",
+            "- Even if you have already confirmed the future situation through the calendar, in order to ensure the effectiveness of the evaluation, you still need to click every corresponding date in the calendar to prove your conclusion.",
+            "- You need to expand the calendar, see what date is currently selected, get snapshot to locate the date button, and click the next date to check, and so on, until you reach the last date to check. Every button of data is 100% clickable. You must repeat the above steps for each check, opening the corresponding page one by one.",
+            "- Finally, you need to include in your answer whether you have clicked on each date that needs to be checked. List all the dates you have viewed by **clicking**. And make sure all checks have been performed using the click action."
+        ]
+    ),
+}
+
+
+WEBSITE_GUIDELINES = WEB_VOYAGER_GUIDELINES | NAVI_BENCH_GUIDELINES
 
 
 class BrowserAgent:
@@ -484,7 +541,8 @@ class BrowserAgent:
                 "4. After key actions (navigation/click/type), call browser_get_page_snapshot to verify state.",
                 "5. Do NOT give a final answer unless a page snapshot clearly contains the requested information.",
                 "   - If the result is still loading or missing, keep using tools (snapshot/scroll/click) until it appears.",
-                "6. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
+                "7. For all tasks, you need to navigate to the url where you can prove the demand have been satisfied in the task",
+                "8. When you are fully done (success OR you have exhausted reasonable attempts), end your final message with:",
                 f"   {self._TASK_DONE_TOKEN}",
                 "",
             ]
