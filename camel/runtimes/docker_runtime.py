@@ -325,8 +325,26 @@ class DockerRuntime(BaseRuntime):
 
         return self.stop().build()
 
+    def cleanup(self, remove: Optional[bool] = None) -> None:
+        r"""Stop and optionally remove the Docker container.
+
+        Args:
+            remove (Optional[bool]): Whether to remove the container
+                after stopping. If :obj:`None`, uses the instance's
+                :attr:`remove` setting.
+        """
+        if self.container:
+            self.container.stop()
+            do_remove = self.remove if remove is None else remove
+            if do_remove:
+                logger.info("Removing container.")
+                self.container.remove()
+            self.container = None
+        else:
+            logger.warning("No container to stop.")
+
     def stop(self, remove: Optional[bool] = None) -> "DockerRuntime":
-        r"""stop the Docker container.
+        r"""Stop the Docker container and release resources.
 
         Args:
             remove (Optional[bool]): Whether to remove the container
@@ -335,16 +353,7 @@ class DockerRuntime(BaseRuntime):
         Returns:
             DockerRuntime: The DockerRuntime instance.
         """
-        if self.container:
-            self.container.stop()
-            if remove is None:
-                remove = self.remove
-            if remove:
-                logger.info("Removing container.")
-                self.container.remove()
-            self.container = None
-        else:
-            logger.warning("No container to stop.")
+        self.cleanup(remove=remove)
         return self
 
     @property

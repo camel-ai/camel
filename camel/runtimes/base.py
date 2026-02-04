@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 
@@ -39,6 +39,37 @@ class BaseRuntime(ABC):
     def reset(self, *args: Any, **kwargs: Any) -> Any:
         r"""Resets the runtime to its initial state."""
         pass
+
+    @abstractmethod
+    def cleanup(self) -> None:
+        r"""Releases resources (containers, processes, connections, etc.).
+
+        Subclasses must implement this method. Runtimes can be used as
+        context managers so that cleanup is called automatically on exit.
+        """
+        pass
+
+    def stop(self) -> "BaseRuntime":
+        r"""Stops the runtime and releases resources. Calls :meth:`cleanup`.
+
+        Returns:
+            BaseRuntime: The current runtime (for chaining).
+        """
+        self.cleanup()
+        return self
+
+    def __enter__(self) -> "BaseRuntime":
+        r"""Enter the context manager."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
+        r"""Exit the context manager; ensures cleanup is called."""
+        self.cleanup()
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of all tools in the runtime."""
