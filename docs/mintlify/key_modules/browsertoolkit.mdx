@@ -3,263 +3,567 @@ title: "Browser Toolkit"
 icon: "globe"
 ---
 
-<Note type="info" title="What is the Browser Toolkit?">
-  The <b>Browser Toolkit</b> provides a powerful set of tools to automate and interact with web browsers. It allows CAMEL agents to perform complex web-based tasks, from simple page navigation to intricate form submissions and data extraction.
+<Note type="info" title="What is the HybridBrowserToolkit?">
+  The <b>HybridBrowserToolkit</b> provides a powerful set of browser automation tools for CAMEL agents. It enables web navigation, form interaction, screenshot capture, and data extraction through a unified interface with TypeScript (WebSocket-based) and Python implementations.
 </Note>
 
 <CardGroup cols={2}>
-  <Card title="Two-Agent System" icon="users">
-    Uses a sophisticated two-agent system: a `planning_agent` to create and refine high-level plans, and a `web_agent` to observe the screen and execute low-level actions.
+  <Card title="Dual Implementation" icon="code-branch">
+    Choose between TypeScript (WebSocket-based, recommended) or pure Python (Playwright) implementations based on your needs.
   </Card>
-  <Card title="Visual Reasoning" icon="image">
-    The `web_agent` can analyze "Set-of-Marks" (SoM) screenshots, which are visual representations of the page with interactive elements highlighted, enabling it to perform complex visual reasoning.
+  <Card title="Set-of-Marks (SoM)" icon="image">
+    Capture annotated screenshots with interactive elements highlighted and numbered, enabling visual reasoning for AI agents.
   </Card>
   <Card title="Persistent Sessions" icon="cookie">
-    Supports persistent browser sessions by saving and loading cookies and user data, allowing the agent to stay logged into websites across multiple sessions.
+    Maintain browser sessions with `user_data_dir`, keeping login states and cookies across multiple runs.
   </Card>
-  <Card title="Video Analysis" icon="video">
-    Can analyze videos on the current page (e.g., YouTube) to answer questions about their content, leveraging the `VideoAnalysisToolkit`.
+  <Card title="CDP Connection" icon="link">
+    Connect to existing Chrome instances via Chrome DevTools Protocol (CDP) for debugging or reusing browser sessions.
   </Card>
 </CardGroup>
 
-## Initialization
+<Card title="Source Code" icon="github">
+  - **Toolkit**: `camel/toolkits/hybrid_browser_toolkit/`
+  - **Example**: `examples/toolkits/hybrid_browser_toolkit_example.py`
+</Card>
 
-To get started, initialize the `BrowserToolkit`. You can configure the underlying models for the planning and web agents.
+## Installation
+
+The HybridBrowserToolkit requires Node.js for the TypeScript implementation (recommended) or Playwright for Python mode.
 
 <Tabs>
-<Tab title="Default">
-```python
-from camel.toolkits import BrowserToolkit
+<Tab title="TypeScript Mode (Recommended)">
+```bash
+# Install CAMEL with browser support
+pip install "camel-ai[browser]"
 
-# Initialize with default models
-browser_toolkit = BrowserToolkit()
+# The toolkit will automatically install Node.js dependencies on first use
 ```
 </Tab>
-<Tab title="Custom Models">
+<Tab title="Python Mode">
+```bash
+# Install CAMEL with browser support
+pip install "camel-ai[browser]"
+
+# Install Playwright browsers
+playwright install chromium
+```
+</Tab>
+</Tabs>
+
+## Quick Start
+
+<Card title="Basic Usage" icon="rocket">
 ```python
-from camel.toolkits import BrowserToolkit
+import asyncio
+from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.toolkits import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Define custom models for the agents (use latest OpenAI models)
-web_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_5_MINI,
-)
-planning_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.O4_MINI,
-)
+async def main():
+    # Initialize the toolkit
+    toolkit = HybridBrowserToolkit(
+        headless=False,  # Set True for headless mode
+    )
 
-browser_toolkit = BrowserToolkit(
-    web_agent_model=web_agent_model,
-    planning_agent_model=planning_agent_model,
+    # Create a model and agent with browser tools
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+    )
+
+    agent = ChatAgent(
+        model=model,
+        tools=toolkit.get_tools(),
+    )
+
+    # Run a browser task
+    response = await agent.astep(
+        "Go to google.com and search for 'CAMEL AI framework'"
+    )
+    print(response.msgs[0].content)
+
+    # Clean up
+    await toolkit.browser_close()
+
+asyncio.run(main())
+```
+</Card>
+
+## Initialization
+
+The `HybridBrowserToolkit` supports extensive configuration options.
+
+<Tabs>
+<Tab title="Basic">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Default TypeScript mode with basic settings
+toolkit = HybridBrowserToolkit(
+    headless=True,           # Run in headless mode
+    stealth=True,            # Enable stealth mode to avoid detection
+)
+```
+</Tab>
+<Tab title="With Persistence">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Persistent session with user data directory
+toolkit = HybridBrowserToolkit(
+    headless=False,
+    user_data_dir="./browser_data",  # Saves cookies, localStorage, etc.
+    stealth=True,
+)
+```
+</Tab>
+<Tab title="Python Mode">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Use pure Python Playwright implementation
+toolkit = HybridBrowserToolkit(
+    mode="python",           # Switch to Python mode
+    headless=True,
+    user_data_dir="./browser_data",
+)
+```
+</Tab>
+<Tab title="CDP Connection">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Connect to an existing Chrome instance (TypeScript mode only)
+toolkit = HybridBrowserToolkit(
+    connect_over_cdp=True,
+    cdp_url="ws://localhost:9222/devtools/browser/...",
+    cdp_keep_current_page=True,  # Use existing page instead of creating new
 )
 ```
 </Tab>
 </Tabs>
 
-## Core Functionality: `browse_url`
+### Configuration Parameters
 
-The main entry point for the toolkit is the `browse_url` function. It takes a high-level task and a starting URL, and then autonomously navigates the web to complete the task.
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `mode` | `"typescript"` \| `"python"` | `"typescript"` | Implementation mode |
+| `headless` | `bool` | `True` | Run browser without visible window |
+| `user_data_dir` | `str` | `None` | Directory for persistent browser data |
+| `stealth` | `bool` | `False` | Enable stealth mode to avoid bot detection |
+| `cache_dir` | `str` | `None` | Directory for caching |
+| `enabled_tools` | `List[str]` | `DEFAULT_TOOLS` | List of enabled tool methods |
+| `browser_log_to_file` | `bool` | `False` | Log browser actions to file |
+| `log_dir` | `str` | `"browser_log"` | Directory for log files |
+| `session_id` | `str` | `None` | Session identifier for logging |
+| `viewport_limit` | `bool` | `False` | Filter snapshot to visible viewport only |
+| `full_visual_mode` | `bool` | `False` | Return minimal snapshots, rely on screenshots |
 
-<Card title="Example: Researching a Topic" icon="magnifying-glass">
+### Timeout Configuration
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `default_timeout` | `int` | `None` | Default timeout in milliseconds |
+| `navigation_timeout` | `int` | `None` | Page navigation timeout |
+| `network_idle_timeout` | `int` | `None` | Wait for network idle |
+| `screenshot_timeout` | `int` | `None` | Screenshot capture timeout |
+| `page_stability_timeout` | `int` | `None` | Wait for page stability |
+
+## Available Tools
+
+### Default Tools
+
+The default tool set provides essential browser functionality:
+
 ```python
-task_prompt = "Find the main contributions of the paper 'Sparks of AGI' by Microsoft Research."
-start_url = "https://www.google.com"
+DEFAULT_TOOLS = [
+    "browser_open",
+    "browser_close",
+    "browser_visit_page",
+    "browser_back",
+    "browser_forward",
+    "browser_click",
+    "browser_type",
+    "browser_switch_tab",
+]
+```
 
-# The agent will navigate from Google, find the paper, and extract the information.
-result = browser_toolkit.browse_url(
-    task_prompt=task_prompt,
-    start_url=start_url,
+### All Available Tools
+
+Use `enabled_tools=HybridBrowserToolkit.ALL_TOOLS` for full functionality:
+
+```python
+ALL_TOOLS = [
+    # Navigation
+    "browser_open",          # Start browser session
+    "browser_close",         # Close browser
+    "browser_visit_page",    # Navigate to URL
+    "browser_back",          # Go back in history
+    "browser_forward",       # Go forward in history
+
+    # Page Observation
+    "browser_get_page_snapshot",   # Get page structure as text
+    "browser_get_som_screenshot",  # Screenshot with element annotations
+    "browser_get_screenshot",      # Plain screenshot
+
+    # Interaction
+    "browser_click",         # Click on element (by ref or coordinates)
+    "browser_type",          # Type text into element
+    "browser_select",        # Select dropdown option
+    "browser_scroll",        # Scroll the page
+    "browser_enter",         # Press Enter key
+    "browser_press_key",     # Press any key combination
+    "browser_mouse_control", # Move mouse to position
+    "browser_mouse_drag",    # Drag from one point to another
+
+    # Tab Management
+    "browser_switch_tab",    # Switch to different tab
+    "browser_close_tab",     # Close a tab
+    "browser_get_tab_info",  # Get info about all tabs
+
+    # Developer Tools
+    "browser_console_view",  # View console logs
+    "browser_console_exec",  # Execute JavaScript
+
+    # Special
+    "browser_wait_user",     # Wait for user intervention
+    "browser_sheet_input",   # Input data into spreadsheets
+    "browser_sheet_read",    # Read spreadsheet data
+]
+```
+
+### Custom Tool Selection
+
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Select only the tools you need
+toolkit = HybridBrowserToolkit(
+    enabled_tools=[
+        "browser_open",
+        "browser_visit_page",
+        "browser_click",
+        "browser_type",
+        "browser_get_som_screenshot",
+        "browser_close",
+    ]
 )
+```
 
-print(result)
+## Core Tool Methods
+
+### Navigation
+
+<Card title="browser_visit_page" icon="compass">
+Navigate to a URL and get the page snapshot.
+
+```python
+result = await toolkit.browser_visit_page("https://example.com")
+# Returns: {"snapshot": "...", "url": "...", "title": "..."}
 ```
 </Card>
 
-## How It Works: The Two-Agent System
+<Card title="browser_back / browser_forward" icon="arrows-left-right">
+Navigate through browser history.
 
-The `browse_url` function orchestrates a loop between the `planning_agent` and the `web_agent`.
+```python
+await toolkit.browser_back()
+await toolkit.browser_forward()
+```
+</Card>
 
-<Steps>
-<Step title="Planning">
-The `planning_agent` creates a high-level plan to accomplish the task.
-</Step>
-<Step title="Observation">
-The `web_agent` observes the current page by taking a "Set-of-Marks" (SoM) screenshot.
-</Step>
-<Step title="Action">
-Based on the observation and the plan, the `web_agent` decides on the next action to take (e.g., click, type, scroll).
-</Step>
-<Step title="Execution">
-The toolkit executes the action and the loop repeats.
-</Step>
-<Step title="Replanning">
-If the `web_agent` gets stuck, the `planning_agent` can re-evaluate the situation and create a new plan.
-</Step>
-</Steps>
+### Interaction
+
+<Card title="browser_click" icon="mouse-pointer">
+Click on an element by ref ID (from SoM screenshot) or pixel coordinates.
+
+```python
+# Click by ref (from Set-of-Marks screenshot)
+await toolkit.browser_click(ref="e15")
+
+# Click by pixel coordinates (in full_visual_mode)
+await toolkit.browser_click(x=350, y=200)
+```
+</Card>
+
+<Card title="browser_type" icon="keyboard">
+Type text into an input field.
+
+```python
+# Type into element by ref
+await toolkit.browser_type(ref="e8", text="Hello World")
+
+# Type by coordinates (in full_visual_mode)
+await toolkit.browser_type(x=350, y=200, text="Hello World")
+```
+</Card>
+
+<Card title="browser_scroll" icon="arrows-up-down">
+Scroll the page in any direction.
+
+```python
+await toolkit.browser_scroll(direction="down", amount=500)
+# direction: "up", "down", "left", "right"
+```
+</Card>
+
+### Page Observation
+
+<Card title="browser_get_som_screenshot" icon="camera">
+Capture a screenshot with Set-of-Marks annotations. Each interactive element is labeled with a ref ID (e.g., `e1`, `e2`).
+
+```python
+result = await toolkit.browser_get_som_screenshot()
+# Returns screenshot image with numbered element overlays
+```
+</Card>
+
+<Card title="browser_get_page_snapshot" icon="code">
+Get the page structure as text, showing all interactive elements with their ref IDs.
+
+```python
+snapshot = await toolkit.browser_get_page_snapshot()
+# Returns text representation of page elements
+```
+</Card>
+
+### Tab Management
+
+<Card title="Tab Operations" icon="window-restore">
+```python
+# Get info about all tabs
+tabs = await toolkit.browser_get_tab_info()
+
+# Switch to a specific tab
+await toolkit.browser_switch_tab(tab_id="tab_123")
+
+# Close a tab
+await toolkit.browser_close_tab(tab_id="tab_123")
+```
+</Card>
+
+### Console Operations
+
+<Card title="JavaScript Execution" icon="terminal">
+```python
+# View console logs
+logs = await toolkit.browser_console_view()
+
+# Execute JavaScript
+result = await toolkit.browser_console_exec("document.title")
+```
+</Card>
 
 ## Advanced Usage
 
-### Persistent Sessions (Cookies vs User Data Directory)
-You can maintain login sessions across runs by providing either a `cookie_json_path` (storage state) or a `user_data_dir` (full browser profile).
+### Full Visual Mode
 
-**How to choose**
-- `cookie_json_path`: lightweight and headless-friendly. Loads a saved storage state (cookies/localStorage) into a fresh context. Ideal for CI or short-lived sessions.
-- `user_data_dir`: persistent browser profile folder. Keeps cookies, localStorage, cache, and site settings across runs. Ideal when you need a full profile or repeated interactive sessions.
+Full Visual Mode is designed for vision-capable models that can reason directly from screenshots using pixel coordinates. When enabled, several key behaviors change:
 
-**Important note**: `cookie_json_path` is *loaded* by `BrowserToolkit`. To *create* it, you should first save a storage state (see below).
+<AccordionGroup>
+<Accordion title="Automatic Tool Signature Switching">
+Tools that normally use `ref` IDs automatically switch to pixel-based parameters. The docstrings are also updated accordingly - **you will only see the pixel-based signatures**, not both versions simultaneously.
 
-<Tabs>
-<Tab title="cookie_json_path">
-```python
-# The toolkit will load storage state (cookies/localStorage) from this file.
-# Useful for headless or CI runs where you don't want a full profile.
-cookie_path = "./my_browser_session.json"
+| Tool | Standard Mode | Full Visual Mode |
+|------|--------------|------------------|
+| `browser_click` | `click(ref="e15")` | `click(x=350, y=200)` |
+| `browser_type` | `type(ref="e8", text="...")` | `type(x=350, y=200, text="...")` |
+| `browser_mouse_drag` | `drag(from_ref="e1", to_ref="e2")` | `drag(from_x=100, from_y=100, to_x=300, to_y=200)` |
 
-# First run: log in (manual/assisted), then save the storage state
-# browser_toolkit = BrowserToolkit(headless=False, cookie_json_path=cookie_path)
-# browser_toolkit.browse_url(task_prompt="Log in to my account...", start_url="...")
+Tools that require `ref` with no pixel alternative (`browser_select`, `browser_get_page_snapshot`, `browser_get_som_screenshot`) are automatically excluded from the tool list.
+</Accordion>
 
-# Subsequent runs: the agent will be logged in automatically
-browser_toolkit_loggedin = BrowserToolkit(cookie_json_path=cookie_path)
+<Accordion title="Screenshot with Pixel Rulers">
+`browser_get_screenshot` returns screenshots with pixel rulers added to the top and left edges. This helps vision models accurately identify pixel coordinates for click and type operations.
+
+The rulers show:
+- Major tick marks every 100 pixels with numeric labels
+- Medium tick marks every 50 and 10 pixels
+- Minor tick marks every 5 pixels
+</Accordion>
+
+<Accordion title="Ineffective Click Detection">
+When a click does not change the page content (snapshot remains the same), the toolkit detects this as a potentially ineffective click and returns helpful feedback including the **5 nearest interactive elements** with their clickable coordinates.
+
+Example response:
 ```
-</Tab>
-<Tab title="user_data_dir">
+Click at (350, 200) may be ineffective - page content unchanged.
+Nearest interactive elements:
+  1. [button] "Submit" - click at (380, 195), area: (340, 180) to (420, 210)
+  2. [link] "Learn more" - click at (290, 240), area: (250, 230) to (330, 250)
+  3. [textbox] "Email" - click at (400, 150), area: (300, 140) to (500, 160)
+  ...
+```
+
+This helps the model correct its click position without needing another screenshot.
+</Accordion>
+</AccordionGroup>
+
 ```python
-# The toolkit will reuse a full browser profile directory.
-# This persists cookies, localStorage, cache, and site settings.
-browser_toolkit = BrowserToolkit(
+toolkit = HybridBrowserToolkit(
+    full_visual_mode=True,
     headless=False,
-    user_data_dir="./my_browser_profile",
 )
-```
-</Tab>
-</Tabs>
 
-<Card title="Create a cookie_json_path (first-time login)" icon="key">
-```python
-from camel.utils import browser_toolkit_save_auth_cookie
+# Get screenshot with pixel rulers for coordinate identification
+screenshot = await toolkit.browser_get_screenshot()
 
-# Opens a browser window so you can log in manually,
-# then saves storage state to a JSON file.
-browser_toolkit_save_auth_cookie(
-    cookie_json_path="cookie.json",
-    url="https://example.com/login",
-    wait_time=60,
-)
+# Click using pixel coordinates (ref parameter not available in this mode)
+await toolkit.browser_click(x=350, y=200)
+
+# Type at specific coordinates
+await toolkit.browser_type(x=400, y=150, text="user@example.com")
 ```
+
+### Diff Snapshot for Dropdowns and Autocomplete
+
+When interacting with **combobox** (dropdown) or **textbox** (input/textarea) elements, the toolkit intelligently returns a **diff snapshot** instead of the full page snapshot. This optimization is particularly useful for:
+
+- Dropdown menus that expand with options
+- Autocomplete/typeahead suggestions
+- Search result suggestions
+
+<Card title="How Diff Snapshot Works" icon="code-compare">
+**Trigger elements:**
+- `combobox` - dropdown select elements
+- `textbox`, `input`, `textarea` - text input fields
+
+**What's returned:**
+- Only **new** `option` and `menuitem` elements that appeared after the interaction
+- For combobox: includes the combobox's updated state (since its ref may change after expansion)
+
+**Example diff snapshot after clicking a dropdown:**
+```
+- combobox "Country" [ref=e12] [expanded]
+- option "United States" [ref=e45]
+- option "Canada" [ref=e46]
+- option "United Kingdom" [ref=e47]
+- option "Germany" [ref=e48]
+```
+
+This significantly reduces context size compared to returning the entire page snapshot, helping the model focus on the relevant options.
 </Card>
 
-### Manual Control with `BaseBrowser`
-For precise, deterministic steps, you can access the underlying `BaseBrowser` via `browser_toolkit.browser`. This is useful for debugging, single-step scraping, or file downloads.
+### Viewport Limiting
 
-**What this gives you**
-- Visual debugging with SoM screenshots (interactive elements highlighted).
-- Element-level actions by id (`click_id`, `fill_input_id`, `hover_id`).
-- Direct content extraction (`get_webpage_content`) in Markdown form.
-  
-**Tip**: Element ids are generated per page state. After navigation or heavy
-DOM changes, re-run `get_som_screenshot` or `get_interactive_elements` to
-get fresh ids.
-
-<Card title="Element-Level Actions + Markdown Extraction" icon="mouse-pointer">
-```python
-from camel.toolkits import BrowserToolkit
-
-browser_toolkit = BrowserToolkit(headless=False, cache_dir="./browser_cache")
-browser = browser_toolkit.browser
-
-browser.init()
-browser.visit_page("https://example.com")
-
-# Visual debugging helpers
-som_img, som_path = browser.get_som_screenshot(save_image=True)
-elements = browser.get_interactive_elements()
-print(list(elements.keys())[:5])  # element ids
-
-# Element-level actions
-browser.click_id("12")
-browser.fill_input_id("34", "search terms")
-browser.find_text_on_page("pricing")
-
-# Extract page content as Markdown
-markdown = browser.get_webpage_content()
-print(markdown[:500])
-
-browser.close()
-```
-</Card>
-
-### Full-Page Capture and Downloads
-For long pages or downloadable assets, use full-page capture and download helpers.
-
-**Notes**
-- Screenshots are saved under `cache_dir`.
-- `download_file_id` saves to `cache_dir` and returns the local path.
-- If a page is highly dynamic, adjust `scroll_ratio` or add waits.
-
-<Card title="Capture + Download" icon="camera">
-```python
-browser_toolkit = BrowserToolkit(headless=True, cache_dir="./browser_cache")
-browser = browser_toolkit.browser
-
-browser.init()
-browser.visit_page("https://example.com/reports")
-
-# Capture full-page screenshots
-paths = browser.capture_full_page_screenshots(scroll_ratio=0.7)
-print(paths)
-
-# Download a file by element id (from SoM / interactive elements)
-result = browser.download_file_id("78")
-print(result)
-
-browser.close()
-```
-</Card>
-
-### Control Budget and Language
-Tune exploration limits and output language when tasks are complex or multilingual.
-
-**Tips**
-- Increase `round_limit` for multi-step forms or deep navigation.
-- Use `output_language` to force the final response language.
+Reduce context size by only including elements visible in the current viewport:
 
 ```python
-browser_toolkit = BrowserToolkit(output_language="en", headless=True)
-result = browser_toolkit.browse_url(
-    task_prompt="Summarize the main conclusions on the page",
-    start_url="https://example.com",
-    round_limit=20,
+toolkit = HybridBrowserToolkit(
+    viewport_limit=True,  # Only show visible elements in snapshots
 )
 ```
 
-### Video Analysis
+### Action Logging
 
-The toolkit can answer questions about videos on a webpage.
+Enable detailed logging for debugging or replay:
 
-**Note**: Video analysis may be slow, and the tool will ask for confirmation
-before running.
-
-<Card title="Asking a Question About a YouTube Video" icon="video">
 ```python
-# First, navigate to the video
-browser_toolkit.browse_url(task_prompt="Navigate to a specific YouTube video", start_url="...")
+toolkit = HybridBrowserToolkit(
+    browser_log_to_file=True,
+    log_dir="./my_browser_logs",
+    session_id="task_001",
+)
+```
 
-# Then, ask a question about it
-# Note: This is an example of how you might use the underlying BaseBrowser.
-question = "What is the main topic of this video?"
-answer = browser_toolkit.browser.ask_question_about_video(question=question)
+### Spreadsheet Operations
 
-print(answer)
+The toolkit includes specialized tools for interacting with web-based spreadsheets (Google Sheets, Excel Online):
+
+```python
+# Input data into cells
+await toolkit.browser_sheet_input(
+    data=[["A1", "Hello"], ["B1", "World"]],
+    start_cell="A1",
+)
+
+# Read spreadsheet data
+data = await toolkit.browser_sheet_read()
+```
+
+## Integration with ChatAgent
+
+<Card title="Complete Example" icon="robot">
+```python
+import asyncio
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import HybridBrowserToolkit
+from camel.types import ModelPlatformType, ModelType
+
+async def search_and_extract():
+    # Initialize toolkit with logging
+    toolkit = HybridBrowserToolkit(
+        headless=False,
+        user_data_dir="./browser_data",
+        stealth=True,
+        viewport_limit=True,
+        browser_log_to_file=True,
+    )
+
+    # Create model
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+        model_config_dict={"temperature": 0.0},
+    )
+
+    # Create agent with browser tools
+    agent = ChatAgent(
+        model=model,
+        tools=toolkit.get_tools(),
+        max_iteration=15,
+    )
+
+    task = """
+    1. Go to google.com
+    2. Search for "CAMEL AI multi-agent framework"
+    3. Click on the official GitHub repository
+    4. Find and report the number of stars
+    """
+
+    try:
+        response = await agent.astep(task)
+        print(response.msgs[0].content)
+    finally:
+        await toolkit.browser_close()
+
+asyncio.run(search_and_extract())
 ```
 </Card>
 
-## References
-- `camel/toolkits/browser_toolkit.py`
-- `examples/toolkits/browser_toolkit.py`
-- `examples/toolkits/browser_toolkit_with_cookie.py`
-- `examples/toolkits/browser_toolkit_with_user_data_dir.py`
-- `camel/utils/commons.py`
+## Mode Comparison
+
+| Feature | TypeScript Mode | Python Mode |
+|---------|-----------------|-------------|
+| **Performance** | Faster (WebSocket) | Standard |
+| **CDP Connection** | Supported | Not supported |
+| **Viewport Limit** | Supported | Not supported |
+| **Full Visual Mode** | Supported | Supported |
+| **Dependencies** | Node.js (auto-installed) | Playwright |
+| **Recommended For** | Production use | Simple tasks |
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Browser fails to start">
+Ensure Node.js is installed for TypeScript mode, or run `playwright install chromium` for Python mode.
+</Accordion>
+
+<Accordion title="Elements not found">
+Use `browser_get_som_screenshot` to see the current page state. Elements may be loading or require scrolling into view.
+</Accordion>
+
+<Accordion title="CDP connection fails">
+Ensure Chrome is started with remote debugging enabled:
+```bash
+google-chrome --remote-debugging-port=9222
+```
+</Accordion>
+
+<Accordion title="Stealth mode not working">
+Some websites have advanced bot detection. Try using a persistent `user_data_dir` with realistic browsing history.
+</Accordion>
+</AccordionGroup>
