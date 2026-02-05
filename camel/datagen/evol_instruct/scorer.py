@@ -97,6 +97,8 @@ Respond with a JSON object like:
             "Try to solve the new problem. Then provide scores in JSON format."
         )
         response = self.agent.step(query, response_format=self.MathScoreSchema)
+        if response.msg is None:
+            return {"diversity": 0, "difficulty": 0, "solvability": 0}
         score_data = json.loads(response.msg.content)
         return score_data
 
@@ -161,5 +163,7 @@ class GeneralScorer(BaseScorer):
         response = self.agent.step(
             query, response_format=self.GeneralScoreSchema
         )
+        if response.msg is None:
+            return {"diversity": 0, "complexity": 0, "validity": 0}
         score_data = json.loads(response.msg.content)
         return score_data

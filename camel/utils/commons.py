@@ -28,6 +28,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -40,6 +41,9 @@ from typing import (
     TypeVar,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.responses.agent_responses import ChatAgentResponse
 from urllib.parse import urlparse
 
 import pydantic
@@ -51,6 +55,7 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
+T = TypeVar('T', bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
@@ -702,7 +707,7 @@ def retry_on_error(
                 except Exception as e:
                     last_exception = e
                     if attempt == max_retries:
-                        logger.error(
+                        logger.warning(
                             f"Failed after {max_retries} retries: {e!s}"
                         )
                         raise
@@ -957,6 +962,58 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def safe_extract_parsed(
+    response: "ChatAgentResponse",
+    schema: Type[T],
+) -> Optional[T]:
+    r"""Safely extract a parsed structured output from a ChatAgentResponse.
+
+    Handles the common cases where ``response.msg`` is ``None`` (empty or
+    multi-message response) or ``msg.parsed`` is ``None`` (model failed to
+    produce valid structured output). When the parsed value is a dict, it
+    attempts to construct the schema from it.
+
+    Args:
+        response (ChatAgentResponse): The agent response to extract from.
+        schema (Type[T]): The expected Pydantic model class.
+
+    Returns:
+        Optional[T]: The parsed and validated result, or ``None`` if
+            extraction fails for any reason.
+    """
+    msg = response.msg
+    if msg is None:
+        logger.error(
+            f"safe_extract_parsed: response.msg is None "
+            f"(msgs count: {len(response.msgs)}), "
+            f"cannot extract {schema.__name__}"
+        )
+        return None
+    parsed = msg.parsed
+    if isinstance(parsed, schema):
+        return parsed
+    if isinstance(parsed, dict):
+        try:
+            return schema(**parsed)
+        except Exception as e:
+            logger.error(
+                f"safe_extract_parsed: failed to construct "
+                f"{schema.__name__} from dict: {e}"
+            )
+            return None
+    if parsed is None:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is None, "
+            f"model did not produce valid {schema.__name__}"
+        )
+    else:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is "
+            f"{type(parsed).__name__}, expected {schema.__name__}"
+        )
+    return None
 
 
 def with_timeout(timeout=None):
