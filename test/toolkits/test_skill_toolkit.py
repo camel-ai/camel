@@ -123,3 +123,18 @@ def test_caching(skill_toolkit):
     cached_skills = skill_toolkit._skills_cache
     skill_toolkit.list_skills()
     assert skill_toolkit._skills_cache is cached_skills
+
+
+def test_clear_cache(skill_toolkit):
+    r"""Test that clear_cache resets the skills cache."""
+    # Populate the cache
+    skill_toolkit.list_skills()
+    assert skill_toolkit._skills_cache is not None
+
+    # Clear the cache
+    skill_toolkit.clear_cache()
+    assert skill_toolkit._skills_cache is None
+
+    # Cache should be repopulated on next access
+    skill_toolkit.list_skills()
+    assert skill_toolkit._skills_cache is not None
