@@ -4760,9 +4760,7 @@ class ChatAgent(BaseAgent):
             return
             yield  # Make this a generator
 
-        # Record the assistant message with ALL tool calls BEFORE executing
-        # This ensures proper message sequence: [assistant with all tool_calls]
-        # -> [tool result 1] -> [tool result 2] -> ...
+        # Record the assistant message with ALL tool calls
         self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
         # Execute tools using ThreadPoolExecutor for proper timeout handling
@@ -5663,9 +5661,7 @@ class ChatAgent(BaseAgent):
         proper content accumulation."""
         import asyncio
 
-        # Record the assistant message with ALL tool calls BEFORE executing
-        # This ensures proper message sequence: [assistant with all
-        # tool_calls] -> [tool result 1] -> [tool result 2] -> ...
+        # Record the assistant message with ALL tool calls
         # Note: _record_assistant_tool_calls_message has early return if empty
         self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
