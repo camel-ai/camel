@@ -12,3 +12,8 @@ Task: Search for 1-bedroom apartments in New York in Upper East Side or Upper We
 2026-02-05 22:56:01.138 | INFO     | navi_bench.apartments.apartments_url_match:update:67 - ApartmentsUrlMatch.update did not find match: https://www.apartments.com/new-york-ny/?n=upper-east-side_new-york_ny
 2026-02-05 22:56:10.014 | INFO     | navi_bench.apartments.apartments_url_match:update:67 - ApartmentsUrlMatch.update did not find match: https://www.apartments.com/new-york-ny/?n=upper-east-side_new-york_ny
 2026-02-05 22:56:10,056 - camel.camel.agents.chat_agent - WARNING - Token count (213509) exceed threshold (200220). Triggering summarization.
+
+2. Some policy error
+    "reasoning": "Attempt crashed: BadRequestError: Error code: 400 - {'error': {'message': \"The response was filtered due to the prompt triggering Azure OpenAI's content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766\", 'type': None, 'param': 'prompt', 'code': 'content_filter', 'status': 400, 'innererror': {'code': 'ResponsibleAIPolicyViolation', 'content_filter_result': {'hate': {'filtered': False, 'severity': 'safe'}, 'jailbreak': {'filtered': False, 'detected': False}, 'self_harm': {'filtered': True, 'severity': 'medium'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': False, 'severity': 'safe'}}}}}",
+
+3. Problem to get the correct url match for evaluation.
