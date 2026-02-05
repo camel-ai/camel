@@ -1,0 +1,209 @@
+<a id="camel.toolkits.skill_toolkit"></a>
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit"></a>
+
+## SkillToolkit
+
+```python
+class SkillToolkit(BaseToolkit):
+```
+
+Toolkit for loading SKILL.md content.
+
+Skills are discovered from filesystem roots and loaded on-demand.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._build_description"></a>
+
+### _build_description
+
+```python
+def _build_description(self):
+```
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._get_skills"></a>
+
+### _get_skills
+
+```python
+def _get_skills(self):
+```
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.clear_cache"></a>
+
+### clear_cache
+
+```python
+def clear_cache(self):
+```
+
+Clear the cached skills to force rescanning on next access.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._scan_skills"></a>
+
+### _scan_skills
+
+```python
+def _scan_skills(self):
+```
+
+**Returns:**
+
+  Dict[str, Dict[str, str]]: Mapping of skill name to metadata.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._skill_roots"></a>
+
+### _skill_roots
+
+```python
+def _skill_roots(self):
+```
+
+**Returns:**
+
+  List[Tuple[str, Path]]: List of (scope, path) tuples.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._is_hidden_path"></a>
+
+### _is_hidden_path
+
+```python
+def _is_hidden_path(self, path: Path, root: Path):
+```
+
+Check if a path contains hidden directories (starting with dot).
+
+**Parameters:**
+
+- **path** (Path): The path to check.
+- **root** (Path): The root directory to compute relative path from.
+
+**Returns:**
+
+  bool: True if the path contains hidden directories.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._parse_skill"></a>
+
+### _parse_skill
+
+```python
+def _parse_skill(self, path: Path):
+```
+
+Parse a SKILL.md file and extract metadata.
+
+**Parameters:**
+
+- **path** (Path): Path to the SKILL.md file.
+
+**Returns:**
+
+  Optional[Dict[str, str]]: Parsed skill data with name,
+description, and body. Returns None if parsing fails.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._split_frontmatter"></a>
+
+### _split_frontmatter
+
+```python
+def _split_frontmatter(self, contents: str):
+```
+
+Split YAML frontmatter from the body of a SKILL.md file.
+
+**Parameters:**
+
+- **contents** (str): The full contents of the file.
+
+**Returns:**
+
+  Tuple[Optional[str], str]: A tuple of (frontmatter, body).
+frontmatter is None if no valid frontmatter delimiter is found.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.list_skills"></a>
+
+### list_skills
+
+```python
+def list_skills(self):
+```
+
+**Returns:**
+
+  List[Dict[str, str]]: Skill metadata entries including name,
+description, path, and scope.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.list_skill_files"></a>
+
+### list_skill_files
+
+```python
+def list_skill_files(self, name: str):
+```
+
+List files and directories in a skill folder.
+
+**Parameters:**
+
+- **name** (str): The skill identifier.
+
+**Returns:**
+
+  str: Formatted list of files/directories, or error message.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._load_single_skill"></a>
+
+### _load_single_skill
+
+```python
+def _load_single_skill(self, name: str):
+```
+
+Load a single skill by name.
+
+**Parameters:**
+
+- **name** (str): The skill identifier.
+
+**Returns:**
+
+  str: The skill content, or error message if not found.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.get_skill"></a>
+
+### get_skill
+
+```python
+def get_skill(self, name: Union[str, List[str]]):
+```
+
+Load one or more skills by name.
+
+**Parameters:**
+
+- **name** (Union[str, List[str]]): A single skill name or list of names.
+
+**Returns:**
+
+  str: The skill content(s), or error message if not found.
+
+<a id="camel.toolkits.skill_toolkit.SkillToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Return the skill tools with injected available skills.
