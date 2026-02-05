@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
+
+import yaml
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -45,16 +45,21 @@ class SkillToolkit(BaseToolkit):
 
     def _build_description(self) -> str:
         skills = self._get_skills()
-        lines = [
+        if not skills:
+            return (
+                "Load a skill to get detailed instructions for a specific "
+                "task. No skills are currently available."
+            )
+        # Build skill summary lines
+        summary_lines = [
             "Load a skill to get detailed instructions for a specific task.",
             "Skills provide specialized knowledge and step-by-step guidance.",
             "Use this when a task matches an available skill's description.",
             "Only the skills listed here are available:",
             "<available_skills>",
         ]
-        available = ""
         for skill in skills.values():
-            lines.extend(
+            summary_lines.extend(
                 [
                     "  <skill>",
                     f"    <name>{skill['name']}</name>",
@@ -63,15 +68,13 @@ class SkillToolkit(BaseToolkit):
                     "  </skill>",
                 ]
             )
+        summary_lines.append("</available_skills>")
+        # Build markdown list for display
+        available = ""
+        for skill in skills.values():
             available += (
                 f"- {skill['name']}: {skill['description']} "
                 f"({skill['path']})\n"
-            )
-        lines.append("</available_skills>")
-        if not skills:
-            return (
-                "Load a skill to get detailed instructions for a specific "
-                "task. No skills are currently available."
             )
         return (
             "## Skills\n"
@@ -98,8 +101,8 @@ class SkillToolkit(BaseToolkit):
             "  2) If `SKILL.md` points to extra folders such as `references/` "
             ", load only the specific files needed for the request; don't "
             "bulk-load everything.\n"
-            "  3) If `scripts/` exist, prefer running or patching them "
-            "instead of rewriting large code blocks.\n"
+            "  3) If `scripts/` exist, use available execution tools "
+            "(terminal, code runner) to run them instead of rewriting code.\n"
             "  4) If `assets/` or templates exist, reuse them instead of "
             "recreating from scratch.\n"
             "- Coordination and sequencing:\n"
@@ -117,14 +120,28 @@ class SkillToolkit(BaseToolkit):
             "- Safety and fallback: If a skill can't be applied cleanly "
             "(missing files, unclear instructions), state the issue, pick the "
             "next-best approach, and continue.\n"
-            "\n" + " ".join(lines)
+            "\n" + "\n".join(summary_lines)
         )
 
     def _get_skills(self) -> Dict[str, Dict[str, str]]:
-        self._skills_cache = self._scan_skills()
+        if self._skills_cache is None:
+            self._skills_cache = self._scan_skills()
         return self._skills_cache
 
+    def clear_cache(self) -> None:
+        r"""Clear the cached skills to force rescanning on next access."""
+        self._skills_cache = None
+
     def _scan_skills(self) -> Dict[str, Dict[str, str]]:
+        r"""Scan all skill roots and collect skill metadata.
+
+        Skills are discovered from roots in priority order:
+        repo > user > system. If multiple skills have the same name,
+        the first one found takes priority.
+
+        Returns:
+            Dict[str, Dict[str, str]]: Mapping of skill name to metadata.
+        """
         skills: Dict[str, Dict[str, str]] = {}
         for scope, root in self._skill_roots():
             if not root.is_dir():
@@ -132,49 +149,56 @@ class SkillToolkit(BaseToolkit):
             for path in root.rglob("SKILL.md"):
                 if self._is_hidden_path(path, root):
                     continue
-                info = self._parse_skill(path)
-                if not info:
+                skill = self._parse_skill(path)
+                if not skill:
                     continue
-                name = info["name"]
+                name = skill["name"]
+                # First skill with this name wins (earlier scope has priority)
                 if name in skills:
                     continue
                 skills[name] = {
                     "name": name,
-                    "description": info["description"],
+                    "description": skill["description"],
                     "path": str(path),
                     "scope": scope,
                 }
         return skills
 
     def _skill_roots(self) -> List[Tuple[str, Path]]:
-        repo_root = self._find_repo_root()
-        codex_home = os.environ.get("CODEX_HOME")
-        codex_home_path = Path(codex_home).expanduser() if codex_home else None
+        r"""Return skill root directories with their scope.
+
+        Scopes are checked in order: repo -> user -> system.
+        Earlier scopes take priority when skills have the same name.
+
+        Returns:
+            List[Tuple[str, Path]]: List of (scope, path) tuples.
+        """
+        # Skills are discovered in priority order:
+        # 1. repo scope: project-specific skills in working directory
+        # 2. user scope: user-level skills in home directory
+        # 3. system scope: system-wide skills in /etc
         roots: List[Tuple[str, Path]] = [
-            ("repo", repo_root / ".camel" / "skills"),
-            ("repo", repo_root / ".codex" / "skills"),
-            ("repo", repo_root / ".agents" / "skills"),
+            # Repo scope - project-specific skills
+            ("repo", self.working_directory / ".camel" / "skills"),
+            ("repo", self.working_directory / ".agents" / "skills"),
+            # User scope - user-level skills
             ("user", Path.home() / ".camel" / "skills"),
-            ("user", Path.home() / ".config" / "agents" / "skills"),
-            ("user", Path.home() / ".codex" / "skills"),
+            ("user", Path.home() / ".config" / "camel" / "skills"),
+            # System scope - system-wide skills
             ("system", Path("/etc/camel/skills")),
-            ("system", Path("/etc/codex/skills")),
         ]
-        if codex_home_path:
-            roots.append(("user", codex_home_path / "skills"))
-            roots.append(("system", codex_home_path / "skills" / ".system"))
         return roots
 
-    def _find_repo_root(self) -> Path:
-        for parent in (
-            self.working_directory,
-            *self.working_directory.parents,
-        ):
-            if (parent / ".git").exists():
-                return parent
-        return self.working_directory
-
     def _is_hidden_path(self, path: Path, root: Path) -> bool:
+        r"""Check if a path contains hidden directories (starting with dot).
+
+        Args:
+            path (Path): The path to check.
+            root (Path): The root directory to compute relative path from.
+
+        Returns:
+            bool: True if the path contains hidden directories.
+        """
         try:
             rel = path.relative_to(root)
         except ValueError:
@@ -182,12 +206,15 @@ class SkillToolkit(BaseToolkit):
         return any(part.startswith(".") for part in rel.parts)
 
     def _parse_skill(self, path: Path) -> Optional[Dict[str, str]]:
-        try:
-            import yaml  # type: ignore[import-not-found]
-        except ImportError:
-            logger.warning("PyYAML is not available; skipping skills")
-            return None
+        r"""Parse a SKILL.md file and extract metadata.
 
+        Args:
+            path (Path): Path to the SKILL.md file.
+
+        Returns:
+            Optional[Dict[str, str]]: Parsed skill data with name,
+                description, and body. Returns None if parsing fails.
+        """
         try:
             contents = path.read_text(encoding="utf-8")
         except OSError as exc:
@@ -222,6 +249,15 @@ class SkillToolkit(BaseToolkit):
         }
 
     def _split_frontmatter(self, contents: str) -> Tuple[Optional[str], str]:
+        r"""Split YAML frontmatter from the body of a SKILL.md file.
+
+        Args:
+            contents (str): The full contents of the file.
+
+        Returns:
+            Tuple[Optional[str], str]: A tuple of (frontmatter, body).
+                frontmatter is None if no valid frontmatter delimiter is found.
+        """
         lines = contents.splitlines()
         if not lines or lines[0].strip() != "---":
             return None, contents
@@ -236,7 +272,8 @@ class SkillToolkit(BaseToolkit):
         r"""List available skills without loading their full content.
 
         Returns:
-            List[Dict[str, str]]: Skill metadata entries.
+            List[Dict[str, str]]: Skill metadata entries including name,
+                description, path, and scope.
         """
         skills = self._get_skills()
         return [
@@ -249,40 +286,98 @@ class SkillToolkit(BaseToolkit):
             for skill in skills.values()
         ]
 
-    def get_skill(self, name: str) -> str:
-        r"""Load a skill by name.
+    def list_skill_files(self, name: str) -> str:
+        r"""List files and directories in a skill folder.
 
         Args:
-            name (str): The skill identifier from available_skills.
+            name (str): The skill identifier.
 
         Returns:
-            str: The skill content along with its base directory.
+            str: Formatted list of files/directories, or error message.
         """
         skills = self._get_skills()
         skill = skills.get(name)
         if not skill:
             available = ", ".join(sorted(skills.keys())) or "none"
-            raise ValueError(
-                f"Skill \"{name}\" not found. Available skills: {available}"
-            )
+            return f"Error: Skill \"{name}\" not found. Available: {available}"
+
+        skill_dir = Path(skill["path"]).parent
+        lines = [f"Files in {name}:"]
+        for item in sorted(skill_dir.iterdir()):
+            if item.is_dir():
+                lines.append(f"  - {item.name}/")
+            else:
+                lines.append(f"  - {item.name}")
+        return "\n".join(lines)
+
+    def _load_single_skill(self, name: str) -> str:
+        r"""Load a single skill by name.
+
+        Args:
+            name (str): The skill identifier.
+
+        Returns:
+            str: The skill content, or error message if not found.
+        """
+        skills = self._get_skills()
+        skill = skills.get(name)
+        if not skill:
+            available = ", ".join(sorted(skills.keys())) or "none"
+            return f"Error: Skill \"{name}\" not found. Available: {available}"
 
         path = Path(skill["path"])
         parsed = self._parse_skill(path)
         if not parsed:
-            raise ValueError(f"Failed to load skill from {path}")
+            return f"Error: Failed to load skill from {path}"
 
-        base_dir = str(path.parent)
+        base_dir = path.parent
         body = parsed.get("body", "").strip()
-        output = "\n".join(
-            [
-                f"## Skill: {parsed['name']}",
-                "",
-                f"**Base directory**: {base_dir}",
-                "",
-                body,
-            ]
-        ).strip()
-        return output
+
+        # List files in skill directory
+        files_info = []
+        for item in sorted(base_dir.iterdir()):
+            if item.name == "SKILL.md":
+                continue
+            files_info.append(
+                f"  - {item.name}/ (dir)"
+                if item.is_dir()
+                else f"  - {item.name}"
+            )
+
+        output_lines = [
+            f"## Skill: {parsed['name']}",
+            "",
+            f"**Base directory**: {base_dir}",
+        ]
+
+        if files_info:
+            output_lines.append("")
+            output_lines.append("**Available files**:")
+            output_lines.extend(files_info)
+
+        output_lines.append("")
+        output_lines.append(body)
+
+        return "\n".join(output_lines).strip()
+
+    def get_skill(self, name: Union[str, List[str]]) -> str:
+        r"""Load one or more skills by name.
+
+        Args:
+            name (Union[str, List[str]]): A single skill name or list of names.
+
+        Returns:
+            str: The skill content(s), or error message if not found.
+        """
+        if isinstance(name, str):
+            return self._load_single_skill(name)
+
+        # Load multiple skills
+        results = []
+        for skill_name in name:
+            results.append(self._load_single_skill(skill_name))
+
+        return "\n\n---\n\n".join(results)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Return the skill tools with injected available skills."""
