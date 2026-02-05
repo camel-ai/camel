@@ -15,7 +15,7 @@ import math
 import os
 import re
 from pathlib import Path
-from typing import Any, List, cast, Optional
+from typing import Any, List, cast
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -2460,7 +2460,7 @@ class EarthScienceToolkit(BaseToolkit):
         }
 
     def calculate_bbox_area(
-        self, bboxes: list[list[float]], gsd: Optional[float] = None
+        self, bboxes: list[list[float]], gsd: float | None = None
     ):
         """Calculate the total area of bounding boxes in [x, y, w, h] format.
 
@@ -4031,9 +4031,9 @@ class EarthScienceToolkit(BaseToolkit):
     def image_division_mean(
         self,
         image_path1: str,
-        image_path2: Optional[str] = None,
-        band1: Optional[int] = 1,
-        band2: Optional[int] = 2
+        image_path2: str | None = None,
+        band1: int | None = 1,
+        band2: int | None = 2
     ):
         """
         Description:
@@ -5059,7 +5059,7 @@ class EarthScienceToolkit(BaseToolkit):
                 dst.write(result, 1)
         return f'Result save at {output_path_full}'
 
-    def calculate_area(self, input_image_path: str, gsd: Optional[float]):
+    def calculate_area(self, input_image_path: str, gsd: float | None):
         """
         Description:
         This function calculates the area of non-zero pixels in the input
