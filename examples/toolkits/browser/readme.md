@@ -26,8 +26,9 @@ When you run the experiments make sure following settings are correct:
 # Commands to run the experiments
 
 ## WebVoyager
+```
 python -m examples.toolkits.browser.browser_skills_example.cli.run_webvoyager_tasks --jsonl examples/toolkits/browser/data/WebVoyager_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --start 301 --max-tasks 42
-
+```
 ## Navi-bench
 ### Without skills version
 ```bash
