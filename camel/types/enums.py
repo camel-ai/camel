@@ -219,6 +219,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
+    CLAUDE_OPUS_4_6 = "claude-opus-4-6"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -702,6 +703,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
@@ -1541,6 +1543,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
