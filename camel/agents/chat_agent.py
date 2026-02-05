@@ -2950,7 +2950,8 @@ class ChatAgent(BaseAgent):
                 )
 
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -2960,17 +2961,29 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if (
-                            self.pause_event is not None
-                            and not self.pause_event.is_set()
-                        ):
-                            if isinstance(self.pause_event, threading.Event):
-                                self.pause_event.wait()
-                            else:
-                                while not self.pause_event.is_set():
-                                    time.sleep(0.001)
-                        result = self._execute_tool(tool_call_request)
-                        tool_call_records.append(result)
+                        internal_tool_requests.append(tool_call_request)
+
+                # Record the assistant message with ALL internal tool calls
+                # BEFORE executing any tools. This ensures proper message
+                # sequence: [assistant with all tool_calls] -> [tool results]
+                if internal_tool_requests:
+                    self._record_assistant_tool_calls_from_requests(
+                        internal_tool_requests
+                    )
+
+                # Execute internal tools
+                for tool_call_request in internal_tool_requests:
+                    if (
+                        self.pause_event is not None
+                        and not self.pause_event.is_set()
+                    ):
+                        if isinstance(self.pause_event, threading.Event):
+                            self.pause_event.wait()
+                        else:
+                            while not self.pause_event.is_set():
+                                time.sleep(0.001)
+                    result = self._execute_tool(tool_call_request)
+                    tool_call_records.append(result)
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
@@ -3222,7 +3235,8 @@ class ChatAgent(BaseAgent):
                 )
 
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_requests = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -3232,21 +3246,33 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if (
-                            self.pause_event is not None
-                            and not self.pause_event.is_set()
-                        ):
-                            if isinstance(self.pause_event, asyncio.Event):
-                                await self.pause_event.wait()
-                            elif isinstance(self.pause_event, threading.Event):
-                                loop = asyncio.get_event_loop()
-                                await loop.run_in_executor(
-                                    None, self.pause_event.wait
-                                )
-                        tool_call_record = await self._aexecute_tool(
-                            tool_call_request
-                        )
-                        tool_call_records.append(tool_call_record)
+                        internal_tool_requests.append(tool_call_request)
+
+                # Record the assistant message with ALL internal tool calls
+                # BEFORE executing any tools. This ensures proper message
+                # sequence: [assistant with all tool_calls] -> [tool results]
+                if internal_tool_requests:
+                    self._record_assistant_tool_calls_from_requests(
+                        internal_tool_requests
+                    )
+
+                # Execute internal tools
+                for tool_call_request in internal_tool_requests:
+                    if (
+                        self.pause_event is not None
+                        and not self.pause_event.is_set()
+                    ):
+                        if isinstance(self.pause_event, asyncio.Event):
+                            await self.pause_event.wait()
+                        elif isinstance(self.pause_event, threading.Event):
+                            loop = asyncio.get_event_loop()
+                            await loop.run_in_executor(
+                                None, self.pause_event.wait
+                            )
+                    tool_call_record = await self._aexecute_tool(
+                        tool_call_request
+                    )
+                    tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -3973,8 +3999,11 @@ class ChatAgent(BaseAgent):
         mask_output: bool = False,
         extra_content: Optional[Dict[str, Any]] = None,
     ):
-        r"""Record the tool calling information in the memory, and return the
-        tool calling record.
+        r"""Record the tool result in the memory.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_from_requests).
+        This method only records the tool result message.
 
         Args:
             func_name (str): The name of the tool function called.
@@ -3999,16 +4028,9 @@ class ChatAgent(BaseAgent):
         )
         result_for_memory = truncated_result if was_truncated else result
 
-        assist_msg = FunctionCallingMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=None,
-            content="",
-            func_name=func_name,
-            args=args,
-            tool_call_id=tool_call_id,
-            extra_content=extra_content,
-        )
+        # Create the tool response message
+        # Note: assistant message with tool_calls is already recorded by
+        # _record_assistant_tool_calls_from_requests
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -4021,25 +4043,10 @@ class ChatAgent(BaseAgent):
             extra_content=extra_content,
         )
 
-        # Use precise timestamps to ensure correct ordering
-        # This ensures the assistant message (tool call) always appears before
-        # the function message (tool result) in the conversation context
-        # Use time.time_ns() for nanosecond precision to avoid collisions
-        current_time_ns = time.time_ns()
-        base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
-
-        self.update_memory(
-            assist_msg,
-            OpenAIBackendRole.ASSISTANT,
-            timestamp=base_timestamp,
-            return_records=self._enable_snapshot_clean,
-        )
-
-        # Add minimal increment to ensure function message comes after
+        # Record only the tool result message
         func_records = self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-6,
             return_records=self._enable_snapshot_clean,
         )
 
@@ -4095,12 +4102,10 @@ class ChatAgent(BaseAgent):
                             image_list=pil_images,
                         )
 
-                        # Inject into conversation context with slight
-                        # timestamp increment
+                        # Inject into conversation context
                         self.update_memory(
                             visual_msg,
                             OpenAIBackendRole.USER,
-                            timestamp=base_timestamp + 2e-6,
                             return_records=False,
                         )
                         logger.info(
@@ -4720,6 +4725,11 @@ class ChatAgent(BaseAgent):
             return
             yield  # Make this a generator
 
+        # Record the assistant message with ALL tool calls BEFORE executing
+        # This ensures proper message sequence: [assistant with all tool_calls]
+        # -> [tool result 1] -> [tool result 2] -> ...
+        self._record_assistant_tool_calls_message(accumulated_tool_calls)
+
         # Execute tools using ThreadPoolExecutor for proper timeout handling
         # Use max_workers=len() for parallel execution, with min of 1
         with concurrent.futures.ThreadPoolExecutor(
@@ -4779,7 +4789,12 @@ class ChatAgent(BaseAgent):
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
     ) -> Optional[ToolCallingRecord]:
-        r"""Execute a tool from accumulated stream data."""
+        r"""Execute a tool from accumulated stream data.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_message).
+        This method only records the tool result message.
+        """
 
         try:
             function_name = tool_call_data['function']['name']
@@ -4812,20 +4827,9 @@ class ChatAgent(BaseAgent):
                         truncated_result if was_truncated else result
                     )
 
-                    # First, create and record the assistant message with tool
-                    # call
-                    assist_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        args=args,
-                        tool_call_id=tool_call_id,
-                        extra_content=extra_content,
-                    )
-
-                    # Then create the tool response message
+                    # Create the tool response message
+                    # Note: assistant message with tool_calls is already
+                    # recorded by _record_assistant_tool_calls_message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -4838,23 +4842,8 @@ class ChatAgent(BaseAgent):
                         extra_content=extra_content,
                     )
 
-                    # Record both messages with precise timestamps to ensure
-                    # correct ordering
-                    current_time_ns = time.time_ns()
-                    base_timestamp = (
-                        current_time_ns / 1_000_000_000
-                    )  # Convert to seconds
-
-                    self.update_memory(
-                        assist_msg,
-                        OpenAIBackendRole.ASSISTANT,
-                        timestamp=base_timestamp,
-                    )
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=base_timestamp + 1e-6,
-                    )
+                    # Record only the tool result message
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -4929,7 +4918,12 @@ class ChatAgent(BaseAgent):
     async def _aexecute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
     ) -> Optional[ToolCallingRecord]:
-        r"""Async execute a tool from accumulated stream data."""
+        r"""Async execute a tool from accumulated stream data.
+
+        Note: The assistant message with tool_calls should be recorded BEFORE
+        calling this method (via _record_assistant_tool_calls_message).
+        This method only records the tool result message.
+        """
 
         try:
             function_name = tool_call_data['function']['name']
@@ -4938,24 +4932,6 @@ class ChatAgent(BaseAgent):
             extra_content = tool_call_data.get('extra_content')
 
             if function_name in self._internal_tools:
-                # Create the tool call message
-                assist_msg = FunctionCallingMessage(
-                    role_name=self.role_name,
-                    role_type=self.role_type,
-                    meta_dict=None,
-                    content="",
-                    func_name=function_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                assist_ts = time.time_ns() / 1_000_000_000
-                self.update_memory(
-                    assist_msg,
-                    OpenAIBackendRole.ASSISTANT,
-                    timestamp=assist_ts,
-                )
-
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
@@ -5010,6 +4986,8 @@ class ChatAgent(BaseAgent):
                     )
 
                     # Create the tool response message
+                    # Note: assistant message with tool_calls is already
+                    # recorded by _record_assistant_tool_calls_message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -5021,12 +4999,7 @@ class ChatAgent(BaseAgent):
                         mask_output=self.mask_tool_output,
                         extra_content=extra_content,
                     )
-                    func_ts = time.time_ns() / 1_000_000_000
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=func_ts,
-                    )
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -5055,12 +5028,7 @@ class ChatAgent(BaseAgent):
                         tool_call_id=tool_call_id,
                         extra_content=extra_content,
                     )
-                    func_ts = time.time_ns() / 1_000_000_000
-                    self.update_memory(
-                        func_msg,
-                        OpenAIBackendRole.FUNCTION,
-                        timestamp=func_ts,
-                    )
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
                     tool_record = ToolCallingRecord(
                         tool_name=function_name,
@@ -5397,7 +5365,10 @@ class ChatAgent(BaseAgent):
         # Create a BaseMessage with tool_calls information in meta_dict
         # This will be converted to the proper OpenAI format when needed
         tool_calls_list = []
-        for tool_call_data in accumulated_tool_calls.values():
+        for key, tool_call_data in accumulated_tool_calls.items():
+            # Skip internal mapping key
+            if key == '_index_to_key_map':
+                continue
             if tool_call_data.get('complete', False):
                 tool_call_dict = {
                     "id": tool_call_data["id"],
@@ -5414,7 +5385,56 @@ class ChatAgent(BaseAgent):
                     ]
                 tool_calls_list.append(tool_call_dict)
 
+        # Early return if no tool calls to record
+        if not tool_calls_list:
+            return
+
         # Create an assistant message with tool calls
+        assist_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={"tool_calls": tool_calls_list},
+            content=content or "",
+        )
+
+        # Record this assistant message
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+
+    def _record_assistant_tool_calls_from_requests(
+        self, tool_call_requests: List["ToolCallRequest"], content: str = ""
+    ) -> None:
+        r"""Record assistant message with tool calls from requests.
+
+        This method creates and records an assistant message that includes
+        all the tool calls from a list of ToolCallRequest objects.
+        Used for non-streaming tool execution to ensure proper message
+        sequence.
+
+        Args:
+            tool_call_requests: List of tool call requests from model response.
+            content: Optional content to include in the assistant message.
+        """
+        import json
+
+        tool_calls_list = []
+        for request in tool_call_requests:
+            tool_call_dict = {
+                "id": request.tool_call_id,
+                "type": "function",
+                "function": {
+                    "name": request.tool_name,
+                    "arguments": json.dumps(request.args, ensure_ascii=False),
+                },
+            }
+            # Include extra_content if present
+            if request.extra_content:
+                tool_call_dict["extra_content"] = request.extra_content
+            tool_calls_list.append(tool_call_dict)
+
+        if not tool_calls_list:
+            return
+
+        # Create an assistant message with all tool calls
         assist_msg = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -5607,6 +5627,12 @@ class ChatAgent(BaseAgent):
         r"""Execute multiple tools asynchronously with
         proper content accumulation."""
         import asyncio
+
+        # Record the assistant message with ALL tool calls BEFORE executing
+        # This ensures proper message sequence: [assistant with all
+        # tool_calls] -> [tool result 1] -> [tool result 2] -> ...
+        # Note: _record_assistant_tool_calls_message has early return if empty
+        self._record_assistant_tool_calls_message(accumulated_tool_calls)
 
         # Phase 1: Start all tools and yield "Calling function"
         # statuses immediately
