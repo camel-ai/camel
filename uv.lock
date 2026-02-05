@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1704,7 +1704,7 @@ requires-dist = [
     { name = "tavily-python", marker = "extra == 'web-tools'", specifier = ">=0.5.0,<0.6" },
     { name = "textblob", marker = "extra == 'all'", specifier = ">=0.17.1,<0.18" },
     { name = "textblob", marker = "extra == 'data-tools'", specifier = ">=0.17.1,<0.18" },
-    { name = "tiktoken", specifier = ">=0.7.0,<0.8" },
+    { name = "tiktoken", specifier = ">=0.7.0,<=0.12" },
     { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "transformers", marker = "extra == 'huggingface'", specifier = ">=4,<5" },
