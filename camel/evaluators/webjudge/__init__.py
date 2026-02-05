@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .vision_webjudge import WebJudgeVisionConfig, WebJudgeVisionEvaluator
+from .vision_webjudge import WebJudgeVisionConfig, WebJudgeVisionEvaluator, WebJudgeEvaluationResult
 
 __all__ = [
     "WebJudgeVisionConfig",
     "WebJudgeVisionEvaluator",
+    "WebJudgeEvaluationResult",
 ]

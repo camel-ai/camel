@@ -29,6 +29,13 @@ When you run the experiments make sure following settings are correct:
 python -m examples.toolkits.browser.browser_skills_example.cli.run_webvoyager_tasks --jsonl examples/toolkits/browser/data/WebVoyager_data.jsonl --skills-root examples/toolkits/browser/browser_skills_example/skills_store --start 301 --max-tasks 42
 
 ## Navi-bench
+### Without skills version
+```bash
+python -m examples.toolkits.browser.browser_example.cli.run_navi_bench_tasks --jsonl examples\toolkits\browser\data\navi_bench_data.jsonl --domain apartments
+```
+
+
+### With skills version
 ```bash
 python -m examples.toolkits.browser.browser_skills_example.cli.run_navi_bench_case --jsonl examples\toolkits\browser\data\navi_bench_data.jsonl --skills-root examples\toolkits\browser\browser_skills_example\skills_store --task-id navi_bench/apartments/ny_multi_region_search/12
 
