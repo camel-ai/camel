@@ -47,7 +47,7 @@ class RetrievalToolkit(BaseToolkit):
         top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> str:
-        rf"""Retrieves information from a local vector storage based on the
+        r"""Retrieves information from a local vector storage based on the
         specified query. This function connects to a local vector storage
         system and retrieves relevant information by processing the input
         query. It is essential to use this function when the answer to a
@@ -58,11 +58,9 @@ class RetrievalToolkit(BaseToolkit):
             contents (Union[str, List[str]]): Local file paths, remote URLs or
                 string contents.
             top_k (int, optional): The number of top results to return during
-                retrieve. Must be a positive integer. Defaults to
-                `{Constants.DEFAULT_TOP_K_RESULTS}`.
+                retrieve. Must be a positive integer. Defaults to 1.
             similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `{Constants.DEFAULT_SIMILARITY_THRESHOLD}`.
+                for filtering results. Defaults to 0.7.
 
         Returns:
             str: The information retrieved in response to the query, aggregated
