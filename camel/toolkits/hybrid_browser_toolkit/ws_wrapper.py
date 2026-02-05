@@ -13,8 +13,10 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import base64
 import contextlib
 import datetime
+import hashlib
 import json
 import os
 import subprocess
@@ -22,7 +24,16 @@ import time
 import uuid
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+)
 
 if TYPE_CHECKING:
     import websockets
@@ -43,6 +54,10 @@ logger = get_logger(__name__)
 _in_high_level_action: ContextVar[bool] = ContextVar(
     '_in_high_level_action', default=False
 )
+
+# Context variable to prevent hook recursion. Hook code may call "quiet" APIs
+# that should not trigger hook callbacks or get logged into action history.
+_in_action_hook: ContextVar[bool] = ContextVar('_in_action_hook', default=False)
 
 
 def _create_memory_aware_error(base_msg: str) -> str:
@@ -97,6 +112,17 @@ def action_logger(func):
             "kwargs": kwargs,
         }
 
+        pre_capture: Optional[Dict[str, Any]] = None
+        if self.capture_pre_step_evidence:
+            try:
+                if self._should_capture_pre_step_evidence(action_name):
+                    pre_capture = await self._capture_pre_step_evidence(
+                        next_action=action_name,
+                        next_action_inputs=inputs,
+                    )
+            except Exception as e:
+                pre_capture = {"pre_capture_error": f"{type(e).__name__}: {e}"}
+
         try:
             result = await func(self, *args, **kwargs)
             execution_time = time.time() - start_time
@@ -111,8 +137,15 @@ def action_logger(func):
                 outputs=result,
                 execution_time=execution_time,
                 page_load_time=page_load_time,
+                pre_capture=pre_capture,
             )
 
+            await self._maybe_call_action_hook(
+                action_name=action_name,
+                inputs=inputs,
+                outputs=result,
+                error=None,
+            )
             return result
 
         except Exception as e:
@@ -125,8 +158,15 @@ def action_logger(func):
                 outputs=None,
                 execution_time=execution_time,
                 error=error_msg,
+                pre_capture=pre_capture,
             )
 
+            await self._maybe_call_action_hook(
+                action_name=action_name,
+                inputs=inputs,
+                outputs=None,
+                error=error_msg,
+            )
             raise
 
     return wrapper
@@ -234,6 +274,36 @@ class WebSocketBrowserWrapper:
         self.ts_log_file = None
         self._log_reader_task = None
 
+        self.cache_dir = (config or {}).get('cache_dir', None)
+
+        self._action_hook: Optional[
+            Callable[[Dict[str, Any]], Awaitable[None]]
+        ] = None
+
+        evidence_capture = (config or {}).get("evidence_capture") or {}
+        if not isinstance(evidence_capture, dict):
+            raise TypeError(
+                "ws_wrapper config expects evidence_capture as a dict."
+            )
+
+        self.capture_pre_step_evidence = bool(
+            evidence_capture.get("enabled", False)
+        )
+        self.capture_pre_step_snapshot = bool(
+            evidence_capture.get("snapshot", False)
+        )
+        self.capture_pre_step_screenshot = bool(
+            evidence_capture.get("screenshot", False)
+        )
+        self.pre_step_evidence_max_steps = int(
+            evidence_capture.get("max_steps") or 250
+        )
+        actions = evidence_capture.get("actions") or []
+        self.pre_step_evidence_actions = set(
+            actions if isinstance(actions, list) else []
+        )
+        self._pre_step_evidence_index = 0
+
         if self.browser_log_to_file:
             log_dir = self.log_dir if self.log_dir else "browser_log"
             os.makedirs(log_dir, exist_ok=True)
@@ -246,6 +316,95 @@ class WebSocketBrowserWrapper:
                 log_dir,
                 f"typescript_console_{timestamp}_{self.session_id}.log",
             )
+
+    def set_action_hook(
+        self, hook: Optional[Callable[[Dict[str, Any]], Awaitable[None]]]
+    ) -> None:
+        """Register (or clear) a post-action callback.
+
+        The hook is invoked after a state-changing action finishes and is
+        intended for external runners to do per-step evaluation/verification.
+        """
+        self._action_hook = hook
+
+    def _should_trigger_action_hook(self, action_name: str) -> bool:
+        # Skip read-only and meta actions to reduce overhead/noise.
+        # NOTE: keep action names in sync with ws_wrapper methods (no "browser_"
+        # prefix - those live on HybridBrowserToolkit).
+        skip = {
+            "open_browser",
+            "close_browser",
+            "get_tab_info",
+            "get_page_snapshot",
+            "get_snapshot_for_ai",
+            "get_som_screenshot",
+            "console_view",
+            "console_exec",
+            "wait_user",
+        }
+        return action_name not in skip
+
+    @staticmethod
+    def _extract_current_url_from_tab_info(
+        tabs: Any,
+    ) -> Optional[str]:
+        if not isinstance(tabs, list):
+            return None
+        for tab in tabs:
+            if isinstance(tab, dict) and tab.get("is_current"):
+                url = tab.get("url")
+                return url if isinstance(url, str) else None
+        return None
+
+    def _extract_current_url_from_outputs(self, outputs: Any) -> Optional[str]:
+        # Some actions return {"tabs": [...]} while get_tab_info returns [...]
+        if isinstance(outputs, dict) and "tabs" in outputs:
+            return self._extract_current_url_from_tab_info(outputs.get("tabs"))
+        return self._extract_current_url_from_tab_info(outputs)
+
+    async def _maybe_call_action_hook(
+        self,
+        *,
+        action_name: str,
+        inputs: Dict[str, Any],
+        outputs: Any,
+        error: Optional[str],
+    ) -> None:
+        hook = self._action_hook
+        if hook is None:
+            return
+        if _in_action_hook.get():
+            return
+        if not self._should_trigger_action_hook(action_name):
+            return
+
+        current_url = self._extract_current_url_from_outputs(outputs)
+        if current_url is None:
+            try:
+                tabs = await self.get_tab_info_quiet()
+                current_url = self._extract_current_url_from_tab_info(tabs)
+            except Exception:
+                current_url = None
+
+        event = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "action": action_name,
+            "inputs": inputs,
+            "outputs": outputs,
+            "error": error,
+            "current_url": current_url,
+        }
+
+        token = _in_action_hook.set(True)
+        try:
+            await hook(event)
+        except Exception as e:
+            logger.warning(
+                f"Action hook failed for {action_name}: "
+                f"{type(e).__name__}: {e}"
+            )
+        finally:
+            _in_action_hook.reset(token)
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -537,6 +696,7 @@ class WebSocketBrowserWrapper:
         execution_time: float,
         page_load_time: Optional[float] = None,
         error: Optional[str] = None,
+        pre_capture: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Log action details with comprehensive
         information including detailed timing breakdown."""
@@ -551,6 +711,8 @@ class WebSocketBrowserWrapper:
             "execution_time_ms": round(execution_time * 1000, 2),
             "inputs": inputs,
         }
+        if pre_capture:
+            log_entry.update(pre_capture)
 
         if error:
             log_entry["error"] = error
@@ -586,6 +748,295 @@ class WebSocketBrowserWrapper:
                 )
         except Exception as e:
             logger.error(f"Failed to write to log file: {e}")
+
+    def _get_evidence_dir(self) -> Path:
+        cache_dir = self.cache_dir
+        if isinstance(cache_dir, str) and cache_dir.strip():
+            return Path(cache_dir).expanduser()
+        return Path(self.log_dir or "browser_log").expanduser() / "evidence"
+
+    def _should_capture_pre_step_evidence(self, action_name: str) -> bool:
+        if not self.capture_pre_step_evidence:
+            return False
+
+        if self._pre_step_evidence_index >= max(
+            0, self.pre_step_evidence_max_steps
+        ):
+            return False
+
+        if not self._browser_opened:
+            return False
+
+        # In CDP mode, the very first navigation can happen before a browser
+        # context/page is fully available. Pre-capturing evidence for the
+        # initial `visit_page` is not useful (there is no "previous step" to
+        # align to) and can error noisily.
+        if action_name == "visit_page" and self._pre_step_evidence_index == 0:
+            return False
+
+        # Skip read-only or meta actions to avoid overhead/recursion
+        excluded = {
+            "get_tab_info",
+            "get_page_snapshot",
+            "get_snapshot_for_ai",
+            "get_som_screenshot",
+            "open_browser",
+            "close_browser",
+        }
+        if action_name in excluded:
+            return False
+
+        if not self.pre_step_evidence_actions:
+            self.pre_step_evidence_actions = {
+                "visit_page",
+                "click",
+                "type",
+                "type_multiple",
+                "select",
+                "scroll",
+                "enter",
+                "back",
+                "forward",
+                "switch_tab",
+                "close_tab",
+                "press_key",
+                "batch_keyboard_input",
+                "mouse_control",
+                "mouse_drag",
+            }
+
+        return action_name in self.pre_step_evidence_actions
+
+    def _path_for_log(self, path: Path) -> str:
+        try:
+            root = Path(self.log_dir or "").expanduser().resolve()
+            resolved = path.expanduser().resolve()
+            if root and resolved.is_relative_to(root):
+                return str(resolved.relative_to(root))
+        except Exception:
+            pass
+        return str(path)
+
+    async def _capture_pre_step_evidence(
+        self,
+        *,
+        next_action: str,
+        next_action_inputs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        evidence_dir = self._get_evidence_dir()
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+
+        index = self._pre_step_evidence_index
+        self._pre_step_evidence_index += 1
+        prefix = f"pre_step_{index:04d}"
+
+        token = _in_high_level_action.set(True)
+        try:
+            captured_at = datetime.datetime.now().isoformat()
+            tab_id = None
+            url = None
+
+            try:
+                tab_info = await self.get_tab_info()
+                if isinstance(tab_info, list):
+                    current = next(
+                        (
+                            t
+                            for t in tab_info
+                            if isinstance(t, dict) and t.get("is_current")
+                        ),
+                        None,
+                    )
+                    if isinstance(current, dict):
+                        tab_id = current.get("tab_id")
+                        url = current.get("url")
+            except Exception:
+                pass
+
+            snapshot_path = None
+            snapshot_sha1 = None
+            if self.capture_pre_step_snapshot:
+                try:
+                    viewport_limit = bool(
+                        self.config.get("viewport_limit", False)
+                    )
+                    snapshot_text = await self.get_page_snapshot(
+                        viewport_limit
+                    )
+                    snapshot_sha1 = hashlib.sha1(
+                        snapshot_text.encode("utf-8", errors="ignore")
+                    ).hexdigest()
+                    snapshot_file = evidence_dir / f"{prefix}.snapshot.txt"
+                    snapshot_file.write_text(
+                        snapshot_text, encoding="utf-8", errors="ignore"
+                    )
+                    snapshot_path = snapshot_file
+                except Exception:
+                    pass
+
+            screenshot_path = None
+            screenshot_sha1 = None
+            screenshot_timing = None
+            if self.capture_pre_step_screenshot:
+                try:
+                    resp = await self._send_command(
+                        "get_som_screenshot", {"overlay": False}
+                    )
+                    if isinstance(resp, dict):
+                        screenshot_timing = resp.get("timing")
+                        images = resp.get("images", [])
+                        if isinstance(images, list) and images:
+                            image = images[0]
+                            if isinstance(image, str) and "," in image:
+                                base64_data = image.split(",", 1)[1]
+                                image_bytes = base64.b64decode(base64_data)
+                                screenshot_sha1 = hashlib.sha1(
+                                    image_bytes
+                                ).hexdigest()
+                                screenshot_file = evidence_dir / f"{prefix}.png"
+                                screenshot_file.write_bytes(image_bytes)
+                                screenshot_path = screenshot_file
+                except Exception:
+                    pass
+
+            metadata = {
+                "type": "pre_capture",
+                "index": index,
+                "prefix": prefix,
+                "captured_at": captured_at,
+                "next_action": next_action,
+                "next_action_args": next_action_inputs,
+                "tab_id": tab_id,
+                "url": url,
+                "snapshot_sha1": snapshot_sha1,
+                "screenshot_sha1": screenshot_sha1,
+                "timing": screenshot_timing,
+            }
+            metadata_file = evidence_dir / f"{prefix}.json"
+            metadata_file.write_text(
+                json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            payload: Dict[str, Any] = {
+                "pre_capture_index": index,
+                "pre_capture_prefix": prefix,
+                "pre_capture_captured_at": captured_at,
+                "pre_capture_next_action": next_action,
+                "pre_capture_next_action_args": metadata["next_action_args"],
+                "pre_capture_tab_id": tab_id,
+                "pre_capture_url": url,
+                "pre_capture_metadata_path": self._path_for_log(metadata_file),
+            }
+            if snapshot_path is not None:
+                payload["pre_capture_snapshot_path"] = self._path_for_log(
+                    snapshot_path
+                )
+                payload["pre_capture_snapshot_sha1"] = snapshot_sha1
+            if screenshot_path is not None:
+                payload["pre_capture_screenshot_path"] = self._path_for_log(
+                    screenshot_path
+                )
+                payload["pre_capture_screenshot_sha1"] = screenshot_sha1
+                if screenshot_timing is not None:
+                    payload["pre_capture_screenshot_timing"] = (
+                        screenshot_timing
+                    )
+            return payload
+        finally:
+            _in_high_level_action.reset(token)
+
+    async def capture_final_evidence(self) -> Dict[str, Any]:
+        """Capture a final evidence frame after the run finishes."""
+        evidence_dir = self._get_evidence_dir()
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+
+        token = _in_high_level_action.set(True)
+        try:
+            captured_at = datetime.datetime.now().isoformat()
+            tab_id = None
+            url = None
+            try:
+                tab_info = await self.get_tab_info()
+                if isinstance(tab_info, list):
+                    current = next(
+                        (
+                            t
+                            for t in tab_info
+                            if isinstance(t, dict) and t.get("is_current")
+                        ),
+                        None,
+                    )
+                    if isinstance(current, dict):
+                        tab_id = current.get("tab_id")
+                        url = current.get("url")
+            except Exception:
+                pass
+
+            snapshot_sha1 = None
+            if self.capture_pre_step_snapshot:
+                try:
+                    viewport_limit = bool(
+                        self.config.get("viewport_limit", False)
+                    )
+                    snapshot_text = await self.get_page_snapshot(
+                        viewport_limit
+                    )
+                    snapshot_sha1 = hashlib.sha1(
+                        snapshot_text.encode("utf-8", errors="ignore")
+                    ).hexdigest()
+                    (evidence_dir / "final.snapshot.txt").write_text(
+                        snapshot_text, encoding="utf-8", errors="ignore"
+                    )
+                except Exception:
+                    pass
+
+            screenshot_sha1 = None
+            screenshot_timing = None
+            if self.capture_pre_step_screenshot:
+                try:
+                    resp = await self._send_command(
+                        "get_som_screenshot", {"overlay": False}
+                    )
+                    if isinstance(resp, dict):
+                        screenshot_timing = resp.get("timing")
+                        images = resp.get("images", [])
+                        if isinstance(images, list) and images:
+                            image = images[0]
+                            if isinstance(image, str) and "," in image:
+                                base64_data = image.split(",", 1)[1]
+                                image_bytes = base64.b64decode(base64_data)
+                                screenshot_sha1 = hashlib.sha1(
+                                    image_bytes
+                                ).hexdigest()
+                                (evidence_dir / "final.png").write_bytes(
+                                    image_bytes
+                                )
+                except Exception:
+                    pass
+
+            metadata = {
+                "type": "final_pre_capture",
+                "captured_at": captured_at,
+                "tab_id": tab_id,
+                "url": url,
+                "snapshot_sha1": snapshot_sha1,
+                "screenshot_sha1": screenshot_sha1,
+                "timing": screenshot_timing,
+            }
+            metadata_file = evidence_dir / "final.json"
+            metadata_file.write_text(
+                json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            return {
+                "captured_at": captured_at,
+                "tab_id": tab_id,
+                "url": url,
+                "metadata_path": self._path_for_log(metadata_file),
+            }
+        finally:
+            _in_high_level_action.reset(token)
 
     async def _receive_loop(self):
         r"""Background task to receive messages from WebSocket."""
@@ -784,12 +1235,14 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
-    async def get_som_screenshot(self) -> ToolResult:
-        """Get screenshot."""
+    async def get_som_screenshot(self, *, overlay: bool = True) -> ToolResult:
+        """Get screenshot (SoM overlay optional)."""
         logger.info("Requesting screenshot via WebSocket...")
         start_time = time.time()
 
-        response = await self._send_command('get_som_screenshot', {})
+        response = await self._send_command(
+            'get_som_screenshot', {"overlay": bool(overlay)}
+        )
 
         end_time = time.time()
         logger.info(f"Screenshot completed in {end_time - start_time:.2f}s")
@@ -956,6 +1409,13 @@ class WebSocketBrowserWrapper:
         # Fallback if wrapped in an object
         return response.get('tabs', [])
 
+    async def get_tab_info_quiet(self) -> List[Dict[str, Any]]:
+        """Get tab information without emitting an action log entry."""
+        response = await self._send_command('get_tab_info', {})
+        if isinstance(response, list):
+            return response
+        return response.get('tabs', [])
+
     @action_logger
     async def console_view(self) -> List[Dict[str, Any]]:
         """Get current page console view"""
@@ -969,6 +1429,15 @@ class WebSocketBrowserWrapper:
     @action_logger
     async def console_exec(self, code: str) -> Dict[str, Any]:
         """Execute javascript code and get result."""
+        response = await self._send_command('console_exec', {'code': code})
+        return response
+
+    async def console_exec_quiet(self, code: str) -> Dict[str, Any]:
+        """Execute JS without emitting an action log entry.
+
+        Used by evaluators/runners to inspect the page without polluting
+        the action timeline or mined skills.
+        """
         response = await self._send_command('console_exec', {'code': code})
         return response
 

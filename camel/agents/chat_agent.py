@@ -49,6 +49,7 @@ from typing import (
     cast,
 )
 
+from json_repair import repair_json
 from openai import (
     AsyncStream,
     RateLimitError,
@@ -104,6 +105,7 @@ from camel.utils import (
 )
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.langfuse import set_current_agent_session_id
 from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
@@ -137,7 +139,12 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 # Langfuse decorator setting
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+if os.environ.get("LOGFIRE_TOKEN") is not None:
+    import logfire
+
+    logfire.configure(scrubbing=False)
+    observe = logfire.instrument
+elif os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
@@ -451,6 +458,9 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        step_timeout_max_retries (int, optional): Maximum number of retry
+            attempts when a step times out. Set to 0 to disable retries.
+            (default: :obj:`0`)
         stream_accumulate (Optional[bool], optional): When True, partial
             streaming updates return accumulated content. When False, partial
             updates return only the incremental delta (recommended).
@@ -506,6 +516,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
+        step_timeout_max_retries: int = 0,
         stream_accumulate: Optional[bool] = None,
         summary_window_ratio: float = 0.6,
     ) -> None:
@@ -618,6 +629,7 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self.step_timeout_max_retries = max(0, step_timeout_max_retries)
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
 
@@ -657,10 +669,9 @@ class ChatAgent(BaseAgent):
 
         total_tokens = prompt_tokens + completion_tokens
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'set_cached_token_count'):
-            context_creator.set_cached_token_count(
-                total_tokens, message_count + 1
-            )
+        set_cached = getattr(context_creator, "set_cached_token_count", None)
+        if callable(set_cached):
+            set_cached(total_tokens, message_count + 1)
 
     def _resolve_models(
         self,
@@ -838,14 +849,70 @@ class ChatAgent(BaseAgent):
         r"""Set the agent memory.
 
         When setting a new memory, the system message is automatically
-        re-added to ensure it's not lost.
+        added after existing system messages, while preserving existing
+        memory data.
 
         Args:
             value (AgentMemory): The new agent memory to use.
         """
         self._memory = value
-        # Ensure the new memory has the system message
-        self.init_messages()
+
+        # Reset summary state for the new memory
+        self._reset_summary_state()
+
+        # Clear token cache for the new memory
+        context_creator = self.memory.get_context_creator()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
+
+        if self.system_message is None:
+            return
+
+        # Get existing records from new memory
+        existing_records = self.memory.retrieve()
+
+        # Fast path: empty memory, just write system message
+        if not existing_records:
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
+            return
+
+        # Separate system messages and other messages in one pass
+        existing_system_records = []
+        other_records = []
+        for r in existing_records:
+            if r.memory_record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                existing_system_records.append(r.memory_record)
+            else:
+                other_records.append(r.memory_record)
+
+        # Clear and rewrite in correct order
+        self.memory.clear()
+
+        # 1. Write existing system messages first
+        if existing_system_records:
+            self.memory.write_records(existing_system_records)
+
+        # 2. Write current agent's system message
+        self.memory.write_record(
+            MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=time.time_ns() / 1_000_000_000,
+                agent_id=self.agent_id,
+            )
+        )
+
+        # 3. Write other records
+        if other_records:
+            self.memory.write_records(other_records)
 
     def set_context_utility(
         self, context_utility: Optional[ContextUtility]
@@ -1247,7 +1314,7 @@ class ChatAgent(BaseAgent):
 
         def save_quoted(match):
             quoted_parts.append(match.group(0))
-            return f'__QUOTED_{len(quoted_parts)-1}__'
+            return f'__QUOTED_{len(quoted_parts) - 1}__'
 
         line = re.sub(r'"[^"]*"', save_quoted, line)
         line = re.sub(r'\s*\[[^\]]+\]\s*', ' ', line)
@@ -1277,8 +1344,6 @@ class ChatAgent(BaseAgent):
             The cleaned content with deduplicated lines.
         """
         try:
-            import json
-
             data = json.loads(content)
             modified = False
 
@@ -1776,7 +1841,7 @@ class ChatAgent(BaseAgent):
                 return result
 
             # handle structured output if response_format was provided
-            structured_output = None
+            structured_output: BaseModel | dict[str, Any] | None = None
             if response_format and response.msgs[-1].parsed:
                 structured_output = response.msgs[-1].parsed
 
@@ -1784,19 +1849,22 @@ class ChatAgent(BaseAgent):
             # structured output, or generate timestamp
             if filename:
                 base_filename = filename
-            elif structured_output and hasattr(
-                structured_output, 'task_title'
-            ):
-                # use task_title from structured output for filename
-                task_title = structured_output.task_title
+            else:
+                task_title = ""
+                if isinstance(structured_output, BaseModel):
+                    task_title = str(getattr(structured_output, "task_title", ""))
+                elif isinstance(structured_output, dict):
+                    task_title = str(structured_output.get("task_title") or "")
+
+            if not filename and task_title:
                 clean_title = ContextUtility.sanitize_workflow_filename(
                     task_title
                 )
                 base_filename = (
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
-            else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+            elif not filename:
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -1814,10 +1882,16 @@ class ChatAgent(BaseAgent):
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
                 exclude_fields = []
-                if hasattr(structured_output, 'operation_mode'):
-                    exclude_fields.append('operation_mode')
-                if hasattr(structured_output, 'target_workflow_filename'):
-                    exclude_fields.append('target_workflow_filename')
+                if isinstance(structured_output, BaseModel):
+                    if hasattr(structured_output, 'operation_mode'):
+                        exclude_fields.append('operation_mode')
+                    if hasattr(structured_output, 'target_workflow_filename'):
+                        exclude_fields.append('target_workflow_filename')
+                elif isinstance(structured_output, dict):
+                    if "operation_mode" in structured_output:
+                        exclude_fields.append("operation_mode")
+                    if "target_workflow_filename" in structured_output:
+                        exclude_fields.append("target_workflow_filename")
 
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output,
@@ -1925,8 +1999,6 @@ class ChatAgent(BaseAgent):
 
                     # Parse and format arguments for readability
                     try:
-                        import json
-
                         args_dict = json.loads(func_args_str)
                         args_formatted = ', '.join(
                             f"{k}={v}" for k, v in args_dict.items()
@@ -2243,7 +2315,7 @@ class ChatAgent(BaseAgent):
                     f"{clean_title}_workflow" if clean_title else "workflow"
                 )
             else:
-                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
             base_filename = Path(base_filename).with_suffix("").name
 
@@ -2328,8 +2400,9 @@ class ChatAgent(BaseAgent):
 
         # Reset token cache when memory is cleared
         context_creator = self.memory.get_context_creator()
-        if hasattr(context_creator, 'clear_cache'):
-            context_creator.clear_cache()
+        clear_cache = getattr(context_creator, "clear_cache", None)
+        if callable(clear_cache):
+            clear_cache()
 
         if self.system_message is not None:
             self.memory.write_record(
@@ -2773,19 +2846,47 @@ class ChatAgent(BaseAgent):
 
         # Execute with timeout if configured
         if self.step_timeout is not None:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=1
-            ) as executor:
-                future = executor.submit(
-                    self._step_impl, input_message, response_format
-                )
-                try:
-                    return future.result(timeout=self.step_timeout)
-                except concurrent.futures.TimeoutError:
-                    future.cancel()
-                    raise TimeoutError(
-                        f"Step timed out after {self.step_timeout}s"
+            # Retry loop for timeout errors
+            max_retries = self.step_timeout_max_retries
+            last_error: Optional[TimeoutError] = None
+
+            for attempt in range(max_retries + 1):
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=1
+                ) as executor:
+                    future = executor.submit(
+                        self._step_impl, input_message, response_format
                     )
+                    try:
+                        return future.result(timeout=self.step_timeout)
+                    except concurrent.futures.TimeoutError:
+                        future.cancel()
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Step timed out after {self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            import time
+
+                            time.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                    f" (exhausted {max_retries + 1} attempts)"
+                                )
+                            else:
+                                last_error = TimeoutError(
+                                    f"Step timed out after {self.step_timeout}s"
+                                )
+                            raise last_error
+
+            # This should not be reached, but just in case
+            if last_error:
+                raise last_error
+            raise RuntimeError("Unexpected state in step retry loop")
         else:
             return self._step_impl(input_message, response_format)
 
@@ -2801,12 +2902,7 @@ class ChatAgent(BaseAgent):
         set_current_agent_id(self.agent_id)
 
         # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3036,13 +3132,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
@@ -3050,17 +3140,46 @@ class ChatAgent(BaseAgent):
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
             if self.step_timeout is not None:
-                try:
-                    return await asyncio.wait_for(
-                        self._astep_non_streaming_task(
-                            input_message, response_format
-                        ),
-                        timeout=self.step_timeout,
-                    )
-                except asyncio.TimeoutError:
-                    raise asyncio.TimeoutError(
-                        f"Async step timed out after {self.step_timeout}s"
-                    )
+                # Retry loop for timeout errors
+                max_retries = self.step_timeout_max_retries
+                last_error: Optional[asyncio.TimeoutError] = None
+
+                for attempt in range(max_retries + 1):
+                    try:
+                        return await asyncio.wait_for(
+                            self._astep_non_streaming_task(
+                                input_message, response_format
+                            ),
+                            timeout=self.step_timeout,
+                        )
+                    except asyncio.TimeoutError as e:
+                        last_error = e
+                        if attempt < max_retries:
+                            logger.warning(
+                                f"Async step timed out after "
+                                f"{self.step_timeout}s "
+                                f"(attempt {attempt + 1}/{max_retries + 1}), "
+                                f"retrying in 5 seconds..."
+                            )
+                            await asyncio.sleep(5)
+                        else:
+                            # All retries exhausted
+                            if max_retries > 0:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s "
+                                    f"(exhausted {max_retries + 1} attempts)"
+                                ) from last_error
+                            else:
+                                raise asyncio.TimeoutError(
+                                    f"Async step timed out after "
+                                    f"{self.step_timeout}s"
+                                ) from last_error
+
+                # This should not be reached, but just in case
+                if last_error:
+                    raise last_error
+                raise RuntimeError("Unexpected state in astep retry loop")
             else:
                 return await self._astep_non_streaming_task(
                     input_message, response_format
@@ -3077,13 +3196,7 @@ class ChatAgent(BaseAgent):
 
         set_current_agent_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
-
+        set_current_agent_session_id(self.agent_id)
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
@@ -3684,6 +3797,16 @@ class ChatAgent(BaseAgent):
         Returns:
             _ModelResponse: parsed model response.
         """
+        if response.choices is None:
+            return ModelResponse(
+                response=response,
+                tool_call_requests=None,
+                output_messages=[],
+                finish_reasons=[],
+                usage_dict={},
+                response_id=response.id or "",
+            )
+
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
             # Skip messages with no meaningful content
@@ -3722,20 +3845,24 @@ class ChatAgent(BaseAgent):
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                extra_content = getattr(tool_call, 'extra_content', None)
+            try:
+                tool_call_requests = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call.function.name  # type: ignore[union-attr]
+                    tool_call_id = tool_call.id
+                    args = json.loads(repair_json(tool_call.function.arguments or "{}")) # type: ignore[union-attr] some models return '' as {}
+                    extra_content = getattr(tool_call, 'extra_content', None)
 
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name,
-                    args=args,
-                    tool_call_id=tool_call_id,
-                    extra_content=extra_content,
-                )
-                tool_call_requests.append(tool_call_request)
+                    tool_call_request = ToolCallRequest(
+                        tool_name=tool_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                        extra_content=extra_content,
+                    )
+                    tool_call_requests.append(tool_call_request)
+            except (AttributeError, IndexError, json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Error parsing tool calls: {e!s}. Raw tool calls: {tool_calls!s}")
+                raise e
 
         return ModelResponse(
             response=response,
@@ -3839,6 +3966,7 @@ class ChatAgent(BaseAgent):
             extra_content=tool_call_request.extra_content,
         )
 
+    @observe()
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -3858,19 +3986,21 @@ class ChatAgent(BaseAgent):
         else:
             try:
                 # Try different invocation paths in order of preference
-                if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                tool_func = getattr(tool, "func", None)
+                func_async_call = getattr(tool_func, "async_call", None)
+                tool_async_call = getattr(tool, "async_call", None)
+
+                if callable(func_async_call):
                     # Case: FunctionTool wrapping an MCP tool
-                    raw_result = await tool.func.async_call(**args)
+                    raw_result = await func_async_call(**args)
 
-                elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                elif callable(tool_async_call):
                     # Case: tool itself has async_call
-                    raw_result = await tool.async_call(**args)
+                    raw_result = await tool_async_call(**args)
 
-                elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                    tool.func
-                ):
+                elif asyncio.iscoroutinefunction(tool_func):
                     # Case: tool wraps a direct async function
-                    raw_result = await tool.func(**args)
+                    raw_result = await tool_func(**args)
 
                 elif asyncio.iscoroutinefunction(tool):
                     # Case: tool is itself a coroutine function
@@ -4000,14 +4130,13 @@ class ChatAgent(BaseAgent):
 
         if isinstance(result, ToolResult) and result.images:
             try:
-                import base64
                 import io
 
                 try:
                     from PIL import Image
                 except ImportError:
                     logger.warning(
-                        f"Tool '{func_name}' returned images but PIL "
+                        f"Tool '{func_name}' returned images but Pillow "
                         "is not installed. Install with: pip install "
                         "Pillow. Skipping visual context injection."
                     )
@@ -4196,14 +4325,10 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__iter__')
                     and hasattr(response, '__enter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
-                (
-                    stream_completed,
-                    tool_calls_complete,
-                ) = yield from self._process_stream_chunks_with_accumulator(
+                _, tool_calls_complete = yield from self._process_stream_chunks_with_accumulator(
                     response,  # type: ignore[arg-type]
                     content_accumulator,
                     accumulated_tool_calls,
@@ -4243,8 +4368,11 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__enter__') and not hasattr(
+                response, '__iter__'
+            ):
                 # Handle structured output stream (ChatCompletionStreamManager)
+                # This catches context managers that aren't iterators
                 with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -4252,7 +4380,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -4372,12 +4500,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -4387,7 +4513,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -4415,7 +4541,6 @@ class ChatAgent(BaseAgent):
                 # Check if stream is complete
                 if choice.finish_reason:
                     stream_completed = True
-
                     # If we have complete tool calls, execute them with
                     # sync status updates
                     if accumulated_tool_calls:
@@ -4902,23 +5027,21 @@ class ChatAgent(BaseAgent):
                 tool = self._internal_tools[function_name]
                 try:
                     # Try different invocation paths in order of preference
-                    if hasattr(tool, 'func') and hasattr(
-                        tool.func, 'async_call'
-                    ):
+                    tool_func = getattr(tool, "func", None)
+                    func_async_call = getattr(tool_func, "async_call", None)
+                    tool_async_call = getattr(tool, "async_call", None)
+
+                    if callable(func_async_call):
                         # Case: FunctionTool wrapping an MCP tool
-                        result = await tool.func.async_call(**args)
+                        result = await func_async_call(**args)
 
-                    elif hasattr(tool, 'async_call') and callable(
-                        tool.async_call
-                    ):
+                    elif callable(tool_async_call):
                         # Case: tool itself has async_call
-                        result = await tool.async_call(**args)
+                        result = await tool_async_call(**args)
 
-                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
-                        tool.func
-                    ):
+                    elif asyncio.iscoroutinefunction(tool_func):
                         # Case: tool wraps a direct async function
-                        result = await tool.func(**args)
+                        result = await tool_func(**args)
 
                     elif asyncio.iscoroutinefunction(tool):
                         # Case: tool is itself a coroutine function
@@ -5160,11 +5283,9 @@ class ChatAgent(BaseAgent):
                 or (
                     hasattr(response, '__aiter__')
                     and hasattr(response, '__aenter__')
-                    and not hasattr(response, 'get_final_completion')
                     and not isinstance(response, ChatCompletion)
                 )
             ):
-                stream_completed = False
                 tool_calls_complete = False
 
                 # Process chunks and forward them
@@ -5181,7 +5302,7 @@ class ChatAgent(BaseAgent):
                     if isinstance(item, tuple):
                         # This is the final return value (stream_completed,
                         # tool_calls_complete)
-                        stream_completed, tool_calls_complete = item
+                        _, tool_calls_complete = item
                         break
                     else:
                         # This is a ChatAgentResponse to be yielded
@@ -5218,9 +5339,12 @@ class ChatAgent(BaseAgent):
                     # Stream completed without tool calls
                     accumulated_tool_calls.clear()
                     break
-            elif hasattr(response, 'get_final_completion'):
+            elif hasattr(response, '__aenter__') and not hasattr(
+                response, '__aiter__'
+            ):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
+                # Catches async context managers that aren't async iterators
                 async with response as stream:  # type: ignore[union-attr]
                     parsed_object = None
 
@@ -5228,7 +5352,7 @@ class ChatAgent(BaseAgent):
                         if event.type == "content.delta":
                             if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
-                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                partial_response = self._create_streaming_response_with_accumulator(
                                     content_accumulator,
                                     getattr(event, "delta", ""),
                                     step_token_usage,
@@ -5394,12 +5518,10 @@ class ChatAgent(BaseAgent):
                 delta = choice.delta
 
                 # Handle reasoning content streaming (for DeepSeek reasoner)
-                if (
-                    hasattr(delta, 'reasoning_content')
-                    and delta.reasoning_content
-                ):
+                reasoning_delta = getattr(delta, "reasoning_content", None)
+                if reasoning_delta:
                     content_accumulator.add_reasoning_content(
-                        delta.reasoning_content
+                        reasoning_delta
                     )
                     # Yield partial response with reasoning content
                     partial_response = (
@@ -5409,7 +5531,7 @@ class ChatAgent(BaseAgent):
                             step_token_usage,
                             getattr(chunk, 'id', ''),
                             tool_call_records.copy(),
-                            reasoning_delta=delta.reasoning_content,
+                            reasoning_delta=reasoning_delta,
                         )
                     )
                     yield partial_response
@@ -5794,16 +5916,14 @@ class ChatAgent(BaseAgent):
 
         for tool in self._internal_tools.values():
             # Check if this tool is a method bound to a toolkit instance
-            if hasattr(tool.func, '__self__'):
-                toolkit_instance = tool.func.__self__
+            toolkit_instance = getattr(getattr(tool, "func", None), "__self__", None)
+            if toolkit_instance is not None:
                 toolkit_id = id(toolkit_instance)
 
                 if toolkit_id not in cloned_toolkits:
                     # Check if the toolkit has a clone method
                     if hasattr(toolkit_instance, 'clone_for_new_session'):
                         try:
-                            import uuid
-
                             new_session_id = str(uuid.uuid4())[:8]
                             new_toolkit = (
                                 toolkit_instance.clone_for_new_session(
@@ -5819,7 +5939,7 @@ class ChatAgent(BaseAgent):
                             cloned_toolkits[toolkit_id] = new_toolkit
                         except Exception as e:
                             logger.warning(
-                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"
                             )
                             # Use original toolkit if cloning fails
                             cloned_toolkits[toolkit_id] = toolkit_instance
@@ -5955,6 +6075,7 @@ class ChatAgent(BaseAgent):
                     "DynamicResponseFormat", response_format
                 )
             response = await agent_instance.astep(message, format_cls)
+            response = cast(ChatAgentResponse, response)
             return {
                 "status": "success",
                 "messages": [msg.to_dict() for msg in response.msgs],
@@ -6002,10 +6123,11 @@ class ChatAgent(BaseAgent):
                     "content": msg.get("content", ""),
                 }
                 # Include function calls if present
-                if "function_call" in msg:
+                function_call = msg.get("function_call")
+                if isinstance(function_call, dict):
                     msg_dict["function_call"] = {
-                        "name": msg["function_call"].get("name", ""),
-                        "arguments": msg["function_call"].get("arguments", ""),
+                        "name": function_call.get("name", ""),
+                        "arguments": function_call.get("arguments", ""),
                     }
                 messages.append(msg_dict)
             return messages

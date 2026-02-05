@@ -1,0 +1,21 @@
+{
+  "type": "pre_capture",
+  "index": 10,
+  "prefix": "pre_step_0010",
+  "captured_at": "2026-02-03T21:02:14.493072",
+  "next_action": "type",
+  "next_action_args": {
+    "args": [
+      "e1393",
+      "Orlando MCO"
+    ],
+    "kwargs": {}
+  },
+  "tab_id": "tab-002",
+  "url": "https://www.google.com/travel/flights?tfs=CBwQARoJagcIARIDVklFGglyBwgBEgNWSUVAAUABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+  "snapshot_sha1": "0b31ba0b2e018ca0ff3dc0823983124f2ac15900",
+  "screenshot_sha1": "594d0a5556d57c47368f5486dc11bbb2e391a823",
+  "timing": {
+    "screenshot_time_ms": 127
+  }
+}

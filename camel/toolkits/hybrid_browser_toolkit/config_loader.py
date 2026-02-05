@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional
 
 
@@ -24,6 +24,7 @@ class BrowserConfig:
     user_data_dir: Optional[str] = None
     stealth: bool = False
     console_log_limit: int = 1000
+    locale: Optional[str] = None
 
     # Default settings
     default_start_url: str = "https://google.com/"
@@ -36,9 +37,14 @@ class BrowserConfig:
     screenshot_timeout: int = 15000
     page_stability_timeout: int = 1500
     dom_content_loaded_timeout: int = 5000
+    dom_stability_threshold: int = 200
+    dom_stability_timeout: int = 5000
 
     # Viewport configuration
     viewport_limit: bool = False
+    viewport: Dict[str, int] = field(
+        default_factory=lambda: {"width": 1280, "height": 720}
+    )
 
     # CDP connection configuration
     connect_over_cdp: bool = False
@@ -58,6 +64,18 @@ class ToolkitConfig:
     log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
+    evidence_capture: "EvidenceCaptureConfig" = field(
+        default_factory=lambda: EvidenceCaptureConfig()
+    )
+
+
+@dataclass
+class EvidenceCaptureConfig:
+    enabled: bool = False
+    snapshot: bool = False
+    screenshot: bool = False
+    max_steps: int = 250
+    actions: Optional[list] = None
 
 
 class ConfigLoader:
@@ -103,10 +121,16 @@ class ConfigLoader:
                 browser_kwargs["screenshot_timeout"] = value
             elif key == "pageStabilityTimeout":
                 browser_kwargs["page_stability_timeout"] = value
+            elif key == "domStabilityThreshold":
+                browser_kwargs["dom_stability_threshold"] = value
+            elif key == "domStabilityTimeout":
+                browser_kwargs["dom_stability_timeout"] = value
             elif key == "domContentLoadedTimeout":
                 browser_kwargs["dom_content_loaded_timeout"] = value
             elif key == "viewportLimit":
                 browser_kwargs["viewport_limit"] = value
+            elif key == "viewport":
+                browser_kwargs["viewport"] = value
             elif key == "connectOverCdp":
                 browser_kwargs["connect_over_cdp"] = value
             elif key == "cdpUrl":
@@ -145,12 +169,18 @@ class ConfigLoader:
             "headless": self.browser_config.headless,
             "userDataDir": self.browser_config.user_data_dir,
             "stealth": self.browser_config.stealth,
+            "locale": self.browser_config.locale,
             "defaultStartUrl": self.browser_config.default_start_url,
             "navigationTimeout": self.browser_config.navigation_timeout,
             "networkIdleTimeout": self.browser_config.network_idle_timeout,
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
+            "domStabilityThreshold": (
+                self.browser_config.dom_stability_threshold
+            ),
+            "domStabilityTimeout": self.browser_config.dom_stability_timeout,
             "viewport_limit": self.browser_config.viewport_limit,
+            "viewport": self.browser_config.viewport,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
             "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
@@ -158,6 +188,8 @@ class ConfigLoader:
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,
+            "cache_dir": self.toolkit_config.cache_dir,
+            "evidence_capture": asdict(self.toolkit_config.evidence_capture),
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:
@@ -168,8 +200,8 @@ class ConfigLoader:
             "navigation_timeout": self.browser_config.navigation_timeout,
             "network_idle_timeout": self.browser_config.network_idle_timeout,
             "screenshot_timeout": self.browser_config.screenshot_timeout,
-            "page_stability_timeout": self.browser_config.page_stability_timeout,  # noqa:E501
-            "dom_content_loaded_timeout": self.browser_config.dom_content_loaded_timeout,  # noqa:E501
+            "page_stability_timeout": self.browser_config.page_stability_timeout,
+            "dom_content_loaded_timeout": self.browser_config.dom_content_loaded_timeout,
         }
 
     def update_browser_config(self, **kwargs) -> None:
