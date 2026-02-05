@@ -1627,8 +1627,41 @@ export class HybridBrowserSession {
   }
 
   /**
+   * Resolves click action based on ref or pixel coordinates.
+   * Returns either a clickAction function or an error message.
+   */
+  private async resolveClickAction(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ clickAction: () => Promise<void> } | { error: string }> {
+    if (x !== undefined && y !== undefined) {
+      // Pixel mode
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+      }
+      await this.showClickHighlight(page, x, y);
+      return { clickAction: async () => { await page.mouse.click(x, y); } };
+    } else if (ref) {
+      // Ref mode
+      await this.getSnapshot(page);
+      const element = page.locator(`aria-ref=${ref}`).first();
+      if (await element.count() === 0) {
+        return { error: `Element with ref ${ref} not found` };
+      }
+      return { clickAction: async () => { await element.click(); } };
+    } else {
+      return { error: 'Must provide either ref or (x, y) coordinates' };
+    }
+  }
+
+  /**
    * Upload a file by clicking the ref element or pixel coordinates and intercepting the file chooser.
-   * Falls back to finding the last file input on the page if no file chooser is triggered.
    * Supports both ref mode and pixel mode.
    */
   private async performFileUpload(
@@ -1643,31 +1676,11 @@ export class HybridBrowserSession {
         return { success: false, error: `File not found: ${filePath}` };
       }
 
-      // Determine click method based on provided parameters
-      let clickAction: () => Promise<void>;
-
-      if (x !== undefined && y !== undefined) {
-        // Pixel mode
-        const viewport = page.viewportSize();
-        if (!viewport) {
-          return { success: false, error: 'Viewport size not available from page.' };
-        }
-        if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
-          return { success: false, error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
-        }
-        await this.showClickHighlight(page, x, y);
-        clickAction = async () => { await page.mouse.click(x, y); };
-      } else if (ref) {
-        // Ref mode
-        await this.getSnapshot(page);
-        const element = page.locator(`aria-ref=${ref}`).first();
-        if (await element.count() === 0) {
-          return { success: false, error: `Element with ref ${ref} not found` };
-        }
-        clickAction = async () => { await element.click(); };
-      } else {
-        return { success: false, error: 'Must provide either ref or (x, y) coordinates' };
+      const result = await this.resolveClickAction(page, ref, x, y);
+      if ('error' in result) {
+        return { success: false, error: result.error };
       }
+      const { clickAction } = result;
 
       try {
         const [fileChooser] = await Promise.all([
@@ -1677,12 +1690,10 @@ export class HybridBrowserSession {
         await fileChooser.setFiles(filePath);
         return { success: true };
       } catch {
-        const fileInput = page.locator('input[type="file"]');
-        if (await fileInput.count() === 0) {
-          return { success: false, error: 'No file input found on page' };
-        }
-        await fileInput.last().setInputFiles(filePath);
-        return { success: true };
+        return {
+          success: false,
+          error: 'File chooser not triggered. The clicked element may not be a file upload button.'
+        };
       }
     } catch (error) {
       return { success: false, error: `File upload failed: ${error}` };
@@ -1711,31 +1722,11 @@ export class HybridBrowserSession {
       return { success: false, error: `Download directory does not exist: ${saveDir}` };
     }
 
-    // Determine click method based on provided parameters
-    let clickAction: () => Promise<void>;
-
-    if (x !== undefined && y !== undefined) {
-      // Pixel mode
-      const viewport = page.viewportSize();
-      if (!viewport) {
-        return { success: false, error: 'Viewport size not available from page.' };
-      }
-      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
-        return { success: false, error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
-      }
-      await this.showClickHighlight(page, x, y);
-      clickAction = async () => { await page.mouse.click(x, y); };
-    } else if (ref) {
-      // Ref mode
-      await this.getSnapshot(page);
-      const element = page.locator(`aria-ref=${ref}`).first();
-      if (await element.count() === 0) {
-        return { success: false, error: `Element with ref ${ref} not found` };
-      }
-      clickAction = async () => { await element.click(); };
-    } else {
-      return { success: false, error: 'Must provide either ref or (x, y) coordinates' };
+    const result = await this.resolveClickAction(page, ref, x, y);
+    if ('error' in result) {
+      return { success: false, error: result.error };
     }
+    const { clickAction } = result;
 
     try {
       const [download] = await Promise.all([
