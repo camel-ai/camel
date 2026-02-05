@@ -6,6 +6,7 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write  # required for issues.addLabels() on PRs
 
 jobs:
   add-labels:
