@@ -56,27 +56,11 @@ def test_normal_with_tools():
     assert "314" in content
     assert "142" in content
 
-
-@pytest.mark.model_backend
-def test_structured_output_with_tools():
-    """Structured output example with tools."""
-
     class Result(BaseModel):
         sum_result: str = Field(description="Result of the addition")
         product_result: str = Field(description="Result of the multiplication")
         division_result: str = Field(description="Result of the division")
         capital_result: str = Field(description="Result of the capital search")
-
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
-    )
-
-    agent = ChatAgent(
-        system_message="You are a helpful assistant. ",
-        model=model,
-        tools=MathToolkit().get_tools(),
-    )
 
     response = agent.step(
         "Calculate: 1) 123.45 + 678.90  2) 100 * 3.14159  3) 1000 / 7, "

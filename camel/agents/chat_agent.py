@@ -2896,6 +2896,10 @@ class ChatAgent(BaseAgent):
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
 
+        # Track if we've recorded tool calls for the current response
+        # to avoid duplicate assistant message recording
+        recorded_tool_calls = False
+
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 # Use efficient blocking wait for threading.Event
@@ -2949,6 +2953,9 @@ class ChatAgent(BaseAgent):
                     "termination_triggered",
                 )
 
+            # Reset flag for each iteration
+            recorded_tool_calls = False
+
             if tool_call_requests := response.tool_call_requests:
                 # Separate internal and external tool calls
                 internal_tool_requests = []
@@ -2963,15 +2970,19 @@ class ChatAgent(BaseAgent):
                     else:
                         internal_tool_requests.append(tool_call_request)
 
-                # Record the assistant message with ALL internal tool calls
-                # BEFORE executing any tools. This ensures proper message
-                # sequence: [assistant with all tool_calls] -> [tool results]
-                if internal_tool_requests:
-                    self._record_assistant_tool_calls_from_requests(
-                        internal_tool_requests
+                # Record the assistant message with ALL tool calls (internal +
+                # external)
+                response_content = ""
+                if response.output_messages:
+                    response_content = (
+                        response.output_messages[0].content or ""
                     )
+                self._record_assistant_tool_calls_from_requests(
+                    tool_call_requests, content=response_content
+                )
+                recorded_tool_calls = True
 
-                # Execute internal tools
+                # Execute internal tools only
                 for tool_call_request in internal_tool_requests:
                     if (
                         self.pause_event is not None
@@ -3046,7 +3057,10 @@ class ChatAgent(BaseAgent):
                 response, original_response_format
             )
 
-        self._record_final_output(response.output_messages)
+        # Only record final output if we haven't already recorded tool calls
+        # for this response (to avoid duplicate assistant messages)
+        if not recorded_tool_calls:
+            self._record_final_output(response.output_messages)
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3182,6 +3196,10 @@ class ChatAgent(BaseAgent):
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
 
+        # Track if we've recorded tool calls for the current response
+        # to avoid duplicate assistant message recording
+        recorded_tool_calls = False
+
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 if isinstance(self.pause_event, asyncio.Event):
@@ -3234,6 +3252,9 @@ class ChatAgent(BaseAgent):
                     "termination_triggered",
                 )
 
+            # Reset flag for each iteration
+            recorded_tool_calls = False
+
             if tool_call_requests := response.tool_call_requests:
                 # Separate internal and external tool calls
                 internal_tool_requests = []
@@ -3248,15 +3269,19 @@ class ChatAgent(BaseAgent):
                     else:
                         internal_tool_requests.append(tool_call_request)
 
-                # Record the assistant message with ALL internal tool calls
-                # BEFORE executing any tools. This ensures proper message
-                # sequence: [assistant with all tool_calls] -> [tool results]
-                if internal_tool_requests:
-                    self._record_assistant_tool_calls_from_requests(
-                        internal_tool_requests
+                # Record the assistant message with ALL tool calls (internal +
+                # external) BEFORE executing any tools.
+                response_content = ""
+                if response.output_messages:
+                    response_content = (
+                        response.output_messages[0].content or ""
                     )
+                self._record_assistant_tool_calls_from_requests(
+                    tool_call_requests, content=response_content
+                )
+                recorded_tool_calls = True
 
-                # Execute internal tools
+                # Execute internal tools only
                 for tool_call_request in internal_tool_requests:
                     if (
                         self.pause_event is not None
@@ -3334,7 +3359,10 @@ class ChatAgent(BaseAgent):
                 response, original_response_format
             )
 
-        self._record_final_output(response.output_messages)
+        # Only record final output if we haven't already recorded tool calls
+        # for this response (to avoid duplicate assistant messages)
+        if not recorded_tool_calls:
+            self._record_final_output(response.output_messages)
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
