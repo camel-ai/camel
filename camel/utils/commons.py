@@ -984,6 +984,7 @@ def safe_extract_parsed(
             extraction fails for any reason.
     """
     msg = response.msg
+    # Empty or multi-message response (len(msgs) != 1)
     if msg is None:
         logger.error(
             f"safe_extract_parsed: response.msg is None "
@@ -992,8 +993,10 @@ def safe_extract_parsed(
         )
         return None
     parsed = msg.parsed
+    # Already the expected Pydantic model
     if isinstance(parsed, schema):
         return parsed
+    # Some backends return raw dict instead of model instance
     if isinstance(parsed, dict):
         try:
             return schema(**parsed)
@@ -1003,11 +1006,13 @@ def safe_extract_parsed(
                 f"{schema.__name__} from dict: {e}"
             )
             return None
+    # Model did not produce structured output
     if parsed is None:
         logger.error(
             f"safe_extract_parsed: msg.parsed is None, "
             f"model did not produce valid {schema.__name__}"
         )
+    # Unexpected type
     else:
         logger.error(
             f"safe_extract_parsed: msg.parsed is "
