@@ -97,8 +97,8 @@ class DaytonaRuntime(BaseRuntime):
             raise RuntimeError(f"Daytona sandbox creation failed: {e!s}")
         return self
 
-    def _cleanup(self):
-        r"""Clean up the sandbox when exiting."""
+    def cleanup(self) -> None:
+        r"""Release the Daytona sandbox (delete and remove reference)."""
         if self.sandbox:
             try:
                 self.daytona.delete(self.sandbox)
@@ -236,7 +236,7 @@ class DaytonaRuntime(BaseRuntime):
     def __del__(self):
         r"""Clean up the sandbox when the object is deleted."""
         if hasattr(self, 'sandbox'):
-            self._cleanup()
+            self.cleanup()
 
     def stop(self) -> "DaytonaRuntime":
         r"""Stop and remove the sandbox.
@@ -244,7 +244,7 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
-        self._cleanup()
+        self.cleanup()
         return self
 
     def reset(self) -> "DaytonaRuntime":
