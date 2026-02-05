@@ -190,6 +190,10 @@ class LLMGuardRuntime(BaseRuntime):
 
         return self
 
+    def cleanup(self) -> None:
+        r"""No-op; LLMGuardRuntime does not hold external resources."""
+        pass
+
     def reset(self) -> "LLMGuardRuntime":
         r"""Resets the runtime to its initial state."""
         self.ignore_toolkit.ignored_risks = dict()
