@@ -4148,6 +4148,13 @@ class ChatAgent(BaseAgent):
                 content, tool calls, and other information as they become
                 available.
         """
+        # Handle response format compatibility with non-strict tools
+        input_message, response_format, _ = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
