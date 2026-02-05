@@ -996,7 +996,9 @@ def safe_extract_parsed(
     # Already the expected Pydantic model
     if isinstance(parsed, schema):
         return parsed
-    # Some backends return raw dict instead of model instance
+    # TODO: Unify backend parsing so parsed is always a model instance,
+    # removing the need for this dict fallback.
+    # LiteLLM or non-OpenAI backends may return raw dict instead of model
     if isinstance(parsed, dict):
         try:
             return schema(**parsed)
