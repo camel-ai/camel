@@ -950,18 +950,46 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
-    async def upload_file(self, ref: str, file_path: str) -> Dict[str, Any]:
-        """Upload a file by clicking the element and
-        intercepting the file chooser."""
-        response = await self._send_command(
-            'upload_file', {'ref': ref, 'filePath': file_path}
-        )
+    async def upload_file(
+        self,
+        file_path: str,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Upload a file by clicking the element or coordinates and
+        intercepting the file chooser.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {'filePath': file_path}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('upload_file', params)
         return response
 
     @action_logger
-    async def download_file(self, ref: str) -> Dict[str, Any]:
-        """Download a file by clicking the element that triggers a download."""
-        response = await self._send_command('download_file', {'ref': ref})
+    async def download_file(
+        self,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Download a file by clicking the element or coordinates that
+        triggers a download.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('download_file', params)
         return response
 
     @action_logger

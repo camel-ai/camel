@@ -404,13 +404,22 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async uploadFile(ref: string, filePath: string): Promise<any> {
-    const action: BrowserAction = { type: 'upload_file', ref, filePath };
+  async uploadFile(params: {
+    filePath: string;
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'upload_file', ...params };
     return this.executeActionWithSnapshot(action);
   }
 
-  async downloadFile(ref: string): Promise<any> {
-    const action: BrowserAction = { type: 'download_file', ref };
+  async downloadFile(params: {
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'download_file', ...params };
     return this.executeActionWithSnapshot(action);
   }
 

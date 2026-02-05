@@ -433,7 +433,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._user_data_dir = browser_config.user_data_dir
         self._stealth = browser_config.stealth
         self._cache_dir = toolkit_config.cache_dir
-        self._download_dir = toolkit_config.download_dir
         self._browser_log_to_file = toolkit_config.browser_log_to_file
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
@@ -1224,16 +1223,25 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return self._build_error_response(f"Error with press key: {e}")
 
     async def browser_upload_file(
-        self, *, ref: str, file_path: str
+        self,
+        *,
+        file_path: str,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
     ) -> Dict[str, Any]:
-        r"""Uploads a file by clicking the element
-         that triggers a file chooser.
+        r"""Uploads a file by clicking the element or coordinates that
+        triggers a file chooser.
+
+        Supports both ref mode and pixel mode.
 
         Args:
-            ref (str): The `ref` ID of the clickable upload element (e.g.,
-                a "Choose File" button). This ID is obtained from a page
-                snapshot (`get_page_snapshot` or `get_som_screenshot`).
             file_path (str): The absolute path to the file to upload.
+            ref (Optional[str]): The `ref` ID of the clickable upload element
+                (e.g., a "Choose File" button). This ID is obtained from a
+                page snapshot (`get_page_snapshot` or `get_som_screenshot`).
+            x (Optional[float]): X pixel coordinate for pixel mode.
+            y (Optional[float]): Y pixel coordinate for pixel mode.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1245,7 +1253,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.upload_file(ref, file_path)
+            result = await ws_wrapper.upload_file(
+                file_path=file_path, ref=ref, x=x, y=y
+            )
             return await self._build_action_response(
                 result, ws_wrapper, include_note=False
             )
@@ -1255,13 +1265,25 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 f"Error uploading file: {e}", include_note=False
             )
 
-    async def browser_download_file(self, *, ref: str) -> Dict[str, Any]:
-        r"""Downloads a file by clicking the element that triggers a download.
+    async def browser_download_file(
+        self,
+        *,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        r"""Downloads a file by clicking the element or coordinates that
+        triggers a download.
+
+        Supports both ref mode and pixel mode.
 
         Args:
-            ref (str): The `ref` ID of the clickable download element (e.g.,
-                a "Download" button or link). This ID is obtained from a page
-                snapshot (`get_page_snapshot` or `get_som_screenshot`).
+            ref (Optional[str]): The `ref` ID of the clickable download
+                element (e.g., a "Download" button or link). This ID is
+                obtained from a page snapshot (`get_page_snapshot` or
+                `get_som_screenshot`).
+            x (Optional[float]): X pixel coordinate for pixel mode.
+            y (Optional[float]): Y pixel coordinate for pixel mode.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1273,7 +1295,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.download_file(ref)
+            result = await ws_wrapper.download_file(ref=ref, x=x, y=y)
             return await self._build_action_response(
                 result, ws_wrapper, include_note=False
             )
@@ -2228,6 +2250,99 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 browser_mouse_drag_ref.__name__ = "browser_mouse_drag"
                 return browser_mouse_drag_ref
 
+        elif tool_name == "browser_upload_file":
+            if pixel_mode:
+
+                async def browser_upload_file_pixel(
+                    *, x: float, y: float, file_path: str
+                ) -> Dict[str, Any]:
+                    r"""Uploads a file by clicking at the specified pixel
+                    coordinates.
+
+                    Clicks at the coordinates to trigger the file chooser,
+                    then uploads the specified file.
+
+                    Args:
+                        x (float): X pixel coordinate of the upload element.
+                        y (float): Y pixel coordinate of the upload element.
+                        file_path (str): The absolute path to the file to
+                            upload.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(x=x, y=y, file_path=file_path)
+
+                browser_upload_file_pixel.__name__ = "browser_upload_file"
+                return browser_upload_file_pixel
+            else:
+
+                async def browser_upload_file_ref(
+                    *, ref: str, file_path: str
+                ) -> Dict[str, Any]:
+                    r"""Uploads a file by clicking the element identified by
+                    ref ID.
+
+                    The ref ID is obtained from a page snapshot.
+
+                    Args:
+                        ref (str): The ref ID of the upload element.
+                        file_path (str): The absolute path to the file to
+                            upload.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action.
+                    """
+                    return await method(ref=ref, file_path=file_path)
+
+                browser_upload_file_ref.__name__ = "browser_upload_file"
+                return browser_upload_file_ref
+
+        elif tool_name == "browser_download_file":
+            if pixel_mode:
+
+                async def browser_download_file_pixel(
+                    *, x: float, y: float
+                ) -> Dict[str, Any]:
+                    r"""Downloads a file by clicking at the specified pixel
+                    coordinates.
+
+                    Clicks at the coordinates to trigger the download.
+
+                    Args:
+                        x (float): X pixel coordinate of the download element.
+                        y (float): Y pixel coordinate of the download element.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action with file name
+                            and save path.
+                    """
+                    return await method(x=x, y=y)
+
+                browser_download_file_pixel.__name__ = "browser_download_file"
+                return browser_download_file_pixel
+            else:
+
+                async def browser_download_file_ref(
+                    *, ref: str
+                ) -> Dict[str, Any]:
+                    r"""Downloads a file by clicking the element identified by
+                    ref ID.
+
+                    The ref ID is obtained from a page snapshot.
+
+                    Args:
+                        ref (str): The ref ID of the download element.
+
+                    Returns:
+                        Dict[str, Any]: Result of the action with file name
+                            and save path.
+                    """
+                    return await method(ref=ref)
+
+                browser_download_file_ref.__name__ = "browser_download_file"
+                return browser_download_file_ref
+
         return method
 
     def get_tools(self) -> List[FunctionTool]:
@@ -2271,6 +2386,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_click",
             "browser_type",
             "browser_mouse_drag",
+            "browser_upload_file",
+            "browser_download_file",
         }
 
         enabled_tools = []

@@ -142,13 +142,21 @@ export interface PressKeyAction {
 
 export interface UploadFileAction {
   type: 'upload_file';
-  ref: string;
   filePath: string;
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
 }
 
 export interface DownloadFileAction {
   type: 'download_file';
-  ref: string;
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
 }
 
 export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction | UploadFileAction | DownloadFileAction;

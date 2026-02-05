@@ -1627,26 +1627,52 @@ export class HybridBrowserSession {
   }
 
   /**
-   * Upload a file by clicking the ref element and intercepting the file chooser.
+   * Upload a file by clicking the ref element or pixel coordinates and intercepting the file chooser.
    * Falls back to finding the last file input on the page if no file chooser is triggered.
+   * Supports both ref mode and pixel mode.
    */
-  private async performFileUpload(page: Page, ref: string, filePath: string): Promise<{ success: boolean; error?: string }> {
+  private async performFileUpload(
+    page: Page,
+    filePath: string,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       if (!fs.existsSync(filePath)) {
         return { success: false, error: `File not found: ${filePath}` };
       }
 
-      await this.getSnapshot(page);
+      // Determine click method based on provided parameters
+      let clickAction: () => Promise<void>;
 
-      const element = page.locator(`aria-ref=${ref}`).first();
-      if (await element.count() === 0) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      if (x !== undefined && y !== undefined) {
+        // Pixel mode
+        const viewport = page.viewportSize();
+        if (!viewport) {
+          return { success: false, error: 'Viewport size not available from page.' };
+        }
+        if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+          return { success: false, error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+        }
+        await this.showClickHighlight(page, x, y);
+        clickAction = async () => { await page.mouse.click(x, y); };
+      } else if (ref) {
+        // Ref mode
+        await this.getSnapshot(page);
+        const element = page.locator(`aria-ref=${ref}`).first();
+        if (await element.count() === 0) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        clickAction = async () => { await element.click(); };
+      } else {
+        return { success: false, error: 'Must provide either ref or (x, y) coordinates' };
       }
 
       try {
         const [fileChooser] = await Promise.all([
           page.waitForEvent('filechooser', { timeout: 3000 }),
-          element.click(),
+          clickAction(),
         ]);
         await fileChooser.setFiles(filePath);
         return { success: true };
@@ -1664,9 +1690,15 @@ export class HybridBrowserSession {
   }
 
   /**
-   * Download a file by clicking the ref element and waiting for the download to complete.
+   * Download a file by clicking the ref element or pixel coordinates and waiting for the download to complete.
+   * Supports both ref mode and pixel mode.
    */
-  private async performFileDownload(page: Page, ref: string): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
+  private async performFileDownload(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
     const browserConfig = this.configLoader.getBrowserConfig();
     const saveDir = browserConfig.downloadDir;
     const downloadTimeout = browserConfig.downloadTimeout;
@@ -1679,17 +1711,36 @@ export class HybridBrowserSession {
       return { success: false, error: `Download directory does not exist: ${saveDir}` };
     }
 
-    await this.getSnapshot(page);
+    // Determine click method based on provided parameters
+    let clickAction: () => Promise<void>;
 
-    const element = page.locator(`aria-ref=${ref}`).first();
-    if (await element.count() === 0) {
-      return { success: false, error: `Element with ref ${ref} not found` };
+    if (x !== undefined && y !== undefined) {
+      // Pixel mode
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { success: false, error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { success: false, error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+      }
+      await this.showClickHighlight(page, x, y);
+      clickAction = async () => { await page.mouse.click(x, y); };
+    } else if (ref) {
+      // Ref mode
+      await this.getSnapshot(page);
+      const element = page.locator(`aria-ref=${ref}`).first();
+      if (await element.count() === 0) {
+        return { success: false, error: `Element with ref ${ref} not found` };
+      }
+      clickAction = async () => { await element.click(); };
+    } else {
+      return { success: false, error: 'Must provide either ref or (x, y) coordinates' };
     }
 
     try {
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: downloadTimeout }),
-        element.click(),
+        clickAction(),
       ]);
 
       const fileName = download.suggestedFilename();
@@ -1863,7 +1914,13 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const uploadStart = Date.now();
 
-          const uploadResult = await this.performFileUpload(page, action.ref, action.filePath);
+          const uploadResult = await this.performFileUpload(
+            page,
+            action.filePath,
+            action.ref,
+            action.x,
+            action.y
+          );
 
           if (!uploadResult.success) {
             throw new Error(`Upload failed: ${uploadResult.error}`);
@@ -1877,7 +1934,12 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const downloadStart = Date.now();
 
-          const downloadResult = await this.performFileDownload(page, action.ref);
+          const downloadResult = await this.performFileDownload(
+            page,
+            action.ref,
+            action.x,
+            action.y
+          );
 
           if (!downloadResult.success) {
             throw new Error(`Download failed: ${downloadResult.error}`);
