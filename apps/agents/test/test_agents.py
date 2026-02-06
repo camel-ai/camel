@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import gradio as gr
+import os
 import pytest
 
 from apps.agents.agents import (
@@ -38,6 +39,8 @@ def test_utils():
 
 @pytest.mark.model_backend
 def test_session():
+    if not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("OPENAI_API_KEY not found")
     for society_name in ("AI Society", "Code"):
         state = State.empty()
 

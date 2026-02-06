@@ -14,3 +14,4 @@ Basic Concepts
    create_your_first_agents_society
    agents_message
    agents_prompting
+   oceanbase
