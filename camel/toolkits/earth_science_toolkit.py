@@ -1588,7 +1588,7 @@ class EarthScienceToolkit(BaseToolkit):
         nir_path: str,
         lst_path: str,
         ndvi_threshold: float,
-        mode: str = 'above'
+        mode: str = 'above',
     ):
         """
         Calculate the maximum Land Surface Temperature (LST) in areas where
@@ -2694,8 +2694,8 @@ class EarthScienceToolkit(BaseToolkit):
         import numpy as np
         import ruptures as rpt
 
-        signal = np.asarray(signal)
-        algo = rpt.Pelt(model=model).fit(signal)
+        signal_arr = np.asarray(signal)
+        algo = rpt.Pelt(model=model).fit(signal_arr)
         change_points = algo.predict(pen=penalty)
         return [int(cp) for cp in change_points]
 
@@ -2884,7 +2884,7 @@ class EarthScienceToolkit(BaseToolkit):
         self,
         values: list[float],
         spike_threshold: float = 0.1,
-        verbose: bool = True
+        verbose: bool = True,
     ):
         """
         Count the number of upward spikes in a sequence of numerical values.
@@ -2910,9 +2910,9 @@ class EarthScienceToolkit(BaseToolkit):
         """
         import numpy as np
 
-        values = np.array(values, dtype=np.float32)
-        valid_indices = ~np.isnan(values)
-        valid_values = values[valid_indices]
+        values_arr = np.array(values, dtype=np.float32)
+        valid_indices = ~np.isnan(values_arr)
+        valid_values = values_arr[valid_indices]
         if len(valid_values) < 2:
             if verbose:
                 logger.info(
@@ -4033,7 +4033,7 @@ class EarthScienceToolkit(BaseToolkit):
         image_path1: str,
         image_path2: str | None = None,
         band1: int | None = 1,
-        band2: int | None = 2
+        band2: int | None = 2,
     ):
         """
         Description:
@@ -5156,7 +5156,9 @@ class EarthScienceToolkit(BaseToolkit):
             [_ for _ in os.listdir(dir_path) if not _.startswith('.')]
         )
 
-    def radiometric_correction_sr(self, input_band_path: str, output_path: str):
+    def radiometric_correction_sr(
+        self, input_band_path: str, output_path: str
+    ):
         """
         Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
 
