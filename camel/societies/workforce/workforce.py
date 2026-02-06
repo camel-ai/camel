@@ -91,7 +91,7 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.utils import dependencies_required
+from camel.utils import dependencies_required, safe_extract_parsed
 
 from .events import (
     AllTasksCompletedEvent,
@@ -1624,7 +1624,14 @@ class Workforce(BaseNode):
                 response = self.task_agent.step(
                     analysis_prompt, response_format=result_schema
                 )
-                return response.msg.parsed
+                parsed = safe_extract_parsed(response, result_schema)
+                if parsed is not None:
+                    return parsed
+                logger.warning(
+                    "Failed to get structured response from model, "
+                    "using fallback values"
+                )
+                return TaskAnalysisResult(**fallback_values)
 
         except Exception as e:
             logger.warning(

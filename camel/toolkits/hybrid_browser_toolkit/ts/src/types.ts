@@ -125,8 +125,14 @@ export interface MouseAction {
 
 export interface MouseDragAction {
   type: 'mouse_drag';
-  from_ref: string;
-  to_ref: string;
+  // Ref mode
+  from_ref?: string;
+  to_ref?: string;
+  // Pixel mode
+  from_x?: number;
+  from_y?: number;
+  to_x?: number;
+  to_y?: number;
 }
 
 export interface PressKeyAction {
@@ -139,4 +145,26 @@ export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollActi
 export interface VisualMarkResult {
   text: string;
   images: string[];
+}
+
+/**
+ * Interactive element roles for click detection and visual marking
+ * Used by both browser-session.ts and hybrid-browser-toolkit.ts
+ */
+export const INTERACTIVE_ROLES = new Set([
+  'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox',
+  'slider', 'spinbutton', 'switch', 'searchbox', 'menuitem',
+  'menuitemcheckbox', 'menuitemradio', 'option', 'tab'
+]);
+
+/**
+ * Nearest element info for ineffective click detection
+ */
+export interface NearestElementInfo {
+  ref: string;
+  role: string;
+  name: string;
+  distance: number;
+  clickableCoord: { x: number; y: number };
+  boundingBox: { x: number; y: number; width: number; height: number };
 }
