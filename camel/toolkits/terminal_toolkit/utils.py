@@ -15,6 +15,7 @@
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -157,29 +158,100 @@ def sanitize_command(
     if not is_safe:
         return False, reason
 
-    # Additional check for local backend: prevent cd outside working directory
-    if not use_docker_backend and working_dir and 'cd ' in command:
-        # Extract cd commands and check their targets
+    # Additional checks for local backend:
+    # - prevent cd outside working directory
+    # - prevent link creation pointing outside working directory
+    if not use_docker_backend and working_dir:
         # Normalize working_dir to ensure consistent comparison
         normalized_working_dir = os.path.normpath(os.path.abspath(working_dir))
-        for match in _CD_PATTERN.finditer(command):
-            target_path = match.group(1).strip('\'"')
-            target_dir = os.path.normpath(
-                os.path.abspath(os.path.join(working_dir, target_path))
-            )
-            # Use os.path.commonpath for safe path comparison
-            try:
-                common = os.path.commonpath(
-                    [normalized_working_dir, target_dir]
+        if 'cd' in command:
+            # Extract cd commands and check their targets
+            for match in _CD_PATTERN.finditer(command):
+                target_path = match.group(1).strip('\'"')
+                target_dir = os.path.normpath(
+                    os.path.abspath(os.path.join(working_dir, target_path))
                 )
-                if common != normalized_working_dir:
+                # Use os.path.commonpath for safe path comparison
+                try:
+                    common = os.path.commonpath(
+                        [normalized_working_dir, target_dir]
+                    )
+                    if common != normalized_working_dir:
+                        return (
+                            False,
+                            "Cannot 'cd' outside of the working directory.",
+                        )
+                except ValueError:
+                    # Different drives on Windows or other path issues
                     return (
                         False,
                         "Cannot 'cd' outside of the working directory.",
                     )
+
+        if re.search(r'\bln\b', command, re.IGNORECASE):
+            try:
+                lexer = shlex.shlex(
+                    command, posix=True, punctuation_chars=";&|"
+                )
+                lexer.whitespace_split = True
+                lexer.commenters = ""
+                tokens = list(lexer)
             except ValueError:
-                # Different drives on Windows or other path issues
-                return False, "Cannot 'cd' outside of the working directory."
+                return (
+                    False,
+                    "Cannot safely validate link creation command.",
+                )
+
+            segments = []
+            current = []
+            for token in tokens:
+                if token in {";", "&", "|", "&&", "||"}:
+                    if current:
+                        segments.append(current)
+                        current = []
+                    continue
+                current.append(token)
+            if current:
+                segments.append(current)
+
+            for segment in segments:
+                if not segment or segment[0].lower() != "ln":
+                    continue
+                operands = []
+                after_double_dash = False
+                for token in segment[1:]:
+                    if after_double_dash:
+                        operands.append(token)
+                        continue
+                    if token == "--":
+                        after_double_dash = True
+                        continue
+                    if token.startswith("-"):
+                        continue
+                    operands.append(token)
+                for operand in operands:
+                    if os.path.isabs(operand):
+                        target_dir = os.path.normpath(os.path.abspath(operand))
+                    else:
+                        target_dir = os.path.normpath(
+                            os.path.abspath(os.path.join(working_dir, operand))
+                        )
+                    try:
+                        common = os.path.commonpath(
+                            [normalized_working_dir, target_dir]
+                        )
+                        if common != normalized_working_dir:
+                            return (
+                                False,
+                                "Cannot create links "
+                                "outside of the working directory.",
+                            )
+                    except ValueError:
+                        return (
+                            False,
+                            "Cannot create links "
+                            "outside of the working directory.",
+                        )
 
     return True, command
 
