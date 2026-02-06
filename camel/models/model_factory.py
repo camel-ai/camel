@@ -20,6 +20,7 @@ from camel.models.aiml_model import AIMLModel
 from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.atlascloud_model import AtlasCloudModel
+from camel.models.aws_bedrock_converse_model import AWSBedrockConverseModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -82,6 +83,7 @@ class ModelFactory:
         ModelPlatformType.TOGETHER: TogetherAIModel,
         ModelPlatformType.LITELLM: LiteLLMModel,
         ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
+        ModelPlatformType.AWS_BEDROCK_CONVERSE: AWSBedrockConverseModel,
         ModelPlatformType.NVIDIA: NvidiaModel,
         ModelPlatformType.SILICONFLOW: SiliconFlowModel,
         ModelPlatformType.AMD: AMDModel,
