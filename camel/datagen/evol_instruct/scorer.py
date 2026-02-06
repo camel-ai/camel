@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
@@ -20,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.utils import safe_extract_parsed
 
 logger = get_logger(__name__)
 
@@ -97,8 +97,10 @@ Respond with a JSON object like:
             "Try to solve the new problem. Then provide scores in JSON format."
         )
         response = self.agent.step(query, response_format=self.MathScoreSchema)
-        score_data = json.loads(response.msg.content)
-        return score_data
+        parsed = safe_extract_parsed(response, self.MathScoreSchema)
+        if parsed is None:
+            return {"diversity": 0, "difficulty": 0, "solvability": 0}
+        return parsed.model_dump()
 
 
 class GeneralScorer(BaseScorer):
@@ -161,5 +163,7 @@ class GeneralScorer(BaseScorer):
         response = self.agent.step(
             query, response_format=self.GeneralScoreSchema
         )
-        score_data = json.loads(response.msg.content)
-        return score_data
+        parsed = safe_extract_parsed(response, self.GeneralScoreSchema)
+        if parsed is None:
+            return {"diversity": 0, "complexity": 0, "validity": 0}
+        return parsed.model_dump()

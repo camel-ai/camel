@@ -1583,7 +1583,12 @@ class EarthScienceToolkit(BaseToolkit):
         return float(np.nanmean(combined_lst_values))
 
     def calculate_max_lst_by_ndvi(
-        self, red_path, nir_path, lst_path, ndvi_threshold, mode='above'
+        self,
+        red_path: str,
+        nir_path: str,
+        lst_path: str,
+        ndvi_threshold: float,
+        mode: str = 'above'
     ):
         """
         Calculate the maximum Land Surface Temperature (LST) in areas where
@@ -2275,7 +2280,9 @@ class EarthScienceToolkit(BaseToolkit):
             dst.write(ntu.astype(rasterio.float32), 1)
         return f'Result saved at {TEMP_DIR / output_path}'
 
-    def threshold_segmentation(self, input_image_path, threshold, output_path):
+    def threshold_segmentation(
+        self, input_image_path: str, threshold: float | int, output_path: str
+    ):
         """Perform threshold-based segmentation on a single-band raster image.
 
         Reads a raster image, converts it to a binary mask by applying a fixed
@@ -2359,7 +2366,7 @@ class EarthScienceToolkit(BaseToolkit):
         count = np.sum(x > threshold)
         return int(count)
 
-    def count_skeleton_contours(self, image_path):
+    def count_skeleton_contours(self, image_path: str):
         """Count external contours in a skeletonized binary image.
 
         Reads a binary image, applies erosion and skeletonization, then
@@ -2394,7 +2401,7 @@ class EarthScienceToolkit(BaseToolkit):
         )
         return len(contours)
 
-    def bboxes2centroids(self, bboxes):
+    def bboxes2centroids(self, bboxes: list[list[float]]):
         """Convert bounding boxes to centroid coordinates.
 
         Converts from [x_min, y_min, x_max, y_max] format to (x, y) centroids.
@@ -2413,7 +2420,7 @@ class EarthScienceToolkit(BaseToolkit):
         """
         return [((x1 + x2) / 2, (y1 + y2) / 2) for x1, y1, x2, y2 in bboxes]
 
-    def centroid_distance_extremes(self, centroids):
+    def centroid_distance_extremes(self, centroids: list[tuple[float, float]]):
         """Find closest and farthest centroid pairs.
 
         Computes pairwise distances between centroids and returns both the
@@ -2452,7 +2459,9 @@ class EarthScienceToolkit(BaseToolkit):
             'max': (int(max_idx[0]), int(max_idx[1]), float(max_dist)),
         }
 
-    def calculate_bbox_area(self, bboxes, gsd=None):
+    def calculate_bbox_area(
+        self, bboxes: list[list[float]], gsd: float | None = None
+    ):
         """Calculate the total area of bounding boxes in [x, y, w, h] format.
 
         Args:
@@ -2650,7 +2659,9 @@ class EarthScienceToolkit(BaseToolkit):
             'resid': [float(x) for x in result.resid],
         }
 
-    def detect_change_points(self, signal, model='l2', penalty=10):
+    def detect_change_points(
+        self, signal: list[float], model: str = 'l2', penalty: float = 10
+    ):
         """
         Description:
             Detect change points in a one-dimensional time series using the
@@ -2870,7 +2881,10 @@ class EarthScienceToolkit(BaseToolkit):
         return max_direction
 
     def count_spikes_from_values(
-        self, values, spike_threshold=0.1, verbose=True
+        self,
+        values: list[float],
+        spike_threshold: float = 0.1,
+        verbose: bool = True
     ):
         """
         Count the number of upward spikes in a sequence of numerical values.
@@ -3662,7 +3676,7 @@ class EarthScienceToolkit(BaseToolkit):
         min_value = x_arr[min_index]
         return float(min_value), int(min_index)
 
-    def multiply(self, a, b):
+    def multiply(self, a: float | int, b: float | int):
         """
         Description:
             Multiply two numbers and return their product.
@@ -3706,7 +3720,9 @@ class EarthScienceToolkit(BaseToolkit):
         """
         return math.ceil(n)
 
-    def get_list_object_via_indexes(self, input_list, indexes):
+    def get_list_object_via_indexes(
+        self, input_list: list, indexes: list[int]
+    ):
         """
         Description:
             Retrieve elements from a list using a list or tuple of indices.
@@ -3714,7 +3730,7 @@ class EarthScienceToolkit(BaseToolkit):
         Args:
             input_list (list):
                 The source list from which elements will be extracted.
-            indexes (list[int] or tuple[int]):
+            indexes (list[int]):
                 A sequence of indices specifying the positions of elements
                 to retrieve.
 
@@ -3967,7 +3983,9 @@ class EarthScienceToolkit(BaseToolkit):
             threshold_value
         )
 
-    def get_percentile_value_from_image(self, image_path, percentile):
+    def get_percentile_value_from_image(
+        self, image_path: str, percentile: int | float
+    ):
         """
         Description:
             Calculate the N-th percentile value of pixel values in a raster
@@ -4011,7 +4029,11 @@ class EarthScienceToolkit(BaseToolkit):
             raise TypeError(f'Unsupported raster data type: {dtype}')
 
     def image_division_mean(
-        self, image_path1, image_path2=None, band1=1, band2=2
+        self,
+        image_path1: str,
+        image_path2: str | None = None,
+        band1: int | None = 1,
+        band2: int | None = 2
     ):
         """
         Description:
@@ -4063,7 +4085,7 @@ class EarthScienceToolkit(BaseToolkit):
         return float(np.nanmean(ratio))
 
     def calculate_intersection_percentage(
-        self, path1, threshold1, path2, threshold2
+        self, path1: str, threshold1: float, path2: str, threshold2: float
     ):
         """
         Description:
@@ -5037,7 +5059,7 @@ class EarthScienceToolkit(BaseToolkit):
                 dst.write(result, 1)
         return f'Result save at {output_path_full}'
 
-    def calculate_area(self, input_image_path, gsd):
+    def calculate_area(self, input_image_path: str, gsd: float | None):
         """
         Description:
         This function calculates the area of non-zero pixels in the input
@@ -5134,7 +5156,7 @@ class EarthScienceToolkit(BaseToolkit):
             [_ for _ in os.listdir(dir_path) if not _.startswith('.')]
         )
 
-    def radiometric_correction_sr(self, input_band_path, output_path):
+    def radiometric_correction_sr(self, input_band_path: str, output_path: str):
         """
         Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
 
@@ -5163,7 +5185,9 @@ class EarthScienceToolkit(BaseToolkit):
             dst.write(corrected_band.astype(rasterio.float32), 1)
         return f'Result saved at {TEMP_DIR / output_path}'
 
-    def apply_cloud_mask(self, sr_band_path, qa_pixel_path, output_path):
+    def apply_cloud_mask(
+        self, sr_band_path: str, qa_pixel_path: str, output_path: str
+    ):
         """
         Apply cloud/shadow mask to a single Landsat 8 surface reflectance band
         using QA_PIXEL band.

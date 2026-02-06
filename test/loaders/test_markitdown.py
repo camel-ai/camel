@@ -41,6 +41,10 @@ def mock_files():
             "demo.html",
             "<html><body><h1>Mock HTML </h1></body></html>",
         ),
+        "demo_md": (
+            "demo.md",
+            "## Mock Markdown content",
+        ),
         "report_pdf": ("report.pdf", "Mock PDF content"),
         "presentation_pptx": ("presentation.pptx", "Mock PPTX content"),
         "data_xlsx": ("data.xlsx", "Mock XLSX content"),
@@ -97,12 +101,13 @@ def test_convert_file_conversion_error(mock_files):
 
 def test_convert_files_success(mock_files):
     converter = MarkItDownLoader()
-    file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
+    file_paths = [mock_files["demo_html"], mock_files["demo_md"], mock_files["report_pdf"]]
     results = converter.convert_files(file_paths)
     assert mock_files["demo_html"] in results
+    assert mock_files["demo_md"] in results
     assert mock_files["report_pdf"] in results
     assert all(isinstance(result, str) for result in results.values())
-    assert len(results) == 2
+    assert len(results) == 3
 
 
 def test_convert_files_with_errors(mock_files):
