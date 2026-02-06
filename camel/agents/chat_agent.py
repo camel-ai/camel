@@ -4127,6 +4127,11 @@ class ChatAgent(BaseAgent):
             OpenAIBackendRole.FUNCTION,
             return_records=self._enable_snapshot_clean,
         )
+        base_timestamp = (
+            func_records[0].timestamp
+            if func_records
+            else time.time_ns() / 1_000_000_000
+        )
 
         if extra_assistant_message:
             hint_msg = BaseMessage.make_assistant_message(
