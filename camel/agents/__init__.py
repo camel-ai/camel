@@ -14,6 +14,7 @@
 from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
+from .deep_research_agent import DeepResearchAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
@@ -45,4 +46,5 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
+    'DeepResearchAgent',
 ]
