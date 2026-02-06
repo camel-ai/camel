@@ -69,9 +69,6 @@ async def main():
     # --- Agent ---
     system_message = (
         "You are a helpful research assistant with web browsing abilities. "
-        "When you offload a tool output, write a high-level summary but do "
-        "NOT include exact URLs or publication dates — those details can be "
-        "retrieved later if needed."
     )
 
     agent = ChatAgent(
@@ -88,7 +85,7 @@ async def main():
     print("TURN 1: Browse and summarize (triggers offload)")
     print("=" * 60)
 
-    response = agent.step(
+    response = await agent.astep(
         "Go to https://www.camel-ai.org/blog and give me a brief overview "
         "of what the page contains."
     )
