@@ -73,6 +73,15 @@ class GeminiConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
+        cache_control (str, optional): Reserved cache TTL field for API
+            compatibility. Gemini explicit caches are created via
+            :obj:`GeminiModel.create_cache()`, and this field is not applied
+            automatically to requests. Format: "300s", "3600s", etc.
+            (default: :obj:`None`)
+        cached_content (str, optional): Reference to an existing cache to use.
+            Format: "cachedContents/{cache_id}". When set, the model will use
+            the cached content instead of re-processing the same context.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None  # openai default: 1.0
@@ -85,6 +94,8 @@ class GeminiConfig(BaseConfig):
     tool_choice: Optional[
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
+    cache_control: Optional[str] = None
+    cached_content: Optional[str] = None
 
 
 Gemini_API_PARAMS = {param for param in GeminiConfig.model_fields.keys()}

@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Dict,
@@ -21,12 +22,18 @@ from typing import (
     Optional,
     Type,
     Union,
+    cast,
 )
 
 from openai import AsyncStream, Stream
+
+if TYPE_CHECKING:
+    from google.genai.client import Client as GenaiClient
+    from google.genai.types import CachedContent
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -51,6 +58,9 @@ elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
         from camel.utils import observe
 else:
     from camel.utils import observe
+
+
+logger = get_logger(__name__)
 
 
 class GeminiModel(OpenAICompatibleModel):
@@ -100,7 +110,13 @@ class GeminiModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GeminiConfig().as_dict()
+
+        # Extract cache parameters before passing to parent
+        self._cache_control = model_config_dict.pop("cache_control", None)
+        self._cached_content = model_config_dict.pop("cached_content", None)
+
         api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self._api_key = api_key
         url = url or os.environ.get(
             "GEMINI_API_BASE_URL",
             "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -115,6 +131,234 @@ class GeminiModel(OpenAICompatibleModel):
             timeout=timeout,
             max_retries=max_retries,
             **kwargs,
+        )
+
+        # Lazy-initialized native client for cache operations
+        self._native_client: Optional["GenaiClient"] = None
+
+    @property
+    def native_client(self) -> "GenaiClient":
+        r"""Get the native google-genai client for cache operations.
+
+        Returns:
+            genai.Client: The native Google GenAI client.
+        """
+        if self._native_client is None:
+            from google import genai
+
+            self._native_client = genai.Client(api_key=self._api_key)
+        return self._native_client
+
+    def create_cache(
+        self,
+        contents: List[Dict[str, Any]],
+        ttl: str = "300s",
+        display_name: Optional[str] = None,
+        system_instruction: Optional[str] = None,
+    ) -> str:
+        r"""Create a cache for reusing content across requests.
+
+        Args:
+            contents (List[Dict[str, Any]]): The content to cache. Should be a
+                list of message dicts with 'role' and 'parts' keys.
+            ttl (str, optional): Time-to-live for the cache. Format: "300s"
+                (5 minutes), "3600s" (1 hour), etc. (default: :obj:`"300s"`)
+            display_name (str, optional): A human-readable name for the cache.
+                (default: :obj:`None`)
+            system_instruction (str, optional): System instruction to cache.
+                (default: :obj:`None`)
+
+        Returns:
+            str: The cache name in format "cachedContents/{cache_id}".
+        """
+        from google.genai import types
+
+        # Build model name - handle both ModelType enum and string
+        model_name = (
+            self.model_type.value
+            if hasattr(self.model_type, 'value')
+            else str(self.model_type)
+        )
+        # Ensure model name has proper prefix
+        if not model_name.startswith("models/"):
+            model_name = f"models/{model_name}"
+
+        config = types.CreateCachedContentConfig(
+            contents=cast(Any, contents),
+            ttl=ttl,
+            display_name=display_name,
+            system_instruction=system_instruction,
+        )
+
+        # google-genai expects contents inside config.
+        cache = self.native_client.caches.create(
+            model=model_name,
+            config=config,
+        )
+        if not cache.name:
+            raise RuntimeError("Gemini cache creation succeeded without name.")
+        return cache.name
+
+    def list_caches(self) -> List["CachedContent"]:
+        r"""List all caches for the current API key.
+
+        Returns:
+            List[CachedContent]: A list of cached content objects.
+        """
+        return list(self.native_client.caches.list())
+
+    def get_cache(self, cache_name: str) -> "CachedContent":
+        r"""Get details of a specific cache.
+
+        Args:
+            cache_name (str): The cache name in format "cachedContents/{id}".
+
+        Returns:
+            CachedContent: The cached content object.
+        """
+        return self.native_client.caches.get(name=cache_name)
+
+    def update_cache(self, cache_name: str, ttl: str) -> "CachedContent":
+        r"""Update the TTL of an existing cache.
+
+        Args:
+            cache_name (str): The cache name in format "cachedContents/{id}".
+            ttl (str): New time-to-live for the cache.
+
+        Returns:
+            CachedContent: The updated cached content object.
+        """
+        from google.genai import types
+
+        config = types.UpdateCachedContentConfig(ttl=ttl)
+        return self.native_client.caches.update(
+            name=cache_name,
+            config=config,
+        )
+
+    def delete_cache(self, cache_name: str) -> None:
+        r"""Delete a cache.
+
+        Args:
+            cache_name (str): The cache name in format "cachedContents/{id}".
+        """
+        self.native_client.caches.delete(name=cache_name)
+
+    @property
+    def cached_content(self) -> Optional[str]:
+        r"""Get the current cached content name.
+
+        Returns:
+            Optional[str]: The cache name or None if not set.
+        """
+        return self._cached_content
+
+    @cached_content.setter
+    def cached_content(self, value: Optional[str]) -> None:
+        r"""Set or clear the cached content to use for requests.
+
+        Args:
+            value (Optional[str]): The cache name (e.g., "cachedContents/xxx")
+                or None to clear.
+        """
+        self._cached_content = value
+
+    @staticmethod
+    def _sanitize_tools_for_gemini(
+        tools: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        import copy
+
+        sanitized_tools = copy.deepcopy(tools)
+
+        # Remove strict and anyOf from each tool's function parameters since
+        # Gemini does not support them.
+        for tool in sanitized_tools:
+            function_dict = tool.get('function', {})
+            function_dict.pop("strict", None)
+
+            if 'parameters' not in function_dict:
+                continue
+            params = function_dict['parameters']
+            if 'properties' not in params:
+                continue
+
+            for prop_name, prop_value in params['properties'].items():
+                if 'anyOf' in prop_value:
+                    # Replace anyOf with the first type in the list.
+                    first_type = prop_value['anyOf'][0]
+                    params['properties'][prop_name] = first_type
+                    # Preserve description if it exists.
+                    if 'description' in prop_value:
+                        params['properties'][prop_name]['description'] = (
+                            prop_value['description']
+                        )
+
+                # Handle enum and format restrictions for Gemini API.
+                if prop_value.get('type') != 'string':
+                    prop_value.pop('enum', None)
+                if prop_value.get('type') not in [
+                    'string',
+                    'integer',
+                    'number',
+                ]:
+                    prop_value.pop('format', None)
+
+        return sanitized_tools
+
+    def _prepare_request_config(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        request_config = super()._prepare_request_config(
+            self._sanitize_tools_for_gemini(tools) if tools else None
+        )
+
+        # Remove cache config params from base request payload.
+        request_config.pop("cache_control", None)
+        request_config.pop("cached_content", None)
+
+        # OpenAI Python client's `extra_body` is merged into the request root.
+        # Gemini expects extensions under the request's `extra_body` field, so
+        # we wrap once more: extra_body={"extra_body": {...}}.
+        raw_extra_body = request_config.get("extra_body")
+        if isinstance(raw_extra_body, dict) and isinstance(
+            raw_extra_body.get("extra_body"), dict
+        ):
+            gemini_extra_body = raw_extra_body["extra_body"]
+        elif isinstance(raw_extra_body, dict):
+            gemini_extra_body = raw_extra_body
+        else:
+            gemini_extra_body = {}
+
+        if self._cached_content:
+            google_body = gemini_extra_body.get("google")
+            if not isinstance(google_body, dict):
+                google_body = {}
+            google_body["cached_content"] = self._cached_content
+            gemini_extra_body["google"] = google_body
+
+        if gemini_extra_body:
+            request_config["extra_body"] = {"extra_body": gemini_extra_body}
+
+        return request_config
+
+    def _is_stale_cached_content_error(self, err: Exception) -> bool:
+        if not self._cached_content:
+            return False
+
+        msg = str(err).lower()
+        cache_markers = ("cached_content", "cached content", "cachedcontents")
+        invalid_markers = (
+            "not found",
+            "not exist",
+            "expired",
+            "invalid",
+            "no such",
+            "unknown",
+        )
+        return any(k in msg for k in cache_markers) and any(
+            k in msg for k in invalid_markers
         )
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
@@ -540,54 +784,31 @@ class GeminiModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        import copy
+        request_config = self._prepare_request_config(tools)
 
-        request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict and anyOf from each tool's function parameters since
-        # Gemini does not support them
-        if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
-
-                # Process parameters to remove anyOf and handle enum/format
-                if 'parameters' in function_dict:
-                    params = function_dict['parameters']
-                    if 'properties' in params:
-                        for prop_name, prop_value in params[
-                            'properties'
-                        ].items():
-                            if 'anyOf' in prop_value:
-                                # Replace anyOf with the first type in the list
-                                first_type = prop_value['anyOf'][0]
-                                params['properties'][prop_name] = first_type
-                                # Preserve description if it exists
-                                if 'description' in prop_value:
-                                    params['properties'][prop_name][
-                                        'description'
-                                    ] = prop_value['description']
-
-                            # Handle enum and format restrictions for Gemini
-                            # API enum: only allowed for string type
-                            if prop_value.get('type') != 'string':
-                                prop_value.pop('enum', None)
-
-                            # format: only allowed for string, integer, and
-                            # number types
-                            if prop_value.get('type') not in [
-                                'string',
-                                'integer',
-                                'number',
-                            ]:
-                                prop_value.pop('format', None)
-
-            request_config["tools"] = tools
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            response = self._client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as err:
+            print(err)
+            if not self._is_stale_cached_content_error(err):
+                raise
+            stale_cache = self._cached_content
+            logger.warning(
+                "Gemini cached_content %s is unavailable; "
+                "retrying without cache.",
+                stale_cache,
+            )
+            self._cached_content = None
+            request_config = self._prepare_request_config(tools)
+            response = self._client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
 
         # Preserve thought signatures from the response for future requests
         return self._preserve_thought_signatures(response)  # type: ignore[return-value]
@@ -597,54 +818,74 @@ class GeminiModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        import copy
+        request_config = self._prepare_request_config(tools)
 
-        request_config = copy.deepcopy(self.model_config_dict)
-        # Remove strict and anyOf from each tool's function parameters since
-        # Gemini does not support them
-        if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
-
-                # Process parameters to remove anyOf and handle enum/format
-                if 'parameters' in function_dict:
-                    params = function_dict['parameters']
-                    if 'properties' in params:
-                        for prop_name, prop_value in params[
-                            'properties'
-                        ].items():
-                            if 'anyOf' in prop_value:
-                                # Replace anyOf with the first type in the list
-                                first_type = prop_value['anyOf'][0]
-                                params['properties'][prop_name] = first_type
-                                # Preserve description if it exists
-                                if 'description' in prop_value:
-                                    params['properties'][prop_name][
-                                        'description'
-                                    ] = prop_value['description']
-
-                            # Handle enum and format restrictions for Gemini
-                            # API enum: only allowed for string type
-                            if prop_value.get('type') != 'string':
-                                prop_value.pop('enum', None)
-
-                            # format: only allowed for string, integer, and
-                            # number types
-                            if prop_value.get('type') not in [
-                                'string',
-                                'integer',
-                                'number',
-                            ]:
-                                prop_value.pop('format', None)
-
-            request_config["tools"] = tools
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            response = await self._async_client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as err:
+            if not self._is_stale_cached_content_error(err):
+                raise
+            stale_cache = self._cached_content
+            logger.warning(
+                "Gemini cached_content %s is unavailable; "
+                "retrying without cache.",
+                stale_cache,
+            )
+            self._cached_content = None
+            request_config = self._prepare_request_config(tools)
+            response = await self._async_client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
 
         # Preserve thought signatures from the response for future requests
         return self._preserve_thought_signatures(response)  # type: ignore[return-value]
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        try:
+            return super()._request_parse(messages, response_format, tools)
+        except Exception as err:
+            if not self._is_stale_cached_content_error(err):
+                raise
+            stale_cache = self._cached_content
+            logger.warning(
+                "Gemini cached_content %s is unavailable during parse; "
+                "retrying without cache.",
+                stale_cache,
+            )
+            self._cached_content = None
+            return super()._request_parse(messages, response_format, tools)
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        try:
+            return await super()._arequest_parse(
+                messages, response_format, tools
+            )
+        except Exception as err:
+            if not self._is_stale_cached_content_error(err):
+                raise
+            stale_cache = self._cached_content
+            logger.warning(
+                "Gemini cached_content %s is unavailable during parse; "
+                "retrying without cache.",
+                stale_cache,
+            )
+            self._cached_content = None
+            return await super()._arequest_parse(
+                messages, response_format, tools
+            )
