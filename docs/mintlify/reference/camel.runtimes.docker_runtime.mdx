@@ -173,6 +173,20 @@ def reset(self):
 
   DockerRuntime: The DockerRuntime instance.
 
+<a id="camel.runtimes.docker_runtime.DockerRuntime.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Stop and optionally remove the Docker container.
+
+Uses the instance's :attr:`remove` setting to decide whether to
+remove the container after stopping. For a one-off override,
+use :meth:`stop` with the `__INLINE_CODE_2__` argument.
+
 <a id="camel.runtimes.docker_runtime.DockerRuntime.stop"></a>
 
 ### stop
@@ -181,11 +195,11 @@ def reset(self):
 def stop(self, remove: Optional[bool] = None):
 ```
 
-stop the Docker container.
+Stop the Docker container and release resources.
 
 **Parameters:**
 
-- **remove** (Optional[bool]): Whether to remove the container after stopping it. (default: :obj:`None`)
+- **remove** (Optional[bool]): If set, overrides the instance's :attr:`remove` setting for this call only (e.g. `__INLINE_CODE_1____INLINE_CODE_2__None`)
 
 **Returns:**
 

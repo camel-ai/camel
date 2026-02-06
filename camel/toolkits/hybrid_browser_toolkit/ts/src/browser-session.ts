@@ -1,6 +1,8 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
-import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult } from './types';
+import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult, INTERACTIVE_ROLES, NearestElementInfo } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Constants for loading element detection
 // Using word boundary patterns to avoid false positives like "unloading" or "windspinner"
@@ -51,6 +53,206 @@ export class HybridBrowserSession {
     // Version compatibility: if result is object (v1.57.0+), use .full property
     // If result is string (v1.56.x and earlier), return directly
     return typeof result === 'string' ? result : result.full;
+  }
+
+  /**
+   * Parse frame prefix from ref (e.g., "f1e5" -> { frameIndex: 1, localRef: "e5" })
+   * Refs without frame prefix (e.g., "e5") return frameIndex: 0
+   */
+  private parseFrameRef(ref: string): { frameIndex: number; localRef: string } {
+    const frameMatch = ref.match(/^f(\d+)(e.*)$/);
+    if (frameMatch) {
+      return {
+        frameIndex: parseInt(frameMatch[1], 10),
+        localRef: frameMatch[2]
+      };
+    }
+    return { frameIndex: 0, localRef: ref };
+  }
+
+  /**
+   * Try to find element in a specific frame with given selector
+   */
+  private async tryFindInFrame(
+    frame: Frame,
+    selector: string
+  ): Promise<ReturnType<Frame['locator']> | null> {
+    try {
+      const element = frame.locator(selector).first();
+      if (await element.count() > 0) {
+        return element;
+      }
+    } catch {
+      // Frame might be detached or selector invalid
+    }
+    return null;
+  }
+
+  /**
+   * Find element across frames with optimized search strategy
+   * Search order: 1) Target frame with localRef, 2) All frames with full ref
+   */
+  private async findElementAcrossFrames(
+    page: Page,
+    ref: string
+  ): Promise<{ locator: ReturnType<Frame['locator']>; frame: Frame } | null> {
+    const allFrames = page.frames();
+    const { frameIndex, localRef } = this.parseFrameRef(ref);
+
+    // Strategy 1: If ref has frame prefix, try target frame with localRef
+    if (frameIndex > 0 && frameIndex < allFrames.length) {
+      const targetFrame = allFrames[frameIndex];
+      const element = await this.tryFindInFrame(targetFrame, `aria-ref=${localRef}`);
+      if (element) {
+        return { locator: element, frame: targetFrame };
+      }
+    }
+
+    // Strategy 2: Search all frames with full ref
+    for (const frame of allFrames) {
+      const element = await this.tryFindInFrame(frame, `aria-ref=${ref}`);
+      if (element) {
+        return { locator: element, frame };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get element coordinates from boundingBox
+   */
+  private async getElementCoordinates(
+    element: ReturnType<Frame['locator']>
+  ): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    const box = await element.boundingBox();
+    if (!box) return null;
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height)
+    };
+  }
+
+  /**
+   * Calculate distance from point to element center
+   */
+  private distanceToElement(
+    x: number,
+    y: number,
+    coords: { x: number; y: number; width: number; height: number }
+  ): number {
+    const centerX = coords.x + coords.width / 2;
+    const centerY = coords.y + coords.height / 2;
+    return Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+  }
+
+  /**
+   * Find N nearest interactive elements to a given point
+   * Returns elements with clickable center coordinates and aria info
+   */
+  private findNearestElements(
+    elements: Record<string, any>,
+    snapshot: string,
+    x: number,
+    y: number,
+    count: number = 5
+  ): NearestElementInfo[] {
+    // Parse aria-label/name from snapshot text
+    const elementNames = this.parseElementNamesFromSnapshot(snapshot);
+
+    const elementsWithDistance: NearestElementInfo[] = [];
+
+    for (const [ref, element] of Object.entries(elements)) {
+      if (!element.coordinates) continue;
+
+      const role = element.role || 'unknown';
+      if (!INTERACTIVE_ROLES.has(role)) continue;
+
+      const coords = element.coordinates;
+      elementsWithDistance.push({
+        ref,
+        role,
+        name: elementNames.get(ref) || '',
+        distance: Math.round(this.distanceToElement(x, y, coords)),
+        clickableCoord: {
+          x: Math.round(coords.x + coords.width / 2),
+          y: Math.round(coords.y + coords.height / 2)
+        },
+        boundingBox: coords
+      });
+    }
+
+    return elementsWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, count);
+  }
+
+  /**
+   * Parse element names/labels from snapshot text
+   */
+  private parseElementNamesFromSnapshot(snapshot: string): Map<string, string> {
+    const elementNames = new Map<string, string>();
+    for (const line of snapshot.split('\n')) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch) {
+        const nameMatch = line.match(/-\s+\w+\s+"([^"]+)"/);
+        if (nameMatch) {
+          elementNames.set(refMatch[1], nameMatch[1]);
+        }
+      }
+    }
+    return elementNames;
+  }
+
+  /**
+   * Format nearest elements as readable text for LLM
+   */
+  private formatNearestElementsMessage(
+    clickX: number,
+    clickY: number,
+    nearestElements: NearestElementInfo[]
+  ): string {
+    const lines: string[] = [
+      `Click at (${clickX}, ${clickY}) may be ineffective - page content unchanged.`,
+      `Nearest interactive elements:`
+    ];
+
+    for (let i = 0; i < nearestElements.length; i++) {
+      const el = nearestElements[i];
+      const nameStr = el.name ? ` "${el.name}"` : '';
+      const box = el.boundingBox;
+      lines.push(
+        `  ${i + 1}. [${el.role}]${nameStr} - click at (${el.clickableCoord.x}, ${el.clickableCoord.y}), ` +
+        `area: (${box.x}, ${box.y}) to (${box.x + box.width}, ${box.y + box.height})`
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Check if a point is within a canvas element
+   */
+  private async isPointOnCanvas(page: Page, x: number, y: number): Promise<boolean> {
+    return await page.evaluate(({ x, y }) => {
+      const element = document.elementFromPoint(x, y);
+      if (!element) return false;
+      // Check if element is canvas or inside canvas
+      return element.tagName.toUpperCase() === 'CANVAS' ||
+             element.closest('canvas') !== null;
+    }, { x, y });
+  }
+
+  /**
+   * Compare two snapshots to detect if page changed
+   * Returns true if snapshots are meaningfully different
+   */
+  private snapshotsAreDifferent(before: string, after: string): boolean {
+    // Normalize whitespace and compare
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    return normalize(before) !== normalize(after);
   }
 
   private registerNewPage(tabId: string, page: Page): void {
@@ -499,33 +701,32 @@ export class HybridBrowserSession {
       }
 
       if (includeCoordinates) {
-        // Get coordinates for each ref using aria-ref selector
-        for (const ref of refs) {
-          try {
-            const selector = `aria-ref=${ref}`;
-            const element = await page.locator(selector).first();
-            const exists = await element.count() > 0;
-
-            if (exists) {
-              // Get bounding box
-              const boundingBox = await element.boundingBox();
-
-              if (boundingBox) {
-                // Add coordinates to existing element info
+        // Enrich elements with coordinates using parallel processing
+        // Process in batches to avoid overwhelming the browser
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < refs.length; i += BATCH_SIZE) {
+          const batch = refs.slice(i, i + BATCH_SIZE);
+          await Promise.all(batch.map(async (ref) => {
+            const result = await this.findElementAcrossFrames(page, ref);
+            if (result) {
+              const coords = await this.getElementCoordinates(result.locator);
+              if (coords) {
+                // NOTE: We use parseFrameRef(ref) to get frameIndex from the ref string,
+                // not from result.frame. This is correct because Playwright's snapshot
+                // automatically prefixes refs with frame info (e.g., "f1e5" for iframe 1).
+                // Using result.frame directly via indexOf() causes issues with object
+                // reference comparison and can incorrectly set frameIndex to 0 for all
+                // elements, breaking iframe visibility detection in SOM screenshots.
+                const { frameIndex } = this.parseFrameRef(ref);
                 playwrightMapping[ref] = {
                   ...playwrightMapping[ref],
-                  coordinates: {
-                    x: Math.round(boundingBox.x),
-                    y: Math.round(boundingBox.y),
-                    width: Math.round(boundingBox.width),
-                    height: Math.round(boundingBox.height)
-                  }
+                  coordinates: coords,
+                  frameIndex,
+                  frameUrl: frameIndex > 0 ? result.frame.url() : undefined
                 };
               }
             }
-          } catch (error) {
-            console.warn(`Failed to get coordinates for ref ${ref}:`, error);
-          }
+          }));
         }
       }
 
@@ -603,18 +804,15 @@ export class HybridBrowserSession {
       //  Ensure we have the latest snapshot and mapping
       await this.getSnapshot(page);
 
-      //  Use Playwright's aria-ref selector engine
-      const selector = `aria-ref=${ref}`;
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      // Check if element exists
-      const element = await page.locator(selector).first();
-      const exists = await element.count() > 0;
-
-      if (!exists) {
+      if (!result) {
         page.off('dialog', dialogHandler);
-        return { success: false, error: `Element with ref ${ref} not found` };
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
 
+      const element = result.locator;
       const role = await element.getAttribute('role');
       const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
       const isCombobox = role === 'combobox' || elementTagName === 'combobox';
@@ -857,13 +1055,14 @@ export class HybridBrowserSession {
 
       // Handle single input (backward compatibility)
       if (ref && text !== undefined) {
-        const selector = `aria-ref=${ref}`;
-        const element = await page.locator(selector).first();
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const result = await this.findElementAcrossFrames(page, ref);
 
-        const exists = await element.count() > 0;
-        if (!exists) {
-          return { success: false, error: `Element with ref ${ref} not found` };
+        if (!result) {
+          return { success: false, error: `Element with ref ${ref} not found in any frame` };
         }
+
+        const element = result.locator;
 
         // Get element attributes to check if it's readonly or a special input type
         let originalPlaceholder: string | null = null;
@@ -1192,14 +1391,14 @@ export class HybridBrowserSession {
       // Ensure we have the latest snapshot
       await this.getSnapshot(page);
 
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      if (!result) {
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
+
+      const element = result.locator;
 
       // Select value using Playwright's built-in selectOption method
       await element.selectOption(value);
@@ -1211,9 +1410,75 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Simplified mouse control implementation
+   *  Show highlight animation at given coordinates
    */
-  private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
+  private async showClickHighlight(page: Page, x: number, y: number): Promise<void> {
+    await page.evaluate(({ x, y }) => {
+      // Create highlight element
+      const highlight = document.createElement('div');
+      highlight.id = 'claude-click-highlight-' + Date.now();
+      highlight.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        width: 20px;
+        height: 20px;
+        margin-left: -10px;
+        margin-top: -10px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.5);
+        border: 2px solid rgba(59, 130, 246, 0.8);
+        pointer-events: none;
+        z-index: 2147483647;
+        animation: claude-highlight-pulse 0.6s ease-out forwards;
+      `;
+
+      // Add keyframes if not already present
+      if (!document.getElementById('claude-highlight-styles')) {
+        const style = document.createElement('style');
+        style.id = 'claude-highlight-styles';
+        style.textContent = `
+          @keyframes claude-highlight-pulse {
+            0% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(2);
+              opacity: 0.7;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      document.body.appendChild(highlight);
+
+      // Remove after animation
+      setTimeout(() => {
+        highlight.remove();
+      }, 600);
+    }, { x, y });
+  }
+
+  /**
+   *  Mouse control implementation with ineffective click detection
+   *  For full visual mode: detects when click has no effect and suggests nearest elements
+   */
+  private async performMouseControl(
+    page: Page,
+    control: string,
+    x: number,
+    y: number
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    resultMessage?: string;  // Custom result message for ineffective clicks
+  }> {
     try {
       const viewport = page.viewportSize();
       if (!viewport) {
@@ -1222,6 +1487,24 @@ export class HybridBrowserSession {
       if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
         return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
       }
+
+      // Check if clicking on canvas element
+      const isOnCanvas = await this.isPointOnCanvas(page, x, y);
+
+      // Get snapshot before click (with coordinates for nearest element calculation)
+      let snapshotBefore: string | null = null;
+      let elementsWithCoords: Record<string, any> | null = null;
+
+      if (!isOnCanvas && control === 'click') {
+        const snapshotResult = await this.getSnapshotForAINative(true, false);
+        snapshotBefore = snapshotResult.snapshot;
+        elementsWithCoords = snapshotResult.elements;
+      }
+
+      // Show highlight animation at click position
+      await this.showClickHighlight(page, x, y);
+
+      // Perform the click action
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
@@ -1239,6 +1522,25 @@ export class HybridBrowserSession {
           return { success: false, error: `Invalid control action: ${control}` };
       }
 
+      // For non-canvas clicks, check if the click had any effect
+      if (!isOnCanvas && control === 'click' && snapshotBefore && elementsWithCoords) {
+        // Wait a moment for any UI changes
+        await page.waitForTimeout(100);
+
+        // Get snapshot after click
+        const snapshotAfter = await this.getSnapshot(page);
+
+        // Check if snapshot changed
+        if (!this.snapshotsAreDifferent(snapshotBefore, snapshotAfter)) {
+          // Click had no effect - find nearest interactive elements and format message
+          const nearestCount = this.configLoader.getWebSocketConfig().nearestElementsCount;
+          const nearestElements = this.findNearestElements(elementsWithCoords, snapshotBefore, x, y, nearestCount);
+          const resultMessage = this.formatNearestElementsMessage(x, y, nearestElements);
+
+          return { success: true, resultMessage };
+        }
+      }
+
       return { success: true };
     } catch (error) {
       return { success: false, error: `Mouse action failed: ${error}` };
@@ -1246,59 +1548,206 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Enhanced mouse drag and drop implementation using ref IDs
+   *  Mouse drag and drop implementation supporting both ref and pixel modes
    */
-  private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
+  private async performMouseDrag(
+    page: Page,
+    action: { from_ref?: string; to_ref?: string; from_x?: number; from_y?: number; to_x?: number; to_y?: number }
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      // Ensure we have the latest snapshot
-      await this.getSnapshot(page);
+      let fromX: number, fromY: number, toX: number, toY: number;
 
-      // Get elements using Playwright's aria-ref selector
-      const fromSelector = `aria-ref=${fromRef}`;
-      const toSelector = `aria-ref=${toRef}`;
+      // Pixel mode: use coordinates directly
+      if (action.from_x !== undefined && action.from_y !== undefined &&
+          action.to_x !== undefined && action.to_y !== undefined) {
+        fromX = action.from_x;
+        fromY = action.from_y;
+        toX = action.to_x;
+        toY = action.to_y;
 
-      const fromElement = await page.locator(fromSelector).first();
-      const toElement = await page.locator(toSelector).first();
+        // Validate coordinates are within viewport bounds
+        const viewport = page.viewportSize();
+        if (!viewport) {
+          return { success: false, error: 'Viewport size not available from page.' };
+        }
+        if (fromX < 0 || fromY < 0 || fromX > viewport.width || fromY > viewport.height) {
+          return { success: false, error: `Invalid from coordinates (${fromX}, ${fromY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
+        if (toX < 0 || toY < 0 || toX > viewport.width || toY > viewport.height) {
+          return { success: false, error: `Invalid to coordinates (${toX}, ${toY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
 
-      // Check if elements exist
-      const fromExists = await fromElement.count() > 0;
-      const toExists = await toElement.count() > 0;
-
-      if (!fromExists) {
-        return { success: false, error: `Source element with ref ${fromRef} not found` };
+        // Show highlight at start and end positions for pixel mode
+        await this.showClickHighlight(page, fromX, fromY);
+        await this.showClickHighlight(page, toX, toY);
       }
+      // Ref mode: get coordinates from elements (supports iframes)
+      else if (action.from_ref && action.to_ref) {
+        await this.getSnapshot(page);
 
-      if (!toExists) {
-        return { success: false, error: `Target element with ref ${toRef} not found` };
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const fromResult = await this.findElementAcrossFrames(page, action.from_ref);
+        const toResult = await this.findElementAcrossFrames(page, action.to_ref);
+
+        if (!fromResult) {
+          return { success: false, error: `Source element with ref ${action.from_ref} not found in any frame` };
+        }
+        if (!toResult) {
+          return { success: false, error: `Target element with ref ${action.to_ref} not found in any frame` };
+        }
+
+        const fromBox = await fromResult.locator.boundingBox();
+        const toBox = await toResult.locator.boundingBox();
+
+        if (!fromBox) {
+          return { success: false, error: `Could not get bounding box for source element` };
+        }
+        if (!toBox) {
+          return { success: false, error: `Could not get bounding box for target element` };
+        }
+
+        fromX = fromBox.x + fromBox.width / 2;
+        fromY = fromBox.y + fromBox.height / 2;
+        toX = toBox.x + toBox.width / 2;
+        toY = toBox.y + toBox.height / 2;
+      } else {
+        return { success: false, error: 'Must provide either (from_ref, to_ref) or (from_x, from_y, to_x, to_y)' };
       }
-
-      // Get the center coordinates of both elements
-      const fromBox = await fromElement.boundingBox();
-      const toBox = await toElement.boundingBox();
-
-      if (!fromBox) {
-        return { success: false, error: `Could not get bounding box for source element with ref ${fromRef}` };
-      }
-
-      if (!toBox) {
-        return { success: false, error: `Could not get bounding box for target element with ref ${toRef}` };
-      }
-
-      const fromX = fromBox.x + fromBox.width / 2;
-      const fromY = fromBox.y + fromBox.height / 2;
-      const toX = toBox.x + toBox.width / 2;
-      const toY = toBox.y + toBox.height / 2;
 
       // Perform the drag operation
       await page.mouse.move(fromX, fromY);
       await page.mouse.down();
-      // Destination coordinates
       await page.mouse.move(toX, toY);
       await page.mouse.up();
 
       return { success: true };
     } catch (error) {
       return { success: false, error: `Mouse drag action failed: ${error}` };
+    }
+  }
+
+  /**
+   * Resolves click action based on ref or pixel coordinates.
+   * Returns either a clickAction function or an error message.
+   */
+  private async resolveClickAction(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ clickAction: () => Promise<void> } | { error: string }> {
+    if (x !== undefined && y !== undefined) {
+      // Pixel mode
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+      }
+      await this.showClickHighlight(page, x, y);
+      return { clickAction: async () => { await page.mouse.click(x, y); } };
+    } else if (ref) {
+      // Ref mode
+      await this.getSnapshot(page);
+      const element = page.locator(`aria-ref=${ref}`).first();
+      if (await element.count() === 0) {
+        return { error: `Element with ref ${ref} not found` };
+      }
+      return { clickAction: async () => { await element.click(); } };
+    } else {
+      return { error: 'Must provide either ref or (x, y) coordinates' };
+    }
+  }
+
+  /**
+   * Upload a file by clicking the ref element or pixel coordinates and intercepting the file chooser.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileUpload(
+    page: Page,
+    filePath: string,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: `File not found: ${filePath}` };
+      }
+
+      const result = await this.resolveClickAction(page, ref, x, y);
+      if ('error' in result) {
+        return { success: false, error: result.error };
+      }
+      const { clickAction } = result;
+
+      try {
+        const [fileChooser] = await Promise.all([
+          page.waitForEvent('filechooser', { timeout: 3000 }),
+          clickAction(),
+        ]);
+        await fileChooser.setFiles(filePath);
+        return { success: true };
+      } catch {
+        return {
+          success: false,
+          error: 'File chooser not triggered. The clicked element may not be a file upload button.'
+        };
+      }
+    } catch (error) {
+      return { success: false, error: `File upload failed: ${error}` };
+    }
+  }
+
+  /**
+   * Download a file by clicking the ref element or pixel coordinates and waiting for the download to complete.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileDownload(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const saveDir = browserConfig.downloadDir;
+    const downloadTimeout = browserConfig.downloadTimeout;
+
+    if (!saveDir) {
+      return { success: false, error: 'No download directory configured. Set download_dir when initializing the toolkit.' };
+    }
+
+    if (!fs.existsSync(saveDir)) {
+      return { success: false, error: `Download directory does not exist: ${saveDir}` };
+    }
+
+    const result = await this.resolveClickAction(page, ref, x, y);
+    if ('error' in result) {
+      return { success: false, error: result.error };
+    }
+    const { clickAction } = result;
+
+    try {
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: downloadTimeout }),
+        clickAction(),
+      ]);
+
+      const fileName = download.suggestedFilename();
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
+      let savePath = path.join(saveDir, fileName);
+      let counter = 1;
+      while (fs.existsSync(savePath)) {
+        savePath = path.join(saveDir, `${base} (${counter})${ext}`);
+        counter++;
+      }
+      await download.saveAs(savePath);
+
+      return { success: true, fileName, savePath };
+    } catch (error) {
+      return { success: false, error: `Download failed: ${error}` };
     }
   }
 
@@ -1420,6 +1869,12 @@ export class HybridBrowserSession {
           if (!mouseControlResult.success) {
             throw new Error(`Action failed: ${mouseControlResult.error}`);
           }
+
+          // Use custom result message if click was ineffective
+          if (mouseControlResult.resultMessage) {
+            customMessage = mouseControlResult.resultMessage;
+          }
+
           actionExecutionTime = Date.now() - mouseControlStart;
           break;
         }
@@ -1427,7 +1882,7 @@ export class HybridBrowserSession {
         case 'mouse_drag': {
           elementSearchTime = Date.now() - elementSearchStart;
           const mouseDragStart = Date.now();
-          const mouseDragResult = await this.performMouseDrag(page, action.from_ref, action.to_ref);
+          const mouseDragResult = await this.performMouseDrag(page, action);
 
           if (!mouseDragResult.success) {
             throw new Error(`Action failed: ${mouseDragResult.error}`);
@@ -1443,6 +1898,46 @@ export class HybridBrowserSession {
           const keys = action.keys.join('+');
           await page.keyboard.press(keys);
           actionExecutionTime = Date.now() - keyPressStart;
+          break;
+        }
+
+        case 'upload_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const uploadStart = Date.now();
+
+          const uploadResult = await this.performFileUpload(
+            page,
+            action.filePath,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!uploadResult.success) {
+            throw new Error(`Upload failed: ${uploadResult.error}`);
+          }
+
+          actionExecutionTime = Date.now() - uploadStart;
+          break;
+        }
+
+        case 'download_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const downloadStart = Date.now();
+
+          const downloadResult = await this.performFileDownload(
+            page,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!downloadResult.success) {
+            throw new Error(`Download failed: ${downloadResult.error}`);
+          }
+
+          customMessage = `File downloaded: ${downloadResult.fileName} -> ${downloadResult.savePath}`;
+          actionExecutionTime = Date.now() - downloadStart;
           break;
         }
 
@@ -2080,7 +2575,11 @@ export class HybridBrowserSession {
     return tabInfo;
   }
 
-  async takeScreenshot(): Promise<{ buffer: Buffer; timing: { screenshot_time_ms: number } }> {
+  async takeScreenshot(): Promise<{
+    buffer: Buffer;
+    timing: { screenshot_time_ms: number };
+    viewport: { width: number; height: number };
+  }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
 
@@ -2090,6 +2589,7 @@ export class HybridBrowserSession {
       fullPage: browserConfig.fullPageScreenshot
     });
 
+    const viewport = page.viewportSize() || browserConfig.viewport;
     const screenshotTime = Date.now() - startTime;
 
     return {
@@ -2097,6 +2597,7 @@ export class HybridBrowserSession {
       timing: {
         screenshot_time_ms: screenshotTime,
       },
+      viewport,
     };
   }
 

@@ -22,6 +22,7 @@ export interface BrowserConfig {
   screenshotTimeout: number;
   pageStabilityTimeout: number;
   domContentLoadedTimeout: number;
+  downloadTimeout: number;
   domStabilityTimeout: number;
   domStabilityThreshold: number;
 
@@ -76,6 +77,9 @@ export interface BrowserConfig {
   connectOverCdp: boolean;
   cdpUrl?: string;
   cdpKeepCurrentPage: boolean;
+
+  // Download file configuration
+  downloadDir?: string;
 }
 
 export interface WebSocketConfig {
@@ -83,6 +87,7 @@ export interface WebSocketConfig {
   session_id?: string;
   viewport_limit: boolean;
   fullVisualMode?: boolean;
+  nearestElementsCount: number;  // Number of nearest elements to show for ineffective clicks
 }
 
 // Default stealth configuration
@@ -114,6 +119,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     screenshotTimeout: 15000,
     pageStabilityTimeout: 1500,
     domContentLoadedTimeout: 5000,
+    downloadTimeout: 30000,
     domStabilityTimeout: 5000,
     domStabilityThreshold: 200,       // Consider DOM stable if no changes for 200ms
     popupTimeout: 5000,
@@ -152,7 +158,8 @@ function getDefaultBrowserConfig(): BrowserConfig {
 function getDefaultWebSocketConfig(): WebSocketConfig {
   return {
     browser_log_to_file: false,
-    viewport_limit: false
+    viewport_limit: false,
+    nearestElementsCount: 5  // Default number of nearest elements for ineffective click detection
   };
 }
 
@@ -222,11 +229,14 @@ export class ConfigLoader {
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
     if (config.viewport_limit !== undefined) wsConfig.viewport_limit = config.viewport_limit;
     if (config.fullVisualMode !== undefined) wsConfig.fullVisualMode = config.fullVisualMode;
+    if (config.nearestElementsCount !== undefined) wsConfig.nearestElementsCount = config.nearestElementsCount;
 
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
     if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
+    if (config.downloadDir !== undefined) browserConfig.downloadDir = config.downloadDir;
+    if (config.downloadTimeout !== undefined) browserConfig.downloadTimeout = config.downloadTimeout;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }
