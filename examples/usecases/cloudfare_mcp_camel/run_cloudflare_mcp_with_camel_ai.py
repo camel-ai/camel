@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+
+import dotenv
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MCPToolkit
-import dotenv
-import os
 
 dotenv.load_dotenv()
 

@@ -23,14 +23,14 @@ from .together_embedding import TogetherEmbedding
 from .vlm_embedding import VisionLanguageEmbedding
 
 __all__ = [
-    "BaseEmbedding",
-    "OpenAIEmbedding",
     "AzureEmbedding",
-    "SentenceTransformerEncoder",
-    "VisionLanguageEmbedding",
+    "BaseEmbedding",
+    "GeminiEmbedding",
+    "JinaEmbedding",
     "MistralEmbedding",
     "OpenAICompatibleEmbedding",
-    "JinaEmbedding",
+    "OpenAIEmbedding",
+    "SentenceTransformerEncoder",
     "TogetherEmbedding",
-    "GeminiEmbedding",
+    "VisionLanguageEmbedding",
 ]

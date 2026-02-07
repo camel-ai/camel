@@ -12,13 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import streamlit as st
-import ffmpeg
-from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
-from camel.toolkits.audio_analysis_toolkit import AudioAnalysisToolkit
-from camel.agents import ChatAgent
 import os
+
+import ffmpeg
+import streamlit as st
 from dotenv import load_dotenv
+
+from camel.agents import ChatAgent
+from camel.toolkits.audio_analysis_toolkit import AudioAnalysisToolkit
+from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
 
 load_dotenv()
 

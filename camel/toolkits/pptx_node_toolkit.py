@@ -183,7 +183,7 @@ class PptxNodeToolkit(BaseToolkit):
             payload = {
                 "slides": final_slides,
                 "theme": theme,
-                "layout": layout
+                "layout": layout,
             }
             content_str = json.dumps(payload)
 
@@ -192,7 +192,6 @@ class PptxNodeToolkit(BaseToolkit):
                 "Error: Content must be valid JSON string or structure "
                 "representing slides."
             )
-
 
         file_path = self._resolve_filepath(filename)
         script_path = Path(__file__).parent / "scripts" / "generate_pptx.js"

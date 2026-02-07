@@ -12,18 +12,24 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import logging
+
 import streamlit as st
 from dotenv import load_dotenv
-from camel.societies import RolePlaying
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from camel.toolkits import (
-    GoogleScholarToolkit, SemanticScholarToolkit, ArxivToolkit,
-    AskNewsToolkit, ThinkingToolkit,
-    FileWriteToolkit, LinkedInToolkit
-)
+
 from camel.logger import set_log_level
-import logging
+from camel.models import ModelFactory
+from camel.societies import RolePlaying
+from camel.toolkits import (
+    ArxivToolkit,
+    AskNewsToolkit,
+    FileWriteToolkit,
+    GoogleScholarToolkit,
+    LinkedInToolkit,
+    SemanticScholarToolkit,
+    ThinkingToolkit,
+)
+from camel.types import ModelPlatformType, ModelType
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()

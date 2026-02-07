@@ -77,7 +77,7 @@ class TestPptxNodeToolkit(unittest.TestCase):
 
         content = [{"title": "Test Slide"}]
         filename = "test_theme"
-        
+
         self.toolkit.create_presentation(
             content, filename, theme="custom_theme", layout="LAYOUT_4x3"
         )
@@ -86,7 +86,6 @@ class TestPptxNodeToolkit(unittest.TestCase):
         content_json = json.loads(args[3])
         self.assertEqual(content_json["theme"], "custom_theme")
         self.assertEqual(content_json["layout"], "LAYOUT_4x3")
-
 
     @patch("subprocess.run")
     def test_create_presentation_custom_node(

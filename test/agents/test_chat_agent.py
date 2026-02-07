@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
+import os
 from copy import deepcopy
 from io import BytesIO
 from typing import List
@@ -77,6 +78,12 @@ model_backend_rsp_base = ChatCompletion(
         total_tokens=47,
     ),
 )
+
+
+# Mock OPENAI_API_KEY for test collection if not present
+
+if "OPENAI_API_KEY" not in os.environ:
+    os.environ["OPENAI_API_KEY"] = "sk-mock-key-for-test-collection"
 
 parametrize = pytest.mark.parametrize(
     'model',

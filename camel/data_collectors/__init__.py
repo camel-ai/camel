@@ -16,4 +16,4 @@ from .alpaca_collector import AlpacaDataCollector
 from .base import BaseDataCollector
 from .sharegpt_collector import ShareGPTDataCollector
 
-__all__ = ["BaseDataCollector", "AlpacaDataCollector", "ShareGPTDataCollector"]
+__all__ = ["AlpacaDataCollector", "BaseDataCollector", "ShareGPTDataCollector"]

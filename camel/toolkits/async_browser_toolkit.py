@@ -1373,7 +1373,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 (
                     if_need_replan,
                     replanned_schema,
-                    # ruff: noqa: E501
                 ) = await self._async_task_replanning(
                     task_prompt, detailed_plan
                 )

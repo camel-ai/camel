@@ -11,18 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
-import streamlit as st
-import json
 import base64
+import json
+import os
 from typing import List, Optional, Union
+
+import streamlit as st
 from pydantic import BaseModel, Field
 
-
-from camel.toolkits.pptx_toolkit import PPTXToolkit
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits.pptx_toolkit import PPTXToolkit
+from camel.types import ModelPlatformType, ModelType
+
 
 # --- Pydantic Models for Structured Output ---
 class TitleSlide(BaseModel):

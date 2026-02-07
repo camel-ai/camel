@@ -18,7 +18,7 @@ from .skywork_model import SkyworkRewardModel
 
 __all__ = [
     'BaseRewardModel',
-    'NemotronRewardModel',
     'Evaluator',
+    'NemotronRewardModel',
     'SkyworkRewardModel',
 ]

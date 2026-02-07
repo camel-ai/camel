@@ -13,18 +13,18 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import os
+import json
 import re
+
 import streamlit as st
 from dotenv import load_dotenv
-import json
 
 # Import CAMEL components
 from camel.agents import ChatAgent
+from camel.loaders import Firecrawl
 from camel.models import ModelFactory
 from camel.toolkits import CodeExecutionToolkit, MathToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.loaders import Firecrawl
 
 load_dotenv()
 
@@ -78,7 +78,7 @@ class ProblemSolver:
                 return result.get('markdown', result.get('content', ''))
             return str(result)
         except Exception as e:
-            raise Exception(f"Failed to fetch content: {str(e)}")
+            raise Exception(f"Failed to fetch content: {e!s}")
 
     def solve_problem(self, problem_content: str) -> str:
         """Generate solution for the problem"""
@@ -207,7 +207,7 @@ else:
         except Exception as e:
             return {
                 'passed': False,
-                'error': f"Execution error: {str(e)}",
+                'error': f"Execution error: {e!s}",
                 'actual': "",
                 'expected': expected_output.strip()
             }
@@ -402,7 +402,7 @@ def solve_problem(platform: str, problem_id: str) -> bool:
         return True
 
     except Exception as e:
-        st.error(f"Solving failed: {str(e)}")
+        st.error(f"Solving failed: {e!s}")
         return False
 
 def improve_solution(max_attempts: int = 5) -> bool:

@@ -16,7 +16,7 @@ from .role_playing import RolePlaying
 from .workforce import Workforce
 
 __all__ = [
-    'RolePlaying',
     'BabyAGI',
+    'RolePlaying',
     'Workforce',
 ]
