@@ -218,7 +218,7 @@ def title_case_skill_name(skill_name):
 
 
 def init_skill(skill_name, path):
-    r"""a new skill directory with template SKILL.md.
+    r"""Create a new skill directory with template SKILL.md.
 
     Args:
         skill_name: Name of the skill
