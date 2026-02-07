@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import warnings
 from typing import Any, Dict, Optional, Union
 
 from camel.configs import BedrockConfig
@@ -72,6 +73,26 @@ class AWSBedrockModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = BedrockConfig().as_dict()
+        # Prompt-caching controls are for AWSBedrockConverseModel. Remove them
+        # to avoid passing unknown keys to the OpenAI-compatible endpoint.
+        cache_control = model_config_dict.pop("cache_control", None)
+        cache_checkpoint_target = model_config_dict.pop(
+            "cache_checkpoint_target", None
+        )
+        if cache_control is not None:
+            warnings.warn(
+                "Ignoring `cache_control` on AWSBedrockModel. "
+                "Use AWSBedrockConverseModel for Bedrock prompt caching.",
+                UserWarning,
+                stacklevel=2,
+            )
+        if cache_checkpoint_target not in (None, "both"):
+            warnings.warn(
+                "Ignoring `cache_checkpoint_target` on AWSBedrockModel. "
+                "Use AWSBedrockConverseModel for Bedrock prompt caching.",
+                UserWarning,
+                stacklevel=2,
+            )
         api_key = api_key or os.environ.get("BEDROCK_API_KEY")
         url = url or os.environ.get(
             "BEDROCK_API_BASE_URL",
