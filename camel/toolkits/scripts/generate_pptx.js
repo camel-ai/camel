@@ -1,6 +1,11 @@
 
 import PptxGenJS from "pptxgenjs";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Get arguments
 const args = process.argv.slice(2);
@@ -12,16 +17,60 @@ if (args.length < 2) {
 const filename = args[0];
 const contentJson = args[1];
 
-let slidesData;
+let data;
 try {
-    slidesData = JSON.parse(contentJson);
+    data = JSON.parse(contentJson);
 } catch (e) {
     console.error("Error parsing JSON content:", e);
     process.exit(1);
 }
 
+let slidesData = [];
+let themeName = "default";
+let layout = "LAYOUT_16x9";
+
+if (Array.isArray(data)) {
+    slidesData = data;
+} else if (typeof data === 'object' && data !== null) {
+    if (Array.isArray(data.slides)) {
+        slidesData = data.slides;
+    }
+    if (data.theme) {
+        themeName = data.theme;
+    }
+    if (data.layout) {
+        layout = data.layout;
+    }
+}
+
+// Load theme
+let theme = {};
+try {
+    const themePath = join(__dirname, 'themes', `${themeName}.json`);
+    if (fs.existsSync(themePath)) {
+        const themeContent = fs.readFileSync(themePath, 'utf8');
+        theme = JSON.parse(themeContent);
+    } else {
+        console.warn(`Theme '${themeName}' not found. Using internal defaults.`);
+        // Fallback or just empty object, relying on defaults below if needed
+    }
+} catch (e) {
+    console.error(`Error loading theme '${themeName}':`, e);
+}
+
+const styles = theme.styles || {};
+
+// Helper to get style or default
+const getStyle = (key, defaultStyle) => {
+    return { ...defaultStyle, ...styles[key] };
+};
+
+
 // Create Presentation
 const ppt = new PptxGenJS();
+if (layout && layout !== "LAYOUT_16x9") {
+    ppt.layout = layout;
+}
 
 // Process slides
 if (Array.isArray(slidesData)) {
@@ -30,32 +79,41 @@ if (Array.isArray(slidesData)) {
 
         // simple layout heuristics based on keys
         if (slideData.title) {
-            slide.addText(slideData.title, { x: 1, y: 1, w: "80%", h: 1, fontSize: 24, bold: true, color: "363636" });
+            const style = getStyle("title", { x: 1, y: 1, w: "80%", h: 1, fontSize: 24, bold: true, color: "363636" });
+            slide.addText(slideData.title, style);
         }
 
         if (slideData.subtitle) {
-            slide.addText(slideData.subtitle, { x: 1, y: 2.5, w: "80%", h: 1, fontSize: 18, color: "737373" });
+            const style = getStyle("subtitle", { x: 1, y: 2.5, w: "80%", h: 1, fontSize: 18, color: "737373" });
+            slide.addText(slideData.subtitle, style);
         }
 
         if (slideData.heading) {
-            slide.addText(slideData.heading, { x: 0.5, y: 0.5, w: "90%", h: 0.5, fontSize: 20, bold: true, color: "000000" });
+            const style = getStyle("heading", { x: 0.5, y: 0.5, w: "90%", h: 0.5, fontSize: 20, bold: true, color: "000000" });
+            slide.addText(slideData.heading, style);
         }
 
         if (slideData.bullet_points && Array.isArray(slideData.bullet_points)) {
-            const bullets = slideData.bullet_points.map(bp => ({ text: bp, options: { fontSize: 14, bullet: true, color: "000000", breakLine: true } }));
-            slide.addText(bullets, { x: 1, y: 1.5, w: "80%", h: 4 });
+            const bulletOpts = getStyle("bullet_point", { fontSize: 14, bullet: true, color: "000000", breakLine: true });
+            const listStyle = getStyle("bullet_list", { x: 1, y: 1.5, w: "80%", h: 4 });
+
+            const bullets = slideData.bullet_points.map(bp => ({ text: bp, options: bulletOpts }));
+            slide.addText(bullets, listStyle);
         }
 
         if (slideData.text) {
-            slide.addText(slideData.text, { x: 1, y: 1.5, w: "80%", h: 4, fontSize: 14, color: "000000" });
+            const style = getStyle("body_text", { x: 1, y: 1.5, w: "80%", h: 4, fontSize: 14, color: "000000" });
+            slide.addText(slideData.text, style);
         }
 
         // Table support
         if (slideData.table) {
             const tableData = [];
+            const headerStyle = getStyle("table_header", { bold: true, fill: "F7F7F7" });
+
             // headers
             if (slideData.table.headers) {
-                tableData.push(slideData.table.headers.map(h => ({ text: h, options: { bold: true, fill: "F7F7F7" } })));
+                tableData.push(slideData.table.headers.map(h => ({ text: h, options: headerStyle })));
             }
             // rows
             if (slideData.table.rows) {
@@ -63,7 +121,8 @@ if (Array.isArray(slidesData)) {
                     tableData.push(row);
                 });
             }
-            slide.addTable(tableData, { x: 1, y: 2, w: "80%" });
+            const tableStyle = getStyle("table", { x: 1, y: 2, w: "80%" });
+            slide.addTable(tableData, tableStyle);
         }
     });
 }

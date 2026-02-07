@@ -96,6 +96,8 @@ class PptxNodeToolkit(BaseToolkit):
         self,
         content: Union[str, List[Dict[str, Any]]],
         filename: str,
+        theme: str = "default",
+        layout: str = "LAYOUT_16x9",
     ) -> str:
         r"""Create a PowerPoint presentation (PPTX) file using PptxGenJS.
 
@@ -138,6 +140,8 @@ class PptxNodeToolkit(BaseToolkit):
                     }
                 ]
             filename (str): The name of the file to save. MUST end in .pptx.
+            theme (str, optional): The theme to use. Defaults to "default".
+            layout (str, optional): The layout to use. Defaults to "LAYOUT_16x9".
 
         Returns:
             str: A JSON string containing the result status, file path, and
@@ -149,33 +153,42 @@ class PptxNodeToolkit(BaseToolkit):
         # Ensure content is a valid JSON string or structure
         try:
             if not isinstance(content, str):
-                # If it's a list/dict, check for expected keys if possible
-                if isinstance(content, list):
-                    for item in content:
-                        if not isinstance(item, dict):
-                            return "Error: Slide content must be a dictionary."
-                        # Basic validation for known keys
-                        valid_keys = {
-                            "title",
-                            "subtitle",
-                            "heading",
-                            "text",
-                            "bullet_points",
-                            "table",
-                        }
-                        if not any(key in item for key in valid_keys):
-                            # Soft validation: warn/ignore if keys missing
-                            pass
-                content_str = json.dumps(content)
+                slides_data = content
             else:
-                # Validate JSON
-                json_obj = json.loads(content)
-                content_str = json.dumps(json_obj)
+                slides_data = json.loads(content)
+
+            # Support both list of slides and dict with "slides" key
+            if isinstance(slides_data, dict) and "slides" in slides_data:
+                # If user provided a dict with 'slides', usage that.
+                # Use provided theme/layout if not in dict, or override?
+                # For simplicity, we wrap what we have.
+                # If the user passed a structure matching the new JS input,
+                # we might just use it. But to enforce the args:
+                final_slides = slides_data["slides"]
+            elif isinstance(slides_data, list):
+                final_slides = slides_data
+            else:
+                return "Error: Content must be a list of slides or a dict describing slides."
+
+            # Validate slides are dicts
+            for item in final_slides:
+                if not isinstance(item, dict):
+                    return "Error: Slide content must be a dictionary."
+
+            # Construct the payload for JS
+            payload = {
+                "slides": final_slides,
+                "theme": theme,
+                "layout": layout
+            }
+            content_str = json.dumps(payload)
+
         except json.JSONDecodeError:
             return (
                 "Error: Content must be valid JSON string or structure "
                 "representing slides."
             )
+
 
         file_path = self._resolve_filepath(filename)
         script_path = Path(__file__).parent / "scripts" / "generate_pptx.js"

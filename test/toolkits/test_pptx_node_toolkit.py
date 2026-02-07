@@ -53,6 +53,41 @@ class TestPptxNodeToolkit(unittest.TestCase):
         self.assertIn("/path/to/test.pptx", result)
         self.assertIn("Slides: 5", result)
 
+        # Verify arguments passed to node script
+        args = mock_subprocess_run.call_args[0][0]
+        # args[3] is the content JSON string
+        content_json = json.loads(args[3])
+        self.assertEqual(content_json["slides"], content)
+        self.assertEqual(content_json["theme"], "default")
+        self.assertEqual(content_json["layout"], "LAYOUT_16x9")
+
+    @patch("subprocess.run")
+    def test_create_presentation_with_theme(
+        self, mock_subprocess_run, mock_exists, mock_which
+    ):
+        mock_which.return_value = "/usr/bin/node"
+        mock_exists.return_value = True
+
+        # Mock successful execution
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {"success": True, "path": "/path/to/test.pptx", "slides": 5}
+        )
+        mock_subprocess_run.return_value = mock_result
+
+        content = [{"title": "Test Slide"}]
+        filename = "test_theme"
+        
+        result = self.toolkit.create_presentation(
+            content, filename, theme="custom_theme", layout="LAYOUT_4x3"
+        )
+
+        args = mock_subprocess_run.call_args[0][0]
+        content_json = json.loads(args[3])
+        self.assertEqual(content_json["theme"], "custom_theme")
+        self.assertEqual(content_json["layout"], "LAYOUT_4x3")
+
+
     @patch("subprocess.run")
     def test_create_presentation_custom_node(
         self, mock_subprocess_run, mock_exists, mock_which

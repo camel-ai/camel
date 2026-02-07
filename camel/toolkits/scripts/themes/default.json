@@ -1,0 +1,60 @@
+{
+    "name": "default",
+    "styles": {
+        "title": {
+            "x": 1,
+            "y": 1,
+            "w": "80%",
+            "h": 1,
+            "fontSize": 24,
+            "bold": true,
+            "color": "363636"
+        },
+        "subtitle": {
+            "x": 1,
+            "y": 2.5,
+            "w": "80%",
+            "h": 1,
+            "fontSize": 18,
+            "color": "737373"
+        },
+        "heading": {
+            "x": 0.5,
+            "y": 0.5,
+            "w": "90%",
+            "h": 0.5,
+            "fontSize": 20,
+            "bold": true,
+            "color": "000000"
+        },
+        "bullet_point": {
+            "fontSize": 14,
+            "bullet": true,
+            "color": "000000",
+            "breakLine": true
+        },
+        "bullet_list": {
+            "x": 1,
+            "y": 1.5,
+            "w": "80%",
+            "h": 4
+        },
+        "body_text": {
+            "x": 1,
+            "y": 1.5,
+            "w": "80%",
+            "h": 4,
+            "fontSize": 14,
+            "color": "000000"
+        },
+        "table": {
+            "x": 1,
+            "y": 2,
+            "w": "80%"
+        },
+        "table_header": {
+            "bold": true,
+            "fill": "F7F7F7"
+        }
+    }
+}
