@@ -17,6 +17,43 @@ except ImportError:
     sys.exit(1)
 
 
+def validate_skill_name(name):
+    r"""Validate skill name format.
+
+    Args:
+        name: Name of the skill to validate (should already be stripped)
+
+    Returns:
+        Tuple of (is_valid, error_message). error_message is None if valid.
+    """
+    if not name:
+        return False, "Name cannot be empty"
+
+    # Check naming convention (kebab-case: lowercase with hyphens)
+    if not re.match(r'^[a-z0-9-]+$', name):
+        return (
+            False,
+            f"Name '{name}' should be kebab-case (lowercase "
+            f"letters, digits, and hyphens only)",
+        )
+
+    if name.startswith('-') or name.endswith('-'):
+        return False, f"Name '{name}' cannot start or end with hyphen"
+
+    if '--' in name:
+        return False, f"Name '{name}' cannot contain consecutive hyphens"
+
+    # Check name length (max 64 characters per spec)
+    if len(name) > 64:
+        return (
+            False,
+            f"Name is too long ({len(name)} characters). Maximum is "
+            f"64 characters.",
+        )
+
+    return True, None
+
+
 def validate_skill(skill_path):
     r"""Basic validation of a skill"""
     skill_path = Path(skill_path)
@@ -76,27 +113,11 @@ def validate_skill(skill_path):
     if not isinstance(name, str):
         return False, f"Name must be a string, got {type(name).__name__}"
     name = name.strip()
-    if name:
-        # Check naming convention (kebab-case: lowercase with hyphens)
-        if not re.match(r'^[a-z0-9-]+$', name):
-            return (
-                False,
-                f"Name '{name}' should be kebab-case (lowercase "
-                f"letters, digits, and hyphens only)",
-            )
-        if name.startswith('-') or name.endswith('-') or '--' in name:
-            return (
-                False,
-                f"Name '{name}' cannot start/end with hyphen or "
-                f"contain consecutive hyphens",
-            )
-        # Check name length (max 64 characters per spec)
-        if len(name) > 64:
-            return (
-                False,
-                f"Name is too long ({len(name)} characters). Maximum is "
-                f"64 characters.",
-            )
+
+    # Use shared validation function
+    is_valid, error_msg = validate_skill_name(name)
+    if not is_valid:
+        return False, error_msg
 
     # Extract and validate description
     description = frontmatter.get('description', '')
@@ -106,7 +127,16 @@ def validate_skill(skill_path):
             f"Description must be a string, got {type(description).__name__}",
         )
     description = description.strip()
-    if description:
+    if not description:
+        return False, "Description cannot be empty"
+    else:
+        # Check for placeholder/TODO description
+        if description.upper().startswith('TODO'):
+            return (
+                False,
+                "Description appears to be a placeholder "
+                "(starts with 'TODO'). Please provide a real description.",
+            )
         # Check for angle brackets
         if '<' in description or '>' in description:
             return False, "Description cannot contain angle brackets (< or >)"

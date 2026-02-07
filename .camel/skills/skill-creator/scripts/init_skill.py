@@ -11,10 +11,16 @@ Examples:
     init_skill.py custom-skill --path /custom/location
 """
 
-import re
 import shutil
 import sys
 from pathlib import Path
+
+# Import from same directory - add parent to path for module resolution
+_script_dir = Path(__file__).parent.resolve()
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+from quick_validate import validate_skill_name  # noqa: E402
 
 SKILL_TEMPLATE = """---
 name: {skill_name}
@@ -217,43 +223,6 @@ Note: This is a text placeholder. Actual assets can be any file type.
 def title_case_skill_name(skill_name):
     r"""Convert hyphenated skill name to Title Case for display."""
     return ' '.join(word.capitalize() for word in skill_name.split('-'))
-
-
-def validate_skill_name(skill_name):
-    r"""Validate skill name format.
-
-    Args:
-        skill_name: Name of the skill to validate
-
-    Returns:
-        Tuple of (is_valid, error_message). error_message is None if valid.
-    """
-    if not skill_name:
-        return False, "Skill name cannot be empty"
-
-    # Check naming convention (kebab-case: lowercase with hyphens)
-    if not re.match(r'^[a-z0-9-]+$', skill_name):
-        return (
-            False,
-            f"Name '{skill_name}' should be kebab-case (lowercase "
-            f"letters, digits, and hyphens only)",
-        )
-
-    if skill_name.startswith('-') or skill_name.endswith('-'):
-        return False, f"Name '{skill_name}' cannot start or end with hyphen"
-
-    if '--' in skill_name:
-        return False, f"Name '{skill_name}' cannot contain consecutive hyphens"
-
-    # Check name length (max 64 characters per spec)
-    if len(skill_name) > 64:
-        return (
-            False,
-            f"Name is too long ({len(skill_name)} characters). "
-            f"Maximum is 64 characters.",
-        )
-
-    return True, None
 
 
 def init_skill(skill_name, path):
