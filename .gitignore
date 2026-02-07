@@ -425,10 +425,13 @@ datasets_test/
 evaluation_data/
 camel_data/
 temp_files/
+data/bfcl/
 
 #Benchmark
 benchmark/gaia/Dataset
 benchmark/gaia/results.jsonl
+results/
+results/bfcl/
 
 # Secret files for docker
 .container/.env
