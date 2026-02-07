@@ -40,6 +40,39 @@ class BaseRuntime(ABC):
         r"""Resets the runtime to its initial state."""
         pass
 
+    @abstractmethod
+    def cleanup(self) -> None:
+        r"""Releases resources (containers, processes, connections, etc.).
+
+        Public part of the runtime lifecycle API: callers may call
+        :meth:`cleanup` or use the runtime as a context manager
+        (``with runtime:``) for deterministic teardown. Subclasses must
+        implement this method.
+        """
+        pass
+
+    def stop(self) -> "BaseRuntime":
+        r"""Stops the runtime and releases resources. Calls :meth:`cleanup`.
+
+        Returns:
+            BaseRuntime: The current runtime (for chaining).
+        """
+        self.cleanup()
+        return self
+
+    def __enter__(self) -> "BaseRuntime":
+        r"""Enter the context manager."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
+    ) -> None:
+        r"""Exit the context manager; ensures cleanup is called."""
+        self.cleanup()
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of all tools in the runtime."""
         return list(self.tools_map.values())

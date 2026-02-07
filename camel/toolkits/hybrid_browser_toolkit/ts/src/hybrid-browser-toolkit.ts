@@ -1,5 +1,5 @@
 import {HybridBrowserSession} from './browser-session';
-import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
+import {ActionResult, BrowserAction, BrowserToolkitConfig, PageStabilityResult, SnapshotResult, TabInfo, VisualMarkResult, INTERACTIVE_ROLES} from './types';
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
 import {SomScreenshotInjected} from './som-screenshot-injected';
@@ -191,7 +191,6 @@ export class HybridBrowserToolkit {
 
   async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
-    console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
 
     try {
       // Get page and snapshot data
@@ -200,11 +199,9 @@ export class HybridBrowserToolkit {
 
       // Parse clickable elements from snapshot text
       const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
-      console.log(`[HybridBrowserToolkit] Found ${clickableElements.size} clickable elements`);
 
       // Apply hierarchy-based filtering
       const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
-      console.log(`[HybridBrowserToolkit] After filtering: ${filteredElements.size} elements remain`);
 
       // Use injected SOM-screenshot method without export path
       const result = await SomScreenshotInjected.captureOptimized(
@@ -235,21 +232,59 @@ export class HybridBrowserToolkit {
     }
   }
 
+  async getScreenshot(): Promise<VisualMarkResult & { timing: any; viewport?: { width: number; height: number } }> {
+    const startTime = Date.now();
+    console.log('[HybridBrowserToolkit] Starting getScreenshot...');
+
+    try {
+      const result = await this.session.takeScreenshot();
+      const base64Image = `data:image/png;base64,${result.buffer.toString('base64')}`;
+      const totalTime = Date.now() - startTime;
+
+      return {
+        text: `Screenshot captured successfully. Viewport size: ${result.viewport.width}x${result.viewport.height}. Valid coordinate range: x=[0, ${result.viewport.width}], y=[0, ${result.viewport.height}]`,
+        images: [base64Image],
+        timing: {
+          total_time_ms: totalTime,
+          screenshot_time_ms: result.timing.screenshot_time_ms,
+        },
+        viewport: result.viewport,
+      };
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      return {
+        text: `Error capturing screenshot: ${error}`,
+        images: [],
+        timing: {
+          total_time_ms: totalTime,
+          screenshot_time_ms: 0,
+        },
+      };
+    }
+  }
 
   /**
-   * Parse clickable elements from snapshot text
+   * Parse clickable/interactive elements from snapshot text
    */
   private parseClickableElements(snapshotText: string): Set<string> {
     const clickableElements = new Set<string>();
-    const lines = snapshotText.split('\n');
 
-    for (const line of lines) {
-      // Look for lines containing [cursor=pointer] or [active] and extract ref
+    for (const line of snapshotText.split('\n')) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (!refMatch) continue;
+
+      const ref = refMatch[1];
+
+      // Include elements with cursor=pointer or active state
       if (line.includes('[cursor=pointer]') || line.includes('[active]')) {
-        const refMatch = line.match(/\[ref=([^\]]+)\]/);
-        if (refMatch) {
-          clickableElements.add(refMatch[1]);
-        }
+        clickableElements.add(ref);
+        continue;
+      }
+
+      // Include interactive form elements by role (uses shared INTERACTIVE_ROLES)
+      const roleMatch = line.match(/^\s*-\s+(\w+)\s/);
+      if (roleMatch && INTERACTIVE_ROLES.has(roleMatch[1])) {
+        clickableElements.add(ref);
       }
     }
 
@@ -302,6 +337,11 @@ export class HybridBrowserToolkit {
       }
     }
 
+    // Include note if present
+    if (result.note) {
+      response.note = result.note;
+    }
+
     return response;
   }
 
@@ -347,13 +387,39 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async mouseDrag(from_ref: string, to_ref: string): Promise<any> {
-    const action: BrowserAction = { type: 'mouse_drag', from_ref, to_ref };
+  async mouseDrag(params: {
+    from_ref?: string;
+    to_ref?: string;
+    from_x?: number;
+    from_y?: number;
+    to_x?: number;
+    to_y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_drag', ...params };
     return this.executeActionWithSnapshot(action);
   }
 
   async pressKeys(keys: string[]): Promise<any> {
     const action: BrowserAction = { type: 'press_key', keys};
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async uploadFile(params: {
+    filePath: string;
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'upload_file', ...params };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async downloadFile(params: {
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'download_file', ...params };
     return this.executeActionWithSnapshot(action);
   }
 
@@ -371,6 +437,9 @@ export class HybridBrowserToolkit {
       await page.goBack({ waitUntil: 'domcontentloaded' });
       const navigationTime = Date.now() - navigationStart;
 
+      // Wait for page stability after navigation
+      const stabilityResult = await this.session.waitForPageStability(page);
+
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -384,8 +453,12 @@ export class HybridBrowserToolkit {
         timing: {
           total_time_ms: totalTime,
           navigation_time_ms: navigationTime,
+          dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+          network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
           snapshot_time_ms: snapshotTime,
         },
+        note: stabilityResult.note,
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -411,6 +484,9 @@ export class HybridBrowserToolkit {
       await page.goForward({ waitUntil: 'domcontentloaded' });
       const navigationTime = Date.now() - navigationStart;
 
+      // Wait for page stability after navigation
+      const stabilityResult = await this.session.waitForPageStability(page);
+
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -424,8 +500,12 @@ export class HybridBrowserToolkit {
         timing: {
           total_time_ms: totalTime,
           navigation_time_ms: navigationTime,
+          dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+          network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
           snapshot_time_ms: snapshotTime,
         },
+        note: stabilityResult.note,
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -449,6 +529,11 @@ export class HybridBrowserToolkit {
       const success = await this.session.switchToTab(tabId);
 
       if (success) {
+        const page = await this.session.getCurrentPage();
+
+        // Wait for page stability after tab switch
+        const stabilityResult = await this.session.waitForPageStability(page);
+
         const snapshotStart = Date.now();
         const snapshot = await this.getPageSnapshot(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
@@ -460,8 +545,12 @@ export class HybridBrowserToolkit {
           snapshot: snapshot,
           timing: {
             total_time_ms: totalTime,
+            dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
+            network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
             snapshot_time_ms: snapshotTime,
           },
+          note: stabilityResult.note,
         };
       } else {
         return {

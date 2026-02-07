@@ -1,6 +1,28 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
-import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
+import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult, INTERACTIVE_ROLES, NearestElementInfo } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Constants for loading element detection
+// Using word boundary patterns to avoid false positives like "unloading" or "windspinner"
+const LOADING_CLASS_PATTERNS = [
+  /\bloading\b/i,    // matches "loading", "is-loading", "loading-spinner" but not "unloading"
+  /\bloader\b/i,     // matches "loader", "page-loader" but not "preloader" (intentionally excluded)
+  /\bspinner\b/i,    // matches "spinner", "loading-spinner" but not "windspinner"
+  /\bspin\b/i,       // matches "spin", "spin-animation"
+];
+
+// CSS selector for querying loading elements - matches common loading class patterns
+const LOADING_ELEMENTS_SELECTOR = [
+  '[class*="loading"]:not([class*="unloading"]):not([class*="loaded"])',
+  '[class*="loader"]',
+  '[class*="spinner"]',
+  '[class*="spin"]:not([class*="spinach"])', // avoid false positives
+].join(', ');
+
+// Note message for loading state warning
+const LOADING_STATE_NOTE = 'Loading-related elements were detected on this page. The page may still be in a loading or transitional state. The current snapshot may not reflect the final state.';
 
 export class HybridBrowserSession {
   private browser: Browser | null = null;
@@ -31,6 +53,206 @@ export class HybridBrowserSession {
     // Version compatibility: if result is object (v1.57.0+), use .full property
     // If result is string (v1.56.x and earlier), return directly
     return typeof result === 'string' ? result : result.full;
+  }
+
+  /**
+   * Parse frame prefix from ref (e.g., "f1e5" -> { frameIndex: 1, localRef: "e5" })
+   * Refs without frame prefix (e.g., "e5") return frameIndex: 0
+   */
+  private parseFrameRef(ref: string): { frameIndex: number; localRef: string } {
+    const frameMatch = ref.match(/^f(\d+)(e.*)$/);
+    if (frameMatch) {
+      return {
+        frameIndex: parseInt(frameMatch[1], 10),
+        localRef: frameMatch[2]
+      };
+    }
+    return { frameIndex: 0, localRef: ref };
+  }
+
+  /**
+   * Try to find element in a specific frame with given selector
+   */
+  private async tryFindInFrame(
+    frame: Frame,
+    selector: string
+  ): Promise<ReturnType<Frame['locator']> | null> {
+    try {
+      const element = frame.locator(selector).first();
+      if (await element.count() > 0) {
+        return element;
+      }
+    } catch {
+      // Frame might be detached or selector invalid
+    }
+    return null;
+  }
+
+  /**
+   * Find element across frames with optimized search strategy
+   * Search order: 1) Target frame with localRef, 2) All frames with full ref
+   */
+  private async findElementAcrossFrames(
+    page: Page,
+    ref: string
+  ): Promise<{ locator: ReturnType<Frame['locator']>; frame: Frame } | null> {
+    const allFrames = page.frames();
+    const { frameIndex, localRef } = this.parseFrameRef(ref);
+
+    // Strategy 1: If ref has frame prefix, try target frame with localRef
+    if (frameIndex > 0 && frameIndex < allFrames.length) {
+      const targetFrame = allFrames[frameIndex];
+      const element = await this.tryFindInFrame(targetFrame, `aria-ref=${localRef}`);
+      if (element) {
+        return { locator: element, frame: targetFrame };
+      }
+    }
+
+    // Strategy 2: Search all frames with full ref
+    for (const frame of allFrames) {
+      const element = await this.tryFindInFrame(frame, `aria-ref=${ref}`);
+      if (element) {
+        return { locator: element, frame };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get element coordinates from boundingBox
+   */
+  private async getElementCoordinates(
+    element: ReturnType<Frame['locator']>
+  ): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    const box = await element.boundingBox();
+    if (!box) return null;
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height)
+    };
+  }
+
+  /**
+   * Calculate distance from point to element center
+   */
+  private distanceToElement(
+    x: number,
+    y: number,
+    coords: { x: number; y: number; width: number; height: number }
+  ): number {
+    const centerX = coords.x + coords.width / 2;
+    const centerY = coords.y + coords.height / 2;
+    return Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+  }
+
+  /**
+   * Find N nearest interactive elements to a given point
+   * Returns elements with clickable center coordinates and aria info
+   */
+  private findNearestElements(
+    elements: Record<string, any>,
+    snapshot: string,
+    x: number,
+    y: number,
+    count: number = 5
+  ): NearestElementInfo[] {
+    // Parse aria-label/name from snapshot text
+    const elementNames = this.parseElementNamesFromSnapshot(snapshot);
+
+    const elementsWithDistance: NearestElementInfo[] = [];
+
+    for (const [ref, element] of Object.entries(elements)) {
+      if (!element.coordinates) continue;
+
+      const role = element.role || 'unknown';
+      if (!INTERACTIVE_ROLES.has(role)) continue;
+
+      const coords = element.coordinates;
+      elementsWithDistance.push({
+        ref,
+        role,
+        name: elementNames.get(ref) || '',
+        distance: Math.round(this.distanceToElement(x, y, coords)),
+        clickableCoord: {
+          x: Math.round(coords.x + coords.width / 2),
+          y: Math.round(coords.y + coords.height / 2)
+        },
+        boundingBox: coords
+      });
+    }
+
+    return elementsWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, count);
+  }
+
+  /**
+   * Parse element names/labels from snapshot text
+   */
+  private parseElementNamesFromSnapshot(snapshot: string): Map<string, string> {
+    const elementNames = new Map<string, string>();
+    for (const line of snapshot.split('\n')) {
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch) {
+        const nameMatch = line.match(/-\s+\w+\s+"([^"]+)"/);
+        if (nameMatch) {
+          elementNames.set(refMatch[1], nameMatch[1]);
+        }
+      }
+    }
+    return elementNames;
+  }
+
+  /**
+   * Format nearest elements as readable text for LLM
+   */
+  private formatNearestElementsMessage(
+    clickX: number,
+    clickY: number,
+    nearestElements: NearestElementInfo[]
+  ): string {
+    const lines: string[] = [
+      `Click at (${clickX}, ${clickY}) may be ineffective - page content unchanged.`,
+      `Nearest interactive elements:`
+    ];
+
+    for (let i = 0; i < nearestElements.length; i++) {
+      const el = nearestElements[i];
+      const nameStr = el.name ? ` "${el.name}"` : '';
+      const box = el.boundingBox;
+      lines.push(
+        `  ${i + 1}. [${el.role}]${nameStr} - click at (${el.clickableCoord.x}, ${el.clickableCoord.y}), ` +
+        `area: (${box.x}, ${box.y}) to (${box.x + box.width}, ${box.y + box.height})`
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Check if a point is within a canvas element
+   */
+  private async isPointOnCanvas(page: Page, x: number, y: number): Promise<boolean> {
+    return await page.evaluate(({ x, y }) => {
+      const element = document.elementFromPoint(x, y);
+      if (!element) return false;
+      // Check if element is canvas or inside canvas
+      return element.tagName.toUpperCase() === 'CANVAS' ||
+             element.closest('canvas') !== null;
+    }, { x, y });
+  }
+
+  /**
+   * Compare two snapshots to detect if page changed
+   * Returns true if snapshots are meaningfully different
+   */
+  private snapshotsAreDifferent(before: string, after: string): boolean {
+    // Normalize whitespace and compare
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    return normalize(before) !== normalize(after);
   }
 
   private registerNewPage(tabId: string, page: Page): void {
@@ -479,33 +701,32 @@ export class HybridBrowserSession {
       }
 
       if (includeCoordinates) {
-        // Get coordinates for each ref using aria-ref selector
-        for (const ref of refs) {
-          try {
-            const selector = `aria-ref=${ref}`;
-            const element = await page.locator(selector).first();
-            const exists = await element.count() > 0;
-
-            if (exists) {
-              // Get bounding box
-              const boundingBox = await element.boundingBox();
-
-              if (boundingBox) {
-                // Add coordinates to existing element info
+        // Enrich elements with coordinates using parallel processing
+        // Process in batches to avoid overwhelming the browser
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < refs.length; i += BATCH_SIZE) {
+          const batch = refs.slice(i, i + BATCH_SIZE);
+          await Promise.all(batch.map(async (ref) => {
+            const result = await this.findElementAcrossFrames(page, ref);
+            if (result) {
+              const coords = await this.getElementCoordinates(result.locator);
+              if (coords) {
+                // NOTE: We use parseFrameRef(ref) to get frameIndex from the ref string,
+                // not from result.frame. This is correct because Playwright's snapshot
+                // automatically prefixes refs with frame info (e.g., "f1e5" for iframe 1).
+                // Using result.frame directly via indexOf() causes issues with object
+                // reference comparison and can incorrectly set frameIndex to 0 for all
+                // elements, breaking iframe visibility detection in SOM screenshots.
+                const { frameIndex } = this.parseFrameRef(ref);
                 playwrightMapping[ref] = {
                   ...playwrightMapping[ref],
-                  coordinates: {
-                    x: Math.round(boundingBox.x),
-                    y: Math.round(boundingBox.y),
-                    width: Math.round(boundingBox.width),
-                    height: Math.round(boundingBox.height)
-                  }
+                  coordinates: coords,
+                  frameIndex,
+                  frameUrl: frameIndex > 0 ? result.frame.url() : undefined
                 };
               }
             }
-          } catch (error) {
-            console.warn(`Failed to get coordinates for ref ${ref}:`, error);
-          }
+          }));
         }
       }
 
@@ -566,23 +787,32 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string; dialogMessage?: string }> {
+    // Track dialog (alert/confirm/prompt) that may appear during click
+    let dialogMessage: string | undefined;
+
+    const dialogHandler = (dialog: any) => {
+      dialogMessage = dialog.message();
+      // Auto-accept the dialog to prevent blocking
+      dialog.accept().catch(() => {});
+    };
+
+    // Set up dialog handler before clicking
+    page.on('dialog', dialogHandler);
 
     try {
       //  Ensure we have the latest snapshot and mapping
       await this.getSnapshot(page);
 
-      //  Use Playwright's aria-ref selector engine
-      const selector = `aria-ref=${ref}`;
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      // Check if element exists
-      const element = await page.locator(selector).first();
-      const exists = await element.count() > 0;
-
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      if (!result) {
+        page.off('dialog', dialogHandler);
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
 
+      const element = result.locator;
       const role = await element.getAttribute('role');
       const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
       const isCombobox = role === 'combobox' || elementTagName === 'combobox';
@@ -624,28 +854,9 @@ export class HybridBrowserSession {
         (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
       );
 
-      //  Open ALL links in new tabs
-      // Check if this is a navigable link
-      const isNavigableLink = tagName === 'a' && href &&
-        !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
-        !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
-        href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
-        href !== browserConfig.anchorOnly; // Not just #
-
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
-
-
-      if (shouldOpenNewTab) {
-        //  Handle new tab opening
-        // If it's a link that doesn't naturally open in new tab, force it
-        if (isNavigableLink && !naturallyOpensNewTab) {
-          await element.evaluate((el, blankTarget) => {
-            if (el.tagName.toLowerCase() === 'a') {
-              el.setAttribute('target', blankTarget);
-            }
-          }, browserConfig.blankTarget);
-        }
-
+      // Only open new tab if element naturally opens one (has target="_blank" or window.open)
+      // Do NOT force all links to open in new tabs
+      if (naturallyOpensNewTab) {
         // Set up popup listener before clicking
         const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
 
@@ -673,9 +884,14 @@ export class HybridBrowserSession {
           // Wait for new page to be ready
           await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
 
-          return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref-newtab', newTabId, dialogMessage };
         } catch (popupError) {
-          return { success: true, method: 'playwright-aria-ref' };
+          // Popup didn't open within timeout - this is expected for elements that
+          // look like they might open popups but don't (e.g., JS intercepted the click)
+          // The click still executed successfully
+          page.off('dialog', dialogHandler);
+          return { success: true, method: 'playwright-aria-ref', dialogMessage };
         }
       } else {
         //  Add options to prevent scrolling issues
@@ -700,16 +916,19 @@ export class HybridBrowserSession {
           }
 
           if (diffSnapshot && diffSnapshot.trim() !== '') {
-            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+            page.off('dialog', dialogHandler);
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot, dialogMessage };
           }
         }
 
-        return { success: true, method: 'playwright-aria-ref' };
+        page.off('dialog', dialogHandler);
+        return { success: true, method: 'playwright-aria-ref', dialogMessage };
       }
 
     } catch (error) {
+      page.off('dialog', dialogHandler);
       console.error('[performClick] Exception during click for ref: %s', ref, error);
-      return { success: false, error: `Click failed with exception: ${error}` };
+      return { success: false, error: `Click failed with exception: ${error}`, dialogMessage };
     }
   }
 
@@ -836,13 +1055,14 @@ export class HybridBrowserSession {
 
       // Handle single input (backward compatibility)
       if (ref && text !== undefined) {
-        const selector = `aria-ref=${ref}`;
-        const element = await page.locator(selector).first();
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const result = await this.findElementAcrossFrames(page, ref);
 
-        const exists = await element.count() > 0;
-        if (!exists) {
-          return { success: false, error: `Element with ref ${ref} not found` };
+        if (!result) {
+          return { success: false, error: `Element with ref ${ref} not found in any frame` };
         }
+
+        const element = result.locator;
 
         // Get element attributes to check if it's readonly or a special input type
         let originalPlaceholder: string | null = null;
@@ -1171,14 +1391,14 @@ export class HybridBrowserSession {
       // Ensure we have the latest snapshot
       await this.getSnapshot(page);
 
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
+      //  Use findElementAcrossFrames to support elements inside iframes
+      const result = await this.findElementAcrossFrames(page, ref);
 
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      if (!result) {
+        return { success: false, error: `Element with ref ${ref} not found in any frame` };
       }
+
+      const element = result.locator;
 
       // Select value using Playwright's built-in selectOption method
       await element.selectOption(value);
@@ -1190,9 +1410,75 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Simplified mouse control implementation
+   *  Show highlight animation at given coordinates
    */
-  private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
+  private async showClickHighlight(page: Page, x: number, y: number): Promise<void> {
+    await page.evaluate(({ x, y }) => {
+      // Create highlight element
+      const highlight = document.createElement('div');
+      highlight.id = 'claude-click-highlight-' + Date.now();
+      highlight.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        width: 20px;
+        height: 20px;
+        margin-left: -10px;
+        margin-top: -10px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.5);
+        border: 2px solid rgba(59, 130, 246, 0.8);
+        pointer-events: none;
+        z-index: 2147483647;
+        animation: claude-highlight-pulse 0.6s ease-out forwards;
+      `;
+
+      // Add keyframes if not already present
+      if (!document.getElementById('claude-highlight-styles')) {
+        const style = document.createElement('style');
+        style.id = 'claude-highlight-styles';
+        style.textContent = `
+          @keyframes claude-highlight-pulse {
+            0% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(2);
+              opacity: 0.7;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      document.body.appendChild(highlight);
+
+      // Remove after animation
+      setTimeout(() => {
+        highlight.remove();
+      }, 600);
+    }, { x, y });
+  }
+
+  /**
+   *  Mouse control implementation with ineffective click detection
+   *  For full visual mode: detects when click has no effect and suggests nearest elements
+   */
+  private async performMouseControl(
+    page: Page,
+    control: string,
+    x: number,
+    y: number
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    resultMessage?: string;  // Custom result message for ineffective clicks
+  }> {
     try {
       const viewport = page.viewportSize();
       if (!viewport) {
@@ -1201,6 +1487,24 @@ export class HybridBrowserSession {
       if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
         return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
       }
+
+      // Check if clicking on canvas element
+      const isOnCanvas = await this.isPointOnCanvas(page, x, y);
+
+      // Get snapshot before click (with coordinates for nearest element calculation)
+      let snapshotBefore: string | null = null;
+      let elementsWithCoords: Record<string, any> | null = null;
+
+      if (!isOnCanvas && control === 'click') {
+        const snapshotResult = await this.getSnapshotForAINative(true, false);
+        snapshotBefore = snapshotResult.snapshot;
+        elementsWithCoords = snapshotResult.elements;
+      }
+
+      // Show highlight animation at click position
+      await this.showClickHighlight(page, x, y);
+
+      // Perform the click action
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
@@ -1218,6 +1522,25 @@ export class HybridBrowserSession {
           return { success: false, error: `Invalid control action: ${control}` };
       }
 
+      // For non-canvas clicks, check if the click had any effect
+      if (!isOnCanvas && control === 'click' && snapshotBefore && elementsWithCoords) {
+        // Wait a moment for any UI changes
+        await page.waitForTimeout(100);
+
+        // Get snapshot after click
+        const snapshotAfter = await this.getSnapshot(page);
+
+        // Check if snapshot changed
+        if (!this.snapshotsAreDifferent(snapshotBefore, snapshotAfter)) {
+          // Click had no effect - find nearest interactive elements and format message
+          const nearestCount = this.configLoader.getWebSocketConfig().nearestElementsCount;
+          const nearestElements = this.findNearestElements(elementsWithCoords, snapshotBefore, x, y, nearestCount);
+          const resultMessage = this.formatNearestElementsMessage(x, y, nearestElements);
+
+          return { success: true, resultMessage };
+        }
+      }
+
       return { success: true };
     } catch (error) {
       return { success: false, error: `Mouse action failed: ${error}` };
@@ -1225,59 +1548,206 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Enhanced mouse drag and drop implementation using ref IDs
+   *  Mouse drag and drop implementation supporting both ref and pixel modes
    */
-  private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
+  private async performMouseDrag(
+    page: Page,
+    action: { from_ref?: string; to_ref?: string; from_x?: number; from_y?: number; to_x?: number; to_y?: number }
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      // Ensure we have the latest snapshot
-      await this.getSnapshot(page);
+      let fromX: number, fromY: number, toX: number, toY: number;
 
-      // Get elements using Playwright's aria-ref selector
-      const fromSelector = `aria-ref=${fromRef}`;
-      const toSelector = `aria-ref=${toRef}`;
+      // Pixel mode: use coordinates directly
+      if (action.from_x !== undefined && action.from_y !== undefined &&
+          action.to_x !== undefined && action.to_y !== undefined) {
+        fromX = action.from_x;
+        fromY = action.from_y;
+        toX = action.to_x;
+        toY = action.to_y;
 
-      const fromElement = await page.locator(fromSelector).first();
-      const toElement = await page.locator(toSelector).first();
+        // Validate coordinates are within viewport bounds
+        const viewport = page.viewportSize();
+        if (!viewport) {
+          return { success: false, error: 'Viewport size not available from page.' };
+        }
+        if (fromX < 0 || fromY < 0 || fromX > viewport.width || fromY > viewport.height) {
+          return { success: false, error: `Invalid from coordinates (${fromX}, ${fromY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
+        if (toX < 0 || toY < 0 || toX > viewport.width || toY > viewport.height) {
+          return { success: false, error: `Invalid to coordinates (${toX}, ${toY}), viewport is ${viewport.width}x${viewport.height}` };
+        }
 
-      // Check if elements exist
-      const fromExists = await fromElement.count() > 0;
-      const toExists = await toElement.count() > 0;
-
-      if (!fromExists) {
-        return { success: false, error: `Source element with ref ${fromRef} not found` };
+        // Show highlight at start and end positions for pixel mode
+        await this.showClickHighlight(page, fromX, fromY);
+        await this.showClickHighlight(page, toX, toY);
       }
+      // Ref mode: get coordinates from elements (supports iframes)
+      else if (action.from_ref && action.to_ref) {
+        await this.getSnapshot(page);
 
-      if (!toExists) {
-        return { success: false, error: `Target element with ref ${toRef} not found` };
+        //  Use findElementAcrossFrames to support elements inside iframes
+        const fromResult = await this.findElementAcrossFrames(page, action.from_ref);
+        const toResult = await this.findElementAcrossFrames(page, action.to_ref);
+
+        if (!fromResult) {
+          return { success: false, error: `Source element with ref ${action.from_ref} not found in any frame` };
+        }
+        if (!toResult) {
+          return { success: false, error: `Target element with ref ${action.to_ref} not found in any frame` };
+        }
+
+        const fromBox = await fromResult.locator.boundingBox();
+        const toBox = await toResult.locator.boundingBox();
+
+        if (!fromBox) {
+          return { success: false, error: `Could not get bounding box for source element` };
+        }
+        if (!toBox) {
+          return { success: false, error: `Could not get bounding box for target element` };
+        }
+
+        fromX = fromBox.x + fromBox.width / 2;
+        fromY = fromBox.y + fromBox.height / 2;
+        toX = toBox.x + toBox.width / 2;
+        toY = toBox.y + toBox.height / 2;
+      } else {
+        return { success: false, error: 'Must provide either (from_ref, to_ref) or (from_x, from_y, to_x, to_y)' };
       }
-
-      // Get the center coordinates of both elements
-      const fromBox = await fromElement.boundingBox();
-      const toBox = await toElement.boundingBox();
-
-      if (!fromBox) {
-        return { success: false, error: `Could not get bounding box for source element with ref ${fromRef}` };
-      }
-
-      if (!toBox) {
-        return { success: false, error: `Could not get bounding box for target element with ref ${toRef}` };
-      }
-
-      const fromX = fromBox.x + fromBox.width / 2;
-      const fromY = fromBox.y + fromBox.height / 2;
-      const toX = toBox.x + toBox.width / 2;
-      const toY = toBox.y + toBox.height / 2;
 
       // Perform the drag operation
       await page.mouse.move(fromX, fromY);
       await page.mouse.down();
-      // Destination coordinates
       await page.mouse.move(toX, toY);
       await page.mouse.up();
 
       return { success: true };
     } catch (error) {
       return { success: false, error: `Mouse drag action failed: ${error}` };
+    }
+  }
+
+  /**
+   * Resolves click action based on ref or pixel coordinates.
+   * Returns either a clickAction function or an error message.
+   */
+  private async resolveClickAction(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ clickAction: () => Promise<void> } | { error: string }> {
+    if (x !== undefined && y !== undefined) {
+      // Pixel mode
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+      }
+      await this.showClickHighlight(page, x, y);
+      return { clickAction: async () => { await page.mouse.click(x, y); } };
+    } else if (ref) {
+      // Ref mode
+      await this.getSnapshot(page);
+      const element = page.locator(`aria-ref=${ref}`).first();
+      if (await element.count() === 0) {
+        return { error: `Element with ref ${ref} not found` };
+      }
+      return { clickAction: async () => { await element.click(); } };
+    } else {
+      return { error: 'Must provide either ref or (x, y) coordinates' };
+    }
+  }
+
+  /**
+   * Upload a file by clicking the ref element or pixel coordinates and intercepting the file chooser.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileUpload(
+    page: Page,
+    filePath: string,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: `File not found: ${filePath}` };
+      }
+
+      const result = await this.resolveClickAction(page, ref, x, y);
+      if ('error' in result) {
+        return { success: false, error: result.error };
+      }
+      const { clickAction } = result;
+
+      try {
+        const [fileChooser] = await Promise.all([
+          page.waitForEvent('filechooser', { timeout: 3000 }),
+          clickAction(),
+        ]);
+        await fileChooser.setFiles(filePath);
+        return { success: true };
+      } catch {
+        return {
+          success: false,
+          error: 'File chooser not triggered. The clicked element may not be a file upload button.'
+        };
+      }
+    } catch (error) {
+      return { success: false, error: `File upload failed: ${error}` };
+    }
+  }
+
+  /**
+   * Download a file by clicking the ref element or pixel coordinates and waiting for the download to complete.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileDownload(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const saveDir = browserConfig.downloadDir;
+    const downloadTimeout = browserConfig.downloadTimeout;
+
+    if (!saveDir) {
+      return { success: false, error: 'No download directory configured. Set download_dir when initializing the toolkit.' };
+    }
+
+    if (!fs.existsSync(saveDir)) {
+      return { success: false, error: `Download directory does not exist: ${saveDir}` };
+    }
+
+    const result = await this.resolveClickAction(page, ref, x, y);
+    if ('error' in result) {
+      return { success: false, error: result.error };
+    }
+    const { clickAction } = result;
+
+    try {
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: downloadTimeout }),
+        clickAction(),
+      ]);
+
+      const fileName = download.suggestedFilename();
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
+      let savePath = path.join(saveDir, fileName);
+      let counter = 1;
+      while (fs.existsSync(savePath)) {
+        savePath = path.join(saveDir, `${base} (${counter})${ext}`);
+        counter++;
+      }
+      await download.saveAs(savePath);
+
+      return { success: true, fileName, savePath };
+    } catch (error) {
+      return { success: false, error: `Download failed: ${error}` };
     }
   }
 
@@ -1313,9 +1783,12 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
 
-          // Capture diff snapshot if present
-          if (clickResult.diffSnapshot) {
-            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          // Capture diff snapshot and dialog message if present
+          if (clickResult.diffSnapshot || clickResult.dialogMessage) {
+            actionDetails = {
+              ...(clickResult.diffSnapshot && { diffSnapshot: clickResult.diffSnapshot }),
+              ...(clickResult.dialogMessage && { dialogMessage: clickResult.dialogMessage })
+            };
           }
 
           actionExecutionTime = Date.now() - clickStart;
@@ -1396,6 +1869,12 @@ export class HybridBrowserSession {
           if (!mouseControlResult.success) {
             throw new Error(`Action failed: ${mouseControlResult.error}`);
           }
+
+          // Use custom result message if click was ineffective
+          if (mouseControlResult.resultMessage) {
+            customMessage = mouseControlResult.resultMessage;
+          }
+
           actionExecutionTime = Date.now() - mouseControlStart;
           break;
         }
@@ -1403,7 +1882,7 @@ export class HybridBrowserSession {
         case 'mouse_drag': {
           elementSearchTime = Date.now() - elementSearchStart;
           const mouseDragStart = Date.now();
-          const mouseDragResult = await this.performMouseDrag(page, action.from_ref, action.to_ref);
+          const mouseDragResult = await this.performMouseDrag(page, action);
 
           if (!mouseDragResult.success) {
             throw new Error(`Action failed: ${mouseDragResult.error}`);
@@ -1419,6 +1898,46 @@ export class HybridBrowserSession {
           const keys = action.keys.join('+');
           await page.keyboard.press(keys);
           actionExecutionTime = Date.now() - keyPressStart;
+          break;
+        }
+
+        case 'upload_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const uploadStart = Date.now();
+
+          const uploadResult = await this.performFileUpload(
+            page,
+            action.filePath,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!uploadResult.success) {
+            throw new Error(`Upload failed: ${uploadResult.error}`);
+          }
+
+          actionExecutionTime = Date.now() - uploadStart;
+          break;
+        }
+
+        case 'download_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const downloadStart = Date.now();
+
+          const downloadResult = await this.performFileDownload(
+            page,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!downloadResult.success) {
+            throw new Error(`Download failed: ${downloadResult.error}`);
+          }
+
+          customMessage = `File downloaded: ${downloadResult.fileName} -> ${downloadResult.savePath}`;
+          actionExecutionTime = Date.now() - downloadStart;
           break;
         }
 
@@ -1443,9 +1962,11 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
           dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
           network_idle_time_ms: stabilityResult.networkIdleTime,
+          dom_stability_time_ms: stabilityResult.domStabilityTime,
         },
-        ...(newTabId && { newTabId }), //  Include new tab ID if present
-        ...(actionDetails && { details: actionDetails }), // Include action details if present
+        note: stabilityResult.note,
+        ...(newTabId && { newTabId }),
+        ...(actionDetails && { details: actionDetails }),
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -1464,44 +1985,157 @@ export class HybridBrowserSession {
 
   /**
    * Wait for DOM to stop changing for a specified duration
+   * @param page - The Playwright page instance
+   * @param maxWaitTime - Maximum time to wait for stability in ms (uses config value)
+   * @returns Object indicating if loading elements were detected
    */
-  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
-    const startTime = Date.now();
-    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
-    let lastChangeTime = Date.now();
+  private async waitForDOMStability(page: Page, maxWaitTime: number): Promise<{ hasLoadingElements: boolean }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const stabilityThreshold = browserConfig.domStabilityThreshold;
+    let hasLoadingElements = false;
+
+    // Pass the selector as a parameter to avoid closure issues
+    const loadingSelector = LOADING_ELEMENTS_SELECTOR;
 
     try {
-      // Monitor DOM changes
-      await page.evaluate(() => {
-        let changeCount = 0;
-        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+      // Monitor DOM changes and loading elements
+      await page.evaluate((selector: string) => {
+        // Word boundary regex patterns for accurate loading class detection
+        const loadingPatterns = [
+          /\bloading\b/i,
+          /\bloader\b/i,
+          /\bspinner\b/i,
+          /\bspin\b/i,
+        ];
 
-        const observer = new MutationObserver(() => {
-          (window as any).__domStabilityCheck.changeCount++;
-          (window as any).__domStabilityCheck.lastChange = Date.now();
+        // Helper function to check if className contains loading indicators using word boundaries
+        const hasLoadingClass = (className: string): boolean => {
+          return loadingPatterns.some(pattern => pattern.test(className));
+        };
+
+        // Helper function to check if any loading elements exist in the DOM
+        const checkForLoadingElements = (): boolean => {
+          const loadingElements = document.querySelectorAll(selector);
+          // Double-check with regex patterns to reduce false positives
+          for (const el of Array.from(loadingElements)) {
+            const cls = el.getAttribute('class') || '';
+            if (hasLoadingClass(cls)) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        (window as any).__domStabilityCheck = {
+          changeCount: 0,
+          lastChange: Date.now(),
+          hasLoadingElements: checkForLoadingElements()
+        };
+
+        const observer = new MutationObserver((mutations: MutationRecord[]) => {
+          const check = (window as any).__domStabilityCheck;
+          check.changeCount++;
+          check.lastChange = Date.now();
+
+          let loadingAdded = false;
+          let loadingRemoved = false;
+
+          for (const mutation of mutations) {
+            // Check if class attribute changed to add/remove loading
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              const target = mutation.target as Element;
+              const oldValue = mutation.oldValue || '';
+              const newValue = target.getAttribute('class') || '';
+
+              const hadLoading = hasLoadingClass(oldValue);
+              const hasLoading = hasLoadingClass(newValue);
+
+              if (!hadLoading && hasLoading) {
+                loadingAdded = true;
+              } else if (hadLoading && !hasLoading) {
+                loadingRemoved = true;
+              }
+            }
+
+            // Check added/removed nodes for loading elements
+            if (mutation.type === 'childList') {
+              for (const node of Array.from(mutation.addedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingAdded = true;
+                    break;
+                  }
+                  // Check descendants
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingAdded = true;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              for (const node of Array.from(mutation.removedNodes)) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const el = node as Element;
+                  const cls = el.getAttribute('class') || '';
+                  if (hasLoadingClass(cls)) {
+                    loadingRemoved = true;
+                    break;
+                  }
+                  const descendants = el.querySelectorAll(selector);
+                  for (const desc of Array.from(descendants)) {
+                    if (hasLoadingClass(desc.getAttribute('class') || '')) {
+                      loadingRemoved = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (loadingAdded) {
+            check.hasLoadingElements = true;
+          }
+
+          if (loadingRemoved) {
+            check.hasLoadingElements = checkForLoadingElements();
+          }
         });
 
         observer.observe(document.body, {
           childList: true,
           subtree: true,
           attributes: true,
+          attributeOldValue: true,
           characterData: true
         });
 
         (window as any).__domStabilityObserver = observer;
-      });
+      }, loadingSelector);
 
-      // Wait until no changes for stabilityThreshold or timeout
+      // Wait until no changes for stabilityThreshold, or timeout
       await page.waitForFunction(
-        (threshold) => {
+        (threshold: number) => {
           const check = (window as any).__domStabilityCheck;
-          return check && (Date.now() - check.lastChange) > threshold;
+          if (!check) return true;
+          return (Date.now() - check.lastChange) > threshold;
         },
         stabilityThreshold,
         { timeout: Math.max(0, maxWaitTime) }
       ).catch(() => {});
+
+      // Get final loading state
+      hasLoadingElements = await page.evaluate(() => {
+        const check = (window as any).__domStabilityCheck;
+        return check ? check.hasLoadingElements : false;
+      });
     } finally {
-      // Cleanup
+      // Cleanup observer
       await page.evaluate(() => {
         const observer = (window as any).__domStabilityObserver;
         if (observer) observer.disconnect();
@@ -1509,26 +2143,81 @@ export class HybridBrowserSession {
         delete (window as any).__domStabilityCheck;
       }).catch(() => {});
     }
+
+    return { hasLoadingElements };
   }
 
-  private async waitForPageStability(page: Page): Promise<{ domContentLoadedTime: number; networkIdleTime: number }> {
-    let domContentLoadedTime = 0;
-    let networkIdleTime = 0;
+  async waitForPageStability(page: Page): Promise<PageStabilityResult> {
+    const defaultResult: PageStabilityResult = {
+      domContentLoadedTime: 0,
+      networkIdleTime: 0,
+      domStabilityTime: 0,
+      hasLoadingElements: false,
+      note: ''
+    };
 
     try {
-      const domStart = Date.now();
       const browserConfig = this.configLoader.getBrowserConfig();
-      await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
-      domContentLoadedTime = Date.now() - domStart;
 
-      const networkStart = Date.now();
-      await page.waitForLoadState(browserConfig.networkIdleState as any, { timeout: browserConfig.networkIdleTimeout });
-      networkIdleTime = Date.now() - networkStart;
+      const maxTimeout = Math.max(
+        browserConfig.domContentLoadedTimeout,
+        browserConfig.networkIdleTimeout,
+        browserConfig.domStabilityTimeout
+      );
+
+      // Track timeout for cleanup
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      const start = Date.now();
+      await page.waitForLoadState(browserConfig.domContentLoadedState as any, {
+        timeout: browserConfig.domContentLoadedTimeout
+      });
+      const domContentLoadedTime = Date.now() - start;
+
+      const networkIdlePromise = (async () => {
+        const startTime = Date.now();
+        await page.waitForLoadState(browserConfig.networkIdleState as any, {
+          timeout: browserConfig.networkIdleTimeout
+        });
+        return Date.now() - startTime;
+      })();
+
+      const domStabilityPromise = (async () => {
+        const startTime = Date.now();
+        const result = await this.waitForDOMStability(page, browserConfig.domStabilityTimeout);
+        return {
+          time: Date.now() - startTime,
+          hasLoadingElements: result.hasLoadingElements
+        };
+      })();
+
+      // Create timeout promise with cleanup capability
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('max timeout')), maxTimeout);
+      });
+
+      try {
+        const [networkIdleTime, domStabilityResult] = await Promise.race([
+          Promise.all([networkIdlePromise, domStabilityPromise]),
+          timeoutPromise
+        ]);
+
+        return {
+          domContentLoadedTime,
+          networkIdleTime,
+          domStabilityTime: domStabilityResult.time,
+          hasLoadingElements: domStabilityResult.hasLoadingElements,
+          note: domStabilityResult.hasLoadingElements ? LOADING_STATE_NOTE : ''
+        };
+      } finally {
+        // Clean up timeout to prevent memory leak
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+      }
     } catch (error) {
-      // Continue even if stability wait fails
+      return defaultResult;
     }
-
-    return { domContentLoadedTime, networkIdleTime };
   }
 
   async visitPage(url: string): Promise<ActionResult & { newTabId?: string }> {
@@ -1585,7 +2274,9 @@ export class HybridBrowserSession {
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
+          note: stabilityResult.note,
         };
       } else {
         //  Open in new tab if current page has content
@@ -1655,13 +2346,15 @@ export class HybridBrowserSession {
         return {
           success: true,
           message: `Opened ${url} in new tab`,
-          newTabId: newTabId, //  Include the new tab ID
+          newTabId: newTabId,
           timing: {
             total_time_ms: totalTime,
             navigation_time_ms: navigationTime,
             dom_content_loaded_time_ms: stabilityResult.domContentLoadedTime,
             network_idle_time_ms: stabilityResult.networkIdleTime,
+            dom_stability_time_ms: stabilityResult.domStabilityTime,
           },
+          note: stabilityResult.note,
         };
       }
     } catch (error) {
@@ -1674,6 +2367,7 @@ export class HybridBrowserSession {
           navigation_time_ms: 0,
           dom_content_loaded_time_ms: 0,
           network_idle_time_ms: 0,
+          dom_stability_time_ms: 0,
         },
       };
     }
@@ -1820,7 +2514,7 @@ export class HybridBrowserSession {
 
         try {
           const browserConfig = this.configLoader.getBrowserConfig();
-          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.pageStabilityTimeout });
+          await page.waitForLoadState(browserConfig.domContentLoadedState as any, { timeout: browserConfig.domContentLoadedTimeout });
           stabilityResult.domContentLoadedTime = Date.now() - stabilityStart;
         } catch (error) {
         }
@@ -1881,7 +2575,11 @@ export class HybridBrowserSession {
     return tabInfo;
   }
 
-  async takeScreenshot(): Promise<{ buffer: Buffer; timing: { screenshot_time_ms: number } }> {
+  async takeScreenshot(): Promise<{
+    buffer: Buffer;
+    timing: { screenshot_time_ms: number };
+    viewport: { width: number; height: number };
+  }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
 
@@ -1891,6 +2589,7 @@ export class HybridBrowserSession {
       fullPage: browserConfig.fullPageScreenshot
     });
 
+    const viewport = page.viewportSize() || browserConfig.viewport;
     const screenshotTime = Date.now() - startTime;
 
     return {
@@ -1898,6 +2597,7 @@ export class HybridBrowserSession {
       timing: {
         screenshot_time_ms: screenshotTime,
       },
+      viewport,
     };
   }
 

@@ -71,11 +71,17 @@ class ModelType(UnifiedModelType, Enum):
 
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASH = "glm-4.7-flash"
+    GLM_4_7_FLASHX = "glm-4.7-flashx"
     GLM_4_6 = "glm-4.6"
     GLM_4_6V = "glm-4.6v"
     GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4 = "glm-4"
+    GLM_4_5_AIR = "glm-4.5-air"
+    GLM_4_5_AIRX = "glm-4.5-airx"
+    GLM_4_5_FLASH = "glm-4.5-flash"
     GLM_4V = "glm-4v"
+    GLM_4_1V_THINKING_FLASHX = "glm-4.1v-thinking-flashx"
+    GLM_4_1V_THINKING_FLASH = "glm-4.1v-thinking-flash"
     GLM_4V_FLASH = "glm-4v-flash"
     GLM_4V_PLUS_0111 = "glm-4v-plus-0111"
     GLM_4_PLUS = "glm-4-plus"
@@ -84,7 +90,9 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4_AIRX = "glm-4-airx"
     GLM_4_LONG = "glm-4-long"
     GLM_4_FLASHX = "glm-4-flashx"
+    GLM_4_FLASHX_250414 = "glm-4-flashx-250414"
     GLM_4_FLASH = "glm-4-flash"
+    GLM_4_FLASH_250414 = "glm-4-flash-250414"
     GLM_ZERO_PREVIEW = "glm-zero-preview"
     GLM_3_TURBO = "glm-3-turbo"
 
@@ -203,24 +211,15 @@ class ModelType(UnifiedModelType, Enum):
 
     STUB = "stub"
 
-    # Legacy anthropic models
-    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
-    CLAUDE_2_1 = "claude-2.1"
-    CLAUDE_2_0 = "claude-2.0"
-    CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
-
     # Claude models
-    CLAUDE_3_OPUS = "claude-3-opus-latest"
-    CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
-    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
-    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
+    CLAUDE_OPUS_4_6 = "claude-opus-4-6"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -336,7 +335,8 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
-    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0905-Preview"
+    MOONSHOT_KIMI_K2_5 = "kimi-k2.5"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -662,11 +662,16 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_zhipuai(self) -> bool:
-        r"""Returns whether this type of models is an ZhipuAI model."""
+        r"""Returns whether this type of models is a ZhipuAI model."""
         return self in {
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
+            ModelType.GLM_4_5_FLASH,
             ModelType.GLM_4V,
+            ModelType.GLM_4_1V_THINKING_FLASHX,
+            ModelType.GLM_4_1V_THINKING_FLASH,
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_4_PLUS,
@@ -675,10 +680,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_AIRX,
             ModelType.GLM_4_LONG,
             ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASHX_250414,
             ModelType.GLM_4_FLASH,
+            ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_7_FLASHX,
             ModelType.GLM_4_6,
             ModelType.GLM_4_6V,
             ModelType.GLM_4_6V_FLASH,
@@ -692,18 +700,12 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is anthropic.
         """
         return self in {
-            ModelType.CLAUDE_INSTANT_1_2,
-            ModelType.CLAUDE_2_0,
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
         }
@@ -1027,6 +1029,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }
 
     @property
@@ -1213,7 +1216,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
             ModelType.MOONSHOT_V1_8K,
-            ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
             ModelType.OPENROUTER_OLYMPICODER_7B,
             ModelType.LMSTUDIO_GEMMA_3_1B,
@@ -1252,6 +1254,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_405B,
             ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_4V_FLASH,
             ModelType.GLM_ZERO_PREVIEW,
             ModelType.PPIO_YI_1_5_34B_CHAT,
             ModelType.NOVITA_LLAMA_3_1_8B,
@@ -1376,6 +1379,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.GLM_4_1V_THINKING_FLASHX,
+            ModelType.GLM_4_1V_THINKING_FLASH,
         }:
             return 64_000
         elif self in {
@@ -1387,11 +1392,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.DEEPSEEK_R1,
         }:
             return 96_000
-        elif self in {
-            ModelType.CLAUDE_2_0,
-            ModelType.CLAUDE_INSTANT_1_2,
-        }:
-            return 100_000
         elif self in {
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
@@ -1435,6 +1435,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_AIR_0111,
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
+            ModelType.GLM_4_FLASHX_250414,
+            ModelType.GLM_4_FLASH_250414,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
+            ModelType.GLM_4_5_FLASH,
+            ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASH,
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
@@ -1445,7 +1452,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
-            ModelType.MOONSHOT_KIMI_K2,
             ModelType.NEBIUS_GLM_4_5,
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
@@ -1534,16 +1540,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O3_MINI,
             ModelType.O3_PRO,
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
-            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
             ModelType.ATLASCLOUD_GLM_4_7,
@@ -1559,6 +1561,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O3,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASH,
+            ModelType.GLM_4_7_FLASHX,
             ModelType.GLM_4_6,
         }:
             return 200_000
@@ -1566,6 +1569,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
             ModelType.OPENROUTER_HORIZON_ALPHA,
+            ModelType.MOONSHOT_KIMI_K2,
+            ModelType.MOONSHOT_KIMI_K2_5,
         }:
             return 256_000
 

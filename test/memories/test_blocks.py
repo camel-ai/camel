@@ -75,6 +75,14 @@ class TestChatHistoryBlock:
         assert all(isinstance(record, ContextRecord) for record in records)
         assert len(records) == 5
 
+    def test_retrieve_with_zero_window_size(self, mock_storage):
+        mock_records = generate_mock_records(3)
+        mock_storage.load.return_value = mock_records
+        chat_history = ChatHistoryBlock(storage=mock_storage)
+
+        records = chat_history.retrieve(window_size=0)
+        assert records == []
+
     def test_retrieve_without_window_size(self, mock_storage):
         mock_records = generate_mock_records(10)
         mock_storage.load.return_value = mock_records

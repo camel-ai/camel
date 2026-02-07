@@ -101,6 +101,7 @@ from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 from .pptx_node_toolkit import PptxNodeToolkit
+from .skill_toolkit import SkillToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -193,4 +194,5 @@ __all__ = [
     "OutlookMailToolkit",
     'EarthScienceToolkit',
     'PptxNodeToolkit',
+    'SkillToolkit',
 ]

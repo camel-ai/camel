@@ -455,7 +455,8 @@ def memory(self, value: AgentMemory):
 Set the agent memory.
 
 When setting a new memory, the system message is automatically
-re-added to ensure it's not lost.
+added after existing system messages, while preserving existing
+memory data.
 
 **Parameters:**
 
@@ -1434,8 +1435,7 @@ def _record_tool_calling(
 ):
 ```
 
-Record the tool calling information in the memory, and return the
-tool calling record.
+Record the tool result in the memory.
 
 **Parameters:**
 
@@ -1578,6 +1578,11 @@ def _execute_tool_from_stream_data(self, tool_call_data: Dict[str, Any]):
 
 Execute a tool from accumulated stream data.
 
+**Note:**
+
+calling this method (via _record_assistant_tool_calls_message).
+This method only records the tool result message.
+
 <a id="camel.agents.chat_agent.ChatAgent._create_error_response"></a>
 
 ### _create_error_response
@@ -1604,6 +1609,30 @@ Record the assistant message that contains tool calls.
 
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
+
+<a id="camel.agents.chat_agent.ChatAgent._record_assistant_tool_calls_from_requests"></a>
+
+### _record_assistant_tool_calls_from_requests
+
+```python
+def _record_assistant_tool_calls_from_requests(
+    self,
+    tool_call_requests: List['ToolCallRequest'],
+    content: str = ''
+):
+```
+
+Record assistant message with tool calls from requests.
+
+This method creates and records an assistant message that includes
+all the tool calls from a list of ToolCallRequest objects.
+Used for non-streaming tool execution to ensure proper message
+sequence.
+
+**Parameters:**
+
+- **tool_call_requests**: List of tool call requests from model response.
+- **content**: Optional content to include in the assistant message.
 
 <a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
 
