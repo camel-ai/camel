@@ -965,6 +965,8 @@ class FunctionTool:
 
 
 def tool(
+    func: Optional[Callable] = None,
+    *,
     openai_tool_schema: Optional[Dict[str, Any]] = None,
     synthesize_schema: bool = False,
     synthesize_schema_model: Optional[BaseModelBackend] = None,
@@ -972,11 +974,19 @@ def tool(
     synthesize_output: bool = False,
     synthesize_output_model: Optional[BaseModelBackend] = None,
     synthesize_output_format: Optional[Type[BaseModel]] = None,
-) -> Callable:
+):
     r"""A decorator that converts a Python function into a FunctionTool
-            instance.
+    instance.
+
+    This decorator can be used with or without parentheses:
+        - @tool - without parentheses, uses default settings
+        - @tool() - with parentheses, uses default settings
+        - @tool(synthesize_output=True) - with custom settings
 
     Args:
+        func (Optional[Callable], optional): The function to be decorated.
+            This is automatically passed when using @tool without parentheses.
+            (default: :obj:`None`)
         openai_tool_schema (Optional[Dict[str, Any]], optional): A
             user-defined OpenAI tool schema to override the default result.
             (default: :obj:`None`)
@@ -994,39 +1004,36 @@ def tool(
             Format for synthesized output. (default: :obj:`None`)
 
     Returns:
-        Callable: A decorator function that converts the decorated function
-            into a FunctionTool instance.
+        Callable[[Callable], FunctionTool]: A decorator function that converts
+            the decorated function into a FunctionTool instance.
 
     Example:
-        >>> @tool()
-        >>> def add(
-        ...     a: int,
-        ...     b: int = 0,
-        ... ) -> int:
-        ...     r'''Add two numbers and return their sum.
-        ...
-        ...     Args:
-        ...         a (int): The first number to add.
-        ...         b (int, optional): The second number to add.
-        ...             (default: :obj:`0`)
-        ...
-        ...     Returns:
-        ...         int: The sum of the two numbers.
-        ...     '''
-        ...     return a + b
+        Using @tool without parentheses::
+
+            @tool
+            def add(a: int, b: int = 0) -> int:
+                '''Add two numbers.'''
+                return a + b
+
+        Using @tool() with parentheses::
+
+            @tool()
+            def multiply(a: int, b: int) -> int:
+                '''Multiply two numbers.'''
+                return a * b
     """
 
-    def decorator(func: Callable) -> FunctionTool:
+    def decorator(f: Callable) -> FunctionTool:
         r"""The actual decorator function.
 
         Args:
-            func (Callable): The function to be converted into a FunctionTool.
+            f (Callable): The function to be converted into a FunctionTool.
 
         Returns:
             FunctionTool: The function wrapped as a FunctionTool instance.
         """
         return FunctionTool(
-            func=func,
+            func=f,
             openai_tool_schema=openai_tool_schema,
             synthesize_schema=synthesize_schema,
             synthesize_schema_model=synthesize_schema_model,
@@ -1036,4 +1043,8 @@ def tool(
             synthesize_output_format=synthesize_output_format,
         )
 
-    return decorator
+    # Support both @tool and @tool() usage patterns
+    if func is not None:
+        return decorator(func)
+    else:
+        return decorator

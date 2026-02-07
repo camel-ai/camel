@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
 from camel.toolkits import FunctionTool, tool
@@ -84,6 +84,32 @@ def test_tool_with_synthesis():
     result = format_result(42)
     assert isinstance(result, str)
     assert "42" in result
+
+
+def test_tool_without_parentheses():
+    r"""Test the tool decorator without parentheses (@tool instead of
+    @tool()).
+    """
+
+    @tool
+    def subtract(a: int, b: int = 0) -> int:
+        r"""Subtract two numbers.
+
+        Args:
+            a (int): The first number.
+            b (int, optional): The number to subtract. (default: :obj:`0`)
+
+        Returns:
+            int: The difference.
+        """
+        return a - b
+
+    assert isinstance(subtract, FunctionTool)
+    assert subtract(5, 3) == 2
+    assert subtract(10) == 10
+
+    schema = subtract.get_openai_tool_schema()
+    assert schema["function"]["name"] == "subtract"
 
 
 def test_custom_schema():

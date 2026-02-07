@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict
 
 from camel.agents import ChatAgent
@@ -51,7 +51,7 @@ def main():
     1. Calculate their BMI
     2. Determine their health status
     3. Provide the results in a clear format
-    
+
     Do NOT perform the calculation yourself. Always use the tool."""
 
     agent = ChatAgent(
@@ -90,8 +90,8 @@ Tool Execution: calculate_bmi
 
 
 User: If someone is 80 kg and 1.8 meters, are they overweight?
-Assistant: For someone who is 80 kg and 1.8 meters tall, their BMI is 24.69, 
-    which is classified as "Normal weight." Therefore, they are not 
+Assistant: For someone who is 80 kg and 1.8 meters tall, their BMI is 24.69,
+    which is classified as "Normal weight." Therefore, they are not
     considered overweight.
 
 Tool Calls:
