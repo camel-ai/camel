@@ -1,0 +1,123 @@
+<a id="camel.verifiers.python_verifier"></a>
+
+<a id="camel.verifiers.python_verifier.PythonVerifier"></a>
+
+## PythonVerifier
+
+```python
+class PythonVerifier(BaseVerifier):
+```
+
+The PythonVerifier class verifies Python-based implementations
+by executing them in an isolated virtual environment.
+
+Features:
+- Creates a virtual environment with a specified Python version.
+- Installs required packages before executing the provided script.
+- Executes the script and compares the output against a ground truth,
+if supplied.
+- Automatically cleans up the virtual environment after execution.
+
+The verification process ensures that the code runs in a controlled
+environment, minimizing external dependencies and conflicts.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: Optional[BaseExtractor] = None,
+    timeout: Optional[float] = 30.0,
+    required_packages: Optional[List[str]] = None,
+    float_tolerance: Optional[float] = None,
+    **kwargs
+):
+```
+
+Initializes the PythonVerifier.
+
+**Parameters:**
+
+- **extractor** (Optional[BaseExtractor], optional): The extractor to use for extracting code from the solution. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The execution timeout in seconds. (default: :obj:`30.0`)
+- **required_packages** (Optional[List[str]], optional): A list of packages to install in the virtual environment. (default: :obj:`None`)
+- **float_tolerance** (Optional[float], optional): The tolerance for floating point comparisons. (default: :obj:`None`)
+
+<a id="camel.verifiers.python_verifier.PythonVerifier._cleanup_venv"></a>
+
+### _cleanup_venv
+
+```python
+def _cleanup_venv(self):
+```
+
+Clean up the virtual environment if it exists.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier._is_uv_environment"></a>
+
+### _is_uv_environment
+
+```python
+def _is_uv_environment(self):
+```
+
+Detect whether the current Python runtime is managed by uv.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier._setup_with_uv"></a>
+
+### _setup_with_uv
+
+```python
+def _setup_with_uv(self):
+```
+
+Create virtual environment and install packages using uv.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier._is_expression"></a>
+
+### _is_expression
+
+```python
+def _is_expression(self, code: str):
+```
+
+Determines whether a given string of code is a single expression.
+
+This utility uses Python's AST module to parse the code and checks if
+it consists of a single expression node.
+
+**Parameters:**
+
+- **code** (str): The Python code to analyze.
+
+**Returns:**
+
+  bool: True if the code is a single expression, False otherwise.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier._is_equal_with_tolerance"></a>
+
+### _is_equal_with_tolerance
+
+```python
+def _is_equal_with_tolerance(self, a: Any, b: Any):
+```
+
+Compares two Python objects for equality with optional float
+tolerance.
+
+This method recursively compares nested structures (lists, tuples,
+sets, and dictionaries) and applies floating point tolerance when
+comparing numerical values. If no float tolerance is set, a runtime
+error is raised.
+
+**Parameters:**
+
+- **a** (Any): First value to compare.
+- **b** (Any): Second value to compare.
+
+**Returns:**
+
+  bool: True if the values are considered equal within the
+specified float tolerance; False otherwise.

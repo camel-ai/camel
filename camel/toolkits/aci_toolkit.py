@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import os
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
@@ -48,14 +49,14 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             api_key (Optional[str]): The API key for authentication.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             base_url (Optional[str]): The base URL for the ACI API.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             linked_account_owner_id (Optional[str]): ID of the owner of the
                 linked account, e.g., "johndoe"
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             timeout (Optional[float]): Request timeout.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
         """
         from aci import ACI
 
@@ -80,20 +81,20 @@ class ACIToolkit(BaseToolkit):
         Args:
             intent (Optional[str]): Search results will be sorted by relevance
                 to this intent.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             allowed_app_only (bool): If true, only return apps that
                 are allowed by the agent/accessor, identified by the api key.
-                (default: :obj: `True`)
+                (default: :obj:`True`)
             include_functions (bool): If true, include functions
                 (name and description) in the search results.
-                (default: :obj: `False`)
+                (default: :obj:`False`)
             categories (Optional[List[str]]): List of categories to filter the
                 search results. Defaults to an empty list.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
+                (default: :obj:`10`)
             offset (Optional[int]): Offset for pagination.
-                (default: :obj: `0`)
+                (default: :obj:`0`)
 
         Returns:
             Optional[List[AppBasic]]: List of matching apps if successful,
@@ -123,10 +124,10 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             app_names (Optional[List[str]]): List of app names to filter the
-                results. (default: :obj: `None`)
+                results. (default: :obj:`None`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
-            offset (Optional[int]): Offset for pagination. (default: :obj: `0`)
+                (default: :obj:`10`)
+            offset (Optional[int]): Offset for pagination. (default: :obj:`0`)
 
         Returns:
             Union[List[AppConfiguration], str]: List of configured apps if
@@ -356,15 +357,15 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             app_names (Optional[List[str]]): List of app names to filter the
-                search results. (default: :obj: `None`)
+                search results. (default: :obj:`None`)
             intent (Optional[str]): The search query/intent.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             allowed_apps_only (bool): If true, only return
-                functions from allowed apps. (default: :obj: `True`)
+                functions from allowed apps. (default: :obj:`True`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
+                (default: :obj:`10`)
             offset (Optional[int]): Offset for pagination.
-                (default: :obj: `0`)
+                (default: :obj:`0`)
 
         Returns:
             List[Dict]: List of matching functions
@@ -395,12 +396,44 @@ class ACIToolkit(BaseToolkit):
                 owner id in the ACI dashboard (https://platform.aci.dev).
             allowed_apps_only (bool): If true, only returns functions/apps
                 that are allowed to be used by the agent/accessor, identified
-                by the api key. (default: :obj: `False`)
+                by the api key. (default: :obj:`False`)
 
         Returns:
             Dict: Result of the function execution
         """
         result = self.client.handle_function_call(
+            function_name,
+            function_arguments,
+            linked_account_owner_id,
+            allowed_apps_only,
+        )
+        return result
+
+    async def aexecute_function(
+        self,
+        function_name: str,
+        function_arguments: Dict,
+        linked_account_owner_id: str,
+        allowed_apps_only: bool = False,
+    ) -> Dict:
+        r"""Execute a function call asynchronously.
+
+        Args:
+            function_name (str): Name of the function to execute.
+            function_arguments (Dict): Arguments to pass to the function.
+            linked_account_owner_id (str): To specify the end-user (account
+                owner) on behalf of whom you want to execute functions
+                You need to first link corresponding account with the same
+                owner id in the ACI dashboard (https://platform.aci.dev).
+            allowed_apps_only (bool): If true, only returns functions/apps
+                that are allowed to be used by the agent/accessor, identified
+                by the api key. (default: :obj:`False`)
+
+        Returns:
+            Dict: Result of the function execution
+        """
+        result = await asyncio.to_thread(
+            self.client.handle_function_call,
             function_name,
             function_arguments,
             linked_account_owner_id,
@@ -434,6 +467,8 @@ class ACIToolkit(BaseToolkit):
             FunctionTool(self.delete_linked_account),
             FunctionTool(self.function_definition),
             FunctionTool(self.search_function),
+            FunctionTool(self.execute_function),
+            FunctionTool(self.aexecute_function),
         ]
 
         for function in _all_function:
@@ -447,6 +482,16 @@ class ACIToolkit(BaseToolkit):
                     function_arguments=kwargs,
                     linked_account_owner_id=self.linked_account_owner_id,
                 )
+
+            async def async_dummy_func(*, schema=schema, **kwargs):
+                return await self.aexecute_function(
+                    function_name=schema['function']['name'],
+                    function_arguments=kwargs,
+                    linked_account_owner_id=self.linked_account_owner_id,
+                )
+
+            # Add async_call method to the sync function for compatibility
+            dummy_func.async_call = async_dummy_func  # type: ignore[attr-defined]
 
             tool = FunctionTool(
                 func=dummy_func,

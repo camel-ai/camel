@@ -1,0 +1,21 @@
+<a id="camel.configs.yi_config"></a>
+
+<a id="camel.configs.yi_config.YiConfig"></a>
+
+## YiConfig
+
+```python
+class YiConfig(BaseConfig):
+```
+
+Defines the parameters for generating chat completions using the
+Yi API. You can refer to the following link for more details:
+https://platform.lingyiwanwu.com/docs/api-reference
+
+**Parameters:**
+
+- **tool_choice** (Union[dict[str, str], str], optional): Controls which (if any) tool is called by the model. :obj:`"none"` means the model will not call any tool and instead generates a message. :obj:`"auto"` means the model can pick between generating a message or calling one or more tools. :obj:`"required"` or specifying a particular tool via `{"type": "function", "function": {"name": "some_function"}}` can be used to guide the model to use tools more strongly. (default: :obj:`None`)
+- **max_tokens** (int, optional): Specifies the maximum number of tokens the model can generate. This sets an upper limit, but does not guarantee that this number will always be reached. (default: :obj:`None`)
+- **top_p** (float, optional): Controls the randomness of the generated results. Lower values lead to less randomness, while higher values increase randomness. (default: :obj:`None`)
+- **temperature** (float, optional): Controls the diversity and focus of the generated results. Lower values make the output more focused, while higher values make it more diverse. (default: :obj:`0.3`)
+- **stream** (bool, optional): If True, enables streaming output. (default: :obj:`None`)

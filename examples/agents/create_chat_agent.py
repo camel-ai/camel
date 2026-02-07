@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
@@ -29,13 +29,13 @@ agent_2 = ChatAgent(
 # Method 3: Initialize the agent with a tuple (platform, model)
 agent_3 = ChatAgent(
     "You are a helpful assistant.",
-    model=("anthropic", "claude-3-5-sonnet-latest"),
+    model=("anthropic", "claude-sonnet-4-5"),
 )
 
 # Method 4: Initialize the agent with a `tuple` of `enum`
 agent_4 = ChatAgent(
     "You are a helpful assistant.",
-    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_HAIKU_4_5),
 )
 
 # Method 5: Default model when none is specified.
@@ -56,7 +56,7 @@ model = ModelFactory.create(
 agent_7 = ChatAgent("You are a helpful assistant.", model=model)
 
 
-# Test with a simple question with agent3(Anthropic, claude-3-5-sonnet-latest)
+# Test with a simple question with agent3(Anthropic, claude-sonnet-4-5)
 user_msg = "Which model are you?"
 
 # Get the response from one of the agents

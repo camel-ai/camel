@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,20 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from __future__ import annotations
-
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
+from ssl import SSLContext
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
-    from ssl import SSLContext
-
     from slack_sdk import WebClient
 
 from camel.logger import get_logger
@@ -57,7 +53,7 @@ class SlackToolkit(BaseToolkit):
         self,
         slack_token: Optional[str] = None,
         ssl: Optional[SSLContext] = None,
-    ) -> WebClient:
+    ) -> "WebClient":
         r"""Authenticate using the Slack API.
 
         Args:
@@ -128,18 +124,15 @@ class SlackToolkit(BaseToolkit):
             return f"Error creating conversation: {e.response['error']}"
 
     def join_slack_channel(self, channel_id: str) -> str:
-        r"""Joins an existing Slack channel.
+        r"""Joins an existing Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to join.
 
         Returns:
-            str: A confirmation message indicating whether join successfully
-                or an error message.
-
-        Raises:
-            SlackApiError: If there is an error during get slack channel
-                information.
+            str: A string containing the API response from Slack.
         """
         from slack_sdk.errors import SlackApiError
 
@@ -148,21 +141,18 @@ class SlackToolkit(BaseToolkit):
             response = slack_client.conversations_join(channel=channel_id)
             return str(response)
         except SlackApiError as e:
-            return f"Error creating conversation: {e.response['error']}"
+            return f"Error joining channel: {e.response['error']}"
 
     def leave_slack_channel(self, channel_id: str) -> str:
-        r"""Leaves an existing Slack channel.
+        r"""Leaves an existing Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to leave.
 
         Returns:
-            str: A confirmation message indicating whether leave successfully
-                or an error message.
-
-        Raises:
-            SlackApiError: If there is an error during get slack channel
-                information.
+            str: A string containing the API response from Slack.
         """
         from slack_sdk.errors import SlackApiError
 
@@ -171,18 +161,18 @@ class SlackToolkit(BaseToolkit):
             response = slack_client.conversations_leave(channel=channel_id)
             return str(response)
         except SlackApiError as e:
-            return f"Error creating conversation: {e.response['error']}"
+            return f"Error leaving channel: {e.response['error']}"
 
     def get_slack_channel_information(self) -> str:
-        r"""Retrieve Slack channels and return relevant information in JSON
-            format.
+        r"""Retrieve a list of all public channels in the Slack workspace.
+
+        This function is crucial for discovering available channels and their
+        `channel_id`s, which are required by many other functions.
 
         Returns:
-            str: JSON string containing information about Slack channels.
-
-        Raises:
-            SlackApiError: If there is an error during get slack channel
-                information.
+            str: A JSON string representing a list of channels. Each channel
+                object in the list contains 'id', 'name', 'created', and
+                'num_members'. Returns an error message string on failure.
         """
         from slack_sdk.errors import SlackApiError
 
@@ -204,21 +194,20 @@ class SlackToolkit(BaseToolkit):
             ]
             return json.dumps(filtered_result, ensure_ascii=False)
         except SlackApiError as e:
-            return f"Error creating conversation: {e.response['error']}"
+            return f"Error retrieving channel list: {e.response['error']}"
 
     def get_slack_channel_message(self, channel_id: str) -> str:
-        r"""Retrieve messages from a Slack channel.
+        r"""Retrieve messages from a Slack channel. When use this function you
+        must call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to retrieve messages
                 from.
 
         Returns:
-            str: JSON string containing filtered message data.
-
-        Raises:
-            SlackApiError: If there is an error during get
-                slack channel message.
+            str: A JSON string representing a list of messages. Each message
+                object contains 'user', 'text', and 'ts' (timestamp).
         """
         from slack_sdk.errors import SlackApiError
 
@@ -239,27 +228,37 @@ class SlackToolkit(BaseToolkit):
         self,
         message: str,
         channel_id: str,
+        file_path: Optional[str] = None,
         user: Optional[str] = None,
     ) -> str:
-        r"""Send a message to a Slack channel.
+        r"""Send a message to a Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`. If use user, you must use `get_slack_user_list`
+        function first to get the user id.
 
         Args:
             message (str): The message to send.
-            channel_id (str): The ID of the Slack channel to send message.
-            user (Optional[str]): The user ID of the recipient.
-                Defaults to `None`.
+            channel_id (str): The ID of the channel to send the message to.
+            file_path (Optional[str]): The local path of a file to upload
+                with the message.
+            user (Optional[str]): The ID of a user to send an ephemeral
+                message to (visible only to that user).
 
         Returns:
-            str: A confirmation message indicating whether the message was sent
-                successfully or an error message.
-
-        Raises:
-            SlackApiError: If an error occurs while sending the message.
+            str: A confirmation message indicating success or an error
+                message.
         """
         from slack_sdk.errors import SlackApiError
 
         try:
             slack_client = self._login_slack()
+            if file_path:
+                response = slack_client.files_upload_v2(
+                    channel=channel_id,
+                    file=file_path,
+                    initial_comment=message,
+                )
+                return f"File sent successfully, got response: {response}"
             if user:
                 response = slack_client.chat_postEphemeral(
                     channel=channel_id, text=message, user=user
@@ -268,27 +267,30 @@ class SlackToolkit(BaseToolkit):
                 response = slack_client.chat_postMessage(
                     channel=channel_id, text=message
                 )
-            return str(response)
+            return (
+                f"Message: {message} sent successfully, "
+                f"got response: {response}"
+            )
         except SlackApiError as e:
-            return f"Error creating conversation: {e.response['error']}"
+            return f"Error sending message: {e.response['error']}"
 
     def delete_slack_message(
         self,
         time_stamp: str,
         channel_id: str,
     ) -> str:
-        r"""Delete a message to a Slack channel.
+        r"""Delete a message from a Slack channel. When use this function you
+        must call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
-            time_stamp (str): Timestamp of the message to be deleted.
-            channel_id (str): The ID of the Slack channel to delete message.
+            time_stamp (str): The 'ts' value of the message to be deleted.
+                You can get this from the `get_slack_channel_message` function.
+            channel_id (str): The ID of the channel where the message is. Use
+                `get_slack_channel_information` to find the `channel_id`.
 
         Returns:
-            str: A confirmation message indicating whether the message
-                was delete successfully or an error message.
-
-        Raises:
-            SlackApiError: If an error occurs while sending the message.
+            str: A string containing the API response from Slack.
         """
         from slack_sdk.errors import SlackApiError
 
@@ -299,7 +301,53 @@ class SlackToolkit(BaseToolkit):
             )
             return str(response)
         except SlackApiError as e:
-            return f"Error creating conversation: {e.response['error']}"
+            return f"Error deleting message: {e.response['error']}"
+
+    def get_slack_user_list(self) -> str:
+        r"""Retrieve a list of all users in the Slack workspace.
+
+        Returns:
+            str: A JSON string representing a list of users. Each user
+                object contains 'id', 'name'.
+        """
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            slack_client = self._login_slack()
+            response = slack_client.users_list()
+            users = response["members"]
+            filtered_users = [
+                {
+                    "id": user["id"],
+                    "name": user["name"],
+                }
+                for user in users
+            ]
+
+            return json.dumps(filtered_users, ensure_ascii=False)
+        except SlackApiError as e:
+            return f"Error retrieving user list: {e.response['error']}"
+
+    def get_slack_user_info(self, user_id: str) -> str:
+        r"""Retrieve information about a specific user in the Slack workspace.
+        normally, you don't need to use this method, when you need to get a
+        user's detailed information, use this method. Use `get_slack_user_list`
+        function first to get the user id.
+
+        Args:
+            user_id (str): The ID of the user to retrieve information about.
+
+        Returns:
+            str: A JSON string representing the user's information.
+        """
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            slack_client = self._login_slack()
+            response = slack_client.users_info(user=user_id)
+            return json.dumps(response, ensure_ascii=False)
+        except SlackApiError as e:
+            return f"Error retrieving user info: {e.response['error']}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -317,4 +365,6 @@ class SlackToolkit(BaseToolkit):
             FunctionTool(self.get_slack_channel_message),
             FunctionTool(self.send_slack_message),
             FunctionTool(self.delete_slack_message),
+            FunctionTool(self.get_slack_user_list),
+            FunctionTool(self.get_slack_user_info),
         ]

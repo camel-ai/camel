@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,54 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import os
 
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
-
-res_simple = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=False
-)
-
-print(res_simple)
-'''
-===============================================================================
-x = 6
-===============================================================================
-'''
-
-res_detailed = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=True
-)
-
-print(res_detailed)
-'''
-===============================================================================
-{'query': 'solve 3x-7=11', 'pod_info': [{'title': 'Input interpretation',
-'description': 'solve 3 x - 7 = 11', 'image_url': 'https://www6b3.wolframalpha.
-com/Calculate/MSP/MSP37741a3dc67f338579ff00003fih94dg39300iaf?
-MSPStoreType=image/gif&s=18'}, {'title': 'Result', 'description': 'x = 6',
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37751a3dc67f338579ff00001dg4gbdcd0f10i3f?MSPStoreType=image/gif&s=18'},
-{'title': 'Plot', 'description': None, 'image_url': 'https://www6b3.
-wolframalpha.com/Calculate/MSP/MSP37761a3dc67f338579ff0000374484g95bh3ah3e?
-MSPStoreType=image/gif&s=18'}, {'title': 'Number line', 'description': None,
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37771a3dc67f338579ff00005573c3a87ahg8dbc?MSPStoreType=image/gif&s=18'}],
-'final_answer': 'x = 6', 'steps': {'step1': 'Isolate terms with x to the left
-hand side.\nAdd 7 to both sides:\n3 x + (7 - 7) = 7 + 11', 'step2': 'Look for
-the difference of two identical terms.\n7 - 7 = 0:\n3 x = 11 + 7', 'step3':
-'Evaluate 11 + 7.\n11 + 7 = 18:\n3 x = 18', 'step4': 'Divide both sides by a
-constant to simplify the equation.\nDivide both sides of 3 x = 18 by 3:\n(3 x)/
-3 = 18/3', 'step5': 'Any nonzero number divided by itself is one.\n3/3 = 1:\nx
-= 18/3', 'step6': 'Reduce 18/3 to lowest terms. Start by finding the greatest
-common divisor of 18 and 3.\nThe greatest common divisor of 18 and 3 is 3, so
-factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3
-x 6 = 6\nAnswer: | \n | x = 6'}}
-===============================================================================
-'''
 
 res_brave = SearchToolkit().search_brave(
     q="What is the weather in Tokyo?",
@@ -332,7 +292,7 @@ print(exa_response)
 
 # Example with ChatAgent using Exa search
 exa_agent = ChatAgent(
-    system_message="""You are a helpful assistant that can use Exa search 
+    system_message="""You are a helpful assistant that can use Exa search
         engine to find the latest research papers.""",
     tools=[FunctionTool(SearchToolkit().search_exa)],
 )
@@ -346,51 +306,51 @@ print(response.msgs[0].content)
 ===============================================================================
 Here are some of the latest developments in quantum error correction:
 
-1. **Suppressing Quantum Errors by Scaling a Surface Code Logical Qubit**  
-- **Published Date**: February 22, 2023  
-- **Authors**: Google Quantum AI  
-- **Summary**: This work reports on a 72-qubit superconducting device 
+1. **Suppressing Quantum Errors by Scaling a Surface Code Logical Qubit**
+- **Published Date**: February 22, 2023
+- **Authors**: Google Quantum AI
+- **Summary**: This work reports on a 72-qubit superconducting device
 implementing  49-qubit distance-5 surface code, improving the performance over
 a dist-3 code. The research demonstrates how scaling error-correcting codes
-can lead to significant reductions in logical error rates.  
+can lead to significant reductions in logical error rates.
 - **Link**: [Read paper](https://www.nature.com/articles/s41586-022-05434-1)
 
 ![Image](https://media.springernature.com/m685/springer-static/image/art%3A10.
 1038%2Fs41586-022-05434-1/MediaObjects/41586_2022_5434_Fig1_HTML.png)
 
-2. **Increasing Error Tolerance in Quantum Computers with Dynamic Bias**  
-- **Published Date**: March 28, 2023  
+2. **Increasing Error Tolerance in Quantum Computers with Dynamic Bias**
+- **Published Date**: March 28, 2023
 - **Authors**: H'ector Bomb'in, C. Dawson, Naomi H. Nickerson, M. Pant
 - **Summary**: This study introduces a method for dynamically arranging error
-biases to enhance error tolerance in fusion-based quantum computing. By 
+biases to enhance error tolerance in fusion-based quantum computing. By
 adaptively choosing bias during operations, it triples the loss tolerance.
 - **Link**: [Read the paper](https://arxiv.org/pdf/2303.16122.pdf)
 
-3. **Fault Tolerant Non-Clifford State Preparation for Arbitrary Rotations**  
-- **Published Date**: March 30, 2023  
-- **Authors**: Hyeongrak Choi, Frederic T. Chong, Dirk Englund, Yong Ding  
-- **Summary**: This paper proposes a post-selection-based algorithm for 
+3. **Fault Tolerant Non-Clifford State Preparation for Arbitrary Rotations**
+- **Published Date**: March 30, 2023
+- **Authors**: Hyeongrak Choi, Frederic T. Chong, Dirk Englund, Yong Ding
+- **Summary**: This paper proposes a post-selection-based algorithm for
 efficiently preparing resource states for gate teleportation, achieving fault
 tolerance with reduced resource overheads for non-Clifford rotations.
 - **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17380v1.pdf)
 
-4. **Measurement-free Fault-tolerant Logical Zero-state Encoding**  
-- **Published Date**: June 2, 2023  
-- **Authors**: Hayato Goto, Yinghao Ho, Taro Kanao  
-- **Summary**: This work presents an efficient encoding method for the 
-nine-qubit surface code that requires no measurement and can operate on a 
+4. **Measurement-free Fault-tolerant Logical Zero-state Encoding**
+- **Published Date**: June 2, 2023
+- **Authors**: Hayato Goto, Yinghao Ho, Taro Kanao
+- **Summary**: This work presents an efficient encoding method for the
+nine-qubit surface code that requires no measurement and can operate on a
 one-dimensional qubit array, demonstrating its fault tolerance.
 - **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17211v2.pdf)
 
-5. **High-threshold and Low-overhead Fault-tolerant Quantum Memory**  
-- **Published Date**: March 27, 2024  
-- **Author**: Theodore J. Yoder  
+5. **High-threshold and Low-overhead Fault-tolerant Quantum Memory**
+- **Published Date**: March 27, 2024
+- **Author**: Theodore J. Yoder
 - **Summary**: This research discusses high-rate LDPC codes for quantum error
 correction, presenting codes that require fewer physical qubits compared to
 traditional surface codes while achieving similar error thresholds.
 - **Link**: [Read paper](https://www.nature.com/articles/s41586-024-07107-7)
 
-These studies reflect ongoing advances in quantum error correction, focusing 
+These studies reflect ongoing advances in quantum error correction, focusing
 on improving efficiency, fault tolerance, and minimizing resource overheads.
 ===============================================================================
 """
@@ -404,19 +364,153 @@ print(search_alibaba_tongxiao_response)
 ===============================================================================
 {'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
 {'result_id': 1, 'title': 'Investor Relations', 'snippet':
- 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%） 
+ 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%）
  2025-04-15T20:01 EDT Prices shown in USD The data service is provided
-   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba 
+   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba
    Group(9988)-H...', 'url': 'https://www.alibabagroup.com/
-   en-US/investor-relations', 'hostname': 'www.alibabagroup.com', 
+   en-US/investor-relations', 'hostname': 'www.alibabagroup.com',
    'summary': 'February 20, 2025\nAlibaba Group Will Announce December
-   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group 
-   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock 
+   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group
+   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock
    Information\nAlibaba Group (BABA) - NYSE\n$\n112.280\n-$1.690（-1.483%
    2025-04-15T20:01 EDTAlibaba Group (9988) - HKEX\nHK$\n104.400\n-HK$5.500
-   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD', 
+   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD',
    'score': 0.33736322991609163, 'publish_time': 1744646400000},
 {'result_id': 2, 'title': 'technode'.....}
 ]}
+===============================================================================
+"""
+# Example using metaso response
+metaso_response = SearchToolkit().search_metaso(
+    query="What is CAMEL-AI?",
+    scope="webpage",
+    page=1,
+)
+
+print(metaso_response)
+"""
+===============================================================================
+{'credits': 10, 'searchParameters': {'q': 'What is CAMEL-AI?', 'scope': 'webpage',
+ 'page': 1, 'includeSummary': False, 'includeRawContent': False, 'conciseSnippet':
+  False, 'format': 'chat_completions'}, 'webpages': [{'title': '使用CAMEL框架和Qwen
+  模型自动进行数据获取及报告与知识 ...', 'link': 'https://developer.aliyun.com/articl
+  e/1647631', 'score': 'high', 'snippet': '**关于CAMEL AI**\n* * *\n**"Finding the
+   Scaling Law of Agents"**\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建基
+   于大语言模型(LLMs)的多智能体系统的开源平台,旨在推动人工智能的发展。就像AI领域的“沙
+   漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。CAMEL框架
+   是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。', 'position'
+   : 1, 'authors': ['阿里云开发者社区'], 'date': '2024年12月31日'}, {'title':
+   'CAMEL-AI团队参与发表Nature子刊啦!聚焦LLM如何重塑 ...', 'link': 'https://cloud.
+   tencent.com/developer/article/2475624', 'score': 'high', 'snippet': 'Finding
+   the Scaling Law of Agents"\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建
+   基于大语言模型)LLMs)的多智能体系统的开源平台，旨在推动人工智能的发展。\n就像AI领域的
+   “沙漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。\n
+   CAMEL框架是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。\n
+   CAMEL AI框架设计上极具灵活性与模块化,包含多种智能体实现、专业领域提示示例以及AI数据探
+   索功能等模块，适应各种高效决策与复杂数据处理需求。\n通过协作运作的智能体队列,CAMEL AI
+   不仅在金融、零售、医疗等领域展示出强大的适用性和创新性，还大大提升了自适应能力......
+   'position': 9, 'authors': ['KubeNine'], 'date': '2025年04月15日'}, {'title': '
+   RAG应用的评估-CSDN博客', 'link': 'https://blog.csdn.net/weixin_44245188/article/
+   details/148157069', 'score': 'high', 'snippet': "Query: 什么是CAMEL AI?\n
+   Expected Answers: ['CAMEL AI 是一个开源的、社区驱动的AI框架。']\nRetrieved
+   Results: ['CAMEL AI 介绍\\n\\nCAMEL AI 是一个开源的、社区驱动的AI框架,旨在简化AI应
+   用的开发和部署。该框架提供了多种功能模块，包括数据加载、特征工程、模型训练和部署等。']
+   \nPrecision: 1.0000\nRecall: 1.0000\nF1 Score: 1.0000\nAverage
+ Similarity: 0.9584", 'position': 10, 'date': '2025年05月23日'}], 'total': 38}
+===============================================================================
+"""  # noqa: E501
+
+
+# Example using Serper search
+if os.getenv("SERPER_API_KEY"):
+    serper_response = SearchToolkit().search_serper(
+        query="Apple Inc",
+        page=1,
+    )
+    print(serper_response)
+"""
+===============================================================================
+{'searchParameters': {'q': 'Apple Inc', 'type': 'search', 'page': 1,
+'location': 'United States', 'engine': 'google', 'gl': 'us'},
+'organic': [{'title': 'Apple', 'link': 'https://www.apple.com/',
+'snippet': 'Discover the innovative world of Apple and shop everything
+iPhone, iPad, Apple Watch, Mac, and Apple TV, plus explore accessories,
+entertainment, ...', 'position': 1}, {'title': 'Apple Inc.', 'link':
+'https://en.wikipedia.org/wiki/Apple_Inc.', 'snippet': 'Apple Inc. is
+an American multinational technology company headquartered in
+Cupertino, California, in Silicon Valley, best known for its consumer
+electronics, ...', 'position': 2}, {'title': 'AAPL: Apple Inc Stock
+Price Quote - NASDAQ GS', 'link':
+'https://www.bloomberg.com/quote/AAPL:US', 'snippet': 'Apple Inc.
+designs, manufactures, and markets smartphones, personal computers,
+tablets, wearables and accessories, and sells a variety of related
+accessories.', 'position': 3}, {'title': 'Apple Inc. | History,
+Products, Headquarters, & Facts', 'link':
+'https://www.britannica.com/money/Apple-Inc', 'snippet': 'Apple Inc. is
+an American multinational technology company that revolutionized the
+technology sector through its innovation of computer software, personal
+...', 'date': '3 days ago', 'position': 4}, {'title': 'Apple Inc.
+(AAPL)', 'link': 'https://finance.yahoo.com/quote/AAPL/', 'snippet':
+'Apple Inc. designs, manufactures, and markets smartphones, personal
+computers, tablets, wearables, and accessories worldwide.', 'position':
+5}, {'title': 'What the heck is going on at Apple?', 'link':
+'https://www.cnn.com/2025/12/06/tech/apple-tim-cook-leadership-changes',
+'snippet': 'Now the company known for its steadiness is going through a
+shakeup at the top, as both Apple and the tech industry at large are at
+a crossroads ...', 'date': '1 day ago', 'position': 6}, {'title':
+'Apple Inc. (AAPL) Stock Price Today - WSJ', 'link':
+'https://www.wsj.com/market-data/quotes/AAPL?gaa_at=eafs&gaa_n=AWEtsqeZ
+rQcR92j11_hQeDtRlWcl9tKefoYwgR1oId6oHIJbV4gU_v-Mpi48&gaa_ts=6935bd94&ga
+a_sig=3tbJ_7ZRrguPYjDxogTwd2ytCG7b70pNDaNogjgUg14icaShrFItmMWpypVli_jwY
+m1WncqFLHFta52UOD1ngQ%3D%3D', 'snippet': 'Key Stock Data · P/E Ratio
+(TTM). 37.37(12/05/25) · EPS (TTM). .46 · Market Cap. .12 T · Shares
+Outstanding. 14.78 B · Public Float. 14.76 B · Yield. 0.37%( ...',
+'position': 7}, {'title': 'Apple', 'link':
+'https://www.linkedin.com/company/apple', 'snippet': 'Company size:
+10,001+ employees. Headquarters: Cupertino, California. Type: Public
+Company. Founded: 1976. Specialties: Innovative Product ...',
+'position': 8}, {'title': 'Apple | AAPL Stock Price, Company Overview &
+News', 'link': 'https://www.forbes.com/companies/apple/', 'snippet':
+'Apple Inc. engages in the design, manufacture, and sale of
+smartphones, personal computers, tablets, wearables and accessories,
+and other variety of related ...', 'position': 9}, {'title': 'iCloud',
+'link': 'https://www.icloud.com/', 'snippet': 'Log in to iCloud to
+access your photos, mail, notes, documents and more. Sign in with your
+Apple Account or create a new account to start using Apple services
+...', 'position': 10}], 'credits': 1}
+===============================================================================
+"""
+
+serpapi_agent = ChatAgent(
+    system_message="""You are a helpful assistant that helps users with
+    their queries""",
+    tools=[FunctionTool(SearchToolkit().search_serpapi)],
+)
+
+usr_msg = "What are the latest developments in quantum error correction?"
+response = serpapi_agent.step(input_message=usr_msg, response_format=None)
+print(response)
+
+"""
+===============================================================================
+msgs=[BaseMessage(role_name='System', role_type=<RoleType.SYSTEM: 'system'>,
+meta_dict={}, content='Recent reports indicate a rapid acceleration in quantum
+error correction research, with rising investments focused on achieving
+fault-tolerant performance. This suggests that error correction has become a
+defining challenge in the quantum industry.', video_bytes=None, image_list=None
+image_detail='auto', video_detail='auto', parsed=None, reasoning_content=None)]
+terminated=False info={'id': 'f7w3acbaFIyA0-kP9MuZoAk', 'usage':
+{'prompt_tokens': 1290, 'completion_tokens': 65, 'total_tokens': 1513},
+'termination_reasons': ['stop'], 'num_tokens': 191, 'tool_calls':
+[ToolCallingRecord(tool_name='search_serpapi', args={'query': 'latest
+developments in quantum error correction', 'engine': 'google'}, result=
+{'results': [{'title': "Quantum Report Says Error Correction Now The
+Industry's ...", 'link': 'https://thequantuminsider.com/2025/11/19/quantum-
+report-says-error-correction-now-the-industrys-defining-challenge/',
+'snippet': 'The findings show rapid acceleration in error-correction research,
+rising investments linked to fault-tolerant performance and heightened ...',
+'keywords': ['rapid acceleration in error-correction research'], 'source':
+'The Quantum Insider'}]}, tool_call_id='function-call-18262120514510234122',
+images=None)], 'external_tool_call_requests': None}
 ===============================================================================
 """

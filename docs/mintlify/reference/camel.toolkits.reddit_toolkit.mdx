@@ -1,0 +1,136 @@
+<a id="camel.toolkits.reddit_toolkit"></a>
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit"></a>
+
+## RedditToolkit
+
+```python
+class RedditToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for Reddit operations.
+
+This toolkit provides methods to interact with the Reddit API, allowing
+users to collect top posts, perform sentiment analysis on comments, and
+track keyword discussions across multiple subreddits.
+
+**Parameters:**
+
+- **retries** (int): Number of retries for API requests in case of failure.
+- **delay** (float): Delay between retries in seconds.
+- **reddit** (Reddit): An instance of the Reddit client.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    retries: int = 3,
+    delay: float = 0.0,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the RedditToolkit with the specified number of retries
+and delay.
+
+**Parameters:**
+
+- **retries** (int): Number of times to retry the request in case of failure. Defaults to `3`.
+- **delay** (int): Time in seconds to wait between retries. Defaults to `0`.
+- **timeout** (float): Timeout for API requests in seconds. Defaults to `None`.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.collect_top_posts"></a>
+
+### collect_top_posts
+
+```python
+def collect_top_posts(
+    self,
+    subreddit_name: str,
+    post_limit: int = 5,
+    comment_limit: int = 5
+):
+```
+
+Collects the top posts and their comments from a specified
+subreddit.
+
+**Parameters:**
+
+- **subreddit_name** (str): The name of the subreddit to collect posts from.
+- **post_limit** (int): The maximum number of top posts to collect. Defaults to `5`.
+- **comment_limit** (int): The maximum number of top comments to collect per post. Defaults to `5`.
+
+**Returns:**
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries, each
+containing the post title and its top comments if success.
+String warming if credentials are not set.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.perform_sentiment_analysis"></a>
+
+### perform_sentiment_analysis
+
+```python
+def perform_sentiment_analysis(self, data: List[Dict[str, Any]]):
+```
+
+Performs sentiment analysis on the comments collected from Reddit
+posts.
+
+**Parameters:**
+
+- **data** (List[Dict[str, Any]]): A list of dictionaries containing Reddit post data and comments.
+
+**Returns:**
+
+  List[Dict[str, Any]]: The original data with an added 'Sentiment
+Score' for each comment.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.track_keyword_discussions"></a>
+
+### track_keyword_discussions
+
+```python
+def track_keyword_discussions(
+    self,
+    subreddits: List[str],
+    keywords: List[str],
+    post_limit: int = 10,
+    comment_limit: int = 10,
+    sentiment_analysis: bool = False
+):
+```
+
+Tracks discussions about specific keywords in specified subreddits.
+
+**Parameters:**
+
+- **subreddits** (List[str]): A list of subreddit names to search within.
+- **keywords** (List[str]): A list of keywords to track in the subreddit discussions.
+- **post_limit** (int): The maximum number of top posts to collect per subreddit. Defaults to `10`.
+- **comment_limit** (int): The maximum number of top comments to collect per post. Defaults to `10`.
+- **sentiment_analysis** (bool): If True, performs sentiment analysis on the comments. Defaults to `False`.
+
+**Returns:**
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries
+containing the subreddit name, post title, comment body, and
+upvotes for each comment that contains the specified keywords
+if success. String warming if credentials are not set.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

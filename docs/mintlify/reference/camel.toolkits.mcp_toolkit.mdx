@@ -1,0 +1,316 @@
+<a id="camel.toolkits.mcp_toolkit"></a>
+
+<a id="camel.toolkits.mcp_toolkit.MCPConnectionError"></a>
+
+## MCPConnectionError
+
+```python
+class MCPConnectionError(Exception):
+```
+
+Raised when MCP connection fails.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolError"></a>
+
+## MCPToolError
+
+```python
+class MCPToolError(Exception):
+```
+
+Raised when MCP tool execution fails.
+
+<a id="camel.toolkits.mcp_toolkit.ensure_strict_json_schema"></a>
+
+## ensure_strict_json_schema
+
+```python
+def ensure_strict_json_schema(schema: dict[str, Any]):
+```
+
+Mutates the given JSON schema to ensure it conforms to the
+`strict` standard that the OpenAI API expects.
+
+<a id="camel.toolkits.mcp_toolkit._ensure_strict_json_schema"></a>
+
+## _ensure_strict_json_schema
+
+```python
+def _ensure_strict_json_schema(json_schema: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.resolve_ref"></a>
+
+## resolve_ref
+
+```python
+def resolve_ref():
+```
+
+<a id="camel.toolkits.mcp_toolkit.is_dict"></a>
+
+## is_dict
+
+```python
+def is_dict(obj: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.is_list"></a>
+
+## is_list
+
+```python
+def is_list(obj: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.has_more_than_n_keys"></a>
+
+## has_more_than_n_keys
+
+```python
+def has_more_than_n_keys(obj: dict[str, object], n: int):
+```
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit"></a>
+
+## MCPToolkit
+
+```python
+class MCPToolkit(BaseToolkit):
+```
+
+MCPToolkit provides a unified interface for managing multiple
+MCP server connections and their tools.
+
+This class handles the lifecycle of multiple MCP server connections and
+offers a centralized configuration mechanism for both local and remote
+MCP services. The toolkit manages multiple :obj:`MCPClient` instances and
+aggregates their tools into a unified interface compatible with the CAMEL
+framework.
+
+Connection Lifecycle:
+There are three ways to manage the connection lifecycle:
+
+1. Using the async context manager (recommended):
+
+.. code-block:: python
+
+async with MCPToolkit(config_path="config.json") as toolkit:
+# Toolkit is connected here
+tools = toolkit.get_tools()
+# Toolkit is automatically disconnected here
+
+2. Using the factory method:
+
+.. code-block:: python
+
+toolkit = await MCPToolkit.create(config_path="config.json")
+# Toolkit is connected here
+tools = toolkit.get_tools()
+# Don't forget to disconnect when done!
+await toolkit.disconnect()
+
+3. Using explicit connect/disconnect:
+
+.. code-block:: python
+
+toolkit = MCPToolkit(config_path="config.json")
+await toolkit.connect()
+# Toolkit is connected here
+tools = toolkit.get_tools()
+# Don't forget to disconnect when done!
+await toolkit.disconnect()
+
+**Parameters:**
+
+- **clients** (Optional[List[MCPClient]], optional): List of :obj:`MCPClient` instances to manage. (default: :obj:`None`)
+- **config_path** (Optional[str], optional): Path to a JSON configuration file defining MCP servers. The file should contain server configurations in the standard MCP format. (default: :obj:`None`)
+- **config_dict** (Optional[Dict[str, Any]], optional): Dictionary containing MCP server configurations in the same format as the config file. This allows for programmatic configuration without file I/O. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): Timeout for connection attempts in seconds. This timeout applies to individual client connections. (default: :obj:`None`)
+- **clients** (List[MCPClient]): List of :obj:`MCPClient` instances being managed by this toolkit.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    clients: Optional[List[MCPClient]] = None,
+    config_path: Optional[str] = None,
+    config_dict: Optional[Dict[str, Any]] = None,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.is_connected"></a>
+
+### is_connected
+
+```python
+def is_connected(self):
+```
+
+**Returns:**
+
+  bool: True if the toolkit is connected to all MCP servers,
+False otherwise.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.connect_sync"></a>
+
+### connect_sync
+
+```python
+def connect_sync(self):
+```
+
+Synchronously connect to all MCP servers.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.disconnect_sync"></a>
+
+### disconnect_sync
+
+```python
+def disconnect_sync(self):
+```
+
+Synchronously disconnect from all MCP servers.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+Synchronously enter the async context manager.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc_val,
+    exc_tb
+):
+```
+
+Synchronously exit the async context manager.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.create_sync"></a>
+
+### create_sync
+
+```python
+def create_sync(
+    cls,
+    clients: Optional[List[MCPClient]] = None,
+    config_path: Optional[str] = None,
+    config_dict: Optional[Dict[str, Any]] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Synchronously create and connect to all MCP servers.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_clients_from_config"></a>
+
+### _load_clients_from_config
+
+```python
+def _load_clients_from_config(self, config_path: str):
+```
+
+Load clients from configuration file.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_clients_from_dict"></a>
+
+### _load_clients_from_dict
+
+```python
+def _load_clients_from_dict(self, config: Dict[str, Any]):
+```
+
+Load clients from configuration dictionary.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._create_client_from_config"></a>
+
+### _create_client_from_config
+
+```python
+def _create_client_from_config(self, name: str, cfg: Dict[str, Any]):
+```
+
+Create a single MCP client from configuration.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._ensure_strict_tool_schema"></a>
+
+### _ensure_strict_tool_schema
+
+```python
+def _ensure_strict_tool_schema(self, tool: FunctionTool):
+```
+
+Ensure a tool has a strict schema compatible with
+OpenAI's requirements.
+
+Strategy:
+- Ensure parameters exist with at least an empty properties object
+(OpenAI requirement).
+- Try converting parameters to strict using ensure_strict_json_schema.
+- If conversion fails, mark function.strict = False and
+keep best-effort parameters.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: Combined list of all available function tools
+from all connected MCP servers with strict schemas. Returns an
+empty list if no clients are connected or if no tools are
+available.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_text_tools"></a>
+
+### get_text_tools
+
+```python
+def get_text_tools(self):
+```
+
+**Returns:**
+
+  str: A string containing the descriptions of all tools.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.call_tool_sync"></a>
+
+### call_tool_sync
+
+```python
+def call_tool_sync(self, tool_name: str, tool_args: Dict[str, Any]):
+```
+
+Synchronously call a tool.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.list_available_tools"></a>
+
+### list_available_tools
+
+```python
+def list_available_tools(self):
+```
+
+**Returns:**
+
+  Dict[str, List[str]]: Dictionary mapping client indices to tool
+names.

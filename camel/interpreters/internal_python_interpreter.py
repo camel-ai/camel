@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import difflib
 import importlib
+import os
+import subprocess
 import typing
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -77,6 +79,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             (default: :obj:`False`)
         raise_error (bool, optional): Raise error if the interpreter fails.
             (default: :obj:`False`)
+        allow_builtins (bool, optional): If `True`, safe built-in functions
+            like print, len, str, etc. are added to the action space.
+            (default: :obj:`True`)
     """
 
     _CODE_TYPES: ClassVar[List[str]] = ["python", "py", "python3", "python2"]
@@ -87,6 +92,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         import_white_list: Optional[List[str]] = None,
         unsafe_mode: bool = False,
         raise_error: bool = False,
+        allow_builtins: bool = True,
     ) -> None:
         self.action_space = action_space or dict()
         self.state = self.action_space.copy()
@@ -95,7 +101,54 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
 
-    def run(self, code: str, code_type: str) -> str:
+        # Add safe built-in functions if allowed
+        if allow_builtins:
+            self._add_safe_builtins()
+
+    def _add_safe_builtins(self):
+        r"""Add safe built-in functions to the action space."""
+        safe_builtins = {
+            'print': print,
+            'len': len,
+            'str': str,
+            'int': int,
+            'float': float,
+            'bool': bool,
+            'list': list,
+            'dict': dict,
+            'tuple': tuple,
+            'set': set,
+            'abs': abs,
+            'min': min,
+            'max': max,
+            'sum': sum,
+            'sorted': sorted,
+            'reversed': reversed,
+            'enumerate': enumerate,
+            'zip': zip,
+            'range': range,
+            'round': round,
+            'type': type,
+            'isinstance': isinstance,
+            'hasattr': hasattr,
+            'getattr': getattr,
+            'setattr': setattr,
+            'dir': dir,
+            'help': help,
+            'map': map,
+            'filter': filter,
+            'any': any,
+            'all': all,
+            'ord': ord,
+            'chr': chr,
+            'bin': bin,
+            'oct': oct,
+            'hex': hex,
+        }
+        self.action_space.update(safe_builtins)
+        self.state.update(safe_builtins)
+
+    def run(self, code: str, code_type: str = "python") -> str:
         r"""Executes the given code with specified code type in the
         interpreter.
 
@@ -111,7 +164,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             code (str): The python code to be executed.
             code_type (str): The type of the code, which should be one of the
             supported code types (`python`, `py`, `python3`, `python2`).
-
+                (default: obj:`python`)
 
         Returns:
             str: The string representation of the output of the executed code.
@@ -531,3 +584,27 @@ class InternalPythonInterpreter(BaseInterpreter):
                 return self.fuzz_state[close_matches[0]]
             else:
                 raise InterpreterError(f"The variable `{key}` is not defined.")
+
+    def execute_command(self, command: str) -> tuple[str, str]:
+        r"""Execute a command in the internal python interpreter.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            tuple: A tuple containing the stdout and stderr of the command.
+        """
+        try:
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=os.environ,
+                shell=True,
+            )
+            stdout, stderr = proc.communicate()
+
+            return stdout, stderr
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")

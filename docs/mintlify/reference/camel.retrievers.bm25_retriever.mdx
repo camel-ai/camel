@@ -1,0 +1,74 @@
+<a id="camel.retrievers.bm25_retriever"></a>
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever"></a>
+
+## BM25Retriever
+
+```python
+class BM25Retriever(BaseRetriever):
+```
+
+An implementation of the `BaseRetriever` using the `BM25` model.
+
+This class facilitates the retriever of relevant information using a
+query-based approach, it ranks documents based on the occurrence and
+frequency of the query terms.
+
+**Parameters:**
+
+- **bm25** (BM25Okapi): An instance of the BM25Okapi class used for calculating document scores.
+- **content_input_path** (str): The path to the content that has been processed and stored.
+- **unstructured_modules** (UnstructuredIO): A module for parsing files and URLs and chunking content based on specified parameters.
+- **References**: 
+- **https**: //github.com/dorianbrown/rank_bm25
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initializes the BM25Retriever.
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.process"></a>
+
+### process
+
+```python
+def process(
+    self,
+    content_input_path: str,
+    chunk_type: str = 'chunk_by_title',
+    **kwargs: Any
+):
+```
+
+Processes content from a file or URL, divides it into chunks by
+using `Unstructured IO`,then stored internally. This method must be
+called before executing queries with the retriever.
+
+**Parameters:**
+
+- **content_input_path** (str): File path or URL of the content to be processed.
+- **chunk_type** (str): Type of chunking going to apply. Defaults to "chunk_by_title". **kwargs (Any): Additional keyword arguments for content parsing.
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.query"></a>
+
+### query
+
+```python
+def query(self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS):
+```
+
+Executes a query and compiles the results.
+
+**Parameters:**
+
+- **query** (str): Query string for information retriever.
+- **top_k** (int, optional): The number of top results to return during retriever. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+
+**Returns:**
+
+  List[Dict[str]]: Concatenated list of the query results.

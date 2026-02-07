@@ -1,0 +1,155 @@
+---
+title: "Tic Tac Toe"
+---
+
+You can also open this on [Google Colab](https://colab.research.google.com/github/camel-ai/camel/blob/master/docs/cookbooks/loong/multi_step_rl.ipynb)
+
+In this cookbook, I want to show how Multi-Step environments work in CAMEL. Our RL modules were built to mimic OpenAI Gym, so if you're familiar with Gym's interface, you'll feel right at home.
+
+We will use the Tic-Tac-Toe environment as an example to show the lifecycle of an environment.
+
+The Tic-Tac-Toe environment can be used to evaluate agents, generate synthetic data for distillation, or train an agent to play the game.
+
+First, we need to initialize our environment and set it up. Then we can call `reset` to get our initial observation.
+
+Let's install the CAMEL package with all its dependencies:
+
+
+```python
+%pip install camel-ai[all]==0.2.46
+```
+
+
+```python
+import asyncio
+from camel.environments.models import Action
+from camel.environments.tic_tac_toe import TicTacToeEnv, Opponent
+
+# we can choose the playstyle of our opponent to be either 'random' or 'optimal' (computed using minimax)
+opp = Opponent(play_style="random")
+env = TicTacToeEnv(opponent=opp)
+await env.setup()
+
+obs = await env.reset()
+print("Initial Observation:\n")
+print(obs.question)
+```
+
+We will use GPT-4o-mini, so let's enter our API key.
+
+
+```python
+import os
+from getpass import getpass
+
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+Let's next define the model-backend and the agent.
+
+You can also add a system prompt or equip your agent with tools, but for the sake of simplicity we just create a bare agent with GPT-4o-mini.
+
+
+```python
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import ChatGPTConfig
+from camel.agents import ChatAgent
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O_MINI,
+    model_config_dict=ChatGPTConfig().as_dict(),
+)
+
+agent = ChatAgent(model=model)
+```
+
+Next, we will simulate one episode.
+
+
+```python
+while not env.is_done():
+
+    llm_response = agent.step(obs.question).msgs[0].content
+    agent.reset() # clear context window
+
+    action = Action(llm_response=llm_response)
+    result = await env.step(action)
+
+    next_obs, reward, done, info = result
+
+    obs = next_obs
+
+    print("\nAgent Move:", action.llm_response)
+    print("Observation:")
+    print(next_obs.question)
+    print("Reward:", reward)
+    print("Done:", done)
+    print("Info:", info)
+```
+
+### Eval
+
+We can also use this to eval a model on tic tac toe.
+
+Let's run it for 10 episodes and see how often we win, draw and lose.
+
+
+```python
+wins = 0
+losses = 0
+draws = 0
+
+for episode in range(10):
+    obs = await env.reset()  # Start fresh
+    done = False
+
+    while not done:
+        llm_response = agent.step(obs.question).msgs[0].content
+        agent.reset()  # Nuke the context
+
+        action = Action(llm_response=llm_response)
+        next_obs, reward, done, info = await env.step(action)
+
+        obs = next_obs
+
+    # Tally result based on final reward
+    if reward == 1:
+        wins += 1
+    elif reward == 0.5:
+        draws += 1
+    else:
+        losses += 1
+
+# Final report
+print("\n=== Summary after 10 Episodes ===")
+print(f"Wins:   {wins}")
+print(f"Draws:  {draws}")
+print(f"Losses: {losses}")
+
+```
+
+As you can see, GPT-4o-mini is quite bad!
+
+Finally, we close the environment.
+
+
+```python
+await env.close()
+```

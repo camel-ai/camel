@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from typing import Any, Dict, Optional
@@ -100,8 +100,8 @@ class Firecrawl:
     def scrape(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
-    ) -> Dict:
+        params: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
         r"""To scrape a single URL. This function supports advanced scraping
         by setting different parameters and returns the full scraped data as a
         dictionary.
@@ -110,11 +110,11 @@ class Firecrawl:
 
         Args:
             url (str): The URL to read.
-            params (Optional[Dict[str, Any]]): Additional parameters for the
+            params (Optional[Dict[str, str]]): Additional parameters for the
                 scrape request.
 
         Returns:
-            Dict: The scraped data.
+            Dict[str, str]: The scraped data.
 
         Raises:
             RuntimeError: If the scrape process fails.

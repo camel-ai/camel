@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
+from camel.configs import OllamaConfig
 from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
@@ -35,8 +35,8 @@ class OllamaModel(OpenAICompatibleModel):
             If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the model service.  Ollama doesn't need API key, it would be
-            ignored if set. (default: :obj:`None`)
+            the model service. Required for Ollama cloud services. If not
+            provided, defaults to "Not_Provided". (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -47,6 +47,10 @@ class OllamaModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://github.com/ollama/ollama/blob/main/docs/openai.md
@@ -60,6 +64,8 @@ class OllamaModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = OllamaConfig().as_dict()
@@ -73,10 +79,12 @@ class OllamaModel(OpenAICompatibleModel):
         super().__init__(
             model_type=self._model_type,
             model_config_dict=model_config_dict,
-            api_key="Not_Used",
+            api_key=api_key or "Not_Provided",
             url=self._url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _start_server(self) -> None:
@@ -94,18 +102,3 @@ class OllamaModel(OpenAICompatibleModel):
             )
         except Exception as e:
             logger.error(f"Failed to start Ollama server: {e}.")
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Ollama API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in OLLAMA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Ollama model backend."
-                )

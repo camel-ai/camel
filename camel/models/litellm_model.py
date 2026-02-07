@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import uuid
 from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
+from camel.configs import LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -24,7 +25,16 @@ from camel.utils import (
     BaseTokenCounter,
     LiteLLMTokenCounter,
     dependencies_required,
+    update_current_observation,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -48,6 +58,8 @@ class LiteLLMModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     # NOTE: Currently stream mode is not supported.
@@ -61,6 +73,7 @@ class LiteLLMModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         from litellm import completion
 
@@ -71,6 +84,7 @@ class LiteLLMModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self.client = completion
+        self.kwargs = kwargs
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -83,23 +97,47 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response object in OpenAI's format.
         """
+
+        converted_choices = []
+        for choice in response.choices:
+            # Build the assistant message dict
+            msg_dict: Dict[str, Any] = {
+                "role": choice.message.role,
+                "content": choice.message.content,
+            }
+
+            if getattr(choice.message, "tool_calls", None):
+                msg_dict["tool_calls"] = choice.message.tool_calls
+
+            elif getattr(choice.message, "function_call", None):
+                func_call = choice.message.function_call
+                msg_dict["tool_calls"] = [
+                    {
+                        "id": f"call_{uuid.uuid4().hex[:24]}",
+                        "type": "function",
+                        "function": {
+                            "name": getattr(func_call, "name", None),
+                            "arguments": getattr(func_call, "arguments", "{}"),
+                        },
+                    }
+                ]
+
+            converted_choices.append(
+                {
+                    "index": choice.index,
+                    "message": msg_dict,
+                    "finish_reason": choice.finish_reason,
+                }
+            )
+
         return ChatCompletion.construct(
             id=response.id,
-            choices=[
-                {
-                    "index": response.choices[0].index,
-                    "message": {
-                        "role": response.choices[0].message.role,
-                        "content": response.choices[0].message.content,
-                    },
-                    "finish_reason": response.choices[0].finish_reason,
-                }
-            ],
-            created=response.created,
-            model=response.model,
-            object=response.object,
-            system_fingerprint=response.system_fingerprint,
-            usage=response.usage,
+            choices=converted_choices,
+            created=getattr(response, "created", None),
+            model=getattr(response, "model", None),
+            object=getattr(response, "object", None),
+            system_fingerprint=getattr(response, "system_fingerprint", None),
+            usage=getattr(response, "usage", None),
         )
 
     @property
@@ -117,6 +155,7 @@ class LiteLLMModel(BaseModelBackend):
     async def _arun(self) -> None:  # type: ignore[override]
         raise NotImplementedError
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -132,28 +171,35 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion
         """
+
+        request_config = self.model_config_dict.copy()
+        if tools:
+            request_config['tools'] = tools
+        if response_format:
+            request_config['response_format'] = response_format
+
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         response = self.client(
             timeout=self._timeout,
             api_key=self._api_key,
             base_url=self._url,
             model=self.model_type,
             messages=messages,
-            **self.model_config_dict,
+            **request_config,
+            **self.kwargs,
         )
         response = self._convert_response_from_litellm_to_openai(response)
+
+        update_current_observation(
+            usage=response.usage,
+        )
         return response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to LiteLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments.
-        """
-        for param in self.model_config_dict:
-            if param not in LITELLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LiteLLM model backend."
-                )

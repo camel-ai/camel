@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,21 +10,49 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
-import time
-from typing import IO, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
-import requests
+if TYPE_CHECKING:
+    from chunkr_ai.models import Configuration
 
+from camel.logger import get_logger
 from camel.utils import api_keys_required
 
-from .base_loader import BaseLoader
+logger = get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+
+class ChunkrReaderConfig:
+    r"""Defines the parameters for configuring the task.
+
+    Args:
+        chunk_processing (int, optional): The target chunk length.
+            (default: :obj:`512`)
+        high_resolution (bool, optional): Whether to use high resolution OCR.
+            (default: :obj:`True`)
+        ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
+        **kwargs: Additional keyword arguments to pass to the Chunkr
+            Configuration. This accepts all other Configuration parameters
+            such as expires_in, pipeline, segment_processing,
+            segmentation_strategy, etc.
+            See: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/
+            models/task.rs#L749
+    """
+
+    def __init__(
+        self,
+        chunk_processing: int = 512,
+        high_resolution: bool = True,
+        ocr_strategy: str = "Auto",
+        **kwargs,
+    ):
+        self.chunk_processing = chunk_processing
+        self.high_resolution = high_resolution
+        self.ocr_strategy = ocr_strategy
+        self.kwargs = kwargs
 
 
 class ChunkrReader:
@@ -37,8 +65,6 @@ class ChunkrReader:
             `CHUNKR_API_KEY`. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Chunkr service.
             (default: :obj:`https://api.chunkr.ai/api/v1/task`)
-        timeout (int, optional): The maximum time in seconds to wait for the
-            API responses. (default: :obj:`30`)
         **kwargs (Any): Additional keyword arguments for request headers.
     """
 
@@ -51,111 +77,80 @@ class ChunkrReader:
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = "https://api.chunkr.ai/api/v1/task",
-        timeout: int = 30,
-        **kwargs: Any,
     ) -> None:
-        self._api_key = api_key or os.getenv('CHUNKR_API_KEY')
-        self._url = os.getenv('CHUNKR_API_URL') or url
-        self._headers = {
-            "Authorization": f"{self._api_key}",
-            **kwargs,
-        }
-        self.timeout = timeout
+        from chunkr_ai import Chunkr
 
-    def submit_task(
+        self._api_key = api_key or os.getenv('CHUNKR_API_KEY')
+        self._chunkr = Chunkr(api_key=self._api_key)
+
+    async def submit_task(
         self,
         file_path: str,
-        model: str = "Fast",
-        ocr_strategy: str = "Auto",
-        target_chunk_length: str = "512",
+        chunkr_config: Optional[ChunkrReaderConfig] = None,
     ) -> str:
         r"""Submits a file to the Chunkr API and returns the task ID.
 
         Args:
             file_path (str): The path to the file to be uploaded.
-            model (str, optional): The model to be used for the task.
-                (default: :obj:`Fast`)
-            ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
-            target_chunk_length (str, optional): The target chunk length.
-                (default: :obj:`512`)
+            chunkr_config (ChunkrReaderConfig, optional): The configuration
+                for the Chunkr API. Defaults to None.
 
         Returns:
             str: The task ID.
         """
-        with open(file_path, 'rb') as file:
-            files: dict[
-                str, Union[tuple[None, IO[bytes]], tuple[None, str]]
-            ] = {
-                'file': (
-                    None,
-                    file,
-                ),  # Properly pass the file as a binary stream
-                'model': (None, model),
-                'ocr_strategy': (None, ocr_strategy),
-                'target_chunk_length': (None, target_chunk_length),
-            }
-            try:
-                response = requests.post(
-                    self._url,  # type: ignore[arg-type]
-                    headers=self._headers,
-                    files=files,
-                    timeout=self.timeout,
-                )
-                response.raise_for_status()
-                task_id = response.json().get('task_id')
-                if not task_id:
-                    raise ValueError("Task ID not returned in the response.")
-                logger.info(f"Task submitted successfully. Task ID: {task_id}")
-                return task_id
-            except Exception as e:
-                logger.error(f"Failed to submit task: {e}")
-                raise ValueError(f"Failed to submit task: {e}") from e
+        chunkr_config = self._to_chunkr_configuration(
+            chunkr_config or ChunkrReaderConfig()
+        )
 
-    def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
+        try:
+            task = await self._chunkr.create_task(
+                file=file_path, config=chunkr_config
+            )
+            logger.info(
+                f"Task submitted successfully. Task ID: {task.task_id}"
+            )
+            return task.task_id
+        except Exception as e:
+            logger.error(f"Failed to submit task: {e}")
+            raise ValueError(f"Failed to submit task: {e}") from e
+
+    async def get_task_output(self, task_id: str) -> str | None:
         r"""Polls the Chunkr API to check the task status and returns the task
         result.
 
         Args:
             task_id (str): The task ID to check the status for.
-            max_retries (int, optional): Maximum number of retry attempts.
-                (default: :obj:`5`)
 
         Returns:
-            str: The formatted task result in JSON format.
-
-        Raises:
-            ValueError: If the task status cannot be retrieved.
-            RuntimeError: If the maximum number of retries is reached without
-                a successful task completion.
+            Optional[str]: The formatted task result in JSON format, or `None`
+                if the task fails or is canceld.
         """
-        url_get = f"{self._url}/{task_id}"
-        attempts = 0
+        from chunkr_ai.models import Status
 
-        while attempts < max_retries:
-            try:
-                response = requests.get(
-                    url_get, headers=self._headers, timeout=self.timeout
+        try:
+            task = await self._chunkr.get_task(task_id)
+        except Exception as e:
+            logger.error(f"Failed to get task by task id: {task_id}: {e}")
+            raise ValueError(
+                f"Failed to get task by task id: {task_id}: {e}"
+            ) from e
+
+        try:
+            await task.poll()
+            if task.status == Status.SUCCEEDED:
+                logger.info(f"Task {task_id} completed successfully.")
+                return self._pretty_print_response(task.json())
+            elif task.status == Status.FAILED:
+                logger.warning(
+                    f"Task {task_id} encountered an error: {task.message}"
                 )
-                response.raise_for_status()
-                task_status = response.json().get('status')
-
-                if task_status == "Succeeded":
-                    logger.info(f"Task {task_id} completed successfully.")
-                    return self._pretty_print_response(response.json())
-                else:
-                    logger.info(
-                        f"Task {task_id} is still {task_status}. Retrying "
-                        "in 5 seconds..."
-                    )
-            except Exception as e:
-                logger.error(f"Failed to retrieve task status: {e}")
-                raise ValueError(f"Failed to retrieve task status: {e}") from e
-
-            attempts += 1
-            time.sleep(5)
-
-        logger.error(f"Max retries reached for task {task_id}.")
-        raise RuntimeError(f"Max retries reached for task {task_id}.")
+                return None
+            else:
+                logger.warning(f"Task {task_id} was manually cancelled.")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to retrieve task status: {e}")
+            raise ValueError(f"Failed to retrieve task status: {e}") from e
 
     def _pretty_print_response(self, response_json: dict) -> str:
         r"""Pretty prints the JSON response.
@@ -166,54 +161,42 @@ class ChunkrReader:
         Returns:
             str: Formatted JSON as a string.
         """
-        return json.dumps(response_json, indent=4)
+        from datetime import datetime
 
-
-class ChunkrLoader(BaseLoader):
-    def __init__(
-        self,
-        config: Optional[Dict[str, Any]],
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(config)
-        self.config = config if config else {}
-        self._api_key = self.config.get("api_key") or os.getenv(
-            "CHUNKR_API_KEY"
-        )
-        if not self._api_key:
-            raise ValueError("API key is required for ChunkrLoader.")
-        self._url = self.config.get("url", "https://api.chunkr.ai/api/v1/task")
-        self.timeout = self.config.get("timeout", 30)
-
-        self._headers = {
-            "Authorization": f"{self._api_key}",
-            **self.config.get(
-                "headers", {}
-            ),  # Allow additional headers if provided
-        }
-
-        self.chunkr = ChunkrReader(
-            api_key=self._api_key,
-            url=self._url,
-            timeout=self.timeout,
-            **kwargs,
+        return json.dumps(
+            response_json,
+            default=lambda o: o.isoformat()
+            if isinstance(o, datetime)
+            else None,
+            indent=4,
         )
 
-    def load(self, source: str, **kwargs: Any) -> str:
-        # Submit the task and retrieve the task ID.
-        task_id = self.chunkr.submit_task(
-            file_path=source,
-            model=kwargs.get("model", "Fast"),
-            ocr_strategy=kwargs.get("ocr_strategy", "Auto"),
-            target_chunk_length=kwargs.get("target_chunk_length", "512"),
+    def _to_chunkr_configuration(
+        self, chunkr_config: ChunkrReaderConfig
+    ) -> "Configuration":
+        r"""Converts the ChunkrReaderConfig to Chunkr Configuration.
+
+        Args:
+            chunkr_config (ChunkrReaderConfig):
+                The ChunkrReaderConfig to convert.
+
+        Returns:
+            Configuration: Chunkr SDK configuration.
+        """
+        from chunkr_ai.models import (
+            ChunkProcessing,
+            Configuration,
+            OcrStrategy,
         )
-        return task_id
 
-    def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
-        # Wait for and return the task output.
-        return self.chunkr.get_task_output(task_id, max_retries=max_retries)
-
-    @property
-    def supported_formats(self) -> set:
-        return {"txt", "docx", "ppt", "pdf", "jpeg", "png", "tiff"}
-        return json.dumps(response_json, indent=4, ensure_ascii=False)
+        return Configuration(
+            chunk_processing=ChunkProcessing(
+                target_length=chunkr_config.chunk_processing
+            ),
+            high_resolution=chunkr_config.high_resolution,
+            ocr_strategy={
+                "Auto": OcrStrategy.AUTO,
+                "All": OcrStrategy.ALL,
+            }.get(chunkr_config.ocr_strategy, OcrStrategy.ALL),
+            **chunkr_config.kwargs,
+        )

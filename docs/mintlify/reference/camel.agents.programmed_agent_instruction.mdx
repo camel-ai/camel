@@ -1,0 +1,191 @@
+<a id="camel.agents.programmed_agent_instruction"></a>
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammableAgentRequirement"></a>
+
+## ProgrammableAgentRequirement
+
+```python
+class ProgrammableAgentRequirement(Enum):
+```
+
+Requirements for programmable agent state.
+
+Defines the possible requirements that can be used to repair the state
+of a programmable agent.
+
+**Parameters:**
+
+- **LAST_MESSAGE_NOT_USER** (str): Requires that the last message in the conversation was not from the user.
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammedAgentInstructionResult"></a>
+
+## ProgrammedAgentInstructionResult
+
+```python
+class ProgrammedAgentInstructionResult(BaseModel):
+```
+
+Result of a programmable agent instruction execution.
+
+Contains the messages exchanged during execution and the computed value.
+The value type is specified by the generic type parameter T.
+
+**Parameters:**
+
+- **user_message** (BaseMessage): The message sent by the user.
+- **agent_message** (BaseMessage): The message sent by the agent.
+- **value** (T): The computed result value of type T.
+
+<a id="camel.agents.programmed_agent_instruction.AbstractProgrammableAgent"></a>
+
+## AbstractProgrammableAgent
+
+```python
+class AbstractProgrammableAgent(ABC):
+```
+
+Abstract class for a programmable agent.
+
+A programmable agent is an agent that can be programmed to perform a
+specific function or task. This class defines the interface for a
+programmable agent.
+
+These methods should be implemented in order to ensure the agent supports
+the necessary guarantees to enable a programming interface while
+maintaining compatibility in a multi-agent system.
+
+A programmable agent is responsible for providing and maintaining a
+programming interface for its functionality.
+
+<a id="camel.agents.programmed_agent_instruction.AbstractProgrammableAgent.run_atomic"></a>
+
+### run_atomic
+
+```python
+def run_atomic(
+    self,
+    callback: Callable[[], ProgrammedAgentInstructionResult[T]]
+):
+```
+
+Run an atomic operation on the agent.
+
+An atomic operation is an operation that is guaranteed to
+be executed without interruption by any other operation.
+
+**Parameters:**
+
+- **callback** (Callable[[], ProgrammedAgentInstructionResult[T]]): The operation to execute atomically.
+
+**Returns:**
+
+  ProgrammedAgentInstructionResult[T]: The result of the operation.
+
+<a id="camel.agents.programmed_agent_instruction.AbstractProgrammableAgent.repair_state"></a>
+
+### repair_state
+
+```python
+def repair_state(self, requirement: ProgrammableAgentRequirement):
+```
+
+Repair the state of the agent.
+
+Agents may have other non-atomic interfaces, such as a user interface,
+or chat between other agents. This method should restore the agent to
+a state where it can perform operations according to the specified
+requirement.
+
+**Parameters:**
+
+- **requirement** (ProgrammableAgentRequirement): The requirement to repair the state for.
+
+<a id="camel.agents.programmed_agent_instruction.programmable_capability"></a>
+
+## programmable_capability
+
+```python
+def programmable_capability(func: Callable[..., ProgrammedAgentInstructionResult[T]]):
+```
+
+Decorator for programmable agent capabilities.
+
+This decorator ensures that the decorated method is executed atomically
+and maintains the agent's state guarantees.
+
+**Parameters:**
+
+- **func** (Callable[..., ProgrammedAgentInstructionResult[T]]): The method to decorate.
+
+**Returns:**
+
+  Callable[..., ProgrammedAgentInstructionResult[T]]: The decorated
+method that ensures atomic execution.
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammableChatAgent"></a>
+
+## ProgrammableChatAgent
+
+```python
+class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
+```
+
+A chat agent that can be programmed to perform specific tasks.
+
+Provides a default implementation of atomic execution using threading locks
+and basic state tracking for message roles. Implementing classes need to
+provide specific repair logic for their use cases.
+
+**Parameters:**
+
+- **_operation_lock** (threading.Lock): Lock for ensuring atomic operations.
+- **_last_message_role** (Optional[str]): Role of the last message in the conversation.
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammableChatAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, **kwargs: Any):
+```
+
+Initialize the ProgrammableChatAgent.
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammableChatAgent.run_atomic"></a>
+
+### run_atomic
+
+```python
+def run_atomic(
+    self,
+    callback: Callable[[], ProgrammedAgentInstructionResult[T]]
+):
+```
+
+Run an atomic operation on the agent.
+
+Ensures thread-safe execution of the callback function by using a lock.
+
+**Parameters:**
+
+- **callback** (Callable[[], ProgrammedAgentInstructionResult[T]]): The operation to execute atomically.
+
+**Returns:**
+
+  ProgrammedAgentInstructionResult[T]: The result of the operation.
+
+<a id="camel.agents.programmed_agent_instruction.ProgrammableChatAgent.repair_state"></a>
+
+### repair_state
+
+```python
+def repair_state(self, requirement: ProgrammableAgentRequirement):
+```
+
+Repair the state of the agent.
+
+Implements basic state repair for message role requirements.
+
+**Parameters:**
+
+- **requirement** (ProgrammableAgentRequirement): The requirement to repair the state for.

@@ -1,0 +1,61 @@
+<a id="camel.messages.conversion.alpaca"></a>
+
+<a id="camel.messages.conversion.alpaca.AlpacaItem"></a>
+
+## AlpacaItem
+
+```python
+class AlpacaItem(BaseModel):
+```
+
+Represents an instruction-response item in the Alpaca format.
+
+Appropripate for both cases where input field is empty, or populated.
+Provides parsing from string format using the class method from_string().
+
+**Parameters:**
+
+- **instruction** (str): The instruction/question/prompt
+- **input** (str): Input context or examples (put empty string if none)
+- **output** (str): The response/answer to the instruction
+
+<a id="camel.messages.conversion.alpaca.AlpacaItem.no_section_markers"></a>
+
+### no_section_markers
+
+```python
+def no_section_markers(cls, value: str):
+```
+
+Ensures fields don't contain section markers like '###
+Response:'
+
+<a id="camel.messages.conversion.alpaca.AlpacaItem.from_string"></a>
+
+### from_string
+
+```python
+def from_string(cls, text: str):
+```
+
+Creates an AlpacaItem from a formatted string.
+
+**Parameters:**
+
+- **text**: String in either of these formats: With input: ### Instruction: \{instruction\} ### Input: \{input\} ### Response: \{response\} Without input: ### Instruction: \{instruction\} ### Response: \{response\}
+
+**Returns:**
+
+  AlpacaItem: Parsed instance
+
+<a id="camel.messages.conversion.alpaca.AlpacaItem.to_string"></a>
+
+### to_string
+
+```python
+def to_string(self):
+```
+
+**Returns:**
+
+  str: Formatted string representation with sections markers

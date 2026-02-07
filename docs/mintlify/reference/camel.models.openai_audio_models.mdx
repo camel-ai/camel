@@ -1,0 +1,123 @@
+<a id="camel.models.openai_audio_models"></a>
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels"></a>
+
+## OpenAIAudioModels
+
+```python
+class OpenAIAudioModels(BaseAudioModel):
+```
+
+Provides access to OpenAI's Text-to-Speech (TTS) and Speech_to_Text
+(STT) models.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initialize an instance of OpenAI.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.text_to_speech"></a>
+
+### text_to_speech
+
+```python
+def text_to_speech(self, input: str, **kwargs: Any):
+```
+
+Convert text to speech using OpenAI's TTS model. This method
+converts the given input text to speech using the specified model and
+voice.
+
+**Parameters:**
+
+- **input** (str): The text to be converted to speech.
+- **model_type** (AudioModelType, optional): The TTS model to use. Defaults to `AudioModelType.TTS_1`.
+- **voice** (VoiceType, optional): The voice to be used for generating speech. Defaults to `VoiceType.ALLOY`.
+- **storage_path** (str, optional): The local path to store the generated speech file if provided, defaults to `None`. **kwargs (Any): Extra kwargs passed to the TTS API.
+
+**Returns:**
+
+  Union[List[_legacy_response.HttpxBinaryResponseContent],
+_legacy_response.HttpxBinaryResponseContent]: List of response
+content object from OpenAI if input characters more than 4096,
+single response content if input characters less than 4096.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels._split_audio"></a>
+
+### _split_audio
+
+```python
+def _split_audio(self, audio_file_path: str, chunk_size_mb: int = 24):
+```
+
+Split the audio file into smaller chunks. Since the Whisper API
+only supports files that are less than 25 MB.
+
+**Parameters:**
+
+- **audio_file_path** (str): Path to the input audio file.
+- **chunk_size_mb** (int, optional): Size of each chunk in megabytes. Defaults to `24`.
+
+**Returns:**
+
+  list: List of paths to the split audio files.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.speech_to_text"></a>
+
+### speech_to_text
+
+```python
+def speech_to_text(
+    self,
+    audio_file_path: str,
+    translate_into_english: bool = False,
+    **kwargs: Any
+):
+```
+
+Convert speech audio to text.
+
+**Parameters:**
+
+- **audio_file_path** (str): The audio file path, supporting one of these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or webm.
+- **translate_into_english** (bool, optional): Whether to translate the speech into English. Defaults to `False`. **kwargs (Any): Extra keyword arguments passed to the Speech-to-Text (STT) API.
+
+**Returns:**
+
+  str: The output text.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.audio_question_answering"></a>
+
+### audio_question_answering
+
+```python
+def audio_question_answering(
+    self,
+    audio_file_path: str,
+    question: str,
+    model: str = 'gpt-4o-mini-audio-preview',
+    **kwargs: Any
+):
+```
+
+Answer a question directly using the audio content.
+
+**Parameters:**
+
+- **audio_file_path** (str): The path to the audio file.
+- **question** (str): The question to ask about the audio content.
+- **model** (str, optional): The model to use for audio question answering. (default: :obj:`"gpt-4o-mini-audio-preview"`) **kwargs (Any): Extra keyword arguments passed to the chat completions API.
+
+**Returns:**
+
+  str: The model's response to the question.

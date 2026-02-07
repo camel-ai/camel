@@ -1,0 +1,61 @@
+<a id="camel.embeddings.sentence_transformers_embeddings"></a>
+
+<a id="camel.embeddings.sentence_transformers_embeddings.SentenceTransformerEncoder"></a>
+
+## SentenceTransformerEncoder
+
+```python
+class SentenceTransformerEncoder:
+```
+
+This class provides functionalities to generate text
+embeddings using `Sentence Transformers`.
+
+References:
+https://www.sbert.net/
+
+<a id="camel.embeddings.sentence_transformers_embeddings.SentenceTransformerEncoder.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model_name: str = 'intfloat/e5-large-v2', **kwargs):
+```
+
+Initializes the: obj: `SentenceTransformerEmbedding` class
+with the specified transformer model.
+
+**Parameters:**
+
+- **model_name** (str, optional): The name of the model to use. (default: :obj:`intfloat/e5-large-v2`) **kwargs (optional): Additional arguments of :class:`SentenceTransformer`, such as :obj:`prompts` etc.
+
+<a id="camel.embeddings.sentence_transformers_embeddings.SentenceTransformerEncoder.embed_list"></a>
+
+### embed_list
+
+```python
+def embed_list(self, objs: list[str], **kwargs: Any):
+```
+
+Generates embeddings for the given texts using the model.
+
+**Parameters:**
+
+- **objs** (list[str]): The texts for which to generate the embeddings.
+
+**Returns:**
+
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
+
+<a id="camel.embeddings.sentence_transformers_embeddings.SentenceTransformerEncoder.get_output_dim"></a>
+
+### get_output_dim
+
+```python
+def get_output_dim(self):
+```
+
+**Returns:**
+
+  int: The dimensionality of the embeddings.

@@ -1,0 +1,152 @@
+<a id="camel.models.samba_model"></a>
+
+<a id="camel.models.samba_model.SambaModel"></a>
+
+## SambaModel
+
+```python
+class SambaModel(BaseModelBackend):
+```
+
+SambaNova service interface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a SambaNova backend is created. Supported models via SambaNova Cloud: `https://community.sambanova.ai/t/supported-models/193`. Supported models via SambaVerse API is listed in `https://sambaverse.sambanova.ai/models`.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`SambaCloudAPIConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the SambaNova service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the SambaNova service. Current support SambaVerse API: :obj:`"https://sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud: :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`https://api. sambanova.ai/v1`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used.
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. Only applicable when using SambaNova Cloud API. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous OpenAI-compatible client instance. If provided, this client will be used instead of creating a new one. Only applicable when using SambaNova Cloud API. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization. Ignored if custom clients are provided.
+
+<a id="camel.models.samba_model.SambaModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
+    **kwargs: Any
+):
+```
+
+<a id="camel.models.samba_model.SambaModel.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+**Returns:**
+
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
+
+<a id="camel.models.samba_model.SambaModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Runs SambaNova's service.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+
+**Returns:**
+
+  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+`ChatCompletion` in the non-stream mode, or
+`Stream[ChatCompletionChunk]` in the stream mode.
+
+<a id="camel.models.samba_model.SambaModel._run_streaming"></a>
+
+### _run_streaming
+
+```python
+def _run_streaming(self, messages: List[OpenAIMessage]):
+```
+
+Handles streaming inference with SambaNova's API.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): A list of messages representing the chat history in OpenAI API format.
+
+**Returns:**
+
+  Stream[ChatCompletionChunk]: A generator yielding
+`ChatCompletionChunk` objects as they are received from the
+API.
+
+<a id="camel.models.samba_model.SambaModel._run_non_streaming"></a>
+
+### _run_non_streaming
+
+```python
+def _run_non_streaming(self, messages: List[OpenAIMessage]):
+```
+
+Handles non-streaming inference with SambaNova's API.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): A list of messages representing the message in OpenAI API format.
+
+**Returns:**
+
+  ChatCompletion: A `ChatCompletion` object containing the complete
+response from the API.
+
+<a id="camel.models.samba_model.SambaModel._sambaverse_to_openai_response"></a>
+
+### _sambaverse_to_openai_response
+
+```python
+def _sambaverse_to_openai_response(self, samba_response: Dict[str, Any]):
+```
+
+Converts SambaVerse API response into an OpenAI-compatible
+response.
+
+**Parameters:**
+
+- **samba_response** (Dict[str, Any]): A dictionary representing responses from the SambaVerse API.
+
+**Returns:**
+
+  ChatCompletion: A `ChatCompletion` object constructed from the
+aggregated response data.
+
+<a id="camel.models.samba_model.SambaModel.stream"></a>
+
+### stream
+
+```python
+def stream(self):
+```
+
+**Returns:**
+
+  bool: Whether the model is in stream mode.

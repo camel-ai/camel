@@ -1,0 +1,73 @@
+<a id="camel.bots.slack.models"></a>
+
+<a id="camel.bots.slack.models.SlackAuthProfile"></a>
+
+## SlackAuthProfile
+
+```python
+class SlackAuthProfile(BaseModel):
+```
+
+Represents the authorization profile within a Slack event.
+
+Events will contain a single, compact authorizations field that shows one
+installation of your app that the event is visible to.
+In other words, lists of authorizations will be truncated to one element.
+
+If there's more than one installing party that your app is keeping track
+of, it's best not to rely on the single party listed in authorizations to
+be any particular one.
+
+To get a full list of who can see events, call the apps.event.
+authorizations.list method after obtaining an app-level token. Read more on
+the changes here; they have taken effect for existing apps as of
+February 24, 2021.
+
+References:
+
+- https://api.slack.com/apis/events-api#authorizations
+- https://api.slack.com/changelog/2020-09-15-events-api-truncate-authed-users#no_context
+
+<a id="camel.bots.slack.models.SlackEventProfile"></a>
+
+## SlackEventProfile
+
+```python
+class SlackEventProfile(BaseModel):
+```
+
+Represents the detailed profile of a Slack event, including user,
+message, and context data.
+
+<a id="camel.bots.slack.models.SlackEventBody"></a>
+
+## SlackEventBody
+
+```python
+class SlackEventBody(BaseModel):
+```
+
+Represents the entire body of a Slack event, including the event
+profile, authorization, and context.
+
+<a id="camel.bots.slack.models.SlackAppMentionEventProfile"></a>
+
+## SlackAppMentionEventProfile
+
+```python
+class SlackAppMentionEventProfile(SlackEventProfile):
+```
+
+Represents the detailed profile of a Slack event where the app was
+mentioned in a message.
+
+<a id="camel.bots.slack.models.SlackAppMentionEventBody"></a>
+
+## SlackAppMentionEventBody
+
+```python
+class SlackAppMentionEventBody(SlackEventBody):
+```
+
+Represents the entire body of a Slack event where the app was mentioned
+in a message.

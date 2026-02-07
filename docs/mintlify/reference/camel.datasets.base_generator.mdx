@@ -1,0 +1,150 @@
+<a id="camel.datasets.base_generator"></a>
+
+<a id="camel.datasets.base_generator.BaseGenerator"></a>
+
+## BaseGenerator
+
+```python
+class BaseGenerator(ABC, IterableDataset):
+```
+
+Abstract base class for data generators.
+
+This class defines the interface for generating synthetic datapoints.
+Concrete implementations should provide specific generation strategies.
+
+<a id="camel.datasets.base_generator.BaseGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    seed: int = 42,
+    buffer: int = 20,
+    cache: Union[str, Path, None] = None,
+    data_path: Union[str, Path, None] = None,
+    **kwargs
+):
+```
+
+Initialize the base generator.
+
+**Parameters:**
+
+- **seed** (int): Random seed for reproducibility. (default: :obj:`42`) (default: 42)
+- **buffer** (int): Amount of DataPoints to be generated when the iterator runs out of DataPoints in data. (default: :obj:`20`)
+- **cache** (Union[str, Path, None]): Optional path to save generated datapoints during iteration. If None is provided, datapoints will be discarded every 100 generations.
+- **data_path** (Union[str, Path, None]): Optional path to a JSONL file to initialize the dataset from. **kwargs: Additional generator parameters.
+
+<a id="camel.datasets.base_generator.BaseGenerator.__aiter__"></a>
+
+### __aiter__
+
+```python
+def __aiter__(self):
+```
+
+Async iterator that yields datapoints dynamically.
+
+If a `data_path` was provided during initialization, those datapoints
+are yielded first. When self._data is empty, 20 new datapoints
+are generated. Every 100 yields, the batch is appended to the
+JSONL file or discarded if `cache` is None.
+
+Yields:
+DataPoint: A single datapoint.
+
+<a id="camel.datasets.base_generator.BaseGenerator.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
+
+Synchronous iterator for PyTorch IterableDataset compatibility.
+
+If a `data_path` was provided during initialization, those datapoints
+are yielded first. When self._data is empty, 20 new datapoints
+are generated. Every 100 yields, the batch is appended to the
+JSONL file or discarded if `cache` is None.
+
+Yields:
+DataPoint: A single datapoint.
+
+<a id="camel.datasets.base_generator.BaseGenerator.sample"></a>
+
+### sample
+
+```python
+def sample(self):
+```
+
+**Returns:**
+
+  DataPoint: The next DataPoint.
+
+**Note:**
+
+This method is intended for synchronous contexts.
+Use 'async_sample' in asynchronous contexts to
+avoid blocking or runtime errors.
+
+<a id="camel.datasets.base_generator.BaseGenerator.save_to_jsonl"></a>
+
+### save_to_jsonl
+
+```python
+def save_to_jsonl(self, file_path: Union[str, Path]):
+```
+
+Saves the generated datapoints to a JSONL (JSON Lines) file.
+
+Each datapoint is stored as a separate JSON object on a new line.
+
+**Parameters:**
+
+- **file_path** (Union[str, Path]): Path to save the JSONL file.
+
+**Note:**
+
+- Uses `self._data`, which contains the generated datapoints.
+- Appends to the file if it already exists.
+- Ensures compatibility with large datasets by using JSONL format.
+
+<a id="camel.datasets.base_generator.BaseGenerator.flush"></a>
+
+### flush
+
+```python
+def flush(self, file_path: Union[str, Path]):
+```
+
+Flush the current data to a JSONL file and clear the data.
+
+**Parameters:**
+
+- **file_path** (Union[str, Path]): Path to save the JSONL file.
+
+**Note:**
+
+- Uses `save_to_jsonl` to save `self._data`.
+
+<a id="camel.datasets.base_generator.BaseGenerator._init_from_jsonl"></a>
+
+### _init_from_jsonl
+
+```python
+def _init_from_jsonl(self, file_path: Path):
+```
+
+Load and parse a dataset from a JSONL file.
+
+**Parameters:**
+
+- **file_path** (Path): Path to the JSONL file.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of datapoint dictionaries.

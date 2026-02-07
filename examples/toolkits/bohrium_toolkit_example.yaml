@@ -1,0 +1,4 @@
+job_name: "test-bohr-job"
+machine_type: "c2_m4_cpu"
+cmd: "mpirun -n 2 lmp_mpi -i in.shear"
+image_address: "registry.dp.tech/dptech/lammps:29Sep2021"

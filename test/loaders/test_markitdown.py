@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,14 +10,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import tempfile
 from unittest.mock import patch
 
 import pytest
 
-from camel.loaders import MarkItDownLoader
+# Try importing markitdown, skip tests if not available
+try:
+    import markitdown  # noqa: F401
+
+    from camel.loaders import MarkItDownLoader
+
+    markitdown_available = True
+except ImportError:
+    markitdown_available = False
+
+# Skip all tests in this module if markitdown isn't available
+pytestmark = pytest.mark.skipif(
+    not markitdown_available,
+    reason="markitdown is not installed (only available for Python >= 3.13)",
+)
 
 
 @pytest.fixture
@@ -26,6 +40,10 @@ def mock_files():
         "demo_html": (
             "demo.html",
             "<html><body><h1>Mock HTML </h1></body></html>",
+        ),
+        "demo_md": (
+            "demo.md",
+            "## Mock Markdown content",
         ),
         "report_pdf": ("report.pdf", "Mock PDF content"),
         "presentation_pptx": ("presentation.pptx", "Mock PPTX content"),
@@ -83,12 +101,17 @@ def test_convert_file_conversion_error(mock_files):
 
 def test_convert_files_success(mock_files):
     converter = MarkItDownLoader()
-    file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
+    file_paths = [
+        mock_files["demo_html"],
+        mock_files["demo_md"],
+        mock_files["report_pdf"],
+    ]
     results = converter.convert_files(file_paths)
     assert mock_files["demo_html"] in results
+    assert mock_files["demo_md"] in results
     assert mock_files["report_pdf"] in results
     assert all(isinstance(result, str) for result in results.values())
-    assert len(results) == 2
+    assert len(results) == 3
 
 
 def test_convert_files_with_errors(mock_files):

@@ -1,0 +1,127 @@
+<a id="camel.models.reka_model"></a>
+
+<a id="camel.models.reka_model.RekaModel"></a>
+
+## RekaModel
+
+```python
+class RekaModel(BaseModelBackend):
+```
+
+Reka API in a unified OpenAICompatibleModel interface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, one of REKA_* series.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`Reka.chat.create()`. If :obj:`None`, :obj:`RekaConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the Reka service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Reka service. (default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`) **kwargs (Any): Additional arguments to pass to the client initialization.
+
+<a id="camel.models.reka_model.RekaModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    **kwargs: Any
+):
+```
+
+<a id="camel.models.reka_model.RekaModel._convert_reka_to_openai_response"></a>
+
+### _convert_reka_to_openai_response
+
+```python
+def _convert_reka_to_openai_response(self, response: 'ChatResponse'):
+```
+
+Converts a Reka `ChatResponse` to an OpenAI-style `ChatCompletion`
+response.
+
+**Parameters:**
+
+- **response** (ChatResponse): The response object from the Reka API.
+
+**Returns:**
+
+  ChatCompletion: An OpenAI-compatible chat completion response.
+
+<a id="camel.models.reka_model.RekaModel._convert_openai_to_reka_messages"></a>
+
+### _convert_openai_to_reka_messages
+
+```python
+def _convert_openai_to_reka_messages(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[str]] = None
+):
+```
+
+Converts OpenAI API messages to Reka API messages.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): A list of messages in OpenAI format.
+
+**Returns:**
+
+  List[ChatMessage]: A list of messages converted to Reka's format.
+
+<a id="camel.models.reka_model.RekaModel.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+**Returns:**
+
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
+
+<a id="camel.models.reka_model.RekaModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Runs inference of Mistral chat completion.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+
+**Returns:**
+
+  ChatCompletion.
+
+<a id="camel.models.reka_model.RekaModel.stream"></a>
+
+### stream
+
+```python
+def stream(self):
+```
+
+**Returns:**
+
+  bool: Whether the model is in stream mode.

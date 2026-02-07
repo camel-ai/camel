@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.57'
+release = '0.2.85'
 
 html_favicon = (
     'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
@@ -97,7 +97,6 @@ rediraffe_redirects = {
     "cookbooks/embodied_agents": "cookbooks/advanced_features/embodied_agents",
     "cookbooks/critic_agents_and_tree_search": "cookbooks/advanced_features/critic_agents_and_tree_search",
     "cookbooks/agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
-    "cookbooks/model_speed_comparison": "cookbooks/basic_concepts/model_speed_comparison",
     "cookbooks/agents_message": "cookbooks/basic_concepts/agents_message",
     "cookbooks/agents_with_tools": "cookbooks/advanced_features/agents_with_tools",
     "cookbooks/agents_with_memory": "cookbooks/advanced_features/agents_with_memory",

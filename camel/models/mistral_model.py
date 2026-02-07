@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 from openai import AsyncStream
 
-from camel.configs import MISTRAL_API_PARAMS, MistralConfig
+from camel.configs import MistralConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -35,6 +35,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    update_current_observation,
 )
 
 logger = get_logger(__name__)
@@ -46,6 +47,14 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     LLMEvent = None
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class MistralModel(BaseModelBackend):
@@ -69,6 +78,10 @@ class MistralModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries
+            for API calls. (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -85,6 +98,8 @@ class MistralModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         from mistralai import Mistral
 
@@ -95,7 +110,14 @@ class MistralModel(BaseModelBackend):
         url = url or os.environ.get("MISTRAL_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
+            **kwargs,
         )
         self._client = Mistral(
             timeout_ms=int(self._timeout * 1000)
@@ -103,6 +125,7 @@ class MistralModel(BaseModelBackend):
             else None,
             api_key=self._api_key,
             server_url=self._url,
+            **kwargs,
         )
 
     def _to_openai_response(
@@ -232,6 +255,7 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -242,6 +266,17 @@ class MistralModel(BaseModelBackend):
             "Mistral does not support async inference, using sync "
             "inference instead."
         )
+        update_current_observation(
+            input={
+                "messages": messages,
+                "response_format": response_format,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -254,6 +289,10 @@ class MistralModel(BaseModelBackend):
         )
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+
+        update_current_observation(
+            usage=openai_response.usage,
+        )
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -271,6 +310,7 @@ class MistralModel(BaseModelBackend):
 
         return openai_response
 
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -290,6 +330,16 @@ class MistralModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response from the model.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -302,6 +352,10 @@ class MistralModel(BaseModelBackend):
         )
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+
+        update_current_observation(
+            usage=openai_response.usage,
+        )
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -333,21 +387,6 @@ class MistralModel(BaseModelBackend):
             request_config["response_format"] = {"type": "json_object"}
 
         return request_config
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Mistral API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Mistral API.
-        """
-        for param in self.model_config_dict:
-            if param not in MISTRAL_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Mistral model backend."
-                )
 
     @property
     def stream(self) -> bool:

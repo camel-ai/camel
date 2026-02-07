@@ -1,0 +1,73 @@
+<a id="camel.utils.deduplication"></a>
+
+<a id="camel.utils.deduplication.DeduplicationResult"></a>
+
+## DeduplicationResult
+
+```python
+class DeduplicationResult(BaseModel):
+```
+
+The result of deduplication.
+
+**Parameters:**
+
+- **original_texts** (List[str]): The original texts.
+- **unique_ids** (List[int]): A list of ids that are unique (not duplicates).
+- **unique_embeddings_dict** (Dict[int, List[float]]): A mapping from the index of each unique text to its embedding.
+- **duplicate_to_target_map** (Dict[int, int]): A mapping from the index of the duplicate text to the index of the text it is considered a duplicate of.
+
+<a id="camel.utils.deduplication.deduplicate_internally"></a>
+
+## deduplicate_internally
+
+```python
+def deduplicate_internally(
+    texts: List[str],
+    threshold: float = 0.65,
+    embedding_instance: Optional[BaseEmbedding[str]] = None,
+    embeddings: Optional[List[List[float]]] = None,
+    strategy: Literal['top1', 'llm-supervise'] = 'top1',
+    batch_size: int = 1000
+):
+```
+
+Deduplicate a list of strings based on their cosine similarity.
+
+You can either:
+1) Provide a CAMEL `BaseEmbedding` instance via `embedding_instance` to let
+this function handle the embedding internally, OR
+2) Directly pass a list of pre-computed embeddings to `embeddings`.
+
+If both `embedding_instance` and `embeddings` are provided, the function
+will raise a ValueError to avoid ambiguous usage.
+
+strategy is used to specify different strategies, where 'top1' selects the
+one with highest similarity, and 'llm-supervise' uses LLM to determine if
+texts are duplicates (not yet implemented).
+
+**Parameters:**
+
+- **texts** (List[str]): The list of texts to be deduplicated.
+- **threshold** (float, optional): The similarity threshold for considering two texts as duplicates. (default: :obj:`0.65`)
+- **embedding_instance** (Optional[BaseEmbedding[str]], optional): A CAMEL embedding instance for automatic embedding. (default: :obj:`None`)
+- **embeddings** (Optional[List[List[float]]], optional): Pre-computed embeddings of `texts`. Each element in the list corresponds to the embedding of the text in the same index of `texts`. (default: :obj:`None`)
+- **strategy** (`Literal["top1", "llm-supervise"], optional`): The strategy to use for deduplication. (default: :obj:`"top1"`)
+- **batch_size** (int, optional): The size of the batch to use for calculating cosine similarities. (default: :obj:`1000`)
+
+**Returns:**
+
+  DeduplicationResult: An object that contains:
+- `original_texts`: The original texts.
+- `unique_ids`: The unique ids after deduplication.
+- `unique_embeddings_dict`: A dict mapping from (unique) text id
+to its embedding.
+- `duplicate_to_target_map`: A dict mapping from the id of a
+duplicate text to the id of the text it is considered a duplicate
+of.
+
+**Raises:**
+
+- **NotImplementedError**: If the strategy is not "top1".
+- **ValueError**: If neither embeddings nor embedding_instance is provided,
+- **ValueError**: If the length of `embeddings` does not match the length of

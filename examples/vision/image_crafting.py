@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,11 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents.chat_agent import ChatAgent
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -39,7 +39,7 @@ def main():
     dalle_agent = ChatAgent(
         system_message=sys_msg,
         model=model,
-        tools=DalleToolkit().get_tools(),
+        tools=OpenAIImageToolkit().get_tools(),
     )
 
     response = dalle_agent.step("Draw a picture of a camel.")
@@ -61,13 +61,13 @@ You are tasked with creating an original image based on
         explain your thought process.
 =================================================
 ==================== RESULT ====================
-I have created an image of a camel standing in a desert oasis under the shade 
-of a palm tree. You can see the realistic and detailed drawing of the camel in 
-the image below. 
+I have created an image of a camel standing in a desert oasis under the shade
+of a palm tree. You can see the realistic and detailed drawing of the camel in
+the image below.
 
-![Camel in a Desert Oasis](img/58a2a3fa-1e7e-407c-8cd6-4b99448b6a90.png) 
+![Camel in a Desert Oasis](img/58a2a3fa-1e7e-407c-8cd6-4b99448b6a90.png)
 
-The scene captures the essence of the desert environment with the camel 
+The scene captures the essence of the desert environment with the camel
 peacefully resting in the oasis.
 ===============================================================================
 """

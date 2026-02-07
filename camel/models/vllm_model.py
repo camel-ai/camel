@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import VLLM_API_PARAMS, VLLMConfig
+from camel.configs import VLLMConfig
 from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
@@ -49,6 +49,9 @@ class VLLMModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client initialization.
 
     References:
         https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
@@ -62,6 +65,8 @@ class VLLMModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
@@ -79,6 +84,8 @@ class VLLMModel(OpenAICompatibleModel):
             url=self._url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _start_server(self) -> None:
@@ -96,18 +103,3 @@ class VLLMModel(OpenAICompatibleModel):
             )
         except Exception as e:
             logger.error(f"Failed to start vllm server: {e}.")
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to vLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in VLLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into vLLM model backend."
-                )

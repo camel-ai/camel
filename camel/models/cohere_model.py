@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import json
 import logging
@@ -21,9 +21,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cohere.types import ChatMessageV2, ChatResponse
+    from cohere.types import (  # type: ignore[attr-defined]
+        ChatMessageV2,
+        ChatResponse,
+    )
 
-from camel.configs import COHERE_API_PARAMS, CohereConfig
+from camel.configs import CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -32,7 +35,16 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    update_current_observation,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -65,6 +77,8 @@ class CohereModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -80,6 +94,7 @@ class CohereModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ):
         import cohere
 
@@ -94,10 +109,14 @@ class CohereModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = cohere.ClientV2(
-            timeout=self._timeout, api_key=self._api_key
+            timeout=self._timeout,
+            api_key=self._api_key,
+            **kwargs,
         )
         self._async_client = cohere.AsyncClientV2(
-            timeout=self._timeout, api_key=self._api_key
+            timeout=self._timeout,
+            api_key=self._api_key,
+            **kwargs,
         )
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
@@ -271,6 +290,7 @@ class CohereModel(BaseModelBackend):
 
         return request_config
 
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -285,6 +305,16 @@ class CohereModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         from cohere.core.api_error import ApiError
 
         request_config = self._prepare_request(
@@ -309,6 +339,10 @@ class CohereModel(BaseModelBackend):
 
         openai_response = self._to_openai_response(response)
 
+        update_current_observation(
+            usage=openai_response.usage,
+        )
+
         # Add AgentOps LLM Event tracking
         if LLMEvent:
             llm_event = LLMEvent(
@@ -325,6 +359,7 @@ class CohereModel(BaseModelBackend):
 
         return openai_response
 
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -339,6 +374,16 @@ class CohereModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         from cohere.core.api_error import ApiError
 
         request_config = self._prepare_request(
@@ -363,6 +408,10 @@ class CohereModel(BaseModelBackend):
 
         openai_response = self._to_openai_response(response)
 
+        update_current_observation(
+            usage=openai_response.usage,
+        )
+
         # Add AgentOps LLM Event tracking
         if LLMEvent:
             llm_event = LLMEvent(
@@ -378,21 +427,6 @@ class CohereModel(BaseModelBackend):
             record(llm_event)
 
         return openai_response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to Cohere API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Cohere API.
-        """
-        for param in self.model_config_dict:
-            if param not in COHERE_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Cohere model backend."
-                )
 
     @property
     def stream(self) -> bool:

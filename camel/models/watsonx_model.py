@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import WATSONX_API_PARAMS, WatsonXConfig
+from camel.configs import WatsonXConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -26,7 +26,16 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    update_current_observation,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 logger = get_logger(__name__)
 
@@ -55,6 +64,8 @@ class WatsonXModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -72,6 +83,7 @@ class WatsonXModel(BaseModelBackend):
         project_id: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ):
         from ibm_watsonx_ai import APIClient, Credentials
         from ibm_watsonx_ai.foundation_models import ModelInference
@@ -92,7 +104,7 @@ class WatsonXModel(BaseModelBackend):
 
         self._project_id = project_id
         credentials = Credentials(api_key=self._api_key, url=self._url)
-        client = APIClient(credentials, project_id=self._project_id)
+        client = APIClient(credentials, project_id=self._project_id, **kwargs)
 
         self._model = ModelInference(
             model_id=self.model_type,
@@ -151,6 +163,7 @@ class WatsonXModel(BaseModelBackend):
 
         return request_config
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -170,6 +183,15 @@ class WatsonXModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
         try:
             request_config = self._prepare_request(
                 messages, response_format, tools
@@ -183,12 +205,16 @@ class WatsonXModel(BaseModelBackend):
             )
 
             openai_response = self._to_openai_response(response)
+            update_current_observation(
+                usage=openai_response.usage,
+            )
             return openai_response
 
         except Exception as e:
             logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
 
+    @observe(as_type='generation')
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -208,6 +234,16 @@ class WatsonXModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+
         try:
             request_config = self._prepare_request(
                 messages, response_format, tools
@@ -221,26 +257,14 @@ class WatsonXModel(BaseModelBackend):
             )
 
             openai_response = self._to_openai_response(response)
+            update_current_observation(
+                usage=openai_response.usage,
+            )
             return openai_response
 
         except Exception as e:
             logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to WatsonX API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to WatsonX API.
-        """
-        for param in self.model_config_dict:
-            if param not in WATSONX_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into WatsonX model backend."
-                )
 
     @property
     def stream(self) -> bool:

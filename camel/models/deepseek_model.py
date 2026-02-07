@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from typing import Any, Dict, List, Optional, Type, Union
@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from camel.configs import DeepSeekConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
@@ -28,7 +28,24 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
+)
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import trace as observe  # type: ignore[import]
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 logger = get_logger(__name__)
 
@@ -64,6 +81,10 @@ class DeepSeekModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://api-docs.deepseek.com/
@@ -82,6 +103,8 @@ class DeepSeekModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = DeepSeekConfig().as_dict()
@@ -98,6 +121,8 @@ class DeepSeekModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _prepare_request(
@@ -138,44 +163,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return request_config
 
-    def _post_handle_response(
-        self, response: ChatCompletion
-    ) -> ChatCompletion:
-        r"""Handle reasoning content with <think> tags at the beginning."""
-        if (
-            self.model_type in [ModelType.DEEPSEEK_REASONER]
-            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
-            == "true"
-        ):
-            reasoning_content = response.choices[0].message.reasoning_content  # type: ignore[attr-defined]
-            combined_content = (  # type: ignore[operator]
-                f"<think>\n{reasoning_content}\n</think>\n"
-                if reasoning_content
-                else ""
-            ) + response.choices[0].message.content
-
-            response = ChatCompletion.construct(
-                id=response.id,
-                choices=[
-                    dict(
-                        index=response.choices[0].index,
-                        message={
-                            "role": response.choices[0].message.role,
-                            "content": combined_content,
-                            "tool_calls": None,
-                        },
-                        finish_reason=response.choices[0].finish_reason
-                        if response.choices[0].finish_reason
-                        else None,
-                    )
-                ],
-                created=response.created,
-                model=response.model,
-                object="chat.completion",
-                usage=response.usage,
-            )
-        return response
-
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -193,6 +181,8 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        self._log_and_trace()
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -203,8 +193,9 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
+        return response
 
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -222,6 +213,8 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        self._log_and_trace()
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -231,19 +224,4 @@ class DeepSeekModel(OpenAICompatibleModel):
             **request_config,
         )
 
-        return self._post_handle_response(response)
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to DeepSeek API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to DeepSeek API.
-        """
-        for param in self.model_config_dict:
-            if param not in DEEPSEEK_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into DeepSeek model backend."
-                )
+        return response

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from unstructured.documents.elements import Element
 
@@ -53,8 +53,8 @@ print(nebula_graph.get_structured_schema)
 
 """
 ==============================================================================
-{'node_props': {'CAMEL_AI': [], 'Agent_Framework': []}, 'rel_props': 
-{'contribute_to': []}, 'relationships': ['contribute_to'], 'metadata': 
+{'node_props': {'CAMEL_AI': [], 'Agent_Framework': []}, 'rel_props':
+{'contribute_to': []}, 'relationships': ['contribute_to'], 'metadata':
 {'index': []}}
 ==============================================================================
 """
@@ -96,9 +96,9 @@ print(nebula_graph.get_structured_schema)
 
 """
 ==============================================================================
-{'node_props': {'Agent_Framework': [], 'CAMEL_AI': [], 'Graph_Database': [], 
-'Nebula': [], 'agent_framework': []}, 'rel_props': {'Supporting': [], 
-'contribute_to': []}, 'relationships': ['Supporting', 'contribute_to'], 
+{'node_props': {'Agent_Framework': [], 'CAMEL_AI': [], 'Graph_Database': [],
+'Nebula': [], 'agent_framework': []}, 'rel_props': {'Supporting': [],
+'contribute_to': []}, 'relationships': ['Supporting', 'contribute_to'],
 'metadata': {'index': []}}
 ==============================================================================
 """

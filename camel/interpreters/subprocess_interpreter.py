@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import subprocess
@@ -87,14 +87,14 @@ class SubprocessInterpreter(BaseInterpreter):
     def run_file(
         self,
         file: Path,
-        code_type: str,
+        code_type: str = "python",
     ) -> str:
         r"""Executes a code file in a subprocess and captures its output.
 
         Args:
             file (Path): The path object of the file to run.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: A string containing the captured stdout and stderr of the
@@ -425,3 +425,35 @@ class SubprocessInterpreter(BaseInterpreter):
                 return True
             except subprocess.CalledProcessError:
                 return False
+
+    def execute_command(self, command: str) -> tuple[str, str]:
+        r"""Executes a shell command in a subprocess and captures its output.
+
+        Args:
+            command (str): The shell command to execute.
+
+        Returns:
+            tuple: A tuple containing the captured stdout and stderr of the
+                executed command.
+
+        Raises:
+            InterpreterError: If the command execution fails.
+        """
+        try:
+            # Get current Python executable's environment
+            env = os.environ.copy()
+
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                shell=True,  # Use shell=True for command execution
+            )
+            # Add timeout to prevent hanging processes
+            stdout, stderr = proc.communicate(timeout=self.execution_timeout)
+
+            return stdout, stderr
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")

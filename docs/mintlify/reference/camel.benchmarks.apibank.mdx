@@ -1,0 +1,229 @@
+<a id="camel.benchmarks.apibank"></a>
+
+<a id="camel.benchmarks.apibank.process_messages"></a>
+
+## process_messages
+
+```python
+def process_messages(chat_history: List[Dict[str, Any]], prompt: str):
+```
+
+Processes chat history into a structured format for further use.
+
+**Parameters:**
+
+- **chat_history** (List[Dict[str, Any]): A list of dictionaries representing the chat history.
+- **prompt** (str): A prompt to be set as the system message.
+
+**Returns:**
+
+  List[Dict[str, str]]: A list of dictionaries representing
+the processed messages, where each dictionary has:
+- 'role': The role of the message ('system', 'user', or 'assistant').
+- 'content': The content of the message, including formatted
+API responses when applicable.
+
+<a id="camel.benchmarks.apibank.APIBankBenchmark"></a>
+
+## APIBankBenchmark
+
+```python
+class APIBankBenchmark(BaseBenchmark):
+```
+
+API-Bank Benchmark adapted from `API-Bank:
+A Comprehensive Benchmark for Tool-Augmented LLMs`
+`<https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank>`.
+
+**Parameters:**
+
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use. (default: :obj:`1`)
+
+<a id="camel.benchmarks.apibank.APIBankBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, save_to: str, processes: int = 1):
+```
+
+Initialize the APIBank benchmark.
+
+**Parameters:**
+
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use for parallel processing. (default: :obj:`1`)
+
+<a id="camel.benchmarks.apibank.APIBankBenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+Download APIBank dataset and code from Github.
+
+<a id="camel.benchmarks.apibank.APIBankBenchmark.load"></a>
+
+### load
+
+```python
+def load(self, level: str, force_download: bool = False):
+```
+
+Load the APIBank Benchmark dataset.
+
+**Parameters:**
+
+- **level** (str): Level to run benchmark on.
+- **force_download** (bool, optional): Whether to force download the data.
+
+<a id="camel.benchmarks.apibank.APIBankBenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    agent: ChatAgent,
+    level: Literal['level-1', 'level-2'],
+    api_test_enabled = True,
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
+```
+
+Run the benchmark.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to run the benchmark.
+- **level** (`Literal['level-1', 'level-2']`): The level to run the benchmark on.
+- **randomize** (bool, optional): Whether to randomize the data.
+- **api_test_enabled** (bool): Whether to test API calling (`True`) or response (`False`) (default: :obj:`False`)
+- **subset** (Optional[int], optional): The subset of data to run. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: The results of the benchmark.
+
+<a id="camel.benchmarks.apibank.agent_call"></a>
+
+## agent_call
+
+```python
+def agent_call(messages: List[Dict], agent: ChatAgent):
+```
+
+Add messages to agent memory and get response.
+
+<a id="camel.benchmarks.apibank.calculate_rouge_l_score"></a>
+
+## calculate_rouge_l_score
+
+```python
+def calculate_rouge_l_score(reference, hypothesis):
+```
+
+Calculate rouge l score between hypothesis and reference.
+
+<a id="camel.benchmarks.apibank.get_api_call"></a>
+
+## get_api_call
+
+```python
+def get_api_call(model_output):
+```
+
+Parse api call from model output.
+
+<a id="camel.benchmarks.apibank.APIBankSample"></a>
+
+## APIBankSample
+
+```python
+class APIBankSample:
+```
+
+APIBank sample used to load the datasets.
+
+<a id="camel.benchmarks.apibank.APIBankSample.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chat_history,
+    apis,
+    ground_truth
+):
+```
+
+<a id="camel.benchmarks.apibank.APIBankSample.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.benchmarks.apibank.APIBankSample.from_chat_history"></a>
+
+### from_chat_history
+
+```python
+def from_chat_history(cls, chat_history):
+```
+
+<a id="camel.benchmarks.apibank.Evaluator"></a>
+
+## Evaluator
+
+```python
+class Evaluator:
+```
+
+Evaluator for APIBank benchmark.
+
+<a id="camel.benchmarks.apibank.Evaluator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, samples: List[APIBankSample]):
+```
+
+<a id="camel.benchmarks.apibank.Evaluator.get_all_sample_ids"></a>
+
+### get_all_sample_ids
+
+```python
+def get_all_sample_ids(self):
+```
+
+<a id="camel.benchmarks.apibank.Evaluator.get_api_description"></a>
+
+### get_api_description
+
+```python
+def get_api_description(self, api_name):
+```
+
+<a id="camel.benchmarks.apibank.Evaluator.get_model_input"></a>
+
+### get_model_input
+
+```python
+def get_model_input(self, sample_id: int):
+```
+
+<a id="camel.benchmarks.apibank.Evaluator.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, sample_id, model_output):
+```

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import logging
 import re
@@ -44,7 +44,7 @@ class TiDBStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with TiDB.
 
     The detailed information about TiDB is available at:
-    `TiDB Vector Search <https://ai.pingcap.com/>`_
+    `TiDB Vector Search <https://pingcap.com/ai>`_
 
     Args:
         vector_dim (int): The dimension of storing vectors.
@@ -107,10 +107,10 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _get_table_model(self, collection_name: str) -> Any:
+        from pytidb.datatype import JSON  # type: ignore[import-not-found]
         from pytidb.schema import Field, TableModel, VectorField
-        from sqlalchemy import JSON
 
-        class VectorDBRecord(TableModel):
+        class VectorDBRecordBase(TableModel, table=False):
             id: Optional[str] = Field(None, primary_key=True)
             vector: list[float] = VectorField(self.vector_dim)
             payload: Optional[dict[str, Any]] = Field(None, sa_type=JSON)
@@ -119,7 +119,7 @@ class TiDBStorage(BaseVectorStorage):
         # class names.
         return type(
             f"VectorDBRecord_{collection_name}",
-            (VectorDBRecord,),
+            (VectorDBRecordBase,),
             {"__tablename__": collection_name},
             table=True,
         )
@@ -128,8 +128,10 @@ class TiDBStorage(BaseVectorStorage):
         r"""Opens an existing table or creates a new table in TiDB."""
         table = self._client.open_table(self.collection_name)
         if table is None:
+            table_model = self._get_table_model(self.collection_name)
             table = self._client.create_table(
-                schema=self._get_table_model(self.collection_name)
+                schema=table_model,
+                if_exists="skip",  # type: ignore[call-arg]
             )
         return table
 
@@ -166,6 +168,7 @@ class TiDBStorage(BaseVectorStorage):
                 table.
         """
         vector_count = self._table.rows()
+
         # Get vector dimension from table schema
         columns = self._table.columns()
         dim_value = None
@@ -303,7 +306,7 @@ class TiDBStorage(BaseVectorStorage):
         for row in rows:
             query_results.append(
                 VectorDBQueryResult.create(
-                    similarity=float(row['similarity_score']),
+                    similarity=float(row['_score']),
                     id=str(row['id']),
                     payload=row['payload'],
                     vector=row['vector'],

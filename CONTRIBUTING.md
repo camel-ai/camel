@@ -4,7 +4,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ## Join Our Community 🌍
 
-### Schedule an Introduction Call 📞 
+### Schedule an Introduction Call 📞
 - English speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 - Chinese speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 
@@ -21,7 +21,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ### Contributing to the Code 👨‍💻👩‍💻
 
-If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. 
+If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support.
 
 - If you are a contributor from the community:
   - Follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests.
@@ -40,9 +40,9 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
   - Update any affected example console scripts in the `examples` directory, Gradio demos in the `apps` directory, and documentation in the `docs` directory.
   - Update unit tests when relevant.
 - If you add a feature:
-  - Include unit tests in the `test` directory. 
+  - Include unit tests in the `test` directory.
   - Add a demo script in the `examples` directory.
- 
+
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
 
 ### Contributing to the Cookbook Writing 📚
@@ -62,9 +62,9 @@ Here’s how you can contribute to writing cookbooks:
 - Interactive Elements: Whenever applicable, add interactive code cells in Colab that users can directly run and modify.
 
 ##### 1.2. Developing cookbooks for in-progress features
-You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook. 
+You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook.
 
-`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"` 
+`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"`
 
 Changing the branch and extras section (e.g. remove `#egg=camel-ai[all]`) will behave as expected.
 
@@ -83,8 +83,8 @@ Once the initial draft of the cookbook is ready:
 #### 3. Submitting the Cookbook
 When the Colab cookbook is ready for integration:
 
-- Download the Cookbook: Once the Colab notebook is finalized and reviewed, download the notebook as a .ipynb file.
-- Create a Pull Request: Open a pull request to add the cookbook to the docs folder of the repository. This pull request will include the downloadable .ipynb file and also include any necessary documentation or references to integrate the cookbook into the main docs.
+- Download the Cookbook: Once the Colab notebook is finalized and reviewed, download the notebook as a .ipynb file and convert your cookbook from .ipynb to .mdx and add your cookbook file to the appropriate directory under `docs/cookbooks/`.
+- Create a Pull Request: Open a pull request to add the cookbook to the docs folder of the repository. This pull request will include the mdx file and also include any necessary documentation or references to integrate the cookbook into the main docs.
 
 #### 4. Principles to Follow
 To ensure that the cookbook meets the highest standards, please keep the following principles in mind:
@@ -149,7 +149,7 @@ Code reviews are an essential part of maintaining the quality and integrity of o
 This guideline will help you write clear, concise, and structured docstrings for contributing to `CAMEL`.
 
 #### 1. Use the Triple-Quoted String with `r"""` (Raw String)
-Begin the docstring with `r"""` to indicate a raw docstring. This prevents any issues with special characters and ensures consistent formatting, especially in documentation tools like Sphinx.
+Begin the docstring with `r"""` to indicate a raw docstring. This prevents any issues with special characters and ensures consistent formatting.
 
 #### 2. Provide a Brief Class or Method Description
 - Start with a concise summary of the purpose and functionality.
@@ -174,10 +174,10 @@ r"""Class for managing conversations of CAMEL Chat Agents.
 Example:
 ```markdown
 Args:
-    system_message (BaseMessage): The system message for initializing 
+    system_message (BaseMessage): The system message for initializing
         the agent's conversation context.
-    model (BaseModelBackend, optional): The model backend to use for 
-        response generation. Defaults to :obj:`OpenAIModel` with 
+    model (BaseModelBackend, optional): The model backend to use for
+        response generation. Defaults to :obj:`OpenAIModel` with
         `GPT_4O_MINI`. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
 ```
 
@@ -195,18 +195,37 @@ Examples:
 
 By adhering to this principle, we ensure that CAMEL remains accessible and unambiguous for both developers and AI agents.
 
+#### Toolkit Function Naming Principle: Use Toolkit-Specific Prefixes
+
+All public functions in CAMEL toolkits MUST include a toolkit-specific prefix to prevent naming conflicts and improve code clarity.
+
+**Naming Pattern:**
+```
+<toolkit_prefix>_<action>_<resource>
+```
+
+**Examples:**
+- Good: `github_create_issue()`, `twitter_delete_tweet()`, `excel_create_workbook()`
+- Bad: `create_issue()`, `delete_tweet()`, `create_workbook()`
+
+**Key Requirements:**
+1. **Consistent Prefixes**: All public methods in a toolkit must use the same prefix
+2. **No Built-in Shadowing**: Never use names that shadow Python built-ins (e.g., avoid `round()`, use `math_round()`)
+3. **Clear Association**: The prefix should clearly identify which toolkit the function belongs to
+4. **Backward Compatibility**: When renaming functions, provide deprecated aliases with warnings for at least 2 minor versions
+
 #### Logging Principle: Use `logger` Instead of `print`
 
 Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensure consistent, configurable, and professional logging.
 
 Examples:
 
-- Bad: 
+- Bad:
   ```python
   print("Process started")
   print(f"User input: {user_input}")
   ```
-- Good: 
+- Good:
   ```python
   Args:
   logger.info("Process started")
@@ -355,18 +374,22 @@ To quickly run only local isolated unit and integration tests:
 pytest --fast-test-mode .
 ```
 
-If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:
+If you're developing with VSCode, make sure to:
+
+Add your API keys to the existing `.env` file at the repository root, for example:
 
 ```
 OPENAI_API_KEY=sk-XXXXXXXX
 OPENAI_API_BASE_URL=https://XXXXXXXX (Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
+The `conftest.py` file is already configured to automatically load the `.env` file, so you can run `pytest .` directly without extra setup.
+
 ## Documentation 📚
 
 ### Contribute to Documentation 📝
 
-The documentation is primarily generated automatically by [Sphinx](https://www.sphinx-doc.org/en/master/) using the code.
+We use [Mintlify](https://mintlify.com/) for documentation.
 
 We kindly request that you provide comprehensive documentation for all classes and methods to ensure high-quality documentation coverage.
 
@@ -374,10 +397,16 @@ We kindly request that you provide comprehensive documentation for all classes a
 
 To build the documentation locally, follow these steps:
 
-```bash
-cd docs
-make html
-```
+1. Install the Mintlify CLI:
+   ```sh
+   npm install -g mintlify
+   ```
+
+2. Run the Mintlify development server:
+   ```sh
+   mintlify dev
+   ```
+   This will start a local server where you can preview your changes.
 
 More guidelines about building and hosting documentations locally can be found [here](https://github.com/camel-ai/camel/blob/master/docs/README.md).
 

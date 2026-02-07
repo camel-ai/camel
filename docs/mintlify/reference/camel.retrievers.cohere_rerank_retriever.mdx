@@ -1,0 +1,67 @@
+<a id="camel.retrievers.cohere_rerank_retriever"></a>
+
+<a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever"></a>
+
+## CohereRerankRetriever
+
+```python
+class CohereRerankRetriever(BaseRetriever):
+```
+
+An implementation of the `BaseRetriever` using the `Cohere Re-ranking`
+model.
+
+**Parameters:**
+
+- **model_name** (str): The model name to use for re-ranking.
+- **api_key** (Optional[str]): The API key for authenticating with the Cohere service.
+- **References**: 
+- **https**: //txt.cohere.com/rerank/
+
+<a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_name: str = 'rerank-multilingual-v2.0',
+    api_key: Optional[str] = None
+):
+```
+
+Initializes an instance of the CohereRerankRetriever. This
+constructor sets up a client for interacting with the Cohere API using
+the specified model name and API key. If the API key is not provided,
+it attempts to retrieve it from the COHERE_API_KEY environment
+variable.
+
+**Parameters:**
+
+- **model_name** (str): The name of the model to be used for re-ranking. Defaults to 'rerank-multilingual-v2.0'.
+- **api_key** (Optional[str]): The API key for authenticating requests to the Cohere API. If not provided, the method will attempt to retrieve the key from the environment variable 'COHERE_API_KEY'.
+
+<a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever.query"></a>
+
+### query
+
+```python
+def query(
+    self,
+    query: str,
+    retrieved_result: List[Dict[str, Any]],
+    top_k: int = DEFAULT_TOP_K_RESULTS
+):
+```
+
+Queries and compiles results using the Cohere re-ranking model.
+
+**Parameters:**
+
+- **query** (str): Query string for information retriever.
+- **retrieved_result** (List[Dict[str, Any]]): The content to be re-ranked, should be the output from `BaseRetriever` like `VectorRetriever`.
+- **top_k** (int, optional): The number of top results to return during retriever. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+
+**Returns:**
+
+  List[Dict[str, Any]]: Concatenated list of the query results.

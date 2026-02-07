@@ -1,0 +1,133 @@
+<a id="camel.models.model_factory"></a>
+
+<a id="camel.models.model_factory.ModelFactory"></a>
+
+## ModelFactory
+
+```python
+class ModelFactory:
+```
+
+<a id="camel.models.model_factory.ModelFactory.create"></a>
+
+### create
+
+```python
+def create(
+    model_platform: Union[ModelPlatformType, str],
+    model_type: Union[ModelType, str, UnifiedModelType],
+    model_config_dict: Optional[Dict] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    client: Optional[Any] = None,
+    async_client: Optional[Any] = None,
+    **kwargs
+):
+```
+
+Creates an instance of `BaseModelBackend` of the specified type.
+
+**Parameters:**
+
+- **model_platform** (Union[ModelPlatformType, str]): Platform from which the model originates. Can be a string or ModelPlatformType enum.
+- **model_type** (Union[ModelType, str, UnifiedModelType]): Model for which a backend is created. Can be a string, ModelType enum, or UnifiedModelType.
+- **model_config_dict** (Optional[Dict]): A dictionary that will be fed into the backend constructor. (default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter(ModelType.GPT_4O_MINI)` will be used if the model platform didn't provide official token counter. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **client** (Optional[Any], optional): A custom synchronous client instance. Supported by models that use OpenAI-compatible APIs . The client should implement the appropriate client interface for the platform. (default: :obj:`None`)
+- **async_client** (Optional[Any], optional): A custom asynchronous client instance. Supported by models that use OpenAI-compatible APIs. The client should implement the appropriate async client interface for the platform. (default: :obj:`None`) **kwargs: Additional model-specific parameters that will be passed to the model constructor. For example, Azure OpenAI models may require `api_version`, `azure_deployment_name`, `azure_ad_token_provider`, and `azure_ad_token`.
+
+**Returns:**
+
+  BaseModelBackend: The initialized backend.
+
+<a id="camel.models.model_factory.ModelFactory.__parse_model_platform"></a>
+
+### __parse_model_platform
+
+```python
+def __parse_model_platform(cls, model_platform_str: str):
+```
+
+Parses a string and returns the corresponding ModelPlatformType
+enum.
+
+**Parameters:**
+
+- **model_platform_str** (str): The platform name as a string. Can be in the form "ModelPlatformType.`<NAME>`" or simply "`<NAME>`".
+
+**Returns:**
+
+  ModelPlatformType: The matching enum value.
+
+<a id="camel.models.model_factory.ModelFactory.__load_yaml"></a>
+
+### __load_yaml
+
+```python
+def __load_yaml(cls, filepath: str):
+```
+
+<a id="camel.models.model_factory.ModelFactory.__load_json"></a>
+
+### __load_json
+
+```python
+def __load_json(cls, filepath: str):
+```
+
+Loads and parses a JSON file into a dictionary.
+
+**Parameters:**
+
+- **filepath** (str): Path to the JSON configuration file.
+
+**Returns:**
+
+  Dict: The parsed JSON content as a dictionary.
+
+<a id="camel.models.model_factory.ModelFactory.create_from_yaml"></a>
+
+### create_from_yaml
+
+```python
+def create_from_yaml(cls, filepath: str):
+```
+
+Creates and returns a model base backend instance
+from a YAML configuration file.
+
+**Parameters:**
+
+- **filepath** (str): Path to the YAML file containing model configuration.
+
+**Returns:**
+
+  BaseModelBackend: An instance of the model backend based on the
+configuration.
+
+<a id="camel.models.model_factory.ModelFactory.create_from_json"></a>
+
+### create_from_json
+
+```python
+def create_from_json(cls, filepath: str):
+```
+
+Creates and returns a base model backend instance
+from a JSON configuration file.
+
+**Parameters:**
+
+- **filepath** (str): Path to the JSON file containing model configuration.
+
+**Returns:**
+
+  BaseModelBackend: An instance of the model backend based on the
+configuration.

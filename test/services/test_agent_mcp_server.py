@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -19,8 +19,8 @@ from mcp.server.fastmcp import Context
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
-from services.agent_config import agents_dict, description_dict
-from services.agent_mcp_server import (
+from services.agent_mcp.agent_config import agents_dict, description_dict
+from services.agent_mcp.agent_mcp_server import (
     get_agent_info,
     get_agents_info,
     get_available_tools,
@@ -43,13 +43,14 @@ def mock_agent():
     ]
     agent.tool_dict = {"test_tool": mock_tool}
     agent.astep = AsyncMock()
+    agent.reset = Mock()
     return agent
 
 
 @pytest.fixture
 def mock_context():
     context = Mock(spec=Context)
-    context.info = Mock()
+    context.info = AsyncMock()
     return context
 
 
@@ -113,9 +114,10 @@ async def test_step_agent_not_found(mock_context):
         assert "not found" in result["message"]
 
 
-def test_reset(mock_agent, mock_context):
+@pytest.mark.asyncio
+async def test_reset(mock_agent, mock_context):
     with patch.dict(agents_dict, {"test": mock_agent}):
-        result = reset(mock_context)
+        result = await reset(mock_context)
 
         assert result["status"] == "success"
         assert "successfully" in result["message"]
@@ -123,9 +125,10 @@ def test_reset(mock_agent, mock_context):
         mock_context.info.assert_called_once()
 
 
-def test_set_output_language(mock_agent, mock_context):
+@pytest.mark.asyncio
+async def test_set_output_language(mock_agent, mock_context):
     with patch.dict(agents_dict, {"test": mock_agent}):
-        result = set_output_language("fr", mock_context)
+        result = await set_output_language("fr", mock_context)
 
         assert result["status"] == "success"
         assert "fr" in result["message"]
@@ -141,7 +144,15 @@ def test_get_agents_info():
 def test_get_chat_history(mock_agent):
     with patch.dict(agents_dict, {"test": mock_agent}):
         result = get_chat_history("test")
-        assert result == mock_agent.chat_history
+        assert result["status"] == "success"
+        assert result["chat_history"] == mock_agent.chat_history
+
+
+def test_get_chat_history_agent_not_found():
+    with patch.dict(agents_dict, {}, clear=True):
+        result = get_chat_history("nonexistent")
+        assert result["status"] == "error"
+        assert "not found" in result["message"]
 
 
 def test_get_agent_info(mock_agent):
@@ -158,7 +169,21 @@ def test_get_agent_info(mock_agent):
         assert result["description"] == test_description
 
 
+def test_get_agent_info_agent_not_found():
+    with patch.dict(agents_dict, {}, clear=True):
+        result = get_agent_info("nonexistent")
+        assert result["status"] == "error"
+        assert "not found" in result["message"]
+
+
 def test_get_available_tools(mock_agent):
     with patch.dict(agents_dict, {"test": mock_agent}):
         result = get_available_tools("test")
         assert result == mock_agent.tool_dict
+
+
+def test_get_available_tools_agent_not_found():
+    with patch.dict(agents_dict, {}, clear=True):
+        result = get_available_tools("nonexistent")
+        assert result["status"] == "error"
+        assert "not found" in result["message"]

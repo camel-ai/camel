@@ -1,0 +1,27 @@
+<a id="camel.configs.function_gemma_config"></a>
+
+<a id="camel.configs.function_gemma_config.FunctionGemmaConfig"></a>
+
+## FunctionGemmaConfig
+
+```python
+class FunctionGemmaConfig(BaseConfig):
+```
+
+Defines the parameters for generating completions using FunctionGemma
+via Ollama's native API.
+
+FunctionGemma uses a custom chat template format for function calling
+that differs from OpenAI's format. This config is used with Ollama's
+/api/generate endpoint.
+
+Reference: https://github.com/ollama/ollama/blob/main/docs/api.md
+
+**Parameters:**
+
+- **temperature** (float, optional): Sampling temperature to use, between :obj:`0` and :obj:`2`. Higher values make the output more random, while lower values make it more focused and deterministic. (default: :obj:`None`)
+- **top_p** (float, optional): An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. (default: :obj:`0.95`)
+- **top_k** (int, optional): Limits the next token selection to the K most probable tokens. (default: :obj:`64`)
+- **num_predict** (int, optional): Maximum number of tokens to generate. (default: :obj:`None`)
+- **stop** (list, optional): Sequences where the model will stop generating further tokens. (default: :obj:`None`)
+- **seed** (int, optional): Random seed for reproducibility. (default: :obj:`None`)

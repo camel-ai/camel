@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List
 
 import pytest
@@ -88,9 +88,11 @@ def test_extract_text_and_code_prompts():
 def test_base_message_to_dict(base_message: BaseMessage) -> None:
     expected_dict = {
         "role_name": "test_user",
-        "role_type": "USER",
+        "role_type": "user",
         "key": "value",
         "content": "test content",
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
     assert base_message.to_dict() == expected_dict
 
@@ -132,9 +134,11 @@ def test_base_message():
     dictionary = message.to_dict()
     assert dictionary == {
         "role_name": role_name,
-        "role_type": role_type.name,
+        "role_type": role_type.value,
         **(meta_dict or {}),
         "content": content,
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
 
 

@@ -1,0 +1,28 @@
+<a id="camel.prompts.generate_text_embedding_data"></a>
+
+<a id="camel.prompts.generate_text_embedding_data.GenerateTextEmbeddingDataPromptTemplateDict"></a>
+
+## GenerateTextEmbeddingDataPromptTemplateDict
+
+```python
+class GenerateTextEmbeddingDataPromptTemplateDict(TextPromptDict):
+```
+
+A :obj:`TextPrompt` dictionary containing text embedding tasks
+generation, query, positive and hard negative samples generation,
+from the ["Improving Text Embeddings with Large Language Models"](https://arxiv.org/abs/2401.00368) paper.
+
+**Parameters:**
+
+- **GENERATE_TASKS** (TextPrompt): A prompt to generate a list
+- **of**: obj:`num_tasks` synthetic text_embedding tasks.
+- **ASSISTANT_PROMPT** (TextPrompt): A system prompt for the AI assistant to generate synthetic :obj:`user_query`, :obj:`positive document`,
+- **and**: obj:`hard_negative_document` for a specific :obj:`task` with specified parameters including :obj:`query_type`, :obj:`query_length`, :obj:`clarity`, :obj:`num_words`, :obj:`language` and :obj:`difficulty`.
+
+<a id="camel.prompts.generate_text_embedding_data.GenerateTextEmbeddingDataPromptTemplateDict.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, *args: Any, **kwargs: Any):
+```

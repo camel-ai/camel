@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Dict, Generator, List, Optional
 
@@ -49,9 +49,9 @@ class ArxivToolkit(BaseToolkit):
             query (str): The search query string used to search for papers on
                 arXiv.
             paper_ids (List[str], optional): A list of specific arXiv paper
-                IDs to search for. (default: :obj: `None`)
+                IDs to search for. (default: :obj:`None`)
             max_results (int, optional): The maximum number of search results
-                to retrieve. (default: :obj: `5`)
+                to retrieve. (default: :obj:`5`)
 
         Returns:
             Generator: A generator that yields results from the arXiv search
@@ -80,9 +80,9 @@ class ArxivToolkit(BaseToolkit):
         Args:
             query (str): The search query string.
             paper_ids (List[str], optional): A list of specific arXiv paper
-                IDs to search for. (default: :obj: `None`)
+                IDs to search for. (default: :obj:`None`)
             max_results (int, optional): The maximum number of search results
-                to return. (default: :obj: `5`)
+                to return. (default: :obj:`5`)
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries, each containing
@@ -138,9 +138,9 @@ class ArxivToolkit(BaseToolkit):
         Args:
             query (str): The search query string.
             paper_ids (List[str], optional): A list of specific arXiv paper
-                IDs to download. (default: :obj: `None`)
+                IDs to download. (default: :obj:`None`)
             max_results (int, optional): The maximum number of search results
-                to download. (default: :obj: `5`)
+                to download. (default: :obj:`5`)
             output_dir (str, optional): The directory to save the downloaded
                 PDFs. Defaults to the current directory.
 

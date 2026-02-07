@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -118,7 +118,10 @@ def test_send_slack_message(slack_toolkit):
         mock_login.return_value = mock_client
         mock_client.chat_postMessage.return_value = {}
         response = slack_toolkit.send_slack_message("test_message", "123")
-        assert response == "{}"
+        assert (
+            response
+            == "Message: test_message sent successfully, got response: {}"
+        )
 
 
 def test_delete_slack_message(slack_toolkit):
@@ -130,3 +133,31 @@ def test_delete_slack_message(slack_toolkit):
         mock_client.chat_delete.return_value = {}
         response = slack_toolkit.delete_slack_message("123", "123")
         assert response == "{}"
+
+
+def test_get_slack_user_list(slack_toolkit):
+    with patch(
+        "camel.toolkits.slack_toolkit.SlackToolkit._login_slack"
+    ) as mock_login:
+        mock_client = MagicMock()
+        mock_login.return_value = mock_client
+        mock_client.users_list.return_value = {
+            "members": [{"id": "123", "name": "test_user"}]
+        }
+        response = slack_toolkit.get_slack_user_list()
+        assert response == '[{"id": "123", "name": "test_user"}]'
+
+
+def test_get_slack_user_info(slack_toolkit):
+    with patch(
+        "camel.toolkits.slack_toolkit.SlackToolkit._login_slack"
+    ) as mock_login:
+        mock_client = MagicMock()
+        mock_login.return_value = mock_client
+        mock_client.users_info.return_value = {
+            "user": {"id": "123", "name": "test_user"}
+        }
+
+        response = slack_toolkit.get_slack_user_info("123")
+        expected_response = '{"user": {"id": "123", "name": "test_user"}}'
+        assert response == expected_response

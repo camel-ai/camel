@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List
 
@@ -18,7 +18,6 @@ import agentops
 from colorama import Fore
 
 from camel.agents.chat_agent import ToolCallingRecord
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
@@ -46,15 +45,10 @@ task_prompt = (
     "the University is located."
 )
 
-user_model_config = ChatGPTConfig(temperature=0.0)
-
 tools_list = [
     *MathToolkit().get_tools(),
     *SearchToolkit().get_tools(),
 ]
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
 
 role_play_session = RolePlaying(
     assistant_role_name="Searcher",
@@ -63,7 +57,6 @@ role_play_session = RolePlaying(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=assistant_model_config.as_dict(),
         ),
         tools=tools_list,
     ),
@@ -71,7 +64,6 @@ role_play_session = RolePlaying(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=user_model_config.as_dict(),
         ),
     ),
     task_prompt=task_prompt,

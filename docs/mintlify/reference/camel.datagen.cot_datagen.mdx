@@ -1,0 +1,257 @@
+<a id="camel.datagen.cot_datagen"></a>
+
+<a id="camel.datagen.cot_datagen.AgentResponse"></a>
+
+## AgentResponse
+
+```python
+class AgentResponse(BaseModel):
+```
+
+Model for structured agent responses.
+
+A Pydantic model class that represents structured responses from agents,
+including a similarity score that measures the quality of the response.
+
+**Parameters:**
+
+- **score** (float): A similarity score between 0 and 1 that compares the current answer to the correct answer. Must be within the range [0, 1].
+
+<a id="camel.datagen.cot_datagen.VerificationResponse"></a>
+
+## VerificationResponse
+
+```python
+class VerificationResponse(BaseModel):
+```
+
+Model for structured verification responses.
+
+A Pydantic model class that represents verification results from agents,
+indicating whether an answer is correct or not.
+
+**Parameters:**
+
+- **is_correct** (bool): Boolean indicating if the answer is correct.
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator"></a>
+
+## CoTDataGenerator
+
+```python
+class CoTDataGenerator:
+```
+
+Class for generating and managing data through chat agent interactions.
+
+This module implements a sophisticated Chain of Thought data generation
+system that combines several key algorithms to produce high-quality
+reasoning paths. Methods implemented:
+
+1. Monte Carlo Tree Search (MCTS)
+2. Binary Search Error Detection
+3. Dual-Agent Verification System
+4. Solution Tree Management
+
+**Parameters:**
+
+- **chat_agent** (Optional[ChatAgent]): Optional single agent for both tasks (legacy mode). (default::obj:`None`)
+- **generator_agent** (Optional[ChatAgent]): Optional specialized agent for answer generation. (default::obj:`None`)
+- **verifier_agent** (Optional[ChatAgent]): Optional specialized agent for answer verification. (default::obj:`None`)
+- **golden_answers** (Dict[str, str]): Dictionary containing pre-defined correct answers for validation and comparison. Required for answer verification.
+- **search_limit** (int): Maximum number of search iterations allowed. (default::obj:`100`)
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, chat_agent: Optional[ChatAgent] = None):
+```
+
+Initialize the CoTDataGenerator.
+
+This constructor supports both single-agent and dual-agent modes:
+1. Single-agent mode (legacy): Pass a single chat_agent that will be
+used for both generation and verification.
+2. Dual-agent mode: Pass separate generator_agent and verifier_agent
+for specialized tasks.
+
+**Parameters:**
+
+- **chat_agent** (Optional[ChatAgent]): Optional single agent for both tasks (legacy mode). (default::obj:`None`)
+- **generator_agent** (Optional[ChatAgent]): Optional specialized agent for answer generation. (default::obj:`None`)
+- **verifier_agent** (Optional[ChatAgent]): Optional specialized agent for answer verification. (default::obj:`None`)
+- **golden_answers** (Dict[str, str]): Dictionary containing pre-defined correct answers for validation and comparison. Required for answer verification.
+- **search_limit** (int): Maximum number of search iterations allowed. (default::obj:`100`)
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.get_answer"></a>
+
+### get_answer
+
+```python
+def get_answer(self, question: str, context: str = ''):
+```
+
+Get an answer from the chat agent for a given question.
+
+**Parameters:**
+
+- **question** (str): The question to ask.
+- **context** (str): Additional context for the question. (default::obj:`""`)
+
+**Returns:**
+
+  str: The generated answer.
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.verify_answer"></a>
+
+### verify_answer
+
+```python
+def verify_answer(self, question: str, answer: str):
+```
+
+Verify if a generated answer is semantically equivalent to
+the golden answer for a given question.
+
+**Parameters:**
+
+- **question** (str): The question being answered.
+- **answer** (str): The answer to verify.
+
+**Returns:**
+
+  bool: True if the answer matches the golden answer based on
+semantic equivalence (meaning the core content and meaning are
+the same, even if the exact wording differs).
+False in the following cases:
+- If the provided question doesn't exist in the golden answers
+- If the answer's meaning differs from the golden answer
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.evaluate_partial_solution"></a>
+
+### evaluate_partial_solution
+
+```python
+def evaluate_partial_solution(self, question: str, partial_solution: str = ''):
+```
+
+Evaluate the quality of a partial solution against the
+golden answer.
+
+This function generates a similarity score between the given partial
+solution and the correct answer (golden answer).
+
+**Parameters:**
+
+- **question** (str): The question being solved.
+- **partial_solution** (str): The partial solution generated so far. (default::obj:`""`)
+
+**Returns:**
+
+  float: A similarity score between 0 and 1, indicating how close the
+partial solution is to the golden answer.
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.binary_search_error"></a>
+
+### binary_search_error
+
+```python
+def binary_search_error(self, question: str, solution: str):
+```
+
+Use binary search to locate the first error in the solution.
+This method splits the solution into sentences using both English and
+Chinese sentence delimiters and performs binary search to find the
+first error.
+
+**Parameters:**
+
+- **question** (str): The question being solved.
+- **solution** (str): The complete solution to analyze.
+
+**Returns:**
+
+  int: The position of the first error found in the solution.
+Returns -1. If no errors are found (all sentences are correct).
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.solve"></a>
+
+### solve
+
+```python
+def solve(self, question: str):
+```
+
+Solve a question using a multi-step approach.
+
+The solution process follows these steps:
+1. Try to solve directly - if correct, return the solution.
+2. If not correct, perform a search by iteratively generating
+new solutions and evaluating their similarity scores to
+find a good solution. The search process involves:
+a. Generation: Generate new solution candidates using
+the generator agent.
+b. Evaluation: Score each solution candidate for similarity
+to the golden answer.
+c. Selection: Keep the best-scoring candidate found so far.
+d. Early stopping: If a sufficiently high-scoring solution
+is found (score > 0.9), stop early.
+3. If the solution isn't perfect, use binary search to locate
+errors.
+4. Generate a new solution based on the correct part of the
+initial solution.
+
+**Parameters:**
+
+- **question** (str): The question to solve.
+
+**Returns:**
+
+  str: The best solution found.
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.import_qa_from_json"></a>
+
+### import_qa_from_json
+
+```python
+def import_qa_from_json(self, data: Union[str, Dict[str, str]]):
+```
+
+Import question and answer data from either a JSON file or a
+dictionary.
+
+**Parameters:**
+
+- **data** (Union[str, Dict[str, str]]): Either a path to a JSON file containing QA pairs or a dictionary of question-answer pairs. If a string is provided, it's treated as a file path. The expected format is: `{"question1": "answer1", "question2": "answer2", ...}`
+
+**Returns:**
+
+  bool: True if import was successful, False otherwise.
+
+<a id="camel.datagen.cot_datagen.CoTDataGenerator.export_solutions"></a>
+
+### export_solutions
+
+```python
+def export_solutions(self, filepath: str = 'solutions.json'):
+```
+
+Export the solution process and results to a JSON file.
+Exports the solution tree, golden answers,
+and export timestamp to a JSON file.
+The exported data includes:
+- solutions: The solution tree
+with intermediate steps
+- golden_answers: The reference answers used for verification
+- export_time: ISO format timestamp of the export
+
+**Parameters:**
+
+- **filepath** (str, optional): Path where the JSON file will be saved. (default::obj:`'solutions.json'`)
+
+**Returns:**
+
+  None: The method writes to a file and logs the result but does not
+return any value.

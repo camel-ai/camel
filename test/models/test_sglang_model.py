@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -83,23 +82,6 @@ def test_sglang_model(model_type: ModelType, sglang_model_cleanup):
 
 
 @pytest.mark.model_backend
-def test_sglang_model_unexpected_argument(sglang_model_cleanup):
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into SGLang model backend."
-            )
-        ),
-    ):
-        _ = sglang_model_cleanup(model_type, model_config_dict)
-
-
-@pytest.mark.model_backend
 def test_sglang_function_call(sglang_model_cleanup):
     test_tool = {
         "type": "function",
@@ -116,10 +98,13 @@ def test_sglang_function_call(sglang_model_cleanup):
     )
 
     # Create a mock response object
+    from openai.types.chat.chat_completion_message_function_tool_call import (
+        ChatCompletionMessageFunctionToolCall,
+    )
+
     from camel.types import (
         ChatCompletion,
         ChatCompletionMessage,
-        ChatCompletionMessageToolCall,
         Choice,
         CompletionUsage,
     )
@@ -137,7 +122,7 @@ def test_sglang_function_call(sglang_model_cleanup):
                     role="assistant",
                     content=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id="0",
                             type="function",
                             function={"name": "test_tool", "arguments": "{}"},
