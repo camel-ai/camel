@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 import requests
 
 from camel.retrievers import BaseRetriever
+from camel.types.enums import JinaRerankerModelType
 
 DEFAULT_TOP_K_RESULTS = 1
 JINA_RERANK_API_URL = "https://api.jina.ai/v1/rerank"
@@ -31,8 +32,9 @@ class JinaRerankRetriever(BaseRetriever):
     across 100+ languages.
 
     Attributes:
-        model_name (str): The model name to use for re-ranking.
-        api_key (Optional[str]): The API key for authenticating with the
+        model_name (Union[JinaRerankerModelType, str]): The model name to use
+            for re-ranking.
+        api_key (str, optional): The API key for authenticating with the
             Jina AI service.
 
     References:
@@ -41,16 +43,20 @@ class JinaRerankRetriever(BaseRetriever):
 
     def __init__(
         self,
-        model_name: str = "jina-reranker-v2-base-multilingual",
-        api_key: Optional[str] = None,
+        model_name: Union[JinaRerankerModelType, str] = (
+            JinaRerankerModelType.JINA_RERANKER_V2_BASE_MULTILINGUAL
+        ),
+        api_key: str | None = None,
     ) -> None:
         r"""Initializes an instance of the JinaRerankRetriever. This
         constructor sets up the API key for interacting with the Jina AI
         Reranker API.
 
         Args:
-            model_name (str): The name of the model to be used for re-ranking.
-                Defaults to 'jina-reranker-v2-base-multilingual'.
+            model_name (Union[JinaRerankerModelType, str]): The name of the
+                model to be used for re-ranking. Can be a JinaRerankerModelType
+                enum value or a string. Defaults to
+                `JinaRerankerModelType.JINA_RERANKER_V2_BASE_MULTILINGUAL`.
             api_key (Optional[str]): The API key for authenticating requests
                 to the Jina AI API. If not provided, the method will attempt to
                 retrieve the key from the environment variable 'JINA_API_KEY'.
@@ -65,12 +71,16 @@ class JinaRerankRetriever(BaseRetriever):
                 "Must pass in Jina API key or specify via JINA_API_KEY"
                 " environment variable."
             )
-        self.model_name = model_name
+        # Handle both enum and string values for model_name
+        if isinstance(model_name, JinaRerankerModelType):
+            self.model_name = model_name.value
+        else:
+            self.model_name = model_name
 
     def query(
         self,
         query: str,
-        retrieved_result: List[Dict[str, Any]],
+        retrieved_result: list[dict[str, Any]],
         top_k: int = DEFAULT_TOP_K_RESULTS,
     ) -> List[Dict[str, Any]]:
         r"""Queries and compiles results using the Jina AI re-ranking model.
