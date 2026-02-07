@@ -21,6 +21,6 @@ __all__ = [
     "BaseGenerator",
     "DataPoint",
     "FewShotGenerator",
-    "StaticDataset",
     "SelfInstructGenerator",
+    "StaticDataset",
 ]

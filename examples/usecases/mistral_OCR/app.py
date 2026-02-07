@@ -12,17 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import base64
 import os
+import tempfile
+
 import streamlit as st
 from PIL import Image
-import tempfile
-import base64
 
-from camel.loaders import MistralReader
+from camel.agents import ChatAgent
 from camel.configs import MistralConfig
+from camel.loaders import MistralReader
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.agents import ChatAgent
 
 
 # Load camel and mistral logo images as base64

@@ -104,7 +104,6 @@ with runtime as r:
     print("correct:", result["correct"])
     print("total:", result["total"])
 
-# ruff: noqa: E501
 """
 Number of validation examples: 165
 Number of test examples: 300

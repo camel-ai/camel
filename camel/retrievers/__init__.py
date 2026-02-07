@@ -21,11 +21,11 @@ from .vector_retriever import VectorRetriever
 from .hybrid_retrival import HybridRetriever
 
 __all__ = [
-    'BaseRetriever',
-    'VectorRetriever',
     'AutoRetriever',
     'BM25Retriever',
+    'BaseRetriever',
     'JinaRerankRetriever',
     'CohereRerankRetriever',
     'HybridRetriever',
+    'VectorRetriever',
 ]

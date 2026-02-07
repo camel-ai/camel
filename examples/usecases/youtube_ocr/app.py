@@ -12,13 +12,19 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import ffmpeg, cv2, whisper, pytesseract, streamlit as st
-from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
+import os
+
+import cv2
+import ffmpeg
+import pytesseract
+import streamlit as st
+import whisper
+from dotenv import load_dotenv
+from PIL import Image
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from PIL import Image
-from dotenv import load_dotenv
-import os
+from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
 
 load_dotenv()
 pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "tesseract")

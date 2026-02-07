@@ -17,6 +17,12 @@ from camel.types import TaskType
 
 
 def main(key: str = 'generate_users', num_roles: int = 50, model=None):
+    import os
+
+    if not os.environ.get("OPENAI_API_KEY"):
+        print("Skipping single_agent execution: OPENAI_API_KEY not found")
+        return
+
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.AI_SOCIETY, key
     )

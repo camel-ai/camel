@@ -1,0 +1,14 @@
+{
+    "name": "camel-pptx-toolkit-scripts",
+    "version": "1.0.0",
+    "description": "Node.js scripts for CAMEL PptxNodeToolkit",
+    "main": "generate_pptx.js",
+    "type": "module",
+    "dependencies": {
+        "pptxgenjs": "^3.12.0"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "private": true
+}
