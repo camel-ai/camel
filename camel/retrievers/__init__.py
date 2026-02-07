@@ -15,6 +15,7 @@
 from .auto_retriever import AutoRetriever
 from .base import BaseRetriever
 from .bm25_retriever import BM25Retriever
+from .jina_rerank_retriever import JinaRerankRetriever
 from .cohere_rerank_retriever import CohereRerankRetriever
 from .vector_retriever import VectorRetriever
 from .hybrid_retrival import HybridRetriever
@@ -23,6 +24,7 @@ __all__ = [
     'AutoRetriever',
     'BM25Retriever',
     'BaseRetriever',
+    'JinaRerankRetriever',
     'CohereRerankRetriever',
     'HybridRetriever',
     'VectorRetriever',
