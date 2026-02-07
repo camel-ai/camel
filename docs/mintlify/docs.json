@@ -426,6 +426,7 @@
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
+              "reference/camel.retrievers.jina_rerank_retriever",
               "reference/camel.retrievers.vector_retriever"
             ]
           },
