@@ -1,0 +1,67 @@
+<a id="camel.verifiers.math_verifier"></a>
+
+<a id="camel.verifiers.math_verifier.MathVerifier"></a>
+
+## MathVerifier
+
+```python
+class MathVerifier(BaseVerifier):
+```
+
+Verifier for mathematical expressions using Math-Verify.
+
+Features:
+- Supports LaTeX and plain mathematical expressions
+- Handles complex numbers, matrices, and sets
+- Configurable precision for floating-point comparisons
+- Optional LaTeX wrapping to ensure proper parsing and rendering
+- Comprehensive error handling and logging
+
+<a id="camel.verifiers.math_verifier.MathVerifier.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: Optional[BaseExtractor] = None,
+    timeout: Optional[float] = 30.0,
+    float_rounding: int = 6,
+    numeric_precision: int = 15,
+    enable_wrapping: Optional[bool] = False,
+    **kwargs
+):
+```
+
+Initializes the MathVerifier.
+
+**Parameters:**
+
+- **extractor** (Optional[BaseExtractor], optional): The extractor to use for extracting code from the solution. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The execution timeout in seconds. (default: :obj:`30.0`)
+- **float_rounding** (int, optional): The number of decimal places to round floating-point numbers. (default: :obj:`6`)
+- **numeric_precision** (int, optional): The numeric precision for floating-point comparisons. (default: :obj:`15`)
+- **enable_wrapping** (Optional[bool], optional): Whether to wrap LaTeX expressions in math mode delimiters. (default: :obj:`False`)
+
+<a id="camel.verifiers.math_verifier.MathVerifier._latex_wrapping"></a>
+
+### _latex_wrapping
+
+```python
+def _latex_wrapping(s: str):
+```
+
+Wrap a LaTeX expression in math mode delimiters.
+
+This function checks whether the input string is already in a LaTeX
+math environment (e.g., $, \[, \begin\{\}, etc.). If not, it wraps the
+expression in $$...$$ to ensure proper parsing and rendering as a
+mathematical expression.
+
+**Parameters:**
+
+- **s** (str): The input LaTeX string.
+
+**Returns:**
+
+  str: The LaTeX string wrapped in math mode if necessary.

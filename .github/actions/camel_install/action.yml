@@ -1,5 +1,5 @@
 name: 'camel_install'
-description: 'Setup python environment and install dependencies for CAMEL by poetry.'
+description: 'Setup python environment and install dependencies for CAMEL using uv.'
 inputs:
   python-version:
     description: 'Python version.'
@@ -12,25 +12,41 @@ runs:
       uses: actions/setup-python@v3
       with:
         python-version: '${{ inputs.python-version }}'
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
+    - name: Install uv
       run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
+        pip install uv
       shell: bash
     - uses: actions/cache/restore@v3
       id: cache-restore
-      name: Restore caches for the virtual environment based on poetry.lock
+      name: Restore caches for the virtual environment based on uv.lock
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('poetry.lock') }}
+        key: venv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+    - name: Validate cached virtual environment
+      id: validate-venv
+      if: steps.cache-restore.outputs.cache-hit == 'true'
+      run: |
+        if [ -f .venv/bin/python3 ] && .venv/bin/python3 --version; then
+          echo "cache-valid=true" >> $GITHUB_OUTPUT
+        else
+          echo "cache-valid=false" >> $GITHUB_OUTPUT
+          rm -rf .venv
+        fi
+      shell: bash
+    - name: Setup virtual environment
+      if: steps.cache-restore.outputs.cache-hit != 'true' || steps.validate-venv.outputs.cache-valid == 'false'
+      run: |
+        uv venv .venv --python=${{ inputs.python-version }}
+      shell: bash
     - name: Install the project dependencies
-      run: poetry install --with dev,docs -E all
+      if: steps.cache-restore.outputs.cache-hit != 'true' || steps.validate-venv.outputs.cache-valid == 'false'
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
       shell: bash
     - uses: actions/cache/save@v3
-      name: Save caches based on poetry.lock 
-      if: ${{ !steps.cache-restore.outputs.cache-hit }}
+      name: Save caches based on uv.lock
+      if: steps.cache-restore.outputs.cache-hit != 'true' || steps.validate-venv.outputs.cache-valid == 'false'
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('poetry.lock') }}
+        key: venv-${{ hashFiles('uv.lock', 'pyproject.toml') }}

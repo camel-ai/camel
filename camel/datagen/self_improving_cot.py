@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 import json
@@ -116,7 +116,7 @@ class SelfImprovingCoTPipeline:
                 samples to be drawn using the rejection sampling
                 method, where samples are accepted or rejected based on
                 a predefined condition to achieve a desired distribution.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             evaluate_agent (Optional[ChatAgent]): The chat agent used for
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
@@ -161,13 +161,13 @@ class SelfImprovingCoTPipeline:
         # Initialize output file with empty results if path is specified
         if self.output_path:
             with open(self.output_path, 'w') as f:
-                json.dump({'traces': []}, f, indent=2)
+                json.dump({'traces': []}, f, indent=2, ensure_ascii=False)
         self.lock = threading.Lock()
 
     def safe_write_json(self, file_path, data):
         temp_path = file_path + ".tmp"
         with open(temp_path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, ensure_ascii=False)
         os.replace(temp_path, file_path)
 
     def clean_json(self, data):
@@ -518,7 +518,7 @@ class SelfImprovingCoTPipeline:
             self.reason_agent.model_backend.model_config_dict['n'] = (
                 self.rejection_sampling_n
             )
-            # Generate multiple condidate traces in one call using parameter n
+            # Generate multiple candidate traces in one call using parameter n
             responses = self.reason_agent.step(prompt)
             # Extract cancidate traces
             candidate_traces = [choice.content for choice in responses.msgs]
@@ -861,7 +861,7 @@ Problem: {problem}
 
 Please show your complete reasoning process."""
 
-    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and 
+    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and
 provide scores and feedback in valid JSON format.
 
 Problem: {problem}
@@ -884,7 +884,7 @@ Respond ONLY with a JSON object in this exact format:
     "feedback": "<specific feedback for improvement>"
 }}"""
 
-    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an 
+    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an
 improved reasoning trace:
 Problem: {problem}
 

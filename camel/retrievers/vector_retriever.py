@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from io import IOBase
@@ -27,6 +27,7 @@ from camel.storages import (
     VectorRecord,
 )
 from camel.utils import Constants
+from camel.utils.chunker import BaseChunker, UnstructuredIOChunker
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -78,6 +79,7 @@ class VectorRetriever(BaseRetriever):
         should_chunk: bool = True,
         extra_info: Optional[dict] = None,
         metadata_filename: Optional[str] = None,
+        chunker: Optional[BaseChunker] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from local file path, remote URL, string
@@ -101,6 +103,12 @@ class VectorRetriever(BaseRetriever):
                 used for storing metadata. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
+        if chunker is None:
+            chunker = UnstructuredIOChunker(
+                chunk_type=chunk_type,
+                max_characters=max_characters,
+                metadata_filename=metadata_filename,
+            )
         from unstructured.documents.elements import Element
 
         if isinstance(content, Element):
@@ -140,13 +148,7 @@ class VectorRetriever(BaseRetriever):
         else:
             # Chunk the content if required
             chunks = (
-                self.uio.chunk_elements(
-                    chunk_type=chunk_type,
-                    elements=elements,
-                    max_characters=max_characters,
-                )
-                if should_chunk
-                else elements
+                chunker.chunk(content=elements) if should_chunk else (elements)
             )
 
             # Process chunks in batches and store embeddings
@@ -157,6 +159,7 @@ class VectorRetriever(BaseRetriever):
                 )
 
                 records = []
+                offset = 0
                 # Prepare the payload for each vector record, includes the
                 # content path, chunk metadata, and chunk text
                 for vector, chunk in zip(batch_vectors, batch_chunks):
@@ -178,6 +181,7 @@ class VectorRetriever(BaseRetriever):
                     chunk_metadata["metadata"].pop("orig_elements", "")
                     chunk_metadata["extra_info"] = extra_info or {}
                     chunk_text = {"text": str(chunk)}
+                    chunk_metadata["metadata"]["piece_num"] = i + offset + 1
                     combined_dict = {
                         **content_path_info,
                         **chunk_metadata,
@@ -187,6 +191,7 @@ class VectorRetriever(BaseRetriever):
                     records.append(
                         VectorRecord(vector=vector, payload=combined_dict)
                     )
+                    offset += 1
 
                 self.storage.add(records=records)
 
@@ -219,7 +224,7 @@ class VectorRetriever(BaseRetriever):
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
 
-        # Load the storage incase it's hosted remote
+        # Load the storage in case it's hosted remote
         self.storage.load()
 
         query_vector = self.embedding_model.embed(obj=query)

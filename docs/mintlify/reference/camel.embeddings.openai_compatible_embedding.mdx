@@ -1,0 +1,64 @@
+<a id="camel.embeddings.openai_compatible_embedding"></a>
+
+<a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding"></a>
+
+## OpenAICompatibleEmbedding
+
+```python
+class OpenAICompatibleEmbedding:
+```
+
+Provides text embedding functionalities supporting OpenAI
+compatibility.
+
+**Parameters:**
+
+- **model_type** (str): The model type to be used for text embeddings.
+- **api_key** (str): The API key for authenticating with the model service.
+- **url** (str): The url to the model service.
+- **output_dim** (Optional[int]): The dimensionality of the embedding vectors. If None, it will be determined during the first embedding call.
+
+<a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: str,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    output_dim: Optional[int] = None
+):
+```
+
+<a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.embed_list"></a>
+
+### embed_list
+
+```python
+def embed_list(self, objs: list[str], **kwargs: Any):
+```
+
+Generates embeddings for the given texts.
+
+**Parameters:**
+
+- **objs** (list[str]): The texts for which to generate the embeddings. **kwargs (Any): Extra kwargs passed to the embedding API.
+
+**Returns:**
+
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
+
+<a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.get_output_dim"></a>
+
+### get_output_dim
+
+```python
+def get_output_dim(self):
+```
+
+**Returns:**
+
+  int: The dimensionality of the embedding for the current model.

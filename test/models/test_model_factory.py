@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 
 from camel.configs import (
@@ -78,15 +82,15 @@ parameterize_token_counter = pytest.mark.parametrize(
         # Anthropic model uses AnthropicTokenCounter as default
         (
             ModelPlatformType.ANTHROPIC,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_HAIKU_4_5,
             AnthropicConfig().as_dict(),
             None,
             AnthropicTokenCounter,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_HAIKU_4_5,
         ),
         (
             ModelPlatformType.ANTHROPIC,
-            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_HAIKU_4_5,
             AnthropicConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_3_5_TURBO),
             OpenAITokenCounter,
@@ -95,7 +99,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         # Test GEMINI model
         (
             ModelPlatformType.GEMINI,
-            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_2_0_FLASH,
             GeminiConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
@@ -158,3 +162,109 @@ def test_model_factory(model_platform, model_type):
     assert 'role' in message
     assert isinstance(message['role'], str)
     assert message['role'] == 'assistant'
+
+
+json_config_files = [
+    "test_config_file/json_configs/claude2_config.json",
+    "test_config_file/json_configs/claude2_openai_token_counter.json",
+    "test_config_file/json_configs/gemini_1.5_flash_config.json",
+    "test_config_file/json_configs/ollama_config.json",
+    "test_config_file/json_configs/ollama_openai_token_counter.json",
+    "test_config_file/json_configs/openai3.5_turbo_config.json",
+    "test_config_file/json_configs/openai4o_config.json",
+]
+
+
+@pytest.mark.parametrize("config_file", json_config_files)
+@patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
+@patch("camel.models.base_model.BaseModelBackend.run")
+def test_model_factory_json(mock_run, config_file):
+    r"""Test ModelFactory with JSON files without actual API calls."""
+
+    # Get the directory of the current test file
+    test_dir = Path(__file__).parent
+    json_path = test_dir / config_file
+    if not json_path.exists():
+        pytest.skip(f"Skipping file {json_path}")
+
+    mock_run.return_value = {
+        "id": "test_response",
+        "usage": {"total_tokens": 10},
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": "Hello, test!"},
+            }
+        ],
+    }
+
+    model_inst = ModelFactory.create_from_json(str(json_path))
+
+    messages = [
+        {"role": "system", "content": "Initialize system"},
+        {"role": "user", "content": "Hello"},
+    ]
+
+    response = model_inst.run(messages)
+
+    assert isinstance(response, dict)
+    assert response["id"] == "test_response"
+    assert "usage" in response
+    assert "choices" in response
+    assert response["choices"][0]["message"]["role"] == "assistant"
+    assert response["choices"][0]["message"]["content"] == "Hello, test!"
+
+    print(f"JSON file {config_file} loaded successfully.")
+
+
+yaml_config_files = [
+    "test_config_file/yaml_configs/claude2_config.yaml",
+    "test_config_file/yaml_configs/claude2_openai_config.yaml",
+    "test_config_file/yaml_configs/gemini_1.5_flash_config.yaml",
+    "test_config_file/yaml_configs/ollama_config.yaml",
+    "test_config_file/yaml_configs/ollama_openai_config.yaml",
+    "test_config_file/yaml_configs/openai3.5_turbo_config.yaml",
+    "test_config_file/yaml_configs/openai4o_config.yaml",
+]
+
+
+@pytest.mark.parametrize("config_file", yaml_config_files)
+@patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
+@patch("camel.models.base_model.BaseModelBackend.run")
+def test_model_factory_yaml(mock_run, config_file):
+    r"""Test ModelFactory with YAML files without real API calls."""
+
+    # Get the directory of the current test file
+    test_dir = Path(__file__).parent
+    yaml_path = test_dir / config_file
+    if not yaml_path.exists():
+        pytest.skip(f"Skipping file {yaml_path}")
+
+    mock_run.return_value = {
+        "id": "test_response",
+        "usage": {"total_tokens": 10},
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": "Hello, test!"},
+            }
+        ],
+    }
+
+    model_inst = ModelFactory.create_from_yaml(str(yaml_path))
+
+    messages = [
+        {"role": "system", "content": "Initialize system"},
+        {"role": "user", "content": "Hello"},
+    ]
+
+    response = model_inst.run(messages)
+
+    assert isinstance(response, dict)
+    assert response["id"] == "test_response"
+    assert "usage" in response
+    assert "choices" in response
+    assert response["choices"][0]["message"]["role"] == "assistant"
+    assert response["choices"][0]["message"]["content"] == "Hello, test!"
+
+    print(f" YAML file {config_file} loaded successfully.")

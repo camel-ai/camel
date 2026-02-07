@@ -1,0 +1,52 @@
+<a id="camel.runtimes.utils.function_risk_toolkit"></a>
+
+<a id="camel.runtimes.utils.function_risk_toolkit.FunctionRiskToolkit"></a>
+
+## FunctionRiskToolkit
+
+```python
+class FunctionRiskToolkit(BaseToolkit):
+```
+
+A toolkit for assessing the risk associated with functions.
+
+**Parameters:**
+
+- **verbose** (Optional[bool]): Whether to print verbose output. (default: :obj:`False`)
+
+<a id="camel.runtimes.utils.function_risk_toolkit.FunctionRiskToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, verbose: Optional[bool] = False):
+```
+
+<a id="camel.runtimes.utils.function_risk_toolkit.FunctionRiskToolkit.function_risk"></a>
+
+### function_risk
+
+```python
+def function_risk(self, score: int, reason: str):
+```
+
+Provides an assessment of the potential risk associated
+with a function.
+
+**Parameters:**
+
+- **score** (int): The risk level associated with the function, ranging from 1 to 3: - 1: No harm (e.g., simple math operations, content searches) - 2: Minimal harm (e.g., accessing user files) - 3: Risk present (e.g., deleting files, modifying the file system)
+- **reason** (str): A brief explanation of the reasoning behind the assigned score, describing the specific aspects that contribute to the assessed risk.
+
+<a id="camel.runtimes.utils.function_risk_toolkit.FunctionRiskToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

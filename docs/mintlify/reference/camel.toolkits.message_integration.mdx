@@ -1,0 +1,198 @@
+<a id="camel.toolkits.message_integration"></a>
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration"></a>
+
+## ToolkitMessageIntegration
+
+```python
+class ToolkitMessageIntegration:
+```
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    message_handler: Optional[Callable] = None,
+    extract_params_callback: Optional[Callable[[dict], tuple]] = None
+):
+```
+
+Initialize the toolkit message integration.
+
+**Parameters:**
+
+- **message_handler** (Optional[Callable]): Custom message handler function. If not provided, uses the built-in send_message_to_user. (default: :obj:`None`)
+- **extract_params_callback** (Optional[Callable]): Function to extract parameters from kwargs for the custom message handler. Should return a tuple of arguments to pass to the message handler. If not provided, uses default extraction for built-in handler. (default: :obj:`None`)
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._default_extract_params"></a>
+
+### _default_extract_params
+
+```python
+def _default_extract_params(self, kwargs: dict):
+```
+
+Default parameter extraction for built-in message handler.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.send_message_to_user"></a>
+
+### send_message_to_user
+
+```python
+def send_message_to_user(
+    self,
+    message_title: str,
+    message_description: str,
+    message_attachment: str = ''
+):
+```
+
+Built-in message handler that sends tidy messages to the user.
+
+This one-way tool keeps the user informed about agent progress,
+decisions, or actions. It does not require a response.
+
+**Parameters:**
+
+- **message_title** (str): The title of the message.
+- **message_description** (str): The short description message.
+- **message_attachment** (str): The additional attachment of the message, which can be a file path or a URL.
+
+**Returns:**
+
+  str: Confirmation that the message was successfully sent.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.get_message_tool"></a>
+
+### get_message_tool
+
+```python
+def get_message_tool(self):
+```
+
+**Returns:**
+
+  FunctionTool: The message sending tool.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.register_toolkits"></a>
+
+### register_toolkits
+
+```python
+def register_toolkits(self, toolkit: BaseToolkit):
+```
+
+Add messaging capabilities to all toolkit methods.
+
+This method modifies a toolkit so that all its tools can send
+status messages to users while executing their primary function.
+The tools will accept optional messaging parameters:
+- message_title: Title of the status message
+- message_description: Description of what the tool is doing
+- message_attachment: Optional file path or URL
+
+**Parameters:**
+
+- **toolkit**: The toolkit to add messaging capabilities to
+
+**Returns:**
+
+  The same toolkit instance with messaging capabilities added to
+all methods.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._create_bound_method_wrapper"></a>
+
+### _create_bound_method_wrapper
+
+```python
+def _create_bound_method_wrapper(self, enhanced_func: Callable, toolkit_instance):
+```
+
+Create a wrapper that mimics a bound method for _clone_tools.
+
+This wrapper preserves the toolkit instance reference while maintaining
+the enhanced messaging functionality.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.register_functions"></a>
+
+### register_functions
+
+```python
+def register_functions(
+    self,
+    functions: Union[List[FunctionTool], List[Callable]],
+    function_names: Optional[List[str]] = None
+):
+```
+
+Add messaging capabilities to a list of functions or FunctionTools.
+
+This method enhances functions so they can send status messages to
+users while executing. The enhanced functions will accept optional
+messaging parameters that trigger status updates.
+
+**Parameters:**
+
+- **functions** (Union[List[FunctionTool], List[Callable]]): List of FunctionTool objects or callable functions to enhance.
+- **function_names** (Optional[List[str]]): List of specific function names to modify. If None, messaging is added to all functions.
+
+**Returns:**
+
+  List[FunctionTool]: List of enhanced FunctionTool objects
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._add_messaging_to_tool"></a>
+
+### _add_messaging_to_tool
+
+```python
+def _add_messaging_to_tool(self, func: Callable):
+```
+
+Add messaging parameters to a tool function.
+
+This internal method modifies the function signature and docstring
+to include optional messaging parameters that trigger status updates.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._find_docstring_insert_point"></a>
+
+### _find_docstring_insert_point
+
+```python
+def _find_docstring_insert_point(self, lines: List[str]):
+```
+
+Find where to insert parameters in a docstring.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._get_docstring_indent"></a>
+
+### _get_docstring_indent
+
+```python
+def _get_docstring_indent(self, lines: List[str], insert_idx: int):
+```
+
+Get the proper indentation for docstring parameters.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._get_base_indent"></a>
+
+### _get_base_indent
+
+```python
+def _get_base_indent(self, lines: List[str]):
+```
+
+Get the base indentation level of the docstring.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._extract_param_docs_from_handler"></a>
+
+### _extract_param_docs_from_handler
+
+```python
+def _extract_param_docs_from_handler(self):
+```
+
+Extract parameter documentation from the custom handler's
+docstring.

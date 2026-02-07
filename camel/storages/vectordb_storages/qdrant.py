@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from uuid import UUID
 
 if TYPE_CHECKING:
     from qdrant_client import QdrantClient
@@ -40,7 +41,7 @@ class QdrantStorage(BaseVectorStorage):
     `Qdrant <https://qdrant.tech/>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         collection_name (Optional[str], optional): Name for the collection in
             the Qdrant. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
@@ -218,7 +219,7 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
+        r"""Returns whether the collection exists in the database"""
         for c in self._client.get_collections().collections:
             if collection_name == c.name:
                 return True
@@ -251,7 +252,6 @@ class QdrantStorage(BaseVectorStorage):
             else None,
             "vector_count": collection_info.points_count,
             "status": collection_info.status,
-            "vectors_count": collection_info.vectors_count,
             "config": collection_info.config,
         }
 
@@ -304,12 +304,12 @@ class QdrantStorage(BaseVectorStorage):
         """
         from qdrant_client.http.models import PointIdsList, UpdateStatus
 
-        points = cast(List[Union[str, int]], ids)
+        points = cast(List[Union[int, str, UUID]], ids)
 
         op_info = self._client.set_payload(
             collection_name=self.collection_name,
             payload=payload,
-            points=PointIdsList(points=points),
+            points=PointIdsList(points=points),  # type: ignore[arg-type]
             **kwargs,
         )
         if op_info.status != UpdateStatus.COMPLETED:
@@ -376,7 +376,7 @@ class QdrantStorage(BaseVectorStorage):
             op_info = self._client.delete(
                 collection_name=self.collection_name,
                 points_selector=PointIdsList(
-                    points=cast(List[Union[int, str]], ids)
+                    points=cast(List[Union[int, str, UUID]], ids)  # type: ignore[arg-type]
                 ),
                 **kwargs,
             )
@@ -450,9 +450,9 @@ class QdrantStorage(BaseVectorStorage):
             search_filter = Filter(must=cast(List[Condition], must_conditions))
 
         # Execute the search with optional filter
-        search_result = self._client.search(
+        search_result = self._client.query_points(
             collection_name=self.collection_name,
-            query_vector=query.query_vector,
+            query=query.query_vector,
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
@@ -467,7 +467,7 @@ class QdrantStorage(BaseVectorStorage):
                 payload=point.payload,
                 vector=point.vector,  # type: ignore[arg-type]
             )
-            for point in search_result
+            for point in search_result.points
         ]
 
         return query_results

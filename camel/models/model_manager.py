@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import logging
 from itertools import cycle
 from random import choice
@@ -26,6 +27,10 @@ from typing import (
 )
 
 from openai import AsyncStream, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -69,6 +74,7 @@ class ModelManager:
             self.models = [models]
         self.models_cycle = cycle(self.models)
         self.current_model = self.models[0]
+        self.lock = asyncio.Lock()
 
         # Set the scheduling strategy; default is round-robin
         try:
@@ -116,6 +122,15 @@ class ModelManager:
             int: index of current model in given list of models.
         """
         return self.models.index(self.current_model)
+
+    @property
+    def num_models(self) -> int:
+        r"""Return the number of models in the manager.
+
+        Returns:
+            int: The number of models available in the model manager.
+        """
+        return len(self.models)
 
     @property
     def token_limit(self):
@@ -185,7 +200,11 @@ class ModelManager:
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
             Sends the entire list of messages to the selected model,
@@ -196,9 +215,12 @@ class ModelManager:
                 history in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, Stream[ChatCompletionChunk],
+                  ChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `Stream[ChatCompletionChunk]` in the stream mode, or
+                `ChatCompletionStreamManager[BaseModel]` for
+                structured-output stream.
         """
         self.current_model = self.scheduling_strategy()
 
@@ -222,7 +244,11 @@ class ModelManager:
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
             Sends the entire list of messages to the selected model,
@@ -233,11 +259,15 @@ class ModelManager:
                 history in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                  AsyncChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode, or
+                `AsyncChatCompletionStreamManager[BaseModel]` for
+                structured-output stream.
         """
-        self.current_model = self.scheduling_strategy()
+        async with self.lock:
+            self.current_model = self.scheduling_strategy()
 
         # Pass all messages to the selected model and get the response
         try:
@@ -251,7 +281,8 @@ class ModelManager:
                 logger.warning(
                     "The scheduling strategy has been changed to 'round_robin'"
                 )
-                # Skip already used one
-                self.current_model = self.scheduling_strategy()
+                async with self.lock:
+                    # Skip already used one
+                    self.current_model = self.scheduling_strategy()
             raise exc
         return response

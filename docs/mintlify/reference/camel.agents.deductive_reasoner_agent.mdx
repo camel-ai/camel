@@ -1,0 +1,68 @@
+<a id="camel.agents.deductive_reasoner_agent"></a>
+
+<a id="camel.agents.deductive_reasoner_agent.DeductiveReasonerAgent"></a>
+
+## DeductiveReasonerAgent
+
+```python
+class DeductiveReasonerAgent(ChatAgent):
+```
+
+An agent responsible for deductive reasoning. Model of deductive
+reasoning:
+- L: A ⊕ C -> q * B
+- A represents the known starting state.
+- B represents the known target state.
+- C represents the conditions required to transition from A to B.
+- Q represents the quality or effectiveness of the transition from
+A to B.
+- L represents the path or process from A to B.
+
+**Parameters:**
+
+- **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+
+<a id="camel.agents.deductive_reasoner_agent.DeductiveReasonerAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model: Optional[BaseModelBackend] = None):
+```
+
+<a id="camel.agents.deductive_reasoner_agent.DeductiveReasonerAgent.deduce_conditions_and_quality"></a>
+
+### deduce_conditions_and_quality
+
+```python
+def deduce_conditions_and_quality(
+    self,
+    starting_state: str,
+    target_state: str,
+    role_descriptions_dict: Optional[Dict[str, str]] = None
+):
+```
+
+Derives the conditions and quality from the starting state and the
+target state based on the model of the deductive reasoning and the
+knowledge base. It can optionally consider the roles involved in the
+scenario, which allows tailoring the output more closely to the AI
+agent's environment.
+
+**Parameters:**
+
+- **starting_state** (str): The initial or starting state from which conditions are deduced.
+- **target_state** (str): The target state of the task.
+- **role_descriptions_dict** (Optional[Dict[str, str]], optional): The descriptions of the roles. (default: :obj:`None`)
+- **role_descriptions_dict** (Optional[Dict[str, str]], optional): A dictionary describing the roles involved in the scenario. This is optional and can be used to provide a context for the CAMEL's role-playing, enabling the generation of more relevant and tailored conditions and quality assessments. This could be generated using a `RoleAssignmentAgent()` or defined manually by the user.
+
+**Returns:**
+
+  Dict[str, Union[List[str], Dict[str, str]]]: A dictionary with the
+extracted data from the message. The dictionary contains three
+keys:
+- 'conditions': A list where each key is a condition ID and
+each value is the corresponding condition text.
+- 'labels': A list of label strings extracted from the message.
+- 'quality': A string of quality assessment strings extracted
+from the message.

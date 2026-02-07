@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from __future__ import annotations
 
@@ -90,6 +90,30 @@ class BaseTokenCounter(ABC):
         """
         pass
 
+    @abstractmethod
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        pass
+
+    @abstractmethod
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        pass
+
 
 class OpenAITokenCounter(BaseTokenCounter):
     def __init__(self, model: UnifiedModelType):
@@ -109,10 +133,18 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_message = 4
             # If there's a name, the role is omitted
             self.tokens_per_name = -1
-        elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
+        elif (
+            ("gpt-3.5-turbo" in self.model)
+            or ("gpt-4" in self.model)
+            or ("gpt-5" in self.model)
+        ):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
-        elif ("o1" in self.model) or ("o3" in self.model):
+        elif (
+            ("o1" in self.model)
+            or ("o3" in self.model)
+            or ("o4" in self.model)
+        ):
             self.tokens_per_message = 2
             self.tokens_per_name = 1
         else:
@@ -120,8 +152,8 @@ class OpenAITokenCounter(BaseTokenCounter):
             raise NotImplementedError(
                 "Token counting for OpenAI Models is not presently "
                 f"implemented for model {model}. "
-                "See https://github.com/openai/openai-python/blob/main/chatml.md "
-                "for information on how messages are converted to tokens. "
+                "See https://github.com/openai/openai-python/blob/main/chatml"
+                ".md for information on how messages are converted to tokens. "
                 "See https://platform.openai.com/docs/models/gpt-4"
                 "or https://platform.openai.com/docs/models/gpt-3-5"
                 "for information about openai chat models."
@@ -163,24 +195,32 @@ class OpenAITokenCounter(BaseTokenCounter):
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
 
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
+                            # Only count tokens for base64 encoded images
+                            # For URLs, we cannot reliably determine token count without fetching the image
+                            if image_str.startswith("data:image"):
+                                # Base64 encoded image
+                                image_prefix_format = "data:image/{};base64,"
+                                image_prefix: Optional[str] = None
+                                for image_type in list(OpenAIImageType):
+                                    # Find the correct image format
+                                    image_prefix = image_prefix_format.format(
+                                        image_type.value
+                                    )
+                                    if image_prefix in image_str:
+                                        break
+                                assert isinstance(image_prefix, str)
+                                encoded_image = image_str.split(image_prefix)[
+                                    1
+                                ]
+                                image_bytes = BytesIO(
+                                    base64.b64decode(encoded_image)
                                 )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
-                            image_bytes = BytesIO(
-                                base64.b64decode(encoded_image)
-                            )
-                            image = Image.open(image_bytes)
-                            num_tokens += self._count_tokens_from_image(
-                                image, OpenAIVisionDetailType(detail)
-                            )
+                                image = Image.open(image_bytes)
+                                num_tokens += self._count_tokens_from_image(
+                                    image, OpenAIVisionDetailType(detail)
+                                )
+                            # Note: For regular URLs, token count cannot be determined without fetching the image
+                            # The actual token usage will be reported by the API response
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
@@ -227,18 +267,51 @@ class OpenAITokenCounter(BaseTokenCounter):
         total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
         return total
 
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        return self.encoding.encode(text, disallowed_special=())
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        return self.encoding.decode(token_ids)
+
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self, model: str):
+    def __init__(
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ):
         r"""Constructor for the token counter for Anthropic models.
 
         Args:
             model (str): The name of the Anthropic model being used.
+            api_key (Optional[str], optional): The API key for authenticating
+                with the Anthropic service. If not provided, it will use the
+                ANTHROPIC_API_KEY environment variable. (default: :obj:`None`)
+            base_url (Optional[str], optional): The URL of the Anthropic
+                service. If not provided, it will use the default Anthropic
+                URL. (default: :obj:`None`)
         """
         from anthropic import Anthropic
 
-        self.client = Anthropic()
+        self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
 
     @dependencies_required('anthropic')
@@ -265,6 +338,33 @@ class AnthropicTokenCounter(BaseTokenCounter):
             ],
             model=self.model,
         ).input_tokens
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        raise NotImplementedError(
+            "The Anthropic API does not provide direct access to token IDs. "
+            "Use count_tokens_from_messages() for token counting instead."
+        )
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        raise NotImplementedError(
+            "The Anthropic API does not provide functionality to decode token IDs."
+        )
 
 
 class LiteLLMTokenCounter(BaseTokenCounter):
@@ -318,6 +418,32 @@ class LiteLLMTokenCounter(BaseTokenCounter):
             float: The cost of the completion call in USD.
         """
         return self.completion_cost(completion_response=response)
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        from litellm import encoding
+
+        return encoding.encode(text, disallowed_special=())
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        from litellm import encoding
+
+        return encoding.decode(token_ids)
 
 
 class MistralTokenCounter(BaseTokenCounter):
@@ -390,3 +516,37 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        # Use the Mistral tokenizer to encode the text
+        return self.tokenizer.encode_chat_completion(
+            ChatCompletionRequest(
+                model=self.model_type,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": text,
+                    }
+                ],
+            )
+        )
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        # Use the Mistral tokenizer to decode the tokens
+        return self.tokenizer.decode(token_ids)

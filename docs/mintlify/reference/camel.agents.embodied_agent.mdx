@@ -1,0 +1,90 @@
+<a id="camel.agents.embodied_agent"></a>
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent"></a>
+
+## EmbodiedAgent
+
+```python
+class EmbodiedAgent(ChatAgent):
+```
+
+Class for managing conversations of CAMEL Embodied Agents.
+
+**Parameters:**
+
+- **system_message** (BaseMessage): The system message for the chat agent.
+- **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
+- **tool_agents** (List[BaseToolAgent], optional): The tools agents to use in the embodied agent. (default: :obj:`None`)
+- **code_interpreter** (BaseInterpreter, optional): The code interpreter to execute codes. If `code_interpreter` and `tool_agent` are both `None`, default to `SubProcessInterpreter`. If `code_interpreter` is `None` and `tool_agents` is not `None`, default to `InternalPythonInterpreter`. (default: :obj:`None`)
+- **verbose** (bool, optional): Whether to print the critic's messages.
+- **logger_color** (Any): The color of the logger displayed to the user. (default: :obj:`Fore.MAGENTA`)
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    system_message: BaseMessage,
+    model: Optional[BaseModelBackend] = None,
+    message_window_size: Optional[int] = None,
+    tool_agents: Optional[List[BaseToolAgent]] = None,
+    code_interpreter: Optional[BaseInterpreter] = None,
+    verbose: bool = False,
+    logger_color: Any = Fore.MAGENTA
+):
+```
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent._set_tool_agents"></a>
+
+### _set_tool_agents
+
+```python
+def _set_tool_agents(self, system_message: BaseMessage):
+```
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent._get_tool_agents_prompt"></a>
+
+### _get_tool_agents_prompt
+
+```python
+def _get_tool_agents_prompt(self):
+```
+
+**Returns:**
+
+  str: The action space prompt.
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent.get_tool_agent_names"></a>
+
+### get_tool_agent_names
+
+```python
+def get_tool_agent_names(self):
+```
+
+**Returns:**
+
+  List[str]: The names of tool agents.
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent.step"></a>
+
+### step
+
+```python
+def step(self, input_message: BaseMessage):
+```
+
+Performs a step in the conversation.
+
+**Parameters:**
+
+- **input_message** (BaseMessage): The input message.
+
+**Returns:**
+
+  ChatAgentResponse: A struct containing the output messages,
+a boolean indicating whether the chat session has terminated,
+and information about the chat session.

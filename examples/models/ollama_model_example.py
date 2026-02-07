@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from pydantic import BaseModel
 
@@ -40,15 +40,15 @@ Ollama server started on http://localhost:11434/v1 for mistral model
 
 Hello CAMEL AI community!
 
-It's great to connect with such a fascinating group of individuals passionate 
-about autonomous and communicative agents. Your dedication to advancing 
+It's great to connect with such a fascinating group of individuals passionate
+about autonomous and communicative agents. Your dedication to advancing
 knowledge in this field is truly commendable.
 
-I'm here to help answer any questions, provide information, or engage in 
-discussions related to AI, machine learning, and autonomous systems. Feel free 
+I'm here to help answer any questions, provide information, or engage in
+discussions related to AI, machine learning, and autonomous systems. Feel free
 to ask me anything!
 
-By the way, what topics would you like to explore within the realm of 
+By the way, what topics would you like to explore within the realm of
 autonomous and communicative agents?
 ===============================================================================
 """
@@ -69,7 +69,7 @@ class PetList(BaseModel):
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
     model_type="llama3.2",
-    # Ensure using ollama verison >= 0.5.1 to use structured output feature
+    # Ensure using ollama version >= 0.5.1 to use structured output feature
     model_config_dict={"temperature": 0, "response_format": PetList},
 )
 
@@ -89,7 +89,7 @@ print(assistant_response.msg.parsed)
 ===========================================================================
 [{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role':
 'user', 'content': 'I have two pets.A cat named Luna who is 5 years old
-and loves playing with yarn. She has grey fur.I also have a 2 year old 
+and loves playing with yarn. She has grey fur.I also have a 2 year old
 black cat named Loki who loves tennis balls.'}]
 { "pets": [
     {

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
 from unittest.mock import MagicMock, create_autospec
 from uuid import uuid4
@@ -46,7 +46,8 @@ def generate_mock_records(num_records: int):
             },
             "role_at_backend": "user",
             "extra_info": {},
-            "timestamp": datetime.now().timestamp() + i,
+            "timestamp": datetime.now().timestamp(),
+            "agent_id": f"test_agent_{i}",
         }
         for i in range(num_records)
     ]
@@ -73,6 +74,14 @@ class TestChatHistoryBlock:
         records = chat_history.retrieve(window_size=5)
         assert all(isinstance(record, ContextRecord) for record in records)
         assert len(records) == 5
+
+    def test_retrieve_with_zero_window_size(self, mock_storage):
+        mock_records = generate_mock_records(3)
+        mock_storage.load.return_value = mock_records
+        chat_history = ChatHistoryBlock(storage=mock_storage)
+
+        records = chat_history.retrieve(window_size=0)
+        assert records == []
 
     def test_retrieve_without_window_size(self, mock_storage):
         mock_records = generate_mock_records(10)
@@ -101,6 +110,8 @@ class TestChatHistoryBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]
@@ -176,6 +187,8 @@ class TestVectorDBBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]

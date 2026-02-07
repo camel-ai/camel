@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Gradio-based web app Agents that uses OpenAI API to generate
 a chat between collaborative agents.
@@ -97,7 +97,7 @@ def parse_arguments():
         '--server-port',
         type=int,
         default=8080,
-        help='Port ot run the web page on',
+        help='Port to run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
@@ -138,7 +138,7 @@ def load_roles(path: str) -> List[str]:
                 role = match.group(1)
                 roles.append(role)
             else:
-                logger.warn("No match")
+                logger.warning("No match")
     return roles
 
 

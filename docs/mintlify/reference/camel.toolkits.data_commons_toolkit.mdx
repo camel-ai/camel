@@ -1,0 +1,188 @@
+<a id="camel.toolkits.data_commons_toolkit"></a>
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit"></a>
+
+## DataCommonsToolkit
+
+```python
+class DataCommonsToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for Data Commons.
+
+This class provides methods for querying and retrieving data from the
+Data Commons knowledge graph. It includes functionality for:
+- Executing SPARQL queries
+- Retrieving triples associated with nodes
+- Fetching statistical time series data
+- Analyzing property labels and values
+- Retrieving places within a given place type
+- Obtaining statistical values for specific variables and locations
+
+All the data are grabbed from the knowledge graph of Data Commons.
+Refer to https://datacommons.org/browser/ for more details.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initialize the DataCommonsToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float], optional): Maximum time in seconds to wait for API calls to complete. If None, will wait indefinitely. (default: :obj:`None`)
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_triples_outgoing"></a>
+
+### get_triples_outgoing
+
+```python
+def get_triples_outgoing(self, dcids: Union[str, List[str]]):
+```
+
+Retrieve triples associated with nodes for outgoing relationships.
+
+**Parameters:**
+
+- **dcids** (Union[str, List[str]]): A single DCID or a list of DCIDs to query.
+
+**Returns:**
+
+  Optional[Dict[str, List[tuple]]]: A dictionary where keys are
+DCIDs and values are lists of associated triples if success,
+(default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_triples_incoming"></a>
+
+### get_triples_incoming
+
+```python
+def get_triples_incoming(self, dcids: Union[str, List[str]]):
+```
+
+Retrieve triples associated with nodes for incoming relationships.
+
+**Parameters:**
+
+- **dcids** (Union[str, List[str]]): A single DCID or a list of DCIDs to query.
+
+**Returns:**
+
+  Optional[Dict[str, List[tuple]]]: A dictionary where keys are
+DCIDs and values are lists of associated triples if success,
+(default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_stat"></a>
+
+### get_stat
+
+```python
+def get_stat(
+    self,
+    date: str,
+    entity_dcids: Union[str, List[str]],
+    variable_dcids: Union[str, List[str]]
+):
+```
+
+Retrieve statistical time series for a place.
+
+**Parameters:**
+
+- **date** (str): The date option for the observations. Use 'all' for all dates, 'latest' for the most recent data, or provide a date as a string (e.g., "2026").
+- **entity_dcids** (Union[str, List[str]]): Entity IDs to filter the data.
+- **variable_dcids** (Union[str, List[str]]): The variable(s) to fetch observations for. This can be a single variable ID or a list of IDs.
+
+**Returns:**
+
+  Optional[Dict[str, Any]]: A dictionary containing the statistical
+time series data if success, (default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_property_labels"></a>
+
+### get_property_labels
+
+```python
+def get_property_labels(self, dcids: Union[str, List[str]], out: bool = True):
+```
+
+Retrieves and analyzes property labels for given DCIDs.
+
+**Parameters:**
+
+- **dcids** (Union[str, List[str]]): A single DCID or a list of DCIDs to query.
+- **out** (bool): Whether to fetch outgoing properties (default: :obj:`True`)
+
+**Returns:**
+
+  Optional[Dict[str, List[str]]]: Analysis results for each DCID if
+success, (default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_property_values"></a>
+
+### get_property_values
+
+```python
+def get_property_values(
+    self,
+    dcids: Union[str, List[str]],
+    properties: Union[str, List[str]],
+    constraints: Optional[str] = None,
+    out: Optional[bool] = True
+):
+```
+
+Retrieves and analyzes property values for given DCIDs.
+
+**Parameters:**
+
+- **dcids** (Union[str, List[str]]): A single DCID or a list of DCIDs to query.
+- **properties** (Union[str, List[str]]): The property or properties to analyze.
+- **constraints** (Optional[str]): Additional constraints for the query. (default: :obj:`None`)
+- **out** (bool, optional): Whether to fetch outgoing properties. (default: :obj:`True`)
+
+**Returns:**
+
+  Optional[Dict[str, Any]]: Analysis results for each DCID if
+success, (default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_places_in"></a>
+
+### get_places_in
+
+```python
+def get_places_in(
+    self,
+    place_dcids: Union[str, List[str]],
+    children_type: Optional[str] = None
+):
+```
+
+Retrieves places within a given place type.
+
+**Parameters:**
+
+- **place_dcids** (Union[str, List[str]]): A single DCID or a list of DCIDs to query.
+- **children_type** (Optional[str]): The type of the child entities to fetch. If None, fetches all child types. (default: :obj:`None`)
+
+**Returns:**
+
+  Optional[Dict[str, Any]]: Analysis results for each DCID if
+success, (default: :obj:`None`) otherwise.
+
+<a id="camel.toolkits.data_commons_toolkit.DataCommonsToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

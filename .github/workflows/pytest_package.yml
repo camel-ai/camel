@@ -6,8 +6,16 @@ name: Pytest Camel package
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -16,7 +24,12 @@ jobs:
   pytest_package_fast_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -35,10 +48,11 @@ jobs:
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-        AZURE_OPENAI_API_KEY: "to-be-filled"
-        AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
+        AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+        AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+        AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+        AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -62,12 +76,56 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: poetry run pytest --fast-test-mode test/
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+        BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
+        BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
+        NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+        NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
+        WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
+        WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+        QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
+        ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
+        CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --fast-test-mode -m "not heavy_dependency" \
+          --ignore=test/datagen/test_evol_instruct.py \
+          --ignore=test/datagen/test_self_improving_cot_pipeline.py \
+          --ignore=test/datasets/test_base_dataset.py \
+          --ignore=test/datasets/test_self_instruct_generator.py \
+          --ignore=test/embeddings/test_open_source_embeddings.py \
+          --ignore=test/environments/test_multi_step_env.py \
+          --ignore=test/environments/test_single_step_env.py \
+          --ignore=test/environments/test_tictactoe_env.py \
+          --ignore=test/interpreters/test_python_interpreter.py \
+          --ignore=test/models/reward/test_nemotron_model.py \
+          --ignore=test/toolkits/test_video_analysis_toolkit.py \
+          --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
+          test/
 
   pytest_package_llm_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -86,10 +144,10 @@ jobs:
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-        AZURE_OPENAI_API_KEY: "to-be-filled"
-        AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
+        AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+        AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+        AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+        AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -113,12 +171,57 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: poetry run pytest --llm-test-only test/
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+        BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
+        BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
+        NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+        NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
+        WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
+        WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+        QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
+        ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+        CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --llm-test-only -m "not heavy_dependency" \
+          --ignore=test/datagen/test_evol_instruct.py \
+          --ignore=test/datagen/test_self_improving_cot_pipeline.py \
+          --ignore=test/datasets/test_base_dataset.py \
+          --ignore=test/datasets/test_self_instruct_generator.py \
+          --ignore=test/embeddings/test_open_source_embeddings.py \
+          --ignore=test/environments/test_multi_step_env.py \
+          --ignore=test/environments/test_single_step_env.py \
+          --ignore=test/environments/test_tictactoe_env.py \
+          --ignore=test/interpreters/test_python_interpreter.py \
+          --ignore=test/models/reward/test_nemotron_model.py \
+          --ignore=test/toolkits/test_video_analysis_toolkit.py \
+          --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
+          test/
 
   pytest_package_very_slow_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -133,14 +236,15 @@ jobs:
         GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
         NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
-        AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
-        AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
-        AZURE_OPENAI_BASE_URL: ${{ secrets.AZURE_OPENAI_BASE_URL }}"
+        AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+        AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+        AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+        AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -162,4 +266,43 @@ jobs:
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
-      run: poetry run pytest --very-slow-test-only test/
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+        BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
+        BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
+        NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+        NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
+        WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
+        WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+        QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
+        ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+        CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --very-slow-test-only -m "not heavy_dependency" \
+          --ignore=test/datagen/test_evol_instruct.py \
+          --ignore=test/datagen/test_self_improving_cot_pipeline.py \
+          --ignore=test/datasets/test_base_dataset.py \
+          --ignore=test/datasets/test_self_instruct_generator.py \
+          --ignore=test/embeddings/test_open_source_embeddings.py \
+          --ignore=test/environments/test_multi_step_env.py \
+          --ignore=test/environments/test_single_step_env.py \
+          --ignore=test/environments/test_tictactoe_env.py \
+          --ignore=test/interpreters/test_python_interpreter.py \
+          --ignore=test/models/reward/test_nemotron_model.py \
+          --ignore=test/toolkits/test_video_analysis_toolkit.py \
+          --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
+          test/

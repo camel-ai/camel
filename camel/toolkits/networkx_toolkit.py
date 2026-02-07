@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
@@ -18,10 +18,12 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class NetworkXToolkit(BaseToolkit):
     _nx = None  # Class variable to store the networkx module
 
@@ -36,6 +38,7 @@ class NetworkXToolkit(BaseToolkit):
 
     def __init__(
         self,
+        timeout: Optional[float] = None,
         graph_type: Literal[
             'graph', 'digraph', 'multigraph', 'multidigraph'
         ] = 'graph',
@@ -51,7 +54,11 @@ class NetworkXToolkit(BaseToolkit):
                 - 'multigraph': Undirected graph with parallel edges
                 - 'multidigraph': Directed graph with parallel edges
                 (default: :obj:`'graph'`)
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         nx = self._get_nx()
         graph_types = {
             'graph': nx.Graph,
@@ -178,7 +185,7 @@ class NetworkXToolkit(BaseToolkit):
         """
         logger.info("Serializing the graph.")
         nx = self._get_nx()
-        return json.dumps(nx.node_link_data(self.graph))
+        return json.dumps(nx.node_link_data(self.graph), ensure_ascii=False)
 
     def deserialize_graph(self, data: str) -> None:
         r"""Loads a graph from a serialized JSON string.
@@ -199,7 +206,7 @@ class NetworkXToolkit(BaseToolkit):
         logger.info(f"Exporting graph to file: {file_path}")
         nx = self._get_nx()
         with open(file_path, "w") as file:
-            json.dump(nx.node_link_data(self.graph), file)
+            json.dump(nx.node_link_data(self.graph), file, ensure_ascii=False)
 
     def import_from_file(self, file_path: str) -> None:
         r"""Imports a graph from a JSON file.

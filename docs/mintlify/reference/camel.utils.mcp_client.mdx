@@ -1,0 +1,288 @@
+<a id="camel.utils.mcp_client"></a>
+
+Unified MCP Client
+
+This module provides a unified interface for connecting to MCP servers
+using different transport protocols (stdio, sse, streamable-http, websocket).
+The client can automatically detect the transport type based on configuration.
+
+<a id="camel.utils.mcp_client.TransportType"></a>
+
+## TransportType
+
+```python
+class TransportType(str, Enum):
+```
+
+Supported transport types.
+
+<a id="camel.utils.mcp_client.ServerConfig"></a>
+
+## ServerConfig
+
+```python
+class ServerConfig(BaseModel):
+```
+
+<a id="camel.utils.mcp_client.ServerConfig.validate_config"></a>
+
+### validate_config
+
+```python
+def validate_config(self):
+```
+
+Validate that either command or url is provided.
+
+<a id="camel.utils.mcp_client.ServerConfig.transport_type"></a>
+
+### transport_type
+
+```python
+def transport_type(self):
+```
+
+Automatically detect transport type based on configuration.
+
+<a id="camel.utils.mcp_client.MCPClient"></a>
+
+## MCPClient
+
+```python
+class MCPClient:
+```
+
+Unified MCP client that automatically detects and connects to servers
+using the appropriate transport protocol.
+
+This client provides a unified interface for connecting to Model Context
+Protocol (MCP) servers using different transport protocols including STDIO,
+HTTP/HTTPS, WebSocket, and Server-Sent Events (SSE). The client
+automatically detects the appropriate transport type based on the
+configuration provided.
+
+The client should be used as an async context manager for automatic
+connectionmanagement.
+
+**Parameters:**
+
+- **config** (Union[ServerConfig, Dict[str, Any]]): Server configuration as either a :obj:`ServerConfig` object or a dictionary that will be converted to a :obj:`ServerConfig`. The configuration determines the transport type and connection parameters.
+- **client_info** (Optional[types.Implementation], optional): Client implementation information to send to the server during initialization. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): Timeout for waiting for messages from the server in seconds. (default: :obj:`10.0`)
+- **config** (ServerConfig): The server configuration object.
+- **client_info** (Optional[types.Implementation]): Client implementation information.
+- **read_timeout_seconds** (timedelta): Timeout for reading from the server.
+
+<a id="camel.utils.mcp_client.MCPClient.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    config: Union[ServerConfig, Dict[str, Any]],
+    client_info: Optional[types.Implementation] = None,
+    timeout: Optional[float] = 10.0
+):
+```
+
+<a id="camel.utils.mcp_client.MCPClient.transport_type"></a>
+
+### transport_type
+
+```python
+def transport_type(self):
+```
+
+Get the detected transport type.
+
+<a id="camel.utils.mcp_client.MCPClient._simplify_connection_error"></a>
+
+### _simplify_connection_error
+
+```python
+def _simplify_connection_error(self, error: Exception):
+```
+
+Convert complex MCP connection errors to simple, understandable
+messages.
+
+<a id="camel.utils.mcp_client.MCPClient.session"></a>
+
+### session
+
+```python
+def session(self):
+```
+
+Get the current session if connected.
+
+<a id="camel.utils.mcp_client.MCPClient.is_connected"></a>
+
+### is_connected
+
+```python
+def is_connected(self):
+```
+
+Check if the client is currently connected.
+
+<a id="camel.utils.mcp_client.MCPClient.list_mcp_tools_sync"></a>
+
+### list_mcp_tools_sync
+
+```python
+def list_mcp_tools_sync(self):
+```
+
+**Returns:**
+
+  ListToolsResult: Result containing available MCP tools.
+
+<a id="camel.utils.mcp_client.MCPClient.generate_function_from_mcp_tool"></a>
+
+### generate_function_from_mcp_tool
+
+```python
+def generate_function_from_mcp_tool(self, mcp_tool: types.Tool):
+```
+
+Dynamically generates a Python callable function corresponding to
+a given MCP tool.
+
+**Parameters:**
+
+- **mcp_tool** (types.Tool): The MCP tool definition received from the MCP server.
+
+**Returns:**
+
+  Callable: A dynamically created Python function that wraps
+the MCP tool and works in both sync and async contexts.
+
+<a id="camel.utils.mcp_client.MCPClient._build_tool_schema"></a>
+
+### _build_tool_schema
+
+```python
+def _build_tool_schema(self, mcp_tool: types.Tool):
+```
+
+Build tool schema for OpenAI function calling format.
+
+<a id="camel.utils.mcp_client.MCPClient.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of :obj:`FunctionTool` objects
+representing the available tools from the MCP server. Returns
+an empty list if the client is not connected.
+
+**Note:**
+
+This method requires an active connection to the MCP server.
+If the client is not connected, an empty list will be returned.
+
+<a id="camel.utils.mcp_client.MCPClient.get_text_tools"></a>
+
+### get_text_tools
+
+```python
+def get_text_tools(self):
+```
+
+**Returns:**
+
+  str: Text description of tools
+
+<a id="camel.utils.mcp_client.MCPClient.call_tool_sync"></a>
+
+### call_tool_sync
+
+```python
+def call_tool_sync(self, tool_name: str, arguments: Dict[str, Any]):
+```
+
+Synchronously call a tool by name with the provided arguments.
+
+**Parameters:**
+
+- **tool_name** (str): The name of the tool to call.
+- **arguments** (Dict[str, Any]): A dictionary of arguments to pass to the tool.
+
+**Returns:**
+
+  Any: The result returned by the tool execution.
+
+<a id="camel.utils.mcp_client.create_mcp_client"></a>
+
+## create_mcp_client
+
+```python
+def create_mcp_client(config: Union[Dict[str, Any], ServerConfig], **kwargs: Any):
+```
+
+Create an MCP client from configuration.
+
+Factory function that creates an :obj:`MCPClient` instance from various
+configuration formats. This is the recommended way to create MCP clients
+as it handles configuration validation and type conversion automatically.
+
+**Parameters:**
+
+- **config** (Union[Dict[str, Any], ServerConfig]): Server configuration as either a dictionary or a :obj:`ServerConfig` object. If a dictionary is provided, it will be automatically converted to
+- **a**: obj:`ServerConfig`. **kwargs: Additional keyword arguments passed to the :obj:`MCPClient` constructor, such as :obj:`client_info`, :obj:`timeout`.
+
+**Returns:**
+
+  MCPClient: A configured :obj:`MCPClient` instance ready for use as
+an async context manager.
+
+<a id="camel.utils.mcp_client.create_mcp_client_from_config_file"></a>
+
+## create_mcp_client_from_config_file
+
+```python
+def create_mcp_client_from_config_file(config_path: Union[str, Path], server_name: str, **kwargs: Any):
+```
+
+Create an MCP client from a configuration file.
+
+**Parameters:**
+
+- **config_path** (Union[str, Path]): Path to configuration file (JSON).
+- **server_name** (str): Name of the server in the config. **kwargs: Additional arguments passed to MCPClient constructor.
+
+**Returns:**
+
+  MCPClient: MCPClient instance as an async context manager.
+Example config file:
+`\{
+"mcpServers": \{
+"filesystem": \{
+"command": "npx",
+"args": [
+"-y",
+"@modelcontextprotocol/server-filesystem",
+"/path"
+]
+\},
+"remote-server": \{
+"url": "https://api.example.com/mcp",
+"headers": \{"Authorization": "Bearer token"\}
+\}
+\}
+\}`
+
+Usage:
+.. code-block:: python
+
+async with create_mcp_client_from_config_file(
+"config.json", "filesystem"
+) as client:
+tools = client.get_tools()

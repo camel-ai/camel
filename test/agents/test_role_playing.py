@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,7 +34,7 @@ from camel.types import (
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_type=ModelType.DEFAULT,
 )
 
 model_backend_rsp = ChatCompletion(
@@ -105,13 +105,11 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model is None:
-        assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_4O_MINI
-        )
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O_MINI
+        assert assistant_agent.model_backend.model_type == ModelType.DEFAULT
+        assert user_agent.model_backend.model_type == ModelType.DEFAULT
     else:
-        assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O
+        assert assistant_agent.model_backend.model_type == ModelType.DEFAULT
+        assert user_agent.model_backend.model_type == ModelType.DEFAULT
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -123,9 +121,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert critic.model_backend.model_type == ModelType.GPT_4O_MINI
+                assert critic.model_backend.model_type == ModelType.DEFAULT
             else:
-                assert critic.model_backend.model_type == ModelType.GPT_4O
+                assert critic.model_backend.model_type == ModelType.DEFAULT
 
 
 @pytest.mark.model_backend
@@ -194,28 +192,50 @@ def test_role_playing_step(
 
 
 @pytest.mark.model_backend
-def test_role_playing_with_function(step_call_count=3):
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
+    [
+        (TaskType.AI_SOCIETY, None, None),
+        (
+            TaskType.CODE,
+            [dict(domain="science", language="python")] * 2,
+            dict(domain="science", language="python"),
+        ),
+        (TaskType.MISALIGNMENT, None, None),
+    ],
+)
+async def test_role_playing_astep(
+    task_type,
+    extend_sys_msg_meta_dicts,
+    extend_task_specify_meta_dict,
+    step_call_count=3,
+):
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
-    tools = MathToolkit().get_tools()
-
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
-        assistant_agent_kwargs=dict(
-            model=model,
-            tools=tools,
-        ),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="AI User",
         user_agent_kwargs=dict(model=model),
         task_prompt="Perform the task",
         task_specify_agent_kwargs=dict(model=model),
-        task_type=TaskType.AI_SOCIETY,
+        task_type=task_type,
+        extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
+        extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
+    init_assistant_msg = BaseMessage.make_assistant_message(
+        role_name="AI Assistant", content="Hello"
+    )
+    print(role_playing.assistant_agent.system_message)
+    print(role_playing.user_agent.system_message)
 
-    input_msg = role_playing.init_chat()
     for i in range(step_call_count):
-        assistant_response, user_response = role_playing.step(input_msg)
+        assistant_response, user_response = await role_playing.astep(
+            init_assistant_msg
+        )
+
         for response in (assistant_response, user_response):
             assert isinstance(
                 response.msgs, list
@@ -235,6 +255,67 @@ def test_role_playing_with_function(step_call_count=3):
             assert isinstance(
                 response.info, dict
             ), f"Error in round {i+1}: response.info is not a dict"
+
+
+@pytest.mark.model_backend
+def test_role_playing_with_function(step_call_count=3):
+    if model is not None:
+        model.run = MagicMock(return_value=model_backend_rsp)
+
+    tools = MathToolkit().get_tools()
+    role_playing = RolePlaying(
+        assistant_role_name="AI Assistant",
+        assistant_agent_kwargs=dict(
+            model=model,
+            tools=tools,
+        ),
+        user_role_name="AI User",
+        user_agent_kwargs=dict(model=model),
+        task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=model),
+        task_type=TaskType.AI_SOCIETY,
+    )
+
+    input_msg = role_playing.init_chat()
+    for _ in range(step_call_count):
+        assistant_response, user_response = role_playing.step(input_msg)
+        for response in (assistant_response, user_response):
+            assert isinstance(response.msgs, list)
+            assert len(response.msgs) == 1
+            assert isinstance(response.msgs[0], BaseMessage)
+            assert isinstance(response.terminated, bool)
+            assert response.terminated is False
+            assert isinstance(response.info, dict)
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+@pytest.mark.parametrize("init_msg_content", [None, "Custom init message"])
+async def test_role_playing_ainit_chat(init_msg_content):
+    if model is not None:
+        model.run = MagicMock(return_value=model_backend_rsp)
+
+    role_playing = RolePlaying(
+        assistant_role_name="AI Assistant",
+        assistant_agent_kwargs=dict(model=model),
+        user_role_name="AI User",
+        user_agent_kwargs=dict(model=model),
+        task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=model),
+        task_type=TaskType.AI_SOCIETY,
+    )
+
+    init_msg = await role_playing.ainit_chat(init_msg_content)
+    assert isinstance(init_msg, BaseMessage)
+    assert init_msg.role_type == RoleType.ASSISTANT
+    assert init_msg.role_name == "AI Assistant"
+    if init_msg_content is not None:
+        assert init_msg.content == init_msg_content
+    else:
+        assert init_msg.content == (
+            "Now start to give me instructions one by one. "
+            "Only reply with Instruction and Input."
+        )
 
 
 def test_role_playing_role_sequence(

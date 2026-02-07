@@ -1,0 +1,59 @@
+<a id="camel.storages.graph_storages.graph_element"></a>
+
+<a id="camel.storages.graph_storages.graph_element.Node"></a>
+
+## Node
+
+```python
+class Node(BaseModel):
+```
+
+Represents a node in a graph with associated properties.
+
+**Parameters:**
+
+- **id** (Union[str, int]): A unique identifier for the node.
+- **type** (str): The type of the relationship.
+- **properties** (dict): Additional properties and metadata associated with the node.
+
+<a id="camel.storages.graph_storages.graph_element.Relationship"></a>
+
+## Relationship
+
+```python
+class Relationship(BaseModel):
+```
+
+Represents a directed relationship between two nodes in a graph.
+
+**Parameters:**
+
+- **subj** (Node): The subject/source node of the relationship.
+- **obj** (Node): The object/target node of the relationship.
+- **type** (str): The type of the relationship.
+- **timestamp** (str, optional): The timestamp of the relationship.
+- **properties** (dict): Additional properties associated with the relationship.
+
+<a id="camel.storages.graph_storages.graph_element.GraphElement"></a>
+
+## GraphElement
+
+```python
+class GraphElement(BaseModel):
+```
+
+A graph element with lists of nodes and relationships.
+
+**Parameters:**
+
+- **nodes** (List[Node]): A list of nodes in the graph.
+- **relationships** (List[Relationship]): A list of relationships in the graph.
+- **source** (Element): The element from which the graph information is derived.
+
+<a id="camel.storages.graph_storages.graph_element.GraphElement.__post_init__"></a>
+
+### __post_init__
+
+```python
+def __post_init__(self):
+```

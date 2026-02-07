@@ -1,0 +1,266 @@
+<a id="camel.datasets.static_dataset"></a>
+
+<a id="camel.datasets.static_dataset.StaticDataset"></a>
+
+## StaticDataset
+
+```python
+class StaticDataset(Dataset):
+```
+
+A static dataset containing a list of datapoints.
+Ensures that all items adhere to the DataPoint schema.
+This dataset extends :obj:`Dataset` from PyTorch and should
+be used when its size is fixed at runtime.
+
+This class can initialize from Hugging Face Datasets,
+PyTorch Datasets, JSON file paths, or lists of dictionaries,
+converting them into a consistent internal format.
+
+<a id="camel.datasets.static_dataset.StaticDataset.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
+    seed: int = 42,
+    min_samples: int = 1,
+    strict: bool = False,
+    **kwargs
+):
+```
+
+Initialize the static dataset and validate integrity.
+
+**Parameters:**
+
+- **data** (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]): Input data, which can be one of the following: - A Hugging Face Dataset (:obj:`HFDataset`). - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`). - A :obj:`Path` object representing a JSON or JSONL file. - A list of dictionaries with :obj:`DataPoint`-compatible fields.
+- **seed** (int): Random seed for reproducibility. (default: :obj:`42`)
+- **min_samples** (int): Minimum required number of samples. (default: :obj:`1`)
+- **strict** (bool): Whether to raise an error on invalid datapoints (:obj:`True`) or skip/filter them (:obj:`False`). (default: :obj:`False`) **kwargs: Additional dataset parameters.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_data"></a>
+
+### _init_data
+
+```python
+def _init_data(
+    self,
+    data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
+):
+```
+
+Convert input data from various formats into a list of
+:obj:`DataPoint` instances.
+
+**Parameters:**
+
+- **data** (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]): Input dataset in one of the supported formats.
+
+**Returns:**
+
+  List[DataPoint]: A list of validated :obj:`DataPoint`
+instances.
+
+<a id="camel.datasets.static_dataset.StaticDataset.__len__"></a>
+
+### __len__
+
+```python
+def __len__(self):
+```
+
+Return the size of the dataset.
+
+<a id="camel.datasets.static_dataset.StaticDataset.__getitem__"></a>
+
+### __getitem__
+
+```python
+def __getitem__(self, idx: Union[int, slice]):
+```
+
+Retrieve a datapoint or a batch of datapoints by index or slice.
+
+**Parameters:**
+
+- **idx** (Union[int, slice]): Index or slice of the datapoint(s).
+
+**Returns:**
+
+  List[DataPoint]: A list of `DataPoint` objects.
+
+<a id="camel.datasets.static_dataset.StaticDataset.sample"></a>
+
+### sample
+
+```python
+def sample(self):
+```
+
+**Returns:**
+
+  DataPoint: A randomly sampled :obj:`DataPoint`.
+
+<a id="camel.datasets.static_dataset.StaticDataset.metadata"></a>
+
+### metadata
+
+```python
+def metadata(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A copy of the dataset metadata dictionary.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_hf_dataset"></a>
+
+### _init_from_hf_dataset
+
+```python
+def _init_from_hf_dataset(self, data: HFDataset):
+```
+
+Convert a Hugging Face dataset into a list of dictionaries.
+
+**Parameters:**
+
+- **data** (HFDataset): A Hugging Face dataset.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries representing
+the dataset, where each dictionary corresponds to a datapoint.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_pytorch_dataset"></a>
+
+### _init_from_pytorch_dataset
+
+```python
+def _init_from_pytorch_dataset(self, data: Dataset):
+```
+
+Convert a PyTorch dataset into a list of dictionaries.
+
+**Parameters:**
+
+- **data** (Dataset): A PyTorch dataset.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries representing
+the dataset.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_json_path"></a>
+
+### _init_from_json_path
+
+```python
+def _init_from_json_path(self, data: Path):
+```
+
+Load and parse a dataset from a JSON file.
+
+**Parameters:**
+
+- **data** (Path): Path to the JSON file.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_jsonl_path"></a>
+
+### _init_from_jsonl_path
+
+```python
+def _init_from_jsonl_path(self, data: Path):
+```
+
+Load and parse a dataset from a JSONL file.
+
+**Parameters:**
+
+- **data** (Path): Path to the JSONL file.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_list"></a>
+
+### _init_from_list
+
+```python
+def _init_from_list(self, data: List[Dict[str, Any]]):
+```
+
+Validate and convert a list of dictionaries into a dataset.
+
+**Parameters:**
+
+- **data** (List[Dict[str, Any]]): A list of dictionaries where each dictionary must be a valid :obj:`DataPoint`.
+
+**Returns:**
+
+  List[Dict[str, Any]]: The validated list of dictionaries.
+
+<a id="camel.datasets.static_dataset.StaticDataset.save_to_json"></a>
+
+### save_to_json
+
+```python
+def save_to_json(self, file_path: Union[str, Path]):
+```
+
+Save the dataset to a local JSON file.
+
+**Parameters:**
+
+- **file_path** (Union[str, Path]): Path to the output JSON file. If a string is provided, it will be converted to a Path object.
+
+<a id="camel.datasets.static_dataset.StaticDataset.save_to_huggingface"></a>
+
+### save_to_huggingface
+
+```python
+def save_to_huggingface(
+    self,
+    dataset_name: str,
+    token: Optional[str] = None,
+    filepath: str = 'records/records.json',
+    private: bool = False,
+    description: Optional[str] = None,
+    license: Optional[str] = None,
+    version: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    language: Optional[List[str]] = None,
+    task_categories: Optional[List[str]] = None,
+    authors: Optional[List[str]] = None,
+    **kwargs: Any
+):
+```
+
+Save the dataset to the Hugging Face Hub using the project's
+HuggingFaceDatasetManager.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset on Hugging Face Hub. Should be in the format 'username/dataset_name' .
+- **token** (Optional[str]): The Hugging Face API token. If not provided, the token will be read from the environment variable `HF_TOKEN` (default: :obj:`None`)
+- **filepath** (str): The path in the repository where the dataset will be saved. (default: :obj:`"records/records.json"`)
+- **private** (bool): Whether the dataset should be private. (default: :obj:`False`)
+- **description** (Optional[str]): A description of the dataset. (default: :obj:`None`)
+- **license** (Optional[str]): The license of the dataset. (default: :obj:`None`)
+- **version** (Optional[str]): The version of the dataset. (default: :obj:`None`)
+- **tags** (Optional[List[str]]): A list of tags for the dataset. (default: :obj:`None`)
+- **language** (Optional[List[str]]): A list of languages the dataset is in. (default: :obj:`None`)
+- **task_categories** (Optional[List[str]]): A list of task categories. (default: :obj:`None`)
+- **authors** (Optional[List[str]]): A list of authors of the dataset. (default: :obj:`None`) **kwargs (Any): Additional keyword arguments to pass to the Hugging Face API.
+
+**Returns:**
+
+  str: The URL of the dataset on the Hugging Face Hub.

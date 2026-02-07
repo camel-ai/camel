@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from typing import Any, Optional
 
+from camel.models.base_audio_model import BaseAudioModel
 
-class FishAudioModel:
+
+class FishAudioModel(BaseAudioModel):
     r"""Provides access to FishAudio's Text-to-Speech (TTS) and Speech_to_Text
     (STT) models.
     """
@@ -37,16 +39,24 @@ class FishAudioModel:
         """
         from fish_audio_sdk import Session
 
+        super().__init__(api_key, url)
         self._api_key = api_key or os.environ.get("FISHAUDIO_API_KEY")
         self._url = url or os.environ.get(
             "FISHAUDIO_API_BASE_URL", "https://api.fish.audio"
         )
+        if self._api_key is None:
+            raise ValueError(
+                "API key is required for FishAudio. Please provide it via "
+                "the 'api_key' parameter or set the 'FISHAUDIO_API_KEY' "
+                "environment variable."
+            )
         self.session = Session(apikey=self._api_key, base_url=self._url)
 
     def text_to_speech(
         self,
         input: str,
-        storage_path: str,
+        *,
+        storage_path: Optional[str] = None,
         reference_id: Optional[str] = None,
         reference_audio: Optional[str] = None,
         reference_audio_text: Optional[str] = None,
@@ -55,9 +65,9 @@ class FishAudioModel:
         r"""Convert text to speech and save the output to a file.
 
         Args:
-            input_text (str): The text to convert to speech.
-            storage_path (str): The file path where the resulting speech will
-                be saved.
+            input (str): The text to convert to speech.
+            storage_path (Optional[str]): The file path where the resulting
+                speech will be saved. (default: :obj:`None`)
             reference_id (Optional[str]): An optional reference ID to
                 associate with the request. (default: :obj:`None`)
             reference_audio (Optional[str]): Path to an audio file for
@@ -68,12 +78,18 @@ class FishAudioModel:
 
         Raises:
             FileNotFoundError: If the reference audio file cannot be found.
+            ValueError: If storage_path is not provided or if reference_audio
+                is provided without reference_audio_text.
         """
         from fish_audio_sdk import ReferenceAudio, TTSRequest
 
-        directory = os.path.dirname(storage_path)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory)
+        if storage_path is None:
+            raise ValueError(
+                "storage_path must be provided for "
+                "FishAudioModel.text_to_speech"
+            )
+
+        self._ensure_directory_exists(storage_path)
 
         if not reference_audio:
             with open(f"{storage_path}", "wb") as f:

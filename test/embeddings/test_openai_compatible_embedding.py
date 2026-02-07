@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import unittest
 from unittest.mock import MagicMock, patch
@@ -23,8 +23,8 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
     @patch.dict(
         "os.environ",
         {
-            "OPENAI_COMPATIBILIY_API_KEY": "test_api_key",
-            "OPENAI_COMPATIBILIY_API_BASE_URL": "http://test-url.com",
+            "OPENAI_COMPATIBILITY_API_KEY": "test_api_key",
+            "OPENAI_COMPATIBILITY_API_BASE_URL": "http://test-url.com",
         },
     )
     def test_embed_list(self, MockOpenAI):
@@ -58,8 +58,8 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
     @patch.dict(
         "os.environ",
         {
-            "OPENAI_COMPATIBILIY_API_KEY": "test_api_key",
-            "OPENAI_COMPATIBILIY_API_BASE_URL": "http://test-url.com",
+            "OPENAI_COMPATIBILITY_API_KEY": "test_api_key",
+            "OPENAI_COMPATIBILITY_API_BASE_URL": "http://test-url.com",
         },
     )
     def test_get_output_dim(self, MockOpenAI):
@@ -85,15 +85,24 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
 
     def test_get_output_dim_without_embeddings(self):
         # Test if ValueError is raised when get_output_dim is called before
-        # embed_list
+        # embed_list and embed_list fails to set output_dim
         embedding = OpenAICompatibleEmbedding(
             "text-embedding-model", "test_api_key", "http://test-url.com"
         )
 
-        with self.assertRaises(ValueError) as context:
-            embedding.get_output_dim()
+        # Mock the embed_list method to simulate a failed embedding attempt
+        with patch.object(embedding, 'embed_list') as mock_embed_list:
+            # Configure the mock to not change output_dim (simulating failure)
+            mock_embed_list.return_value = []
 
-        self.assertEqual(
-            str(context.exception),
-            "Output dimension is not yet determined. Call 'embed_list' first.",
-        )
+            with self.assertRaises(ValueError) as context:
+                embedding.get_output_dim()
+
+            # Verify that embed_list was called
+            mock_embed_list.assert_called_once_with(["test"])
+
+            # Check the error message
+            self.assertEqual(
+                str(context.exception),
+                "Failed to determine embedding dimension",
+            )

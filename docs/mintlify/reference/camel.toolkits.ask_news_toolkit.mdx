@@ -1,0 +1,256 @@
+<a id="camel.toolkits.ask_news_toolkit"></a>
+
+<a id="camel.toolkits.ask_news_toolkit._process_response"></a>
+
+## _process_response
+
+```python
+def _process_response(response, return_type: str):
+```
+
+Process the response based on the specified return type.
+
+This helper method processes the API response and returns the content
+in the specified format, which could be a string, a dictionary, or
+both.
+
+**Parameters:**
+
+- **response**: The response object returned by the API call.
+- **return_type** (str): Specifies the format of the return value. It can be "string" to return the response as a string, "dicts" to return it as a dictionary, or "both" to return both formats as a tuple.
+
+**Returns:**
+
+  Union[str, dict, Tuple[str, dict]]: The processed response,
+formatted according to the return_type argument. If "string",
+returns the response as a string. If "dicts", returns the
+response as a dictionary. If "both", returns a tuple
+containing both formats.
+
+**Raises:**
+
+- **ValueError**: If the return_type provided is invalid.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit"></a>
+
+## AskNewsToolkit
+
+```python
+class AskNewsToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for interacting with the AskNews API.
+
+This class provides methods for fetching news, stories, and other content
+based on user queries using the AskNews API.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initialize the AskNewsToolkit with API clients.The API keys and
+credentials are retrieved from environment variables.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.get_news"></a>
+
+### get_news
+
+```python
+def get_news(
+    self,
+    query: str,
+    n_articles: int = 10,
+    return_type: Literal['string', 'dicts', 'both'] = 'string',
+    method: Literal['nl', 'kw'] = 'kw'
+):
+```
+
+Fetch news or stories based on a user query.
+
+**Parameters:**
+
+- **query** (str): The search query for fetching relevant news.
+- **n_articles** (int): Number of articles to include in the response. (default: :obj:`10`)
+- **return_type** (`Literal["string", "dicts", "both"]`): The format of the return value. (default: :obj:`"string"`)
+- **method** (`Literal["nl", "kw"]`): The search method, either "nl" for natural language or "kw" for keyword search. (default: :obj:`"kw"`)
+
+**Returns:**
+
+  Union[str, dict, Tuple[str, dict]]: A string, dictionary,
+or both containing the news or story content, or error message
+if the process fails.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.get_stories"></a>
+
+### get_stories
+
+```python
+def get_stories(
+    self,
+    query: str,
+    categories: List[Literal['Politics', 'Economy', 'Finance', 'Science', 'Technology', 'Sports', 'Climate', 'Environment', 'Culture', 'Entertainment', 'Business', 'Health', 'International']],
+    reddit: int = 3,
+    expand_updates: bool = True,
+    max_updates: int = 2,
+    max_articles: int = 10
+):
+```
+
+Fetch stories based on the provided parameters.
+
+**Parameters:**
+
+- **query** (str): The search query for fetching relevant stories.
+- **categories** (list): The categories to filter stories by.
+- **reddit** (int): Number of Reddit threads to include. (default: :obj:`3`)
+- **expand_updates** (bool): Whether to include detailed updates. (default: :obj:`True`)
+- **max_updates** (int): Maximum number of recent updates per story. (default: :obj:`2`)
+- **max_articles** (int): Maximum number of articles associated with each update. (default: :obj:`10`)
+
+**Returns:**
+
+  Union[dict, str]: A dictionary containing the stories and their
+associated data, or error message if the process fails.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.get_web_search"></a>
+
+### get_web_search
+
+```python
+def get_web_search(
+    self,
+    queries: List[str],
+    return_type: Literal['string', 'dicts', 'both'] = 'string'
+):
+```
+
+Perform a live web search based on the given queries.
+
+**Parameters:**
+
+- **queries** (List[str]): A list of search queries.
+- **return_type** (`Literal["string", "dicts", "both"]`): The format of the return value. (default: :obj:`"string"`)
+
+**Returns:**
+
+  Union[str, dict, Tuple[str, dict]]: A string,
+dictionary, or both containing the search results, or
+error message if the process fails.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.search_reddit"></a>
+
+### search_reddit
+
+```python
+def search_reddit(
+    self,
+    keywords: List[str],
+    n_threads: int = 5,
+    return_type: Literal['string', 'dicts', 'both'] = 'string',
+    method: Literal['nl', 'kw'] = 'kw'
+):
+```
+
+Search Reddit based on the provided keywords.
+
+**Parameters:**
+
+- **keywords** (List[str]): The keywords to search for on Reddit.
+- **n_threads** (int): Number of Reddit threads to summarize and return. (default: :obj:`5`)
+- **return_type** (`Literal["string", "dicts", "both"]`): The format of the return value. (default: :obj:`"string"`)
+- **method** (`Literal["nl", "kw"]`): The search method, either "nl" for natural language or "kw" for keyword search. (default: :obj:`"kw"`)
+
+**Returns:**
+
+  Union[str, dict, Tuple[str, dict]]: The Reddit search
+results as a string, dictionary, or both, or error message if
+the process fails.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.query_finance"></a>
+
+### query_finance
+
+```python
+def query_finance(
+    self,
+    asset: Literal['bitcoin', 'ethereum', 'cardano', 'uniswap', 'ripple', 'solana', 'polkadot', 'polygon', 'chainlink', 'tether', 'dogecoin', 'monero', 'tron', 'binance', 'aave', 'tesla', 'microsoft', 'amazon'],
+    metric: Literal['news_positive', 'news_negative', 'news_total', 'news_positive_weighted', 'news_negative_weighted', 'news_total_weighted'] = 'news_positive',
+    return_type: Literal['list', 'string'] = 'string',
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None
+):
+```
+
+Fetch asset sentiment data for a given asset, metric, and date
+range.
+
+**Parameters:**
+
+- **asset** (Literal): The asset for which to fetch sentiment data.
+- **metric** (Literal): The sentiment metric to analyze.
+- **return_type** (`Literal["list", "string"]`): The format of the return value. (default: :obj:`"string"`)
+- **date_from** (datetime, optional): The start date and time for the data in ISO 8601 format.
+- **date_to** (datetime, optional): The end date and time for the data in ISO 8601 format.
+
+**Returns:**
+
+  Union[list, str]: A list of dictionaries containing the datetime
+and value or a string describing all datetime and value pairs
+for providing quantified time-series data for news sentiment
+on topics of interest, or an error message if the process
+fails.
+
+<a id="camel.toolkits.ask_news_toolkit.AskNewsToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.
+
+<a id="camel.toolkits.ask_news_toolkit.AsyncAskNewsToolkit"></a>
+
+## AsyncAskNewsToolkit
+
+```python
+class AsyncAskNewsToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for interacting with the AskNews API
+asynchronously.
+
+This class provides methods for fetching news, stories, and other
+content based on user queries using the AskNews API.
+
+<a id="camel.toolkits.ask_news_toolkit.AsyncAskNewsToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize the AsyncAskNewsToolkit with API clients.The API keys
+and credentials are retrieved from environment variables.
+
+<a id="camel.toolkits.ask_news_toolkit.AsyncAskNewsToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

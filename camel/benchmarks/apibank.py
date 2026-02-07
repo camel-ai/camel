@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import logging
@@ -48,7 +48,7 @@ def process_messages(
     Args:
         chat_history (List[Dict[str, Any]):
             A list of dictionaries representing the chat history.
-        prompt (str): A propmt to be set as the system message.
+        prompt (str): A prompt to be set as the system message.
 
     Returns:
         List[Dict[str, str]]: A list of dictionaries representing
@@ -316,7 +316,10 @@ class APIBankBenchmark(BaseBenchmark):
                                 'Correct': correct,
                             }
                         )
-                        f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                        json_str = json.dumps(
+                            self._results[-1], indent=2, ensure_ascii=False
+                        )
+                        f.write(json_str + "\n")
 
                     elif (
                         sample.ground_truth['role'] == 'AI'
@@ -361,7 +364,10 @@ class APIBankBenchmark(BaseBenchmark):
                                 'Test': test,
                             }
                         )
-                        f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                        json_str = json.dumps(
+                            self._results[-1], indent=2, ensure_ascii=False
+                        )
+                        f.write(json_str + "\n")
 
                     f.flush()
 
@@ -536,9 +542,9 @@ replace the ApiName with the actual API name, and \
 replace the key and value with the actual parameters. \
 Your output should start with a square bracket "[" \
 and end with a square bracket "]". Do not output any \
-other explanation or prompt or the result of the API call in your output. 
+other explanation or prompt or the result of the API call in your output.
 This year is 2023.
-Input: 
+Input:
 User: [User's utterence]
 AI: [AI's utterence]
 
@@ -553,7 +559,7 @@ Based on the given API description and the existing \
 conversation history 1..t, please generate the next \
 dialog that the AI should response after the API call t.
 This year is 2023.
-Input: 
+Input:
 User: [User's utterence]
 AI: [AI's utterence]
 [ApiName(key1='value1', key2='value2', …)]

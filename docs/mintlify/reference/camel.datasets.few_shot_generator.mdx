@@ -1,0 +1,65 @@
+<a id="camel.datasets.few_shot_generator"></a>
+
+<a id="camel.datasets.few_shot_generator.FewShotGenerator"></a>
+
+## FewShotGenerator
+
+```python
+class FewShotGenerator(BaseGenerator):
+```
+
+A generator for creating synthetic datapoints using few-shot learning.
+
+This class leverages a seed dataset, an agent, and a verifier to generate
+new synthetic datapoints on demand through few-shot prompting.
+
+<a id="camel.datasets.few_shot_generator.FewShotGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    seed_dataset: StaticDataset,
+    verifier: BaseVerifier,
+    model: BaseModelBackend,
+    seed: int = 42,
+    **kwargs
+):
+```
+
+Initialize the few-shot generator.
+
+**Parameters:**
+
+- **seed_dataset** (StaticDataset): Validated static dataset to use for examples.
+- **verifier** (BaseVerifier): Verifier to validate generated content.
+- **model** (BaseModelBackend): The underlying LLM that the generating agent will be initiated with.
+- **seed** (int): Random seed for reproducibility. (default: :obj:`42`) **kwargs: Additional generator parameters. (default: 42)
+
+<a id="camel.datasets.few_shot_generator.FewShotGenerator._validate_seed_dataset"></a>
+
+### _validate_seed_dataset
+
+```python
+def _validate_seed_dataset(self):
+```
+
+<a id="camel.datasets.few_shot_generator.FewShotGenerator._construct_prompt"></a>
+
+### _construct_prompt
+
+```python
+def _construct_prompt(self, examples: List[DataPoint]):
+```
+
+Construct a prompt for generating new datapoints
+using a fixed sample of examples from the seed dataset.
+
+**Parameters:**
+
+- **examples** (List[DataPoint]): Examples to include in the prompt.
+
+**Returns:**
+
+  str: Formatted prompt with examples.

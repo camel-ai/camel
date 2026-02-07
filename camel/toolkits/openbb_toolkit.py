@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,16 +10,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
 from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 
+@MCPServer()
 class OpenBBToolkit(BaseToolkit):
     r"""A toolkit for accessing financial data and analysis through OpenBB
     Platform.
@@ -46,7 +51,7 @@ class OpenBBToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
         import os
 
-        from openbb import obb
+        from openbb import obb  # type: ignore[import-not-found]
 
         self.client = obb
         # Initialize OpenBB Hub account with access token

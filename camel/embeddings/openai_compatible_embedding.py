@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import os
@@ -30,12 +30,15 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         model_type (str): The model type to be used for text embeddings.
         api_key (str): The API key for authenticating with the model service.
         url (str): The url to the model service.
+        output_dim (Optional[int]): The dimensionality of the embedding
+            vectors. If None, it will be determined during the first
+            embedding call.
     """
 
     @api_keys_required(
         [
-            ("api_key", 'OPENAI_COMPATIBILIY_API_KEY'),
-            ("url", 'OPENAI_COMPATIBILIY_API_BASE_URL'),
+            ("api_key", 'OPENAI_COMPATIBILITY_API_KEY'),
+            ("url", 'OPENAI_COMPATIBILITY_API_BASE_URL'),
         ]
     )
     def __init__(
@@ -43,14 +46,15 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         model_type: str,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        output_dim: Optional[int] = None,
     ) -> None:
         self.model_type = model_type
-        self.output_dim: Optional[int] = None
+        self.output_dim: Optional[int] = output_dim
 
         self._api_key = api_key or os.environ.get(
-            "OPENAI_COMPATIBILIY_API_KEY"
+            "OPENAI_COMPATIBILITY_API_KEY"
         )
-        self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        self._url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         self._client = OpenAI(
             timeout=180,
             max_retries=3,
@@ -87,10 +91,14 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
 
         Returns:
             int: The dimensionality of the embedding for the current model.
+
+        Raises:
+            ValueError: If the embedding dimension cannot be determined.
         """
         if self.output_dim is None:
-            raise ValueError(
-                "Output dimension is not yet determined. Call "
-                "'embed_list' first."
-            )
+            self.embed_list(["test"])
+
+        if self.output_dim is None:
+            raise ValueError("Failed to determine embedding dimension")
+
         return self.output_dim

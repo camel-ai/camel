@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Gradio-based web UI to explore the Camel dataset.
 """
@@ -56,7 +56,7 @@ def parse_arguments():
         '--server-port',
         type=int,
         default=8080,
-        help='Port ot run the web page on',
+        help='Port to run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
@@ -73,7 +73,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        logger.warn("Unknown args: %s", unknown)
+        logger.warning("Unknown args: %s", unknown)
     return args
 
 
@@ -399,7 +399,7 @@ def construct_ui(
 
 
 def construct_blocks(data_path: str, default_dataset: Optional[str]):
-    """Construct Blocs app but do not launch it.
+    """Construct Blocks app but do not launch it.
 
     Args:
         data_path (str): Path to the set of ZIP datasets.

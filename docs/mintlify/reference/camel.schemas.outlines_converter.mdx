@@ -1,0 +1,181 @@
+<a id="camel.schemas.outlines_converter"></a>
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter"></a>
+
+## OutlinesConverter
+
+```python
+class OutlinesConverter(BaseConverter):
+```
+
+OutlinesConverter is a class that converts a string or a function
+into a BaseModel schema.
+
+**Parameters:**
+
+- **model_type** (str, optional): The model type to be used.
+- **platform** (str, optional): The platform to be used. 1. transformers 2. mamba 3. vllm 4. llamacpp 5. mlx (default: "transformers") **kwargs: The keyword arguments to be used. See the outlines documentation for more details. See
+- **https**: //dottxt-ai.github.io/outlines/latest/reference/models/models/
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: str,
+    platform: Literal['vllm', 'transformers', 'mamba', 'llamacpp', 'mlx'] = 'transformers',
+    **kwargs: Any
+):
+```
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_regex"></a>
+
+### convert_regex
+
+```python
+def convert_regex(self, content: str, regex_pattern: str):
+```
+
+Convert the content to the specified regex pattern.
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **regex_pattern** (str): The regex pattern to be used.
+
+**Returns:**
+
+  str: The converted content.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_json"></a>
+
+### convert_json
+
+```python
+def convert_json(self, content: str, output_schema: Union[str, Callable]):
+```
+
+Convert the content to the specified JSON schema given by
+output_schema.
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **output_schema** (Union[str, Callable]): The expected format of the response.
+
+**Returns:**
+
+  dict: The converted content in JSON format.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_pydantic"></a>
+
+### convert_pydantic
+
+```python
+def convert_pydantic(self, content: str, output_schema: Type[BaseModel]):
+```
+
+Convert the content to the specified Pydantic schema.
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **output_schema** (Type[BaseModel]): The expected format of the response.
+
+**Returns:**
+
+  BaseModel: The converted content in pydantic model format.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_type"></a>
+
+### convert_type
+
+```python
+def convert_type(self, content: str, type_name: type):
+```
+
+Convert the content to the specified type.
+
+The following types are currently available:
+1. int
+2. float
+3. bool
+4. datetime.date
+5. datetime.time
+6. datetime.datetime
+7. custom types (https://dottxt-ai.github.io/outlines/latest/reference/generation/types/)
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **type_name** (type): The type to be used.
+
+**Returns:**
+
+  str: The converted content.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_choice"></a>
+
+### convert_choice
+
+```python
+def convert_choice(self, content: str, choices: List[str]):
+```
+
+Convert the content to the specified choice.
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **choices** (List[str]): The choices to be used.
+
+**Returns:**
+
+  str: The converted content.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert_grammar"></a>
+
+### convert_grammar
+
+```python
+def convert_grammar(self, content: str, grammar: str):
+```
+
+Convert the content to the specified grammar.
+
+**Parameters:**
+
+- **content** (str): The content to be converted.
+- **grammar** (str): The grammar to be used.
+
+**Returns:**
+
+  str: The converted content.
+
+<a id="camel.schemas.outlines_converter.OutlinesConverter.convert"></a>
+
+### convert
+
+```python
+def convert(
+    self,
+    content: str,
+    type: Literal['regex', 'json', 'type', 'choice', 'grammar'],
+    **kwargs
+):
+```
+
+Formats the input content into the expected BaseModel.
+
+**Parameters:**
+
+- **type** (`Literal["regex", "json", "type", "choice", "grammar"]`): The type of conversion to perform. Options are: - "regex": Match the content against a regex pattern. - "pydantic": Convert the content into a pydantic model. - "json": Convert the content into a JSON based on a schema. - "type": Convert the content into a specified type. - "choice": Match the content against a list of valid choices. - "grammar": Convert the content using a specified grammar.
+- **content** (str): The content to be formatted. **kwargs: Additional keyword arguments specific to the conversion type. - For "regex":
+- **regex_pattern** (str): The regex pattern to use for matching. - For "pydantic":
+- **output_schema** (Type[BaseModel]): The schema to validate and format the pydantic model. - For "json":
+- **output_schema** (Union[str, Callable]): The schema to validate and format the JSON object. - For "type":
+- **type_name** (str): The target type name for the conversion. - For "choice":
+- **choices** (List[str]): A list of valid choices to match against. - For "grammar":
+- **grammar** (str): The grammar definition to use for content conversion.

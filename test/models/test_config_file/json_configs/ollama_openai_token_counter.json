@@ -1,0 +1,14 @@
+{
+    "model_platform": "ollama",
+    "model_type": "llama3.2",
+    "model_config_dict": {
+        "temperature": 0.5,
+        "top_p": 0.9
+    },
+    "token_counter": {
+        "type": "OpenAITokenCounter",
+        "model_type": "gpt-4o-mini"
+    },
+    "api_key": null,
+    "url": null
+}

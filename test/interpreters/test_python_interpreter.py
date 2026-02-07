@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import numpy as np
 import pytest
 import torch
 
 from camel.interpreters import InternalPythonInterpreter, InterpreterError
+
+pytestmark = pytest.mark.heavy_dependency
 
 
 def action_function():
@@ -296,6 +298,12 @@ x += 1"""
     )
 
 
+def test_allow_builtins(interpreter: InternalPythonInterpreter):
+    code = "res = len([0, 1])"
+    execution_res = interpreter.execute(code)
+    assert execution_res == 2
+
+
 @pytest.fixture
 def unsafe_interpreter():
     interpreter = InternalPythonInterpreter()
@@ -372,3 +380,21 @@ print(f'Sum: {total}')
 """
     result = unsafe_interpreter.run(code, code_type="python")
     assert result == "Sum: 10\n"  # exec returns captured stdout
+
+
+@pytest.fixture()
+def not_allow_builtins_interpreter():
+    interpreter = InternalPythonInterpreter(
+        raise_error=True, allow_builtins=False
+    )
+    return interpreter
+
+
+def test_not_allow_builtins(
+    not_allow_builtins_interpreter: InternalPythonInterpreter,
+):
+    code = "res = len([0, 1])"
+    with pytest.raises(InterpreterError) as e:
+        not_allow_builtins_interpreter.execute(code)
+    exec_msg = e.value.args[0]
+    assert "The variable `len` is not defined." in exec_msg

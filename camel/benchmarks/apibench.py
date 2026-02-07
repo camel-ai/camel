@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import logging
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 # Mapping of dataset names to file names
-# 'Oracle' retriver used here which means all the full
+# 'Oracle' retriever used here which means all the full
 # API documentation will be included in the prompt
 dataset_mapping = {
     "huggingface": {
@@ -323,7 +323,10 @@ class APIBenchBenchmark(BaseBenchmark):
 
                 agent.reset()
 
-                f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                json_str = json.dumps(
+                    self._results[-1], indent=2, ensure_ascii=False
+                )
+                f.write(json_str + "\n")
                 f.flush()
 
         total = len(self._results)

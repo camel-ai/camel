@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class ZhipuAIConfig(BaseConfig):
@@ -29,15 +28,15 @@ class ZhipuAIConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`0.2`)
+            (default: :obj:`None`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj:`0.6`)
+            (default: :obj:`None`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
-            (default: :obj:`False`)
+            (default: :obj:`None`)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
             will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate
@@ -60,12 +59,14 @@ class ZhipuAIConfig(BaseConfig):
             are present.
     """
 
-    temperature: float = 0.2
-    top_p: float = 0.6
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}

@@ -1,0 +1,254 @@
+<a id="camel.storages.vectordb_storages.milvus"></a>
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage"></a>
+
+## MilvusStorage
+
+```python
+class MilvusStorage(BaseVectorStorage):
+```
+
+An implementation of the `BaseVectorStorage` for interacting with
+Milvus, a cloud-native vector search engine.
+
+The detailed information about Milvus is available at:
+`Milvus <https://milvus.io/docs/overview.md/>`_
+
+**Parameters:**
+
+- **vector_dim** (int): The dimension of storing vectors.
+- **url_and_api_key** (Tuple[str, str]): Tuple containing the URL and API key for connecting to a remote Milvus instance. URL maps to Milvus uri concept, typically "endpoint:port". API key maps to Milvus token concept, for self-hosted it's "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API Key.
+- **collection_name** (Optional[str], optional): Name for the collection in the Milvus. If not provided, set it to the current time with iso format. (default: :obj:`None`) **kwargs (Any): Additional keyword arguments for initializing `MilvusClient`.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    vector_dim: int,
+    url_and_api_key: Tuple[str, str],
+    collection_name: Optional[str] = None,
+    **kwargs: Any
+):
+```
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._create_client"></a>
+
+### _create_client
+
+```python
+def _create_client(self, url_and_api_key: Tuple[str, str], **kwargs: Any):
+```
+
+Initializes the Milvus client with the provided connection details.
+
+**Parameters:**
+
+- **url_and_api_key** (Tuple[str, str]): The URL and API key for the Milvus server. **kwargs: Additional keyword arguments passed to the Milvus client.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._check_and_create_collection"></a>
+
+### _check_and_create_collection
+
+```python
+def _check_and_create_collection(self):
+```
+
+Checks if the specified collection exists in Milvus and creates it
+if it doesn't, ensuring it matches the specified vector dimensionality.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._create_collection"></a>
+
+### _create_collection
+
+```python
+def _create_collection(self, collection_name: str, **kwargs: Any):
+```
+
+Creates a new collection in the database.
+
+**Parameters:**
+
+- **collection_name** (str): Name of the collection to be created. **kwargs (Any): Additional keyword arguments pass to create collection.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._delete_collection"></a>
+
+### _delete_collection
+
+```python
+def _delete_collection(self, collection_name: str):
+```
+
+Deletes an existing collection from the database.
+
+**Parameters:**
+
+- **collection** (str): Name of the collection to be deleted.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._collection_exists"></a>
+
+### _collection_exists
+
+```python
+def _collection_exists(self, collection_name: str):
+```
+
+Checks whether a collection with the specified name exists in the
+database.
+
+**Parameters:**
+
+- **collection_name** (str): The name of the collection to check.
+
+**Returns:**
+
+  bool: True if the collection exists, False otherwise.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._generate_collection_name"></a>
+
+### _generate_collection_name
+
+```python
+def _generate_collection_name(self):
+```
+
+**Returns:**
+
+  str: A unique, valid collection name.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._get_collection_info"></a>
+
+### _get_collection_info
+
+```python
+def _get_collection_info(self, collection_name: str):
+```
+
+Retrieves details of an existing collection.
+
+**Parameters:**
+
+- **collection_name** (str): Name of the collection to be checked.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing details about the
+collection.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._validate_and_convert_vectors"></a>
+
+### _validate_and_convert_vectors
+
+```python
+def _validate_and_convert_vectors(self, records: List[VectorRecord]):
+```
+
+Validates and converts VectorRecord instances to the format
+expected by Milvus.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to validate and convert.
+
+**Returns:**
+
+  List[dict]: A list of dictionaries formatted for Milvus insertion.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs):
+```
+
+Adds a list of vectors to the specified collection.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vectors to be added. **kwargs (Any): Additional keyword arguments pass to insert.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.delete"></a>
+
+### delete
+
+```python
+def delete(self, ids: List[str], **kwargs: Any):
+```
+
+Deletes a list of vectors identified by their IDs from the
+storage. If unsure of ids you can first query the collection to grab
+the corresponding data.
+
+**Parameters:**
+
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments passed to delete.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: An object containing information about the
+collection's status.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.query"></a>
+
+### query
+
+```python
+def query(self, query: VectorDBQuery, **kwargs: Any):
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments passed to search.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all vectors from the Milvus collection. This method
+deletes the existing collection and then recreates it with the same
+schema to effectively remove all stored vectors.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+**Returns:**
+
+  Any: The Milvus client instance.

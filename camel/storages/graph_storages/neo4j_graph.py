@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
 from hashlib import md5
@@ -69,7 +69,7 @@ class Neo4jGraph(BaseGraphStorage):
     The detailed information about Neo4j is available at:
     `Neo4j https://neo4j.com/docs/getting-started`
 
-    This module refered to the work of Langchian and Llamaindex.
+    This module referred to the work of Langchian and Llamaindex.
 
     Args:
         url (str): The URL of the Neo4j database server.
@@ -339,18 +339,24 @@ class Neo4jGraph(BaseGraphStorage):
             ]
         )
 
-    def add_triplet(self, subj: str, obj: str, rel: str) -> None:
-        r"""Adds a relationship (triplet) between two entities in the database.
+    def add_triplet(
+        self, subj: str, obj: str, rel: str, timestamp: Optional[str] = None
+    ) -> None:
+        r"""Adds a relationship (triplet) between two entities
+        in the database with a timestamp.
 
         Args:
             subj (str): The identifier for the subject entity.
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
+            timestamp (Optional[str]): The timestamp of the relationship.
+                Defaults to None.
         """
         query = """
             MERGE (n1:`%s` {id:$subj})
             MERGE (n2:`%s` {id:$obj})
-            MERGE (n1)-[:`%s`]->(n2)
+            MERGE (n1)-[r:`%s`]->(n2)
+            SET r.timestamp = $timestamp
         """
 
         prepared_statement = query % (
@@ -361,7 +367,10 @@ class Neo4jGraph(BaseGraphStorage):
 
         # Execute the query within a database session
         with self.driver.session(database=self.database) as session:
-            session.run(prepared_statement, {"subj": subj, "obj": obj})
+            session.run(
+                prepared_statement,
+                {"subj": subj, "obj": obj, "timestamp": timestamp},
+            )
 
     def _delete_rel(self, subj: str, obj: str, rel: str) -> None:
         r"""Deletes a specific relationship between two nodes in the Neo4j
@@ -633,9 +642,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -701,9 +710,9 @@ class Neo4jGraph(BaseGraphStorage):
             nodeLabelStratification: $nodeLabelStratification,
             relationshipWeightProperty: $relationshipWeightProperty
         })
-        YIELD graphName, fromGraphName, nodeCount, 
+        YIELD graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
-        RETURN graphName, fromGraphName, nodeCount, 
+        RETURN graphName, fromGraphName, nodeCount,
         relationshipCount, startNodeCount, projectMillis
         """
 
@@ -721,3 +730,70 @@ class Neo4jGraph(BaseGraphStorage):
             return result[0] if result else {}
         except CypherSyntaxError as e:
             raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+
+    def get_triplet(
+        self,
+        subj: Optional[str] = None,
+        obj: Optional[str] = None,
+        rel: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        r"""Query triplet information. If subj, obj, or rel is
+        not specified, returns all matching triplets.
+
+        Args:
+            subj (Optional[str]): The ID of the subject node.
+                If None, matches any subject node.
+                (default: :obj:`None`)
+            obj (Optional[str]): The ID of the object node.
+                If None, matches any object node.
+                (default: :obj:`None`)
+            rel (Optional[str]): The type of relationship.
+                If None, matches any relationship type.
+                (default: :obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: A list of matching triplets,
+                each containing subj, obj, rel, and timestamp.
+        """
+        import logging
+
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger(__name__)
+
+        # Construct the query
+        query = """
+                MATCH (n1:Entity)-[r]->(n2:Entity)
+                WHERE ($subj IS NULL OR n1.id = $subj)
+                AND ($obj IS NULL OR n2.id = $obj)
+                AND ($rel IS NULL OR type(r) = $rel)
+                RETURN n1.id AS subj, n2.id AS obj,
+                type(r) AS rel, r.timestamp AS timestamp
+            """
+
+        # Construct the query parameters
+        params = {
+            "subj": subj
+            if subj is not None
+            else None,  # If subj is None, match any subject node
+            "obj": obj
+            if obj is not None
+            else None,  # If obj is None, match any object node
+            "rel": rel
+            if rel is not None
+            else None,  # If rel is None, match any relationship type
+        }
+
+        logger.debug(f"Executing query: {query}")
+        logger.debug(f"Query parameters: {params}")
+
+        with self.driver.session(database=self.database) as session:
+            try:
+                result = session.run(query, params)
+                records = [record.data() for record in result]
+                logger.debug(
+                    f"Query returned {len(records)} records: {records}"
+                )
+                return records
+            except Exception as e:
+                logger.error(f"Error executing query: {e}")
+                return []

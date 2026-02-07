@@ -1,0 +1,214 @@
+<a id="camel.societies.workforce.single_agent_worker"></a>
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool"></a>
+
+## AgentPool
+
+```python
+class AgentPool:
+```
+
+A pool of agent instances for efficient reuse.
+
+This pool manages a collection of pre-cloned agents with automatic
+scaling and idle timeout cleanup.
+
+**Parameters:**
+
+- **base_agent** (ChatAgent): The base agent to clone from.
+- **initial_size** (int): Initial number of agents in the pool. (default: :obj:`1`)
+- **max_size** (int): Maximum number of agents in the pool. (default: :obj:`10`)
+- **auto_scale** (bool): Whether to automatically scale the pool size. (default: :obj:`True`)
+- **idle_timeout** (float): Time in seconds after which idle agents are removed. (default: :obj:`180.0`)
+- **cleanup_interval** (float): Fixed interval in seconds between cleanup checks. (default: :obj:`60.0`)
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    base_agent: ChatAgent,
+    initial_size: int = 1,
+    max_size: int = 10,
+    auto_scale: bool = True,
+    idle_timeout: float = 180.0,
+    cleanup_interval: float = 60.0
+):
+```
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool._initialize_pool"></a>
+
+### _initialize_pool
+
+```python
+def _initialize_pool(self, size: int):
+```
+
+Initialize the pool with the specified number of agents.
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool._create_fresh_agent"></a>
+
+### _create_fresh_agent
+
+```python
+def _create_fresh_agent(self):
+```
+
+Create a fresh agent instance.
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool.get_stats"></a>
+
+### get_stats
+
+```python
+def get_stats(self):
+```
+
+Get pool statistics.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker"></a>
+
+## SingleAgentWorker
+
+```python
+class SingleAgentWorker(Worker):
+```
+
+A worker node that consists of a single agent.
+
+**Parameters:**
+
+- **description** (str): Description of the node.
+- **worker** (ChatAgent): Worker of the node. A single agent.
+- **use_agent_pool** (bool): Whether to use agent pool for efficiency. (default: :obj:`True`)
+- **pool_initial_size** (int): Initial size of the agent pool. (default: :obj:`1`)
+- **pool_max_size** (int): Maximum size of the agent pool. (default: :obj:`10`)
+- **auto_scale_pool** (bool): Whether to auto-scale the agent pool. (default: :obj:`True`)
+- **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
+- **context_utility** (ContextUtility, optional): Shared context utility instance for workflow management. If provided, all workflow operations will use this shared instance instead of creating a new one. This ensures multiple workers share the same session directory. (default: :obj:`None`)
+- **enable_workflow_memory** (bool, optional): Whether to enable workflow memory accumulation during task execution. When enabled, conversations from all task executions are accumulated for potential workflow saving. Set to True if you plan to call save_workflow_memories(). (default: :obj:`False`)
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    description: str,
+    worker: ChatAgent,
+    use_agent_pool: bool = True,
+    pool_initial_size: int = 1,
+    pool_max_size: int = 10,
+    auto_scale_pool: bool = True,
+    use_structured_output_handler: bool = True,
+    context_utility: Optional[ContextUtility] = None,
+    enable_workflow_memory: bool = False
+):
+```
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Resets the worker to its initial state.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker._get_context_utility"></a>
+
+### _get_context_utility
+
+```python
+def _get_context_utility(self):
+```
+
+Get context utility with lazy initialization.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker._get_conversation_accumulator"></a>
+
+### _get_conversation_accumulator
+
+```python
+def _get_conversation_accumulator(self):
+```
+
+Get or create the conversation accumulator agent.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker._get_workflow_manager"></a>
+
+### _get_workflow_manager
+
+```python
+def _get_workflow_manager(self):
+```
+
+Get or create the workflow memory manager.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.get_pool_stats"></a>
+
+### get_pool_stats
+
+```python
+def get_pool_stats(self):
+```
+
+Get agent pool statistics if pool is enabled.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.save_workflow_memories"></a>
+
+### save_workflow_memories
+
+```python
+def save_workflow_memories(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Result dictionary with keys:
+- status (str): "success" or "error"
+- summary (str): Generated workflow summary
+- file_path (str): Path to saved file
+- worker_description (str): Worker description used
+
+See Also:
+:meth:`save_workflow_memories_async`: Async version for better
+performance in parallel workflows.
+
+<a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.load_workflow_memories"></a>
+
+### load_workflow_memories
+
+```python
+def load_workflow_memories(
+    self,
+    pattern: Optional[str] = None,
+    max_workflows: int = 3,
+    session_id: Optional[str] = None,
+    use_smart_selection: bool = True
+):
+```
+
+Load workflow memories using intelligent agent-based selection.
+
+This method uses the worker agent to intelligently select the most
+relevant workflows based on metadata (title, description, tags)
+rather than simple filename pattern matching.
+
+Delegates to WorkflowMemoryManager for all workflow operations.
+
+**Parameters:**
+
+- **pattern** (Optional[str]): Legacy parameter for backward compatibility. When use_smart_selection=False, uses this pattern for file matching. Ignored when smart selection is enabled.
+- **max_workflows** (int): Maximum number of workflow files to load. (default: :obj:`3`)
+- **session_id** (Optional[str]): Specific workforce session ID to load from. If None, searches across all sessions. (default: :obj:`None`)
+- **use_smart_selection** (bool): Whether to use agent-based intelligent workflow selection. When True, uses metadata and LLM to select most relevant workflows. When False, falls back to pattern matching. (default: :obj:`True`)
+
+**Returns:**
+
+  bool: True if workflow memories were successfully loaded, False
+otherwise.

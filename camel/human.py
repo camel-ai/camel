@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, Sequence
 
 from colorama import Fore
@@ -136,3 +136,17 @@ class Human:
         content = self.parse_input(human_input)
         message = meta_chat_message.create_new_instance(content)
         return ChatAgentResponse(msgs=[message], terminated=False, info={})
+
+    def clone(self, with_memory: bool = False) -> 'Human':
+        r"""Creates a new instance of the Human class with the same
+        attributes.
+
+        Args:
+            with_memory (bool): Flag indicating whether to include memory in
+                the cloned instance. Currently not used.
+                (default: :obj:`False`)
+
+        Returns:
+            Human: A new Human instance with the same name and logger_color.
+        """
+        return Human(name=self.name, logger_color=self.logger_color)

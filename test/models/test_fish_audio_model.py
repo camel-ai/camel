@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from unittest.mock import MagicMock, patch
@@ -48,7 +48,7 @@ def test_fish_audio_model_text_to_speech_no_reference_audio():
         with patch("builtins.open") as mock_file:
             mock_file.return_value.__enter__.return_value.write = MagicMock()
 
-            model.text_to_speech("Hello", "output_path.wav")
+            model.text_to_speech(input="Hello", storage_path="output_path.wav")
 
             mock_session.tts.assert_called_once()
             mock_file.return_value.__enter__.return_value.write.assert_called_once_with(
@@ -76,8 +76,8 @@ def test_fish_audio_model_text_to_speech_with_reference_audio():
             )
 
             model.text_to_speech(
-                "Hello",
-                "output_path.wav",
+                input="Hello",
+                storage_path="output_path.wav",
                 reference_audio="reference_audio.wav",
                 reference_audio_text="Reference text",
             )

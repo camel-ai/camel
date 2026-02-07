@@ -1,0 +1,6 @@
+model_platform: OPENAI_COMPATIBLE_MODEL
+model_type: grok-beta
+api_key: xai-...
+url: https://api.x.ai/v1
+model_config_dict:
+  max_tokens: 2000

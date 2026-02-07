@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
 from camel.benchmarks import APIBankBenchmark
@@ -43,7 +43,7 @@ level = 'level-1'
 # Run the benchmark
 result = benchmark.run(agent, level, api_test_enabled=True, subset=10)
 
-# The following steps are only for demostration purposes,
+# The following steps are only for demonstration purposes,
 # they have been integrated into the run method of the benchmark.
 # Get the first example of the test data
 example_test = list(benchmark._data.items())[0]  # type: ignore[assignment] # noqa: RUF015
@@ -53,11 +53,11 @@ print('\nAPI description for ToolSearcher:\n', api_description)
 '''
 ===============================================================================
 API description for ToolSearcher:
- {"name": "ToolSearcher", "description": "Searches for relevant tools in 
- library based on the keywords.", "input_parameters": {"keywords": {"type": 
- "str", "description": "The keyword to search for."}}, 
- "output_parameters": 
- {"best_matchs": {"type": "Union[List[dict], dict]", 
+ {"name": "ToolSearcher", "description": "Searches for relevant tools in
+ library based on the keywords.", "input_parameters": {"keywords": {"type":
+ "str", "description": "The keyword to search for."}},
+ "output_parameters":
+ {"best_matchs": {"type": "Union[List[dict], dict]",
  "description": "The best match tool(s)."}}}
 ===============================================================================
 '''

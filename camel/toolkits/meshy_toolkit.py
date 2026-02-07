@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,17 +10,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
+@MCPServer()
 class MeshyToolkit(BaseToolkit):
     r"""A class representing a toolkit for 3D model generation using Meshy.
 
@@ -188,3 +190,19 @@ class MeshyToolkit(BaseToolkit):
 
         # Wait for refinement completion and return final result
         return self.wait_for_task_completion(refine_task_id)
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.generate_3d_preview),
+            FunctionTool(self.refine_3d_model),
+            FunctionTool(self.get_task_status),
+            FunctionTool(self.wait_for_task_completion),
+            FunctionTool(self.generate_3d_model_complete),
+        ]

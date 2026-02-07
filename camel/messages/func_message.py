@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -47,12 +47,20 @@ class FunctionCallingMessage(BaseMessage):
             (default: :obj:`None`)
         tool_call_id (Optional[str]): The ID of the tool call, if available.
             (default: :obj:`None`)
+        mask_output (Optional[bool]): Whether to return a sanitized placeholder
+            instead of the raw tool output.
+            (default: :obj:`False`)
+        extra_content (Optional[Dict[str, Any]]): Additional content
+            associated with the tool call.
+            (default: :obj:`None`)
     """
 
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
     tool_call_id: Optional[str] = None
+    mask_output: Optional[bool] = False
+    extra_content: Optional[Dict[str, Any]] = None
 
     def to_openai_message(
         self,
@@ -105,10 +113,13 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
             #  optionally to be the same as assistant messages
-            content = function_format.format_tool_response(
-                self.func_name,  # type: ignore[arg-type]
-                self.result,  # type: ignore[arg-type]
-            )
+            if self.mask_output:
+                content = "[MASKED]"
+            else:
+                content = function_format.format_tool_response(
+                    self.func_name,  # type: ignore[arg-type]
+                    self.result,  # type: ignore[arg-type]
+                )
             return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -124,19 +135,23 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or arguments."
             )
 
+        tool_call = {
+            "id": self.tool_call_id or "null",
+            "type": "function",
+            "function": {
+                "name": self.func_name,
+                "arguments": json.dumps(self.args, ensure_ascii=False),
+            },
+        }
+
+        # Include extra_content if available
+        if self.extra_content is not None:
+            tool_call["extra_content"] = self.extra_content
+
         return {
             "role": "assistant",
             "content": self.content or "",
-            "tool_calls": [
-                {
-                    "id": self.tool_call_id or "null",
-                    "type": "function",
-                    "function": {
-                        "name": self.func_name,
-                        "arguments": json.dumps(self.args),
-                    },
-                }
-            ],
+            "tool_calls": [tool_call],  # type: ignore[list-item]
         }
 
     def to_openai_tool_message(self) -> OpenAIToolMessageParam:
@@ -154,10 +169,32 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = str(self.result)
+        if self.mask_output:
+            result_content = "[MASKED]"
+        else:
+            result_content = str(self.result)
 
         return {
             "role": "tool",
             "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
+
+    def to_dict(self) -> Dict:
+        r"""Converts the message to a dictionary.
+
+        Returns:
+            dict: The converted dictionary.
+        """
+        base = super().to_dict()
+        base["func_name"] = self.func_name
+        if self.args is not None:
+            base["args"] = self.args
+        if self.result is not None:
+            base["result"] = self.result
+        if self.tool_call_id is not None:
+            base["tool_call_id"] = self.tool_call_id
+        base["mask_output"] = self.mask_output
+        if self.extra_content is not None:
+            base["extra_content"] = self.extra_content
+        return base

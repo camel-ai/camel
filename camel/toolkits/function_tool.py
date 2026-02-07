@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
+import asyncio
+import functools
 import inspect
 import logging
 import textwrap
+import threading
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from inspect import Parameter, getsource, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
@@ -30,6 +34,13 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
 
 logger = logging.getLogger(__name__)
+
+# Shared thread pool for running sync tools without blocking the event loop
+_SYNC_TOOL_EXECUTOR = ThreadPoolExecutor(max_workers=64)
+
+# Persistent event loop to avoid httpx connection pool issues
+_PERSISTENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
+_PERSISTENT_LOOP_LOCK = threading.Lock()
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -156,7 +167,12 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if (name := param.arg_name) in parameters_dict["properties"] and (
             description := param.description
         ):
-            parameters_dict["properties"][name]["description"] = description
+            # OpenAI does not allow descriptions on properties that use $ref.
+            # To avoid schema errors, we only add the description if "$ref" is
+            # not present.
+            prop = parameters_dict["properties"][name]
+            if "$ref" not in prop:
+                prop["description"] = description
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
@@ -190,7 +206,9 @@ def sanitize_and_enforce_required(parameters_dict):
     r"""Cleans and updates the function schema to conform with OpenAI's
     requirements:
     - Removes invalid 'default' fields from the parameters schema.
-    - Ensures all fields or function parameters are marked as required.
+    - Ensures all fields are marked as required or have null type for optional
+    fields.
+    - Recursively adds additionalProperties: false to all nested objects.
 
     Args:
         parameters_dict (dict): The dictionary representing the function
@@ -198,8 +216,38 @@ def sanitize_and_enforce_required(parameters_dict):
 
     Returns:
         dict: The updated dictionary with invalid defaults removed and all
-            fields set as required.
+            fields properly configured for strict mode.
     """
+
+    def _add_additional_properties_false(obj):
+        r"""Recursively add additionalProperties: false to all objects."""
+        if isinstance(obj, dict):
+            if (
+                obj.get("type") == "object"
+                and "additionalProperties" not in obj
+            ):
+                obj["additionalProperties"] = False
+
+            # Process nested structures
+            for key, value in obj.items():
+                if key == "properties" and isinstance(value, dict):
+                    for prop_value in value.values():
+                        _add_additional_properties_false(prop_value)
+                elif key in [
+                    "items",
+                    "allOf",
+                    "oneOf",
+                    "anyOf",
+                ] and isinstance(value, (dict, list)):
+                    if isinstance(value, dict):
+                        _add_additional_properties_false(value)
+                    elif isinstance(value, list):
+                        for item in value:
+                            _add_additional_properties_false(item)
+                elif key == "$defs" and isinstance(value, dict):
+                    for def_value in value.values():
+                        _add_additional_properties_false(def_value)
+
     # Check if 'function' and 'parameters' exist
     if (
         'function' in parameters_dict
@@ -209,12 +257,65 @@ def sanitize_and_enforce_required(parameters_dict):
         parameters = parameters_dict['function']['parameters']
         properties = parameters.get('properties', {})
 
-        # Remove 'default' key from each property
-        for field in properties.values():
-            field.pop('default', None)
+        # Track which fields should be required vs optional
+        required_fields = []
 
-        # Mark all keys in 'properties' as required
-        parameters['required'] = list(properties.keys())
+        # Process each property
+        for field_name, field_schema in properties.items():
+            # Check if this field had a default value (making it optional)
+            had_default = 'default' in field_schema
+
+            # Remove 'default' key from field schema as required by OpenAI
+            field_schema.pop('default', None)
+
+            if had_default:
+                # This field is optional - add null to its type
+                current_type = field_schema.get('type')
+                has_ref = '$ref' in field_schema
+                has_any_of = 'anyOf' in field_schema
+
+                if has_ref:
+                    # Fields with $ref shouldn't have additional type field
+                    # The $ref itself defines the type structure
+                    pass
+                elif has_any_of:
+                    # Field already has anyOf
+                    any_of_types = field_schema['anyOf']
+                    has_null_type = any(
+                        item.get('type') == 'null' for item in any_of_types
+                    )
+                    if not has_null_type:
+                        # Add null type to anyOf
+                        field_schema['anyOf'].append({'type': 'null'})
+                    # Remove conflicting type field if it exists
+                    if 'type' in field_schema:
+                        del field_schema['type']
+                elif current_type:
+                    if isinstance(current_type, str):
+                        # Single type - convert to array with null
+                        field_schema['type'] = [current_type, 'null']
+                    elif (
+                        isinstance(current_type, list)
+                        and 'null' not in current_type
+                    ):
+                        # Array of types - add null if not present
+                        field_schema['type'] = [*current_type, 'null']
+                else:
+                    # No type specified, add null type
+                    field_schema['type'] = ['null']
+
+                # Optional fields are still marked as required in strict mode
+                # but with null type to indicate they can be omitted
+                required_fields.append(field_name)
+            else:
+                # This field is required
+                required_fields.append(field_name)
+
+        # Set all fields as required (strict mode requirement)
+        parameters['required'] = required_fields
+
+        # Recursively add additionalProperties: false to all objects
+        _add_additional_properties_false(parameters)
 
     return parameters_dict
 
@@ -386,30 +487,106 @@ class FunctionTool:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        else:
-            # Pass the extracted arguments to the indicated function
+
+        # Call the function first
+        try:
+            result = self.func(*args, **kwargs)
+        except Exception as e:
+            parts = []
+            if args:
+                parts.append(f"args={args}")
+            if kwargs:
+                parts.append(f"kwargs={kwargs}")
+            args_str = ", ".join(parts) if parts else "no arguments"
+            raise ValueError(
+                f"Execution of function {self.func.__name__} failed with "
+                f"{args_str}. Error: {e}"
+            )
+
+        # Handle coroutine result (from async function or sync wrapper
+        # returning coroutine)
+        if inspect.iscoroutine(result):
+            # Check if there's already a running event loop
             try:
-                result = self.func(*args, **kwargs)
-                return result
-            except Exception as e:
-                raise ValueError(
-                    f"Execution of function {self.func.__name__} failed with "
-                    f"arguments {args} and {kwargs}. "
-                    f"Error: {e}"
+                asyncio.get_running_loop()
+                has_running_loop = True
+            except RuntimeError:
+                has_running_loop = False
+
+            if has_running_loop:
+                # Already in an async context
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously within an async context. Consider using "
+                    f"'await tool.async_call()' or 'await agent.astep()' for "
+                    f"better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
+                # Must run in separate thread to avoid blocking current loop
+                future = _SYNC_TOOL_EXECUTOR.submit(
+                    self._run_async_in_persistent_loop, result
+                )
+                return future.result()
+            else:
+                warnings.warn(
+                    f"Async tool '{self.func.__name__}' is being called "
+                    f"synchronously. Consider using 'await tool.async_call()' "
+                    f"or 'await agent.astep()' for better performance.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return self._run_async_in_persistent_loop(result)
+
+        return result
+
+    @staticmethod
+    def _run_async_in_persistent_loop(coro):
+        r"""Run coroutine in persistent loop to preserve httpx connections."""
+        global _PERSISTENT_LOOP
+        with _PERSISTENT_LOOP_LOCK:
+            need_new_loop = (
+                _PERSISTENT_LOOP is None
+                or _PERSISTENT_LOOP.is_closed()
+                or not _PERSISTENT_LOOP.is_running()
+            )
+            if need_new_loop:
+                _PERSISTENT_LOOP = asyncio.new_event_loop()
+                t = threading.Thread(
+                    target=_PERSISTENT_LOOP.run_forever, daemon=True
+                )
+                t.start()
+                while not _PERSISTENT_LOOP.is_running():
+                    pass  # Wait for loop to start
+        future = asyncio.run_coroutine_threadsafe(coro, _PERSISTENT_LOOP)
+        return future.result()
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
             result = self.synthesize_execution_output(args, kwargs)
             return result
-        if self.is_async:
+
+        # Check if the function itself (not unwrapped) is a coroutine function
+        if inspect.iscoroutinefunction(self.func):
             return await self.func(*args, **kwargs)
-        else:
-            return self.func(*args, **kwargs)
+
+        # For sync functions (including sync wrappers around async functions),
+        # run in executor to avoid blocking
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            _SYNC_TOOL_EXECUTOR,
+            functools.partial(self.func, *args, **kwargs),
+        )
+
+        # If the sync wrapper returned a coroutine, await it
+        if inspect.iscoroutine(result):
+            return await result
+
+        return result
 
     @property
     def is_async(self) -> bool:
-        return inspect.iscoroutinefunction(self.func)
+        return inspect.iscoroutinefunction(inspect.unwrap(self.func))
 
     @staticmethod
     def validate_openai_tool_schema(
@@ -437,8 +614,8 @@ class FunctionTool:
 
         # Check the function description, if no description then raise warming
         if not openai_tool_schema["function"].get("description"):
-            warnings.warn(f"""Function description is missing for 
-                          {openai_tool_schema['function']['name']}. This may 
+            warnings.warn(f"""Function description is missing for
+                          {openai_tool_schema['function']['name']}. This may
                           affect the quality of tool calling.""")
 
         # Validate whether parameters
@@ -458,9 +635,12 @@ class FunctionTool:
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
-                warnings.warn(f"""Parameter description is missing for 
-                            {param_dict}. This may affect the quality of tool 
-                            calling.""")
+                warnings.warn(
+                    f"Parameter description is missing for the "
+                    f"function '{openai_tool_schema['function']['name']}'. "
+                    f"The parameter definition is {param_dict}. "
+                    f"This may affect the quality of tool calling."
+                )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
@@ -545,7 +725,7 @@ class FunctionTool:
         """
         self.openai_tool_schema["function"]["description"] = description
 
-    def get_paramter_description(self, param_name: str) -> str:
+    def get_parameter_description(self, param_name: str) -> str:
         r"""Gets the description of a specific parameter from the function
         schema.
 
@@ -561,7 +741,7 @@ class FunctionTool:
             param_name
         ]["description"]
 
-    def set_paramter_description(
+    def set_parameter_description(
         self,
         param_name: str,
         description: str,

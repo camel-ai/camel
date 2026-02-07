@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class YiConfig(BaseConfig):
@@ -37,22 +36,24 @@ class YiConfig(BaseConfig):
         max_tokens (int, optional): Specifies the maximum number of tokens
             the model can generate. This sets an upper limit, but does not
             guarantee that this number will always be reached.
-            (default: :obj:`5000`)
+            (default: :obj:`None`)
         top_p (float, optional): Controls the randomness of the generated
             results. Lower values lead to less randomness, while higher
-            values increase randomness. (default: :obj:`0.9`)
+            values increase randomness. (default: :obj:`None`)
         temperature (float, optional): Controls the diversity and focus of
             the generated results. Lower values make the output more focused,
             while higher values make it more diverse. (default: :obj:`0.3`)
         stream (bool, optional): If True, enables streaming output.
-            (default: :obj:`False`)
+            (default: :obj:`None`)
     """
 
-    tool_choice: Optional[Union[dict[str, str], str]] = None
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    top_p: float = 0.9
-    temperature: float = 0.3
-    stream: bool = False
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
+    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    temperature: Optional[float] = None
+    stream: Optional[bool] = None
 
 
 YI_API_PARAMS = {param for param in YiConfig.model_fields.keys()}

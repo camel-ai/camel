@@ -1,0 +1,126 @@
+<a id="camel.toolkits.linkedin_toolkit"></a>
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit"></a>
+
+## LinkedInToolkit
+
+```python
+class LinkedInToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for LinkedIn operations.
+
+This class provides methods for creating a post, deleting a post, and
+retrieving the authenticated user's profile information.
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit.create_post"></a>
+
+### create_post
+
+```python
+def create_post(self, text: str):
+```
+
+Creates a post on LinkedIn for the authenticated user.
+
+**Parameters:**
+
+- **text** (str): The content of the post to be created.
+
+**Returns:**
+
+  dict: A dictionary containing the post ID and the content of
+the post. If the post creation fails, the values will be None.
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit.delete_post"></a>
+
+### delete_post
+
+```python
+def delete_post(self, post_id: str):
+```
+
+Deletes a LinkedIn post with the specified ID
+for an authorized user.
+
+This function sends a DELETE request to the LinkedIn API to delete
+a post with the specified ID. Before sending the request, it
+prompts the user to confirm the deletion.
+
+**Parameters:**
+
+- **post_id** (str): The ID of the post to delete.
+
+**Returns:**
+
+  str: A message indicating the result of the deletion. If the
+deletion was successful, the message includes the ID of the
+deleted post. If the deletion was not successful, the message
+includes an error message.
+
+Reference:
+https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit.get_profile"></a>
+
+### get_profile
+
+```python
+def get_profile(self, include_id: bool = False):
+```
+
+Retrieves the authenticated user's LinkedIn profile info.
+
+This function sends a GET request to the LinkedIn API to retrieve the
+authenticated user's profile information. Optionally, it also returns
+the user's LinkedIn ID.
+
+**Parameters:**
+
+- **include_id** (bool): Whether to include the LinkedIn profile ID in the response.
+
+**Returns:**
+
+  dict: A dictionary containing the user's LinkedIn profile
+information. If `include_id` is True, the dictionary will also
+include the profile ID.
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.
+
+<a id="camel.toolkits.linkedin_toolkit.LinkedInToolkit._get_access_token"></a>
+
+### _get_access_token
+
+```python
+def _get_access_token(self):
+```
+
+**Returns:**
+
+  str: The OAuth 2.0 access token or warming message if the
+environment variable `LINKEDIN_ACCESS_TOKEN` is not set or is
+empty.
+
+Reference:
+You can apply for your personal LinkedIn API access token through
+the link below:
+https://www.linkedin.com/developers/apps

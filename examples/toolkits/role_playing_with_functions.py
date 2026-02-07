@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List
 
@@ -28,8 +28,8 @@ from camel.utils import print_text_animated
 
 
 def main(
-    model_platform=ModelPlatformType.NVIDIA,
-    model_type=ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (

@@ -1,0 +1,445 @@
+<a id="camel.societies.workforce.utils"></a>
+
+<a id="camel.societies.workforce.utils.is_generic_role_name"></a>
+
+## is_generic_role_name
+
+```python
+def is_generic_role_name(role_name: str):
+```
+
+Check if a role name is generic and should trigger fallback logic.
+
+Generic role names are common, non-specific identifiers that don't
+provide meaningful information about an agent's actual purpose.
+When a role name is generic, fallback logic should be used to find
+a more specific identifier (e.g., from LLM-generated agent_title
+or description).
+
+**Parameters:**
+
+- **role_name** (str): The role name to check (will be converted to lowercase for case-insensitive comparison).
+
+**Returns:**
+
+  bool: True if the role name is generic, False otherwise.
+
+<a id="camel.societies.workforce.utils.WorkflowMetadata"></a>
+
+## WorkflowMetadata
+
+```python
+class WorkflowMetadata(BaseModel):
+```
+
+Pydantic model for workflow metadata tracking.
+
+This model defines the formal schema for workflow metadata that tracks
+versioning, timestamps, and contextual information about saved workflows.
+Used to maintain workflow history and enable proper version management.
+
+<a id="camel.societies.workforce.utils.WorkflowConfig"></a>
+
+## WorkflowConfig
+
+```python
+class WorkflowConfig(BaseModel):
+```
+
+Configuration for workflow memory management.
+
+Centralizes all workflow-related configuration options to avoid scattered
+settings across multiple files and methods.
+
+<a id="camel.societies.workforce.utils.WorkerConf"></a>
+
+## WorkerConf
+
+```python
+class WorkerConf(BaseModel):
+```
+
+The configuration of a worker.
+
+<a id="camel.societies.workforce.utils.TaskResult"></a>
+
+## TaskResult
+
+```python
+class TaskResult(BaseModel):
+```
+
+The result of a task.
+
+<a id="camel.societies.workforce.utils.QualityEvaluation"></a>
+
+## QualityEvaluation
+
+```python
+class QualityEvaluation(BaseModel):
+```
+
+Quality evaluation result for a completed task.
+
+.. deprecated::
+Use :class:`TaskAnalysisResult` instead. This class is kept for
+backward compatibility.
+
+<a id="camel.societies.workforce.utils.TaskAssignment"></a>
+
+## TaskAssignment
+
+```python
+class TaskAssignment(BaseModel):
+```
+
+An individual task assignment within a batch.
+
+<a id="camel.societies.workforce.utils.TaskAssignment._split_and_strip"></a>
+
+### _split_and_strip
+
+```python
+def _split_and_strip(dep_str: str):
+```
+
+Utility to split a comma separated string and strip
+whitespace.
+
+<a id="camel.societies.workforce.utils.TaskAssignment.validate_dependencies"></a>
+
+### validate_dependencies
+
+```python
+def validate_dependencies(cls, v):
+```
+
+<a id="camel.societies.workforce.utils.TaskAssignResult"></a>
+
+## TaskAssignResult
+
+```python
+class TaskAssignResult(BaseModel):
+```
+
+The result of task assignment for both single and batch
+assignments.
+
+<a id="camel.societies.workforce.utils.RecoveryStrategy"></a>
+
+## RecoveryStrategy
+
+```python
+class RecoveryStrategy(str, Enum):
+```
+
+Strategies for handling failed tasks.
+
+<a id="camel.societies.workforce.utils.RecoveryStrategy.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```
+
+<a id="camel.societies.workforce.utils.RecoveryStrategy.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.societies.workforce.utils.FailureHandlingConfig"></a>
+
+## FailureHandlingConfig
+
+```python
+class FailureHandlingConfig(BaseModel):
+```
+
+Configuration for failure handling behavior in Workforce.
+
+This configuration allows users to customize how the Workforce handles
+task failures. This config allows users to disable reassignment or other
+recovery strategies as needed.
+
+**Parameters:**
+
+- **max_retries** (int): Maximum number of retry attempts before giving up on a task. (default: :obj:`3`)
+- **enabled_strategies** (Optional[List[RecoveryStrategy]]): List of recovery strategies that are allowed to be used. Can be specified as RecoveryStrategy enums or strings (e.g., ["retry", "replan"]). If None, all strategies are enabled (with LLM analysis). If an empty list, no recovery strategies are applied and failed tasks are marked as failed immediately. If only ["retry"] is specified, simple retry is used without LLM analysis. (default: :obj:`None` - all strategies enabled)
+- **halt_on_max_retries** (bool): Whether to halt the entire workforce when a task exceeds max retries. If False, the task is marked as failed and the workflow continues (similar to PIPELINE mode behavior). (default: :obj:`True` for AUTO_DECOMPOSE mode behavior)
+
+<a id="camel.societies.workforce.utils.FailureHandlingConfig.validate_enabled_strategies"></a>
+
+### validate_enabled_strategies
+
+```python
+def validate_enabled_strategies(cls, v):
+```
+
+Convert string list to RecoveryStrategy enum list.
+
+<a id="camel.societies.workforce.utils.FailureContext"></a>
+
+## FailureContext
+
+```python
+class FailureContext(BaseModel):
+```
+
+Context information about a task failure.
+
+<a id="camel.societies.workforce.utils.TaskAnalysisResult"></a>
+
+## TaskAnalysisResult
+
+```python
+class TaskAnalysisResult(BaseModel):
+```
+
+Unified result for task failure analysis and quality evaluation.
+
+This model combines both failure recovery decisions and quality evaluation
+results into a single structure. For failure analysis, only the recovery
+strategy and reasoning fields are populated. For quality evaluation, all
+fields including quality_score and issues are populated.
+
+<a id="camel.societies.workforce.utils.TaskAnalysisResult.is_quality_evaluation"></a>
+
+### is_quality_evaluation
+
+```python
+def is_quality_evaluation(self):
+```
+
+**Returns:**
+
+  bool: True if this is a quality evaluation (has quality_score),
+False if this is a failure analysis.
+
+<a id="camel.societies.workforce.utils.TaskAnalysisResult.quality_sufficient"></a>
+
+### quality_sufficient
+
+```python
+def quality_sufficient(self):
+```
+
+**Returns:**
+
+  bool: True if quality is sufficient (score `>= 70` and no recovery
+strategy recommended), False otherwise. Always False for
+failure analysis results.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder"></a>
+
+## PipelineTaskBuilder
+
+```python
+class PipelineTaskBuilder:
+```
+
+Helper class for building pipeline tasks with dependencies.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize an empty pipeline task builder.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    dependencies: Optional[List[str]] = None,
+    additional_info: Optional[dict] = None,
+    auto_depend: bool = True
+):
+```
+
+Add a task to the pipeline with support for chaining.
+
+**Parameters:**
+
+- **content** (str): The content/description of the task.
+- **task_id** (str, optional): Unique identifier for the task. If None, a unique ID will be generated. (default: :obj:`None`)
+- **dependencies** (List[str], optional): List of task IDs that this task depends on. If None and auto_depend=True, will depend on the last added task. (default: :obj:`None`)
+- **additional_info** (dict, optional): Additional information for the task. (default: :obj:`None`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add_parallel_tasks"></a>
+
+### add_parallel_tasks
+
+```python
+def add_parallel_tasks(
+    self,
+    task_contents: List[str],
+    dependencies: Optional[List[str]] = None,
+    task_id_prefix: str = 'parallel',
+    auto_depend: bool = True
+):
+```
+
+Add multiple parallel tasks that can execute simultaneously.
+
+**Parameters:**
+
+- **task_contents** (List[str]): List of task content strings.
+- **dependencies** (List[str], optional): Common dependencies for all parallel tasks. If None and auto_depend=True, will depend on the last added task. (default: :obj:`None`)
+- **task_id_prefix** (str, optional): Prefix for generated task IDs. (default: :obj:`"parallel"`)
+- **auto_depend** (bool, optional): If True and dependencies is None, automatically depend on the last added task. (default: :obj:`True`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.add_sync_task"></a>
+
+### add_sync_task
+
+```python
+def add_sync_task(
+    self,
+    content: str,
+    wait_for: Optional[List[str]] = None,
+    task_id: Optional[str] = None
+):
+```
+
+Add a synchronization task that waits for multiple tasks.
+
+**Parameters:**
+
+- **content** (str): Content of the synchronization task.
+- **wait_for** (List[str], optional): List of task IDs to wait for. If None, will automatically wait for the last parallel tasks. (default: :obj:`None`)
+- **task_id** (str, optional): ID for the sync task. If None, a unique ID will be generated. (default: :obj:`None`)
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.build"></a>
+
+### build
+
+```python
+def build(self):
+```
+
+**Returns:**
+
+  List[Task]: List of tasks with proper dependency relationships.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Clear all tasks from the builder.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.fork"></a>
+
+### fork
+
+```python
+def fork(self, task_contents: List[str]):
+```
+
+Create parallel branches from the current task (alias for
+add_parallel_tasks).
+
+**Parameters:**
+
+- **task_contents** (List[str]): List of task content strings for parallel execution.
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.join"></a>
+
+### join
+
+```python
+def join(self, content: str, task_id: Optional[str] = None):
+```
+
+Join parallel branches with a synchronization task (alias for
+add_sync_task).
+
+**Parameters:**
+
+- **content** (str): Content of the join/sync task.
+- **task_id** (str, optional): ID for the sync task.
+
+**Returns:**
+
+  PipelineTaskBuilder: Self for method chaining.
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder._validate_dependencies"></a>
+
+### _validate_dependencies
+
+```python
+def _validate_dependencies(self):
+```
+
+<a id="camel.societies.workforce.utils.PipelineTaskBuilder.get_task_info"></a>
+
+### get_task_info
+
+```python
+def get_task_info(self):
+```
+
+**Returns:**
+
+  dict: Dictionary containing task count and task details.
+
+<a id="camel.societies.workforce.utils.check_if_running"></a>
+
+## check_if_running
+
+```python
+def check_if_running(
+    running: bool,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+    handle_exceptions: bool = False
+):
+```
+
+Check if the workforce is (not) running, specified by the boolean
+value. Provides fault tolerance through automatic retries and exception
+handling.
+
+**Parameters:**
+
+- **running** (bool): Expected running state (True or False).
+- **max_retries** (int, optional): Maximum number of retry attempts if the operation fails. Set to 0 to disable retries. (default: :obj:`3`)
+- **retry_delay** (float, optional): Delay in seconds between retry attempts. (default: :obj:`1.0`)
+- **handle_exceptions** (bool, optional): If True, catch and log exceptions instead of propagating them. (default: :obj:`False`)
+
+**Raises:**
+
+- **RuntimeError**: If the workforce is not in the expected status and
+- **Exception**: Any exception raised by the decorated function if

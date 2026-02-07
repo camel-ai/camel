@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,12 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import List, Optional, cast
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer, api_keys_required
 
 
 def get_plain_text_from_rich_text(rich_text: List[dict]) -> str:
@@ -66,6 +67,7 @@ def get_media_source_text(block: dict) -> str:
     return source
 
 
+@MCPServer()
 class NotionToolkit(BaseToolkit):
     r"""A toolkit for retrieving information from the user's notion pages.
 
@@ -76,6 +78,11 @@ class NotionToolkit(BaseToolkit):
             the notion APIs.
     """
 
+    @api_keys_required(
+        [
+            ("notion_token", 'NOTION_TOKEN'),
+        ]
+    )
     def __init__(
         self,
         notion_token: Optional[str] = None,

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,22 +10,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
-
-
-class VerifierInput(BaseModel):
-    llm_response: str = Field(
-        description="The LLM response to be verified."
-        "Needs to be in a format that the verifier can handle."
-    )
-    ground_truth: Optional[str] = Field(
-        description="The ground truth data, if available."
-    )
 
 
 class VerificationOutcome(Enum):
@@ -35,6 +25,10 @@ class VerificationOutcome(Enum):
     FAILURE = "failure"
     ERROR = "error"
     TIMEOUT = "timeout"
+
+    def __bool__(self):
+        r"""Only VerificationOutcome.SUCCESS is truthy; others are falsy."""
+        return self is VerificationOutcome.SUCCESS
 
 
 class VerificationResult(BaseModel):

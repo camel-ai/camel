@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .agent_context import get_current_agent_id, set_current_agent_id
 from .commons import (
     AgentOpsMeta,
     BatchProcessor,
     agentops_decorator,
     api_keys_required,
+    browser_toolkit_save_auth_cookie,
     check_server_running,
     create_chunks,
     dependencies_required,
@@ -34,6 +36,8 @@ from .commons import (
     json_to_function_code,
     print_text_animated,
     retry_on_error,
+    run_async,
+    safe_extract_parsed,
     text_extract_from_web,
     to_pascal,
     track_agent,
@@ -41,7 +45,18 @@ from .commons import (
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
-from .response_format import get_pydantic_model
+from .filename import sanitize_filename
+from .langfuse import (
+    configure_langfuse,
+    get_current_agent_session_id,
+    get_langfuse_status,
+    is_langfuse_available,
+    observe,
+    update_current_observation,
+    update_langfuse_trace,
+)
+from .mcp import MCPServer
+from .response_format import get_pydantic_model, model_from_json_schema
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -88,4 +103,19 @@ __all__ = [
     "retry_on_error",
     "BatchProcessor",
     "with_timeout",
+    "MCPServer",
+    "model_from_json_schema",
+    "sanitize_filename",
+    "browser_toolkit_save_auth_cookie",
+    "run_async",
+    "safe_extract_parsed",
+    "configure_langfuse",
+    "is_langfuse_available",
+    "get_current_agent_session_id",
+    "update_langfuse_trace",
+    "observe",
+    "update_current_observation",
+    "get_langfuse_status",
+    "get_current_agent_id",
+    "set_current_agent_id",
 ]

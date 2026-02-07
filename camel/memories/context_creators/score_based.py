@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,40 +10,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import List, Tuple
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from pydantic import BaseModel
+from typing import List, Optional, Tuple
 
-from camel.logger import get_logger
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
+from camel.types.enums import OpenAIBackendRole
 from camel.utils import BaseTokenCounter
-
-logger = get_logger(__name__)
-
-
-class _ContextUnit(BaseModel):
-    idx: int
-    record: ContextRecord
-    num_tokens: int
 
 
 class ScoreBasedContextCreator(BaseContextCreator):
-    r"""A default implementation of context creation strategy, which inherits
-    from :obj:`BaseContextCreator`.
+    r"""A context creation strategy that orders records chronologically.
 
-    This class provides a strategy to generate a conversational context from
-    a list of chat history records while ensuring the total token count of
-    the context does not exceed a specified limit. It prunes messages based
-    on their score if the total token count exceeds the limit.
+    This class supports token count estimation to reduce expensive repeated
+    token counting. When a cached token count is available, it estimates
+    new message tokens using character-based approximation instead of
+    calling the token counter for every message.
 
     Args:
-        token_counter (BaseTokenCounter): An instance responsible for counting
-            tokens in a message.
-        token_limit (int): The maximum number of tokens allowed in the
-            generated context.
+        token_counter (BaseTokenCounter): Token counter instance used to
+            compute the combined token count of the returned messages.
+        token_limit (int): Retained for API compatibility. No longer used to
+            filter records.
     """
 
     def __init__(
@@ -51,6 +41,10 @@ class ScoreBasedContextCreator(BaseContextCreator):
     ) -> None:
         self._token_counter = token_counter
         self._token_limit = token_limit
+        # Token count cache: stores the known token count and corresponding
+        # message count from the last LLM response
+        self._cached_token_count: Optional[int] = None
+        self._cached_message_count: int = 0
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -60,100 +54,116 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def token_limit(self) -> int:
         return self._token_limit
 
+    def set_cached_token_count(
+        self, token_count: int, message_count: int
+    ) -> None:
+        r"""Set the cached token count from LLM response usage.
+
+        Args:
+            token_count (int): The total token count (prompt + completion)
+                from LLM response usage.
+            message_count (int): The number of messages including the
+                assistant response that will be added to memory.
+        """
+        self._cached_token_count = token_count
+        self._cached_message_count = message_count
+
+    def clear_cache(self) -> None:
+        r"""Clear the cached token count."""
+        self._cached_token_count = None
+        self._cached_message_count = 0
+
+    def _estimate_message_tokens(self, message: OpenAIMessage) -> int:
+        r"""Estimate token count for a single message.
+
+        Uses ~2 chars/token as a conservative approximation to handle both
+        ASCII (~4 chars/token) and CJK text (~1-2 chars/token).
+
+        Args:
+            message: The OpenAI message to estimate.
+
+        Returns:
+            Estimated token count (intentionally conservative).
+        """
+        content = message.get("content", "")
+        token_estimate = 4  # message overhead
+
+        if isinstance(content, list):
+            # Multimodal content
+            for part in content:
+                if isinstance(part, dict):
+                    if part.get("type") == "image_url":
+                        # Images: 85 (low) to ~1500 (high detail large image)
+                        # Use 1500 as conservative estimate
+                        token_estimate += 1500
+                    else:
+                        token_estimate += len(str(part)) // 2
+                else:
+                    token_estimate += len(str(part)) // 2
+        else:
+            token_estimate += len(str(content)) // 2
+
+        # Add tool_calls if present (already text, safe to serialize)
+        if message.get("tool_calls"):
+            token_estimate += len(str(message.get("tool_calls"))) // 2
+
+        return token_estimate
+
     def create_context(
         self,
         records: List[ContextRecord],
     ) -> Tuple[List[OpenAIMessage], int]:
-        r"""Creates conversational context from chat history while respecting
-        token limits.
+        """Returns messages sorted by timestamp and their total token count."""
 
-        Constructs the context from provided records and ensures that the total
-        token count does not exceed the specified limit by pruning the least
-        score messages if necessary.
+        system_record: Optional[ContextRecord] = None
+        remaining_records: List[ContextRecord] = []
 
-        Args:
-            records (List[ContextRecord]): A list of message records from which
-                to generate the context.
+        for record in records:
+            if (
+                system_record is None
+                and record.memory_record.role_at_backend
+                == OpenAIBackendRole.SYSTEM
+            ):
+                system_record = record
+                continue
+            remaining_records.append(record)
 
-        Returns:
-            Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
+        remaining_records.sort(key=lambda record: record.timestamp)
 
-        Raises:
-            RuntimeError: If it's impossible to create a valid context without
-                exceeding the token limit.
-        """
-        # Create unique context units list
-        uuid_set = set()
-        context_units = []
-        for idx, record in enumerate(records):
-            if record.memory_record.uuid not in uuid_set:
-                uuid_set.add(record.memory_record.uuid)
-                context_units.append(
-                    _ContextUnit(
-                        idx=idx,
-                        record=record,
-                        num_tokens=self.token_counter.count_tokens_from_messages(
-                            [record.memory_record.to_openai_message()]
-                        ),
-                    )
+        messages: List[OpenAIMessage] = []
+        if system_record is not None:
+            messages.append(system_record.memory_record.to_openai_message())
+
+        messages.extend(
+            record.memory_record.to_openai_message()
+            for record in remaining_records
+        )
+
+        if not messages:
+            return [], 0
+
+        current_count = len(messages)
+
+        # Use cache if available and valid
+        if (
+            self._cached_token_count is not None
+            and self._cached_message_count > 0
+        ):
+            if current_count == self._cached_message_count:
+                # Same message count, use cached value directly
+                return messages, self._cached_token_count
+            elif current_count > self._cached_message_count:
+                # New messages added, estimate incrementally
+                new_messages = messages[self._cached_message_count :]
+                estimated_new_tokens = sum(
+                    self._estimate_message_tokens(msg) for msg in new_messages
                 )
-
-        # TODO: optimize the process, may give information back to memory
-
-        # If not exceed token limit, simply return
-        total_tokens = sum([unit.num_tokens for unit in context_units])
-        if total_tokens <= self.token_limit:
-            context_units = sorted(
-                context_units,
-                key=lambda unit: (unit.record.timestamp, unit.record.score),
-            )
-            return self._create_output(context_units)
-
-        # Log warning about token limit being exceeded
-        logger.warning(
-            f"Token limit reached ({total_tokens} > {self.token_limit}). "
-            f"Some messages will be pruned from memory to meet the limit."
-        )
-
-        # Sort by score
-        context_units = sorted(
-            context_units,
-            key=lambda unit: (unit.record.timestamp, unit.record.score),
-        )
-
-        # Remove the least score messages until total token number is smaller
-        # than token limit
-        truncate_idx = None
-        for i, unit in enumerate(context_units):
-            if i == len(context_units) - 1:
-                # If we reach the end of the list and still exceed the token
-                raise RuntimeError(
-                    "Cannot create context: exceed token limit.", total_tokens
+                return (
+                    messages,
+                    self._cached_token_count + estimated_new_tokens,
                 )
-            total_tokens -= unit.num_tokens
-            if total_tokens <= self.token_limit:
-                truncate_idx = i
-                break
-        if truncate_idx is None:
-            raise RuntimeError(
-                "Cannot create context: exceed token limit.", total_tokens
-            )
-        return self._create_output(context_units[truncate_idx + 1 :])
+            # current_count < cached: messages were removed, cache invalid
 
-    def _create_output(
-        self, context_units: List[_ContextUnit]
-    ) -> Tuple[List[OpenAIMessage], int]:
-        r"""Helper method to generate output from context units.
-
-        This method converts the provided context units into a format suitable
-        for output, specifically a list of OpenAIMessages and an integer
-        representing the total token count.
-        """
-        context_units = sorted(
-            context_units, key=lambda unit: unit.record.timestamp
-        )
-        return [
-            unit.record.memory_record.to_openai_message()
-            for unit in context_units
-        ], sum([unit.num_tokens for unit in context_units])
+        # No cache or cache is stale - do full calculation
+        total_tokens = self.token_counter.count_tokens_from_messages(messages)
+        return messages, total_tokens

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
@@ -61,12 +62,13 @@ def main():
 
     workforce = Workforce('a travel group')
     workforce.add_role_playing_worker(
-        'research Group',
-        assistant_role_name,
-        user_role_name,
-        assistant_agent_kwargs,
-        user_agent_kwargs,
-        1,
+        description='research Group',
+        assistant_role_name=assistant_role_name,
+        user_role_name=user_role_name,
+        assistant_agent_kwargs=assistant_agent_kwargs,
+        user_agent_kwargs=user_agent_kwargs,
+        summarize_agent_kwargs={},
+        chat_turn_limit=1,
     ).add_single_agent_worker(
         'tour guide', guide_agent
     ).add_single_agent_worker('planner', planner_agent)
@@ -75,9 +77,21 @@ def main():
         content="research history of Paris and plan a tour.",
         id='0',
     )
-    task = workforce.process_task(human_task)
+    workforce.process_task(human_task)
 
-    print('Final result of original task:\n', task.result)
+    # Test WorkforceLogger features
+    print("\n--- Workforce Log Tree ---")
+    print(workforce.get_workforce_log_tree())
+
+    print("\n--- Workforce KPIs ---")
+    kpis = workforce.get_workforce_kpis()
+    for key, value in kpis.items():
+        print(f"{key}: {value}")
+
+    log_file_path = "role_playing_with_agents_logs.json"
+    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+    workforce.dump_workforce_logs(log_file_path)
+    print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":

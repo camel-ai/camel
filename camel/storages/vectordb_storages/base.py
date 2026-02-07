@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -87,7 +87,11 @@ class VectorDBQueryResult(BaseModel):
     ) -> "VectorDBQueryResult":
         r"""A class method to construct a `VectorDBQueryResult` instance."""
         return cls(
-            record=VectorRecord(vector=vector, id=id, payload=payload),
+            record=VectorRecord(
+                vector=vector,
+                id=id,
+                payload=payload,
+            ),
             similarity=similarity,
         )
 
@@ -96,7 +100,7 @@ class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
     Attributes:
-        vector_dim (int): The dimention of stored vectors.
+        vector_dim (int): The dimension of stored vectors.
         vector_count (int): The number of stored vectors.
 
     """
@@ -200,7 +204,7 @@ class BaseVectorStorage(ABC):
 
         Args:
             vector (List[float]): The search vector.
-            top_k (int): The number of top similer vectors.
+            top_k (int): The number of top similar vectors.
 
         Returns:
             List[List[Dict[str, Any]]]: A list of vector payloads retrieved

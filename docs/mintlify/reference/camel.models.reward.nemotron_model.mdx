@@ -1,0 +1,83 @@
+<a id="camel.models.reward.nemotron_model"></a>
+
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel"></a>
+
+## NemotronRewardModel
+
+```python
+class NemotronRewardModel(BaseRewardModel):
+```
+
+Reward model based on the Nemotron model with OpenAI compatibility.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created.
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the model service.
+
+**Note:**
+
+The Nemotron model does not support model config.
+
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    api_key: Optional[str] = None,
+    url: Optional[str] = None
+):
+```
+
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, messages: List[Dict[str, str]]):
+```
+
+Evaluate the messages using the Nemotron model.
+
+**Parameters:**
+
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary format.
+
+**Returns:**
+
+  Dict[str, float]:  A dictionary mapping score types to their
+values.
+
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel.get_scores_types"></a>
+
+### get_scores_types
+
+```python
+def get_scores_types(self):
+```
+
+**Returns:**
+
+  List[str]: A list of score types that the reward model can return.
+
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel._parse_scores"></a>
+
+### _parse_scores
+
+```python
+def _parse_scores(self, response: ChatCompletion):
+```
+
+Parse the scores from the response.
+
+**Parameters:**
+
+- **response** (ChatCompletion): A ChatCompletion object with the scores.
+
+**Returns:**
+
+  Dict[str, float]: A dictionary mapping score types to their values.

@@ -6,8 +6,16 @@ name: Pytest Gradio Apps and Examples
 on:
   push:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
   pull_request:
     branches: [ "master", "qa" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -18,7 +26,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -28,14 +41,22 @@ jobs:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
-      run: poetry run pytest -v apps/
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest -v apps/
 
   pytest_examples:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -50,4 +71,7 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: poetry run pytest -v examples/
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest -v examples/

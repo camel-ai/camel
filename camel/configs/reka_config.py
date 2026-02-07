@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -26,32 +26,33 @@ class RekaConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5.
+            to use for sampling, e.g. 0.5. (default: :obj:`None`)
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. Defaults to None.
+            tokens to generate, e.g. 0.9. (default: :obj:`None`)
         top_k (Optional[int], optional): Parameter which forces the model to
             only consider the tokens with the `top_k` highest probabilities at
-            the next step. Defaults to 1024.
+            the next step. (default: :obj:`None`)
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. Defaults to None.
+            generate, e.g. 100. (default: :obj:`None`)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list.
+            a string list. (default: :obj:`None`)
         seed (Optional[int], optional): the random seed to use for sampling, e.
-            g. 42. Defaults to None.
+            g. 42. (default: :obj:`None`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
-            presence penalties. (default: :obj:`0.0`)
+            presence penalties. (default: :obj:`None`)
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj:`0.0`)
+            about frequency and presence penalties. (default: :obj:`None`)
         use_search_engine (Optional[bool]): Whether to consider using search
             engine to complete the request. Note that even if this is set to
             `True`, the model might decide to not use search.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -60,15 +61,9 @@ class RekaConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     seed: Optional[int] = None
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
-    use_search_engine: Optional[bool] = False
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # Reka does not support tool calling
-        return config_dict
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    use_search_engine: Optional[bool] = None
 
 
-REKA_API_PARAMS = {param for param in RekaConfig().model_fields.keys()}
+REKA_API_PARAMS = {param for param in RekaConfig.model_fields.keys()}

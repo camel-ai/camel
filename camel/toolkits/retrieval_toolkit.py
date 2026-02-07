@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,16 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Optional, Union
 
 from camel.retrievers import AutoRetriever
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
-from camel.utils import Constants
+from camel.utils import Constants, MCPServer
 
 
+@MCPServer()
 class RetrievalToolkit(BaseToolkit):
     r"""A class representing a toolkit for information retrieval.
 
@@ -57,11 +58,9 @@ class RetrievalToolkit(BaseToolkit):
             contents (Union[str, List[str]]): Local file paths, remote URLs or
                 string contents.
             top_k (int, optional): The number of top results to return during
-                retrieve. Must be a positive integer. Defaults to
-                `DEFAULT_TOP_K_RESULTS`.
+                retrieve. Must be a positive integer. Defaults to 1.
             similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `DEFAULT_SIMILARITY_THRESHOLD`.
+                for filtering results. Defaults to 0.7.
 
         Returns:
             str: The information retrieved in response to the query, aggregated

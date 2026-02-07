@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import random
+from datetime import datetime
 from typing import Dict, List, Tuple
 
 import pytest
@@ -44,6 +45,8 @@ def memory_and_message(request):
                     content="You are a helpful assistant",
                 ),
                 role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=datetime.now().timestamp(),
+                agent_id="system_agent_1",
             )
         ]
     )
@@ -53,7 +56,7 @@ def memory_and_message(request):
     random.shuffle(messages)
 
     # Process each conversation
-    for conv in messages:
+    for i, conv in enumerate(messages):
         records = [
             MemoryRecord(
                 message=BaseMessage(
@@ -63,6 +66,8 @@ def memory_and_message(request):
                     content=conv["user"],
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"user_agent_{i}",
             ),
             MemoryRecord(
                 message=BaseMessage(
@@ -72,6 +77,8 @@ def memory_and_message(request):
                     content=conv["assistant"],
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"assistant_agent_{i}",
             ),
         ]
         memory.write_records(records)
@@ -144,7 +151,7 @@ def test_vector_db_memory(
 ):
     memory, messages, questions = memory_and_message
 
-    for question in questions:
+    for i, question in enumerate(questions):
         # Add user question to memory
         user_msg = BaseMessage(
             "AI user", RoleType.USER, None, question["user"]
@@ -152,15 +159,21 @@ def test_vector_db_memory(
         memory.write_records(
             [
                 MemoryRecord(
-                    message=user_msg, role_at_backend=OpenAIBackendRole.USER
+                    message=user_msg,
+                    role_at_backend=OpenAIBackendRole.USER,
+                    timestamp=datetime.now().timestamp(),
+                    agent_id=f"user_agent_{i}",
                 )
             ]
         )
         output_messages, _ = memory.get_context()
 
+        print(output_messages)
+
         # Check that context messages are from correct category
         for msg in output_messages[:-1]:
-            for conv in messages:
+            for i, conv in enumerate(messages):
+                print(i, conv)
                 if (
                     conv["assistant"] == msg["content"]
                     or conv["user"] == msg["content"]

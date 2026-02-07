@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import unittest
 from unittest.mock import MagicMock, patch
@@ -420,31 +420,54 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
             for i in range(3)
         ]
 
-        # Create enough mock responses for all iterations
-        mock_reason_responses = [
-            MagicMock(
-                msg=MagicMock(
-                    content=f"Reasoning trace for {problem['problem']}"
-                )
-            )
+        # Create a mapping from problem text to expected reasoning trace
+        problem_to_trace = {
+            problem["problem"]: f"Reasoning trace for {problem['problem']}"
             for problem in test_problems
-        ]
-        mock_evaluate_responses = [
-            MagicMock(
+        }
+
+        # Create a mapping from problem text to expected evaluation
+        problem_to_eval = {
+            problem["problem"]: {
+                "correctness": 0.9,
+                "clarity": 0.9,
+                "completeness": 0.9,
+                "feedback": f"Feedback for {problem['problem']}",
+            }
+            for problem in test_problems
+        }
+
+        def reason_side_effect(prompt):
+            # Extract the problem text from the prompt
+            for problem_text in problem_to_trace.keys():
+                if problem_text in prompt:
+                    return MagicMock(
+                        msg=MagicMock(content=problem_to_trace[problem_text])
+                    )
+            # Fallback if no match found
+            return MagicMock(msg=MagicMock(content="Default reasoning trace"))
+
+        def evaluate_side_effect(prompt, response_format=None):
+            # Extract the problem text from the prompt
+            for problem_text in problem_to_eval.keys():
+                if problem_text in prompt:
+                    return MagicMock(
+                        msg=MagicMock(parsed=problem_to_eval[problem_text])
+                    )
+            # Fallback if no match found
+            return MagicMock(
                 msg=MagicMock(
                     parsed={
                         "correctness": 0.9,
                         "clarity": 0.9,
                         "completeness": 0.9,
-                        "feedback": f"Feedback for {problem['problem']}",
+                        "feedback": "Default feedback",
                     }
                 )
             )
-            for problem in test_problems
-        ]
 
-        self.mock_reason_agent.step.side_effect = mock_reason_responses
-        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
+        self.mock_reason_agent.step.side_effect = reason_side_effect
+        self.mock_evaluate_agent.step.side_effect = evaluate_side_effect
 
         pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
@@ -459,19 +482,11 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
         # Verify results
         self.assertEqual(len(results), 3)
 
-        # Create a map of problem text to expected trace
-        expected_traces = {
-            problem["problem"]: f"Reasoning trace for {problem['problem']}"
-            for problem in test_problems
-        }
-
         # Verify each result matches its corresponding problem
         for result in results:
             problem_text = result["problem"]
-            self.assertIn(problem_text, expected_traces)
-            self.assertEqual(
-                result["final_trace"], expected_traces[problem_text]
-            )
+            expected_trace = problem_to_trace[problem_text]
+            self.assertEqual(result["final_trace"], expected_trace)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 import random
@@ -66,7 +66,7 @@ def main() -> None:
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
             model_config_dict=ChatGPTConfig(
-                temperature=0.0, response_format={"type": "json_object"}
+                response_format={"type": "json_object"}
             ).as_dict(),
         )
 
@@ -81,7 +81,7 @@ def main() -> None:
             data = json.loads(content)
             os.makedirs("./text_embedding_data/tasks/", exist_ok=True)
             with open(f"./text_embedding_data/tasks/{i}.json", "w") as f:
-                json.dump(data, f, indent=4)
+                json.dump(data, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Error raised during generation of task {task}", e)
 

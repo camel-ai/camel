@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,27 +10,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Optional, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from camel.configs import VLLMConfig
+from camel.logger import get_logger
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter
 
-from camel.configs import VLLM_API_PARAMS, VLLMConfig
-from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
-    ModelType,
-)
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+logger = get_logger(__name__)
 
 
 # flake8: noqa: E501
-class VLLMModel(BaseModelBackend):
+class VLLMModel(OpenAICompatibleModel):
     r"""vLLM service interface.
 
     Args:
@@ -50,6 +45,13 @@ class VLLMModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client initialization.
 
     References:
         https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
@@ -62,27 +64,28 @@ class VLLMModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
-        url = url or os.environ.get("VLLM_BASE_URL")
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
-        )
+        self._url = url or os.environ.get("VLLM_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+        self._model_type = model_type
+
         if not self._url:
             self._start_server()
-        # Use OpenAI cilent as interface call vLLM
-        self._client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key="EMPTY",  # required but ignored
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key="EMPTY",  # required but ignored
-            base_url=self._url,
+
+        super().__init__(
+            model_type=self._model_type,
+            model_config_dict=model_config_dict,
+            api_key="Not_Used",
+            url=self._url,
+            token_counter=token_counter,
+            timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _start_server(self) -> None:
@@ -94,96 +97,9 @@ class VLLMModel(BaseModelBackend):
                 stderr=subprocess.PIPE,
             )
             self._url = "http://localhost:8000/v1"
-            print(
+            logger.info(
                 f"vllm server started on {self._url} "
-                f"for {self.model_type} model."
+                f"for {self._model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start vllm server: {e}.")
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to vLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in VLLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into vLLM model backend."
-                )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
-        )
-        return response
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
-        )
-        return response
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)
+            logger.error(f"Failed to start vllm server: {e}.")

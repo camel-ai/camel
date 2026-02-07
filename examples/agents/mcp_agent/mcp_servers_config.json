@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "calculator": {
+      "command": "python",
+      "args": [
+        "examples/agents/mcp_agent/calculator_server.py"
+      ]
+    }
+  },
+  "mcpWebServers": {}
+}

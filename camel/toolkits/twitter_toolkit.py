@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import datetime
 import os
 from http import HTTPStatus
@@ -18,12 +18,11 @@ from http.client import responses
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from requests_oauthlib import OAuth1
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 TWEET_TEXT_LIMIT = 280
 
@@ -76,6 +75,8 @@ def create_tweet(
     Reference:
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/post-tweets
     """
+    from requests_oauthlib import OAuth1
+
     auth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),
@@ -160,6 +161,8 @@ def delete_tweet(tweet_id: str) -> str:
     Reference:
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/delete-tweets-id
     """
+    from requests_oauthlib import OAuth1
+
     auth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),
@@ -263,6 +266,8 @@ def _get_user_info(username: Optional[str] = None) -> str:
     Returns:
         str: A formatted report of the user's Twitter profile information.
     """
+    from requests_oauthlib import OAuth1
+
     oauth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),
@@ -418,6 +423,7 @@ def _handle_http_error(response: requests.Response) -> str:
         return "Unexpected Exception"
 
 
+@MCPServer()
 class TwitterToolkit(BaseToolkit):
     r"""A class representing a toolkit for Twitter operations.
 

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import datetime
 import json
 import os
@@ -160,7 +160,7 @@ def test_update_records(manager):
         mock_download.return_value = "/mock/path/records.json"
 
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps(existing_records)
+            json.dumps(existing_records, ensure_ascii=False)
         )
 
         manager.update_records(dataset_name=REPO_ID, records=new_records)
@@ -195,7 +195,7 @@ def test_list_records(manager):
     ):
         mock_download.return_value = "/mock/path/records.json"
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps(mock_records)
+            json.dumps(mock_records, ensure_ascii=False)
         )
 
         records = manager.list_records(dataset_name=REPO_ID)
@@ -285,7 +285,10 @@ def test_delete_record(manager):
             ),
         ]
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps([record.model_dump() for record in existing_records])
+            json.dumps(
+                [record.model_dump() for record in existing_records],
+                ensure_ascii=False,
+            )
         )
 
         manager.delete_record(dataset_name=REPO_ID, record_id="record-1")

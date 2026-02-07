@@ -1,0 +1,121 @@
+<a id="camel.toolkits.searxng_toolkit"></a>
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit"></a>
+
+## SearxNGToolkit
+
+```python
+class SearxNGToolkit(BaseToolkit):
+```
+
+A toolkit for performing web searches using SearxNG search engine.
+
+This toolkit provides methods to search the web using SearxNG,
+a privacy-respecting metasearch engine. It supports customizable
+search parameters and safe search levels.
+
+**Parameters:**
+
+- **searxng_host** (str): The URL of the SearxNG instance to use for searches. Must be a valid HTTP/HTTPS URL.
+- **language** (str, optional): Search language code for results. (default: :obj:`"en"`)
+- **categories** (List[str], optional): List of search categories to use. (default: :obj:`None`)
+- **time_range** (str, optional): Time range filter for search results.Valid values are "day", "week", "month", "year". (default: :obj:`None`)
+- **safe_search** (int, optional): Safe search level (0: None, 1: Moderate, 2: Strict). (default: :obj:`1`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    searxng_host: str,
+    language: str = 'en',
+    categories: Optional[List[str]] = None,
+    time_range: Optional[str] = None,
+    safe_search: int = 1,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit._validate_searxng_host"></a>
+
+### _validate_searxng_host
+
+```python
+def _validate_searxng_host(self, url: str):
+```
+
+Validate if the given URL is a proper HTTP/HTTPS URL.
+
+**Parameters:**
+
+- **url** (str): The URL to validate.
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit._validate_safe_search"></a>
+
+### _validate_safe_search
+
+```python
+def _validate_safe_search(self, level: int):
+```
+
+Validate if the safe search level is valid.
+
+**Parameters:**
+
+- **level** (int): The safe search level to validate.
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit._validate_time_range"></a>
+
+### _validate_time_range
+
+```python
+def _validate_time_range(self, time_range: str):
+```
+
+Validate if the time range is valid.
+
+**Parameters:**
+
+- **time_range** (str): The time range to validate.
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit.search"></a>
+
+### search
+
+```python
+def search(
+    self,
+    query: str,
+    num_results: int = 10,
+    category: Optional[str] = None
+):
+```
+
+Perform a web search using the configured SearxNG instance.
+
+**Parameters:**
+
+- **query** (str): The search query string to execute.
+- **num_results** (int, optional): Maximum number of results to return. (default: :obj:`10`)
+- **category** (str, optional): Specific search category to use. If not provided, uses the first category from self.categories. (default: :obj:`None`)
+
+**Returns:**
+
+  List[Dict[str, str]]: List of search results, where each result is
+dictionary containing 'title', 'link', and 'snippet' keys.
+
+<a id="camel.toolkits.searxng_toolkit.SearxNGToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing the
+available functions in the toolkit.

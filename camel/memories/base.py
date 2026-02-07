@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
@@ -44,6 +44,32 @@ class MemoryBlock(ABC):
             record (MemoryRecord): Record to be added to the memory.
         """
         self.write_records([record])
+
+    def pop_records(self, count: int) -> List[MemoryRecord]:
+        r"""Removes records from the memory and returns the removed records.
+
+        Args:
+            count (int): Number of records to remove.
+
+        Returns:
+            List[MemoryRecord]: The records that were removed from the memory
+                in their original order.
+        """
+        raise NotImplementedError
+
+    def remove_records_by_indices(
+        self, indices: List[int]
+    ) -> List[MemoryRecord]:
+        r"""Removes records at specified indices from the memory.
+
+        Args:
+            indices (List[int]): List of indices to remove. Indices should be
+                valid positions in the current record list.
+
+        Returns:
+            List[MemoryRecord]: The removed records in their original order.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self) -> None:
@@ -112,6 +138,16 @@ class AgentMemory(MemoryBlock, ABC):
     the memory records stored within the AgentMemory.
     """
 
+    @property
+    @abstractmethod
+    def agent_id(self) -> Optional[str]:
+        pass
+
+    @agent_id.setter
+    @abstractmethod
+    def agent_id(self, val: Optional[str]) -> None:
+        pass
+
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:
         r"""Get a record list from the memory for creating model context.
@@ -138,3 +174,23 @@ class AgentMemory(MemoryBlock, ABC):
                 context in OpenAIMessage format and the total token count.
         """
         return self.get_context_creator().create_context(self.retrieve())
+
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This is an optional method that can be overridden by subclasses
+        to implement cleaning of tool-related messages. By default, it
+        does nothing, maintaining backward compatibility.
+        """
+        pass
+
+    def __repr__(self) -> str:
+        r"""Returns a string representation of the AgentMemory.
+
+        Returns:
+            str: A string in the format 'ClassName(agent_id=<id>)'
+                if agent_id exists, otherwise just 'ClassName()'.
+        """
+        agent_id = getattr(self, '_agent_id', None)
+        if agent_id:
+            return f"{self.__class__.__name__}(agent_id='{agent_id}')"
+        return f"{self.__class__.__name__}()"
