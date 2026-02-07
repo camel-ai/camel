@@ -41,6 +41,6 @@ print(f"\nTools available: {[t.func.__name__ for t in tools]}")
 # Load a specific skill (if available)
 if skills:
     skill_name = skills[0]["name"]
-    content = skill_toolkit.get_skill(skill_name)
+    content = skill_toolkit.load_skill(skill_name)
     print(f"\nLoaded skill '{skill_name}':")
     print(content[:200] + "...")

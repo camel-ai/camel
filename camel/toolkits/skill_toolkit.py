@@ -360,7 +360,7 @@ class SkillToolkit(BaseToolkit):
 
         return "\n".join(output_lines).strip()
 
-    def get_skill(self, name: Union[str, List[str]]) -> str:
+    def load_skill(self, name: Union[str, List[str]]) -> str:
         r"""Load one or more skills by name.
 
         Args:
@@ -382,8 +382,8 @@ class SkillToolkit(BaseToolkit):
     def get_tools(self) -> List[FunctionTool]:
         r"""Return the skill tools with injected available skills."""
         list_tool = FunctionTool(self.list_skills)
-        get_tool = FunctionTool(self.get_skill)
-        schema = get_tool.get_openai_tool_schema()
+        load_tool = FunctionTool(self.load_skill)
+        schema = load_tool.get_openai_tool_schema()
         schema["function"]["description"] = self._build_description()
-        get_tool.set_openai_tool_schema(schema)
-        return [list_tool, get_tool]
+        load_tool.set_openai_tool_schema(schema)
+        return [list_tool, load_tool]

@@ -2131,6 +2131,9 @@ class JinaRerankerModelType(str, Enum):
     JINA_COLBERT_V2 = "jina-colbert-v2"
     r"""ColBERT-based reranker for token-level matching."""
 
+    JINA_RERANKER_V3 = "jina-reranker-v3"
+    r"""Latest multilingual reranker with 131K context window (0.6B params)."""
+
 
 class HuggingFaceRepoType(str, Enum):
     DATASET = "dataset"
