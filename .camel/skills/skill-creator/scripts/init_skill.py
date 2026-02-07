@@ -11,14 +11,16 @@ Examples:
     init_skill.py custom-skill --path /custom/location
 """
 
+import re
+import shutil
 import sys
 from pathlib import Path
 
 SKILL_TEMPLATE = """---
 name: {skill_name}
-description: [TODO: Complete and informative explanation of what the skill
-does and when to use it. Include WHEN to use this skill - specific scenarios,
-file types, or tasks that trigger it.]
+description: "TODO: Complete and informative explanation of what the skill
+  does and when to use it. Include WHEN to use this skill - specific scenarios,
+  file types, or tasks that trigger it."
 ---
 
 # {skill_title}
@@ -217,6 +219,43 @@ def title_case_skill_name(skill_name):
     return ' '.join(word.capitalize() for word in skill_name.split('-'))
 
 
+def validate_skill_name(skill_name):
+    r"""Validate skill name format.
+
+    Args:
+        skill_name: Name of the skill to validate
+
+    Returns:
+        Tuple of (is_valid, error_message). error_message is None if valid.
+    """
+    if not skill_name:
+        return False, "Skill name cannot be empty"
+
+    # Check naming convention (kebab-case: lowercase with hyphens)
+    if not re.match(r'^[a-z0-9-]+$', skill_name):
+        return (
+            False,
+            f"Name '{skill_name}' should be kebab-case (lowercase "
+            f"letters, digits, and hyphens only)",
+        )
+
+    if skill_name.startswith('-') or skill_name.endswith('-'):
+        return False, f"Name '{skill_name}' cannot start or end with hyphen"
+
+    if '--' in skill_name:
+        return False, f"Name '{skill_name}' cannot contain consecutive hyphens"
+
+    # Check name length (max 64 characters per spec)
+    if len(skill_name) > 64:
+        return (
+            False,
+            f"Name is too long ({len(skill_name)} characters). "
+            f"Maximum is 64 characters.",
+        )
+
+    return True, None
+
+
 def init_skill(skill_name, path):
     r"""Create a new skill directory with template SKILL.md.
 
@@ -227,6 +266,12 @@ def init_skill(skill_name, path):
     Returns:
         Path to created skill directory, or None if error
     """
+    # Validate skill name before proceeding
+    is_valid, error_msg = validate_skill_name(skill_name)
+    if not is_valid:
+        print(f"❌ Error: {error_msg}")
+        return None
+
     # Determine skill directory path
     skill_dir = Path(path).resolve() / skill_name
 
@@ -255,6 +300,8 @@ def init_skill(skill_name, path):
         print("✅ Created SKILL.md")
     except Exception as e:
         print(f"❌ Error creating SKILL.md: {e}")
+        # Clean up on failure
+        _cleanup_skill_dir(skill_dir)
         return None
 
     # Create resource directories with example files
@@ -284,6 +331,8 @@ def init_skill(skill_name, path):
         print("✅ Created assets/example_asset.txt")
     except Exception as e:
         print(f"❌ Error creating resource directories: {e}")
+        # Clean up on failure
+        _cleanup_skill_dir(skill_dir)
         return None
 
     # Print next steps
@@ -300,6 +349,23 @@ def init_skill(skill_name, path):
     print("3. Run the validator when ready to check the skill structure")
 
     return skill_dir
+
+
+def _cleanup_skill_dir(skill_dir):
+    r"""Clean up a partially created skill directory.
+
+    Args:
+        skill_dir: Path to the skill directory to remove
+    """
+    try:
+        if skill_dir.exists():
+            shutil.rmtree(skill_dir)
+            print(f"🧹 Cleaned up partial skill directory: {skill_dir}")
+    except Exception as cleanup_error:
+        print(
+            f"⚠️ Warning: Could not clean up directory {skill_dir}: "
+            f"{cleanup_error}"
+        )
 
 
 def main():

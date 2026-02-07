@@ -14,12 +14,65 @@ import sys
 import zipfile
 from pathlib import Path
 
+# Files and directories to exclude from the packaged skill
+EXCLUDED_PATTERNS = {
+    '.DS_Store',
+    '.git',
+    '.gitignore',
+    '.gitattributes',
+    '__pycache__',
+    '.pyc',
+    '.pyo',
+    '.pyd',
+    '.so',
+    '.egg-info',
+    '.eggs',
+    '.pytest_cache',
+    '.mypy_cache',
+    '.ruff_cache',
+    '.coverage',
+    '.env',
+    '.venv',
+    'venv',
+    '.idea',
+    '.vscode',
+    'node_modules',
+    '*.log',
+    '.tox',
+    'dist',
+    'build',
+}
+
+
+def _should_exclude(file_path: Path) -> bool:
+    r"""Check if a file should be excluded from packaging.
+
+    Args:
+        file_path: Path to check
+
+    Returns:
+        True if the file should be excluded, False otherwise
+    """
+    # Check each part of the path
+    for part in file_path.parts:
+        # Check exact matches
+        if part in EXCLUDED_PATTERNS:
+            return True
+        # Check suffix matches (e.g., .pyc files)
+        for pattern in EXCLUDED_PATTERNS:
+            if pattern.startswith('.') and part.endswith(pattern):
+                return True
+            if pattern.startswith('*') and part.endswith(pattern[1:]):
+                return True
+    return False
+
+
 # Import from same directory - add parent to path for module resolution
 _script_dir = Path(__file__).parent.resolve()
 if str(_script_dir) not in sys.path:
     sys.path.insert(0, str(_script_dir))
 
-from quick_validate import validate_skill
+from quick_validate import validate_skill  # noqa: E402
 
 
 def package_skill(skill_path, output_dir=None):
@@ -77,6 +130,11 @@ def package_skill(skill_path, output_dir=None):
             # Walk through the skill directory
             for file_path in skill_path.rglob('*'):
                 if file_path.is_file():
+                    # Skip excluded files
+                    rel_path = file_path.relative_to(skill_path)
+                    if _should_exclude(rel_path):
+                        print(f"  Skipped: {rel_path}")
+                        continue
                     # Calculate the relative path within the zip
                     arcname = file_path.relative_to(skill_path.parent)
                     zipf.write(file_path, arcname)

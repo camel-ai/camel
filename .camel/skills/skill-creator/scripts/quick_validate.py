@@ -7,7 +7,14 @@ import re
 import sys
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    print(
+        "❌ Error: PyYAML is required but not installed.\n"
+        "   Install it with: pip install pyyaml"
+    )
+    sys.exit(1)
 
 
 def validate_skill(skill_path):
