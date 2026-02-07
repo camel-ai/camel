@@ -93,11 +93,11 @@ processing
 that performs automation, data processing, or specific operations.
 
 **Note:** Scripts may be executed without loading into context, but can still
-be read by Claude for patching or environment adjustments.
+be read by agent for patching or environment adjustments.
 
 ### references/
 Documentation and reference material intended to be loaded into context to
-inform Claude's process and thinking.
+inform agent's process and thinking.
 
 **Examples from other skills:**
 - Product management: `communication.md`, `context_building.md` - detailed
@@ -106,12 +106,12 @@ workflow guides
 - Finance: Schema documentation, company policies
 
 **Appropriate for:** In-depth documentation, API references, database schemas,
-comprehensive guides, or any detailed information that Claude should reference
+comprehensive guides, or any detailed information that agent should reference
 while working.
 
 ### assets/
 Files not intended to be loaded into context, but rather used within the
-output Claude produces.
+output agent produces.
 
 **Examples from other skills:**
 - Brand styling: PowerPoint template files (.pptx), logo files
@@ -193,7 +193,7 @@ Replace with actual asset files (templates, images, fonts, etc.) or delete if
 not needed.
 
 Asset files are NOT intended to be loaded into context, but rather used within
-the output Claude produces.
+the output agent produces.
 
 Example asset files from other skills:
 - Brand guidelines: logo.png, slides_template.pptx
