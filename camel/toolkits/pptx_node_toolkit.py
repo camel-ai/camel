@@ -141,7 +141,8 @@ class PptxNodeToolkit(BaseToolkit):
                 ]
             filename (str): The name of the file to save. MUST end in .pptx.
             theme (str, optional): The theme to use. Defaults to "default".
-            layout (str, optional): The layout to use. Defaults to "LAYOUT_16x9".
+            layout (str, optional): The layout to use. Defaults to
+                "LAYOUT_16x9".
 
         Returns:
             str: A JSON string containing the result status, file path, and
@@ -168,7 +169,10 @@ class PptxNodeToolkit(BaseToolkit):
             elif isinstance(slides_data, list):
                 final_slides = slides_data
             else:
-                return "Error: Content must be a list of slides or a dict describing slides."
+                return (
+                    "Error: Content must be a list of slides or a dict "
+                    "describing slides."
+                )
 
             # Validate slides are dicts
             for item in final_slides:

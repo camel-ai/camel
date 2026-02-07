@@ -78,7 +78,7 @@ class TestPptxNodeToolkit(unittest.TestCase):
         content = [{"title": "Test Slide"}]
         filename = "test_theme"
         
-        result = self.toolkit.create_presentation(
+        self.toolkit.create_presentation(
             content, filename, theme="custom_theme", layout="LAYOUT_4x3"
         )
 
