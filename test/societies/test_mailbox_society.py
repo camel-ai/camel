@@ -857,3 +857,105 @@ class TestMailboxSocietyProcessing:
 
         # State should remain unchanged (can't verify much without state)
         assert society._running
+
+    @pytest.mark.asyncio
+    @pytest.mark.model_backend
+    async def test_default_handler_uses_agent_step(self):
+        r"""Test that default handler uses ChatAgent.step when no custom
+        handler is set."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        # Create agent WITHOUT setting a custom handler
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="TestAgent",
+                content="You are a test agent. Respond briefly.",
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1",
+            description="Test agent",
+            capabilities=["test"],
+        )
+
+        society.register_agent(agent, card)
+        # NOTE: Not setting a custom handler - should use default
+
+        # Add a message to the agent's mailbox
+        society.message_router["agent1"].append(
+            MailboxMessage(
+                sender_id="agent2",
+                recipient_id="agent1",
+                content="Hello, please acknowledge this message.",
+                subject="Test Message",
+            )
+        )
+
+        # Verify mailbox has the message
+        assert len(society.message_router["agent1"]) == 1
+
+        # Process messages - should use default handler which calls
+        # agent.step()
+        count = await society._process_messages_once()
+
+        # Verify message was processed
+        assert count == 1
+        assert len(society.message_router["agent1"]) == 0
+
+        # Verify agent has memory of processing (agent.step was called)
+        # The agent should have at least 2 messages in memory:
+        # 1. System message
+        # 2. User message created by default handler
+        # 3. Assistant response
+        assert len(agent.memory.get_context()) >= 2
+
+    @pytest.mark.model_backend
+    def test_default_message_handler_direct(self):
+        r"""Test the _default_message_handler method directly."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="TestAgent", content="You are a test agent."
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1",
+            description="Test agent",
+            capabilities=["test"],
+        )
+
+        society.register_agent(agent, card)
+
+        # Create a message
+        message = MailboxMessage(
+            sender_id="agent2",
+            recipient_id="agent1",
+            content="Test content",
+            subject="Test subject",
+        )
+
+        # Get initial memory length
+        initial_memory_length = len(agent.memory.get_context())
+
+        # Call the default handler directly
+        society._default_message_handler(agent, message)
+
+        # Verify agent.step was called by checking memory increased
+        # Should have at least one more message (the user message passed to
+        # step)
+        assert len(agent.memory.get_context()) > initial_memory_length
