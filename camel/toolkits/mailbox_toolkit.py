@@ -165,10 +165,15 @@ class MailboxToolkit(BaseToolkit):
 
         for i in range(count):
             msg = mailbox[i]
+            preview = (
+                msg.content[:100] + "..."
+                if len(msg.content) > 100
+                else msg.content
+            )
             messages.append(
                 f"From: {msg.sender_id}\n"
                 f"Subject: {msg.subject or 'No subject'}\n"
-                f"Preview: {msg.content[:100]}...\n"
+                f"Preview: {preview}\n"
             )
 
         return (
