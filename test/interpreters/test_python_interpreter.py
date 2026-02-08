@@ -292,32 +292,32 @@ def test_augassign_operations(interpreter: InternalPythonInterpreter):
 x += 5"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 15
-    
+
     code = """x = 10
 x -= 3"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 7
-    
+
     code = """x = 4
 x *= 3"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 12
-    
+
     code = """x = 20
 x /= 4"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 5.0
-    
+
     code = """x = 17
 x //= 5"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 3
-    
+
     code = """x = 17
 x %= 5"""
     execution_res = interpreter.execute(code, keep_state=False)
     assert execution_res == 2
-    
+
     code = """x = 2
 x **= 3"""
     execution_res = interpreter.execute(code, keep_state=False)

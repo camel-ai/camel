@@ -408,11 +408,11 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"Unsupported target for augmented assignment. "
                 f"Expected ast.Name, got {target.__class__.__name__} instead."
             )
-        
+
         current_value = self._get_value_from_state(target.id)
         operator = augassign.op
         right_value = self._execute_ast(augassign.value)
-        
+
         # Apply the operation based on the operator type
         if isinstance(operator, ast.Add):
             result = current_value + right_value
@@ -444,7 +444,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             raise InterpreterError(
                 f"Unsupported augmented assignment operator: {operator}"
             )
-        
+
         # Update the state with the new value
         self.state[target.id] = result
         return result
