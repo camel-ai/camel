@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Union
 
 from camel.models.reward import BaseRewardModel
 from camel.types import ModelType
+from camel.utils import dependencies_required
 
 
 class SkyworkRewardModel(BaseRewardModel):
@@ -34,6 +35,7 @@ class SkyworkRewardModel(BaseRewardModel):
             (default: :obj:`offload`)
     """
 
+    @dependencies_required('torch', 'transformers')
     def __init__(
         self,
         model_type: Union[ModelType, str],
