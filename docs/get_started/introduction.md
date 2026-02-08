@@ -31,6 +31,10 @@ description: |
 ## Ecosystem Highlights
 
 <CardGroup cols={2}>
+  <Card title="Eigent" icon="users" href="https://www.eigent.ai/">
+    The Best Open Source Cowork Desktop to Unlock Your Exceptional Productivity
+  </Card>
+
   <Card title="OASIS" icon="globe" href="https://github.com/camel-ai/oasis">
     Large‑scale social simulation environment: model Reddit, Twitter, and user interactions
   </Card>
@@ -46,10 +50,6 @@ description: |
   <Card title="OWL 🦉" icon="brain-circuit" href="https://github.com/camel-ai/owl">
     OWL (Optimized Workforce Learning) is a multi-agent automation framework for real-world tasks. Built on CAMEL-AI,
     it enables dynamic agent collaboration using tools like browsers, code interpreters, and multimodal models.
-  </Card>
-
-  <Card title="Eigent" icon="users" href="https://www.eigent.ai/">
-    The Best Open Source Cowork Desktop to Unlock Your Exceptional Productivity
   </Card>
 </CardGroup>
 
