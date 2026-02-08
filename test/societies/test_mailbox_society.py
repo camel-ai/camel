@@ -911,9 +911,8 @@ class TestMailboxSocietyProcessing:
 
         # Verify agent has memory of processing (agent.step was called)
         # The agent should have at least 2 messages in memory:
-        # 1. System message
-        # 2. User message created by default handler
-        # 3. Assistant response
+        # 1. User message created by default handler
+        # 2. Assistant response
         assert len(agent.memory.get_context()) >= 2
 
     @pytest.mark.model_backend
