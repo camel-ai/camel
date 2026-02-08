@@ -19,7 +19,6 @@ icon: people-group
   <b>Frameworks:</b>
   <ul>
     <li><code>RolePlaying</code> — Advanced turn-taking, prompt-guarded collaboration (most common for LLM societies).</li>
-    <li><code>BabyAGI</code> — Autonomous, open-ended R&D loops for big-picture or research goals.</li>
   </ul>
 </Card>
 
@@ -46,15 +45,6 @@ icon: people-group
         <li>Always end with: <code>Next request.</code></li>
       </ul>
     </div>
-  </Card>
-  <Card icon="flask" title="BabyAGI" style={{ flex: "1 1 320px" }}>
-    <b>Task-driven, fully autonomous project agent</b><br/>
-    Based on <a href="https://github.com/yoheinakajima/babyagi" target="_blank">BabyAGI</a>, with seamless CAMEL integration.
-    <ul>
-      <li>Self-driven research, R&D, and iterative problem-solving</li>
-      <li>Builds, updates, and executes dynamic task lists</li>
-      <li>Minimal initial human input—agents break down and solve tasks</li>
-    </ul>
   </Card>
 </div>
 
@@ -184,24 +174,11 @@ if __name__ == "__main__":
 
 ---
 
-<Card icon="flask-conical" title="Framework Spotlight: BabyAGI" className="my-6">
-  <b>Autonomous project agent—no human in the loop.</b><br/>
-  <a href="https://github.com/yoheinakajima/babyagi" target="_blank">Original BabyAGI repo</a>
-  <ul>
-    <li>Designed for long-horizon, open-ended R&D</li>
-    <li>Automatically breaks down, plans, and solves complex tasks</li>
-    <li>Integrates with CAMEL's toolkit system for supercharged capabilities</li>
-  </ul>
-</Card>
-
----
-a\
 <AccordionGroup>
   <Accordion title="Tips & Best Practices">
     <ul>
       <li>Use <b>RolePlaying</b> for most multi-agent conversations, with or without a critic.</li>
       <li>Define specific roles and prompt-guardrails for your agents—structure is everything!</li>
-      <li>Try <b>BabyAGI</b> when you want open-ended, research-oriented, or autonomous projects.</li>
       <li>Leverage the <code>with_task_specify</code> and <code>with_task_planner</code> options for highly complex tasks.</li>
       <li>Monitor for infinite loops—every agent response should have a clear next step or end.</li>
     </ul>

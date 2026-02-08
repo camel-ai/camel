@@ -21,5 +21,4 @@ Advanced Features
    agents_with_MCP
    agents_tracking
    critic_agents_and_tree_search
-   embodied_agents
    agent_generate_structured_output
