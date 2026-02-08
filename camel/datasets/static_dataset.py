@@ -26,7 +26,15 @@ from typing import (
 
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
-from torch.utils.data import Dataset
+
+try:
+    from torch.utils.data import Dataset
+except ImportError:
+
+    class Dataset:  # type: ignore[no-redef]
+        r"""Fallback when PyTorch is not installed."""
+
+        pass
 
 from camel.logger import get_logger
 
