@@ -33,7 +33,6 @@ except ImportError:
 
     class Dataset:  # type: ignore[no-redef]
         r"""Fallback when PyTorch is not installed."""
-
         pass
 
 from camel.logger import get_logger
