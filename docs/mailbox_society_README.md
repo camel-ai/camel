@@ -249,6 +249,48 @@ society.set_message_handler("agent1", my_handler)
 society.run()
 ```
 
+## Autonomous Agent Coordination
+
+The most powerful use of MailboxSociety is enabling ChatAgents to autonomously coordinate using the toolkits:
+
+```python
+from camel.societies import MailboxSociety, AgentCard
+from camel.toolkits import MailboxToolkit, AgentDiscoveryToolkit
+from camel.agents import ChatAgent
+
+# Create society
+society = MailboxSociety(name="Research Team")
+
+# Create agent with both toolkits
+mailbox = MailboxToolkit("researcher", society.message_router)
+discovery = AgentDiscoveryToolkit("researcher", society.agent_cards)
+
+agent = ChatAgent(
+    system_message=BaseMessage.make_assistant_message(
+        role_name="Researcher",
+        content=(
+            "You are a researcher. Use discovery tools to find collaborators "
+            "and mailbox tools to coordinate with them."
+        )
+    ),
+    model=model,
+    tools=[*mailbox.get_tools(), *discovery.get_tools()]
+)
+
+# Agent autonomously uses tools through natural language
+user_msg = BaseMessage.make_user_message(
+    role_name="User",
+    content="Find a writer on the team and send them your research findings."
+)
+response = agent.step(user_msg)
+# Agent will:
+# 1. Use discovery tools to find writer
+# 2. Use mailbox tools to send message
+# 3. All done autonomously through LLM tool calling!
+```
+
+For a complete example, see `examples/ai_society/mailbox_society_coordination_example.py` which demonstrates a full multi-agent workflow where agents discover each other and coordinate autonomously.
+
 ## Features
 
 ### Message Passing
@@ -349,9 +391,10 @@ pytest test/societies/test_mailbox_society.py
 ## Examples
 
 See the following examples:
-- `examples/ai_society/mailbox_society_example.py` - Basic message passing demonstration
+- `examples/ai_society/mailbox_society_example.py` - Basic message passing demonstration (manual toolkit invocation)
 - `examples/ai_society/mailbox_society_processing_example.py` - Entry point and automatic processing demonstration
 - `examples/ai_society/default_handler_example.py` - Default handler behavior demonstration
+- `examples/ai_society/mailbox_society_coordination_example.py` - **Full autonomous agent coordination example** showing ChatAgents using MailboxToolkit and AgentDiscoveryToolkit to coordinate on a multi-step project
 
 ## API Reference
 
