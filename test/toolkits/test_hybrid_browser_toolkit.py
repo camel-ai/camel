@@ -138,6 +138,18 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.upload_file = AsyncMock(
+        return_value={
+            "result": "File uploaded successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.download_file = AsyncMock(
+        return_value={
+            "result": "File downloaded successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
 
     return mock_ws_wrapper
 
@@ -633,3 +645,84 @@ class TestHybridBrowserToolkit:
         assert "tabs" in result
         assert "current_tab" in result
         assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_upload_file_valid(self, browser_toolkit_fixture):
+        """Test file upload with valid ref and file path."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_upload_file(
+            ref="file_input", file_path="/path/to/test/file.txt"
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_upload_file_exception(self, browser_toolkit_fixture):
+        """Test file upload when exception is raised."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.upload_file = AsyncMock(
+            side_effect=Exception("Upload failed")
+        )
+        result = await toolkit.browser_upload_file(
+            ref="file_input", file_path="/path/to/file.txt"
+        )
+
+        assert "result" in result
+        assert "Error" in result["result"]
+        assert "Upload failed" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_upload_file_invalid_ref(self, browser_toolkit_fixture):
+        """Test file upload with invalid ref."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.upload_file = AsyncMock(
+            side_effect=Exception("Element with ref invalid_ref not found")
+        )
+        result = await toolkit.browser_upload_file(
+            ref="invalid_ref", file_path="/path/to/file.txt"
+        )
+
+        assert "result" in result
+        assert "Error" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_valid(self, browser_toolkit_fixture):
+        """Test file download with valid ref."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_download_file(ref="download_link")
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_download_file_exception(self, browser_toolkit_fixture):
+        """Test file download when exception is raised."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.download_file = AsyncMock(
+            side_effect=Exception("WebSocket connection failed")
+        )
+
+        result = await toolkit.browser_download_file(ref="download_link")
+
+        assert "result" in result
+        assert "Error" in result["result"]
+        assert "WebSocket connection failed" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_invalid_ref(self, browser_toolkit_fixture):
+        """Test file download with invalid ref."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.download_file = AsyncMock(
+            side_effect=Exception("Element with ref invalid_ref not found")
+        )
+        result = await toolkit.browser_download_file(ref="invalid_ref")
+
+        assert "result" in result
+        assert "Error" in result["result"]

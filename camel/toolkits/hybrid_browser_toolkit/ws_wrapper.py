@@ -950,6 +950,49 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
+    async def upload_file(
+        self,
+        file_path: str,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Upload a file by clicking the element or coordinates and
+        intercepting the file chooser.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {'filePath': file_path}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('upload_file', params)
+        return response
+
+    @action_logger
+    async def download_file(
+        self,
+        ref: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Download a file by clicking the element or coordinates that
+        triggers a download.
+
+        Supports both ref mode and pixel mode.
+        """
+        params: Dict[str, Any] = {}
+        if ref is not None:
+            params['ref'] = ref
+        if x is not None and y is not None:
+            params['x'] = x
+            params['y'] = y
+        response = await self._send_command('download_file', params)
+        return response
+
+    @action_logger
     async def batch_keyboard_input(
         self,
         operations: List[Dict[str, Any]],

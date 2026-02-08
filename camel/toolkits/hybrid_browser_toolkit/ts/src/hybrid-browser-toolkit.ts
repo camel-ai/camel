@@ -404,6 +404,25 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
+  async uploadFile(params: {
+    filePath: string;
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'upload_file', ...params };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async downloadFile(params: {
+    ref?: string;
+    x?: number;
+    y?: number;
+  }): Promise<any> {
+    const action: BrowserAction = { type: 'download_file', ...params };
+    return this.executeActionWithSnapshot(action);
+  }
+
   async batchKeyboardInput(operations: Array<{type: string, keys?: string[], text?: string, delay?: number}>, skipStabilityWait: boolean = true): Promise<any> {
     return this.session.batchKeyboardInput(operations, skipStabilityWait);
   }
