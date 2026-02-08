@@ -294,6 +294,10 @@ class InternalPythonInterpreter(BaseInterpreter):
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
+        elif isinstance(expression, ast.AugAssign):
+            # Augmented assignment (+=, -=, *=, etc.) -> update the state
+            # and return the new value
+            return self._execute_augassign(expression)
         elif isinstance(expression, ast.Attribute):
             value = self._execute_ast(expression.value)
             return getattr(value, expression.attr)
@@ -395,6 +399,55 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"ast.Name or ast.Tuple, got "
                 f"{target.__class__.__name__} instead."
             )
+
+    def _execute_augassign(self, augassign: ast.AugAssign) -> Any:
+        # Get the current value of the target variable
+        target = augassign.target
+        if not isinstance(target, ast.Name):
+            raise InterpreterError(
+                f"Unsupported target for augmented assignment. "
+                f"Expected ast.Name, got {target.__class__.__name__} instead."
+            )
+        
+        current_value = self._get_value_from_state(target.id)
+        operator = augassign.op
+        right_value = self._execute_ast(augassign.value)
+        
+        # Apply the operation based on the operator type
+        if isinstance(operator, ast.Add):
+            result = current_value + right_value
+        elif isinstance(operator, ast.Sub):
+            result = current_value - right_value
+        elif isinstance(operator, ast.Mult):
+            result = current_value * right_value
+        elif isinstance(operator, ast.Div):
+            result = current_value / right_value
+        elif isinstance(operator, ast.FloorDiv):
+            result = current_value // right_value
+        elif isinstance(operator, ast.Mod):
+            result = current_value % right_value
+        elif isinstance(operator, ast.Pow):
+            result = current_value ** right_value
+        elif isinstance(operator, ast.LShift):
+            result = current_value << right_value
+        elif isinstance(operator, ast.RShift):
+            result = current_value >> right_value
+        elif isinstance(operator, ast.BitOr):
+            result = current_value | right_value
+        elif isinstance(operator, ast.BitXor):
+            result = current_value ^ right_value
+        elif isinstance(operator, ast.BitAnd):
+            result = current_value & right_value
+        elif isinstance(operator, ast.MatMult):
+            result = current_value @ right_value
+        else:
+            raise InterpreterError(
+                f"Unsupported augmented assignment operator: {operator}"
+            )
+        
+        # Update the state with the new value
+        self.state[target.id] = result
+        return result
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
