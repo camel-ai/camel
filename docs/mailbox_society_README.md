@@ -232,8 +232,6 @@ def my_handler(agent, message):
 society.set_message_handler("agent1", my_handler)
 society.run()
 ```
-society.register_agent(agent, card)
-```
 
 ## Features
 
