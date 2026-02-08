@@ -43,3 +43,19 @@ def test_openrouter_model(model_type: ModelType):
 def test_openrouter_model_stream_property():
     model = OpenRouterModel(ModelType.OPENROUTER_LLAMA_3_1_70B)
     assert model.stream is False
+
+
+@pytest.mark.model_backend
+def test_openrouter_model_app_attribution_headers():
+    r"""Test that OpenRouter App Attribution headers are properly set."""
+    model = OpenRouterModel(ModelType.OPENROUTER_LLAMA_3_1_70B)
+    
+    # Check that the client has the default headers set
+    assert hasattr(model._client, 'default_headers')
+    headers = model._client.default_headers
+    
+    # Verify App Attribution headers are present
+    assert 'HTTP-Referer' in headers
+    assert headers['HTTP-Referer'] == 'https://www.camel-ai.org/'
+    assert 'X-Title' in headers
+    assert headers['X-Title'] == 'CAMEL-AI'

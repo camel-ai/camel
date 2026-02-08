@@ -71,6 +71,14 @@ class OpenRouterModel(OpenAICompatibleModel):
             "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+        
+        # Add OpenRouter App Attribution headers
+        headers = {
+            'HTTP-Referer': 'https://www.camel-ai.org/',
+            'X-Title': 'CAMEL-AI',
+        }
+        kwargs["default_headers"] = headers
+        
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
