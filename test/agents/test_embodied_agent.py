@@ -20,7 +20,7 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
 
-from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
+from camel.agents import EmbodiedAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.types import ChatCompletion, RoleType
@@ -51,24 +51,7 @@ model_backend_rsp_base = ChatCompletion(
 )
 
 
-@pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
-def test_get_action_space_prompt():
-    role_name = "Artist"
-    meta_dict = dict(role=role_name, task="Drawing")
-    sys_msg = SystemMessageGenerator().from_dict(
-        meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
-    )
-    agent = EmbodiedAgent(
-        sys_msg, tool_agents=[HuggingFaceToolAgent("hugging_face_tool_agent")]
-    )
-    assert "hugging_face_tool_agent" in agent.get_tool_agent_names()
-
-
-@pytest.mark.skip(reason="Wait huggingface to update openaiv1")
-@pytest.mark.model_backend
-@pytest.mark.very_slow
 def test_step(step_call_count=3):
     # Create an embodied agent
     role_name = "Artist"

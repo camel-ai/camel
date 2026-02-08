@@ -12,9 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseToolAgent
-from .hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
     'BaseToolAgent',
-    'HuggingFaceToolAgent',
 ]

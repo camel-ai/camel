@@ -27,7 +27,6 @@ from .task_agent import (
     TaskSpecifyAgent,
 )
 from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
     'BaseAgent',
@@ -38,7 +37,6 @@ __all__ = [
     'TaskPrioritizationAgent',
     'CriticAgent',
     'BaseToolAgent',
-    'HuggingFaceToolAgent',
     'EmbodiedAgent',
     'RoleAssignmentAgent',
     'SearchAgent',
