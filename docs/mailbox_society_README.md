@@ -102,7 +102,7 @@ society.reset()   # Reset state
 
 #### Custom Message Handlers
 
-Set custom handlers to control how agents process messages:
+Set custom handlers to control how agents process messages. **If no handler is specified, the default handler automatically uses `ChatAgent.step()` to process messages.**
 
 ```python
 def custom_handler(agent: ChatAgent, message: MailboxMessage):
@@ -112,6 +112,14 @@ def custom_handler(agent: ChatAgent, message: MailboxMessage):
     
 society.set_message_handler("agent1", custom_handler)
 ```
+
+**Default Handler Behavior:**
+When no custom handler is set for an agent, the society uses a default handler that:
+1. Creates a user message containing the mailbox message details (sender, subject, content)
+2. Calls `agent.step()` with this user message
+3. The agent processes the message using its LLM and system prompt
+
+This means agents can process messages automatically without requiring custom handler code.
 
 ### 5. MailboxToolkit
 
@@ -335,6 +343,7 @@ pytest test/societies/test_mailbox_society.py
 See the following examples:
 - `examples/ai_society/mailbox_society_example.py` - Basic message passing demonstration
 - `examples/ai_society/mailbox_society_processing_example.py` - Entry point and automatic processing demonstration
+- `examples/ai_society/default_handler_example.py` - Default handler behavior demonstration
 
 ## API Reference
 
