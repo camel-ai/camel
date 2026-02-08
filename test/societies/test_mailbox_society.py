@@ -1020,3 +1020,109 @@ class TestMailboxSocietyProcessing:
         # Should have at least one more message (the user message passed to
         # step)
         assert len(agent.memory.get_context()) > initial_memory_length
+
+    @pytest.mark.asyncio
+    async def test_run_async_with_initial_messages(self):
+        r"""Test run_async with initial messages."""
+        society = MailboxSociety(
+            "TestSociety", max_iterations=2, process_interval=0.1
+        )
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="TestAgent", content="You are a test agent."
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1",
+            description="Test agent",
+            capabilities=["test"],
+        )
+
+        society.register_agent(agent, card)
+
+        # Verify mailbox is empty initially
+        assert len(society.message_router["agent1"]) == 0
+
+        # Define initial messages
+        initial_messages = {
+            "agent1": "This is an initial task message",
+        }
+
+        # Run with initial messages
+        await society.run_async(initial_messages=initial_messages)
+
+        # Verify message was processed (mailbox should be empty after
+        # processing)
+        assert len(society.message_router["agent1"]) == 0
+
+        # Verify iterations ran
+        assert society._iteration_count == 2
+
+    def test_run_with_initial_messages_as_mailbox_message(self):
+        r"""Test run with MailboxMessage objects as initial messages."""
+        society = MailboxSociety(
+            "TestSociety", max_iterations=1, process_interval=0.1
+        )
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="TestAgent", content="You are a test agent."
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1",
+            description="Test agent",
+            capabilities=["test"],
+        )
+
+        society.register_agent(agent, card)
+
+        # Create a MailboxMessage
+        message = MailboxMessage(
+            sender_id="admin",
+            recipient_id="agent1",
+            content="Task from admin",
+            subject="Initial Task",
+        )
+
+        # Define initial messages with MailboxMessage
+        initial_messages = {
+            "agent1": message,
+        }
+
+        # Run with initial messages
+        society.run(initial_messages=initial_messages)
+
+        # Message should be processed
+        assert society._iteration_count == 1
+
+    def test_initial_messages_invalid_agent(self):
+        r"""Test initial messages with invalid agent ID."""
+        society = MailboxSociety(
+            "TestSociety", max_iterations=1, process_interval=0.1
+        )
+
+        # No agents registered
+
+        # Try to send initial message to non-existent agent
+        initial_messages = {
+            "nonexistent": "This should be skipped",
+        }
+
+        # Should not raise error, just log warning
+        society.run(initial_messages=initial_messages)
