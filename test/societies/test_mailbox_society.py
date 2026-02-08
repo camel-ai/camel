@@ -120,7 +120,7 @@ class TestMailboxToolkit:
         r"""Test sending a message successfully."""
         message_router = {}
         toolkit1 = MailboxToolkit("agent1", message_router)
-        toolkit2 = MailboxToolkit("agent2", message_router)
+        _ = MailboxToolkit("agent2", message_router)
 
         result = toolkit1.send_message(
             "agent2", "Hello agent2", subject="Greeting"
@@ -201,8 +201,8 @@ class TestMailboxToolkit:
         r"""Test getting list of available agents."""
         message_router = {}
         toolkit1 = MailboxToolkit("agent1", message_router)
-        toolkit2 = MailboxToolkit("agent2", message_router)
-        toolkit3 = MailboxToolkit("agent3", message_router)
+        _ = MailboxToolkit("agent2", message_router)
+        _ = MailboxToolkit("agent3", message_router)
 
         result = toolkit1.get_available_agents()
 

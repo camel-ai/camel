@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from collections import deque
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from camel.toolkits.base import BaseToolkit
 
 if TYPE_CHECKING:
-    from camel.societies.mailbox_society import MailboxMessage
+    pass
 
 
 class MailboxToolkit(BaseToolkit):

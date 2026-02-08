@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict
 
 from camel.toolkits.base import BaseToolkit
 
@@ -199,4 +199,4 @@ class AgentDiscoveryToolkit(BaseToolkit):
             return "Your agent card is not registered in the society."
 
         card = self.agent_registry[self.agent_id]
-        return f"Your agent information:\n{str(card)}"
+        return f"Your agent information:\n{card!s}"
