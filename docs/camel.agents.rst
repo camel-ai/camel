@@ -1,14 +1,6 @@
 camel.agents package
 ====================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   camel.agents.tool_agents
-
 Submodules
 ----------
 
