@@ -15,7 +15,6 @@ import os
 import platform
 import select
 import shlex
-import shutil
 import subprocess
 import sys
 import threading
@@ -360,18 +359,6 @@ class TerminalToolkit(BaseToolkit):
         def update_callback(msg: str):
             logger.info(f"[ENV INIT] {msg.strip()}")
 
-        def cleanup_partial_env():
-            if os.path.exists(self.initial_env_path):
-                try:
-                    shutil.rmtree(self.initial_env_path)
-                    update_callback(
-                        "Removed partial .initial_env before retry"
-                    )
-                except Exception as exc:
-                    update_callback(
-                        f"Failed to remove partial .initial_env: {exc}"
-                    )
-
         # Try to ensure uv is available first
         success, uv_path = ensure_uv_available(update_callback)
 
@@ -389,11 +376,6 @@ class TerminalToolkit(BaseToolkit):
             success = setup_initial_env_with_venv(
                 self.initial_env_path, self.working_dir, update_callback
             )
-            if not success:
-                cleanup_partial_env()
-                success = setup_initial_env_with_venv(
-                    self.initial_env_path, self.working_dir, update_callback
-                )
 
         if success:
             # Update python executable to use the initial environment
