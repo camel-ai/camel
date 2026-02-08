@@ -79,3 +79,54 @@ def test_openrouter_model_preserves_custom_headers():
     assert headers['HTTP-Referer'] == 'https://www.camel-ai.org/'
     assert 'X-Title' in headers
     assert headers['X-Title'] == 'CAMEL-AI'
+
+
+@pytest.mark.model_backend
+def test_openrouter_model_custom_attribution_headers():
+    r"""Test that custom attribution header values can be provided."""
+    model = OpenRouterModel(
+        ModelType.OPENROUTER_LLAMA_3_1_70B,
+        app_referer='https://custom-site.com/',
+        app_title='Custom-App',
+    )
+
+    headers = model._client.default_headers
+
+    # Verify custom attribution headers are used
+    assert 'HTTP-Referer' in headers
+    assert headers['HTTP-Referer'] == 'https://custom-site.com/'
+    assert 'X-Title' in headers
+    assert headers['X-Title'] == 'Custom-App'
+
+
+@pytest.mark.model_backend
+def test_openrouter_model_disable_attribution_headers():
+    r"""Test that attribution headers can be disabled."""
+    model = OpenRouterModel(
+        ModelType.OPENROUTER_LLAMA_3_1_70B,
+        app_referer=None,
+        app_title=None,
+    )
+
+    headers = model._client.default_headers
+
+    # Verify attribution headers are not present
+    assert 'HTTP-Referer' not in headers
+    assert 'X-Title' not in headers
+
+
+@pytest.mark.model_backend
+def test_openrouter_model_partial_attribution_headers():
+    r"""Test that individual attribution headers can be customized or disabled."""
+    model = OpenRouterModel(
+        ModelType.OPENROUTER_LLAMA_3_1_70B,
+        app_referer='https://my-custom-site.com/',
+        app_title=None,
+    )
+
+    headers = model._client.default_headers
+
+    # Verify only HTTP-Referer is set with custom value
+    assert 'HTTP-Referer' in headers
+    assert headers['HTTP-Referer'] == 'https://my-custom-site.com/'
+    assert 'X-Title' not in headers
