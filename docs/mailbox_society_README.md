@@ -104,6 +104,30 @@ society.resume()  # Resume processing
 society.reset()   # Reset state
 ```
 
+#### Initial Messages
+
+Both `run()` and `run_async()` support sending initial messages to kick off coordination:
+
+```python
+# Send initial task messages to specific agents
+initial_messages = {
+    "project_manager": "Start the research project on AI safety",
+    "researcher": "Check your mailbox for assignments",
+}
+
+# Synchronous
+society.run(initial_messages=initial_messages)
+
+# Asynchronous
+await society.run_async(initial_messages=initial_messages)
+```
+
+Messages can be:
+- **String**: Automatically converted to MailboxMessage with sender "system"
+- **MailboxMessage**: Full control over sender, subject, etc.
+
+This enables starting autonomous workflows with a single command!
+
 #### Custom Message Handlers
 
 Set custom handlers to control how agents process messages. **If no handler is specified, the default handler automatically uses `ChatAgent.step()` to process messages.**
@@ -291,6 +315,34 @@ response = agent.step(user_msg)
 
 For a complete example, see `examples/ai_society/mailbox_society_coordination_example.py` which demonstrates a full multi-agent workflow where agents discover each other and coordinate autonomously.
 
+### Quick Start with Async and Initial Messages
+
+The recommended way to start a coordination workflow is using `run_async()` with initial messages:
+
+```python
+import asyncio
+from camel.societies import MailboxSociety
+
+# Create society and register agents with toolkits
+society = MailboxSociety(name="Team", max_iterations=15)
+# ... register agents with MailboxToolkit and AgentDiscoveryToolkit ...
+
+# Send initial task and let agents coordinate autonomously
+async def main():
+    await society.run_async(
+        initial_messages={
+            "project_manager": (
+                "Start a research project on AI safety. "
+                "Discover team members and assign tasks."
+            ),
+        }
+    )
+
+asyncio.run(main())
+```
+
+This single command triggers complete autonomous coordination! See `examples/ai_society/mailbox_coordination_async_example.py` for a full working example.
+
 ## Features
 
 ### Message Passing
@@ -394,7 +446,8 @@ See the following examples:
 - `examples/ai_society/mailbox_society_example.py` - Basic message passing demonstration (manual toolkit invocation)
 - `examples/ai_society/mailbox_society_processing_example.py` - Entry point and automatic processing demonstration
 - `examples/ai_society/default_handler_example.py` - Default handler behavior demonstration
-- `examples/ai_society/mailbox_society_coordination_example.py` - **Full autonomous agent coordination example** showing ChatAgents using MailboxToolkit and AgentDiscoveryToolkit to coordinate on a multi-step project
+- `examples/ai_society/mailbox_society_coordination_example.py` - Full autonomous agent coordination example (manual step-by-step)
+- `examples/ai_society/mailbox_coordination_async_example.py` - **Autonomous coordination using run_async with initial_messages** (recommended)
 
 ## API Reference
 
