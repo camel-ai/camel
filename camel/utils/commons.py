@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import contextvars
 import functools
 import importlib
 import inspect
@@ -1094,10 +1095,13 @@ def with_timeout(timeout=None):
                 # call
                 result_container = []
                 exception_container = []
+                # Preserve ContextVar state (e.g., agent/session IDs) when
+                # moving execution into the timeout worker thread.
+                ctx = contextvars.copy_context()
 
                 def target():
                     try:
-                        result_container.append(func(*args, **kwargs))
+                        result_container.append(ctx.run(func, *args, **kwargs))
                     except Exception as e:
                         exception_container.append(e)
 

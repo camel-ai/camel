@@ -42,12 +42,7 @@ logger = get_logger(__name__)
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -268,7 +263,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @observe()
+    @observe(name="openai_model_run")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -321,7 +316,7 @@ class OpenAIModel(BaseModelBackend):
 
         return result
 
-    @observe()
+    @observe(name="openai_model_run_async")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -386,7 +381,7 @@ class OpenAIModel(BaseModelBackend):
 
         return self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -400,7 +395,7 @@ class OpenAIModel(BaseModelBackend):
 
         return await self._async_client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -419,7 +414,7 @@ class OpenAIModel(BaseModelBackend):
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -438,7 +433,7 @@ class OpenAIModel(BaseModelBackend):
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -460,7 +455,7 @@ class OpenAIModel(BaseModelBackend):
         # Use the beta streaming API for structured outputs
         return self._client.beta.chat.completions.stream(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             response_format=response_format,
             **request_config,
         )
@@ -484,7 +479,7 @@ class OpenAIModel(BaseModelBackend):
         # Use the beta streaming API for structured outputs
         return self._async_client.beta.chat.completions.stream(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             response_format=response_format,
             **request_config,
         )

@@ -41,12 +41,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -451,7 +446,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         return async_thought_preserving_generator()
 
-    @observe()
+    @observe(name="gemini_model_run")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -493,7 +488,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         return result
 
-    @observe()
+    @observe(name="gemini_model_run_async")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -585,7 +580,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -642,7 +637,7 @@ class GeminiModel(OpenAICompatibleModel):
 
         response = await self._async_client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 

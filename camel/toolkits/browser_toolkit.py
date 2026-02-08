@@ -853,7 +853,7 @@ class BrowserToolkit(BaseToolkit):
                 for persistent context. If None, a fresh browser instance
                 is used without saving data. (default: :obj:`None`)
         """
-        super().__init__()  # Call to super().__init__() added
+        super().__init__()
 
         # auto-detect if running inside a CAMEL runtime container
         # force headless mode since containers typically don't have a display
@@ -921,7 +921,10 @@ class BrowserToolkit(BaseToolkit):
         system_prompt = WEB_AGENT_SYSTEM_PROMPT
 
         web_agent = ChatAgent(
-            system_message=system_prompt,
+            system_message=BaseMessage.make_system_message(
+                content=system_prompt,
+                role_name="web_agent",
+            ),
             model=web_agent_model_instance,
             output_language=self.output_language,
         )
@@ -929,7 +932,10 @@ class BrowserToolkit(BaseToolkit):
         planning_system_prompt = PLANNING_AGENT_SYSTEM_PROMPT
 
         planning_agent = ChatAgent(
-            system_message=planning_system_prompt,
+            system_message=BaseMessage.make_system_message(
+                content=planning_system_prompt,
+                role_name="planning_agent",
+            ),
             model=planning_model,
             output_language=self.output_language,
         )

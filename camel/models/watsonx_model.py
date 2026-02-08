@@ -31,7 +31,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -125,7 +125,7 @@ class WatsonXModel(BaseModelBackend):
             id=response.get("id", ""),
             choices=response.get("choices", []),
             created=response.get("created"),
-            model=self.model_type,
+            model=self._get_model_name(),
             object="chat.completion",
             usage=usage,
         )
@@ -188,7 +188,7 @@ class WatsonXModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -239,7 +239,7 @@ class WatsonXModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()

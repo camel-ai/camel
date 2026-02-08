@@ -831,7 +831,7 @@ class FunctionGemmaModel(BaseModelBackend):
         response = self._to_chat_completion(
             response_text, str(self.model_type), tools
         )
-        update_current_observation(usage=response.usage)
+        update_current_observation(usage_details=response.usage)
         return response
 
     @observe()
@@ -874,7 +874,7 @@ class FunctionGemmaModel(BaseModelBackend):
         response = self._to_chat_completion(
             response_text, str(self.model_type), tools
         )
-        update_current_observation(usage=response.usage)
+        update_current_observation(usage_details=response.usage)
         return response
 
     @property

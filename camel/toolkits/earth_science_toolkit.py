@@ -1588,7 +1588,7 @@ class EarthScienceToolkit(BaseToolkit):
         nir_path: str,
         lst_path: str,
         ndvi_threshold: float,
-        mode: str = 'above'
+        mode: str = 'above',
     ):
         """
         Calculate the maximum Land Surface Temperature (LST) in areas where
@@ -2884,7 +2884,7 @@ class EarthScienceToolkit(BaseToolkit):
         self,
         values: list[float],
         spike_threshold: float = 0.1,
-        verbose: bool = True
+        verbose: bool = True,
     ):
         """
         Count the number of upward spikes in a sequence of numerical values.
@@ -4033,7 +4033,7 @@ class EarthScienceToolkit(BaseToolkit):
         image_path1: str,
         image_path2: str | None = None,
         band1: int | None = 1,
-        band2: int | None = 2
+        band2: int | None = 2,
     ):
         """
         Description:
@@ -5156,7 +5156,9 @@ class EarthScienceToolkit(BaseToolkit):
             [_ for _ in os.listdir(dir_path) if not _.startswith('.')]
         )
 
-    def radiometric_correction_sr(self, input_band_path: str, output_path: str):
+    def radiometric_correction_sr(
+        self, input_band_path: str, output_path: str
+    ):
         """
         Apply Landsat 8 surface reflectance (SR_B*) radiometric correction.
 

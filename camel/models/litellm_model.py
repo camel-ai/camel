@@ -30,7 +30,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -183,7 +183,7 @@ class LiteLLMModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -192,7 +192,7 @@ class LiteLLMModel(BaseModelBackend):
             timeout=self._timeout,
             api_key=self._api_key,
             base_url=self._url,
-            model=self.model_type,
+            model=self._get_model_name(),
             messages=messages,
             **request_config,
             **self.kwargs,

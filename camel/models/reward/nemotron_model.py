@@ -71,7 +71,7 @@ class NemotronRewardModel(BaseRewardModel):
         """
         response = self._client.chat.completions.create(
             messages=messages,  # type: ignore[arg-type]
-            model=self.model_type,
+            model=self._get_model_name(),
         )
         scores = self._parse_scores(response)
         return scores

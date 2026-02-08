@@ -40,7 +40,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -181,7 +181,7 @@ class CohereModel(BaseModelBackend):
             id=response.id,
             choices=choices,
             created=None,
-            model=self.model_type,
+            model=self._get_model_name(),
             object="chat.completion",
             usage=usage,
         )
@@ -310,7 +310,7 @@ class CohereModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -326,7 +326,7 @@ class CohereModel(BaseModelBackend):
         try:
             response = self._client.chat(
                 messages=cohere_messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **request_config,
             )
         except ApiError as e:
@@ -353,7 +353,7 @@ class CohereModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 
@@ -379,7 +379,7 @@ class CohereModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -395,7 +395,7 @@ class CohereModel(BaseModelBackend):
         try:
             response = await self._async_client.chat(
                 messages=cohere_messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **request_config,
             )
         except ApiError as e:
@@ -422,7 +422,7 @@ class CohereModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 

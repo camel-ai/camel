@@ -50,7 +50,7 @@ except (ImportError, AttributeError):
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -272,7 +272,7 @@ class MistralModel(BaseModelBackend):
                 "response_format": response_format,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -284,7 +284,7 @@ class MistralModel(BaseModelBackend):
 
         response = self._client.chat.complete(
             messages=mistral_messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -304,7 +304,7 @@ class MistralModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 
@@ -335,7 +335,7 @@ class MistralModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -347,7 +347,7 @@ class MistralModel(BaseModelBackend):
 
         response = self._client.chat.complete(
             messages=mistral_messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )
 
@@ -367,7 +367,7 @@ class MistralModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 
