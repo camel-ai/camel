@@ -158,24 +158,31 @@ class MailboxSociety:
     ) -> None:
         r"""Register an agent in the society.
 
+        This method verifies that the agent_id is unique and automatically
+        creates an empty mailbox (message queue) for the agent.
+
         Args:
             agent (ChatAgent): The agent to register.
             agent_card (AgentCard): The agent's card describing its
-                capabilities.
+                capabilities. The agent_id from this card must be unique.
 
         Raises:
-            ValueError: If an agent with the same ID is already registered.
+            ValueError: If an agent with the same ID is already registered,
+                ensuring agent_id uniqueness across the society.
         """
         agent_id = agent_card.agent_id
 
+        # Verify agent_id is unique
         if agent_id in self.agents:
             raise ValueError(
-                f"Agent with ID '{agent_id}' is already registered."
+                f"Agent with ID '{agent_id}' is already registered. "
+                f"Each agent must have a unique ID."
             )
 
+        # Register agent and create its mailbox
         self.agents[agent_id] = agent
         self.agent_cards[agent_id] = agent_card
-        self.message_router[agent_id] = deque()
+        self.message_router[agent_id] = deque()  # Create empty mailbox
 
     def unregister_agent(self, agent_id: str) -> None:
         r"""Unregister an agent from the society.

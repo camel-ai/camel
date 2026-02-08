@@ -395,6 +395,83 @@ class TestMailboxSociety:
         assert "agent1" in society.agents
         assert "agent1" in society.agent_cards
         assert "agent1" in society.message_router
+        # Verify mailbox is created and is empty
+        assert isinstance(society.message_router["agent1"], deque)
+        assert len(society.message_router["agent1"]) == 0
+
+    @pytest.mark.model_backend
+    def test_register_agent_creates_mailbox(self):
+        r"""Test that registering an agent creates an empty mailbox."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Assistant", content="You are a helpful assistant."
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1",
+            description="A test agent",
+            capabilities=["chat"],
+        )
+
+        # Verify mailbox doesn't exist before registration
+        assert "agent1" not in society.message_router
+
+        society.register_agent(agent, card)
+
+        # Verify mailbox is created
+        assert "agent1" in society.message_router
+        # Verify it's a deque
+        assert isinstance(society.message_router["agent1"], deque)
+        # Verify it's empty on creation
+        assert len(society.message_router["agent1"]) == 0
+
+    @pytest.mark.model_backend
+    def test_register_agent_all_components_created(self):
+        r"""Test that all three components are created on registration."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Assistant", content="You are a helpful assistant."
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="test_agent",
+            description="A test agent",
+            capabilities=["chat"],
+        )
+
+        # Verify nothing exists before registration
+        assert "test_agent" not in society.agents
+        assert "test_agent" not in society.agent_cards
+        assert "test_agent" not in society.message_router
+
+        society.register_agent(agent, card)
+
+        # Verify all three components are created atomically
+        assert "test_agent" in society.agents
+        assert "test_agent" in society.agent_cards
+        assert "test_agent" in society.message_router
+        # Verify they're correctly linked
+        assert society.agents["test_agent"] is agent
+        assert society.agent_cards["test_agent"] is card
+        assert isinstance(society.message_router["test_agent"], deque)
 
     @pytest.mark.model_backend
     def test_register_duplicate_agent(self):
@@ -421,9 +498,58 @@ class TestMailboxSociety:
 
         society.register_agent(agent, card)
 
-        # Try to register again with same ID
+        # Try to register again with same ID - should raise ValueError
         with pytest.raises(ValueError, match="already registered"):
             society.register_agent(agent, card)
+
+        # Verify only one agent is registered
+        assert len(society.agents) == 1
+        assert len(society.agent_cards) == 1
+        assert len(society.message_router) == 1
+
+    @pytest.mark.model_backend
+    def test_register_duplicate_agent_error_message(self):
+        r"""Test that duplicate agent error message is descriptive."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent1 = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Assistant", content="You are a helpful assistant."
+            ),
+            model=model,
+        )
+
+        agent2 = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Assistant2", content="You are another assistant."
+            ),
+            model=model,
+        )
+
+        card1 = AgentCard(
+            agent_id="duplicate_id",
+            description="First agent",
+            capabilities=["chat"],
+        )
+
+        card2 = AgentCard(
+            agent_id="duplicate_id",
+            description="Second agent",
+            capabilities=["search"],
+        )
+
+        society.register_agent(agent1, card1)
+
+        # Try to register different agent with same ID
+        with pytest.raises(
+            ValueError, match=r"duplicate_id.*already registered.*unique"
+        ):
+            society.register_agent(agent2, card2)
 
     @pytest.mark.model_backend
     def test_unregister_agent(self):
