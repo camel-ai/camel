@@ -49,12 +49,32 @@ def test_openrouter_model_stream_property():
 def test_openrouter_model_app_attribution_headers():
     r"""Test that OpenRouter App Attribution headers are properly set."""
     model = OpenRouterModel(ModelType.OPENROUTER_LLAMA_3_1_70B)
-    
+
     # Check that the client has the default headers set
     assert hasattr(model._client, 'default_headers')
     headers = model._client.default_headers
-    
+
     # Verify App Attribution headers are present
+    assert 'HTTP-Referer' in headers
+    assert headers['HTTP-Referer'] == 'https://www.camel-ai.org/'
+    assert 'X-Title' in headers
+    assert headers['X-Title'] == 'CAMEL-AI'
+
+
+@pytest.mark.model_backend
+def test_openrouter_model_preserves_custom_headers():
+    r"""Test that custom headers are preserved along with attribution."""
+    custom_headers = {'Custom-Header': 'custom-value'}
+    model = OpenRouterModel(
+        ModelType.OPENROUTER_LLAMA_3_1_70B,
+        default_headers=custom_headers,
+    )
+
+    headers = model._client.default_headers
+
+    # Verify both custom and attribution headers are present
+    assert 'Custom-Header' in headers
+    assert headers['Custom-Header'] == 'custom-value'
     assert 'HTTP-Referer' in headers
     assert headers['HTTP-Referer'] == 'https://www.camel-ai.org/'
     assert 'X-Title' in headers
