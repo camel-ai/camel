@@ -12,12 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -108,19 +113,41 @@ class MailboxSociety:
 
     Args:
         name (str): Name of the society. (default: :obj:`"MailboxSociety"`)
+        max_iterations (int): Maximum number of message processing iterations.
+            (default: :obj:`10`)
+        process_interval (float): Time in seconds to wait between processing
+            iterations. (default: :obj:`0.5`)
     """
 
-    def __init__(self, name: str = "MailboxSociety"):
+    def __init__(
+        self,
+        name: str = "MailboxSociety",
+        max_iterations: int = 10,
+        process_interval: float = 0.5,
+    ):
         r"""Initialize the mailbox society.
 
         Args:
             name (str): Name of the society.
+            max_iterations (int): Maximum number of message processing
+                iterations.
+            process_interval (float): Time in seconds to wait between
+                processing iterations.
         """
         self.name = name
         self.agents: Dict[str, ChatAgent] = {}
         self.agent_cards: Dict[str, AgentCard] = {}
         self.message_router: Dict[str, deque] = {}
+        self.max_iterations = max_iterations
+        self.process_interval = process_interval
         self._running = False
+        self._stop_requested = False
+        self._pause_event = asyncio.Event()
+        self._pause_event.set()  # Initially not paused
+        self._iteration_count = 0
+        self._message_handlers: Dict[
+            str, Callable[[ChatAgent, MailboxMessage], None]
+        ] = {}
 
     def register_agent(
         self,
@@ -319,3 +346,239 @@ class MailboxSociety:
     def __repr__(self) -> str:
         r"""Return a detailed string representation of the society."""
         return self.__str__()
+
+    def set_message_handler(
+        self,
+        agent_id: str,
+        handler: Callable[[ChatAgent, MailboxMessage], None],
+    ) -> None:
+        r"""Set a custom message handler for a specific agent.
+
+        Args:
+            agent_id (str): ID of the agent.
+            handler (Callable): Function that takes (agent, message) and
+                processes the message.
+
+        Raises:
+            ValueError: If the agent is not found.
+        """
+        if agent_id not in self.agents:
+            raise ValueError(f"Agent '{agent_id}' not found.")
+
+        self._message_handlers[agent_id] = handler
+
+    def _default_message_handler(
+        self, agent: ChatAgent, message: MailboxMessage
+    ) -> None:
+        r"""Default handler that has the agent step with the message content.
+
+        Args:
+            agent (ChatAgent): The agent to process the message.
+            message (MailboxMessage): The message to process.
+        """
+        # Create a user message with the mailbox message content
+        prompt = (
+            f"You received a message from {message.sender_id}.\n"
+            f"Subject: {message.subject or 'No subject'}\n"
+            f"Content: {message.content}\n\n"
+            "Please respond or take appropriate action."
+        )
+
+        try:
+            # Have the agent process the message
+            from camel.messages import BaseMessage
+
+            user_msg = BaseMessage.make_user_message(
+                role_name="System", content=prompt
+            )
+            agent.step(user_msg)
+            logger.debug(
+                f"Agent {message.recipient_id} processed message "
+                f"from {message.sender_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error in agent {message.recipient_id} "
+                f"processing message: {e}"
+            )
+
+    async def _process_messages_once(self) -> int:
+        r"""Process one round of messages for all agents.
+
+        Returns:
+            int: Number of messages processed.
+        """
+        total_processed = 0
+
+        for agent_id, agent in self.agents.items():
+            mailbox = self.message_router.get(agent_id, deque())
+
+            # Process all messages in the mailbox
+            while mailbox:
+                message = mailbox.popleft()
+                total_processed += 1
+
+                # Use custom handler if available, otherwise default
+                handler = self._message_handlers.get(
+                    agent_id, self._default_message_handler
+                )
+
+                try:
+                    handler(agent, message)
+                except Exception as e:
+                    logger.error(
+                        f"Error processing message for agent {agent_id}: {e}"
+                    )
+
+        return total_processed
+
+    async def _process_messages_loop(self) -> None:
+        r"""Main async loop for processing messages.
+
+        This method continuously checks for messages and processes them
+        until stopped or max iterations reached.
+        """
+        self._running = True
+        self._stop_requested = False
+        self._iteration_count = 0
+
+        logger.info(
+            f"Starting message processing for society '{self.name}' "
+            f"(max_iterations={self.max_iterations})"
+        )
+
+        try:
+            while (
+                not self._stop_requested
+                and self._iteration_count < self.max_iterations
+            ):
+                # Wait if paused
+                await self._pause_event.wait()
+
+                # Check if there are any messages to process
+                has_messages = any(
+                    len(mailbox) > 0
+                    for mailbox in self.message_router.values()
+                )
+
+                if has_messages:
+                    messages_processed = await self._process_messages_once()
+                    logger.debug(
+                        f"Iteration {self._iteration_count}: "
+                        f"Processed {messages_processed} messages"
+                    )
+
+                self._iteration_count += 1
+
+                # Wait before next iteration
+                await asyncio.sleep(self.process_interval)
+
+        except Exception as e:
+            logger.error(f"Error in message processing loop: {e}")
+            raise
+        finally:
+            self._running = False
+            logger.info(
+                f"Stopped message processing for society '{self.name}' "
+                f"after {self._iteration_count} iterations"
+            )
+
+    async def run_async(self) -> None:
+        r"""Asynchronous entry point to start message processing.
+
+        This method starts the message processing loop and runs until
+        stopped or max iterations reached.
+        """
+        if self._running:
+            logger.warning(f"Society '{self.name}' is already running")
+            return
+
+        await self._process_messages_loop()
+
+    def run(self) -> None:
+        r"""Synchronous entry point to start message processing.
+
+        This method wraps the async processing in a way that works with
+        or without an existing event loop.
+        """
+        if self._running:
+            logger.warning(f"Society '{self.name}' is already running")
+            return
+
+        try:
+            # Check if there's already a running event loop
+            asyncio.get_running_loop()
+            # If we get here, we're in an async context
+            # Use a thread to run the async code
+            executor = ThreadPoolExecutor(max_workers=1)
+
+            def run_in_thread():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(self.run_async())
+                finally:
+                    new_loop.close()
+
+            future = executor.submit(run_in_thread)
+            return future.result()
+
+        except RuntimeError:
+            # No event loop running, create one
+            return asyncio.run(self.run_async())
+
+    def stop(self) -> None:
+        r"""Stop the message processing loop.
+
+        This method signals the processing loop to stop gracefully.
+        """
+        if not self._running:
+            logger.warning(f"Society '{self.name}' is not running")
+            return
+
+        self._stop_requested = True
+        logger.info(f"Stop requested for society '{self.name}'")
+
+    def pause(self) -> None:
+        r"""Pause the message processing loop.
+
+        The loop will stop processing messages until resume() is called.
+        """
+        if not self._running:
+            logger.warning(f"Society '{self.name}' is not running")
+            return
+
+        self._pause_event.clear()
+        logger.info(f"Paused message processing for society '{self.name}'")
+
+    def resume(self) -> None:
+        r"""Resume the message processing loop after a pause.
+
+        This method resumes message processing if it was paused.
+        """
+        if not self._running:
+            logger.warning(f"Society '{self.name}' is not running")
+            return
+
+        self._pause_event.set()
+        logger.info(f"Resumed message processing for society '{self.name}'")
+
+    def reset(self) -> None:
+        r"""Reset the society state.
+
+        This clears all mailboxes and resets the iteration count.
+        """
+        if self._running:
+            logger.warning(
+                f"Cannot reset society '{self.name}' while running. "
+                "Stop it first."
+            )
+            return
+
+        for mailbox in self.message_router.values():
+            mailbox.clear()
+
+        self._iteration_count = 0
+        self._stop_requested = False
+        self._message_handlers.clear()
+        logger.info(f"Reset society '{self.name}'")

@@ -625,3 +625,235 @@ class TestMailboxSociety:
         str_repr = str(society)
         assert "TestSociety" in str_repr
         assert "total=0" in str_repr
+
+
+class TestMailboxSocietyProcessing:
+    r"""Test cases for MailboxSociety message processing."""
+
+    def test_society_initialization_with_params(self):
+        r"""Test creating society with custom parameters."""
+        society = MailboxSociety(
+            name="TestSociety", max_iterations=5, process_interval=0.1
+        )
+
+        assert society.name == "TestSociety"
+        assert society.max_iterations == 5
+        assert society.process_interval == 0.1
+        assert not society._running
+        assert not society._stop_requested
+
+    def test_set_message_handler(self):
+        r"""Test setting a custom message handler."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Agent", content="Test agent"
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1", description="Test agent", capabilities=["test"]
+        )
+
+        society.register_agent(agent, card)
+
+        # Set a custom handler
+        def custom_handler(agent, message):
+            pass
+
+        society.set_message_handler("agent1", custom_handler)
+
+        assert "agent1" in society._message_handlers
+        assert society._message_handlers["agent1"] == custom_handler
+
+    def test_set_message_handler_invalid_agent(self):
+        r"""Test setting handler for non-existent agent raises error."""
+        society = MailboxSociety("TestSociety")
+
+        def custom_handler(agent, message):
+            pass
+
+        with pytest.raises(ValueError, match="not found"):
+            society.set_message_handler("nonexistent", custom_handler)
+
+    @pytest.mark.asyncio
+    async def test_process_messages_once(self):
+        r"""Test processing messages once."""
+        society = MailboxSociety("TestSociety")
+
+        # Track processed messages
+        processed = []
+
+        def handler(agent, message):
+            processed.append(message)
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        # Register agents
+        for i in range(1, 3):
+            agent = ChatAgent(
+                system_message=BaseMessage.make_assistant_message(
+                    role_name=f"Agent{i}", content=f"Agent {i}"
+                ),
+                model=model,
+            )
+            card = AgentCard(
+                agent_id=f"agent{i}",
+                description=f"Agent {i}",
+                capabilities=["test"],
+            )
+            society.register_agent(agent, card)
+            society.set_message_handler(f"agent{i}", handler)
+
+        # Add messages
+        society.message_router["agent1"].append(
+            MailboxMessage("agent2", "agent1", "Message 1")
+        )
+        society.message_router["agent2"].append(
+            MailboxMessage("agent1", "agent2", "Message 2")
+        )
+
+        # Process messages
+        count = await society._process_messages_once()
+
+        assert count == 2
+        assert len(processed) == 2
+        assert len(society.message_router["agent1"]) == 0
+        assert len(society.message_router["agent2"]) == 0
+
+    @pytest.mark.asyncio
+    async def test_run_async(self):
+        r"""Test async message processing."""
+        society = MailboxSociety(
+            "TestSociety", max_iterations=2, process_interval=0.1
+        )
+
+        processed_messages = []
+
+        def handler(agent, message):
+            processed_messages.append(message.content)
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Agent", content="Test agent"
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1", description="Test agent", capabilities=["test"]
+        )
+
+        society.register_agent(agent, card)
+        society.set_message_handler("agent1", handler)
+
+        # Add a message
+        society.message_router["agent1"].append(
+            MailboxMessage("agent2", "agent1", "Test message")
+        )
+
+        # Run processing
+        await society.run_async()
+
+        # Check that message was processed
+        assert len(processed_messages) == 1
+        assert "Test message" in processed_messages
+        assert society._iteration_count == 2
+
+    def test_stop(self):
+        r"""Test stopping the society."""
+        society = MailboxSociety("TestSociety")
+
+        # Can't stop if not running
+        society.stop()  # Should just log a warning
+
+        # Start and stop
+        society._running = True
+        society.stop()
+
+        assert society._stop_requested
+
+    def test_pause_resume(self):
+        r"""Test pausing and resuming the society."""
+        society = MailboxSociety("TestSociety")
+
+        # Can't pause/resume if not running
+        society.pause()  # Should log warning
+        society.resume()  # Should log warning
+
+        # Test pause/resume when running
+        society._running = True
+
+        assert society._pause_event.is_set()  # Not paused initially
+
+        society.pause()
+        assert not society._pause_event.is_set()  # Now paused
+
+        society.resume()
+        assert society._pause_event.is_set()  # Resumed
+
+    def test_reset(self):
+        r"""Test resetting the society."""
+        society = MailboxSociety("TestSociety")
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Agent", content="Test agent"
+            ),
+            model=model,
+        )
+
+        card = AgentCard(
+            agent_id="agent1", description="Test agent", capabilities=["test"]
+        )
+
+        society.register_agent(agent, card)
+
+        # Add messages and set state
+        society.message_router["agent1"].append(
+            MailboxMessage("agent2", "agent1", "Test")
+        )
+        society._iteration_count = 5
+
+        def handler(agent, message):
+            pass
+
+        society.set_message_handler("agent1", handler)
+
+        # Reset
+        society.reset()
+
+        assert len(society.message_router["agent1"]) == 0
+        assert society._iteration_count == 0
+        assert not society._stop_requested
+        assert len(society._message_handlers) == 0
+
+    def test_reset_while_running(self):
+        r"""Test that reset fails while running."""
+        society = MailboxSociety("TestSociety")
+        society._running = True
+
+        society.reset()  # Should log warning and not reset
+
+        # State should remain unchanged (can't verify much without state)
+        assert society._running
