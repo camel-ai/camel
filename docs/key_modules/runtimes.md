@@ -122,7 +122,7 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
 
 ## More Examples
 
-You’ll find runnable scripts for each runtime in <b>[examples/runtime](https://github.com/camel-ai/camel/tree/master/examples/runtimes)/</b> in our main repo.
+You’ll find runnable scripts for each runtime in <b>[examples/runtimes](https://github.com/camel-ai/camel/tree/master/examples/runtimes)/</b> in our main repo.
 Each script demonstrates how to initialize and use a specific runtime—perfect for experimentation or production setups.
 
 ## Final Note

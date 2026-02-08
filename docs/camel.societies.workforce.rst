@@ -12,6 +12,14 @@ camel.societies.workforce.base module
    :undoc-members:
    :show-inheritance:
 
+camel.societies.workforce.events module
+---------------------------------------
+
+.. automodule:: camel.societies.workforce.events
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.societies.workforce.prompts module
 ---------------------------
 
@@ -32,6 +40,14 @@ camel.societies.workforce.single\_agent\_worker module
 ------------------------------------------
 
 .. automodule:: camel.societies.workforce.single_agent_worker
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.societies.workforce.structured\_output\_handler module
+------------------------------------------------------------
+
+.. automodule:: camel.societies.workforce.structured_output_handler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,10 +76,42 @@ camel.societies.workforce.worker module
    :undoc-members:
    :show-inheritance:
 
+camel.societies.workforce.workflow\_memory\_manager module
+---------------------------------------------------------
+
+.. automodule:: camel.societies.workforce.workflow_memory_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.societies.workforce.workforce module
 --------------------------------
 
 .. automodule:: camel.societies.workforce.workforce
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.societies.workforce.workforce\_callback module
+----------------------------------------------------
+
+.. automodule:: camel.societies.workforce.workforce_callback
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.societies.workforce.workforce\_logger module
+--------------------------------------------------
+
+.. automodule:: camel.societies.workforce.workforce_logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.societies.workforce.workforce\_metrics module
+---------------------------------------------------
+
+.. automodule:: camel.societies.workforce.workforce_metrics
    :members:
    :undoc-members:
    :show-inheritance:

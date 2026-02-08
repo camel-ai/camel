@@ -12,6 +12,14 @@ camel.extractors.base module
    :undoc-members:
    :show-inheritance:
 
+camel.extractors.python\_strategies module
+------------------------------------------
+
+.. automodule:: camel.extractors.python_strategies
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

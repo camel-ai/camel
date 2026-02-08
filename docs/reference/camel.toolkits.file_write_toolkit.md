@@ -1,6 +1,6 @@
-<a id="camel.toolkits.file_write_toolkit"></a>
+<a id="camel.toolkits.file_toolkit"></a>
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit"></a>
 
 ## FileWriteToolkit
 
@@ -16,7 +16,7 @@ replacing text in existing files, automatic filename uniquification to
 prevent overwrites, custom encoding and enhanced formatting options for
 specialized formats.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.__init__"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit.__init__"></a>
 
 ### __init__
 
@@ -39,7 +39,7 @@ Initialize the FileWriteToolkit.
 - **default_encoding** (str): Default character encoding for text operations. (default: :obj:`utf-8`)
 - **backup_enabled** (bool): Whether to create backups of existing files before overwriting. (default: :obj:`True`)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._resolve_filepath"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._resolve_filepath"></a>
 
 ### _resolve_filepath
 
@@ -62,7 +62,7 @@ in downstream processing.
 
   Path: A fully resolved (absolute) and sanitized Path object.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._sanitize_filename"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._sanitize_filename"></a>
 
 ### _sanitize_filename
 
@@ -83,7 +83,7 @@ underscore (_).
   str: The sanitized filename with disallowed characters replaced by
 underscores.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_text_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_text_file"></a>
 
 ### _write_text_file
 
@@ -104,7 +104,7 @@ Write text content to a plaintext file.
 - **content** (str): The text content to write.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._generate_unique_filename"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._generate_unique_filename"></a>
 
 ### _generate_unique_filename
 
@@ -122,7 +122,7 @@ Generate a unique filename if the target file already exists.
 
   Path: A unique file path that doesn't exist yet.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_docx_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_docx_file"></a>
 
 ### _write_docx_file
 
@@ -137,7 +137,7 @@ Write text content to a DOCX file with default formatting.
 - **file_path** (Path): The target file path.
 - **content** (str): The text content to write.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_pdf_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_pdf_file"></a>
 
 ### _write_pdf_file
 
@@ -161,7 +161,7 @@ Write text content to a PDF file with LaTeX and table support.
 - **be**: - String: Supports Markdown-style tables and LaTeX math expressions - List[List[str]]: Table data as list of rows for direct table rendering
 - **use_latex** (bool): Whether to use LaTeX for math rendering. (default: :obj:`False`)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._process_text_content"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._process_text_content"></a>
 
 ### _process_text_content
 
@@ -184,7 +184,7 @@ Process text content and add to story.
 - **heading_style**: Style for headings
 - **body_style**: Style for body text
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._find_table_line_ranges"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._find_table_line_ranges"></a>
 
 ### _find_table_line_ranges
 
@@ -203,7 +203,7 @@ Find line ranges that contain markdown tables.
   List[Tuple[int, int]]: List of (start_line, end_line) tuples
 for table ranges.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._register_chinese_font"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._register_chinese_font"></a>
 
 ### _register_chinese_font
 
@@ -215,7 +215,7 @@ def _register_chinese_font(self):
 
   str: The font name to use for Chinese text.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._parse_markdown_table"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._parse_markdown_table"></a>
 
 ### _parse_markdown_table
 
@@ -234,7 +234,7 @@ Parse markdown-style tables from a list of lines.
   List[List[List[str]]]: List of tables, where each table is a list
 of rows, and each row is a list of cells.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._is_table_row"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._is_table_row"></a>
 
 ### _is_table_row
 
@@ -252,7 +252,7 @@ Check if a line appears to be a table row.
 
   bool: True if the line looks like a table row.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._is_table_separator"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._is_table_separator"></a>
 
 ### _is_table_separator
 
@@ -270,7 +270,7 @@ Check if a line is a table separator (e.g., |---|---|).
 
   bool: True if the line is a table separator.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._parse_table_row"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._parse_table_row"></a>
 
 ### _parse_table_row
 
@@ -288,7 +288,7 @@ Parse a single table row into cells.
 
   List[str]: List of cell contents.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._create_pdf_table"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._create_pdf_table"></a>
 
 ### _create_pdf_table
 
@@ -306,7 +306,7 @@ Create a formatted table for PDF.
 
   Table: A formatted reportlab Table object.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._convert_markdown_to_html"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._convert_markdown_to_html"></a>
 
 ### _convert_markdown_to_html
 
@@ -324,7 +324,7 @@ Convert basic markdown formatting to HTML for PDF rendering.
 
   str: Text with HTML formatting.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_csv_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_csv_file"></a>
 
 ### _write_csv_file
 
@@ -345,7 +345,7 @@ Write CSV content to a file.
 - **content** (Union[str, List[List]]): The CSV content as a string or list of lists.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_json_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_json_file"></a>
 
 ### _write_json_file
 
@@ -366,7 +366,7 @@ Write JSON content to a file.
 - **content** (str): The JSON content as a string.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_simple_text_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit._write_simple_text_file"></a>
 
 ### _write_simple_text_file
 
@@ -387,7 +387,7 @@ Write text content to a file (used for HTML, Markdown, YAML, etc.).
 - **content** (str): The content to write.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.write_to_file"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit.write_to_file"></a>
 
 ### write_to_file
 
@@ -421,7 +421,7 @@ and HTML (.html, .htm).
 
   str: A message indicating success or error details.
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.get_tools"></a>
+<a id="camel.toolkits.file_toolkit.FileWriteToolkit.get_tools"></a>
 
 ### get_tools
 

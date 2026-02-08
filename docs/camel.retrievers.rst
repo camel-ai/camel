@@ -36,6 +36,22 @@ camel.retrievers.cohere\_rerank\_retriever module
    :undoc-members:
    :show-inheritance:
 
+camel.retrievers.hybrid\_retrival module
+----------------------------------------
+
+.. automodule:: camel.retrievers.hybrid_retrival
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.retrievers.jina\_rerank\_retriever module
+-----------------------------------------------
+
+.. automodule:: camel.retrievers.jina_rerank_retriever
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.retrievers.vector\_retriever module
 -----------------------------------------
 
