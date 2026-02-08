@@ -49,7 +49,7 @@ description: |
   </Card>
 
   <Card title="Eigent" icon="users" href="https://www.eigent.ai/">
-    The World First Multi-agent Workforce
+    The Best Open Source Cowork Desktop to Unlock Your Exceptional Productivity
   </Card>
 </CardGroup>
 
