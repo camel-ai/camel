@@ -28,22 +28,6 @@ camel.agents.critic\_agent module
    :undoc-members:
    :show-inheritance:
 
-camel.agents.deductive\_reasoner\_agent module
-----------------------------------------------
-
-.. automodule:: camel.agents.deductive_reasoner_agent
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.agents.embodied\_agent module
------------------------------------
-
-.. automodule:: camel.agents.embodied_agent
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 camel.agents.knowledge\_graph\_agent module
 -------------------------------------------
 

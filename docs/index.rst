@@ -26,7 +26,6 @@ Main Documentation
 
    cookbooks/create_your_first_agent.ipynb
    cookbooks/create_your_first_agents_society.ipynb
-   cookbooks/embodied_agents.ipynb
    cookbooks/critic_agents_and_tree_search.ipynb
 
 .. toctree::

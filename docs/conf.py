@@ -94,7 +94,6 @@ nbsphinx_prolog = r"""
 rediraffe_redirects = {
     "cookbooks/create_your_first_agent": "cookbooks/basic_concepts/create_your_first_agent",
     "cookbooks/create_your_first_agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
-    "cookbooks/embodied_agents": "cookbooks/advanced_features/embodied_agents",
     "cookbooks/critic_agents_and_tree_search": "cookbooks/advanced_features/critic_agents_and_tree_search",
     "cookbooks/agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
     "cookbooks/agents_message": "cookbooks/basic_concepts/agents_message",

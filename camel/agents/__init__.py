@@ -14,7 +14,6 @@
 from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
-from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
 from .repo_agent import RepoAgent
@@ -35,7 +34,6 @@ __all__ = [
     'TaskCreationAgent',
     'TaskPrioritizationAgent',
     'CriticAgent',
-    'EmbodiedAgent',
     'RoleAssignmentAgent',
     'SearchAgent',
     'KnowledgeGraphAgent',
