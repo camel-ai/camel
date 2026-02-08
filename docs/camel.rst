@@ -8,17 +8,27 @@ Subpackages
    :maxdepth: 4
 
    camel.agents
+   camel.benchmarks
+   camel.bots
    camel.configs
+   camel.data_collectors
    camel.datagen
+   camel.datahubs
+   camel.datasets
    camel.embeddings
+   camel.environments
+   camel.extractors
    camel.interpreters
    camel.loaders
    camel.memories
    camel.messages
    camel.models
+   camel.personas
    camel.prompts
    camel.responses
    camel.retrievers
+   camel.runtimes
+   camel.schemas
    camel.societies
    camel.storages
    camel.tasks
@@ -26,6 +36,7 @@ Subpackages
    camel.toolkits
    camel.types
    camel.utils
+   camel.verifiers
 
 Submodules
 ----------

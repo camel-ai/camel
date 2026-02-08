@@ -1,6 +1,14 @@
 camel.messages package
 ======================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   camel.messages.conversion
+
 Submodules
 ----------
 

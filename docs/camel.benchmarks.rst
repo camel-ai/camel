@@ -28,6 +28,14 @@ camel.benchmarks.base module
    :undoc-members:
    :show-inheritance:
 
+camel.benchmarks.browsecomp module
+----------------------------------
+
+.. automodule:: camel.benchmarks.browsecomp
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.benchmarks.gaia module
 ----------------------------
 

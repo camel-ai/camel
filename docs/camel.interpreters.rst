@@ -20,6 +20,14 @@ camel.interpreters.docker\_interpreter module
    :undoc-members:
    :show-inheritance:
 
+camel.interpreters.e2b\_interpreter module
+------------------------------------------
+
+.. automodule:: camel.interpreters.e2b_interpreter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.interpreters.internal\_python\_interpreter module
 -------------------------------------------------------
 
@@ -40,6 +48,14 @@ camel.interpreters.ipython\_interpreter module
 ----------------------------------------------
 
 .. automodule:: camel.interpreters.ipython_interpreter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.interpreters.microsandbox\_interpreter module
+---------------------------------------------------
+
+.. automodule:: camel.interpreters.microsandbox_interpreter
    :members:
    :undoc-members:
    :show-inheritance:
