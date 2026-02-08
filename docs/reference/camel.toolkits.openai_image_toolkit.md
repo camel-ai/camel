@@ -1,6 +1,6 @@
-<a id="camel.toolkits.openai_image_toolkit"></a>
+<a id="camel.toolkits.image_generation_toolkit"></a>
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit"></a>
 
 ## OpenAIImageToolkit
 
@@ -11,7 +11,7 @@ class OpenAIImageToolkit(BaseToolkit):
 A class toolkit for image generation using OpenAI's
 Image Generation API.
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.__init__"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit.__init__"></a>
 
 ### __init__
 
@@ -44,7 +44,7 @@ Initializes a new instance of the OpenAIImageToolkit class.
 - **style** (`Optional[Literal["vivid", "natural"]]`): The style of the image.(default: :obj:`None`)
 - **working_directory** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.base64_to_image"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit.base64_to_image"></a>
 
 ### base64_to_image
 
@@ -63,7 +63,7 @@ Converts a base64 encoded string into a PIL Image object.
   Optional[Image.Image]: The PIL Image object or None if conversion
 fails.
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit._build_base_params"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit._build_base_params"></a>
 
 ### _build_base_params
 
@@ -81,7 +81,7 @@ Build base parameters dict for OpenAI API calls.
 
   dict: Parameters dictionary with non-None values.
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit._handle_api_response"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit._handle_api_response"></a>
 
 ### _handle_api_response
 
@@ -106,7 +106,7 @@ Handle API response from OpenAI image operations.
 
   str: Success message with image path/URL or error message.
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.generate_image"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit.generate_image"></a>
 
 ### generate_image
 
@@ -128,7 +128,7 @@ formats).
 
   str: the content of the model response or format of the response.
 
-<a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.get_tools"></a>
+<a id="camel.toolkits.image_generation_toolkit.OpenAIImageToolkit.get_tools"></a>
 
 ### get_tools
 

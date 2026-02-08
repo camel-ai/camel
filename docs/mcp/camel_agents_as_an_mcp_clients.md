@@ -126,7 +126,8 @@ Want your MCP agent discoverable by thousands of clients?
 Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
 ```python Register with ACI Registry lines icon="python"
 from camel.agents import MCPAgent
-from camel.types import ACIRegistryConfig, ModelFactory, ModelPlatformType, ModelType
+from camel.models import ModelFactory
+from camel.types import ACIRegistryConfig, ModelPlatformType, ModelType
 import os
 
 aci_config = ACIRegistryConfig(
@@ -160,7 +161,7 @@ You can visit [PulseMCP.com](https://pulsemcp.com) to browse all available MCP s
 If you prefer to search programmatically inside your CAMEL code, just use:
 
 <CodeBlock language="python" title="pulse_mcp_search.py">
-from camel.toolkits.mcp import PulseMCPSearchToolkit
+from camel.toolkits import PulseMCPSearchToolkit
 
 search_toolkit = PulseMCPSearchToolkit()
 results = search_toolkit.search_mcp_servers(query="Slack", top_k=1)
