@@ -38,12 +38,7 @@ logger = get_logger(__name__)
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -233,7 +228,7 @@ class MoonshotModel(OpenAICompatibleModel):
 
         return cleaned_tools
 
-    @observe()
+    @observe(name="moonshot_model_run_async")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -264,6 +259,6 @@ class MoonshotModel(OpenAICompatibleModel):
 
         return await self._async_client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **request_config,
         )

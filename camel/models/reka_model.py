@@ -30,7 +30,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -235,7 +235,7 @@ class RekaModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -244,7 +244,7 @@ class RekaModel(BaseModelBackend):
 
         response = await self._async_client.chat.create(
             messages=reka_messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **self.model_config_dict,
         )
 
@@ -264,7 +264,7 @@ class RekaModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.input_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.output_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 
@@ -292,7 +292,7 @@ class RekaModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
 
@@ -302,7 +302,7 @@ class RekaModel(BaseModelBackend):
 
         response = self._client.chat.create(
             messages=reka_messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **self.model_config_dict,
         )
 
@@ -322,7 +322,7 @@ class RekaModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.input_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.output_tokens,  # type: ignore[union-attr]
-                model=self.model_type,
+                model=self._get_model_name(),
             )
             record(llm_event)
 

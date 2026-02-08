@@ -114,7 +114,7 @@ class ZhipuAIModel(OpenAICompatibleModel):
         try:
             return self._client.beta.chat.completions.parse(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **request_config,
             )
         except Exception as e:
@@ -138,7 +138,7 @@ class ZhipuAIModel(OpenAICompatibleModel):
         try:
             return await self._async_client.beta.chat.completions.parse(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **request_config,
             )
         except Exception as e:

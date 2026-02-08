@@ -29,20 +29,14 @@ from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
     dependencies_required,
-    get_current_agent_session_id,
-    update_langfuse_trace,
+    update_current_observation,
 )
 
 ANTHROPIC_BETA_FOR_STRUCTURED_OUTPUTS = "structured-outputs-2025-11-13"
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -213,7 +207,7 @@ class AnthropicModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = AnthropicTokenCounter(
-                model=str(self.model_type),
+                model=self._get_model_name(),
                 api_key=self._api_key,
                 base_url=self._url,
             )
@@ -665,7 +659,25 @@ class AnthropicModel(BaseModelBackend):
 
         return anthropic_tools
 
-    @observe()
+    def _start_generation_observation(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> str:
+        r"""Initialize Langfuse generation observation and trace metadata."""
+        model_name = self._get_model_name()
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=model_name,
+            model_parameters=self.model_config_dict,
+        )
+        self._log_and_trace()
+        return model_name
+
+    @observe(name="anthropic_model_run", as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -696,17 +708,7 @@ class AnthropicModel(BaseModelBackend):
                 stacklevel=2,
             )
 
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        model_name = self._start_generation_observation(messages, tools)
 
         # Strip trailing whitespace from messages
         processed_messages = strip_trailing_whitespace_from_messages(messages)
@@ -718,7 +720,7 @@ class AnthropicModel(BaseModelBackend):
 
         # Prepare request parameters
         request_params: Dict[str, Any] = {
-            "model": str(self.model_type),
+            "model": model_name,
             "messages": anthropic_messages,
             "max_tokens": self.model_config_dict.get("max_tokens", 4096),
         }
@@ -782,15 +784,17 @@ class AnthropicModel(BaseModelBackend):
         if is_streaming:
             # Return streaming response
             stream = create_func(**request_params, stream=True)
-            return self._wrap_anthropic_stream(stream, str(self.model_type))
+            return self._wrap_anthropic_stream(stream, model_name)
         else:
             # Return non-streaming response
             response = create_func(**request_params)
-            return self._convert_anthropic_to_openai_response(
-                response, str(self.model_type)
+            openai_response = self._convert_anthropic_to_openai_response(
+                response, model_name
             )
+            update_current_observation(usage_details=openai_response.usage)
+            return openai_response
 
-    @observe()
+    @observe(name="anthropic_model_run_async", as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -821,17 +825,7 @@ class AnthropicModel(BaseModelBackend):
                 stacklevel=2,
             )
 
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        model_name = self._start_generation_observation(messages, tools)
 
         # Strip trailing whitespace from messages
         processed_messages = strip_trailing_whitespace_from_messages(messages)
@@ -843,7 +837,7 @@ class AnthropicModel(BaseModelBackend):
 
         # Prepare request parameters
         request_params: Dict[str, Any] = {
-            "model": str(self.model_type),
+            "model": model_name,
             "messages": anthropic_messages,
             "max_tokens": self.model_config_dict.get("max_tokens", 4096),
         }
@@ -907,15 +901,15 @@ class AnthropicModel(BaseModelBackend):
         if is_streaming:
             # Return streaming response
             stream = await create_func(**request_params, stream=True)
-            return self._wrap_anthropic_async_stream(
-                stream, str(self.model_type)
-            )
+            return self._wrap_anthropic_async_stream(stream, model_name)
         else:
             # Return non-streaming response
             response = await create_func(**request_params)
-            return self._convert_anthropic_to_openai_response(
-                response, str(self.model_type)
+            openai_response = self._convert_anthropic_to_openai_response(
+                response, model_name
             )
+            update_current_observation(usage_details=openai_response.usage)
+            return openai_response
 
     def _wrap_anthropic_stream(
         self, stream: Any, model: str

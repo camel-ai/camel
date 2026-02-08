@@ -26,7 +26,7 @@ from typing import (
     cast,
 )
 
-from camel.agents.chat_agent import ChatAgent
+from camel.agents.chat_agent import AsyncStreamingChatAgentResponse, ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models.base_model import BaseModelBackend
@@ -345,11 +345,16 @@ class MCPAgent(ChatAgent):
             await self.connect()
 
         if self.function_calling_available:
-            return await super().astep(input_message, *args, **kwargs)
+            response = await super().astep(input_message, *args, **kwargs)
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                return await response
+            return response
         else:
             task = f"## Task:\n  {input_message}"
             input_message = str(self._text_tools) + task
             response = await super().astep(input_message, *args, **kwargs)
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                response = await response
             raw_content = response.msgs[0].content if response.msgs else ""
             content = (
                 raw_content

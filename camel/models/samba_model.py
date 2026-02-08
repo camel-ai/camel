@@ -49,7 +49,7 @@ except (ImportError, AttributeError):
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -195,7 +195,7 @@ class SambaModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
 
@@ -235,7 +235,7 @@ class SambaModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -273,7 +273,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **self.model_config_dict,
             )
 
@@ -287,7 +287,7 @@ class SambaModel(BaseModelBackend):
                     prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
                     completion=response.choices[0].message.content,
                     completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
-                    model=self.model_type,
+                    model=self._get_model_name(),
                 )
                 record(llm_event)
 
@@ -322,7 +322,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **self.model_config_dict,
             )
 
@@ -336,7 +336,7 @@ class SambaModel(BaseModelBackend):
                     prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
                     completion=response.choices[0].message.content,
                     completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
-                    model=self.model_type,
+                    model=self._get_model_name(),
                 )
                 record(llm_event)
 
@@ -456,7 +456,7 @@ class SambaModel(BaseModelBackend):
             id=None,
             choices=choices,
             created=int(time.time()),
-            model=self.model_type,
+            model=self._get_model_name(),
             object="chat.completion",
             # SambaVerse API only provide `total_tokens`
             usage=CompletionUsage(
@@ -504,7 +504,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = await self._async_client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **self.model_config_dict,
             )
 
@@ -518,7 +518,7 @@ class SambaModel(BaseModelBackend):
                     prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
                     completion=response.choices[0].message.content,
                     completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
-                    model=self.model_type,
+                    model=self._get_model_name(),
                 )
                 record(llm_event)
 
@@ -553,7 +553,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = await self._async_client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self._get_model_name(),
                 **self.model_config_dict,
             )
 
@@ -567,7 +567,7 @@ class SambaModel(BaseModelBackend):
                     prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
                     completion=response.choices[0].message.content,
                     completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
-                    model=self.model_type,
+                    model=self._get_model_name(),
                 )
                 record(llm_event)
 

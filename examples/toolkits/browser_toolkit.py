@@ -14,14 +14,15 @@
 
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
+from camel.configs import AnthropicConfig, ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import BrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=ModelType.GPT_4O,
     model_config_dict=ChatGPTConfig(
         temperature=0.0,
     ).as_dict(),
@@ -29,16 +30,16 @@ model = ModelFactory.create(
 
 web_agent_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=ModelType.GPT_4O,
     model_config_dict=ChatGPTConfig(
         temperature=0.0,
     ).as_dict(),
 )
 
 planning_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_SONNET_4,
+    model_config_dict=AnthropicConfig(
         temperature=0.0,
     ).as_dict(),
 )
@@ -51,7 +52,10 @@ web_toolkit = BrowserToolkit(
 )
 
 agent = ChatAgent(
-    system_message="You are a helpful assistant.",
+    system_message=BaseMessage.make_system_message(
+        content="You are a helpful assistant.",
+        role_name="amazon_search_agent",
+    ),
     model=model,
     tools=[*web_toolkit.get_tools()],
 )

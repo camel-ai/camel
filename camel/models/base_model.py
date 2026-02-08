@@ -47,23 +47,25 @@ from camel.utils import (
     BaseTokenCounter,
     Constants,
     get_current_agent_session_id,
+    update_current_observation,
     update_langfuse_trace,
 )
+from camel.utils.agent_context import (
+    get_current_agent_id,
+    get_current_agent_role_name,
+    get_current_agent_role_type,
+)
 
-if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+# Langfuse decorator setting
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from traceroot import get_logger  # type: ignore[import]
-        from traceroot import trace as observe  # type: ignore[import]
-
-        logger = get_logger('base_model')
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
-
-        logger = camel_get_logger('base_model')
 else:
     from camel.utils import observe
 
-    logger = camel_get_logger('base_model')
+logger = camel_get_logger('base_model')
 
 
 class _StreamLogger:
@@ -262,6 +264,17 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             == "true"
         )
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
+
+    @staticmethod
+    def _primitive_str(value: Any) -> str:
+        r"""Return a built-in ``str`` for enum-like string values."""
+        if isinstance(value, str):
+            return str.__str__(value)
+        return str(value)
+
+    def _get_model_name(self) -> str:
+        r"""Return model type as a built-in ``str`` for SDK/tooling calls."""
+        return self._primitive_str(self.model_type)
 
     @property
     @abstractmethod
@@ -514,15 +527,47 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         _arun() methods before API execution.
         """
         agent_session_id = get_current_agent_session_id()
+        current_agent_id = get_current_agent_id()
+        current_agent_role_name = get_current_agent_role_name()
+        current_agent_role_type = get_current_agent_role_type()
+        tags = ["CAMEL-AI", self._get_model_name()]
+        if current_agent_role_type:
+            tags.append(f"agent_role:{current_agent_role_type}")
+        elif current_agent_role_name:
+            tags.append(f"agent_role_name:{current_agent_role_name.lower()}")
+        if current_agent_id:
+            tags.append(f"agent_id:{current_agent_id}")
+
+        normalized_role_name = (
+            current_agent_role_name.strip().lower()
+            if isinstance(current_agent_role_name, str)
+            and current_agent_role_name.strip()
+            else None
+        )
+        trace_agent_id = current_agent_id or agent_session_id
+        if normalized_role_name and trace_agent_id:
+            trace_name = f"{normalized_role_name}:{trace_agent_id}"
+        elif normalized_role_name:
+            trace_name = normalized_role_name
+        elif trace_agent_id:
+            trace_name = f"camel_trace:{trace_agent_id}"
+        else:
+            trace_name = "camel_trace"
+
         update_langfuse_trace(
+            name=trace_name,
             session_id=agent_session_id,
             metadata={
                 "source": "camel",
-                "agent_id": agent_session_id,
+                "agent_id": current_agent_id,
+                "session_id": agent_session_id,
                 "agent_type": "camel_chat_agent",
-                "model_type": str(self.model_type),
+                "model_type": self._get_model_name(),
+                "current_agent_id": current_agent_id,
+                "current_agent_role_name": current_agent_role_name,
+                "current_agent_role_type": current_agent_role_type,
             },
-            tags=["CAMEL-AI", str(self.model_type)],
+            tags=tags,
         )
 
     @abstractmethod
@@ -585,7 +630,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
-    @observe()
+    @observe(name="model_run")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -615,6 +660,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `ChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
         """
+        # Update Langfuse trace with session metadata
+        self._log_and_trace()
+
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
 
@@ -633,6 +681,20 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         result = self._run(messages, response_format, tools)
         logger.info("Result: %s", result)
 
+        # Enrich Langfuse observation with model usage details
+        if not (isinstance(result, Stream) or inspect.isgenerator(result)):
+            usage: Dict[str, Any] = {}
+            if hasattr(result, 'usage') and result.usage:
+                usage = (
+                    result.usage.model_dump()
+                    if hasattr(result.usage, 'model_dump')
+                    else {}
+                )
+            update_current_observation(
+                model=self._get_model_name(),
+                usage_details=usage,
+            )
+
         # For streaming responses, wrap with logging; otherwise log immediately
         if isinstance(result, Stream) or inspect.isgenerator(result):
             return _SyncStreamWrapper(  # type: ignore[return-value]
@@ -642,7 +704,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             self._log_response(log_path, result)
         return result
 
-    @observe()
+    @observe(name="model_run_async")
     async def arun(
         self,
         messages: List[OpenAIMessage],
@@ -672,6 +734,9 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `AsyncChatCompletionStreamManager[BaseModel]` in the structured
                 stream mode.
         """
+        # Update Langfuse trace with session metadata
+        self._log_and_trace()
+
         # Log the request if logging is enabled
         log_path = self._log_request(messages)
 
@@ -687,6 +752,20 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         result = await self._arun(messages, response_format, tools)
         logger.info("Result: %s", result)
+
+        # Enrich Langfuse observation with model usage details
+        if not (isinstance(result, AsyncStream) or inspect.isasyncgen(result)):
+            usage: Dict[str, Any] = {}
+            if hasattr(result, 'usage') and result.usage:
+                usage = (
+                    result.usage.model_dump()
+                    if hasattr(result.usage, 'model_dump')
+                    else {}
+                )
+            update_current_observation(
+                model=self._get_model_name(),
+                usage_details=usage,
+            )
 
         # For streaming responses, wrap with logging; otherwise log immediately
         if isinstance(result, AsyncStream) or inspect.isasyncgen(result):

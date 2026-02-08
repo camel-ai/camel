@@ -37,7 +37,7 @@ from camel.utils import (
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
+        from langfuse import observe
     except ImportError:
         from camel.utils import observe
 else:
@@ -261,7 +261,7 @@ class SGLangModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -288,7 +288,7 @@ class SGLangModel(BaseModelBackend):
 
         response = await async_client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **extra_params,
             **self.model_config_dict,
         )
@@ -324,7 +324,7 @@ class SGLangModel(BaseModelBackend):
                 "messages": messages,
                 "tools": tools,
             },
-            model=str(self.model_type),
+            model=self._get_model_name(),
             model_parameters=self.model_config_dict,
         )
         self._log_and_trace()
@@ -351,7 +351,7 @@ class SGLangModel(BaseModelBackend):
 
         response = client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self._get_model_name(),
             **extra_params,
             **self.model_config_dict,
         )

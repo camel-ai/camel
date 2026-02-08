@@ -15,6 +15,12 @@ from contextvars import ContextVar
 from typing import Optional
 
 _agent_id_var: ContextVar[Optional[str]] = ContextVar('agent_id', default=None)
+_agent_role_name_var: ContextVar[Optional[str]] = ContextVar(
+    'agent_role_name', default=None
+)
+_agent_role_type_var: ContextVar[Optional[str]] = ContextVar(
+    'agent_role_type', default=None
+)
 
 
 def set_current_agent_id(agent_id: str) -> None:
@@ -29,6 +35,26 @@ def set_current_agent_id(agent_id: str) -> None:
     _agent_id_var.set(agent_id)
 
 
+def set_current_agent_context(
+    agent_id: str,
+    role_name: Optional[str] = None,
+    role_type: Optional[str] = None,
+) -> None:
+    r"""Set current agent context in context-local storage."""
+    normalized_role_name = (
+        role_name.strip().lower() if isinstance(role_name, str) else role_name
+    )
+    normalized_role_type = None
+    if role_type is not None:
+        normalized_role_type = str(role_type).strip().lower()
+        if normalized_role_type.startswith("roletype."):
+            normalized_role_type = normalized_role_type.split(".", 1)[1]
+
+    _agent_id_var.set(agent_id)
+    _agent_role_name_var.set(normalized_role_name)
+    _agent_role_type_var.set(normalized_role_type)
+
+
 def get_current_agent_id() -> Optional[str]:
     r"""Get the current agent ID from context-local storage.
 
@@ -39,3 +65,13 @@ def get_current_agent_id() -> Optional[str]:
         Optional[str]: The agent ID if set, None otherwise.
     """
     return _agent_id_var.get()
+
+
+def get_current_agent_role_name() -> Optional[str]:
+    r"""Get current agent role name from context-local storage."""
+    return _agent_role_name_var.get()
+
+
+def get_current_agent_role_type() -> Optional[str]:
+    r"""Get current agent role type from context-local storage."""
+    return _agent_role_type_var.get()
