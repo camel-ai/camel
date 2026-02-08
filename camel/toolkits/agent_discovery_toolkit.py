@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 if TYPE_CHECKING:
@@ -200,3 +201,20 @@ class AgentDiscoveryToolkit(BaseToolkit):
 
         card = self.agent_registry[self.agent_id]
         return f"Your agent information:\n{card!s}"
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects for the
+                agent discovery operations.
+        """
+        return [
+            FunctionTool(self.list_all_agents),
+            FunctionTool(self.search_agents_by_capability),
+            FunctionTool(self.search_agents_by_tag),
+            FunctionTool(self.search_agents_by_description),
+            FunctionTool(self.get_agent_details),
+            FunctionTool(self.get_my_info),
+        ]

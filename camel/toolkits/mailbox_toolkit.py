@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from collections import deque
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 if TYPE_CHECKING:
@@ -195,3 +196,19 @@ class MailboxToolkit(BaseToolkit):
             return "No other agents available."
 
         return f"Available agents: {', '.join(agents)}"
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects for the
+                mailbox operations.
+        """
+        return [
+            FunctionTool(self.send_message),
+            FunctionTool(self.receive_messages),
+            FunctionTool(self.check_messages),
+            FunctionTool(self.peek_messages),
+            FunctionTool(self.get_available_agents),
+        ]

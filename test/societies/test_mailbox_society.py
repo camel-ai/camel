@@ -210,6 +210,30 @@ class TestMailboxToolkit:
         assert "agent3" in result
         assert "agent1" not in result
 
+    def test_mailbox_toolkit_get_tools(self):
+        r"""Test that MailboxToolkit returns FunctionTool objects."""
+        message_router = {}
+        toolkit = MailboxToolkit("agent1", message_router)
+
+        tools = toolkit.get_tools()
+
+        # Should return a list of FunctionTool objects
+        assert isinstance(tools, list)
+        assert len(tools) == 5  # 5 methods exposed as tools
+        
+        # All items should be FunctionTool instances
+        from camel.toolkits import FunctionTool
+        for tool in tools:
+            assert isinstance(tool, FunctionTool)
+        
+        # Check that the methods are included
+        tool_names = [tool.get_function_name() for tool in tools]
+        assert "send_message" in tool_names
+        assert "receive_messages" in tool_names
+        assert "check_messages" in tool_names
+        assert "peek_messages" in tool_names
+        assert "get_available_agents" in tool_names
+
 
 class TestAgentDiscoveryToolkit:
     r"""Test cases for AgentDiscoveryToolkit class."""
@@ -302,6 +326,34 @@ class TestAgentDiscoveryToolkit:
         result = toolkit.get_agent_details("nonexistent")
 
         assert "not found" in result.lower()
+
+    def test_agent_discovery_toolkit_get_tools(self):
+        r"""Test that AgentDiscoveryToolkit returns FunctionTool objects."""
+        agent_registry = {
+            "agent1": AgentCard("agent1", "Agent 1", ["skill1"]),
+            "agent2": AgentCard("agent2", "Agent 2", ["skill2"]),
+        }
+        
+        toolkit = AgentDiscoveryToolkit("agent1", agent_registry)
+        tools = toolkit.get_tools()
+
+        # Should return a list of FunctionTool objects
+        assert isinstance(tools, list)
+        assert len(tools) == 6  # 6 methods exposed as tools
+        
+        # All items should be FunctionTool instances
+        from camel.toolkits import FunctionTool
+        for tool in tools:
+            assert isinstance(tool, FunctionTool)
+        
+        # Check that the methods are included
+        tool_names = [tool.get_function_name() for tool in tools]
+        assert "list_all_agents" in tool_names
+        assert "search_agents_by_capability" in tool_names
+        assert "search_agents_by_tag" in tool_names
+        assert "search_agents_by_description" in tool_names
+        assert "get_agent_details" in tool_names
+        assert "get_my_info" in tool_names
 
 
 class TestMailboxSociety:
@@ -639,6 +691,16 @@ class TestMailboxSocietyProcessing:
         assert society.name == "TestSociety"
         assert society.max_iterations == 5
         assert society.process_interval == 0.1
+        assert not society._running
+        assert not society._stop_requested
+
+    def test_society_initialization_defaults(self):
+        r"""Test creating society with default parameters."""
+        society = MailboxSociety(name="TestSociety")
+
+        assert society.name == "TestSociety"
+        assert society.max_iterations is None  # Should be None (infinite)
+        assert society.process_interval == 0.1  # Should be 0.1
         assert not society._running
         assert not society._stop_requested
 

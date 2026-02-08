@@ -113,26 +113,28 @@ class MailboxSociety:
 
     Args:
         name (str): Name of the society. (default: :obj:`"MailboxSociety"`)
-        max_iterations (int): Maximum number of message processing iterations.
-            (default: :obj:`10`)
+        max_iterations (Optional[int]): Maximum number of message processing 
+            iterations. If None, runs indefinitely until stopped.
+            (default: :obj:`None`)
         process_interval (float): Time in seconds to wait between processing
-            iterations. (default: :obj:`0.5`)
+            iterations. (default: :obj:`0.1`)
     """
 
     def __init__(
         self,
         name: str = "MailboxSociety",
-        max_iterations: int = 10,
-        process_interval: float = 0.5,
+        max_iterations: Optional[int] = None,
+        process_interval: float = 0.1,
     ):
         r"""Initialize the mailbox society.
 
         Args:
             name (str): Name of the society.
-            max_iterations (int): Maximum number of message processing
-                iterations.
+            max_iterations (Optional[int]): Maximum number of message 
+                processing iterations. If None, runs indefinitely until 
+                stopped. (default: :obj:`None`)
             process_interval (float): Time in seconds to wait between
-                processing iterations.
+                processing iterations. (default: :obj:`0.1`)
         """
         self.name = name
         self.agents: Dict[str, ChatAgent] = {}
@@ -448,9 +450,9 @@ class MailboxSociety:
         )
 
         try:
-            while (
-                not self._stop_requested
-                and self._iteration_count < self.max_iterations
+            while not self._stop_requested and (
+                self.max_iterations is None
+                or self._iteration_count < self.max_iterations
             ):
                 # Wait if paused
                 await self._pause_event.wait()
