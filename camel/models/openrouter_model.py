@@ -71,7 +71,7 @@ class OpenRouterModel(OpenAICompatibleModel):
             "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        
+
         # Add OpenRouter App Attribution headers
         # Merge with any existing headers to preserve user-provided headers
         attribution_headers = {
@@ -82,7 +82,7 @@ class OpenRouterModel(OpenAICompatibleModel):
             **kwargs.get("default_headers", {}),
             **attribution_headers,
         }
-        
+
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
