@@ -22,6 +22,7 @@ export interface BrowserConfig {
   screenshotTimeout: number;
   pageStabilityTimeout: number;
   domContentLoadedTimeout: number;
+  downloadTimeout: number;
   domStabilityTimeout: number;
   domStabilityThreshold: number;
 
@@ -76,6 +77,9 @@ export interface BrowserConfig {
   connectOverCdp: boolean;
   cdpUrl?: string;
   cdpKeepCurrentPage: boolean;
+
+  // Download file configuration
+  downloadDir?: string;
 }
 
 export interface WebSocketConfig {
@@ -115,6 +119,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     screenshotTimeout: 15000,
     pageStabilityTimeout: 1500,
     domContentLoadedTimeout: 5000,
+    downloadTimeout: 30000,
     domStabilityTimeout: 5000,
     domStabilityThreshold: 200,       // Consider DOM stable if no changes for 200ms
     popupTimeout: 5000,
@@ -230,6 +235,8 @@ export class ConfigLoader {
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
     if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
+    if (config.downloadDir !== undefined) browserConfig.downloadDir = config.downloadDir;
+    if (config.downloadTimeout !== undefined) browserConfig.downloadTimeout = config.downloadTimeout;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }

@@ -426,6 +426,7 @@
               "reference/camel.retrievers.bm25_retriever",
               "reference/camel.retrievers.cohere_rerank_retriever",
               "reference/camel.retrievers.hybrid_retrival",
+              "reference/camel.retrievers.jina_rerank_retriever",
               "reference/camel.retrievers.vector_retriever"
             ]
           },
@@ -560,6 +561,7 @@
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
+              "reference/camel.toolkits.skill_toolkit",
               "reference/camel.toolkits.slack_toolkit",
               "reference/camel.toolkits.sql_toolkit",
               "reference/camel.toolkits.stripe_toolkit",

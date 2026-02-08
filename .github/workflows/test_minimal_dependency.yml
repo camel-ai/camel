@@ -43,4 +43,5 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install pytest dotenv
-          pytest test/integration_test/test_minimal_dependency.py
+          # Exclude model_backend tests (e.g. single_agent example) when no API key in fork PRs
+          pytest test/integration_test/test_minimal_dependency.py -m "not model_backend"
