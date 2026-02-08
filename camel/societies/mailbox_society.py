@@ -17,7 +17,7 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -485,23 +485,79 @@ class MailboxSociety:
                 f"after {self._iteration_count} iterations"
             )
 
-    async def run_async(self) -> None:
+    async def run_async(
+        self,
+        initial_messages: Optional[
+            Dict[str, Union[str, MailboxMessage]]
+        ] = None,
+    ) -> None:
         r"""Asynchronous entry point to start message processing.
 
         This method starts the message processing loop and runs until
-        stopped or max iterations reached.
+        stopped or max iterations reached. Optionally sends initial messages
+        to agents before starting the processing loop.
+
+        Args:
+            initial_messages (Optional[Dict[str, Union[str,
+                MailboxMessage]]]):
+                Optional initial messages to send to agents. Keys are
+                agent IDs, values can be either string content or
+                MailboxMessage objects. If string, a MailboxMessage will
+                be created with sender "system". (default: :obj:`None`)
         """
         if self._running:
             logger.warning(f"Society '{self.name}' is already running")
             return
 
+        # Send initial messages if provided
+        if initial_messages:
+            for agent_id, message in initial_messages.items():
+                if agent_id not in self.agents:
+                    logger.warning(
+                        f"Agent '{agent_id}' not found, "
+                        f"skipping initial message"
+                    )
+                    continue
+
+                # Convert string to MailboxMessage if needed
+                if isinstance(message, str):
+                    message = MailboxMessage(
+                        sender_id="system",
+                        recipient_id=agent_id,
+                        content=message,
+                        subject="Initial Task",
+                    )
+
+                # Add to agent's mailbox
+                if agent_id not in self.message_router:
+                    self.message_router[agent_id] = deque()
+                self.message_router[agent_id].append(message)
+                logger.info(
+                    f"Sent initial message to agent '{agent_id}': "
+                    f"{message.subject or 'No subject'}"
+                )
+
         await self._process_messages_loop()
 
-    def run(self) -> None:
+    def run(
+        self,
+        initial_messages: Optional[
+            Dict[str, Union[str, MailboxMessage]]
+        ] = None,
+    ) -> None:
         r"""Synchronous entry point to start message processing.
 
         This method wraps the async processing in a way that works with
-        or without an existing event loop.
+        or without an existing event loop. Optionally sends initial messages
+        to agents before starting the processing loop.
+
+        Args:
+            initial_messages (Optional[Dict[str, Union[str,
+                MailboxMessage]]]):
+                Optional initial messages to send to agents. Keys are
+                agent IDs, values can be either string content or
+                MailboxMessage objects. If string, a MailboxMessage will
+                be created with sender "system". (default: :obj:`None`)
         """
         if self._running:
             logger.warning(f"Society '{self.name}' is already running")
@@ -518,7 +574,9 @@ class MailboxSociety:
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    return new_loop.run_until_complete(self.run_async())
+                    return new_loop.run_until_complete(
+                        self.run_async(initial_messages)
+                    )
                 finally:
                     new_loop.close()
 
@@ -527,7 +585,7 @@ class MailboxSociety:
 
         except RuntimeError:
             # No event loop running, create one
-            return asyncio.run(self.run_async())
+            return asyncio.run(self.run_async(initial_messages))
 
     def stop(self) -> None:
         r"""Stop the message processing loop.
