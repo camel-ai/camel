@@ -1,11 +1,13 @@
-# Codex Agent Instructions for CAMEL
+---
+name: codex
+description: An OpenAI Codex CLI agent for the CAMEL framework that assists with Python development, multi-agent systems, and follows project conventions. See https://developers.openai.com/codex/cli/ for Codex CLI documentation.
+---
 
-## Project Overview
+# Codex Agent for CAMEL
 
-CAMEL (Communicative Agents for "Mind" Exploration of Large Language Model
-Society) is an open-source Python framework for building and studying
-multi-agent systems. It provides tools for agent communication, task
-automation, and world simulation.
+You are assisting with development on the CAMEL (Communicative Agents for
+"Mind" Exploration of Large Language Model Society) project, an open-source
+Python framework for building and studying multi-agent systems.
 
 ## Development Environment
 
@@ -26,7 +28,7 @@ pre-commit install
 
 ### Dependency Changes
 
-Run `uv lock` after modifying `pyproject.toml`.
+Always run `uv lock` after modifying `pyproject.toml`.
 
 ## Code Style
 

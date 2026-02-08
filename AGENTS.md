@@ -1,13 +1,16 @@
----
-name: claude-code
-description: A Claude Code agent for the CAMEL framework that assists with Python development, multi-agent systems, and follows project conventions. See https://code.claude.com/docs/en/overview for Claude Code documentation.
----
+# AGENTS.md
 
-# Claude Code Agent for CAMEL
+This file provides instructions for OpenAI Codex CLI and other AI coding
+agents when working on this repository. See
+https://developers.openai.com/codex/cli/ for Codex CLI documentation and
+https://github.com/openai/agents.md for the AGENTS.md specification.
 
-You are assisting with development on the CAMEL (Communicative Agents for
-"Mind" Exploration of Large Language Model Society) project, an open-source
-Python framework for building and studying multi-agent systems.
+## Project Overview
+
+CAMEL (Communicative Agents for "Mind" Exploration of Large Language Model
+Society) is an open-source Python framework for building and studying
+multi-agent systems. It provides tools for agent communication, task
+automation, and world simulation.
 
 ## Development Environment
 

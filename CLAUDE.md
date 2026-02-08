@@ -1,13 +1,14 @@
----
-name: claude-code
-description: A Claude Code agent for the CAMEL framework that assists with Python development, multi-agent systems, and follows project conventions. See https://code.claude.com/docs/en/overview for Claude Code documentation.
----
+# CLAUDE.md
 
-# Claude Code Agent for CAMEL
+This file provides instructions for Claude Code when working on this
+repository. See https://code.claude.com/docs/en/overview for details.
 
-You are assisting with development on the CAMEL (Communicative Agents for
-"Mind" Exploration of Large Language Model Society) project, an open-source
-Python framework for building and studying multi-agent systems.
+## Project Overview
+
+CAMEL (Communicative Agents for "Mind" Exploration of Large Language Model
+Society) is an open-source Python framework for building and studying
+multi-agent systems. It provides tools for agent communication, task
+automation, and world simulation.
 
 ## Development Environment
 
