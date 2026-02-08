@@ -12,6 +12,14 @@ The mailbox-based multi-agent system provides a clean, decoupled architecture wh
 
 This design ensures that agents never directly touch each other's state, promoting modularity and scalability.
 
+## Key Features
+
+- **Message Passing**: Direct and broadcast messaging between agents
+- **Entry Points**: Both synchronous (`run()`) and asynchronous (`run_async()`) entry points for processing
+- **Lifecycle Control**: Start, stop, pause, and resume message processing
+- **Custom Handlers**: Set custom message handlers per agent
+- **Discovery**: Search and discover agents by capability, tag, or description
+
 ## Key Components
 
 ### 1. MailboxMessage
@@ -46,12 +54,17 @@ card = AgentCard(
 
 ### 3. MailboxSociety
 
-Manages a society of agents with mailbox-based communication.
+Manages a society of agents with mailbox-based communication and automatic message processing.
 
 ```python
 from camel.societies import MailboxSociety
 
-society = MailboxSociety(name="Research Team")
+# Create society with configuration
+society = MailboxSociety(
+    name="Research Team",
+    max_iterations=10,      # Process for 10 iterations
+    process_interval=0.5    # Check every 0.5 seconds
+)
 
 # Register agents
 society.register_agent(agent, agent_card)
@@ -61,9 +74,46 @@ results = society.search_agents(capabilities=["research"])
 
 # Broadcast messages
 society.broadcast_message("agent1", "Team meeting at 3 PM")
+
+# Use entry point to process messages automatically
+society.run()  # Synchronous processing
+
+# Or use async
+await society.run_async()  # Asynchronous processing
 ```
 
-### 4. MailboxToolkit
+### 4. Entry Points for Message Processing
+
+The MailboxSociety provides entry points similar to Workforce for automatic message processing:
+
+```python
+# Synchronous entry point
+society.run()
+
+# Asynchronous entry point
+await society.run_async()
+
+# Lifecycle controls
+society.stop()    # Stop processing
+society.pause()   # Pause processing
+society.resume()  # Resume processing
+society.reset()   # Reset state
+```
+
+#### Custom Message Handlers
+
+Set custom handlers to control how agents process messages:
+
+```python
+def custom_handler(agent: ChatAgent, message: MailboxMessage):
+    """Custom logic for processing messages."""
+    print(f"Processing: {message.content}")
+    # Your custom logic here
+    
+society.set_message_handler("agent1", custom_handler)
+```
+
+### 5. MailboxToolkit
 
 Provides agents with mailbox functionality.
 
@@ -85,7 +135,7 @@ status = mailbox.check_messages()
 preview = mailbox.peek_messages(max_messages=3)
 ```
 
-### 5. AgentDiscoveryToolkit
+### 6. AgentDiscoveryToolkit
 
 Enables agents to discover other agents in the society.
 
@@ -108,6 +158,8 @@ details = discovery.get_agent_details("agent2")
 ```
 
 ## Quick Start
+
+### Basic Setup
 
 ```python
 from camel.agents import ChatAgent
@@ -148,6 +200,38 @@ agent = ChatAgent(
 )
 
 # Register agent
+society.register_agent(agent, card)
+```
+
+### Using the Entry Point
+
+Process messages automatically using the entry point:
+
+```python
+# Option 1: Manual message handling with toolkits
+# Agents use their mailbox tools to send/receive messages
+
+# Option 2: Automatic processing with entry point
+society = MailboxSociety(
+    name="Auto Processing Society",
+    max_iterations=10,
+    process_interval=0.5
+)
+
+# Register agents...
+# Add initial messages...
+
+# Start automatic processing
+society.run()  # Will process messages for up to 10 iterations
+
+# Or with custom handlers
+def my_handler(agent, message):
+    print(f"Processing: {message.content}")
+    # Custom logic here
+    
+society.set_message_handler("agent1", my_handler)
+society.run()
+```
 society.register_agent(agent, card)
 ```
 
@@ -214,6 +298,32 @@ Agents can be composed with different capabilities and toolkits, enabling divers
 ### Observability
 All communication goes through the mailbox system, making it easy to monitor, log, and debug agent interactions.
 
+## Comparison with Workforce
+
+MailboxSociety shares similarities with Workforce but is designed for different use cases:
+
+| Feature | MailboxSociety | Workforce |
+|---------|----------------|-----------|
+| **Communication** | Message passing via mailboxes | Task-based via TaskChannel |
+| **Entry Point** | `run()` / `run_async()` | `process_task()` / `process_task_async()` |
+| **Main Loop** | `_process_messages_loop()` | `_listen_to_channel()` |
+| **Lifecycle** | start/stop/pause/resume/reset | start/stop/pause/resume/reset |
+| **Processing** | Iterative message processing | Task decomposition & assignment |
+| **Coordination** | Peer-to-peer messaging | Coordinator-worker hierarchy |
+| **Use Case** | Collaborative multi-agent systems | Hierarchical task execution |
+
+**When to use MailboxSociety:**
+- Agents need to communicate freely with each other
+- Peer-to-peer collaboration workflows
+- Event-driven agent interactions
+- Discovery and dynamic messaging patterns
+
+**When to use Workforce:**
+- Task decomposition and hierarchical execution
+- Coordinator-worker patterns
+- Dependency-based task management
+- Failure recovery and task retry strategies
+
 ## Testing
 
 Comprehensive tests are available in `test/societies/test_mailbox_society.py`:
@@ -224,7 +334,9 @@ pytest test/societies/test_mailbox_society.py
 
 ## Examples
 
-See `examples/ai_society/mailbox_society_example.py` for a complete demonstration.
+See the following examples:
+- `examples/ai_society/mailbox_society_example.py` - Basic message passing demonstration
+- `examples/ai_society/mailbox_society_processing_example.py` - Entry point and automatic processing demonstration
 
 ## API Reference
 
