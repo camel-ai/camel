@@ -2694,8 +2694,8 @@ class EarthScienceToolkit(BaseToolkit):
         import numpy as np
         import ruptures as rpt
 
-        signal = np.asarray(signal)
-        algo = rpt.Pelt(model=model).fit(signal)
+        signal_arr = np.asarray(signal)
+        algo = rpt.Pelt(model=model).fit(signal_arr)
         change_points = algo.predict(pen=penalty)
         return [int(cp) for cp in change_points]
 
@@ -2910,9 +2910,9 @@ class EarthScienceToolkit(BaseToolkit):
         """
         import numpy as np
 
-        values = np.array(values, dtype=np.float32)
-        valid_indices = ~np.isnan(values)
-        valid_values = values[valid_indices]
+        values_arr = np.array(values, dtype=np.float32)
+        valid_indices = ~np.isnan(values_arr)
+        valid_values = values_arr[valid_indices]
         if len(valid_values) < 2:
             if verbose:
                 logger.info(

@@ -1,6 +1,8 @@
 import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming, PageStabilityResult, INTERACTIVE_ROLES, NearestElementInfo } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Constants for loading element detection
 // Using word boundary patterns to avoid false positives like "unloading" or "windspinner"
@@ -1624,6 +1626,131 @@ export class HybridBrowserSession {
     }
   }
 
+  /**
+   * Resolves click action based on ref or pixel coordinates.
+   * Returns either a clickAction function or an error message.
+   */
+  private async resolveClickAction(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ clickAction: () => Promise<void> } | { error: string }> {
+    if (x !== undefined && y !== undefined) {
+      // Pixel mode
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { error: `Invalid coordinates (${x}, ${y}), viewport is ${viewport.width}x${viewport.height}` };
+      }
+      await this.showClickHighlight(page, x, y);
+      return { clickAction: async () => { await page.mouse.click(x, y); } };
+    } else if (ref) {
+      // Ref mode
+      await this.getSnapshot(page);
+      const element = page.locator(`aria-ref=${ref}`).first();
+      if (await element.count() === 0) {
+        return { error: `Element with ref ${ref} not found` };
+      }
+      return { clickAction: async () => { await element.click(); } };
+    } else {
+      return { error: 'Must provide either ref or (x, y) coordinates' };
+    }
+  }
+
+  /**
+   * Upload a file by clicking the ref element or pixel coordinates and intercepting the file chooser.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileUpload(
+    page: Page,
+    filePath: string,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: `File not found: ${filePath}` };
+      }
+
+      const result = await this.resolveClickAction(page, ref, x, y);
+      if ('error' in result) {
+        return { success: false, error: result.error };
+      }
+      const { clickAction } = result;
+
+      try {
+        const [fileChooser] = await Promise.all([
+          page.waitForEvent('filechooser', { timeout: 3000 }),
+          clickAction(),
+        ]);
+        await fileChooser.setFiles(filePath);
+        return { success: true };
+      } catch {
+        return {
+          success: false,
+          error: 'File chooser not triggered. The clicked element may not be a file upload button.'
+        };
+      }
+    } catch (error) {
+      return { success: false, error: `File upload failed: ${error}` };
+    }
+  }
+
+  /**
+   * Download a file by clicking the ref element or pixel coordinates and waiting for the download to complete.
+   * Supports both ref mode and pixel mode.
+   */
+  private async performFileDownload(
+    page: Page,
+    ref?: string,
+    x?: number,
+    y?: number
+  ): Promise<{ success: boolean; fileName?: string; savePath?: string; error?: string }> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    const saveDir = browserConfig.downloadDir;
+    const downloadTimeout = browserConfig.downloadTimeout;
+
+    if (!saveDir) {
+      return { success: false, error: 'No download directory configured. Set download_dir when initializing the toolkit.' };
+    }
+
+    if (!fs.existsSync(saveDir)) {
+      return { success: false, error: `Download directory does not exist: ${saveDir}` };
+    }
+
+    const result = await this.resolveClickAction(page, ref, x, y);
+    if ('error' in result) {
+      return { success: false, error: result.error };
+    }
+    const { clickAction } = result;
+
+    try {
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: downloadTimeout }),
+        clickAction(),
+      ]);
+
+      const fileName = download.suggestedFilename();
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
+      let savePath = path.join(saveDir, fileName);
+      let counter = 1;
+      while (fs.existsSync(savePath)) {
+        savePath = path.join(saveDir, `${base} (${counter})${ext}`);
+        counter++;
+      }
+      await download.saveAs(savePath);
+
+      return { success: true, fileName, savePath };
+    } catch (error) {
+      return { success: false, error: `Download failed: ${error}` };
+    }
+  }
+
   async executeAction(action: BrowserAction): Promise<ActionResult> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -1771,6 +1898,46 @@ export class HybridBrowserSession {
           const keys = action.keys.join('+');
           await page.keyboard.press(keys);
           actionExecutionTime = Date.now() - keyPressStart;
+          break;
+        }
+
+        case 'upload_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const uploadStart = Date.now();
+
+          const uploadResult = await this.performFileUpload(
+            page,
+            action.filePath,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!uploadResult.success) {
+            throw new Error(`Upload failed: ${uploadResult.error}`);
+          }
+
+          actionExecutionTime = Date.now() - uploadStart;
+          break;
+        }
+
+        case 'download_file': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const downloadStart = Date.now();
+
+          const downloadResult = await this.performFileDownload(
+            page,
+            action.ref,
+            action.x,
+            action.y
+          );
+
+          if (!downloadResult.success) {
+            throw new Error(`Download failed: ${downloadResult.error}`);
+          }
+
+          customMessage = `File downloaded: ${downloadResult.fileName} -> ${downloadResult.savePath}`;
+          actionExecutionTime = Date.now() - downloadStart;
           break;
         }
 
