@@ -62,8 +62,8 @@ from camel.societies import MailboxSociety
 # Create society with configuration
 society = MailboxSociety(
     name="Research Team",
-    max_iterations=10,      # Process for 10 iterations
-    process_interval=0.5    # Check every 0.5 seconds
+    max_iterations=None,    # None = infinite (default)
+    process_interval=0.1    # Check every 0.1 seconds (default)
 )
 
 # Register agents
@@ -81,6 +81,10 @@ society.run()  # Synchronous processing
 # Or use async
 await society.run_async()  # Asynchronous processing
 ```
+
+**Default Behavior:**
+- `max_iterations=None`: Runs indefinitely until stopped (infinite loop)
+- `process_interval=0.1`: Checks for messages every 0.1 seconds
 
 ### 4. Entry Points for Message Processing
 
@@ -219,18 +223,22 @@ Process messages automatically using the entry point:
 # Option 1: Manual message handling with toolkits
 # Agents use their mailbox tools to send/receive messages
 
-# Option 2: Automatic processing with entry point
+# Option 2: Automatic processing with entry point (infinite by default)
 society = MailboxSociety(
     name="Auto Processing Society",
-    max_iterations=10,
-    process_interval=0.5
+    max_iterations=None,  # None = infinite (default)
+    process_interval=0.1   # Check every 0.1 seconds (default)
 )
 
 # Register agents...
 # Add initial messages...
 
-# Start automatic processing
-society.run()  # Will process messages for up to 10 iterations
+# Start automatic processing (runs until stopped)
+society.run()
+
+# Or with limited iterations
+society = MailboxSociety(name="Limited", max_iterations=10)
+society.run()  # Will stop after 10 iterations
 
 # Or with custom handlers
 def my_handler(agent, message):
