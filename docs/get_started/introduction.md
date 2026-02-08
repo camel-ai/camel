@@ -47,6 +47,10 @@ description: |
     OWL (Optimized Workforce Learning) is a multi-agent automation framework for real-world tasks. Built on CAMEL-AI,
     it enables dynamic agent collaboration using tools like browsers, code interpreters, and multimodal models.
   </Card>
+
+  <Card title="Eigent" icon="users" href="https://www.eigent.ai/">
+    The World First Multi-agent Workforce
+  </Card>
 </CardGroup>
 
 ## Ready to Get Started?
