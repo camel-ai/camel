@@ -706,6 +706,9 @@ module = [
     "markitdown",
     "httplib2",
     "serpapi.*",
+    "azure.identity",
+    "msgraph",
+    "msgraph.*",
 ]
 
 ignore_missing_imports = true

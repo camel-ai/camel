@@ -359,6 +359,169 @@ def update_current_observation(
         langfuse.update_current_span(**span_data)
 
 
+def get_langfuse_tool_name(tool: Any) -> Optional[str]:
+    r"""Get a stable tool identifier for Langfuse metadata.
+
+    For bound toolkit methods this returns values like
+    ``SearchToolkit.search_google``.
+    """
+    if tool is None:
+        return None
+    func = getattr(tool, "func", tool)
+    qualname = getattr(func, "__qualname__", "")
+    if isinstance(qualname, str) and qualname:
+        return qualname.replace(".<locals>.", ".")
+    name = getattr(func, "__name__", "")
+    if isinstance(name, str) and name:
+        return name
+    return None
+
+
+def _normalize_role_type(role_type: Any) -> str:
+    value = getattr(role_type, "value", role_type)
+    return _to_primitive_str(value).strip().lower()
+
+
+def serialize_langfuse_step_input(
+    input_message: Any, response_format: Optional[Any]
+) -> Dict[str, Any]:
+    r"""Build a compact, serializable step input payload."""
+    if (
+        hasattr(input_message, "role_name")
+        and hasattr(input_message, "role_type")
+        and hasattr(input_message, "content")
+    ):
+        message_payload: Dict[str, Any] = {
+            "role_name": getattr(input_message, "role_name", "user"),
+            "role_type": _normalize_role_type(
+                getattr(input_message, "role_type", "user")
+            ),
+            "content": getattr(input_message, "content", None),
+        }
+    else:
+        message_payload = {
+            "role_name": "user",
+            "role_type": "user",
+            "content": _to_primitive_str(input_message),
+        }
+
+    response_format_name = None
+    if response_format is not None:
+        response_format_name = getattr(
+            response_format, "__name__", _to_primitive_str(response_format)
+        )
+
+    return {
+        "input_message": message_payload,
+        "response_format": response_format_name,
+    }
+
+
+def serialize_langfuse_step_output(
+    response: Any, tool_call_records: Optional[List[Any]] = None
+) -> Dict[str, Any]:
+    r"""Build a compact step output payload for observation output."""
+    msgs_payload = [
+        {
+            "role_name": getattr(msg, "role_name", None),
+            "role_type": _normalize_role_type(getattr(msg, "role_type", None)),
+            "content": getattr(msg, "content", None),
+        }
+        for msg in (getattr(response, "msgs", None) or [])
+    ]
+
+    info = getattr(response, "info", None) or {}
+    if not isinstance(info, dict):
+        info = {}
+
+    tool_calls_payload: List[Dict[str, Any]] = []
+    for record in tool_call_records or []:
+        tool_calls_payload.append(
+            {
+                "tool_name": getattr(record, "tool_name", None),
+                "tool_call_id": getattr(record, "tool_call_id", None),
+                "args": getattr(record, "args", None),
+                "result": _to_primitive_str(getattr(record, "result", ""))[
+                    :500
+                ],
+            }
+        )
+
+    return {
+        "terminated": getattr(response, "terminated", None),
+        "msgs": msgs_payload,
+        "info": {
+            "id": info.get("id"),
+            "usage": info.get("usage"),
+            "termination_reasons": info.get("termination_reasons"),
+            "num_tokens": info.get("num_tokens"),
+            "external_tool_call_requests": info.get(
+                "external_tool_call_requests"
+            ),
+        },
+        "tool_calls": tool_calls_payload,
+    }
+
+
+def serialize_langfuse_model_response_input(
+    openai_messages: List[Any],
+    response_format: Optional[Any],
+    tool_schemas: Optional[List[Dict[str, Any]]],
+) -> Dict[str, Any]:
+    r"""Build compact model-response span input payload."""
+    response_format_name = None
+    if response_format is not None:
+        response_format_name = getattr(
+            response_format, "__name__", _to_primitive_str(response_format)
+        )
+
+    tool_names: List[str] = []
+    for schema in tool_schemas or []:
+        try:
+            tool_name = schema.get("function", {}).get("name")
+            if tool_name:
+                tool_names.append(_to_primitive_str(tool_name))
+        except Exception:
+            continue
+
+    return {
+        "num_messages": len(openai_messages),
+        "messages": openai_messages,
+        "response_format": response_format_name,
+        "tool_names": tool_names,
+    }
+
+
+def serialize_langfuse_model_response_output(
+    model_response: Any,
+) -> Dict[str, Any]:
+    r"""Build compact model-response span output payload."""
+    tool_names: List[str] = []
+    tool_call_requests = getattr(model_response, "tool_call_requests", None)
+    if tool_call_requests:
+        tool_names = [
+            _to_primitive_str(getattr(req, "tool_name", ""))
+            for req in tool_call_requests
+        ]
+
+    msgs_payload = [
+        {
+            "role_name": getattr(msg, "role_name", None),
+            "role_type": _normalize_role_type(getattr(msg, "role_type", None)),
+            "content": getattr(msg, "content", None),
+        }
+        for msg in (getattr(model_response, "output_messages", None) or [])
+    ]
+
+    return {
+        "response_id": getattr(model_response, "response_id", None),
+        "finish_reasons": getattr(model_response, "finish_reasons", None),
+        "usage": getattr(model_response, "usage_dict", None),
+        "tool_call_names": tool_names,
+        "msgs": msgs_payload,
+    }
+
+
 def get_langfuse_status() -> Dict[str, Any]:
     r"""Get detailed Langfuse configuration status for debugging.
 

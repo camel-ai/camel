@@ -29,7 +29,6 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -42,9 +41,6 @@ from typing import (
     TypeVar,
     cast,
 )
-
-if TYPE_CHECKING:
-    from camel.responses.agent_responses import ChatAgentResponse
 from urllib.parse import urlparse
 
 import pydantic
@@ -966,7 +962,7 @@ def generate_prompt_for_structured_output(
 
 
 def safe_extract_parsed(
-    response: "ChatAgentResponse",
+    response: Any,
     schema: Type[T],
 ) -> Optional[T]:
     r"""Safely extract a parsed structured output from a ChatAgentResponse.
@@ -977,7 +973,7 @@ def safe_extract_parsed(
     attempts to construct the schema from it.
 
     Args:
-        response (ChatAgentResponse): The agent response to extract from.
+        response (Any): The agent response-like object to extract from.
         schema (Type[T]): The expected Pydantic model class.
 
     Returns:

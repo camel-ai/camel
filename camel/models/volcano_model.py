@@ -16,6 +16,10 @@ import os
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncStream, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -162,7 +166,11 @@ class VolcanoModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of Volcano Engine chat completion.
 
         Overrides the base run method to inject reasoning_content from
@@ -197,7 +205,11 @@ class VolcanoModel(OpenAICompatibleModel):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs async inference of Volcano Engine chat completion.
 
         Overrides the base arun method to inject reasoning_content from
