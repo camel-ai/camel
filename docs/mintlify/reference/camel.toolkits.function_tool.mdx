@@ -460,3 +460,35 @@ the method will raise :obj:`jsonschema.exceptions.SchemaError`.
 **Parameters:**
 
 - **value** (Dict[str, Any]): the new dictionary value for the function's parameters.
+
+<a id="camel.toolkits.function_tool.tool"></a>
+
+## tool
+
+```python
+def tool(func: Optional[Callable] = None):
+```
+
+A decorator that converts a Python function into a FunctionTool
+instance.
+
+This decorator can be used with or without parentheses:
+- @tool - without parentheses, uses default settings
+- @tool() - with parentheses, uses default settings
+- @tool(synthesize_output=True) - with custom settings
+
+**Parameters:**
+
+- **func** (Optional[Callable], optional): The function to be decorated. This is automatically passed when using @tool without parentheses. (default: :obj:`None`)
+- **openai_tool_schema** (Optional[Dict[str, Any]], optional): A user-defined OpenAI tool schema to override the default result. (default: :obj:`None`)
+- **synthesize_schema** (bool, optional): Whether to enable schema synthesis. (default: :obj:`False`)
+- **synthesize_schema_model** (Optional[BaseModelBackend], optional): Model to use for schema synthesis. (default: :obj:`None`)
+- **synthesize_schema_max_retries** (int, optional): Maximum number of retries for schema synthesis. (default: :obj:`2`)
+- **synthesize_output** (bool, optional): Whether to enable output synthesis. (default: :obj:`False`)
+- **synthesize_output_model** (Optional[BaseModelBackend], optional): Model to use for output synthesis. (default: :obj:`None`)
+- **synthesize_output_format** (Optional[Type[BaseModel]], optional): Format for synthesized output. (default: :obj:`None`)
+
+**Returns:**
+
+  Callable[[Callable], FunctionTool]: A decorator function that converts
+the decorated function into a FunctionTool instance.

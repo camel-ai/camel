@@ -80,24 +80,24 @@ def test_list_skills(skill_toolkit):
     assert "another-skill" in names
 
 
-def test_get_skill(skill_toolkit):
-    r"""Test getting a skill by name."""
-    skill_content = skill_toolkit.get_skill("test-skill")
+def test_load_skill(skill_toolkit):
+    r"""Test loading a skill by name."""
+    skill_content = skill_toolkit.load_skill("test-skill")
     assert "## Skill: test-skill" in skill_content
     assert "**Base directory**:" in skill_content
     assert "This is a test skill body content." in skill_content
 
 
-def test_get_skill_not_found(skill_toolkit):
-    r"""Test getting a non-existent skill returns error message."""
-    result = skill_toolkit.get_skill("non-existent-skill")
+def test_load_skill_not_found(skill_toolkit):
+    r"""Test loading a non-existent skill returns error message."""
+    result = skill_toolkit.load_skill("non-existent-skill")
     assert "Error:" in result
     assert "not found" in result
 
 
-def test_get_multiple_skills(skill_toolkit):
-    r"""Test getting multiple skills at once."""
-    result = skill_toolkit.get_skill(["test-skill", "another-skill"])
+def test_load_multiple_skills(skill_toolkit):
+    r"""Test loading multiple skills at once."""
+    result = skill_toolkit.load_skill(["test-skill", "another-skill"])
     assert "## Skill: test-skill" in result
     assert "## Skill: another-skill" in result
     assert "This is a test skill body content." in result
@@ -112,7 +112,7 @@ def test_get_tools(skill_toolkit):
     assert len(tools) == 2
     tool_names = [t.func.__name__ for t in tools]
     assert "list_skills" in tool_names
-    assert "get_skill" in tool_names
+    assert "load_skill" in tool_names
 
 
 def test_caching(skill_toolkit):
