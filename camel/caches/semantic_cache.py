@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 from datetime import datetime
+from threading import Lock
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -106,6 +108,7 @@ class SemanticCache(BaseCache):
         self._cache_enabled = cache_enabled
         self._cache_hits = 0
         self._cache_misses = 0
+        self._stats_lock = Lock()
 
         logger.info(
             f"SemanticCache initialized with threshold={similarity_threshold}"
@@ -171,10 +174,11 @@ class SemanticCache(BaseCache):
         Returns:
             float: Cache hit rate (0.0-1.0), or 0.0 if no lookups yet.
         """
-        total = self._cache_hits + self._cache_misses
-        if total == 0:
-            return 0.0
-        return self._cache_hits / total
+        with self._stats_lock:
+            total = self._cache_hits + self._cache_misses
+            if total == 0:
+                return 0.0
+            return self._cache_hits / total
 
     @property
     def stats(self) -> Dict[str, Any]:
@@ -184,14 +188,98 @@ class SemanticCache(BaseCache):
             Dict[str, Any]: Dictionary containing cache statistics including
                 hits, misses, hit rate, and size.
         """
-        return {
-            "hits": self._cache_hits,
-            "misses": self._cache_misses,
-            "hit_rate": self.hit_rate,
-            "size": self.size,
-            "enabled": self.enabled,
-            "similarity_threshold": self._similarity_threshold,
-        }
+        with self._stats_lock:
+            return {
+                "hits": self._cache_hits,
+                "misses": self._cache_misses,
+                "hit_rate": (
+                    self._cache_hits / (self._cache_hits + self._cache_misses)
+                    if (self._cache_hits + self._cache_misses) > 0
+                    else 0.0
+                ),
+                "size": self.size,
+                "enabled": self.enabled,
+                "similarity_threshold": self._similarity_threshold,
+            }
+
+    def _query_similar(self, query: str, top_k: int = 1) -> Optional[List]:
+        r"""Internal helper to query vector storage for similar entries.
+
+        This consolidates the common logic of embedding generation and
+        vector storage querying used by get, get_with_score, and find_similar.
+
+        Args:
+            query (str): The query to search for.
+            top_k (int): Number of results to return. (default: :obj:`1`)
+
+        Returns:
+            Optional[List]: List of query results from vector storage,
+                or None if query fails or is empty.
+        """
+        if not query or not query.strip():
+            return None
+
+        # Generate embedding for the query
+        try:
+            query_embedding = self._embedding_model.embed(query)
+        except Exception as e:
+            logger.warning(f"Failed to generate embedding for query: {e}")
+            return None
+
+        # Search for similar queries
+        try:
+            results = self._vector_storage.query(
+                VectorDBQuery(query_vector=query_embedding, top_k=top_k)
+            )
+            return results if results else None
+        except Exception as e:
+            logger.warning(f"Failed to query vector storage: {e}")
+            return None
+
+    def _result_to_cache_record(self, result) -> CacheRecord:
+        r"""Convert a vector storage result to a CacheRecord.
+
+        Args:
+            result: A query result from vector storage.
+
+        Returns:
+            CacheRecord: The converted cache record.
+        """
+        payload = result.record.payload or {}
+        # Deserialize metadata from JSON string (stored as JSON for
+        # compatibility with storage backends that don't support nested dicts)
+        metadata_raw = payload.get(self._METADATA_KEY, "{}")
+        if isinstance(metadata_raw, str):
+            try:
+                metadata = json.loads(metadata_raw)
+            except json.JSONDecodeError:
+                metadata = {}
+        else:
+            metadata = metadata_raw if isinstance(metadata_raw, dict) else {}
+        return CacheRecord(
+            query=payload.get(self._QUERY_KEY, ""),
+            response=payload.get(self._RESPONSE_KEY, ""),
+            query_id=result.record.id,
+            created_at=datetime.fromisoformat(
+                payload.get(self._CREATED_AT_KEY, datetime.now().isoformat())
+            ),
+            metadata=metadata,
+        )
+
+    def _normalize_similarity(self, score: float) -> float:
+        r"""Normalize similarity score to 0.0-1.0 range.
+
+        Different vector storage backends may return similarity scores in
+        different ranges. This method ensures consistent behavior by clamping
+        scores to the expected 0.0-1.0 range.
+
+        Args:
+            score (float): Raw similarity score from storage backend.
+
+        Returns:
+            float: Normalized similarity score between 0.0 and 1.0.
+        """
+        return max(0.0, min(1.0, score))
 
     def get(self, query: str) -> Optional[str]:
         r"""Retrieve a cached response for a semantically similar query.
@@ -210,45 +298,31 @@ class SemanticCache(BaseCache):
         if not self._cache_enabled:
             return None
 
-        if not query or not query.strip():
-            return None
-
-        # Generate embedding for the query
-        try:
-            query_embedding = self._embedding_model.embed(query)
-        except Exception as e:
-            logger.warning(f"Failed to generate embedding for query: {e}")
-            return None
-
-        # Search for similar queries
-        try:
-            results = self._vector_storage.query(
-                VectorDBQuery(query_vector=query_embedding, top_k=1)
-            )
-        except Exception as e:
-            logger.warning(f"Failed to query vector storage: {e}")
-            return None
-
+        results = self._query_similar(query, top_k=1)
         if not results:
-            self._cache_misses += 1
+            with self._stats_lock:
+                self._cache_misses += 1
             logger.debug("Cache miss: no results found for query")
             return None
 
         # Check if the best match exceeds the threshold
         best_match = results[0]
-        if best_match.similarity >= self._similarity_threshold:
-            self._cache_hits += 1
+        similarity = self._normalize_similarity(best_match.similarity)
+        if similarity >= self._similarity_threshold:
+            with self._stats_lock:
+                self._cache_hits += 1
             payload = best_match.record.payload or {}
             response = payload.get(self._RESPONSE_KEY)
             logger.debug(
-                f"Cache hit: similarity={best_match.similarity:.4f}, "
+                f"Cache hit: similarity={similarity:.4f}, "
                 f"threshold={self._similarity_threshold}"
             )
             return response
 
-        self._cache_misses += 1
+        with self._stats_lock:
+            self._cache_misses += 1
         logger.debug(
-            f"Cache miss: similarity={best_match.similarity:.4f} < "
+            f"Cache miss: similarity={similarity:.4f} < "
             f"threshold={self._similarity_threshold}"
         )
         return None
@@ -271,51 +345,23 @@ class SemanticCache(BaseCache):
         if not self._cache_enabled:
             return None
 
-        if not query or not query.strip():
-            return None
-
-        # Generate embedding for the query
-        try:
-            query_embedding = self._embedding_model.embed(query)
-        except Exception as e:
-            logger.warning(f"Failed to generate embedding for query: {e}")
-            return None
-
-        # Search for similar queries
-        try:
-            results = self._vector_storage.query(
-                VectorDBQuery(query_vector=query_embedding, top_k=1)
-            )
-        except Exception as e:
-            logger.warning(f"Failed to query vector storage: {e}")
-            return None
-
+        results = self._query_similar(query, top_k=1)
         if not results:
-            self._cache_misses += 1
+            with self._stats_lock:
+                self._cache_misses += 1
             return None
 
         # Check if the best match exceeds the threshold
         best_match = results[0]
-        if best_match.similarity >= self._similarity_threshold:
-            self._cache_hits += 1
-            payload = best_match.record.payload or {}
+        similarity = self._normalize_similarity(best_match.similarity)
+        if similarity >= self._similarity_threshold:
+            with self._stats_lock:
+                self._cache_hits += 1
+            record = self._result_to_cache_record(best_match)
+            return (record.response, similarity, record)
 
-            # Reconstruct CacheRecord
-            record = CacheRecord(
-                query=payload.get(self._QUERY_KEY, ""),
-                response=payload.get(self._RESPONSE_KEY, ""),
-                query_id=best_match.record.id,
-                created_at=datetime.fromisoformat(
-                    payload.get(
-                        self._CREATED_AT_KEY, datetime.now().isoformat()
-                    )
-                ),
-                metadata=payload.get(self._METADATA_KEY, {}),
-            )
-
-            return (record.response, best_match.similarity, record)
-
-        self._cache_misses += 1
+        with self._stats_lock:
+            self._cache_misses += 1
         return None
 
     def set(
@@ -336,11 +382,15 @@ class SemanticCache(BaseCache):
                 - metadata (Dict[str, Any]): Additional metadata to store.
 
         Returns:
-            Optional[str]: The unique ID assigned to this cache entry.
+            Optional[str]: The unique ID assigned to this cache entry,
+                or None if cache is disabled.
 
         Raises:
             ValueError: If query or response is empty.
         """
+        if not self._cache_enabled:
+            return None
+
         if not query or not query.strip():
             raise ValueError("Query cannot be empty")
         if not response:
@@ -357,11 +407,13 @@ class SemanticCache(BaseCache):
         created_at = datetime.now()
 
         # Prepare payload with cache data
+        # Serialize metadata to JSON string for storage backends that
+        # don't support nested dicts (e.g., ChromaDB)
         payload = {
             self._QUERY_KEY: query,
             self._RESPONSE_KEY: response,
             self._CREATED_AT_KEY: created_at.isoformat(),
-            self._METADATA_KEY: metadata or {},
+            self._METADATA_KEY: json.dumps(metadata or {}),
         }
 
         # Create vector record
@@ -397,8 +449,9 @@ class SemanticCache(BaseCache):
     def clear(self) -> None:
         r"""Remove all entries from the cache."""
         self._vector_storage.clear()
-        self._cache_hits = 0
-        self._cache_misses = 0
+        with self._stats_lock:
+            self._cache_hits = 0
+            self._cache_misses = 0
         logger.info("Cache cleared")
 
     def find_similar(
@@ -417,43 +470,18 @@ class SemanticCache(BaseCache):
             List[tuple[CacheRecord, float]]: List of (record, similarity)
                 tuples sorted by similarity in descending order.
         """
-        if not query or not query.strip():
+        results = self._query_similar(query, top_k=top_k)
+        if not results:
             return []
 
-        # Generate embedding for the query
-        try:
-            query_embedding = self._embedding_model.embed(query)
-        except Exception as e:
-            logger.warning(f"Failed to generate embedding for query: {e}")
-            return []
-
-        # Search for similar queries
-        try:
-            results = self._vector_storage.query(
-                VectorDBQuery(query_vector=query_embedding, top_k=top_k)
+        # Convert results to CacheRecords using helper
+        return [
+            (
+                self._result_to_cache_record(result),
+                self._normalize_similarity(result.similarity),
             )
-        except Exception as e:
-            logger.warning(f"Failed to query vector storage: {e}")
-            return []
-
-        # Convert results to CacheRecords
-        cache_results = []
-        for result in results:
-            payload = result.record.payload or {}
-            record = CacheRecord(
-                query=payload.get(self._QUERY_KEY, ""),
-                response=payload.get(self._RESPONSE_KEY, ""),
-                query_id=result.record.id,
-                created_at=datetime.fromisoformat(
-                    payload.get(
-                        self._CREATED_AT_KEY, datetime.now().isoformat()
-                    )
-                ),
-                metadata=payload.get(self._METADATA_KEY, {}),
-            )
-            cache_results.append((record, result.similarity))
-
-        return cache_results
+            for result in results
+        ]
 
     def __repr__(self) -> str:
         return (
