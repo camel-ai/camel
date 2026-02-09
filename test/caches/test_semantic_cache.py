@@ -116,12 +116,15 @@ class TestSemanticCache:
 
     def test_set_with_metadata(self, cache, mock_vector_storage):
         """Test that set() stores metadata correctly."""
+        import json
+
         metadata = {"source": "test", "model": "gpt-4"}
         cache.set("Query", "Response", metadata=metadata)
 
         call_args = mock_vector_storage.add.call_args[0][0]
         record = call_args[0]
-        assert record.payload["metadata"] == metadata
+        # Metadata is stored as JSON string for storage backend compatibility
+        assert json.loads(record.payload["metadata"]) == metadata
 
     def test_set_empty_query_raises(self, cache):
         """Test that empty query raises ValueError."""
