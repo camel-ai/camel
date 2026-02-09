@@ -640,11 +640,13 @@ class ChatAgent(BaseAgent):
         )
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
+        self._pending_tool_hints: List[str] = []
         self.summary_window_ratio = summary_window_ratio
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
+        self._pending_tool_hints.clear()
         self.init_messages()
         for terminator in self.response_terminators:
             terminator.reset()
@@ -1272,6 +1274,32 @@ class ChatAgent(BaseAgent):
         )
 
         return notice + truncated, True
+
+    def _enqueue_tool_hint(self, hint_message: Optional[str]) -> None:
+        r"""Queue a tool hint to be emitted after the current tool batch.
+
+        This avoids inserting assistant text between tool results when a model
+        emits multiple tool calls in one assistant turn.
+        """
+        if hint_message and hint_message.strip():
+            self._pending_tool_hints.append(hint_message)
+
+    def _flush_pending_tool_hints(self) -> None:
+        r"""Flush queued tool hints into memory as a single assistant message.
+
+        Hints are emitted after the full internal tool batch is recorded,
+        preserving tool-call/result ordering for strict backends.
+        """
+        if not self._pending_tool_hints:
+            return
+
+        merged_hint = "\n\n".join(self._pending_tool_hints)
+        self._pending_tool_hints.clear()
+        hint_msg = BaseMessage.make_assistant_message(
+            role_name=self.role_name,
+            content=merged_hint,
+        )
+        self.update_memory(hint_msg, OpenAIBackendRole.ASSISTANT)
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
@@ -3007,6 +3035,9 @@ class ChatAgent(BaseAgent):
                     result = self._execute_tool(tool_call_request)
                     tool_call_records.append(result)
 
+                # Emit post-tool hints only after this tool batch is complete
+                self._flush_pending_tool_hints()
+
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
                     break
@@ -3309,6 +3340,9 @@ class ChatAgent(BaseAgent):
                         tool_call_request
                     )
                     tool_call_records.append(tool_call_record)
+
+                # Emit post-tool hints only after this tool batch is complete
+                self._flush_pending_tool_hints()
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -4127,22 +4161,7 @@ class ChatAgent(BaseAgent):
             OpenAIBackendRole.FUNCTION,
             return_records=self._enable_snapshot_clean,
         )
-        base_timestamp = (
-            func_records[0].timestamp
-            if func_records
-            else time.time_ns() / 1_000_000_000
-        )
-
-        if extra_assistant_message:
-            hint_msg = BaseMessage.make_assistant_message(
-                role_name=self.role_name,
-                content=extra_assistant_message,
-            )
-            self.update_memory(
-                hint_msg,
-                OpenAIBackendRole.ASSISTANT,
-                timestamp=base_timestamp + 2e-6,
-            )
+        self._enqueue_tool_hint(extra_assistant_message)
 
         # Register tool output for snapshot cleaning if enabled
         if self._enable_snapshot_clean and not mask_output and func_records:

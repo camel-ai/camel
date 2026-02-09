@@ -210,7 +210,11 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
                 f"You MUST call summarize_and_offload("
                 f"tool_call_id=\"{tool_call_id}\", "
                 f"summary=\"<your summary>\") as a PARALLEL tool call "
-                f"with your next action. "
+                f"with your next tool action. "
+                f"When this assistant message includes any tool calls, "
+                f"do NOT provide the final user-facing answer in the same "
+                f"message. Provide the final answer only in the next "
+                f"assistant turn after tool results are returned. "
                 f"Do NOT issue offload as a standalone call.]"
             )
             return {"output": output, "hint_message": hint}
@@ -380,8 +384,11 @@ class ToolOutputOffloadToolkit(BaseToolkit, RegisteredAgentToolkit):
         you want to compress. When a tool output exceeds the offload hint
         threshold, you MUST call this to offload it when the full tool
         output is not needed immediately. The offload MUST be issued as a
-        parallel tool call in the same assistant message as your next step
-        (e.g., other tool calls or the final response). This makes the
+        parallel tool call in the same assistant message as your next tool
+        action. If that assistant message includes any tool calls, do NOT
+        include the final user-facing answer in that same message. Wait for
+        tool results and provide the final answer in the next assistant turn.
+        This makes the
         offload happen alongside that next step, so the decision uses the
         full tool output still in context and no separate LLM call is needed.
         Never offload as a standalone call.
