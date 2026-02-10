@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Set
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional, Set
 
 from colorama import Fore
 
@@ -24,6 +24,9 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +49,24 @@ class Worker(BaseNode, ABC):
         super().__init__(description, node_id=node_id)
         self._active_task_ids: Set[str] = set()
         self._running_tasks: Set[asyncio.Task] = set()
+        self._stream_callback: Optional[
+            Callable[
+                ["ChatAgentResponse", str, str],
+                Optional[Awaitable[None]],
+            ]
+        ] = None
 
     def __repr__(self):
         return f"Worker node {self.node_id} ({self.description})"
 
     @abstractmethod
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         r"""Processes a task based on its dependencies.
 
@@ -80,6 +94,18 @@ class Worker(BaseNode, ABC):
     def set_channel(self, channel: TaskChannel):
         self._channel = channel
 
+    def set_stream_callback(
+        self,
+        stream_callback: Optional[
+            Callable[
+                ["ChatAgentResponse", str, str],
+                Optional[Awaitable[None]],
+            ]
+        ],
+    ) -> None:
+        r"""Set streaming callback for worker token/chunk updates."""
+        self._stream_callback = stream_callback
+
     async def _process_single_task(self, task: Task) -> None:
         r"""Process a single task and handle its completion/failure."""
         try:
@@ -89,8 +115,17 @@ class Worker(BaseNode, ABC):
                 f"{Fore.RESET}"
             )
 
+            async def _on_chunk(chunk: "ChatAgentResponse") -> None:
+                if self._stream_callback is None:
+                    return
+                maybe = self._stream_callback(chunk, self.node_id, task.id)
+                if asyncio.iscoroutine(maybe):
+                    await maybe
+
             # Process the task
-            task_state = await self._process_task(task, task.dependencies)
+            task_state = await self._process_task(
+                task, task.dependencies, stream_callback=_on_chunk
+            )
 
             # Update the result and status of the task
             task.set_state(task_state)

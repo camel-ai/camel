@@ -24,6 +24,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Coroutine,
     Deque,
@@ -247,6 +248,10 @@ class Workforce(BaseNode):
             is added automatically. If at least one provided callback
             implements :class:`WorkforceMetrics`, no default logger is added.
             (default: :obj:`None`)
+        stream_callback (Optional[Callable], optional): Real-time callback for
+            worker streaming output chunks. Called as
+            ``(worker_id, task_id, text, mode)``.
+            (default: :obj:`None`)
         mode (WorkforceMode, optional): The execution mode for task
             processing. AUTO_DECOMPOSE mode uses intelligent recovery
             strategies (decompose, replan, etc.) when tasks fail.
@@ -327,6 +332,9 @@ class Workforce(BaseNode):
         task_timeout_seconds: Optional[float] = None,
         mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
         callbacks: Optional[List[WorkforceCallback]] = None,
+        stream_callback: Optional[
+            Callable[[str, str, str, str], Optional[Awaitable[None]]]
+        ] = None,
         failure_handling_config: Optional[
             Union[FailureHandlingConfig, Dict[str, Any]]
         ] = None,
@@ -384,6 +392,9 @@ class Workforce(BaseNode):
         self.snapshot_interval: float = 30.0
         # Shared memory UUID tracking to prevent re-sharing duplicates
         self._shared_memory_uuids: Set[str] = set()
+        # Optional user callback for worker streaming text chunks.
+        self._user_stream_callback = stream_callback
+        self._stream_progress: Dict[Tuple[str, str], str] = {}
         self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
@@ -539,6 +550,7 @@ class Workforce(BaseNode):
 
         # Shared context utility for workflow management (created lazily)
         self._shared_context_utility: Optional["ContextUtility"] = None
+        self._sync_child_stream_callbacks()
 
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
@@ -583,6 +595,69 @@ class Workforce(BaseNode):
 
         for child in self._children:
             self._notify_worker_created(child)
+
+    def _sync_child_stream_callbacks(self) -> None:
+        r"""Propagate stream callback settings to all child nodes."""
+        for child in self._children:
+            if isinstance(child, Worker):
+                child.set_stream_callback(self._on_worker_stream_chunk)
+            elif isinstance(child, Workforce):
+                child.set_stream_callback(self._user_stream_callback)
+
+    def set_stream_callback(
+        self,
+        stream_callback: Optional[
+            Callable[[str, str, str, str], Optional[Awaitable[None]]]
+        ],
+    ) -> Workforce:
+        r"""Set callback for real-time worker streaming output chunks.
+
+        Callback arguments:
+            worker_id (str): ID of the worker emitting this chunk.
+            task_id (str): ID of the task currently processed.
+            text (str): Incremental text content for this chunk.
+            mode (str): Chunk mode reported by model ("delta"/"accumulate").
+        """
+        self._user_stream_callback = stream_callback
+        self._stream_progress.clear()
+        self._sync_child_stream_callbacks()
+        return self
+
+    async def _on_worker_stream_chunk(
+        self, chunk: "ChatAgentResponse", worker_id: str, task_id: str
+    ) -> None:
+        r"""Normalize worker stream chunks and dispatch to user callback."""
+        if self._user_stream_callback is None:
+            return
+
+        if chunk.msg is None or chunk.msg.content is None:
+            return
+
+        mode = "accumulate"
+        if chunk.info:
+            mode = chunk.info.get("stream_accumulate_mode", mode)
+            if "mode" in chunk.info:
+                mode = chunk.info["mode"]
+
+        content = chunk.msg.content
+        key = (worker_id, task_id)
+
+        if mode == "accumulate":
+            previous = self._stream_progress.get(key, "")
+            if content.startswith(previous):
+                text = content[len(previous) :]
+            else:
+                text = content
+            self._stream_progress[key] = content
+        else:
+            text = content
+
+        if not text:
+            return
+
+        maybe = self._user_stream_callback(worker_id, task_id, text, mode)
+        if asyncio.iscoroutine(maybe):
+            await maybe
 
     def _notify_worker_created(
         self,
@@ -1387,6 +1462,11 @@ class Workforce(BaseNode):
 
         if task_id in self._assignees:
             del self._assignees[task_id]
+
+        # Clean streaming progress for completed/failed task chunks.
+        stale_keys = [k for k in self._stream_progress if k[1] == task_id]
+        for key in stale_keys:
+            del self._stream_progress[key]
 
     def _decompose_task(
         self,
@@ -2911,6 +2991,7 @@ class Workforce(BaseNode):
             enable_workflow_memory=enable_workflow_memory,
         )
         self._children.append(worker_node)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new worker
         if hasattr(self, '_channel') and self._channel is not None:
@@ -2988,6 +3069,7 @@ class Workforce(BaseNode):
             use_structured_output_handler=self.use_structured_output_handler,
         )
         self._children.append(worker_node)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new worker
         if hasattr(self, '_channel') and self._channel is not None:
@@ -3024,6 +3106,7 @@ class Workforce(BaseNode):
         # control of worker agents only.
         workforce._pause_event = self._pause_event
         self._children.append(workforce)
+        self._sync_child_stream_callbacks()
 
         # If we have a channel set up, set it for the new workforce
         if hasattr(self, '_channel') and self._channel is not None:
@@ -4120,6 +4203,7 @@ class Workforce(BaseNode):
             )
 
         self._children.append(new_node)
+        self._sync_child_stream_callbacks()
 
         self._notify_worker_created(
             new_node,

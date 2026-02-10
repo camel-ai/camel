@@ -151,9 +151,19 @@ def main() -> None:
         model=model,
     )
 
+    # Real-time streaming callback from worker execution.
+    # You can filter by worker_id/task_id to only consume selected streams.
+    def on_worker_stream(
+        worker_id: str, task_id: str, text: str, mode: str
+    ) -> None:
+        if not text.strip():
+            return
+        print(f"[Stream][{worker_id}][{task_id}][{mode}] {text}", end="")
+
     workforce = Workforce(
         "Workforce Callbacks Demo",
         callbacks=[WorkforceLogger('demo-logger'), PrintCallback()],
+        stream_callback=on_worker_stream,
         use_structured_output_handler=True,
         failure_handling_config=FailureHandlingConfig(enabled_strategies=[]),
         default_model=model,
