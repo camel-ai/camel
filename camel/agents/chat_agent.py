@@ -169,6 +169,8 @@ class _ToolOutputHistoryEntry:
     result_text: str
     record_uuids: List[str]
     record_timestamps: List[float]
+    args: Optional[Dict[str, Any]] = None
+    extra_content: Optional[Dict[str, Any]] = None
     cached: bool = False
 
 
@@ -1445,6 +1447,8 @@ class ChatAgent(BaseAgent):
         tool_call_id: str,
         result_text: str,
         records: List[MemoryRecord],
+        args: Optional[Dict[str, Any]] = None,
+        extra_content: Optional[Dict[str, Any]] = None,
     ) -> None:
         if not records:
             return
@@ -1455,6 +1459,8 @@ class ChatAgent(BaseAgent):
             result_text=result_text,
             record_uuids=[str(record.uuid) for record in records],
             record_timestamps=[record.timestamp for record in records],
+            args=args,
+            extra_content=extra_content,
         )
         self._tool_output_history.append(entry)
         self._process_tool_output_cache()
@@ -1480,22 +1486,6 @@ class ChatAgent(BaseAgent):
         if '- ' in result_text and '[ref=' in result_text:
             cleaned_result = self._clean_snapshot_content(result_text)
 
-            # Update the message in memory storage
-            timestamp = (
-                entry.record_timestamps[0]
-                if entry.record_timestamps
-                else time.time_ns() / 1_000_000_000
-            )
-            cleaned_message = FunctionCallingMessage(
-                role_name=self.role_name,
-                role_type=self.role_type,
-                meta_dict={},
-                content="",
-                func_name=entry.tool_name,
-                result=cleaned_result,
-                tool_call_id=entry.tool_call_id,
-            )
-
             chat_history_block = getattr(
                 self.memory, "_chat_history_block", None
             )
@@ -1504,18 +1494,74 @@ class ChatAgent(BaseAgent):
                 return
 
             existing_records = storage.load()
+
+            # Remove records by UUID
             updated_records = [
                 record
                 for record in existing_records
                 if record["uuid"] not in entry.record_uuids
             ]
-            new_record = MemoryRecord(
-                message=cleaned_message,
-                role_at_backend=OpenAIBackendRole.FUNCTION,
-                timestamp=timestamp,
+
+            # Recreate both assistant and function messages
+            # For Gemini API, the tool call request needs to exist along with
+            # the tool call result.
+            assist_args = entry.args if entry.args is not None else {}
+
+            # Use timestamps from entry, ensuring proper ordering
+            if len(entry.record_timestamps) >= 2:
+                assist_timestamp = entry.record_timestamps[0]
+                func_timestamp = entry.record_timestamps[1]
+            elif entry.record_timestamps:
+                # If only one timestamp, use it for function and ensure
+                # assist comes before
+                func_timestamp = entry.record_timestamps[0]
+                assist_timestamp = func_timestamp - 1e-6
+            else:
+                # No timestamps, use current time with proper ordering
+                assist_timestamp = time.time_ns() / 1_000_000_000
+                func_timestamp = assist_timestamp + 1e-6
+
+            # Recreate assistant message (tool call request)
+            cleaned_assist_message = FunctionCallingMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict={},
+                content="",
+                func_name=entry.tool_name,
+                args=assist_args,
+                tool_call_id=entry.tool_call_id,
+                extra_content=entry.extra_content,
+            )
+
+            # Recreate function message (tool result)
+            cleaned_func_message = FunctionCallingMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict={},
+                content="",
+                func_name=entry.tool_name,
+                result=cleaned_result,
+                tool_call_id=entry.tool_call_id,
+                extra_content=entry.extra_content,
+            )
+
+            # Create new records for both assistant and function messages
+            new_assist_record = MemoryRecord(
+                message=cleaned_assist_message,
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+                timestamp=assist_timestamp,
                 agent_id=self.agent_id,
             )
-            updated_records.append(new_record.to_dict())
+            new_func_record = MemoryRecord(
+                message=cleaned_func_message,
+                role_at_backend=OpenAIBackendRole.FUNCTION,
+                timestamp=func_timestamp,
+                agent_id=self.agent_id,
+            )
+
+            # Add both records back
+            updated_records.append(new_assist_record.to_dict())
+            updated_records.append(new_func_record.to_dict())
             updated_records.sort(key=lambda record: record["timestamp"])
             storage.clear()
             storage.save(updated_records)
@@ -1527,8 +1573,11 @@ class ChatAgent(BaseAgent):
             )
 
             entry.cached = True
-            entry.record_uuids = [str(new_record.uuid)]
-            entry.record_timestamps = [timestamp]
+            entry.record_uuids = [
+                str(new_assist_record.uuid),
+                str(new_func_record.uuid),
+            ]
+            entry.record_timestamps = [assist_timestamp, func_timestamp]
 
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
@@ -4079,6 +4128,8 @@ class ChatAgent(BaseAgent):
         )
 
         # Register tool output for snapshot cleaning if enabled
+        # Include args and extra_content so both the assistant message
+        # (tool call) and function message (tool result) can be recreated
         if self._enable_snapshot_clean and not mask_output and func_records:
             serialized_result = self._serialize_tool_result(result_for_memory)
             self._register_tool_output_for_cache(
@@ -4086,6 +4137,8 @@ class ChatAgent(BaseAgent):
                 tool_call_id,
                 serialized_result,
                 cast(List[MemoryRecord], func_records),
+                args=args,
+                extra_content=extra_content,
             )
 
         if isinstance(result, ToolResult) and result.images:
