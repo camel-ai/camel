@@ -324,8 +324,11 @@ class TestEnsureJavaAvailable:
         mock_download.assert_called_once()
         # Verify Adoptium URL uses correct mappings
         call_kwargs = mock_download.call_args
-        assert "api.adoptium.net" in call_kwargs.kwargs["url"]
-        assert "/21/ga/linux/x64/" in call_kwargs.kwargs["url"]
+        call_url = call_kwargs.kwargs["url"]
+        assert call_url.startswith(
+            "https://api.adoptium.net/v3/binary/latest/"
+            "21/ga/linux/x64/"
+        )
 
 
 class TestFindJavaHome:
