@@ -2525,6 +2525,128 @@ class ChatAgent(BaseAgent):
         except ValidationError:
             return False
 
+    def _format_message_with_fallback(
+        self,
+        message: BaseMessage,
+        response_format: Optional[Type[BaseModel]],
+        original_response_format: Optional[Type[BaseModel]] = None,
+        used_prompt_formatting: bool = False,
+    ) -> None:
+        r"""Format a message with optional prompt-based parsing fallback.
+
+        First tries standard JSON validation via ``_try_format_message``.
+        If that fails and prompt-based formatting was used, falls back to
+        ``_apply_prompt_based_parsing_to_message`` which can extract JSON
+        from free-form text.
+
+        Args:
+            message: The message to format.
+            response_format: The (possibly modified) response format passed
+                to the model. May be ``None`` when prompt-based formatting
+                replaced it.
+            original_response_format: The original response format before
+                prompt-based conversion.
+            used_prompt_formatting: Whether prompt-based formatting was used.
+        """
+        if response_format:
+            self._try_format_message(message, response_format)
+        if (
+            used_prompt_formatting
+            and original_response_format
+            and not message.parsed
+        ):
+            self._apply_prompt_based_parsing_to_message(
+                message, original_response_format
+            )
+
+    @staticmethod
+    def _collect_tool_calls_from_completion(
+        tool_calls: List[Any],
+        accumulated_tool_calls: Dict[str, Any],
+    ) -> None:
+        r"""Convert tool calls from a ChatCompletion into the accumulated
+        tool-call dictionary format used by the streaming pipeline.
+
+        Args:
+            tool_calls: Tool call objects from
+                ``completion.choices[0].message.tool_calls``.
+            accumulated_tool_calls: Mutable dict that will be populated with
+                the converted entries.
+        """
+        for tc in tool_calls:
+            accumulated_tool_calls[tc.id] = {
+                'id': tc.id,
+                'function': {
+                    'name': tc.function.name,
+                    'arguments': tc.function.arguments,
+                },
+                'complete': True,
+            }
+
+    def _record_and_build_display_message(
+        self,
+        final_content: str,
+        parsed_object: Any,
+        final_reasoning: Optional[str],
+        response_format: Optional[Type[BaseModel]],
+        original_response_format: Optional[Type[BaseModel]],
+        used_prompt_formatting: bool,
+    ) -> BaseMessage:
+        r"""Record the full message to memory and build a display message.
+
+        In delta mode the display message has empty content because all
+        content was already yielded incrementally.  In accumulate mode the
+        display message carries the full content.
+
+        Args:
+            final_content: The full final content string.
+            parsed_object: The parsed object from structured output stream.
+            final_reasoning: The reasoning content, if any.
+            response_format: The (possibly modified) response format.
+            original_response_format: The original response format.
+            used_prompt_formatting: Whether prompt-based formatting was used.
+
+        Returns:
+            BaseMessage: The display message to yield to the caller.
+        """
+        parsed_cast = cast("BaseModel | dict[str, Any] | None", parsed_object)  # type: ignore[arg-type]
+
+        # Record full content to memory
+        record_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=final_content,
+            parsed=parsed_cast,
+            reasoning_content=final_reasoning,
+        )
+        self._format_message_with_fallback(
+            record_msg,
+            response_format,
+            original_response_format,
+            used_prompt_formatting,
+        )
+        self.record_message(record_msg)
+
+        # Build display message (empty content in delta mode)
+        display_content = final_content if self.stream_accumulate else ""
+        display_reasoning = final_reasoning if self.stream_accumulate else None
+        display_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=display_content,
+            parsed=parsed_cast,
+            reasoning_content=display_reasoning,
+        )
+        self._format_message_with_fallback(
+            display_msg,
+            response_format,
+            original_response_format,
+            used_prompt_formatting,
+        )
+        return display_msg
+
     def _check_tools_strict_compatibility(self) -> bool:
         r"""Check if all tools are compatible with OpenAI strict mode.
 
@@ -4399,21 +4521,12 @@ class ChatAgent(BaseAgent):
                             final_choice.message, 'tool_calls', None
                         )
                         if final_tool_calls:
-                            # Convert tool calls to accumulated format
-                            # and execute them
-                            for tc in final_tool_calls:
-                                tc_data = {
-                                    'id': tc.id,
-                                    'function': {
-                                        'name': tc.function.name,
-                                        'arguments': tc.function.arguments,
-                                    },
-                                    'complete': True,
-                                }
-                                accumulated_tool_calls[tc.id] = tc_data
+                            self._collect_tool_calls_from_completion(
+                                final_tool_calls,
+                                accumulated_tool_calls,
+                            )
 
-                            # Record assistant message with tool calls
-                            # and execute tools
+                            # Execute tools
                             for status_response in (
                                 self
                             )._execute_tools_sync_with_status_accumulator(
@@ -4460,59 +4573,14 @@ class ChatAgent(BaseAgent):
                             or None
                         )
 
-                        # Record full content to memory
-                        record_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
+                        final_message = self._record_and_build_display_message(
+                            final_content,
+                            parsed_object,
+                            final_reasoning,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
                         )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not record_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                record_message, original_response_format
-                            )
-
-                        self.record_message(record_message)
-
-                        # In delta mode, final response content should
-                        # be empty since all content was already yielded
-                        # incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=display_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=display_reasoning,
-                        )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
 
                         # Create final response
                         final_response = ChatAgentResponse(
@@ -4667,19 +4735,12 @@ class ChatAgent(BaseAgent):
                             reasoning_content=final_reasoning,
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
+                        self._format_message_with_fallback(
+                            final_message,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
+                        )
 
                         self.record_message(final_message)
             if chunk.usage:
@@ -4715,19 +4776,12 @@ class ChatAgent(BaseAgent):
                             reasoning_content=display_reasoning,
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
+                        self._format_message_with_fallback(
+                            final_message,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
+                        )
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
@@ -5474,21 +5528,12 @@ class ChatAgent(BaseAgent):
                             final_choice.message, 'tool_calls', None
                         )
                         if final_tool_calls:
-                            # Convert tool calls to accumulated format
-                            # and execute them
-                            for tc in final_tool_calls:
-                                tc_data = {
-                                    'id': tc.id,
-                                    'function': {
-                                        'name': tc.function.name,
-                                        'arguments': tc.function.arguments,
-                                    },
-                                    'complete': True,
-                                }
-                                accumulated_tool_calls[tc.id] = tc_data
+                            self._collect_tool_calls_from_completion(
+                                final_tool_calls,
+                                accumulated_tool_calls,
+                            )
 
-                            # Record assistant message with tool calls
-                            # and execute tools
+                            # Execute tools
                             async for status_response in (
                                 self
                             )._execute_tools_async_with_status_accumulator(
@@ -5537,59 +5582,14 @@ class ChatAgent(BaseAgent):
                             or None
                         )
 
-                        # Record full content to memory
-                        record_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=final_reasoning,
+                        final_message = self._record_and_build_display_message(
+                            final_content,
+                            parsed_object,
+                            final_reasoning,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
                         )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not record_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                record_message, original_response_format
-                            )
-
-                        self.record_message(record_message)
-
-                        # In delta mode, final response content should
-                        # be empty since all content was already yielded
-                        # incrementally
-                        display_content = (
-                            final_content if self.stream_accumulate else ""
-                        )
-                        display_reasoning = (
-                            final_reasoning if self.stream_accumulate else None
-                        )
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=display_content,
-                            parsed=cast(
-                                "BaseModel | dict[str, Any] | None",
-                                parsed_object,
-                            ),  # type: ignore[arg-type]
-                            reasoning_content=display_reasoning,
-                        )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
 
                         # Create final response
                         final_response = ChatAgentResponse(
@@ -5839,19 +5839,12 @@ class ChatAgent(BaseAgent):
                             content=final_content,
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
+                        self._format_message_with_fallback(
+                            final_message,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
+                        )
 
                         self.record_message(final_message)
             if chunk.usage:
@@ -5887,19 +5880,12 @@ class ChatAgent(BaseAgent):
                             reasoning_content=display_reasoning,
                         )
 
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
-                            )
-
-                        if (
-                            used_prompt_formatting
-                            and original_response_format
-                            and not final_message.parsed
-                        ):
-                            self._apply_prompt_based_parsing_to_message(
-                                final_message, original_response_format
-                            )
+                        self._format_message_with_fallback(
+                            final_message,
+                            response_format,
+                            original_response_format,
+                            used_prompt_formatting,
+                        )
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
