@@ -13,14 +13,14 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 """
-OpenAI Responses API example in CAMEL.
+OpenAI Responses API simple examples in CAMEL.
 
 This example demonstrates:
 1. Basic non-streaming chat
-2. Multi-turn chat with automatic previous_response_id chaining
-3. Streaming output
-4. Tool calling
-5. Structured output (Pydantic schema)
+2. Tool calling
+3. Streaming tool calling
+4. Structured output
+5. Streaming structured output
 
 Required environment variable:
 export OPENAI_API_KEY="your_openai_api_key"
@@ -50,20 +50,27 @@ class TravelAdvice(BaseModel):
     reason: str = Field(description="Brief reasoning")
 
 
-def create_responses_model(stream: bool = False):
+def create_responses_model(
+    stream: bool = False,
+    model_type: ModelType = ModelType.GPT_4_1_MINI,
+    temperature: float = 0.2,
+    tools: list | None = None,
+):
     model_config = {
-        "temperature": 0.2,
+        "temperature": temperature,
         "stream": stream,
     }
+    if tools:
+        model_config["tools"] = tools
     if stream:
         model_config["stream_options"] = {"include_usage": True}
 
     return ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=model_type,
         model_config_dict=model_config,
         api_mode="responses",
-    ) 
+    )
 
 
 def example_basic_non_stream() -> None:
@@ -78,52 +85,14 @@ def example_basic_non_stream() -> None:
     print("usage:", resp.info.get("usage"))
 
 
-def example_multi_turn_previous_response_id() -> None:
-    print("\n=== Example 2: Multi-Turn (Auto previous_response_id) ===")
-    model = create_responses_model(stream=False)
-    agent = ChatAgent(
-        system_message="You are a travel assistant.",
-        model=model,
-    )
-
-    first = agent.step("I will visit Tokyo next week.")
-    print("turn1:", first.msgs[0].content)
-
-    # In responses mode, CAMEL model backend will automatically chain requests
-    # with previous_response_id and send incremental input.
-    second = agent.step("What should I pack for a 5-day trip?")
-    print("turn2:", second.msgs[0].content)
-
-
-def example_streaming() -> None:
-    print("\n=== Example 3: Streaming ===")
-    model = create_responses_model(stream=True)
-    agent = ChatAgent(
-        system_message="You are a helpful assistant.",
-        model=model,
-        stream_accumulate=False,
-    )
-
-    stream_resp = agent.step("Explain what CAMEL is in 3 short bullet points.")
-    for chunk in stream_resp:
-        msg = chunk.msgs[0]
-        if msg.content:
-            print(msg.content, end="", flush=True)
-    print()
-    print("usage:", stream_resp.info.get("usage"))
-
-
 def example_tool_calling() -> None:
-    print("\n=== Example 4: Tool Calling ===")
+    print("\n=== Example 2: Tool Calling ===")
     weather_tool = FunctionTool(get_weather)
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+    model = create_responses_model(
+        stream=False,
         model_type=ModelType.GPT_4_1,
-        model_config_dict={
-            "temperature": 0.0,
-            "tools": [weather_tool.get_openai_tool_schema()],
-        },
-        api_mode="responses",
+        temperature=0.0,
+        tools=[weather_tool.get_openai_tool_schema()],
     )
     agent = ChatAgent(
         system_message="You are a weather assistant. Use tools when needed.",
@@ -135,8 +104,37 @@ def example_tool_calling() -> None:
     print("tool_calls:", resp.info.get("tool_calls"))
 
 
+def example_streaming_tool_calling() -> None:
+    print("\n=== Example 3: Streaming Tool Calling ===")
+    weather_tool = FunctionTool(get_weather)
+    model = create_responses_model(
+        stream=True,
+        model_type=ModelType.GPT_4_1,
+        temperature=0.0,
+        tools=[weather_tool.get_openai_tool_schema()],
+    )
+    agent = ChatAgent(
+        system_message="You are a weather assistant. Use tools when needed.",
+        model=model,
+        tools=[weather_tool],
+        stream_accumulate=False,
+    )
+    stream_resp = agent.step("How is the weather in Beijing today?")
+
+    full_text = ""
+    for chunk in stream_resp:
+        msg = chunk.msgs[0]
+        if msg.content:
+            full_text += msg.content
+            print(msg.content, end="", flush=True)
+    print()
+    print("final:", full_text)
+    print("tool_calls:", stream_resp.info.get("tool_calls"))
+    print("usage:", stream_resp.info.get("usage"))
+
+
 def example_structured_output() -> None:
-    print("\n=== Example 5: Structured Output ===")
+    print("\n=== Example 4: Structured Output ===")
     model = create_responses_model(stream=False)
     agent = ChatAgent(
         system_message="You are a travel assistant.",
@@ -150,9 +148,45 @@ def example_structured_output() -> None:
     print("parsed:", resp.msgs[0].parsed)
 
 
+def example_streaming_structured_output() -> None:
+    print("\n=== Example 5: Streaming Structured Output ===")
+    model = create_responses_model(
+        stream=True,
+        model_type=ModelType.GPT_4_1_MINI,
+        temperature=0.0,
+    )
+    agent = ChatAgent(
+        system_message=(
+            "You are a travel assistant and must return strict JSON matching "
+            "the schema."
+        ),
+        model=model,
+        stream_accumulate=False,
+    )
+
+    stream_resp = agent.step(
+        "I am going to New York in autumn. Give travel advice in JSON.",
+        response_format=TravelAdvice,
+    )
+    full_text = ""
+    for chunk in stream_resp:
+        msg = chunk.msgs[0]
+        if msg.content:
+            full_text += msg.content
+            print(msg.content, end="", flush=True)
+    print()
+    print("raw:", full_text)
+    try:
+        parsed = TravelAdvice.model_validate_json(full_text)
+        print("parsed:", parsed)
+    except Exception as exc:
+        print("parsed error:", exc)
+    print("usage:", stream_resp.info.get("usage"))
+
+
 if __name__ == "__main__":
     example_basic_non_stream()
-    example_multi_turn_previous_response_id()
-    example_streaming()
     example_tool_calling()
+    example_streaming_tool_calling()
     example_structured_output()
+    example_streaming_structured_output()

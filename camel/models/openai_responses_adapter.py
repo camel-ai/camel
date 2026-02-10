@@ -13,7 +13,15 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import time
-from typing import Any, AsyncGenerator, Callable, Dict, Generator, Optional, Type
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    Generator,
+    Optional,
+    Type,
+)
 
 from pydantic import BaseModel
 
@@ -31,7 +39,9 @@ def _usage_to_openai(usage: Any) -> Optional[Dict[str, int]]:
         return None
     input_tokens = int(_get(usage, "input_tokens", 0) or 0)
     output_tokens = int(_get(usage, "output_tokens", 0) or 0)
-    total_tokens = int(_get(usage, "total_tokens", input_tokens + output_tokens))
+    total_tokens = int(
+        _get(usage, "total_tokens", input_tokens + output_tokens)
+    )
     return {
         "prompt_tokens": input_tokens,
         "completion_tokens": output_tokens,
@@ -116,6 +126,8 @@ def iter_response_events_to_chat_chunks(
     response_id = ""
     usage: Optional[Dict[str, int]] = None
     tool_idx_map: Dict[int, int] = {}
+    tool_meta_emitted: Dict[int, bool] = {}
+    tool_args_delta_seen: Dict[int, bool] = {}
 
     for event in event_stream:
         event_type = _get(event, "type", "")
@@ -147,35 +159,76 @@ def iter_response_events_to_chat_chunks(
             continue
 
         # Tool call item can appear as added/done; handle both.
-        if event_type in ("response.output_item.added", "response.output_item.done"):
+        if event_type in (
+            "response.output_item.added",
+            "response.output_item.done",
+        ):
             item = _get(event, "item")
             if _get(item, "type") == "function_call":
                 saw_tool_call = True
                 out_idx = int(_get(event, "output_index", 0))
-                mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
-                tc = {
-                    "index": mapped_idx,
-                    "id": _get(item, "call_id", "") or _get(item, "id", ""),
-                    "type": "function",
-                    "function": {
-                        "name": _get(item, "name", ""),
-                        "arguments": _get(item, "arguments", "") or "",
-                    },
-                }
-                chunk_id = _get(item, "id", response_id)
-                yield ChatCompletionChunk.construct(
-                    id=chunk_id,
-                    choices=[
-                        {
-                            "index": 0,
-                            "delta": {"tool_calls": [tc]},
-                            "finish_reason": None,
-                        }
-                    ],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
+                mapped_idx = tool_idx_map.setdefault(
+                    out_idx, len(tool_idx_map)
                 )
+                # `added/done` may include full arguments, while separate
+                # `...arguments.delta` events stream the same payload.
+                # Avoid emitting duplicated arguments into ChatAgent
+                # accumulation, otherwise JSON becomes invalid.
+                if event_type == "response.output_item.added":
+                    tc = {
+                        "index": mapped_idx,
+                        "id": _get(item, "call_id", "")
+                        or _get(item, "id", ""),
+                        "type": "function",
+                        "function": {
+                            "name": _get(item, "name", ""),
+                            "arguments": "",
+                        },
+                    }
+                    tool_meta_emitted[out_idx] = True
+                    chunk_id = _get(item, "id", response_id)
+                    yield ChatCompletionChunk.construct(
+                        id=chunk_id,
+                        choices=[
+                            {
+                                "index": 0,
+                                "delta": {"tool_calls": [tc]},
+                                "finish_reason": None,
+                            }
+                        ],
+                        created=int(time.time()),
+                        model=model,
+                        object="chat.completion.chunk",
+                    )
+                else:  # response.output_item.done
+                    if not tool_args_delta_seen.get(out_idx, False):
+                        tc = {
+                            "index": mapped_idx,
+                            "function": {
+                                "arguments": _get(item, "arguments", "")
+                                or "",
+                            },
+                        }
+                        if not tool_meta_emitted.get(out_idx, False):
+                            tc["id"] = _get(item, "call_id", "") or _get(
+                                item, "id", ""
+                            )
+                            tc["type"] = "function"
+                            tc["function"]["name"] = _get(item, "name", "")
+                        chunk_id = _get(item, "id", response_id)
+                        yield ChatCompletionChunk.construct(
+                            id=chunk_id,
+                            choices=[
+                                {
+                                    "index": 0,
+                                    "delta": {"tool_calls": [tc]},
+                                    "finish_reason": None,
+                                }
+                            ],
+                            created=int(time.time()),
+                            model=model,
+                            object="chat.completion.chunk",
+                        )
             continue
 
         # Some SDKs emit function-call argument deltas with this name.
@@ -186,6 +239,7 @@ def iter_response_events_to_chat_chunks(
             saw_tool_call = True
             out_idx = int(_get(event, "output_index", 0))
             mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
+            tool_args_delta_seen[out_idx] = True
             delta = _get(event, "delta", "") or ""
             tc = {
                 "index": mapped_idx,
@@ -254,6 +308,8 @@ async def aiter_response_events_to_chat_chunks(
     response_id = ""
     usage: Optional[Dict[str, int]] = None
     tool_idx_map: Dict[int, int] = {}
+    tool_meta_emitted: Dict[int, bool] = {}
+    tool_args_delta_seen: Dict[int, bool] = {}
 
     async for event in event_stream:
         event_type = _get(event, "type", "")
@@ -284,35 +340,72 @@ async def aiter_response_events_to_chat_chunks(
                 )
             continue
 
-        if event_type in ("response.output_item.added", "response.output_item.done"):
+        if event_type in (
+            "response.output_item.added",
+            "response.output_item.done",
+        ):
             item = _get(event, "item")
             if _get(item, "type") == "function_call":
                 saw_tool_call = True
                 out_idx = int(_get(event, "output_index", 0))
-                mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
-                tc = {
-                    "index": mapped_idx,
-                    "id": _get(item, "call_id", "") or _get(item, "id", ""),
-                    "type": "function",
-                    "function": {
-                        "name": _get(item, "name", ""),
-                        "arguments": _get(item, "arguments", "") or "",
-                    },
-                }
-                chunk_id = _get(item, "id", response_id)
-                yield ChatCompletionChunk.construct(
-                    id=chunk_id,
-                    choices=[
-                        {
-                            "index": 0,
-                            "delta": {"tool_calls": [tc]},
-                            "finish_reason": None,
-                        }
-                    ],
-                    created=int(time.time()),
-                    model=model,
-                    object="chat.completion.chunk",
+                mapped_idx = tool_idx_map.setdefault(
+                    out_idx, len(tool_idx_map)
                 )
+                if event_type == "response.output_item.added":
+                    tc = {
+                        "index": mapped_idx,
+                        "id": _get(item, "call_id", "")
+                        or _get(item, "id", ""),
+                        "type": "function",
+                        "function": {
+                            "name": _get(item, "name", ""),
+                            "arguments": "",
+                        },
+                    }
+                    tool_meta_emitted[out_idx] = True
+                    chunk_id = _get(item, "id", response_id)
+                    yield ChatCompletionChunk.construct(
+                        id=chunk_id,
+                        choices=[
+                            {
+                                "index": 0,
+                                "delta": {"tool_calls": [tc]},
+                                "finish_reason": None,
+                            }
+                        ],
+                        created=int(time.time()),
+                        model=model,
+                        object="chat.completion.chunk",
+                    )
+                else:
+                    if not tool_args_delta_seen.get(out_idx, False):
+                        tc = {
+                            "index": mapped_idx,
+                            "function": {
+                                "arguments": _get(item, "arguments", "")
+                                or "",
+                            },
+                        }
+                        if not tool_meta_emitted.get(out_idx, False):
+                            tc["id"] = _get(item, "call_id", "") or _get(
+                                item, "id", ""
+                            )
+                            tc["type"] = "function"
+                            tc["function"]["name"] = _get(item, "name", "")
+                        chunk_id = _get(item, "id", response_id)
+                        yield ChatCompletionChunk.construct(
+                            id=chunk_id,
+                            choices=[
+                                {
+                                    "index": 0,
+                                    "delta": {"tool_calls": [tc]},
+                                    "finish_reason": None,
+                                }
+                            ],
+                            created=int(time.time()),
+                            model=model,
+                            object="chat.completion.chunk",
+                        )
             continue
 
         if event_type in (
@@ -322,6 +415,7 @@ async def aiter_response_events_to_chat_chunks(
             saw_tool_call = True
             out_idx = int(_get(event, "output_index", 0))
             mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
+            tool_args_delta_seen[out_idx] = True
             delta = _get(event, "delta", "") or ""
             tc = {
                 "index": mapped_idx,

@@ -11,9 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
+import json
 import os
 import warnings
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    Literal,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from openai.lib.streaming.chat import (
@@ -105,7 +117,8 @@ class OpenAIModel(BaseModelBackend):
             client instance. If provided, this client will be used instead of
             creating a new one. The client should implement the AsyncOpenAI
             client interface. (default: :obj:`None`)
-        api_mode (str, optional): OpenAI API mode to use. Supported values:
+        api_mode (Literal["chat_completions", "responses"], optional):
+            OpenAI API mode to use. Supported values:
             `"chat_completions"` (default) and `"responses"`.
         **kwargs (Any): Additional arguments to pass to the
             OpenAI client initialization. These can include parameters like
@@ -129,7 +142,9 @@ class OpenAIModel(BaseModelBackend):
         max_retries: int = 3,
         client: Optional[Any] = None,
         async_client: Optional[Any] = None,
-        api_mode: str = "chat_completions",
+        api_mode: Literal["chat_completions", "responses"] = (
+            "chat_completions"
+        ),
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -330,7 +345,9 @@ class OpenAIModel(BaseModelBackend):
                     return self._request_responses_stream(
                         messages, response_format, tools
                     )
-                return self._request_stream_parse(messages, response_format, tools)
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
             else:
                 if self._api_mode == "responses":
                     return self._request_responses(
@@ -403,7 +420,9 @@ class OpenAIModel(BaseModelBackend):
                     return await self._arequest_responses(
                         messages, response_format, tools
                     )
-                return await self._arequest_parse(messages, response_format, tools)
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             if self._api_mode == "responses":
                 if is_streaming:
@@ -430,7 +449,10 @@ class OpenAIModel(BaseModelBackend):
 
         # Translate chat-completions style parameters to responses style.
         max_tokens = request_config.pop("max_tokens", None)
-        if max_tokens is not None and "max_output_tokens" not in request_config:
+        if (
+            max_tokens is not None
+            and "max_output_tokens" not in request_config
+        ):
             request_config["max_output_tokens"] = max_tokens
 
         # `n` is unsupported in responses. Keep backward compatibility.
@@ -454,16 +476,64 @@ class OpenAIModel(BaseModelBackend):
             )
         request_config["store"] = True
 
+        if request_config.get("tools"):
+            request_config["tools"] = self._normalize_tools_for_responses_api(
+                request_config["tools"]
+            )
+
         if response_format is not None:
+            schema = copy.deepcopy(response_format.model_json_schema())
+            self._enforce_object_additional_properties_false(schema)
             request_config["text"] = {
                 "format": {
                     "type": "json_schema",
                     "name": response_format.__name__,
-                    "schema": response_format.model_json_schema(),
+                    "schema": schema,
                 }
             }
 
         return request_config
+
+    @staticmethod
+    def _normalize_tools_for_responses_api(
+        tools: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style function tools to Responses style.
+
+        Input:
+            {"type":"function","function":{"name":"foo",...}}
+        Output:
+            {"type":"function","name":"foo",...}
+        """
+        normalized_tools: List[Dict[str, Any]] = []
+        for tool in tools:
+            if (
+                isinstance(tool, dict)
+                and tool.get("type") == "function"
+                and isinstance(tool.get("function"), dict)
+            ):
+                normalized_tools.append(
+                    {"type": "function", **tool["function"]}
+                )
+            else:
+                normalized_tools.append(tool)
+        return normalized_tools
+
+    @staticmethod
+    def _enforce_object_additional_properties_false(schema: Any) -> None:
+        r"""Recursively enforce strict object schema for Responses API."""
+        if isinstance(schema, dict):
+            if (
+                schema.get("type") == "object"
+                and "additionalProperties" not in schema
+            ):
+                schema["additionalProperties"] = False
+
+            for value in schema.values():
+                OpenAIModel._enforce_object_additional_properties_false(value)
+        elif isinstance(schema, list):
+            for item in schema:
+                OpenAIModel._enforce_object_additional_properties_false(item)
 
     def _get_response_chain_session_key(self) -> str:
         return get_current_agent_session_id() or "__default__"
@@ -473,8 +543,8 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
     ) -> Dict[str, Any]:
         session_key = self._get_response_chain_session_key()
-        previous_response_id = self._responses_previous_response_id_by_session.get(
-            session_key
+        previous_response_id = (
+            self._responses_previous_response_id_by_session.get(session_key)
         )
         last_message_count = self._responses_last_message_count_by_session.get(
             session_key, 0
@@ -490,16 +560,92 @@ class OpenAIModel(BaseModelBackend):
 
         if previous_response_id and last_message_count > 0:
             delta_messages = messages[last_message_count:]
-            input_messages = delta_messages if delta_messages else [messages[-1]]
+            input_messages = (
+                delta_messages if delta_messages else [messages[-1]]
+            )
         else:
             input_messages = messages
+
+        input_items = self._convert_messages_to_responses_input(input_messages)
 
         return {
             "session_key": session_key,
             "previous_response_id": previous_response_id,
-            "input_messages": input_messages,
+            "input_messages": input_items,
             "message_count": len(messages),
         }
+
+    @staticmethod
+    def _convert_messages_to_responses_input(
+        messages: List[OpenAIMessage],
+    ) -> List[Dict[str, Any]]:
+        r"""Convert chat-completions style messages to Responses input items.
+
+        This specifically rewrites tool-calling history:
+        - assistant message with `tool_calls` -> one or more `function_call`
+          items (+ optional assistant message when content exists)
+        - tool message -> `function_call_output` item
+        """
+        input_items: List[Dict[str, Any]] = []
+        for message in messages:
+            role = message.get("role")
+            content = message.get("content", "")
+
+            if role == "tool":
+                input_items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": message.get("tool_call_id", "null"),
+                        "output": content if isinstance(content, str) else str(content),
+                    }
+                )
+                continue
+
+            if role == "assistant" and message.get("tool_calls"):
+                if content not in (None, "", []):
+                    input_items.append(
+                        {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                    )
+
+                tool_calls = message.get("tool_calls", [])
+                if not isinstance(tool_calls, list):
+                    tool_calls = [tool_calls]
+                for tool_call in tool_calls:
+                    function_data = (
+                        tool_call.get("function", {})
+                        if isinstance(tool_call, dict)
+                        else {}
+                    )
+                    if not isinstance(function_data, dict):
+                        continue
+                    arguments = function_data.get("arguments", "{}")
+                    if not isinstance(arguments, str):
+                        arguments = json.dumps(arguments, ensure_ascii=False)
+                    input_items.append(
+                        {
+                            "type": "function_call",
+                            "call_id": (
+                                tool_call.get("id", "null")
+                                if isinstance(tool_call, dict)
+                                else "null"
+                            ),
+                            "name": function_data.get("name", ""),
+                            "arguments": arguments,
+                        }
+                    )
+                continue
+
+            input_items.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
+
+        return input_items
 
     def _save_response_chain_state(
         self,
