@@ -129,20 +129,20 @@ def test_chat_agent(model, step_call_count=3):
         for i in range(step_call_count):
             for user_msg in [user_msg_bm, user_msg_str]:
                 response = assistant.step(user_msg)
-                assert isinstance(
-                    response.msgs, list
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.msgs, list), (
+                    f"Error in round {i + 1}"
+                )
                 assert len(response.msgs) > 0, f"Error in round {i + 1}"
-                assert isinstance(
-                    response.terminated, bool
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.terminated, bool), (
+                    f"Error in round {i + 1}"
+                )
                 assert response.terminated is False, f"Error in round {i + 1}"
-                assert isinstance(
-                    response.info, dict
-                ), f"Error in round {i + 1}"
-                assert (
-                    response.info['id'] is not None
-                ), f"Error in round {i + 1}"
+                assert isinstance(response.info, dict), (
+                    f"Error in round {i + 1}"
+                )
+                assert response.info['id'] is not None, (
+                    f"Error in round {i + 1}"
+                )
 
 
 @pytest.mark.model_backend
@@ -370,9 +370,9 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         external_tool_call_requests = response.info[
             "external_tool_call_requests"
         ]
-        assert (
-            external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i + 1}"
+        assert external_tool_call_requests[0].tool_name == "math_subtract", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -514,9 +514,9 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
         external_tool_call_requests = response.info[
             "external_tool_call_requests"
         ]
-        assert (
-            external_tool_call_requests[0].tool_name == "math_subtract"
-        ), f"Error in calling round {i + 1}"
+        assert external_tool_call_requests[0].tool_name == "math_subtract", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -657,18 +657,18 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     )
 
     for i in range(step_call_count):
-        assert (
-            assistant_with_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i + 1}"
-        assert (
-            len(assistant_with_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i + 1}"
-        assert (
-            assistant_without_sys_msg_response.msgs is not None
-        ), f"Error in calling round {i + 1}"
-        assert (
-            len(assistant_without_sys_msg_response.msgs) == n
-        ), f"Error in calling round {i + 1}"
+        assert assistant_with_sys_msg_response.msgs is not None, (
+            f"Error in calling round {i + 1}"
+        )
+        assert len(assistant_with_sys_msg_response.msgs) == n, (
+            f"Error in calling round {i + 1}"
+        )
+        assert assistant_without_sys_msg_response.msgs is not None, (
+            f"Error in calling round {i + 1}"
+        )
+        assert len(assistant_without_sys_msg_response.msgs) == n, (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -753,12 +753,12 @@ def test_chat_agent_stream_output(step_call_count=3):
             assert len(msg.content) > 0, f"Error in calling round {i + 1}"
 
         stream_usage = stream_assistant_response.info["usage"]
-        assert (
-            stream_usage["completion_tokens"] > 0
-        ), f"Error in calling round {i + 1}"
-        assert (
-            stream_usage["prompt_tokens"] > 0
-        ), f"Error in calling round {i + 1}"
+        assert stream_usage["completion_tokens"] > 0, (
+            f"Error in calling round {i + 1}"
+        )
+        assert stream_usage["prompt_tokens"] > 0, (
+            f"Error in calling round {i + 1}"
+        )
         assert (
             stream_usage["total_tokens"]
             == stream_usage["completion_tokens"]
@@ -1039,12 +1039,12 @@ def test_tool_calling_sync(step_call_count=3):
         ]
 
         assert len(tool_calls) > 0, f"Error in calling round {i + 1}"
-        assert str(tool_calls[0]).startswith(
-            "Tool Execution"
-        ), f"Error in calling round {i + 1}"
-        assert (
-            tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i + 1}"
+        assert str(tool_calls[0]).startswith("Tool Execution"), (
+            f"Error in calling round {i + 1}"
+        )
+        assert tool_calls[0].tool_name == "math_multiply", (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
@@ -1165,9 +1165,9 @@ async def test_tool_calling_math_async(step_call_count=3):
 
         tool_calls = agent_response.info['tool_calls']
 
-        assert (
-            tool_calls[0].tool_name == "math_multiply"
-        ), f"Error in calling round {i + 1}"
+        assert tool_calls[0].tool_name == "math_multiply", (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
@@ -1254,16 +1254,16 @@ async def test_tool_calling_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert tool_calls, f"Error in calling round {i + 1}"
-        assert str(tool_calls[0]).startswith(
-            "Tool Execution"
-        ), f"Error in calling round {i + 1}"
+        assert str(tool_calls[0]).startswith("Tool Execution"), (
+            f"Error in calling round {i + 1}"
+        )
 
-        assert (
-            tool_calls[0].tool_name == "async_sleep"
-        ), f"Error in calling round {i + 1}"
-        assert tool_calls[0].args == {
-            'second': 1
-        }, f"Error in calling round {i + 1}"
+        assert tool_calls[0].tool_name == "async_sleep", (
+            f"Error in calling round {i + 1}"
+        )
+        assert tool_calls[0].args == {'second': 1}, (
+            f"Error in calling round {i + 1}"
+        )
         assert tool_calls[0].result == 1, f"Error in calling round {i + 1}"
 
 
@@ -1294,9 +1294,9 @@ def test_response_words_termination(step_call_count=3):
 
         assert agent.terminated, f"Error in calling round {i + 1}"
         assert agent_response.terminated, f"Error in calling round {i + 1}"
-        assert (
-            "goodbye" in agent_response.info['termination_reasons'][0]
-        ), f"Error in calling round {i + 1}"
+        assert "goodbye" in agent_response.info['termination_reasons'][0], (
+            f"Error in calling round {i + 1}"
+        )
 
 
 def test_chat_agent_vision(step_call_count=3):
@@ -1362,9 +1362,9 @@ def test_chat_agent_vision(step_call_count=3):
 
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
-        assert (
-            agent_response.msgs[0].content == "Yes."
-        ), f"Error in calling round {i + 1}"
+        assert agent_response.msgs[0].content == "Yes.", (
+            f"Error in calling round {i + 1}"
+        )
 
 
 @pytest.mark.model_backend
@@ -1534,9 +1534,9 @@ async def test_chat_agent_async_stream_with_async_generator():
     # Create an async generator that wraps the chunks
     # This simulates what GeminiModel does with _wrap_async_stream_with_
     # thought_preservation
-    async def mock_async_generator() -> (
-        AsyncGenerator[ChatCompletionChunk, None]
-    ):
+    async def mock_async_generator() -> AsyncGenerator[
+        ChatCompletionChunk, None
+    ]:
         for chunk in chunks:
             yield chunk
 
@@ -1563,12 +1563,12 @@ async def test_chat_agent_async_stream_with_async_generator():
 
     # Verify final response contains the accumulated content
     final_response = responses[-1]
-    assert (
-        final_response.msg is not None
-    ), "Final response should have a message"
-    assert (
-        "Hello" in final_response.msg.content
-    ), "Final content should contain 'Hello'"
+    assert final_response.msg is not None, (
+        "Final response should have a message"
+    )
+    assert "Hello" in final_response.msg.content, (
+        "Final content should contain 'Hello'"
+    )
 
 
 @pytest.mark.model_backend
@@ -1718,9 +1718,9 @@ async def test_chat_agent_async_stream_with_async_generator_tool_calls():
 
     call_count = 0
 
-    async def mock_async_generator() -> (
-        AsyncGenerator[ChatCompletionChunk, None]
-    ):
+    async def mock_async_generator() -> AsyncGenerator[
+        ChatCompletionChunk, None
+    ]:
         nonlocal call_count
         if call_count == 0:
             call_count += 1
@@ -1837,3 +1837,84 @@ async def test_chat_agent_async_stream_with_structured_output():
     assert len(responses) > 1, "Should receive multiple streaming chunks"
     assert responses[-1].msg.parsed.answer == 6
     assert responses[-1].msg.parsed.explanation
+
+
+def test_clean_snapshot_in_memory():
+    """Test that snapshot content is properly cleaned in memory.
+
+    This tests the _clean_snapshot_in_memory functionality which removes
+    stale snapshot markers and references from tool output messages stored
+    in memory. The cleaning preserves the assistant message (tool call request)
+    and only updates the function result message.
+    """
+    from unittest.mock import MagicMock, patch
+
+    from camel.agents.chat_agent import _ToolOutputHistoryEntry
+    from camel.messages import FunctionCallingMessage
+
+    # Create a mock model to avoid API calls
+    mock_model = MagicMock()
+    mock_model.model_type = ModelType.DEFAULT
+    mock_model.model_config_dict = {}
+    mock_model.token_counter = None
+    mock_model.model_platform_name = "openai"
+
+    with patch.object(ChatAgent, '_init_model', return_value=mock_model):
+        agent = ChatAgent(
+            system_message="Test agent",
+            model=mock_model,
+        )
+
+    # Manually enable snapshot cleaning
+    agent._enable_snapshot_clean = True
+    agent._tool_output_history = []
+
+    # Create a mock memory storage
+    mock_storage = MagicMock()
+    mock_chat_history_block = MagicMock()
+    mock_chat_history_block.storage = mock_storage
+
+    agent.memory._chat_history_block = mock_chat_history_block
+
+    # Create a test entry with snapshot markers
+    test_uuid = "test-uuid-123"
+    test_timestamp = 1234567890.0
+    entry = _ToolOutputHistoryEntry(
+        tool_name="test_tool",
+        tool_call_id="call_123",
+        result_text="- Item 1 [ref=abc]\n- Item 2 [ref=def]\n",
+        record_uuids=[test_uuid],
+        record_timestamps=[test_timestamp],
+        cached=False,
+    )
+    agent._tool_output_history.append(entry)
+
+    # Mock the storage to return the existing record
+    mock_storage.load.return_value = [
+        {
+            "uuid": test_uuid,
+            "timestamp": test_timestamp,
+            "message": {"content": "- Item 1 [ref=abc]\n- Item 2 [ref=def]\n"},
+        }
+    ]
+
+    # Call the clean function
+    agent._clean_snapshot_in_memory(entry)
+
+    # Verify storage was updated
+    assert mock_storage.clear.called
+    assert mock_storage.save.called
+
+    # Get the saved records
+    saved_records = mock_storage.save.call_args[0][0]
+
+    # Should have one record (the cleaned function result)
+    assert len(saved_records) == 1
+
+    # The record should be a function message with cleaned content
+    saved_record = saved_records[0]
+    assert saved_record["role_at_backend"] == OpenAIBackendRole.FUNCTION.value
+
+    # Verify entry was marked as cached
+    assert entry.cached is True
+    assert len(entry.record_uuids) == 1  # Single function result record
