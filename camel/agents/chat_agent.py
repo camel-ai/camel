@@ -2525,40 +2525,6 @@ class ChatAgent(BaseAgent):
         except ValidationError:
             return False
 
-    def _format_message_with_fallback(
-        self,
-        message: BaseMessage,
-        response_format: Optional[Type[BaseModel]],
-        original_response_format: Optional[Type[BaseModel]] = None,
-        used_prompt_formatting: bool = False,
-    ) -> None:
-        r"""Format a message with optional prompt-based parsing fallback.
-
-        First tries standard JSON validation via ``_try_format_message``.
-        If that fails and prompt-based formatting was used, falls back to
-        ``_apply_prompt_based_parsing_to_message`` which can extract JSON
-        from free-form text.
-
-        Args:
-            message: The message to format.
-            response_format: The (possibly modified) response format passed
-                to the model. May be ``None`` when prompt-based formatting
-                replaced it.
-            original_response_format: The original response format before
-                prompt-based conversion.
-            used_prompt_formatting: Whether prompt-based formatting was used.
-        """
-        if response_format:
-            self._try_format_message(message, response_format)
-        if (
-            used_prompt_formatting
-            and original_response_format
-            and not message.parsed
-        ):
-            self._apply_prompt_based_parsing_to_message(
-                message, original_response_format
-            )
-
     @staticmethod
     def _collect_tool_calls_from_completion(
         tool_calls: List[Any],
@@ -2589,8 +2555,6 @@ class ChatAgent(BaseAgent):
         parsed_object: Any,
         final_reasoning: Optional[str],
         response_format: Optional[Type[BaseModel]],
-        original_response_format: Optional[Type[BaseModel]],
-        used_prompt_formatting: bool,
     ) -> BaseMessage:
         r"""Record the full message to memory and build a display message.
 
@@ -2603,8 +2567,6 @@ class ChatAgent(BaseAgent):
             parsed_object: The parsed object from structured output stream.
             final_reasoning: The reasoning content, if any.
             response_format: The (possibly modified) response format.
-            original_response_format: The original response format.
-            used_prompt_formatting: Whether prompt-based formatting was used.
 
         Returns:
             BaseMessage: The display message to yield to the caller.
@@ -2620,12 +2582,8 @@ class ChatAgent(BaseAgent):
             parsed=parsed_cast,
             reasoning_content=final_reasoning,
         )
-        self._format_message_with_fallback(
-            record_msg,
-            response_format,
-            original_response_format,
-            used_prompt_formatting,
-        )
+        if response_format:
+            self._try_format_message(record_msg, response_format)
         self.record_message(record_msg)
 
         # Build display message (empty content in delta mode)
@@ -2636,133 +2594,10 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict={},
             content=display_content,
-            parsed=parsed_cast,
+            parsed=record_msg.parsed,
             reasoning_content=display_reasoning,
         )
-        self._format_message_with_fallback(
-            display_msg,
-            response_format,
-            original_response_format,
-            used_prompt_formatting,
-        )
         return display_msg
-
-    def _check_tools_strict_compatibility(self) -> bool:
-        r"""Check if all tools are compatible with OpenAI strict mode.
-
-        Returns:
-            bool: True if all tools are strict mode compatible,
-                False otherwise.
-        """
-        tool_schemas = self._get_full_tool_schemas()
-        for schema in tool_schemas:
-            if not schema.get("function", {}).get("strict", True):
-                return False
-        return True
-
-    def _convert_response_format_to_prompt(
-        self, response_format: Type[BaseModel]
-    ) -> str:
-        r"""Convert a Pydantic response format to a prompt instruction.
-
-        Args:
-            response_format (Type[BaseModel]): The Pydantic model class.
-
-        Returns:
-            str: A prompt instruction requesting the specific format.
-        """
-        try:
-            # Get the JSON schema from the Pydantic model
-            schema = response_format.model_json_schema()
-
-            # Create a prompt based on the schema
-            format_instruction = (
-                "\n\nPlease respond in the following JSON format:\n{\n"
-            )
-
-            properties = schema.get("properties", {})
-            for field_name, field_info in properties.items():
-                field_type = field_info.get("type", "string")
-                description = field_info.get("description", "")
-
-                if field_type == "array":
-                    format_instruction += (
-                        f'    "{field_name}": ["array of values"]'
-                    )
-                elif field_type == "object":
-                    format_instruction += f'    "{field_name}": {{"object"}}'
-                elif field_type == "boolean":
-                    format_instruction += f'    "{field_name}": true'
-                elif field_type == "number":
-                    format_instruction += f'    "{field_name}": 0'
-                else:
-                    format_instruction += f'    "{field_name}": "string value"'
-
-                if description:
-                    format_instruction += f'  // {description}'
-
-                # Add comma if not the last item
-                if field_name != list(properties.keys())[-1]:
-                    format_instruction += ","
-                format_instruction += "\n"
-
-            format_instruction += "}"
-            return format_instruction
-
-        except Exception as e:
-            logger.warning(
-                f"Failed to convert response_format to prompt: {e}. "
-                f"Using generic format instruction."
-            )
-            return (
-                "\n\nPlease respond in a structured JSON format "
-                "that matches the requested schema."
-            )
-
-    def _handle_response_format_with_non_strict_tools(
-        self,
-        input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
-    ) -> Tuple[Union[BaseMessage, str], Optional[Type[BaseModel]], bool]:
-        r"""Handle response format when tools are not strict mode compatible.
-
-        Args:
-            input_message: The original input message.
-            response_format: The requested response format.
-
-        Returns:
-            Tuple: (modified_message, modified_response_format,
-                   used_prompt_formatting)
-        """
-        if response_format is None:
-            return input_message, response_format, False
-
-        # Check if tools are strict mode compatible
-        if self._check_tools_strict_compatibility():
-            return input_message, response_format, False
-
-        # Tools are not strict compatible, convert to prompt
-        logger.info(
-            "Non-strict tools detected. Converting response_format to "
-            "prompt-based formatting."
-        )
-
-        format_prompt = self._convert_response_format_to_prompt(
-            response_format
-        )
-
-        # Modify the message to include format instruction
-        modified_message: Union[BaseMessage, str]
-        if isinstance(input_message, str):
-            modified_message = input_message + format_prompt
-        else:
-            modified_message = input_message.create_new_instance(
-                input_message.content + format_prompt
-            )
-
-        # Return None for response_format to avoid strict mode conflicts
-        # and True to indicate we used prompt formatting
-        return modified_message, None, True
 
     def _is_called_from_registered_toolkit(self) -> bool:
         r"""Check if current step/astep call originates from a
@@ -2790,75 +2625,6 @@ class ChatAgent(BaseAgent):
             return False
 
         return False
-
-    def _apply_prompt_based_parsing_to_message(
-        self,
-        message: BaseMessage,
-        original_response_format: Type[BaseModel],
-    ) -> None:
-        r"""Apply prompt-based parsing to a single message.
-
-        Args:
-            message: The message to parse.
-            original_response_format: The original response format class.
-        """
-        if not message.content:
-            return
-        try:
-            import json
-
-            from pydantic import ValidationError
-
-            content = message.content.strip()
-
-            # Try direct parsing first
-            try:
-                parsed_json = json.loads(content)
-                message.parsed = original_response_format.model_validate(
-                    parsed_json
-                )
-                return
-            except (json.JSONDecodeError, ValidationError):
-                pass
-
-            # Try to extract JSON from text
-            json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
-            json_matches = re.findall(json_pattern, content, re.DOTALL)
-
-            for json_str in json_matches:
-                try:
-                    parsed_json = json.loads(json_str)
-                    message.parsed = original_response_format.model_validate(
-                        parsed_json
-                    )
-                    message.content = json.dumps(parsed_json)
-                    break
-                except (json.JSONDecodeError, ValidationError):
-                    continue
-
-            if not message.parsed:
-                logger.warning(
-                    f"Failed to parse JSON from response: {content}"
-                )
-
-        except Exception as e:
-            logger.warning(f"Error during prompt-based parsing: {e}")
-
-    def _apply_prompt_based_parsing(
-        self,
-        response: ModelResponse,
-        original_response_format: Type[BaseModel],
-    ) -> None:
-        r"""Apply manual parsing when using prompt-based formatting.
-
-        Args:
-            response: The model response to parse.
-            original_response_format: The original response format class.
-        """
-        for message in response.output_messages:
-            self._apply_prompt_based_parsing_to_message(
-                message, original_response_format
-            )
 
     def _format_response_if_needed(
         self,
@@ -2997,14 +2763,6 @@ class ChatAgent(BaseAgent):
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
-
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -3182,12 +2940,6 @@ class ChatAgent(BaseAgent):
 
         self._format_response_if_needed(response, response_format)
 
-        # Apply manual parsing if we used prompt-based formatting
-        if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
-
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
         if not recorded_tool_calls:
@@ -3300,14 +3052,6 @@ class ChatAgent(BaseAgent):
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
         disable_tools = self._is_called_from_registered_toolkit()
-
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
 
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -3483,12 +3227,6 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
-
-        # Apply manual parsing if we used prompt-based formatting
-        if used_prompt_formatting and original_response_format:
-            self._apply_prompt_based_parsing(
-                response, original_response_format
-            )
 
         # Only record final output if we haven't already recorded tool calls
         # for this response (to avoid duplicate assistant messages)
@@ -4307,14 +4045,6 @@ class ChatAgent(BaseAgent):
                 content, tool calls, and other information as they become
                 available.
         """
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
-
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -4338,8 +4068,6 @@ class ChatAgent(BaseAgent):
             openai_messages,
             num_tokens,
             response_format,
-            original_response_format,
-            used_prompt_formatting,
         )
 
     def _get_token_count(self, content: str) -> int:
@@ -4381,8 +4109,6 @@ class ChatAgent(BaseAgent):
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
-        original_response_format: Optional[Type[BaseModel]] = None,
-        used_prompt_formatting: bool = False,
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Internal method to handle streaming responses with tool calls."""
 
@@ -4442,8 +4168,6 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     step_token_usage,
                     response_format,
-                    original_response_format,
-                    used_prompt_formatting,
                 )
 
                 if tool_calls_complete:
@@ -4578,8 +4302,6 @@ class ChatAgent(BaseAgent):
                             parsed_object,
                             final_reasoning,
                             response_format,
-                            original_response_format,
-                            used_prompt_formatting,
                         )
 
                         # Create final response
@@ -4640,8 +4362,6 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-        original_response_format: Optional[Type[BaseModel]] = None,
-        used_prompt_formatting: bool = False,
     ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool]]:
         r"""Process streaming chunks with content accumulator."""
 
@@ -4735,12 +4455,10 @@ class ChatAgent(BaseAgent):
                             reasoning_content=final_reasoning,
                         )
 
-                        self._format_message_with_fallback(
-                            final_message,
-                            response_format,
-                            original_response_format,
-                            used_prompt_formatting,
-                        )
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
 
                         self.record_message(final_message)
             if chunk.usage:
@@ -4776,12 +4494,10 @@ class ChatAgent(BaseAgent):
                             reasoning_content=display_reasoning,
                         )
 
-                        self._format_message_with_fallback(
-                            final_message,
-                            response_format,
-                            original_response_format,
-                            used_prompt_formatting,
-                        )
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
@@ -5324,14 +5040,6 @@ class ChatAgent(BaseAgent):
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Asynchronous version of stream method."""
 
-        # Handle response format compatibility with non-strict tools
-        original_response_format = response_format
-        input_message, response_format, used_prompt_formatting = (
-            self._handle_response_format_with_non_strict_tools(
-                input_message, response_format
-            )
-        )
-
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -5357,8 +5065,6 @@ class ChatAgent(BaseAgent):
             openai_messages,
             num_tokens,
             response_format,
-            original_response_format,
-            used_prompt_formatting,
         ):
             last_response = response
             yield response
@@ -5375,8 +5081,6 @@ class ChatAgent(BaseAgent):
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
         response_format: Optional[Type[BaseModel]] = None,
-        original_response_format: Optional[Type[BaseModel]] = None,
-        used_prompt_formatting: bool = False,
     ) -> AsyncGenerator[ChatAgentResponse, None]:
         r"""Async method to handle streaming responses with tool calls."""
 
@@ -5440,8 +5144,6 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     step_token_usage,
                     response_format,
-                    original_response_format,
-                    used_prompt_formatting,
                 ):
                     if isinstance(item, tuple):
                         # This is the final return value (stream_completed,
@@ -5587,8 +5289,6 @@ class ChatAgent(BaseAgent):
                             parsed_object,
                             final_reasoning,
                             response_format,
-                            original_response_format,
-                            used_prompt_formatting,
                         )
 
                         # Create final response
@@ -5745,8 +5445,6 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
-        original_response_format: Optional[Type[BaseModel]] = None,
-        used_prompt_formatting: bool = False,
     ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
         r"""Async version of process streaming chunks with
         content accumulator.
@@ -5839,12 +5537,10 @@ class ChatAgent(BaseAgent):
                             content=final_content,
                         )
 
-                        self._format_message_with_fallback(
-                            final_message,
-                            response_format,
-                            original_response_format,
-                            used_prompt_formatting,
-                        )
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
 
                         self.record_message(final_message)
             if chunk.usage:
@@ -5880,12 +5576,10 @@ class ChatAgent(BaseAgent):
                             reasoning_content=display_reasoning,
                         )
 
-                        self._format_message_with_fallback(
-                            final_message,
-                            response_format,
-                            original_response_format,
-                            used_prompt_formatting,
-                        )
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
 
                         # Create final response with final usage (not partial)
                         final_response = ChatAgentResponse(
