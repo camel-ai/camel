@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Optional
 
 from colorama import Fore
 
@@ -30,6 +30,9 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
+
+if TYPE_CHECKING:
+    from camel.responses import ChatAgentResponse
 
 
 class RolePlayingWorker(Worker):
@@ -98,7 +101,12 @@ class RolePlayingWorker(Worker):
         self.user_agent_kwargs = user_agent_kwargs
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self,
+        task: Task,
+        dependencies: List[Task],
+        stream_callback: Optional[
+            Callable[["ChatAgentResponse"], Optional[Awaitable[None]]]
+        ] = None,
     ) -> TaskState:
         r"""Processes a task leveraging its dependencies through role-playing.
 

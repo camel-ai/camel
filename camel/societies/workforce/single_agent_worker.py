@@ -436,6 +436,10 @@ class SingleAgentWorker(Worker):
                 if isinstance(response, AsyncStreamingChatAgentResponse):
                     task_result = None
                     async for chunk in response:
+                        if stream_callback:
+                            maybe = stream_callback(chunk)
+                            if asyncio.iscoroutine(maybe):
+                                await maybe
                         if chunk.msg and chunk.msg.parsed:
                             task_result = chunk.msg.parsed
                             response_content = chunk.msg.content
