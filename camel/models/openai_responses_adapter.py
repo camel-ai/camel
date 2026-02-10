@@ -205,8 +205,7 @@ def iter_response_events_to_chat_chunks(
                         tc = {
                             "index": mapped_idx,
                             "function": {
-                                "arguments": _get(item, "arguments", "")
-                                or "",
+                                "arguments": _get(item, "arguments", "") or "",
                             },
                         }
                         if not tool_meta_emitted.get(out_idx, False):
@@ -382,8 +381,7 @@ async def aiter_response_events_to_chat_chunks(
                         tc = {
                             "index": mapped_idx,
                             "function": {
-                                "arguments": _get(item, "arguments", "")
-                                or "",
+                                "arguments": _get(item, "arguments", "") or "",
                             },
                         }
                         if not tool_meta_emitted.get(out_idx, False):

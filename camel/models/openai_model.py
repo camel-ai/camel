@@ -20,8 +20,8 @@ from typing import (
     AsyncGenerator,
     Dict,
     Generator,
-    Literal,
     List,
+    Literal,
     Optional,
     Type,
     Union,
@@ -596,7 +596,9 @@ class OpenAIModel(BaseModelBackend):
                     {
                         "type": "function_call_output",
                         "call_id": message.get("tool_call_id", "null"),
-                        "output": content if isinstance(content, str) else str(content),
+                        "output": content
+                        if isinstance(content, str)
+                        else str(content),
                     }
                 )
                 continue
@@ -744,14 +746,18 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-        return iter_response_events_to_chat_chunks(
-            event_stream=event_stream,
-            model=str(self.model_type),
-            on_response_completed=lambda response_id: self._save_response_chain_state(
+
+        def _on_response_completed(response_id: str) -> None:
+            self._save_response_chain_state(
                 session_key=chain_state["session_key"],
                 response_id=response_id,
                 message_count=chain_state["message_count"],
-            ),
+            )
+
+        return iter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
         )
 
     async def _arequest_responses_stream(
@@ -773,14 +779,18 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-        return aiter_response_events_to_chat_chunks(
-            event_stream=event_stream,
-            model=str(self.model_type),
-            on_response_completed=lambda response_id: self._save_response_chain_state(
+
+        def _on_response_completed(response_id: str) -> None:
+            self._save_response_chain_state(
                 session_key=chain_state["session_key"],
                 response_id=response_id,
                 message_count=chain_state["message_count"],
-            ),
+            )
+
+        return aiter_response_events_to_chat_chunks(
+            event_stream=event_stream,
+            model=str(self.model_type),
+            on_response_completed=_on_response_completed,
         )
 
     def _request_chat_completion(
