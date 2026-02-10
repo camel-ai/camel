@@ -112,6 +112,7 @@
                   "cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
                   "cookbooks/advanced_features/agents_with_memory",
                   "cookbooks/advanced_features/agents_with_rag",
+                  "cookbooks/advanced_features/agents_with_oceanbase_advanced_usage",
                   "cookbooks/advanced_features/agents_with_tools",
                   "cookbooks/advanced_features/agents_with_tools_from_ACI",
                   "cookbooks/advanced_features/agents_with_tools_from_Composio",

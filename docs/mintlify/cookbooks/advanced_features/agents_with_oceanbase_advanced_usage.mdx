@@ -1,0 +1,130 @@
+---
+title: "Agents with OceanBase (Advanced Usage)"
+---
+
+Star us on GitHub: https://github.com/camel-ai/camel
+
+## Overview
+
+OceanBase is a MySQL-compatible distributed database that can also serve as a vector database via OceanBase Vector. CAMEL provides `OceanBaseStorage` (backed by `pyobvector`) so you can store embeddings + metadata and run ANN similarity search.
+
+This cookbook shows how to:
+
+- Run OceanBase Community Edition (CE) locally with Docker (4.3.5+).
+- Use `OceanBaseStorage` as a persistent vector store in CAMEL.
+- Tune vector index settings and query strategy for different data scales.
+
+## Installation
+
+You need the RAG/vector dependencies (this pulls in `pyobvector` on supported Python versions):
+
+```python
+!pip install "camel-ai[rag]==0.2.85"
+```
+
+If you already have a local checkout installed from source, you can skip this step.
+
+## Recipe 1: Install OceanBase CE with Docker (4.3.5+)
+
+OceanBase provides an official Docker image: `oceanbase/oceanbase-ce`.
+
+- Port: `2881`
+- Recommended environment variable: `OB_TENANT_PASSWORD`
+
+Official image docs:
+
+- https://github.com/oceanbase/docker-images/tree/main/oceanbase-ce
+- https://hub.docker.com/r/oceanbase/oceanbase-ce
+
+### Option A: Quick start (docker run)
+
+```bash
+docker pull oceanbase/oceanbase-ce
+
+docker run -d --name oceanbase-ce \
+  -p 2881:2881 \
+  -e MODE=mini \
+  -e OB_TENANT_PASSWORD=TenantPassw0rd! \
+  oceanbase/oceanbase-ce
+
+docker logs -f oceanbase-ce
+```
+
+### Option B: With persistence
+
+```bash
+mkdir -p ob ob-cluster
+
+docker run -d --name oceanbase-ce \
+  -p 2881:2881 \
+  -e MODE=mini \
+  -e OB_TENANT_PASSWORD=TenantPassw0rd! \
+  -v "$PWD/ob:/root/ob" \
+  -v "$PWD/ob-cluster:/root/.obd/cluster" \
+  oceanbase/oceanbase-ce
+```
+
+Optional sanity check (if you have a MySQL client installed):
+
+```bash
+mysql -h 127.0.0.1 -P 2881 -u root@test -p
+```
+
+Notes:
+
+- Default tenants/users can vary by image version and your configuration.
+- For local dev, `MODE=mini` reduces resource usage.
+
+## Recipe 2: Use OceanBaseStorage in CAMEL
+
+`OceanBaseStorage` stores vectors and metadata in an OceanBase table and creates an HNSW vector index if the table does not already exist.
+
+Key parameters (see `camel/storages/vectordb_storages/oceanbase.py`):
+
+- `vector_dim`: embedding dimension
+- `table_name`: table name in OceanBase
+- `uri`: `host:port` (for local Docker: `127.0.0.1:2881`)
+- `user`: typically tenant-qualified (e.g. `root@test`)
+- `password`: password for the user
+- `db_name`: database name
+- `distance`: `"l2"` or `"cosine"`
+
+IMPORTANT: In the current CAMEL implementation, the HNSW index build parameters are fixed in code:
+
+- `m = 16`
+- `ef_construction = 256`
+
+If you need different HNSW parameters, you must modify/extend the implementation.
+
+## Recipe 3: Index tuning best practices by scale
+
+OceanBase uses an HNSW-style ANN index for vector search. HNSW tuning is always a tradeoff among recall, latency, build time, and memory.
+
+Terminology (common across HNSW implementations):
+
+- `m`: graph connectivity (higher improves recall but increases memory and build time)
+- `ef_construction`: build-time search width (higher improves recall but increases build time)
+- `ef_search` (or similar): query-time search width (higher improves recall but increases query latency)
+
+Practical guidance:
+
+Small collections (<= 100k vectors):
+
+- Favor fast iteration: keep build settings moderate and increase query-time effort when needed.
+
+Medium collections (~100k to 5M vectors):
+
+- Measure P95/P99 latency and recall. If you cannot reach recall targets without excessive query latency, increase build settings and rebuild.
+
+Large collections (5M+ vectors):
+
+- Plan for memory and rebuild time. Consider sharding/partitioning by tenant/corpus/time to reduce the search space.
+
+CAMEL-specific note:
+
+- `OceanBaseStorage` creates the index with fixed values (`m=16`, `ef_construction=256`) when the table is first created.
+
+Metadata and relational index tips:
+
+- Vector similarity search is only part of most RAG workloads.
+- If you filter by tenant, document id, time range, or tags, consider adding structured columns and using relational indexes to speed up filters.
