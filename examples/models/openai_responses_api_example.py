@@ -63,7 +63,7 @@ def create_responses_model(stream: bool = False):
         model_type=ModelType.GPT_4_1_MINI,
         model_config_dict=model_config,
         api_mode="responses",
-    )
+    ) 
 
 
 def example_basic_non_stream() -> None:
