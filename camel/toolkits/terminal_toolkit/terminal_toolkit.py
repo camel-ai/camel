@@ -27,11 +27,15 @@ from camel.logger import get_logger
 from camel.toolkits import manual_timeout
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.terminal_toolkit.go_runtime import (
+    ensure_go_available,
+)
+from camel.toolkits.terminal_toolkit.java_runtime import (
+    ensure_java_available,
+)
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
-    ensure_go_available,
-    ensure_java_available,
     ensure_uv_available,
     sanitize_command,
     setup_initial_env_with_uv,
