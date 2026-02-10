@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import copy
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
@@ -56,7 +57,6 @@ REASONSER_UNSUPPORTED_PARAMS = [
     "frequency_penalty",
     "logprobs",
     "top_logprobs",
-    "tools",
 ]
 
 
@@ -124,6 +124,89 @@ class DeepSeekModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+        # Map tool_call_id -> reasoning_content for multi-turn tool calls.
+        # Since ChatAgent memory doesn't store reasoning_content, we need to
+        # keep all of them and re-inject on every request within the same turn.
+        # Cleared at the start of a new turn (new user message).
+        self._reasoning_content_map: Dict[str, str] = {}
+
+    def _is_thinking_enabled(self) -> bool:
+        r"""Check if thinking (reasoning) mode is enabled.
+
+        Returns:
+            bool: Whether thinking mode is enabled.
+        """
+        if self.model_type in [ModelType.DEEPSEEK_REASONER]:
+            return True
+        thinking = self.model_config_dict.get("thinking")
+        return isinstance(thinking, dict) and thinking.get("type") == "enabled"
+
+    def _inject_reasoning_content(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> List[OpenAIMessage]:
+        r"""Inject reasoning_content into all assistant messages that need it.
+
+        Args:
+            messages: The original messages list.
+
+        Returns:
+            Messages with reasoning_content injected where needed.
+        """
+        if not messages:
+            return messages
+
+        # New turn (last message is user) -> clear map and return as-is
+        last_msg = messages[-1]
+        if isinstance(last_msg, dict) and last_msg.get("role") == "user":
+            self._reasoning_content_map.clear()
+            return messages
+
+        if not self._reasoning_content_map:
+            return messages
+
+        # Inject reasoning_content into ALL assistant messages that need it
+        processed: List[OpenAIMessage] = []
+        for msg in messages:
+            if (
+                isinstance(msg, dict)
+                and msg.get("role") == "assistant"
+                and msg.get("tool_calls")
+                and "reasoning_content" not in msg
+            ):
+                tool_calls = cast(
+                    List[Dict[str, Any]], msg.get("tool_calls", [])
+                )
+                if tool_calls:
+                    first_id = tool_calls[0].get("id", "")
+                    reasoning = self._reasoning_content_map.get(first_id)
+                    if reasoning:
+                        new_msg = cast(Dict[str, Any], copy.deepcopy(msg))
+                        new_msg["reasoning_content"] = reasoning
+                        processed.append(cast(OpenAIMessage, new_msg))
+                        continue
+            processed.append(msg)
+
+        return processed
+
+    def _store_reasoning_content(self, response: ChatCompletion) -> None:
+        r"""Store reasoning_content from the model response.
+
+        Args:
+            response: The model response.
+        """
+        if not response.choices:
+            return
+
+        message = response.choices[0].message
+        reasoning = getattr(message, "reasoning_content", None)
+        tool_calls = getattr(message, "tool_calls", None)
+
+        if reasoning and tool_calls:
+            for tc in tool_calls:
+                tc_id = getattr(tc, "id", None)
+                if tc_id:
+                    self._reasoning_content_map[tc_id] = reasoning
 
     def _prepare_request(
         self,
@@ -131,13 +214,13 @@ class DeepSeekModel(OpenAICompatibleModel):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
+        request_config = copy.deepcopy(self.model_config_dict)
 
         if self.model_type in [
             ModelType.DEEPSEEK_REASONER,
         ]:
             logger.warning(
-                "Warning: You are using an DeepSeek Reasoner model, "
+                "Warning: You are using a DeepSeek Reasoner model, "
                 "which has certain limitations, reference: "
                 "`https://api-docs.deepseek.com/guides/reasoning_model"
                 "#api-parameters`.",
@@ -147,9 +230,14 @@ class DeepSeekModel(OpenAICompatibleModel):
                 for key, value in request_config.items()
                 if key not in REASONSER_UNSUPPORTED_PARAMS
             }
-        import copy
 
-        request_config = copy.deepcopy(self.model_config_dict)
+        thinking = request_config.pop("thinking", None)
+        if thinking:
+            request_config["extra_body"] = {
+                **request_config.get("extra_body", {}),
+                "thinking": thinking,
+            }
+
         # Remove strict from each tool's function parameters since DeepSeek
         # does not support them
         if tools:
@@ -175,12 +263,19 @@ class DeepSeekModel(OpenAICompatibleModel):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools
+                to use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if self._is_thinking_enabled():
+            messages = self._inject_reasoning_content(messages)
+
         self._log_and_trace()
 
         request_config = self._prepare_request(
@@ -192,6 +287,12 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+
+        # Store reasoning_content for future requests
+        if self._is_thinking_enabled() and isinstance(
+            response, ChatCompletion
+        ):
+            self._store_reasoning_content(response)
 
         return response
 
@@ -207,21 +308,35 @@ class DeepSeekModel(OpenAICompatibleModel):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools
+                to use for the request.
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        if self._is_thinking_enabled():
+            messages = self._inject_reasoning_content(messages)
+
         self._log_and_trace()
 
         request_config = self._prepare_request(
             messages, response_format, tools
         )
+
         response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
+
+        # Store reasoning_content for future requests
+        if self._is_thinking_enabled() and isinstance(
+            response, ChatCompletion
+        ):
+            self._store_reasoning_content(response)
 
         return response
