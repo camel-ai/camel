@@ -69,6 +69,30 @@ def _extract_tool_call(item: Any) -> Dict[str, Any]:
     }
 
 
+def _build_chat_completion_chunk(
+    *,
+    chunk_id: str,
+    model: str,
+    delta: Dict[str, Any],
+    finish_reason: Optional[str] = None,
+    usage: Optional[Dict[str, int]] = None,
+) -> ChatCompletionChunk:
+    return ChatCompletionChunk.construct(
+        id=chunk_id,
+        choices=[
+            {
+                "index": 0,
+                "delta": delta,
+                "finish_reason": finish_reason,
+            }
+        ],
+        created=int(time.time()),
+        model=model,
+        object="chat.completion.chunk",
+        usage=usage,
+    )
+
+
 def response_to_chat_completion(
     response: Any,
     model: str,
@@ -121,8 +145,8 @@ def iter_response_events_to_chat_chunks(
     model: str,
     on_response_completed: Optional[Callable[[str], None]] = None,
 ) -> Generator[ChatCompletionChunk, None, None]:
-    saw_tool_call = False
-    saw_finish_reason = False
+    has_tool_call = False
+    has_finish_reason = False
     response_id = ""
     usage: Optional[Dict[str, int]] = None
     tool_idx_map: Dict[int, int] = {}
@@ -143,18 +167,10 @@ def iter_response_events_to_chat_chunks(
             delta = _get(event, "delta", "") or ""
             chunk_id = _get(event, "item_id", response_id)
             if delta:
-                yield ChatCompletionChunk.construct(
-                    id=chunk_id,
-                    choices=[
-                        {
-                            "index": 0,
-                            "delta": {"content": delta},
-                            "finish_reason": None,
-                        }
-                    ],
-                    created=int(time.time()),
+                yield _build_chat_completion_chunk(
+                    chunk_id=chunk_id,
                     model=model,
-                    object="chat.completion.chunk",
+                    delta={"content": delta},
                 )
             continue
 
@@ -165,7 +181,7 @@ def iter_response_events_to_chat_chunks(
         ):
             item = _get(event, "item")
             if _get(item, "type") == "function_call":
-                saw_tool_call = True
+                has_tool_call = True
                 out_idx = int(_get(event, "output_index", 0))
                 mapped_idx = tool_idx_map.setdefault(
                     out_idx, len(tool_idx_map)
@@ -187,18 +203,10 @@ def iter_response_events_to_chat_chunks(
                     }
                     tool_meta_emitted[out_idx] = True
                     chunk_id = _get(item, "id", response_id)
-                    yield ChatCompletionChunk.construct(
-                        id=chunk_id,
-                        choices=[
-                            {
-                                "index": 0,
-                                "delta": {"tool_calls": [tc]},
-                                "finish_reason": None,
-                            }
-                        ],
-                        created=int(time.time()),
+                    yield _build_chat_completion_chunk(
+                        chunk_id=chunk_id,
                         model=model,
-                        object="chat.completion.chunk",
+                        delta={"tool_calls": [tc]},
                     )
                 else:  # response.output_item.done
                     if not tool_args_delta_seen.get(out_idx, False):
@@ -215,18 +223,10 @@ def iter_response_events_to_chat_chunks(
                             tc["type"] = "function"
                             tc["function"]["name"] = _get(item, "name", "")
                         chunk_id = _get(item, "id", response_id)
-                        yield ChatCompletionChunk.construct(
-                            id=chunk_id,
-                            choices=[
-                                {
-                                    "index": 0,
-                                    "delta": {"tool_calls": [tc]},
-                                    "finish_reason": None,
-                                }
-                            ],
-                            created=int(time.time()),
+                        yield _build_chat_completion_chunk(
+                            chunk_id=chunk_id,
                             model=model,
-                            object="chat.completion.chunk",
+                            delta={"tool_calls": [tc]},
                         )
             continue
 
@@ -235,7 +235,7 @@ def iter_response_events_to_chat_chunks(
             "response.function_call_arguments.delta",
             "response.output_item.function_call_arguments.delta",
         ):
-            saw_tool_call = True
+            has_tool_call = True
             out_idx = int(_get(event, "output_index", 0))
             mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
             tool_args_delta_seen[out_idx] = True
@@ -245,18 +245,10 @@ def iter_response_events_to_chat_chunks(
                 "function": {"arguments": delta},
             }
             chunk_id = _get(event, "item_id", response_id)
-            yield ChatCompletionChunk.construct(
-                id=chunk_id,
-                choices=[
-                    {
-                        "index": 0,
-                        "delta": {"tool_calls": [tc]},
-                        "finish_reason": None,
-                    }
-                ],
-                created=int(time.time()),
+            yield _build_chat_completion_chunk(
+                chunk_id=chunk_id,
                 model=model,
-                object="chat.completion.chunk",
+                delta={"tool_calls": [tc]},
             )
             continue
 
@@ -267,32 +259,24 @@ def iter_response_events_to_chat_chunks(
                 usage = _usage_to_openai(_get(resp, "usage"))
             if on_response_completed is not None and response_id:
                 on_response_completed(response_id)
-            finish_reason = "tool_calls" if saw_tool_call else "stop"
-            saw_finish_reason = True
-            yield ChatCompletionChunk.construct(
-                id=response_id,
-                choices=[
-                    {
-                        "index": 0,
-                        "delta": {},
-                        "finish_reason": finish_reason,
-                    }
-                ],
-                created=int(time.time()),
+            finish_reason = "tool_calls" if has_tool_call else "stop"
+            has_finish_reason = True
+            yield _build_chat_completion_chunk(
+                chunk_id=response_id,
                 model=model,
-                object="chat.completion.chunk",
+                delta={},
+                finish_reason=finish_reason,
                 usage=usage,
             )
             continue
 
     # Safety fallback for abnormal stream termination.
-    if not saw_finish_reason:
-        yield ChatCompletionChunk.construct(
-            id=response_id,
-            choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
-            created=int(time.time()),
+    if not has_finish_reason:
+        yield _build_chat_completion_chunk(
+            chunk_id=response_id,
             model=model,
-            object="chat.completion.chunk",
+            delta={},
+            finish_reason="stop",
             usage=usage,
         )
 
@@ -302,8 +286,8 @@ async def aiter_response_events_to_chat_chunks(
     model: str,
     on_response_completed: Optional[Callable[[str], None]] = None,
 ) -> AsyncGenerator[ChatCompletionChunk, None]:
-    saw_tool_call = False
-    saw_finish_reason = False
+    has_tool_call = False
+    has_finish_reason = False
     response_id = ""
     usage: Optional[Dict[str, int]] = None
     tool_idx_map: Dict[int, int] = {}
@@ -324,18 +308,10 @@ async def aiter_response_events_to_chat_chunks(
             delta = _get(event, "delta", "") or ""
             chunk_id = _get(event, "item_id", response_id)
             if delta:
-                yield ChatCompletionChunk.construct(
-                    id=chunk_id,
-                    choices=[
-                        {
-                            "index": 0,
-                            "delta": {"content": delta},
-                            "finish_reason": None,
-                        }
-                    ],
-                    created=int(time.time()),
+                yield _build_chat_completion_chunk(
+                    chunk_id=chunk_id,
                     model=model,
-                    object="chat.completion.chunk",
+                    delta={"content": delta},
                 )
             continue
 
@@ -345,7 +321,7 @@ async def aiter_response_events_to_chat_chunks(
         ):
             item = _get(event, "item")
             if _get(item, "type") == "function_call":
-                saw_tool_call = True
+                has_tool_call = True
                 out_idx = int(_get(event, "output_index", 0))
                 mapped_idx = tool_idx_map.setdefault(
                     out_idx, len(tool_idx_map)
@@ -363,18 +339,10 @@ async def aiter_response_events_to_chat_chunks(
                     }
                     tool_meta_emitted[out_idx] = True
                     chunk_id = _get(item, "id", response_id)
-                    yield ChatCompletionChunk.construct(
-                        id=chunk_id,
-                        choices=[
-                            {
-                                "index": 0,
-                                "delta": {"tool_calls": [tc]},
-                                "finish_reason": None,
-                            }
-                        ],
-                        created=int(time.time()),
+                    yield _build_chat_completion_chunk(
+                        chunk_id=chunk_id,
                         model=model,
-                        object="chat.completion.chunk",
+                        delta={"tool_calls": [tc]},
                     )
                 else:
                     if not tool_args_delta_seen.get(out_idx, False):
@@ -391,18 +359,10 @@ async def aiter_response_events_to_chat_chunks(
                             tc["type"] = "function"
                             tc["function"]["name"] = _get(item, "name", "")
                         chunk_id = _get(item, "id", response_id)
-                        yield ChatCompletionChunk.construct(
-                            id=chunk_id,
-                            choices=[
-                                {
-                                    "index": 0,
-                                    "delta": {"tool_calls": [tc]},
-                                    "finish_reason": None,
-                                }
-                            ],
-                            created=int(time.time()),
+                        yield _build_chat_completion_chunk(
+                            chunk_id=chunk_id,
                             model=model,
-                            object="chat.completion.chunk",
+                            delta={"tool_calls": [tc]},
                         )
             continue
 
@@ -410,7 +370,7 @@ async def aiter_response_events_to_chat_chunks(
             "response.function_call_arguments.delta",
             "response.output_item.function_call_arguments.delta",
         ):
-            saw_tool_call = True
+            has_tool_call = True
             out_idx = int(_get(event, "output_index", 0))
             mapped_idx = tool_idx_map.setdefault(out_idx, len(tool_idx_map))
             tool_args_delta_seen[out_idx] = True
@@ -420,18 +380,10 @@ async def aiter_response_events_to_chat_chunks(
                 "function": {"arguments": delta},
             }
             chunk_id = _get(event, "item_id", response_id)
-            yield ChatCompletionChunk.construct(
-                id=chunk_id,
-                choices=[
-                    {
-                        "index": 0,
-                        "delta": {"tool_calls": [tc]},
-                        "finish_reason": None,
-                    }
-                ],
-                created=int(time.time()),
+            yield _build_chat_completion_chunk(
+                chunk_id=chunk_id,
                 model=model,
-                object="chat.completion.chunk",
+                delta={"tool_calls": [tc]},
             )
             continue
 
@@ -442,30 +394,22 @@ async def aiter_response_events_to_chat_chunks(
                 usage = _usage_to_openai(_get(resp, "usage"))
             if on_response_completed is not None and response_id:
                 on_response_completed(response_id)
-            finish_reason = "tool_calls" if saw_tool_call else "stop"
-            saw_finish_reason = True
-            yield ChatCompletionChunk.construct(
-                id=response_id,
-                choices=[
-                    {
-                        "index": 0,
-                        "delta": {},
-                        "finish_reason": finish_reason,
-                    }
-                ],
-                created=int(time.time()),
+            finish_reason = "tool_calls" if has_tool_call else "stop"
+            has_finish_reason = True
+            yield _build_chat_completion_chunk(
+                chunk_id=response_id,
                 model=model,
-                object="chat.completion.chunk",
+                delta={},
+                finish_reason=finish_reason,
                 usage=usage,
             )
             continue
 
-    if not saw_finish_reason:
-        yield ChatCompletionChunk.construct(
-            id=response_id,
-            choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
-            created=int(time.time()),
+    if not has_finish_reason:
+        yield _build_chat_completion_chunk(
+            chunk_id=response_id,
             model=model,
-            object="chat.completion.chunk",
+            delta={},
+            finish_reason="stop",
             usage=usage,
         )
