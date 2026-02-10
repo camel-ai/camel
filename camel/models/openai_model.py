@@ -25,6 +25,7 @@ from typing import (
     Optional,
     Type,
     Union,
+    cast,
 )
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
@@ -342,8 +343,11 @@ class OpenAIModel(BaseModelBackend):
         if response_format:
             if is_streaming:
                 if self._api_mode == "responses":
-                    return self._request_responses_stream(
-                        messages, response_format, tools
+                    return cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(
+                            messages, response_format, tools
+                        ),
                     )
                 return self._request_stream_parse(
                     messages, response_format, tools
@@ -355,10 +359,12 @@ class OpenAIModel(BaseModelBackend):
                     )
                 return self._request_parse(messages, response_format, tools)
         else:
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]]
             if self._api_mode == "responses":
                 if is_streaming:
-                    result = self._request_responses_stream(
-                        messages, None, tools
+                    result = cast(
+                        Stream[ChatCompletionChunk],
+                        self._request_responses_stream(messages, None, tools),
                     )
                 else:
                     result = self._request_responses(messages, None, tools)
@@ -409,8 +415,11 @@ class OpenAIModel(BaseModelBackend):
         if response_format:
             if is_streaming:
                 if self._api_mode == "responses":
-                    return await self._arequest_responses_stream(
-                        messages, response_format, tools
+                    return cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, response_format, tools
+                        ),
                     )
                 return await self._arequest_stream_parse(
                     messages, response_format, tools
@@ -424,10 +433,17 @@ class OpenAIModel(BaseModelBackend):
                     messages, response_format, tools
                 )
         else:
+            result: Union[
+                ChatCompletion,
+                AsyncStream[ChatCompletionChunk],
+            ]
             if self._api_mode == "responses":
                 if is_streaming:
-                    result = await self._arequest_responses_stream(
-                        messages, None, tools
+                    result = cast(
+                        AsyncStream[ChatCompletionChunk],
+                        await self._arequest_responses_stream(
+                            messages, None, tools
+                        ),
                     )
                 else:
                     result = await self._arequest_responses(

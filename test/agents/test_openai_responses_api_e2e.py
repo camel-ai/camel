@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel, Field
@@ -54,9 +54,9 @@ def _create_responses_model(
     *,
     stream: bool = False,
     temperature: float = 0.0,
-    tools: Optional[list] = None,
+    tools: Optional[List[Dict[str, Any]]] = None,
 ):
-    model_config = {
+    model_config: Dict[str, Any] = {
         "temperature": temperature,
         "stream": stream,
     }
