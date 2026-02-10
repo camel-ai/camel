@@ -14,10 +14,17 @@
 import platform
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from camel.toolkits import TerminalToolkit
+from camel.toolkits.terminal_toolkit.utils import (
+    _find_java_home,
+    _get_platform_info,
+    ensure_go_available,
+    ensure_java_available,
+)
 
 
 @pytest.fixture
@@ -158,3 +165,209 @@ def test_shell_write_content_to_file_safe_mode_blocks_path_traversal(
     )
     assert "error" in result.lower()
     assert "outside" in result.lower() or "working directory" in result.lower()
+
+
+
+
+
+class TestGetPlatformInfo:
+    """Tests for _get_platform_info()."""
+
+    @patch("camel.toolkits.terminal_toolkit.utils.platform")
+    def test_linux_amd64(self, mock_platform):
+        mock_platform.system.return_value = "Linux"
+        mock_platform.machine.return_value = "x86_64"
+        os_name, arch = _get_platform_info()
+        assert os_name == "linux"
+        assert arch == "amd64"
+
+    @patch("camel.toolkits.terminal_toolkit.utils.platform")
+    def test_darwin_arm64(self, mock_platform):
+        mock_platform.system.return_value = "Darwin"
+        mock_platform.machine.return_value = "arm64"
+        os_name, arch = _get_platform_info()
+        assert os_name == "darwin"
+        assert arch == "arm64"
+
+    @patch("camel.toolkits.terminal_toolkit.utils.platform")
+    def test_windows_amd64(self, mock_platform):
+        mock_platform.system.return_value = "Windows"
+        mock_platform.machine.return_value = "AMD64"
+        os_name, arch = _get_platform_info()
+        assert os_name == "windows"
+        assert arch == "amd64"
+
+    @patch("camel.toolkits.terminal_toolkit.utils.platform")
+    def test_unsupported_os(self, mock_platform):
+        mock_platform.system.return_value = "FreeBSD"
+        mock_platform.machine.return_value = "x86_64"
+        with pytest.raises(RuntimeError, match="Unsupported operating system"):
+            _get_platform_info()
+
+    @patch("camel.toolkits.terminal_toolkit.utils.platform")
+    def test_unsupported_arch(self, mock_platform):
+        mock_platform.system.return_value = "Linux"
+        mock_platform.machine.return_value = "mips"
+        with pytest.raises(RuntimeError, match="Unsupported architecture"):
+            _get_platform_info()
+
+
+class TestEnsureGoAvailable:
+    """Tests for ensure_go_available()."""
+
+    @patch("camel.toolkits.terminal_toolkit.utils.subprocess.run")
+    @patch("camel.toolkits.terminal_toolkit.utils.shutil.which")
+    def test_go_already_installed(self, mock_which, mock_run):
+        """Should return True without downloading if go is on PATH."""
+        mock_which.return_value = "/usr/local/go/bin/go"
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="go version go1.23.6 linux/amd64"
+        )
+
+        callback = MagicMock()
+        success, path = ensure_go_available(update_callback=callback)
+
+        assert success is True
+        assert path == "/usr/local/go/bin"
+        callback.assert_called()
+        # Should NOT have tried to download
+        assert "installing" not in str(callback.call_args_list).lower()
+
+    @patch(
+        "camel.toolkits.terminal_toolkit.utils._download_and_extract_runtime"
+    )
+    @patch("camel.toolkits.terminal_toolkit.utils._get_platform_info")
+    @patch("camel.toolkits.terminal_toolkit.utils.os.path.exists")
+    @patch("camel.toolkits.terminal_toolkit.utils.shutil.which")
+    def test_go_not_installed_downloads(
+        self, mock_which, mock_exists, mock_platform, mock_download
+    ):
+        """Should attempt download when go is not found."""
+        mock_which.return_value = None
+        mock_platform.return_value = ("linux", "amd64")
+        # First call: check if already downloaded (False)
+        # Second call: check after download (True)
+        mock_exists.side_effect = [False, True]
+        mock_download.return_value = True
+
+        callback = MagicMock()
+        success, _ = ensure_go_available(update_callback=callback)
+
+        assert success is True
+        mock_download.assert_called_once()
+        # Verify the URL contains the expected version and platform
+        call_kwargs = mock_download.call_args
+        assert (
+            "go1.23.6.linux-amd64.tar.gz"
+            in call_kwargs.kwargs["url"]
+        )
+
+    @patch("camel.toolkits.terminal_toolkit.utils._get_platform_info")
+    @patch("camel.toolkits.terminal_toolkit.utils.shutil.which")
+    def test_go_unsupported_platform(self, mock_which, mock_platform):
+        """Should return False for unsupported platforms."""
+        mock_which.return_value = None
+        mock_platform.side_effect = RuntimeError("Unsupported")
+
+        callback = MagicMock()
+        success, path = ensure_go_available(update_callback=callback)
+
+        assert success is False
+        assert path is None
+
+
+class TestEnsureJavaAvailable:
+    """Tests for ensure_java_available()."""
+
+    @patch("camel.toolkits.terminal_toolkit.utils.subprocess.run")
+    @patch("camel.toolkits.terminal_toolkit.utils.shutil.which")
+    def test_java_already_installed(self, mock_which, mock_run):
+        """Should return True without downloading if java is on PATH."""
+        mock_which.return_value = "/usr/lib/jvm/jdk-21/bin/java"
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stderr='openjdk version "21.0.2"',
+            stdout="",
+        )
+
+        callback = MagicMock()
+        success, path = ensure_java_available(update_callback=callback)
+
+        assert success is True
+        assert path == "/usr/lib/jvm/jdk-21"
+        callback.assert_called()
+
+    @patch(
+        "camel.toolkits.terminal_toolkit.utils._download_and_extract_runtime"
+    )
+    @patch("camel.toolkits.terminal_toolkit.utils._find_java_home")
+    @patch("camel.toolkits.terminal_toolkit.utils._get_platform_info")
+    @patch("camel.toolkits.terminal_toolkit.utils.shutil.which")
+    def test_java_not_installed_downloads(
+        self, mock_which, mock_platform, mock_find, mock_download
+    ):
+        """Should attempt download when java is not found."""
+        mock_which.return_value = None
+        mock_platform.return_value = ("linux", "amd64")
+        # First call: not found; second call: found after download
+        java_path = (
+            "/home/user/.camel/runtimes/java/jdk-21"
+        )
+        mock_find.side_effect = [None, java_path]
+        mock_download.return_value = True
+
+        callback = MagicMock()
+        success, path = ensure_java_available(update_callback=callback)
+
+        assert success is True
+        assert path == "/home/user/.camel/runtimes/java/jdk-21"
+        mock_download.assert_called_once()
+        # Verify Adoptium URL uses correct mappings
+        call_kwargs = mock_download.call_args
+        assert "api.adoptium.net" in call_kwargs.kwargs["url"]
+        assert "/21/ga/linux/x64/" in call_kwargs.kwargs["url"]
+
+
+class TestFindJavaHome:
+    """Tests for _find_java_home()."""
+
+    def test_finds_linux_java_home(self, tmp_path):
+        """Should find JAVA_HOME on Linux directory structure."""
+        jdk_dir = tmp_path / "jdk-21.0.2+13"
+        bin_dir = jdk_dir / "bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "java").touch()
+
+        result = _find_java_home(str(tmp_path), "linux")
+        assert result == str(jdk_dir)
+
+    def test_finds_macos_java_home(self, tmp_path):
+        """Should find JAVA_HOME on macOS directory structure."""
+        jdk_dir = tmp_path / "jdk-21.0.2+13"
+        home_bin = jdk_dir / "Contents" / "Home" / "bin"
+        home_bin.mkdir(parents=True)
+        (home_bin / "java").touch()
+
+        result = _find_java_home(str(tmp_path), "darwin")
+        assert result == str(jdk_dir / "Contents" / "Home")
+
+    def test_finds_windows_java_home(self, tmp_path):
+        """Should find JAVA_HOME on Windows directory structure."""
+        jdk_dir = tmp_path / "jdk-21.0.2+13"
+        bin_dir = jdk_dir / "bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "java.exe").touch()
+
+        result = _find_java_home(str(tmp_path), "windows")
+        assert result == str(jdk_dir)
+
+    def test_returns_none_when_no_java(self, tmp_path):
+        """Should return None when no JDK is found."""
+        (tmp_path / "some_other_dir").mkdir()
+        result = _find_java_home(str(tmp_path), "linux")
+        assert result is None
+
+    def test_returns_none_when_dir_missing(self):
+        """Should return None when the directory doesn't exist."""
+        result = _find_java_home("/nonexistent/path", "linux")
+        assert result is None

@@ -30,6 +30,8 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
+    ensure_go_available,
+    ensure_java_available,
     ensure_uv_available,
     sanitize_command,
     setup_initial_env_with_uv,
@@ -390,6 +392,12 @@ class TerminalToolkit(BaseToolkit):
 
             # Check Node.js availability
             check_nodejs_availability(update_callback)
+
+            # Check Go availability (auto-install if needed)
+            ensure_go_available(update_callback)
+
+            # Check Java availability (auto-install if needed)
+            ensure_java_available(update_callback)
         else:
             logger.info(
                 "[ENV INIT] Failed to create initial environment, "

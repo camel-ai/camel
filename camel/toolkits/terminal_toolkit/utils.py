@@ -12,14 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import hashlib
 import os
 import platform
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
+import urllib.request
 import venv
+import zipfile
 from typing import Optional, Set, Tuple
 
 from camel.logger import get_logger
@@ -676,3 +680,402 @@ def check_nodejs_availability(update_callback=None) -> Tuple[bool, str]:
             update_callback(f"Note: {info}.\n")
         logger.warning(f"Failed to check Node.js: {e}")
         return False, info
+
+
+# Runtime auto-install utilities
+
+# Pinned stable versions for auto-install
+_GO_VERSION = "1.23.6"
+_JAVA_VERSION = "21"
+_RUNTIMES_DIR = os.path.join(os.path.expanduser("~"), ".camel", "runtimes")
+
+
+def _get_platform_info() -> Tuple[str, str]:
+    r"""Detect the current OS and architecture for binary downloads.
+
+    Returns:
+        Tuple[str, str]: (os_name, arch) suitable for download URLs.
+            os_name: 'linux', 'darwin', or 'windows'
+            arch: 'amd64' or 'arm64'
+
+    Raises:
+        RuntimeError: If the OS or architecture is unsupported.
+    """
+    os_name = platform.system().lower()
+    if os_name not in ('linux', 'darwin', 'windows'):
+        raise RuntimeError(f"Unsupported operating system: {os_name}")
+
+    machine = platform.machine().lower()
+    arch_map = {
+        'x86_64': 'amd64',
+        'amd64': 'amd64',
+        'aarch64': 'arm64',
+        'arm64': 'arm64',
+    }
+    arch = arch_map.get(machine)
+    if arch is None:
+        raise RuntimeError(f"Unsupported architecture: {machine}")
+
+    return os_name, arch
+
+
+def _download_and_extract_runtime(
+    url: str,
+    target_dir: str,
+    archive_type: str = "tar.gz",
+    checksum_url: Optional[str] = None,
+    update_callback=None,
+) -> bool:
+    r"""Download and extract a runtime binary archive.
+
+    Args:
+        url (str): URL of the archive to download.
+        target_dir (str): Directory to extract the archive into.
+        archive_type (str): Type of archive - 'tar.gz' or 'zip'.
+            (default: :obj:`tar.gz`)
+        checksum_url (Optional[str]): URL to a SHA256 checksum file for
+            verification. (default: :obj:`None`)
+        update_callback: Optional callback function to receive status
+            updates.
+
+    Returns:
+        bool: True if download and extraction succeeded, False otherwise.
+    """
+    tmp_file = None
+    try:
+        os.makedirs(target_dir, exist_ok=True)
+
+        # Download to a temporary file
+        suffix = ".tar.gz" if archive_type == "tar.gz" else ".zip"
+        fd, tmp_file = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+
+        if update_callback:
+            update_callback(f"Downloading from {url}...\n")
+
+        # Use a proper User-Agent header to avoid 403 errors
+        # from CDNs that block Python's default User-Agent
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "camel-ai/runtime-installer"},
+        )
+        with urllib.request.urlopen(req) as response:
+            with open(tmp_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        # Verify checksum if provided
+        if checksum_url:
+            try:
+                if update_callback:
+                    update_callback("Verifying checksum...\n")
+                with urllib.request.urlopen(checksum_url) as response:
+                    checksum_data = response.read().decode('utf-8')
+
+                # Calculate SHA256 of downloaded file
+                sha256 = hashlib.sha256()
+                with open(tmp_file, 'rb') as f:
+                    for chunk in iter(lambda: f.read(8192), b''):
+                        sha256.update(chunk)
+                actual_hash = sha256.hexdigest()
+
+                # Check if our hash is in the checksum data
+                if actual_hash not in checksum_data:
+                    if update_callback:
+                        update_callback(
+                            "Checksum verification failed! "
+                            "Download may be corrupted.\n"
+                        )
+                    return False
+
+                if update_callback:
+                    update_callback("Checksum verified successfully.\n")
+            except Exception as e:
+                # Log warning but don't fail the install
+                logger.warning(f"Checksum verification skipped: {e}")
+                if update_callback:
+                    update_callback(
+                        f"Warning: Checksum verification skipped: {e}\n"
+                    )
+
+        # Extract the archive
+        if update_callback:
+            update_callback(f"Extracting to {target_dir}...\n")
+
+        if archive_type == "tar.gz":
+            with tarfile.open(tmp_file, 'r:gz') as tar:
+                tar.extractall(path=target_dir)
+        elif archive_type == "zip":
+            with zipfile.ZipFile(tmp_file, 'r') as zf:
+                zf.extractall(path=target_dir)
+        else:
+            if update_callback:
+                update_callback(f"Unsupported archive type: {archive_type}\n")
+            return False
+
+        return True
+
+    except urllib.error.URLError as e:
+        if update_callback:
+            update_callback(f"Download failed: {e}\n")
+        logger.error(f"Failed to download runtime: {e}")
+        return False
+    except (tarfile.TarError, zipfile.BadZipFile) as e:
+        if update_callback:
+            update_callback(f"Extraction failed: {e}\n")
+        logger.error(f"Failed to extract runtime archive: {e}")
+        return False
+    except Exception as e:
+        if update_callback:
+            update_callback(f"Runtime installation failed: {e}\n")
+        logger.error(f"Failed to install runtime: {e}")
+        return False
+    finally:
+        # Clean up temp file
+        if tmp_file and os.path.exists(tmp_file):
+            try:
+                os.remove(tmp_file)
+            except OSError:
+                pass
+
+
+def ensure_go_available(
+    update_callback=None,
+) -> Tuple[bool, Optional[str]]:
+    r"""Ensure Go is available, downloading it if necessary.
+
+    Checks if Go is already installed on the system. If not, downloads
+    the official Go binary for the current platform and extracts it to
+    ``~/.camel/runtimes/go/``.
+
+    Args:
+        update_callback: Optional callback function to receive status
+            updates.
+
+    Returns:
+        Tuple[bool, Optional[str]]: (success, go_bin_path) where
+            go_bin_path is the path to the Go bin directory that should
+            be added to PATH, or None if Go is not available.
+    """
+    # Check if Go is already available
+    existing_go = shutil.which("go")
+    if existing_go is not None:
+        try:
+            result = subprocess.run(
+                ["go", "version"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                version_info = result.stdout.strip()
+                info = f"Go is already available: {version_info}"
+                if update_callback:
+                    update_callback(f"{info}\n")
+                return True, os.path.dirname(existing_go)
+        except Exception:
+            pass
+
+    # Go not found, attempt auto-install
+    if update_callback:
+        update_callback(
+            f"Go not found, installing Go {_GO_VERSION}...\n"
+        )
+
+    try:
+        os_name, arch = _get_platform_info()
+    except RuntimeError as e:
+        if update_callback:
+            update_callback(f"Cannot auto-install Go: {e}\n")
+        return False, None
+
+    # Construct download URL
+    ext = "zip" if os_name == "windows" else "tar.gz"
+    filename = f"go{_GO_VERSION}.{os_name}-{arch}.{ext}"
+    url = f"https://go.dev/dl/{filename}"
+    checksum_url = f"https://go.dev/dl/{filename}.sha256"
+
+    go_runtime_dir = os.path.join(_RUNTIMES_DIR, "go")
+
+    # Check if already downloaded
+    go_bin_dir = os.path.join(go_runtime_dir, "go", "bin")
+    go_executable = "go.exe" if os_name == "windows" else "go"
+    if os.path.exists(os.path.join(go_bin_dir, go_executable)):
+        info = (
+            f"Go {_GO_VERSION} is already installed at "
+            f"{go_runtime_dir}"
+        )
+        if update_callback:
+            update_callback(f"{info}\n")
+        return True, go_bin_dir
+
+    archive_type = "zip" if os_name == "windows" else "tar.gz"
+    success = _download_and_extract_runtime(
+        url=url,
+        target_dir=go_runtime_dir,
+        archive_type=archive_type,
+        checksum_url=checksum_url,
+        update_callback=update_callback,
+    )
+
+    if success and os.path.exists(os.path.join(go_bin_dir, go_executable)):
+        if update_callback:
+            update_callback(
+                f"Go {_GO_VERSION} installed successfully at "
+                f"{go_runtime_dir}\n"
+            )
+        return True, go_bin_dir
+
+    if update_callback:
+        update_callback(
+            "Failed to install Go. "
+            "If needed, please install it manually.\n"
+        )
+    return False, None
+
+
+def ensure_java_available(
+    update_callback=None,
+) -> Tuple[bool, Optional[str]]:
+    r"""Ensure Java (JDK) is available, downloading it if necessary.
+
+    Checks if Java is already installed on the system. If not, downloads
+    Eclipse Temurin (Adoptium) JDK 21 LTS for the current platform and
+    extracts it to ``~/.camel/runtimes/java/``.
+
+    Args:
+        update_callback: Optional callback function to receive status
+            updates.
+
+    Returns:
+        Tuple[bool, Optional[str]]: (success, java_home_path) where
+            java_home_path is the JAVA_HOME directory, or None if Java
+            is not available.
+    """
+    # Check if Java is already available
+    existing_java = shutil.which("java")
+    if existing_java is not None:
+        try:
+            result = subprocess.run(
+                ["java", "-version"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            # java -version outputs to stderr
+            version_output = result.stderr.strip() or result.stdout.strip()
+            if result.returncode == 0:
+                info = f"Java is already available: {version_output}"
+                if update_callback:
+                    update_callback(f"{info}\n")
+                return True, os.path.dirname(
+                    os.path.dirname(existing_java)
+                )
+        except Exception:
+            pass
+
+    # Java not found, attempt auto-install
+    if update_callback:
+        update_callback(
+            f"Java not found, installing Adoptium Temurin JDK "
+            f"{_JAVA_VERSION} LTS...\n"
+        )
+
+    try:
+        os_name, arch = _get_platform_info()
+    except RuntimeError as e:
+        if update_callback:
+            update_callback(f"Cannot auto-install Java: {e}\n")
+        return False, None
+
+    # Map arch names for Adoptium API
+    adoptium_arch = "x64" if arch == "amd64" else arch
+    # Map OS names for Adoptium API
+    adoptium_os = "mac" if os_name == "darwin" else os_name
+
+    # Construct Adoptium API URL
+    url = (
+        f"https://api.adoptium.net/v3/binary/latest/"
+        f"{_JAVA_VERSION}/ga/{adoptium_os}/{adoptium_arch}/"
+        f"jdk/hotspot/normal/eclipse"
+    )
+
+    java_runtime_dir = os.path.join(_RUNTIMES_DIR, "java")
+    archive_type = "zip" if os_name == "windows" else "tar.gz"
+
+    # Check if already downloaded by looking for java executable
+    # in any subdirectory (Adoptium extracts to a versioned dir)
+    java_home = _find_java_home(java_runtime_dir, os_name)
+    if java_home:
+        info = f"Java JDK is already installed at {java_home}"
+        if update_callback:
+            update_callback(f"{info}\n")
+        return True, java_home
+
+    success = _download_and_extract_runtime(
+        url=url,
+        target_dir=java_runtime_dir,
+        archive_type=archive_type,
+        update_callback=update_callback,
+    )
+
+    if success:
+        java_home = _find_java_home(java_runtime_dir, os_name)
+        if java_home:
+            if update_callback:
+                update_callback(
+                    f"Adoptium Temurin JDK {_JAVA_VERSION} installed "
+                    f"successfully at {java_home}\n"
+                )
+            return True, java_home
+
+    if update_callback:
+        update_callback(
+            "Failed to install Java. "
+            "If needed, please install it manually.\n"
+        )
+    return False, None
+
+
+def _find_java_home(
+    java_runtime_dir: str, os_name: str
+) -> Optional[str]:
+    r"""Find the JAVA_HOME directory within the runtime directory.
+
+    Adoptium extracts to a versioned directory like
+    ``jdk-21.0.x+y/``. This helper scans for it.
+
+    Args:
+        java_runtime_dir (str): The parent directory where Java was
+            extracted.
+        os_name (str): The operating system name ('linux', 'darwin',
+            'windows').
+
+    Returns:
+        Optional[str]: The path to JAVA_HOME, or None if not found.
+    """
+    if not os.path.exists(java_runtime_dir):
+        return None
+
+    java_executable = "java.exe" if os_name == "windows" else "java"
+
+    for entry in os.listdir(java_runtime_dir):
+        entry_path = os.path.join(java_runtime_dir, entry)
+        if not os.path.isdir(entry_path):
+            continue
+
+        # On macOS, the structure is jdk-xxx/Contents/Home/bin/java
+        if os_name == "darwin":
+            java_path = os.path.join(
+                entry_path, "Contents", "Home", "bin", java_executable
+            )
+            if os.path.exists(java_path):
+                return os.path.join(entry_path, "Contents", "Home")
+
+        # On Linux/Windows, the structure is jdk-xxx/bin/java
+        java_path = os.path.join(entry_path, "bin", java_executable)
+        if os.path.exists(java_path):
+            return entry_path
+
+    return None
