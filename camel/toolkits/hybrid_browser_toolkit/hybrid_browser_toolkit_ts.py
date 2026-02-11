@@ -2018,6 +2018,17 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             pixel_mode: If True, create pixel-coordinate wrapper.
                         If False, create ref-based wrapper.
         """
+
+        def _propagate_attrs(
+            wrapper: Callable[..., Any],
+        ) -> Callable[..., Any]:
+            """Copy custom marker attributes from the original method."""
+            for attr in ("__listen_toolkit__",):
+                val = getattr(method, attr, None)
+                if val is not None:
+                    setattr(wrapper, attr, val)
+            return wrapper
+
         if tool_name == "browser_click":
             if pixel_mode:
 
@@ -2041,7 +2052,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     return await method(x=x, y=y)
 
                 browser_click_pixel.__name__ = "browser_click"
-                return browser_click_pixel
+                return _propagate_attrs(browser_click_pixel)
             else:
 
                 async def browser_click_ref(*, ref: str) -> Dict[str, Any]:
@@ -2059,7 +2070,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     return await method(ref=ref)
 
                 browser_click_ref.__name__ = "browser_click"
-                return browser_click_ref
+                return _propagate_attrs(browser_click_ref)
 
         elif tool_name == "browser_type":
             if pixel_mode:
@@ -2083,7 +2094,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     return await method(x=x, y=y, text=text)
 
                 browser_type_pixel.__name__ = "browser_type"
-                return browser_type_pixel
+                return _propagate_attrs(browser_type_pixel)
             else:
 
                 async def browser_type_ref(
@@ -2108,7 +2119,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     return await method(ref=ref, text=text, inputs=inputs)
 
                 browser_type_ref.__name__ = "browser_type"
-                return browser_type_ref
+                return _propagate_attrs(browser_type_ref)
 
         elif tool_name == "browser_mouse_drag":
             if pixel_mode:
@@ -2134,7 +2145,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     )
 
                 browser_mouse_drag_pixel.__name__ = "browser_mouse_drag"
-                return browser_mouse_drag_pixel
+                return _propagate_attrs(browser_mouse_drag_pixel)
             else:
 
                 async def browser_mouse_drag_ref(
@@ -2154,7 +2165,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     return await method(from_ref=from_ref, to_ref=to_ref)
 
                 browser_mouse_drag_ref.__name__ = "browser_mouse_drag"
-                return browser_mouse_drag_ref
+                return _propagate_attrs(browser_mouse_drag_ref)
 
         return method
 
