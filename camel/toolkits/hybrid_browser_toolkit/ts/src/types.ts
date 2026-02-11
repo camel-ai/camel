@@ -140,7 +140,26 @@ export interface PressKeyAction {
   keys: string[];
 }
 
-export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction;
+export interface UploadFileAction {
+  type: 'upload_file';
+  filePath: string;
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
+}
+
+export interface DownloadFileAction {
+  type: 'download_file';
+  // Ref mode
+  ref?: string;
+  // Pixel mode
+  x?: number;
+  y?: number;
+}
+
+export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction | UploadFileAction | DownloadFileAction;
 
 export interface VisualMarkResult {
   text: string;

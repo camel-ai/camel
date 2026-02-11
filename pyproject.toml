@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.85"
+version = "0.2.86"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -22,7 +22,7 @@ keywords = [
 ]
 dependencies = [
     "mcp>=1.3.0",
-    "tiktoken>=0.7.0,<0.8",
+    "tiktoken>=0.7.0,<=0.12",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.17.0,<0.18",
@@ -34,6 +34,7 @@ dependencies = [
     "astor>=0.8.1",
     "pillow>=10.0.0",
     "google-search-results>=2.4.2",
+    "pyyaml>=6.0.3",
 ]
 
 [tool.uv]

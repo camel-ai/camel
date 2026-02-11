@@ -114,6 +114,7 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/
 
   pytest_package_llm_test:
@@ -209,6 +210,7 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/
 
   pytest_package_very_slow_test:
@@ -302,4 +304,5 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/

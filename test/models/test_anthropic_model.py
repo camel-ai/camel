@@ -35,6 +35,7 @@ pytest.importorskip("anthropic", reason="anthropic package is required")
         ModelType.CLAUDE_3_7_SONNET,
         ModelType.CLAUDE_SONNET_4_5,
         ModelType.CLAUDE_OPUS_4_5,
+        ModelType.CLAUDE_OPUS_4_6,
         ModelType.CLAUDE_HAIKU_4_5,
         ModelType.CLAUDE_SONNET_4,
         ModelType.CLAUDE_OPUS_4,

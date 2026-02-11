@@ -219,6 +219,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_HAIKU_4_5 = "claude-haiku-4-5"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
+    CLAUDE_OPUS_4_6 = "claude-opus-4-6"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -702,6 +703,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
@@ -1541,6 +1543,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_OPUS_4_5,
+            ModelType.CLAUDE_OPUS_4_6,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_HAIKU_4_5,
             ModelType.CLAUDE_OPUS_4,
@@ -2105,6 +2108,35 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class JinaRerankerModelType(str, Enum):
+    r"""Model types for Jina AI Reranker.
+
+    These models are available through the Jina AI Reranker API for
+    re-ranking documents based on their relevance to a query.
+
+    For more information, please refer to:
+    https://jina.ai/reranker/
+    """
+
+    JINA_RERANKER_V2_BASE_MULTILINGUAL = "jina-reranker-v2-base-multilingual"
+    r"""Multilingual reranker model supporting 100+ languages. (Default)"""
+
+    JINA_RERANKER_V1_BASE_EN = "jina-reranker-v1-base-en"
+    r"""English base reranker model."""
+
+    JINA_RERANKER_V1_TINY_EN = "jina-reranker-v1-tiny-en"
+    r"""Lightweight English reranker model for faster inference."""
+
+    JINA_RERANKER_V1_TURBO_EN = "jina-reranker-v1-turbo-en"
+    r"""High-performance English reranker model."""
+
+    JINA_COLBERT_V2 = "jina-colbert-v2"
+    r"""ColBERT-based reranker for token-level matching."""
+
+    JINA_RERANKER_V3 = "jina-reranker-v3"
+    r"""Latest multilingual reranker with 131K context window (0.6B params)."""
 
 
 class HuggingFaceRepoType(str, Enum):
