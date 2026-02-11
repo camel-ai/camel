@@ -320,7 +320,12 @@ Evaluate the task result based on these criteria:
 Provide:
 - Quality score (0-100): Objective assessment of result quality
 - Specific issues list: Any problems found in the result
-- Quality sufficient: Boolean indicating if quality meets standards
+- Quality sufficient decision rule:
+  * In this system, **quality_score < 70 means quality is insufficient**
+  * If quality is insufficient, **recovery_strategy MUST NOT be null**
+  * If quality is sufficient, **recovery_strategy MUST be null**
+  * Do NOT add a separate `quality_sufficient` field; it is derived from
+    `quality_score` and `recovery_strategy`
 
 **STEP 2: DETERMINE RECOVERY STRATEGY (if quality insufficient)**
 
@@ -348,6 +353,8 @@ If a strategy is not in the ENABLED list, you CANNOT use it regardless of the gu
 - No explanations or text outside the JSON structure
 - Ensure all required fields are included
 - Use null for optional fields when not applicable
+- For quality evaluation: if `quality_score < 70`, `recovery_strategy` MUST be
+  a non-null enabled strategy
 - **MANDATORY: The recovery_strategy MUST be one of the ENABLED strategies listed above. Using a disabled strategy will cause an error.**
 
 **TASK INFORMATION:**
