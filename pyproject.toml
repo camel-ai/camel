@@ -61,7 +61,7 @@ dev = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=75.8.0,<76",
-    "uv>=0.7.0,<0.8",
+    "uv>=0.7.0,<0.10",
     "Flask>=2.0",
 ]
 docs = [
