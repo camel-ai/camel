@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, List, Optional, Union
 
-import torch
-
 from camel.models.reward import BaseRewardModel
 from camel.types import ModelType
+from camel.utils import dependencies_required
 
 
 class SkyworkRewardModel(BaseRewardModel):
@@ -36,6 +35,7 @@ class SkyworkRewardModel(BaseRewardModel):
             (default: :obj:`offload`)
     """
 
+    @dependencies_required('torch', 'transformers')
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -45,6 +45,7 @@ class SkyworkRewardModel(BaseRewardModel):
         attn_implementation: Optional[str] = "flash_attention_2",
         offload_folder: Optional[str] = "offload",
     ) -> None:
+        import torch
         from transformers import (
             AutoModelForSequenceClassification,
             AutoTokenizer,
@@ -70,6 +71,8 @@ class SkyworkRewardModel(BaseRewardModel):
         Returns:
             ChatCompletion: A ChatCompletion object with the scores.
         """
+        import torch
+
         inputs = self._tokenizer.apply_chat_template(
             messages,
             tokenize=True,
