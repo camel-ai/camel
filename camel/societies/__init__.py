@@ -14,9 +14,13 @@
 from .babyagi_playing import BabyAGI
 from .role_playing import RolePlaying
 from .workforce import Workforce
+from .mailbox_society import AgentCard, MailboxMessage, MailboxSociety
 
 __all__ = [
     'RolePlaying',
     'BabyAGI',
     'Workforce',
+    'MailboxSociety',
+    'AgentCard',
+    'MailboxMessage',
 ]
