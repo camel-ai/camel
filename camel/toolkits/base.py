@@ -13,7 +13,22 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import inspect
-from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypeVar
+import json
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+)
+
+from docstring_parser import parse
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -114,6 +129,172 @@ class BaseToolkit(metaclass=AgentOpsMeta):
                 the MCP server in.
         """
         self.mcp.run(mode)
+
+    def _get_skill_state_path(
+        self, session_id: str = "default", state_dir: Optional[str] = None
+    ) -> Path:
+        r"""Get the state file path for this toolkit."""
+        base_dir = (
+            Path(state_dir or tempfile.gettempdir()) / "camel_skill_state"
+        )
+        base_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = self.__class__.__name__.replace(" ", "_")
+        return base_dir / f"{safe_name}_{session_id}.json"
+
+    def save_state(
+        self,
+        state: Dict[str, Any],
+        session_id: str = "default",
+        state_dir: Optional[str] = None,
+    ) -> Path:
+        r"""Save state to a JSON file.
+
+        Args:
+            state: Dictionary of state to save.
+            session_id: Session identifier.
+            state_dir: Optional custom directory for state files.
+
+        Returns:
+            Path to the saved state file.
+        """
+        state_file = self._get_skill_state_path(session_id, state_dir)
+        data = {
+            "toolkit": self.__class__.__name__,
+            "session_id": session_id,
+            "updated_at": datetime.now().isoformat(),
+            "state": state,
+        }
+        with open(state_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return state_file
+
+    def load_state(
+        self,
+        session_id: str = "default",
+        state_dir: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        r"""Load state from a JSON file.
+
+        Args:
+            session_id: Session identifier.
+            state_dir: Optional custom directory for state files.
+
+        Returns:
+            The state dictionary if found, None otherwise.
+        """
+        state_file = self._get_skill_state_path(session_id, state_dir)
+        if not state_file.exists():
+            return None
+        try:
+            with open(state_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data.get("state")
+        except (json.JSONDecodeError, KeyError):
+            return None
+
+    def to_skill(
+        self,
+        output_dir: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        content: Optional[str] = None,
+    ) -> Path:
+        r"""Convert this toolkit to a skill file.
+
+        Generates a markdown file documenting the toolkit's tools, which can
+        be used as a skill/plugin for AI coding assistants.
+
+        Args:
+            output_dir: Directory to write the skill file. Defaults to
+                `./skills/` in the current directory.
+            name: Custom skill name. Defaults to toolkit class name in
+                kebab-case.
+            description: Custom description. Defaults to class docstring.
+            content: Custom skill content. If None, auto-generates from
+                tool docstrings.
+
+        Returns:
+            Path to the generated skill file.
+
+        Example:
+            >>> from camel.toolkits import MathToolkit
+            >>> toolkit = MathToolkit()
+            >>> skill_path = toolkit.to_skill(name="math")
+        """
+        # Generate skill name
+        if not name:
+            class_name = self.__class__.__name__
+            if class_name.endswith('Toolkit'):
+                class_name = class_name[:-7]
+            name = ''.join(
+                f'-{c.lower()}' if c.isupper() else c for c in class_name
+            ).lstrip('-')
+
+        # Generate description from class docstring
+        if not description:
+            class_doc = self.__class__.__doc__ or ""
+            parsed_doc = parse(class_doc)
+            description = parsed_doc.short_description or f"{name} toolkit"
+
+        # Generate content from tool docstrings if not provided
+        if not content:
+            content = self._generate_skill_content(name, description)
+
+        # Write skill file
+        skills_dir = Path(output_dir) if output_dir else Path.cwd() / "skills"
+        skills_dir.mkdir(parents=True, exist_ok=True)
+        skill_file = skills_dir / f"{name}.md"
+
+        with open(skill_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        logger.info(f"Skill written to {skill_file}")
+        return skill_file
+
+    def _generate_skill_content(self, name: str, description: str) -> str:
+        r"""Generate skill content from tool docstrings."""
+        lines = [f"# {name}", "", description, "", "## Available Tools", ""]
+
+        for tool in self.get_tools():
+            method = tool.func
+            method_name = method.__name__
+            docstring = method.__doc__ or ""
+            parsed = parse(docstring)
+
+            # Signature
+            try:
+                sig = inspect.signature(method)
+                params = [p for n, p in sig.parameters.items() if n != 'self']
+                sig_str = ", ".join(str(p) for p in params)
+            except (ValueError, TypeError):
+                sig_str = "..."
+
+            lines.append(f"### {method_name}")
+            lines.append(f"`{method_name}({sig_str})`")
+            lines.append("")
+
+            if parsed.short_description:
+                lines.append(parsed.short_description)
+                lines.append("")
+
+            if parsed.params:
+                lines.append("**Parameters:**")
+                for p in parsed.params:
+                    ptype = p.type_name or "Any"
+                    pdesc = p.description or ""
+                    lines.append(f"- `{p.arg_name}` ({ptype}): {pdesc}")
+                lines.append("")
+
+            if parsed.returns:
+                rtype = parsed.returns.type_name or "Any"
+                rdesc = parsed.returns.description or ""
+                lines.append(f"**Returns:** ({rtype}) {rdesc}")
+                lines.append("")
+
+            lines.append("---")
+            lines.append("")
+
+        return "\n".join(lines)
 
 
 class RegisteredAgentToolkit:
