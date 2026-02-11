@@ -69,11 +69,11 @@ requirements.txt  # Python dependencies
 
 ## 🔧 Troubleshooting
 
-- **MistralReader import error?**  
+- **MistralReader import error?**
   Make sure you have `camel-ai==0.2.61` installed (see `requirements.txt`).
-- **No module named mistralai?**  
+- **No module named mistralai?**
   Install with `pip install mistralai`.
-- **Python version errors?**  
+- **Python version errors?**
   Use Python 3.10 or 3.12 only.
 
 ---

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 from typing import TYPE_CHECKING, List, Optional, Union
 
@@ -55,9 +55,9 @@ class BotAgent:
         """
 
         assistant_sys_msg = '''
-            Objective: 
+            Objective:
                 You are a customer service bot designed to assist users
-                with inquiries related to our open-source project. 
+                with inquiries related to our open-source project.
                 Your responses should be informative, concise, and helpful.
 
             Instructions:
@@ -65,13 +65,13 @@ class BotAgent:
                         user's question. Focus on keywords and context to
                         determine the user's intent.
                 Search for Relevant Information: Use the provided dataset
-                        and refer to the RAG (file to find answers that 
-                        closely match the user's query. The RAG file 
-                        contains detailed interactions and should be your 
+                        and refer to the RAG (file to find answers that
+                        closely match the user's query. The RAG file
+                        contains detailed interactions and should be your
                         primary resource for crafting responses.
-                Provide Clear and Concise Responses: Your answers should 
+                Provide Clear and Concise Responses: Your answers should
                         be clear and to the point. Avoid overly technical
-                        language unless the user's query indicates 
+                        language unless the user's query indicates
                         familiarity with technical terms.
                 Encourage Engagement: Where applicable, encourage users
                         to contribute to the project or seek further
@@ -86,12 +86,12 @@ class BotAgent:
                         further engagement if appropriate.
             bd
             Tone:
-                Professional: Maintain a professional tone that 
+                Professional: Maintain a professional tone that
                         instills confidence in the user.
-                Friendly: Be approachable and friendly to make users 
+                Friendly: Be approachable and friendly to make users
                         feel comfortable.
                 Helpful: Always aim to be as helpful as possible,
-                        guiding users to solutions.        
+                        guiding users to solutions.
         '''
 
         self._agent = ChatAgent(

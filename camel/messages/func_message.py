@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -50,6 +50,9 @@ class FunctionCallingMessage(BaseMessage):
         mask_output (Optional[bool]): Whether to return a sanitized placeholder
             instead of the raw tool output.
             (default: :obj:`False`)
+        extra_content (Optional[Dict[str, Any]]): Additional content
+            associated with the tool call.
+            (default: :obj:`None`)
     """
 
     func_name: Optional[str] = None
@@ -57,6 +60,7 @@ class FunctionCallingMessage(BaseMessage):
     result: Optional[Any] = None
     tool_call_id: Optional[str] = None
     mask_output: Optional[bool] = False
+    extra_content: Optional[Dict[str, Any]] = None
 
     def to_openai_message(
         self,
@@ -131,19 +135,23 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or arguments."
             )
 
+        tool_call = {
+            "id": self.tool_call_id or "null",
+            "type": "function",
+            "function": {
+                "name": self.func_name,
+                "arguments": json.dumps(self.args, ensure_ascii=False),
+            },
+        }
+
+        # Include extra_content if available
+        if self.extra_content is not None:
+            tool_call["extra_content"] = self.extra_content
+
         return {
             "role": "assistant",
             "content": self.content or "",
-            "tool_calls": [
-                {
-                    "id": self.tool_call_id or "null",
-                    "type": "function",
-                    "function": {
-                        "name": self.func_name,
-                        "arguments": json.dumps(self.args, ensure_ascii=False),
-                    },
-                }
-            ],
+            "tool_calls": [tool_call],  # type: ignore[list-item]
         }
 
     def to_openai_tool_message(self) -> OpenAIToolMessageParam:
@@ -187,4 +195,6 @@ class FunctionCallingMessage(BaseMessage):
         if self.tool_call_id is not None:
             base["tool_call_id"] = self.tool_call_id
         base["mask_output"] = self.mask_output
+        if self.extra_content is not None:
+            base["extra_content"] = self.extra_content
         return base

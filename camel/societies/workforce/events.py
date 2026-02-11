@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -22,10 +22,12 @@ from pydantic import BaseModel, ConfigDict, Field
 class WorkforceEventBase(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
     event_type: Literal[
+        "log",
         "task_decomposed",
         "task_created",
         "task_assigned",
         "task_started",
+        "task_updated",
         "task_completed",
         "task_failed",
         "worker_created",
@@ -37,6 +39,25 @@ class WorkforceEventBase(BaseModel):
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+
+class LogEvent(WorkforceEventBase):
+    event_type: Literal["log"] = "log"
+    message: str
+    level: Literal["debug", "info", "warning", "error", "critical"]
+    color: (
+        Literal[
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "cyan",
+            "magenta",
+            "gray",
+            "black",
+        ]
+        | None
+    ) = None
 
 
 class WorkerCreatedEvent(WorkforceEventBase):
@@ -80,10 +101,22 @@ class TaskStartedEvent(WorkforceEventBase):
     worker_id: str
 
 
+class TaskUpdatedEvent(WorkforceEventBase):
+    event_type: Literal["task_updated"] = "task_updated"
+    task_id: str
+    worker_id: Optional[str] = None
+    update_type: Literal["replan", "reassign", "manual"]
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    parent_task_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class TaskCompletedEvent(WorkforceEventBase):
     event_type: Literal["task_completed"] = "task_completed"
     task_id: str
     worker_id: str
+    parent_task_id: Optional[str] = None
     result_summary: Optional[str] = None
     processing_time_seconds: Optional[float] = None
     token_usage: Optional[Dict[str, int]] = None
@@ -92,6 +125,7 @@ class TaskCompletedEvent(WorkforceEventBase):
 class TaskFailedEvent(WorkforceEventBase):
     event_type: Literal["task_failed"] = "task_failed"
     task_id: str
+    parent_task_id: Optional[str] = None
     error_message: str
     worker_id: Optional[str] = None
 
@@ -109,10 +143,12 @@ class QueueStatusEvent(WorkforceEventBase):
 
 
 WorkforceEvent = Union[
+    LogEvent,
     TaskDecomposedEvent,
     TaskCreatedEvent,
     TaskAssignedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     TaskCompletedEvent,
     TaskFailedEvent,
     WorkerCreatedEvent,

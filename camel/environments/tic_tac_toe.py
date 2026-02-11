@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import math
 import random
 import re
@@ -413,6 +413,9 @@ class TicTacToeEnv(MultiStepEnv):
         Args:
             board (List[str]): The current game board as a list of strings.
             is_x_turn (bool): True if it's X's turn to move, False otherwise.
+            depth (int): Current recursion depth. (default: :obj:`0`)
+            max_depth (int): Maximum recursion depth to prevent stack overflow.
+                (default: :obj:`10`)
 
         Returns:
             float: A float value representing the position evaluation:
@@ -435,14 +438,17 @@ class TicTacToeEnv(MultiStepEnv):
             return 0.5  # Return draw evaluation at max depth
 
         moves = TicTacToeEnv.available_moves(board)
+        if not moves:
+            return 0.5
+        symbol = "X" if is_x_turn else "O"
         values = []
-        # Create a copy of the board to avoid side effects
+
         for move in moves:
-            board_copy = board.copy()
-            board_copy[move] = "X" if is_x_turn else "O"
+            board[move] = symbol
             value = TicTacToeEnv.evaluate_position_for_x(
-                board_copy, not is_x_turn, depth + 1, max_depth
+                board, not is_x_turn, depth + 1, max_depth
             )
+            board[move] = " "  # undo the move
             values.append(value)
 
         return max(values) if is_x_turn else min(values)

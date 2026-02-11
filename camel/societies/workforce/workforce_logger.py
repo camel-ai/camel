@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from camel.logger import get_logger
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    LogEvent,
     QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
@@ -25,6 +26,7 @@ from camel.societies.workforce.events import (
     TaskDecomposedEvent,
     TaskFailedEvent,
     TaskStartedEvent,
+    TaskUpdatedEvent,
     WorkerCreatedEvent,
     WorkerDeletedEvent,
 )
@@ -49,6 +51,11 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         self._task_hierarchy: Dict[str, Dict[str, Any]] = {}
         self._worker_information: Dict[str, Dict[str, Any]] = {}
         self._initial_worker_logs: List[Dict[str, Any]] = []
+
+    def log_message(self, event: LogEvent) -> None:
+        r"""Logs a message to the console with color."""
+        colored_message = self._get_color_message(event)
+        print(colored_message)
 
     def _log_event(self, event_type: str, **kwargs: Any) -> None:
         r"""Internal method to create and store a log entry.
@@ -150,6 +157,21 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
         )
         if event.task_id in self._task_hierarchy:
             self._task_hierarchy[event.task_id]['status'] = 'processing'
+
+    def log_task_updated(self, event: TaskUpdatedEvent) -> None:
+        r"""Logs updates made to a task."""
+        self._log_event(
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            update_type=event.update_type,
+            old_value=event.old_value,
+            new_value=event.new_value,
+            parent_task_id=event.parent_task_id,
+            metadata=event.metadata or {},
+        )
+        if event.task_id in self._task_hierarchy:
+            self._task_hierarchy[event.task_id]['status'] = 'updated'
 
     def log_task_completed(self, event: TaskCompletedEvent) -> None:
         r"""Logs the successful completion of a task."""

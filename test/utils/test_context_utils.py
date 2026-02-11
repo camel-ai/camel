@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import tempfile
 from pathlib import Path
@@ -98,7 +98,7 @@ def test_load_markdown_context_to_memory_preserves_existing_conversation(
 ## Task Completed
 Data analysis of customer sales using pandas and matplotlib.
 
-## Key Findings  
+## Key Findings
 - Sales increased 15% in Q4
 - Electronics is top category
 - Customer retention: 85%
@@ -191,7 +191,7 @@ def test_load_markdown_context_to_memory_with_workflow_content(
 
 ### Agents Involved
 - Agent A: Data collection using web_toolkit
-- Agent B: Analysis using pandas_toolkit  
+- Agent B: Analysis using pandas_toolkit
 - Agent C: Reporting using email_toolkit
 
 ### Results

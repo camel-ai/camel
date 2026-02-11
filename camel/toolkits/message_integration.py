@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Union
@@ -170,6 +170,10 @@ class ToolkitMessageIntegration:
         for tool in original_tools:
             method_name = tool.func.__name__
             enhanced_func = self._add_messaging_to_tool(tool.func)
+            enhanced_func = self._create_bound_method_wrapper(
+                enhanced_func,
+                toolkit,
+            )
             enhanced_methods[method_name] = enhanced_func
             setattr(toolkit, method_name, enhanced_func)
         original_get_tools_method = toolkit.get_tools

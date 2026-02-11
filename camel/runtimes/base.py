@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
 from typing import Any, List, Union
 
@@ -39,6 +39,39 @@ class BaseRuntime(ABC):
     def reset(self, *args: Any, **kwargs: Any) -> Any:
         r"""Resets the runtime to its initial state."""
         pass
+
+    @abstractmethod
+    def cleanup(self) -> None:
+        r"""Releases resources (containers, processes, connections, etc.).
+
+        Public part of the runtime lifecycle API: callers may call
+        :meth:`cleanup` or use the runtime as a context manager
+        (``with runtime:``) for deterministic teardown. Subclasses must
+        implement this method.
+        """
+        pass
+
+    def stop(self) -> "BaseRuntime":
+        r"""Stops the runtime and releases resources. Calls :meth:`cleanup`.
+
+        Returns:
+            BaseRuntime: The current runtime (for chaining).
+        """
+        self.cleanup()
+        return self
+
+    def __enter__(self) -> "BaseRuntime":
+        r"""Enter the context manager."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
+    ) -> None:
+        r"""Exit the context manager; ensures cleanup is called."""
+        self.cleanup()
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of all tools in the runtime."""

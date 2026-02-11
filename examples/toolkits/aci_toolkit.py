@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
 from dotenv import load_dotenv
@@ -46,19 +46,19 @@ print(response)
 
 """
 ==============================================================================
-msgs=[BaseMessage(role_name='assistant', role_type=<RoleType.ASSISTANT: 
-'assistant'>, meta_dict={}, content='The repository **camel-ai/camel** has 
-been successfully starred!', video_bytes=None, image_list=None, 
+msgs=[BaseMessage(role_name='assistant', role_type=<RoleType.ASSISTANT:
+'assistant'>, meta_dict={}, content='The repository **camel-ai/camel** has
+been successfully starred!', video_bytes=None, image_list=None,
 image_detail='auto', video_detail='low', parsed=None)] terminated=False info=
-{'id': 'chatcmpl-BTb0Qd0RUFWkIz96WPWzKkhTEx4GZ', 'usage': 
-{'completion_tokens': 15, 'prompt_tokens': 1323, 'total_tokens': 1338, 
-'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 
-0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0}, 
-'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 1280}}, 
-'termination_reasons': ['stop'], 'num_tokens': 57, 'tool_calls': 
-[ToolCallingRecord(tool_name='GITHUB__STAR_REPOSITORY', args={'path': {'repo': 
-'camel', 'owner': 'camel-ai'}}, result={'success': True, 'data': {}}, 
-tool_call_id='call_5jlmAN7VKEq1Pc9kppWBJvoZ')], 'external_tool_call_requests': 
+{'id': 'chatcmpl-BTb0Qd0RUFWkIz96WPWzKkhTEx4GZ', 'usage':
+{'completion_tokens': 15, 'prompt_tokens': 1323, 'total_tokens': 1338,
+'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens':
+0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0},
+'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 1280}},
+'termination_reasons': ['stop'], 'num_tokens': 57, 'tool_calls':
+[ToolCallingRecord(tool_name='GITHUB__STAR_REPOSITORY', args={'path': {'repo':
+'camel', 'owner': 'camel-ai'}}, result={'success': True, 'data': {}},
+tool_call_id='call_5jlmAN7VKEq1Pc9kppWBJvoZ')], 'external_tool_call_requests':
 None}
 ==============================================================================
 """

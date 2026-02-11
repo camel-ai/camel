@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import ast
 import json
@@ -68,7 +68,7 @@ with the proper arguments that best answers the given prompt.
 
 Respond with nothing but the function call ONLY, such that I can \
 directly execute your function call without any post processing \
-necessary from my end. Do not use variables. 
+necessary from my end. Do not use variables.
 If there are more than two function calls, separate them with a semicolon (;).
 
 {tools}

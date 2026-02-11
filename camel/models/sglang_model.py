@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
 import subprocess
@@ -32,9 +32,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    get_current_agent_session_id,
     update_current_observation,
-    update_langfuse_trace,
 )
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
@@ -266,19 +264,7 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()
@@ -286,15 +272,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            async_client = self._async_client
 
-        if self._client is None:
+        if async_client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = await self._async_client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = await async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(
@@ -332,19 +327,7 @@ class SGLangModel(BaseModelBackend):
             model=str(self.model_type),
             model_parameters=self.model_config_dict,
         )
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         # Ensure server is running
         self._ensure_server_running()
@@ -352,15 +335,24 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+            client = self._client
 
-        if self._client is None:
+        if client is None:
             raise RuntimeError(
                 "Client is not initialized. Ensure the server is running."
             )
 
-        response = self._client.chat.completions.create(
+        # Prepare additional parameters
+        extra_params: Dict[str, Any] = {}
+        if response_format is not None:
+            extra_params["response_format"] = response_format
+        if tools is not None:
+            extra_params["tools"] = tools
+
+        response = client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            **extra_params,
             **self.model_config_dict,
         )
         update_current_observation(
@@ -486,10 +478,10 @@ def _wait_for_server(base_url: str, timeout: Optional[float] = 30) -> None:
                 print(
                     """\n
                     NOTE: Typically, the server runs in a separate terminal.
-                    In this notebook, we run the server and notebook code 
+                    In this notebook, we run the server and notebook code
                     together, so their outputs are combined.
-                    To improve clarity, the server logs are displayed in the 
-                    original black color, while the notebook outputs are 
+                    To improve clarity, the server logs are displayed in the
+                    original black color, while the notebook outputs are
                     highlighted in blue.
                     """
                 )

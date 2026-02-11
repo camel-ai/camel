@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 from collections import deque
@@ -19,8 +19,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from camel.agents import ChatAgent
+from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.responses.agent_responses import ChatAgentResponse
 from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.utils import (
+    FailureHandlingConfig,
+    RecoveryStrategy,
+    TaskAnalysisResult,
+)
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
@@ -230,6 +237,7 @@ async def test_multiple_timeout_points():
     mock_task.additional_info = {}
     mock_task.result = "Mock task failed"
     mock_task.assigned_worker_id = "test_worker_id"
+    mock_task.parent = None
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
@@ -491,3 +499,177 @@ def test_start_child_node_helper():
     workforce._state = WorkforceState.PAUSED
     workforce._loop = None
     workforce._start_child_node_when_paused(mock_coroutine())
+
+
+# --- Tests for _analyze_task null-safety (use_structured_output_handler=False)
+
+
+def _make_analyze_task_workforce():
+    r"""Create a Workforce with mocked internals for _analyze_task testing.
+
+    Bypasses API-key-dependent initialization entirely by using
+    object.__new__ and setting only the attributes that _analyze_task needs.
+    Sets use_structured_output_handler=False to test the native structured
+    output code path.
+    """
+    workforce = object.__new__(Workforce)
+    workforce.use_structured_output_handler = False
+    workforce.failure_handling_config = FailureHandlingConfig()
+
+    mock_task_agent = MagicMock()
+    mock_task_agent.reset = MagicMock()
+    workforce.task_agent = mock_task_agent
+    return workforce
+
+
+def _make_task():
+    r"""Create a minimal Task for _analyze_task tests."""
+    task = MagicMock(spec=Task)
+    task.id = "test_task_1"
+    task.content = "Test task content"
+    task.result = "Test result"
+    task.failure_count = 0
+    task.get_depth.return_value = 0
+    task.assigned_worker_id = "worker_1"
+    return task
+
+
+def _make_mock_response(parsed_value, num_msgs=1):
+    r"""Create a ChatAgentResponse with a controlled parsed value.
+
+    Uses a real BaseMessage to satisfy Pydantic validation in
+    ChatAgentResponse, with the `parsed` field set to the desired value.
+    """
+    from camel.types import RoleType
+
+    if num_msgs == 0:
+        return ChatAgentResponse(msgs=[], terminated=False, info={})
+
+    msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="mock content",
+        parsed=parsed_value,
+    )
+    return ChatAgentResponse(msgs=[msg], terminated=False, info={})
+
+
+def test_analyze_task_returns_valid_result():
+    r"""Test that _analyze_task returns a valid TaskAnalysisResult when
+    response.msg.parsed is a proper TaskAnalysisResult."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    expected = TaskAnalysisResult(
+        reasoning="Network timeout, retrying",
+        recovery_strategy=RecoveryStrategy.RETRY,
+        issues=["timeout"],
+    )
+
+    workforce.task_agent.step.return_value = _make_mock_response(expected)
+
+    result = workforce._analyze_task(
+        task, for_failure=True, error_message="timeout"
+    )
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.recovery_strategy == RecoveryStrategy.RETRY
+    assert result.reasoning == "Network timeout, retrying"
+
+
+def test_analyze_task_fallback_when_msg_is_none():
+    r"""Test that _analyze_task falls back when response.msg is None
+    (e.g., empty msgs list)."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    workforce.task_agent.step.return_value = _make_mock_response(
+        None, num_msgs=0
+    )
+
+    result = workforce._analyze_task(
+        task, for_failure=True, error_message="some error"
+    )
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.recovery_strategy == RecoveryStrategy.RETRY
+    assert "some error" in result.issues
+
+
+def test_analyze_task_fallback_when_parsed_is_none():
+    r"""Test that _analyze_task falls back when response.msg.parsed is None
+    (model failed to produce structured output)."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    workforce.task_agent.step.return_value = _make_mock_response(None)
+
+    result = workforce._analyze_task(
+        task, for_failure=True, error_message="parse failure"
+    )
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.recovery_strategy == RecoveryStrategy.RETRY
+
+
+def test_analyze_task_constructs_from_dict():
+    r"""Test that _analyze_task constructs a TaskAnalysisResult when
+    response.msg.parsed is a dict."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    workforce.task_agent.step.return_value = _make_mock_response(
+        {
+            "reasoning": "Dict-based result",
+            "recovery_strategy": RecoveryStrategy.REPLAN,
+            "issues": ["incomplete"],
+        }
+    )
+
+    result = workforce._analyze_task(
+        task, for_failure=True, error_message="incomplete"
+    )
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.recovery_strategy == RecoveryStrategy.REPLAN
+    assert result.reasoning == "Dict-based result"
+
+
+def test_analyze_task_fallback_when_dict_is_invalid():
+    r"""Test that _analyze_task falls back when response.msg.parsed is a dict
+    with invalid keys that fail schema validation."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    workforce.task_agent.step.return_value = _make_mock_response(
+        {
+            "bad_key": "unexpected value",
+            "another_bad_key": 123,
+        }
+    )
+
+    result = workforce._analyze_task(
+        task, for_failure=True, error_message="bad dict"
+    )
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.recovery_strategy == RecoveryStrategy.RETRY
+    assert "bad dict" in result.issues
+
+
+def test_analyze_task_quality_eval_fallback():
+    r"""Test that _analyze_task returns quality evaluation fallback when
+    response.msg is None and for_failure=False."""
+    workforce = _make_analyze_task_workforce()
+    task = _make_task()
+
+    workforce.task_agent.step.return_value = _make_mock_response(
+        None, num_msgs=0
+    )
+
+    result = workforce._analyze_task(task, for_failure=False)
+
+    assert isinstance(result, TaskAnalysisResult)
+    assert result.quality_score == 80
+    assert result.recovery_strategy is None

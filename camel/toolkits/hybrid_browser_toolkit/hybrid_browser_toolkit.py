@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,11 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Any, List, Literal, Optional
 
-from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit
 
 
@@ -37,8 +36,6 @@ class HybridBrowserToolkit(BaseToolkit):
             persistence. Defaults to None.
         stealth (bool): Whether to enable stealth mode. Defaults to
             False.
-        web_agent_model (Optional[BaseModelBackend]): Model for web
-            agent operations. Defaults to None.
         cache_dir (str): Directory for caching. Defaults to "tmp/".
         enabled_tools (Optional[List[str]]): List of enabled tools.
             Defaults to None.
@@ -94,7 +91,6 @@ class HybridBrowserToolkit(BaseToolkit):
         headless: bool = True,
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
-        web_agent_model: Optional[BaseModelBackend] = None,
         cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
@@ -128,8 +124,6 @@ class HybridBrowserToolkit(BaseToolkit):
                 persistence. Defaults to None.
             stealth (bool): Whether to enable stealth mode. Defaults to
                 False.
-            web_agent_model (Optional[BaseModelBackend]): Model for web
-                agent operations. Defaults to None.
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
                 Defaults to None.
@@ -186,7 +180,6 @@ class HybridBrowserToolkit(BaseToolkit):
                 headless=headless,
                 user_data_dir=user_data_dir,
                 stealth=stealth,
-                web_agent_model=web_agent_model,
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,
@@ -232,7 +225,6 @@ class HybridBrowserToolkit(BaseToolkit):
                 headless=headless,
                 user_data_dir=user_data_dir,
                 stealth=stealth,
-                web_agent_model=web_agent_model,
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,

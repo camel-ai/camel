@@ -6,12 +6,12 @@ icon: screwdriver-wrench
 For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 <Card title="What is a Tool?" icon="toolbox">
-  A <b>Tool</b> in CAMEL is a callable function with a name, description, input parameters, and an output type.  
+  A <b>Tool</b> in CAMEL is a callable function with a name, description, input parameters, and an output type.
   Tools act as the interface between agents and the outside world—think of them like <b>OpenAI Functions</b> you can easily convert, extend, or use directly.
 </Card>
 
 <Card title="What is a Toolkit?" icon="screwdriver-wrench">
-  A <b>Toolkit</b> is a curated collection of related tools designed to work together for a specific purpose.  
+  A <b>Toolkit</b> is a curated collection of related tools designed to work together for a specific purpose.
   CAMEL provides a range of built-in toolkits—covering everything from web search and data extraction to code execution, GitHub integration, and much more.
 </Card>
 
@@ -111,6 +111,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. |
 | HumanToolkit | A toolkit for facilitating human-in-the-loop interactions and feedback in AI systems. |
 | ImageAnalysisToolkit | A toolkit for comprehensive image analysis and understanding using vision-capable language models. |
+| IMAPMailToolkit | A toolkit for IMAP email operations to spring agents into email action |
 | JinaRerankerToolkit | A toolkit for reranking documents (text or images) based on their relevance to a given query using the Jina Reranker model. |
 | LinkedInToolkit | A toolkit for LinkedIn operations including creating posts, deleting posts, and retrieving user profile information. |
 | MathToolkit | A toolkit for performing basic mathematical operations such as addition, subtraction, and multiplication. |

@@ -24,7 +24,12 @@ jobs:
   pytest_package_fast_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -87,9 +92,12 @@ jobs:
         QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -106,12 +114,18 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/
 
   pytest_package_llm_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -171,12 +185,15 @@ jobs:
         WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
         WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
         QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -193,12 +210,18 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/
 
   pytest_package_very_slow_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
@@ -213,6 +236,7 @@ jobs:
         GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
+        ATLASCLOUD_API_KEY: "${{ secrets.ATLASCLOUD_API_KEY }}"
         NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
@@ -262,6 +286,8 @@ jobs:
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
+        MINIMAX_API_KEY: "${{ secrets.MINIMAX_API_KEY }}"
+        CEREBRAS_API_KEY: "${{ secrets.CEREBRAS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -278,4 +304,5 @@ jobs:
           --ignore=test/models/reward/test_nemotron_model.py \
           --ignore=test/toolkits/test_video_analysis_toolkit.py \
           --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+          --ignore=test/agents/test_agent_e2e.py \
           test/

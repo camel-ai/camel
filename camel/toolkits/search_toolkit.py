@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
@@ -20,7 +20,11 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 logger = get_logger(__name__)
 
@@ -50,6 +54,60 @@ class SearchToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         self.exclude_domains = exclude_domains
+
+    @api_keys_required(
+        [
+            (None, "SERPER_API_KEY"),
+        ]
+    )
+    def search_serper(
+        self,
+        query: str,
+        page: int = 10,
+        location: str = "United States",
+    ) -> Dict[str, Any]:
+        r"""Use Serper.dev API to perform Google search.
+
+        Args:
+            query (str): The search query.
+            page (int): The page number of results to retrieve.
+                (default: :obj:`10`)
+            location (str): The location for the search results.
+                (default: :obj:`"United States"`)
+
+        Returns:
+            Dict[str, Any]: The search result dictionary containing 'organic',
+                'peopleAlsoAsk', etc.
+        """
+        SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+
+        url = "https://google.serper.dev/search"
+
+        payload = {
+            "q": query,
+            "location": location,
+            "page": page,
+        }
+
+        headers = {
+            "X-API-KEY": SERPER_API_KEY,
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.post(
+                url, headers=headers, json=payload, timeout=self.timeout
+            )
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Serper API failed with status {response.status_code}: "
+                        f"{response.text}"
+                    )
+                }
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Serper search failed: {e!s}"}
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
@@ -161,7 +219,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"An unexpected error occurred: {e!s}"}
 
-    @dependencies_required("duckduckgo_search")
+    @dependencies_required("ddgs")
     def search_duckduckgo(
         self,
         query: str,
@@ -188,16 +246,14 @@ class SearchToolkit(BaseToolkit):
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
                 represents a search result.
         """
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
 
         ddgs = DDGS()
         responses: List[Dict[str, Any]] = []
 
         if source == "text":
             try:
-                results = ddgs.text(
-                    keywords=query, max_results=number_of_result_pages
-                )
+                results = ddgs.text(query, max_results=number_of_result_pages)
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
                     # Creating a response object with a similar structure
@@ -215,7 +271,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "images":
             try:
                 results = ddgs.images(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
@@ -235,7 +291,7 @@ class SearchToolkit(BaseToolkit):
         elif source == "videos":
             try:
                 results = ddgs.videos(
-                    keywords=query, max_results=number_of_result_pages
+                    query, max_results=number_of_result_pages
                 )
                 # Iterate over results found
                 for i, result in enumerate(results, start=1):
@@ -374,8 +430,6 @@ class SearchToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary representing a search result.
         """
 
-        import requests
-
         BRAVE_API_KEY = os.getenv("BRAVE_API_KEY")
 
         url = "https://api.search.brave.com/res/v1/web/search"
@@ -409,7 +463,9 @@ class SearchToolkit(BaseToolkit):
         }
         params = {k: v for k, v in params.items() if v is not None}
 
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(
+            url, headers=headers, params=params, timeout=self.timeout
+        )
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
@@ -517,8 +573,6 @@ class SearchToolkit(BaseToolkit):
         """
         from urllib.parse import quote
 
-        import requests
-
         # Validate input parameters
         if not isinstance(start_page, int) or start_page < 1:
             raise ValueError("start_page must be a positive integer")
@@ -581,7 +635,7 @@ class SearchToolkit(BaseToolkit):
         # Fetch the results given the URL
         try:
             # Make the get
-            result = requests.get(url)
+            result = requests.get(url, timeout=self.timeout)
             data = result.json()
 
             # Get the result items
@@ -787,7 +841,9 @@ class SearchToolkit(BaseToolkit):
             ensure_ascii=False,
         )
         try:
-            response = requests.post(url, headers=headers, data=payload)
+            response = requests.post(
+                url, headers=headers, data=payload, timeout=self.timeout
+            )
             if response.status_code != 200:
                 return {
                     "error": (
@@ -831,7 +887,9 @@ class SearchToolkit(BaseToolkit):
             }
             params = {"wd": query, "rn": str(number_of_result_pages)}
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(
+                url, headers=headers, params=params, timeout=self.timeout
+            )
             response.encoding = "utf-8"
 
             soup = BeautifulSoup(response.text, "html.parser")
@@ -915,8 +973,7 @@ class SearchToolkit(BaseToolkit):
                     "Chrome/120.0.0.0 Safari/537.36"
                 ),
             }
-            # Add timeout to prevent hanging
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
 
             # Check if the request was successful
             if response.status_code != 200:
@@ -1169,6 +1226,7 @@ class SearchToolkit(BaseToolkit):
                 message. Each result contains title, snippet, url and other
                 metadata.
         """
+
         TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
 
         # Validate query length
@@ -1200,7 +1258,7 @@ class SearchToolkit(BaseToolkit):
         try:
             # Send GET request with proper typing for params
             response = requests.get(
-                base_url, headers=headers, params=params, timeout=10
+                base_url, headers=headers, params=params, timeout=self.timeout
             )
 
             # Check response status
@@ -1342,6 +1400,105 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Metaso search failed: {e}"}
 
+    @dependencies_required("google-search-results")
+    @api_keys_required([(None, 'SERPAPI_KEY')])
+    def search_serpapi(
+        self,
+        query: str,
+        engine: str = "google",
+        location: str = "Austin,Texas",
+        google_domain: str = "google.com",
+        gl: str = "us",
+        search_lang: str = "en",
+        device: str = "desktop",
+        number_of_result_pages: int = 1,
+        safe: str = "off",
+        filter: int = 0,
+        custom_params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        r"""Use SerpApi search engine to search information for the given query.
+
+        SerpApi provides real-time search engine results from multiple search engines
+        including Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and more.
+
+        Args:
+            query (str): The search query string.
+            engine (str): Search engine to use. Supported engines include:
+                'google', 'bing', 'yahoo', 'duckduckgo', 'baidu', 'yandex',
+                'youtube', 'ebay', 'amazon', etc. (default: :obj:`"google"`)
+            location (str): Location for localized search results. Can be a city,
+                state, country, or coordinates. (default: :obj:`"Austin,Texas"`)
+            google_domain (str): Google domain to use (e.g., 'google.com', 'google.co.uk').
+                Only applicable for Google engine. (default: :obj:`"google.com"`)
+            gl (str): Country code for localized results (e.g., 'us', 'uk', 'ca').
+                Only applicable for Google engine. (default: :obj:`"us"`)
+            search_lang (str): Language code for results (e.g., 'en', 'es', 'fr').
+                Only applicable for Google engine. (default: :obj:`"en"`)
+            device (str): Device type: 'desktop', 'tablet', or 'mobile'.
+                (default: :obj:`"desktop"`)
+            number_of_result_pages (int): Number of organic results to return.
+                Adjust based on task needs. (default: :obj:`1`)
+            safe (str): Safe search level: 'off', 'medium', 'high', 'active'.
+                (default: :obj:`"off"`)
+            filter (int): Filter results: 0 (no filter), 1 (filter similar results).
+                (default: :obj:`0`)
+            custom_params (Optional[Dict[str, Any]]): Additional custom parameters
+                to pass to SerpApi. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing search results:
+                - 'results': List of organic search results, each containing:
+                    - 'title': The title of the search result
+                    - 'link': The URL of the search result
+                    - 'snippet': The description snippet
+                    - 'keywords': Highlighted keywords in the snippet
+                    - 'source': The source of the result
+                    - 'error: Error if any
+        """
+        from serpapi import SerpApiClient
+
+        SerpApiClient.SERP_API_KEY = os.getenv("SERPAPI_KEY")
+        params = {
+            "engine": engine,
+            "q": query,
+            "location": location,
+            "google_domain": google_domain,
+            "gl": gl,
+            "hl": search_lang,
+            "device": device,
+            "num": number_of_result_pages,
+            "safe": safe,
+            "filter": filter,
+        }
+
+        if custom_params is not None:
+            params.update(custom_params)
+        try:
+            search = SerpApiClient(params)
+            results = search.get_dict()
+
+            if (
+                "organic_results" not in results
+                or not results["organic_results"]
+            ):
+                return {"error": "No organic results found"}
+
+            formatted_results = []
+            for result in results['organic_results']:
+                formatted_result = {
+                    "title": result.get("title", ""),
+                    "link": result.get("link", ""),
+                    "snippet": result.get("snippet", ""),
+                    "keywords": result.get("snippet_highlighted_words", []),
+                    "source": result.get("source", ""),
+                }
+                formatted_results.append(formatted_result)
+
+            return {"results": formatted_results}
+
+        except Exception as e:
+            return {"error": f"SerpApi search failed: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1351,6 +1508,7 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
+            FunctionTool(self.search_serper),
             FunctionTool(self.search_wiki),
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
@@ -1363,6 +1521,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_exa),
             FunctionTool(self.search_alibaba_tongxiao),
             FunctionTool(self.search_metaso),
+            FunctionTool(self.search_serpapi),
         ]
 
     # Deprecated method alias for backward compatibility

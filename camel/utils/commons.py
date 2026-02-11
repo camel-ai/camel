@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import functools
 import importlib
@@ -28,6 +28,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -40,6 +41,9 @@ from typing import (
     TypeVar,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.responses.agent_responses import ChatAgentResponse
 from urllib.parse import urlparse
 
 import pydantic
@@ -51,6 +55,7 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
+T = TypeVar('T', bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
@@ -311,9 +316,7 @@ def api_keys_required(
 
             key_way = "the official website"
             if env_var_name == 'ANTHROPIC_API_KEY':
-                key_way = (
-                    "https://docs.anthropic.com/zh-CN/api/getting-started"
-                )
+                key_way = "https://platform.claude.com/docs/en/api/overview"
             elif env_var_name == 'AIML_API_KEY':
                 key_way = "https://aimlapi.com/"
             elif env_var_name == 'COHERE_API_KEY':
@@ -331,15 +334,15 @@ def api_keys_required(
             elif env_var_name == 'GEMINI_API_KEY':
                 key_way = "https://gemini.google.com/"
             elif env_var_name == 'INTERNLM_API_KEY':
-                key_way = "https://internlm-chat.intern-ai.org.cn/puyu/api/v1"
+                key_way = "https://internlm.intern-ai.org.cn/api/tokens"
             elif env_var_name == 'GROQ_API_KEY':
-                key_way = "https://api.groq.com/openai/v1"
+                key_way = "https://console.groq.com/keys"
             elif env_var_name == 'MISTRAL_API_KEY':
                 key_way = "https://mistral.ai/"
             elif env_var_name == 'MOONSHOT_API_KEY':
-                key_way = "https://api.moonshot.cn/v1"
+                key_way = "platform.moonshot.ai/console"
             elif env_var_name == 'NVIDIA_API_KEY':
-                key_way = "https://integrate.api.nvidia.com/"
+                key_way = "https://build.nvidia.com/settings/api-keys"
             elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
                 key_way = "https://platform.openai.com/docs/overview"
             elif env_var_name == 'QWEN_API_KEY':
@@ -347,7 +350,7 @@ def api_keys_required(
             elif env_var_name == 'REKA_API_KEY':
                 key_way = "https://docs.reka.ai/quick-start"
             elif env_var_name == 'SAMBA_API_KEY':
-                key_way = "https://community.sambanova.ai/t/looking-for-api-key-and-url-for-sambanova/576"
+                key_way = "cloud.sambanova.ai/apis"
             elif env_var_name == 'TOGETHER_API_KEY':
                 key_way = "https://docs.together.ai/docs/quickstart"
             elif env_var_name == 'YI_API_KEY':
@@ -357,7 +360,7 @@ def api_keys_required(
             elif env_var_name == 'KLAVIS_API_KEY':
                 key_way = "https://www.klavis.ai/docs"
             elif env_var_name == 'XAI_API_KEY':
-                key_way = "https://api.x.ai/v1"
+                key_way = "https://docs.x.ai/docs/overview"
 
             if missing_keys:
                 raise ValueError(
@@ -704,7 +707,7 @@ def retry_on_error(
                 except Exception as e:
                     last_exception = e
                     if attempt == max_retries:
-                        logger.error(
+                        logger.warning(
                             f"Failed after {max_retries} retries: {e!s}"
                         )
                         raise
@@ -959,6 +962,65 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def safe_extract_parsed(
+    response: "ChatAgentResponse",
+    schema: Type[T],
+) -> Optional[T]:
+    r"""Safely extract a parsed structured output from a ChatAgentResponse.
+
+    Handles the common cases where ``response.msg`` is ``None`` (empty or
+    multi-message response) or ``msg.parsed`` is ``None`` (model failed to
+    produce valid structured output). When the parsed value is a dict, it
+    attempts to construct the schema from it.
+
+    Args:
+        response (ChatAgentResponse): The agent response to extract from.
+        schema (Type[T]): The expected Pydantic model class.
+
+    Returns:
+        Optional[T]: The parsed and validated result, or ``None`` if
+            extraction fails for any reason.
+    """
+    msg = response.msg
+    # Empty or multi-message response (len(msgs) != 1)
+    if msg is None:
+        logger.error(
+            f"safe_extract_parsed: response.msg is None "
+            f"(msgs count: {len(response.msgs)}), "
+            f"cannot extract {schema.__name__}"
+        )
+        return None
+    parsed = msg.parsed
+    # Already the expected Pydantic model
+    if isinstance(parsed, schema):
+        return parsed
+    # TODO: Unify backend parsing so parsed is always a model instance,
+    # removing the need for this dict fallback.
+    # LiteLLM or non-OpenAI backends may return raw dict instead of model
+    if isinstance(parsed, dict):
+        try:
+            return schema(**parsed)
+        except Exception as e:
+            logger.error(
+                f"safe_extract_parsed: failed to construct "
+                f"{schema.__name__} from dict: {e}"
+            )
+            return None
+    # Model did not produce structured output
+    if parsed is None:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is None, "
+            f"model did not produce valid {schema.__name__}"
+        )
+    # Unexpected type
+    else:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is "
+            f"{type(parsed).__name__}, expected {schema.__name__}"
+        )
+    return None
 
 
 def with_timeout(timeout=None):

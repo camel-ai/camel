@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .agent_context import get_current_agent_id, set_current_agent_id
 from .commons import (
     AgentOpsMeta,
     BatchProcessor,
@@ -36,6 +37,7 @@ from .commons import (
     print_text_animated,
     retry_on_error,
     run_async,
+    safe_extract_parsed,
     text_extract_from_web,
     to_pascal,
     track_agent,
@@ -106,6 +108,7 @@ __all__ = [
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
     "run_async",
+    "safe_extract_parsed",
     "configure_langfuse",
     "is_langfuse_available",
     "get_current_agent_session_id",
@@ -113,4 +116,6 @@ __all__ = [
     "observe",
     "update_current_observation",
     "get_langfuse_status",
+    "get_current_agent_id",
+    "set_current_agent_id",
 ]

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 from datetime import datetime
@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field, confloat
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.utils import safe_extract_parsed
 
 # Get a logger for this module
 logger = get_logger('CoTDataGenerator')
@@ -39,7 +40,7 @@ class AgentResponse(BaseModel):
 
     score: Annotated[float, confloat(ge=0, le=1)] = Field(
         ...,
-        description="""Similarity score between 0 and 1 
+        description="""Similarity score between 0 and 1
         comparing current answer to correct answer""",
     )
 
@@ -200,7 +201,8 @@ class CoTDataGenerator:
         response = self.verifier_agent.step(
             prompt, response_format=VerificationResponse
         )
-        is_correct = response.msgs[0].parsed.is_correct  # type:ignore [union-attr]
+        parsed = safe_extract_parsed(response, VerificationResponse)
+        is_correct = parsed.is_correct if parsed is not None else False
         logger.info("Answer verification result: %s", is_correct)
         return is_correct
 
@@ -242,9 +244,8 @@ class CoTDataGenerator:
         response = self.generator_agent.step(
             prompt, response_format=AgentResponse
         )
-        agent_response = response.msgs[0].parsed.score  # type: ignore [union-attr]
-
-        return agent_response
+        parsed = safe_extract_parsed(response, AgentResponse)
+        return parsed.score if parsed is not None else 0.0
 
     def binary_search_error(self, question: str, solution: str) -> int:
         r"""Use binary search to locate the first error in the solution.

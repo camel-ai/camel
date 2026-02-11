@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import copy
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Type, Union
@@ -34,9 +33,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_trace,
 )
 
 AzureADTokenProvider = Callable[[], str]
@@ -275,18 +272,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -333,18 +319,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
+        self._log_and_trace()
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
@@ -369,10 +344,7 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
+        request_config = self._prepare_request_config(tools)
 
         return self._client.chat.completions.create(
             messages=messages,
@@ -385,10 +357,7 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
+        request_config = self._prepare_request_config(tools)
 
         return await self._async_client.chat.completions.create(
             messages=messages,
@@ -402,14 +371,11 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
@@ -423,14 +389,11 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         request_config["response_format"] = response_format
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
@@ -448,14 +411,9 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
 
         # Use the beta streaming API for structured outputs
         return self._client.beta.chat.completions.stream(
@@ -475,14 +433,9 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-
-        request_config = copy.deepcopy(self.model_config_dict)
-
+        request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
-
-        if tools is not None:
-            request_config["tools"] = tools
 
         # Use the beta streaming API for structured outputs
         return self._async_client.beta.chat.completions.stream(

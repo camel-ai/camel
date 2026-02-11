@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Any, Dict
 
@@ -84,11 +84,11 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize 
+Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize
 the output.
 Synthesize output: False
-It seems that I'm unable to access the movie data at the moment due to a 
-subscription issue with the API. However, if you provide me with the title of 
+It seems that I'm unable to access the movie data at the moment due to a
+subscription issue with the API. However, if you provide me with the title of
 the movie or any other details, I can help you find information about it!
 ===============================================================================
 """
@@ -96,8 +96,8 @@ the movie or any other details, I can help you find information about it!
 """
 ===============================================================================
 Synthesize output: True
-{'rating': '8.8', 'description': 'A thief who steals corporate secrets through 
-the use of dream-sharing technology is given the inverse task of planting an 
+{'rating': '8.8', 'description': 'A thief who steals corporate secrets through
+the use of dream-sharing technology is given the inverse task of planting an
 idea into the mind of a CEO.', 'movie_title': 'Inception'}
 ===============================================================================
 """

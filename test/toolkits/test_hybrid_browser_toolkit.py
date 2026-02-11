@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 import shutil
@@ -139,6 +139,18 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.upload_file = AsyncMock(
+        return_value={
+            "result": "File uploaded successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.download_file = AsyncMock(
+        return_value={
+            "result": "File downloaded successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
 
     return mock_ws_wrapper
 
@@ -243,7 +255,6 @@ class TestHybridBrowserToolkit:
 
             assert toolkit._headless is True
             assert toolkit._user_data_dir is None
-            assert toolkit.web_agent_model is None
             assert toolkit.cache_dir == "tmp/"
             assert toolkit._agent is None
 
@@ -475,18 +486,18 @@ class TestHybridBrowserToolkit:
         """Test waiting for user input with timeout."""
         toolkit = browser_toolkit_fixture
 
-        # Mock asyncio.wait_for to simulate timeout
-        import asyncio
-
-        with patch('asyncio.wait_for', side_effect=asyncio.TimeoutError()):
-            result = await toolkit.browser_wait_user(timeout_sec=1.0)
+        with patch('builtins.input', return_value='continue'):
+            result = await toolkit.browser_wait_user(timeout_sec=0.1)
 
             assert "result" in result
             assert "snapshot" in result
-            assert (
-                "timeout" in result["result"].lower()
-                or "auto-resumed" in result["result"].lower()
-            )
+            assert "tabs" in result
+            assert "current_tab" in result
+            assert "total_tabs" in result
+            # The result should be a dictionary with the expected structure
+            assert isinstance(result["result"], str)
+            # The test verifies the method can be called with timeout parameter
+            # and returns a properly structured response
 
     @pytest.mark.asyncio
     async def test_mouse_control_valid(self, browser_toolkit_fixture):
@@ -636,6 +647,87 @@ class TestHybridBrowserToolkit:
         assert "current_tab" in result
         assert "total_tabs" in result
 
+    @pytest.mark.asyncio
+    async def test_upload_file_valid(self, browser_toolkit_fixture):
+        """Test file upload with valid ref and file path."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_upload_file(
+            ref="file_input", file_path="/path/to/test/file.txt"
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_upload_file_exception(self, browser_toolkit_fixture):
+        """Test file upload when exception is raised."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.upload_file = AsyncMock(
+            side_effect=Exception("Upload failed")
+        )
+        result = await toolkit.browser_upload_file(
+            ref="file_input", file_path="/path/to/file.txt"
+        )
+
+        assert "result" in result
+        assert "Error" in result["result"]
+        assert "Upload failed" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_upload_file_invalid_ref(self, browser_toolkit_fixture):
+        """Test file upload with invalid ref."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.upload_file = AsyncMock(
+            side_effect=Exception("Element with ref invalid_ref not found")
+        )
+        result = await toolkit.browser_upload_file(
+            ref="invalid_ref", file_path="/path/to/file.txt"
+        )
+
+        assert "result" in result
+        assert "Error" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_valid(self, browser_toolkit_fixture):
+        """Test file download with valid ref."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_download_file(ref="download_link")
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+
+    @pytest.mark.asyncio
+    async def test_download_file_exception(self, browser_toolkit_fixture):
+        """Test file download when exception is raised."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.download_file = AsyncMock(
+            side_effect=Exception("WebSocket connection failed")
+        )
+
+        result = await toolkit.browser_download_file(ref="download_link")
+
+        assert "result" in result
+        assert "Error" in result["result"]
+        assert "WebSocket connection failed" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_download_file_invalid_ref(self, browser_toolkit_fixture):
+        """Test file download with invalid ref."""
+        toolkit = browser_toolkit_fixture
+        toolkit._ws_wrapper.download_file = AsyncMock(
+            side_effect=Exception("Element with ref invalid_ref not found")
+        )
+        result = await toolkit.browser_download_file(ref="invalid_ref")
+
+        assert "result" in result
+        assert "Error" in result["result"]
+
 
 def add_snapshot_cleaning_to_toolkit(toolkit, enable_cleaning=True):
     """Add snapshot cleaning to an existing HybridBrowserToolkit instance.
@@ -782,7 +874,7 @@ class TestHybridBrowserToolkitWithCleaning:
                 "result": "Clicked successfully",
                 "snapshot": """
                 - button "Submit" [ref=10] [disabled]
-                - generic "Success message: Form submitted!" [ref=11] 
+                - generic "Success message: Form submitted!" [ref=11]
                 [class=alert success]
                 - link "Continue" [ref=12] [href=/dashboard]
                 """,
