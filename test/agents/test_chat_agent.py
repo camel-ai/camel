@@ -39,8 +39,12 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend
-from camel.models import AnthropicModel, ModelFactory, OpenAIModel
+from camel.models import (
+    AnthropicModel,
+    BaseModelBackend,
+    ModelFactory,
+    OpenAIModel,
+)
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
