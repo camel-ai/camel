@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import OpenRouterConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -81,3 +81,47 @@ class OpenRouterModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+    def _prepare_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if not self.model_config_dict.get("enable_prompt_caching"):
+            return messages
+
+        implicit_caching_prefixes = (
+            "openai/",
+            "deepseek/",
+            "google/gemini-2.5-pro",
+            "google/gemini-2.5-flash",
+            "x-ai/",
+            "moonshotai/"
+
+        )
+
+        model_name = str(self.model_type).lower()
+
+        needs_explicit_caching = not any(
+            model_name.startswith(p) for p in implicit_caching_prefixes
+        )
+
+        # 4. Apply transformation only if needed
+        if needs_explicit_caching and messages:
+            if messages[0].get("role") == "system":
+                sys_msg = messages[0]
+                content = sys_msg.get("content")
+
+                ttl = self.model_config_dict.get("cache_ttl", "5m")
+                cache_obj = {"type": "ephemeral"}
+
+                if model_name.startswith("anthropic/") and ttl == "1h":
+                    cache_obj["ttl"] = "1h"
+
+                if isinstance(content, str):
+                    sys_msg["content"] = [
+                        {
+                            "type": "text",
+                            "text": content,
+                            "cache_control": cache_obj,
+                        }
+                    ]
+                elif isinstance(content, list) and content:
+                    content[-1]["cache_control"] = cache_obj
+
+        return messages

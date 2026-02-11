@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -900,6 +900,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "pytest" },
     { name = "pyyaml" },
     { name = "tiktoken" },
     { name = "websockets" },
@@ -1617,6 +1618,7 @@ requires-dist = [
     { name = "pytesseract", marker = "extra == 'eigent'", specifier = ">=0.3.13" },
     { name = "pytesseract", marker = "extra == 'media-tools'", specifier = ">=0.3.13" },
     { name = "pytesseract", marker = "extra == 'owl'", specifier = ">=0.3.13" },
+    { name = "pytest", specifier = ">=7.4.4" },
     { name = "pytest", marker = "extra == 'all'", specifier = ">=7,<8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7,<8" },
     { name = "pytest-asyncio", marker = "extra == 'all'", specifier = ">=0.23.0,<0.24" },
