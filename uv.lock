@@ -1684,8 +1684,8 @@ requires-dist = [
     { name = "sentencepiece", marker = "extra == 'all'", specifier = ">=0.2,<0.3" },
     { name = "sentencepiece", marker = "extra == 'huggingface'", specifier = ">=0.2,<0.3" },
     { name = "sentencepiece", marker = "extra == 'owl'", specifier = ">=0.2,<0.3" },
-    { name = "setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
-    { name = "setuptools", marker = "extra == 'dev'", specifier = ">=69.2.0,<70" },
+    { name = "setuptools", marker = "extra == 'all'", specifier = ">=78.1.1,<79" },
+    { name = "setuptools", marker = "extra == 'dev'", specifier = ">=78.1.1,<79" },
     { name = "slack-bolt", marker = "extra == 'all'", specifier = ">=1.20.1,<2" },
     { name = "slack-bolt", marker = "extra == 'communication-tools'", specifier = ">=1.20.1,<2" },
     { name = "slack-sdk", marker = "extra == 'all'", specifier = ">=3.27.2,<4" },
@@ -1735,8 +1735,8 @@ requires-dist = [
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12,<7" },
     { name = "types-requests", marker = "extra == 'all'", specifier = ">=2.31.0,<3" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.31.0,<3" },
-    { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
-    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.2.0,<70" },
+    { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=75.8.0,<76" },
+    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=75.8.0,<76" },
     { name = "types-tqdm", marker = "extra == 'all'", specifier = ">=4.66.0,<5" },
     { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0,<5" },
     { name = "unstructured", marker = "python_full_version < '3.13' and extra == 'all'", specifier = "==0.16.20" },
@@ -7439,7 +7439,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -8408,7 +8408,7 @@ name = "pyobjc-framework-cocoa"
 version = "12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/a3/16ca9a15e77c061a9250afbae2eae26f2e1579eb8ca9462ae2d2c71e1169/pyobjc_framework_cocoa-12.1.tar.gz", hash = "sha256:5556c87db95711b985d5efdaaf01c917ddd41d148b1e52a0c66b1a2e2c5c1640", size = 2772191, upload-time = "2025-11-14T10:13:02.069Z" }
 wheels = [
@@ -8426,8 +8426,8 @@ name = "pyobjc-framework-quartz"
 version = "12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "python_full_version >= '3.13' or sys_platform == 'darwin'" },
+    { name = "pyobjc-core", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "(python_full_version >= '3.13' and sys_platform != 'win32') or sys_platform == 'darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/18/cc59f3d4355c9456fc945eae7fe8797003c4da99212dd531ad1b0de8a0c6/pyobjc_framework_quartz-12.1.tar.gz", hash = "sha256:27f782f3513ac88ec9b6c82d9767eef95a5cf4175ce88a1e5a65875fee799608", size = 3159099, upload-time = "2025-11-14T10:21:24.31Z" }
 wheels = [
@@ -10267,11 +10267,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "69.5.1"
+version = "78.1.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d6/4f/b10f707e14ef7de524fe1f8988a294fb262a29c9b5b12275c7e188864aed/setuptools-69.5.1.tar.gz", hash = "sha256:6c1fccdac05a97e598fb0ae3bbed5904ccb317337a51139dcd51453611bbb987", size = 2291314, upload-time = "2024-04-13T21:06:28.589Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/81/9c/42314ee079a3e9c24b27515f9fbc7a3c1d29992c33451779011c74488375/setuptools-78.1.1.tar.gz", hash = "sha256:fcc17fd9cd898242f6b4adfaca46137a9edef687f43e6f78469692a5e70d851d", size = 1368163, upload-time = "2025-04-19T18:23:36.68Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/29/13965af254e3373bceae8fb9a0e6ea0d0e571171b80d6646932131d6439b/setuptools-69.5.1-py3-none-any.whl", hash = "sha256:c636ac361bc47580504644275c9ad802c50415c7522212252c033bd15f301f32", size = 894566, upload-time = "2024-04-13T21:06:23.256Z" },
+    { url = "https://files.pythonhosted.org/packages/90/99/158ad0609729111163fc1f674a5a42f2605371a4cf036d0441070e2f7455/setuptools-78.1.1-py3-none-any.whl", hash = "sha256:c3a9c4211ff4c309edb8b8c4f1cbfa7ae324c4ba9f91ff254e3d305b9fd54561", size = 1256462, upload-time = "2025-04-19T18:23:34.525Z" },
 ]
 
 [[package]]
@@ -11285,11 +11285,14 @@ wheels = [
 
 [[package]]
 name = "types-setuptools"
-version = "69.5.0.20240522"
+version = "75.8.2.20250305"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/45/dd/dc7fdc8086cb19f081fdc76476a8707c515d0f81abef94b7845b604ceedd/types-setuptools-69.5.0.20240522.tar.gz", hash = "sha256:c5a97601b2d040d3b9fcd0633730f0a8c86ebef208552525c97301427f261549", size = 38273, upload-time = "2024-05-22T02:22:17.63Z" }
+dependencies = [
+    { name = "setuptools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/18/a996861f5225e7d533a8d8b6aa61bcc9183429a6b8bc93b850aa2e22974d/types_setuptools-75.8.2.20250305.tar.gz", hash = "sha256:a987269b49488f21961a1d99aa8d281b611625883def6392a93855b31544e405", size = 42609, upload-time = "2025-03-05T02:47:51.104Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/6d/17e28bda9953e0aa4553fe4b5685a509d2f9ff8fe37dbafdd7a5cde37fbb/types_setuptools-69.5.0.20240522-py3-none-any.whl", hash = "sha256:e27231cbc80648cfaee4921d2f1150107fdf8d33666958abf2aba0191a82688b", size = 62183, upload-time = "2024-05-22T02:22:16.062Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/5b/bb33f99239a6d54ed1d8220a088d96d2ccacac7abb317df0d68d2500f3be/types_setuptools-75.8.2.20250305-py3-none-any.whl", hash = "sha256:ba80953fd1f5f49e552285c024f75b5223096a38a5138a54d18ddd3fa8f6a2d4", size = 63727, upload-time = "2025-03-05T02:47:49.12Z" },
 ]
 
 [[package]]
