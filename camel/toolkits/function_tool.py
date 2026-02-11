@@ -962,3 +962,89 @@ class FunctionTool:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+
+def tool(
+    func: Optional[Callable] = None,
+    *,
+    openai_tool_schema: Optional[Dict[str, Any]] = None,
+    synthesize_schema: bool = False,
+    synthesize_schema_model: Optional[BaseModelBackend] = None,
+    synthesize_schema_max_retries: int = 2,
+    synthesize_output: bool = False,
+    synthesize_output_model: Optional[BaseModelBackend] = None,
+    synthesize_output_format: Optional[Type[BaseModel]] = None,
+):
+    r"""A decorator that converts a Python function into a FunctionTool
+    instance.
+
+    This decorator can be used with or without parentheses:
+        - @tool - without parentheses, uses default settings
+        - @tool() - with parentheses, uses default settings
+        - @tool(synthesize_output=True) - with custom settings
+
+    Args:
+        func (Optional[Callable], optional): The function to be decorated.
+            This is automatically passed when using @tool without parentheses.
+            (default: :obj:`None`)
+        openai_tool_schema (Optional[Dict[str, Any]], optional): A
+            user-defined OpenAI tool schema to override the default result.
+            (default: :obj:`None`)
+        synthesize_schema (bool, optional): Whether to enable schema synthesis.
+            (default: :obj:`False`)
+        synthesize_schema_model (Optional[BaseModelBackend], optional):
+            Model to use for schema synthesis. (default: :obj:`None`)
+        synthesize_schema_max_retries (int, optional): Maximum number of
+            retries for schema synthesis. (default: :obj:`2`)
+        synthesize_output (bool, optional): Whether to enable output synthesis.
+            (default: :obj:`False`)
+        synthesize_output_model (Optional[BaseModelBackend], optional):
+            Model to use for output synthesis. (default: :obj:`None`)
+        synthesize_output_format (Optional[Type[BaseModel]], optional):
+            Format for synthesized output. (default: :obj:`None`)
+
+    Returns:
+        Callable[[Callable], FunctionTool]: A decorator function that converts
+            the decorated function into a FunctionTool instance.
+
+    Example:
+        Using @tool without parentheses::
+
+            @tool
+            def add(a: int, b: int = 0) -> int:
+                '''Add two numbers.'''
+                return a + b
+
+        Using @tool() with parentheses::
+
+            @tool()
+            def multiply(a: int, b: int) -> int:
+                '''Multiply two numbers.'''
+                return a * b
+    """
+
+    def decorator(f: Callable) -> FunctionTool:
+        r"""The actual decorator function.
+
+        Args:
+            f (Callable): The function to be converted into a FunctionTool.
+
+        Returns:
+            FunctionTool: The function wrapped as a FunctionTool instance.
+        """
+        return FunctionTool(
+            func=f,
+            openai_tool_schema=openai_tool_schema,
+            synthesize_schema=synthesize_schema,
+            synthesize_schema_model=synthesize_schema_model,
+            synthesize_schema_max_retries=synthesize_schema_max_retries,
+            synthesize_output=synthesize_output,
+            synthesize_output_model=synthesize_output_model,
+            synthesize_output_format=synthesize_output_format,
+        )
+
+    # Support both @tool and @tool() usage patterns
+    if func is not None:
+        return decorator(func)
+    else:
+        return decorator

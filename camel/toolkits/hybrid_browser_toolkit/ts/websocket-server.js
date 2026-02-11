@@ -164,6 +164,17 @@ class WebSocketBrowserServer {
         console.log(`Screenshot completed in ${endTime - startTime}ms`);
         return result;
       }
+
+      case 'get_screenshot': {
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        console.log('Starting plain screenshot (no SOM)...');
+        const startTime = Date.now();
+        const result = await this.toolkit.getScreenshot();
+        const endTime = Date.now();
+        console.log(`Plain screenshot completed in ${endTime - startTime}ms`);
+        return result;
+      }
+
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.click(params.ref);
@@ -197,11 +208,28 @@ class WebSocketBrowserServer {
 
       case 'mouse_drag':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.mouseDrag(params.from_ref, params.to_ref);
+        return await this.toolkit.mouseDrag(params);
 
       case 'press_key':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.pressKeys(params.keys);
+
+      case 'upload_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.uploadFile({
+          filePath: params.filePath,
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
+
+      case 'download_file':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.downloadFile({
+          ref: params.ref,
+          x: params.x,
+          y: params.y
+        });
 
       case 'batch_keyboard_input':
         if (!this.toolkit) throw new Error('Toolkit not initialized');

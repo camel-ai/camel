@@ -43,6 +43,58 @@ def reset(self, *args: Any, **kwargs: Any):
 
 Resets the runtime to its initial state.
 
+<a id="camel.runtimes.base.BaseRuntime.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Releases resources (containers, processes, connections, etc.).
+
+Public part of the runtime lifecycle API: callers may call
+:meth:`cleanup` or use the runtime as a context manager
+(`__INLINE_CODE_1__`) for deterministic teardown. Subclasses must
+implement this method.
+
+<a id="camel.runtimes.base.BaseRuntime.stop"></a>
+
+### stop
+
+```python
+def stop(self):
+```
+
+**Returns:**
+
+  BaseRuntime: The current runtime (for chaining).
+
+<a id="camel.runtimes.base.BaseRuntime.__enter__"></a>
+
+### __enter__
+
+```python
+def __enter__(self):
+```
+
+Enter the context manager.
+
+<a id="camel.runtimes.base.BaseRuntime.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type: type[BaseException] | None,
+    exc_val: BaseException | None,
+    exc_tb: Any | None
+):
+```
+
+Exit the context manager; ensures cleanup is called.
+
 <a id="camel.runtimes.base.BaseRuntime.get_tools"></a>
 
 ### get_tools
