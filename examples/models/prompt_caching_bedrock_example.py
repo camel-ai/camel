@@ -34,18 +34,32 @@ def run_bedrock_demo(shared_context: str, questions: list) -> None:
     print()
 
     system_message = get_system_message()
+
+    # Option 1: Bearer Token authentication
     model = ModelFactory.create(
         model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
-        model_type=ModelType.AWS_CLAUDE_3_5_SONNET,
+        model_type=ModelType.AWS_CLAUDE_3_7_SONNET,
         model_config_dict=BedrockConfig(
             temperature=0.2,
             max_tokens=256,
             cache_control="5m",
-            cache_checkpoint_target="both",
         ).as_dict(),
-        api_key="fowhiafhawf1412215wfwifha",
+        api_key="xxx",  # Replace with your actual Bearer Token
         region_name="us-west-2",
     )
+
+    # Option 2: IAM credentials (or default credential chain):
+    # model = ModelFactory.create(
+    #     model_platform=ModelPlatformType.AWS_BEDROCK_CONVERSE,
+    #     model_type=ModelType.AWS_CLAUDE_3_7_SONNET,
+    #     model_config_dict=BedrockConfig(
+    #         temperature=0.2,
+    #         max_tokens=256,
+    #         cache_control="5m",
+    #     ).as_dict(),
+    #     region_name="us-west-2",
+    #     # No api_key needed — uses ~/.aws/credentials or IAM role
+    # )
 
     agent = ChatAgent(system_message=system_message, model=model)
     for i, q in enumerate(questions, 1):

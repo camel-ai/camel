@@ -60,7 +60,6 @@ class AWSBedrockConverseModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", "AWS_BEARER_TOKEN_BEDROCK"),
             ("region_name", "AWS_REGION"),
         ]
     )
@@ -70,6 +69,9 @@ class AWSBedrockConverseModel(BaseModelBackend):
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         region_name: Optional[str] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        aws_session_token: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -81,32 +83,19 @@ class AWSBedrockConverseModel(BaseModelBackend):
             api_key
             or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
             or os.environ.get("BEDROCK_API_KEY")
+            or None
         )
         region_name = region_name or os.environ.get("AWS_REGION")
 
-        self._cache_control = model_config_dict.pop("cache_control", None)
-        self._cache_checkpoint_target = model_config_dict.pop(
-            "cache_checkpoint_target",
-            "both",
-        )
+        self._cache_ttl = model_config_dict.pop("cache_control", None)
 
-        if self._cache_control is not None and self._cache_control not in (
+        if self._cache_ttl is not None and self._cache_ttl not in (
             "5m",
             "1h",
         ):
             raise ValueError(
-                f"Invalid cache_control value: {self._cache_control!r}. "
+                f"Invalid cache_control value: {self._cache_ttl!r}. "
                 "Must be either '5m' or '1h'."
-            )
-        if self._cache_checkpoint_target not in (
-            "system",
-            "last_user",
-            "both",
-        ):
-            raise ValueError(
-                "Invalid cache_checkpoint_target value: "
-                f"{self._cache_checkpoint_target!r}. Must be one of "
-                "'system', 'last_user', or 'both'."
             )
 
         super().__init__(
@@ -122,6 +111,15 @@ class AWSBedrockConverseModel(BaseModelBackend):
         bedrock_client = kwargs.pop("bedrock_client", None)
         self._bedrock_client = bedrock_client
         self._region_name = region_name
+        self._aws_access_key_id = aws_access_key_id or os.environ.get(
+            "AWS_ACCESS_KEY_ID"
+        )
+        self._aws_secret_access_key = aws_secret_access_key or os.environ.get(
+            "AWS_SECRET_ACCESS_KEY"
+        )
+        self._aws_session_token = aws_session_token or os.environ.get(
+            "AWS_SESSION_TOKEN"
+        )
 
     @property
     def bedrock_client(self) -> Any:
@@ -129,8 +127,22 @@ class AWSBedrockConverseModel(BaseModelBackend):
             client_kwargs: Dict[str, Any] = {}
             if self._region_name is not None:
                 client_kwargs["region_name"] = self._region_name
-            if self._api_key is not None:
+
+            if self._api_key:
+                # Bearer Token authentication
                 os.environ["AWS_BEARER_TOKEN_BEDROCK"] = self._api_key
+            elif self._aws_access_key_id and self._aws_secret_access_key:
+                # Explicit IAM credentials
+                client_kwargs["aws_access_key_id"] = self._aws_access_key_id
+                client_kwargs["aws_secret_access_key"] = (
+                    self._aws_secret_access_key
+                )
+                if self._aws_session_token:
+                    client_kwargs["aws_session_token"] = (
+                        self._aws_session_token
+                    )
+            # Otherwise: boto3 default credential chain
+            # (env vars, ~/.aws/credentials, instance profile, etc.)
 
             import boto3  # type: ignore[import-untyped]
 
@@ -151,8 +163,11 @@ class AWSBedrockConverseModel(BaseModelBackend):
         return self.model_config_dict.get("stream", False)
 
     @staticmethod
-    def _new_cache_point(ttl: str) -> Dict[str, Any]:
-        return {"cachePoint": {"type": "default", "ttl": ttl}}
+    def _new_cache_point(ttl: Optional[str] = None) -> Dict[str, Any]:
+        cp: Dict[str, Any] = {"type": "default"}
+        if ttl and ttl not in ("5m"):
+            cp["ttl"] = ttl
+        return {"cachePoint": cp}
 
     @staticmethod
     def _parse_json_or_text(value: Any) -> Dict[str, Any]:
@@ -213,7 +228,7 @@ class AWSBedrockConverseModel(BaseModelBackend):
         content: Any,
     ) -> List[Dict[str, Any]]:
         if isinstance(content, str):
-            return [{"text": content}]
+            return [{"text": content}] if content else []
 
         blocks: List[Dict[str, Any]] = []
         if not isinstance(content, list):
@@ -344,24 +359,18 @@ class AWSBedrockConverseModel(BaseModelBackend):
                 {"text": "\n".join(part for part in system_parts if part)}
             ]
 
-        if self._cache_control:
-            if (
-                self._cache_checkpoint_target in ("system", "both")
-                and system_blocks
-            ):
-                system_blocks.append(
-                    self._new_cache_point(self._cache_control)
-                )
+        if self._cache_ttl:
+            if system_blocks:
+                system_blocks.append(self._new_cache_point(self._cache_ttl))
 
-            if self._cache_checkpoint_target in ("last_user", "both"):
-                for bedrock_msg in reversed(bedrock_messages):
-                    if bedrock_msg.get("role") == "user":
-                        msg_content = bedrock_msg.get("content")
-                        if isinstance(msg_content, list):
-                            msg_content.append(
-                                self._new_cache_point(self._cache_control)
-                            )
-                        break
+            for bedrock_msg in reversed(bedrock_messages):
+                if bedrock_msg.get("role") == "user":
+                    msg_content = bedrock_msg.get("content")
+                    if isinstance(msg_content, list):
+                        msg_content.append(
+                            self._new_cache_point(self._cache_ttl)
+                        )
+                    break
 
         return system_blocks, bedrock_messages
 
@@ -769,7 +778,6 @@ class AWSBedrockConverseModel(BaseModelBackend):
             return self._converse_stream_to_openai_chunks(
                 stream_obj=stream_resp, model=str(self.model_type)
             )
-
         response = self.bedrock_client.converse(**request)
         return self._convert_converse_to_openai_response(
             response=response, model=str(self.model_type)

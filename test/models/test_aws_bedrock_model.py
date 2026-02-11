@@ -45,7 +45,6 @@ def test_aws_bedrock_model(model_type: ModelType):
     assert model.model_type == model_type
     expected_config = BedrockConfig().as_dict()
     expected_config.pop("cache_control", None)
-    expected_config.pop("cache_checkpoint_target", None)
     assert model.model_config_dict == expected_config
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
@@ -81,10 +80,8 @@ def test_bedrock_config_accepts_prompt_cache_params():
     config = BedrockConfig(
         temperature=0.3,
         cache_control="5m",
-        cache_checkpoint_target="both",
     )
     config_dict = config.as_dict()
 
     assert config_dict["temperature"] == 0.3
     assert config_dict["cache_control"] == "5m"
-    assert config_dict["cache_checkpoint_target"] == "both"

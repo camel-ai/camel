@@ -44,7 +44,6 @@ def test_converse_cache_checkpoints_not_shared_object():
     model = _make_model(
         BedrockConfig(
             cache_control="5m",
-            cache_checkpoint_target="both",
         ).as_dict(),
         bedrock_client=object(),
     )
@@ -55,10 +54,8 @@ def test_converse_cache_checkpoints_not_shared_object():
             {"role": "user", "content": "hello"},
         ]
     )
-    assert system[-1] == {"cachePoint": {"type": "default", "ttl": "5m"}}
-    assert messages[-1]["content"][-1] == {
-        "cachePoint": {"type": "default", "ttl": "5m"}
-    }
+    assert system[-1] == {"cachePoint": {"type": "default"}}
+    assert messages[-1]["content"][-1] == {"cachePoint": {"type": "default"}}
     assert system[-1] is not messages[-1]["content"][-1]
 
 

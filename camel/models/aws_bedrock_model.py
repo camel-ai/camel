@@ -76,19 +76,9 @@ class AWSBedrockModel(OpenAICompatibleModel):
         # Prompt-caching controls are for AWSBedrockConverseModel. Remove them
         # to avoid passing unknown keys to the OpenAI-compatible endpoint.
         cache_control = model_config_dict.pop("cache_control", None)
-        cache_checkpoint_target = model_config_dict.pop(
-            "cache_checkpoint_target", None
-        )
         if cache_control is not None:
             warnings.warn(
                 "Ignoring `cache_control` on AWSBedrockModel. "
-                "Use AWSBedrockConverseModel for Bedrock prompt caching.",
-                UserWarning,
-                stacklevel=2,
-            )
-        if cache_checkpoint_target not in (None, "both"):
-            warnings.warn(
-                "Ignoring `cache_checkpoint_target` on AWSBedrockModel. "
                 "Use AWSBedrockConverseModel for Bedrock prompt caching.",
                 UserWarning,
                 stacklevel=2,

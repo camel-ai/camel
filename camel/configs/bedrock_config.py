@@ -60,11 +60,10 @@ class BedrockConfig(BaseConfig):
             or if the model type does not support it, this parameter is
             ignored. (default: :obj:`None`)
         cache_control (Optional[Literal["5m", "1h"]], optional): Cache TTL
-            for Bedrock prompt caching. Set to :obj:`"5m"` or :obj:`"1h"` to
-            enable cache checkpoints. (default: :obj:`None`)
-        cache_checkpoint_target (Literal["system", "last_user", "both"],
-            optional): Where cache checkpoints are inserted when prompt
-            caching is enabled. (default: :obj:`"both"`)
+            for Bedrock prompt caching. Set to :obj:`"5m"` for 5-minute or
+            :obj:`"1h"` for 1-hour TTL (only supported by some models).
+            Cache checkpoints are inserted on both the system message and
+            the last user message. (default: :obj:`None`)
     """
 
     max_tokens: Optional[int] = None
@@ -77,7 +76,6 @@ class BedrockConfig(BaseConfig):
     ] = None
     reasoning_effort: Optional[str] = None
     cache_control: Optional[Literal["5m", "1h"]] = None
-    cache_checkpoint_target: Literal["system", "last_user", "both"] = "both"
 
 
 BEDROCK_API_PARAMS = {param for param in BedrockConfig.model_fields.keys()}

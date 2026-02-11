@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,6 +31,7 @@ from openai import AsyncStream, Stream
 if TYPE_CHECKING:
     from google.genai.client import Client as GenaiClient
     from google.genai.types import CachedContent
+from google.genai.errors import ClientError
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
@@ -149,6 +151,8 @@ class GeminiModel(OpenAICompatibleModel):
             self._native_client = genai.Client(api_key=self._api_key)
         return self._native_client
 
+    _TTL_PATTERN = re.compile(r"^\d+s$")
+
     def create_cache(
         self,
         contents: List[Dict[str, Any]],
@@ -161,8 +165,10 @@ class GeminiModel(OpenAICompatibleModel):
         Args:
             contents (List[Dict[str, Any]]): The content to cache. Should be a
                 list of message dicts with 'role' and 'parts' keys.
-            ttl (str, optional): Time-to-live for the cache. Format: "300s"
-                (5 minutes), "3600s" (1 hour), etc. (default: :obj:`"300s"`)
+            ttl (str, optional): Time-to-live for the cache as an integer
+                number of seconds followed by ``"s"``, e.g. ``"300s"``
+                (5 min), ``"3600s"`` (1 h), ``"86400s"`` (1 day).
+                (default: :obj:`"300s"`)
             display_name (str, optional): A human-readable name for the cache.
                 (default: :obj:`None`)
             system_instruction (str, optional): System instruction to cache.
@@ -170,7 +176,16 @@ class GeminiModel(OpenAICompatibleModel):
 
         Returns:
             str: The cache name in format "cachedContents/{cache_id}".
+
+        Raises:
+            ValueError: If *ttl* does not match the ``"<number>s"`` format.
         """
+        if not self._TTL_PATTERN.match(ttl):
+            raise ValueError(
+                f"Invalid ttl format: {ttl!r}. "
+                "Expected an integer number of seconds followed by 's', "
+                "e.g. '300s', '3600s'."
+            )
         from google.genai import types
 
         # Build model name - handle both ModelType enum and string
@@ -347,19 +362,12 @@ class GeminiModel(OpenAICompatibleModel):
         if not self._cached_content:
             return False
 
-        msg = str(err).lower()
-        cache_markers = ("cached_content", "cached content", "cachedcontents")
-        invalid_markers = (
-            "not found",
-            "not exist",
-            "expired",
-            "invalid",
-            "no such",
-            "unknown",
-        )
-        return any(k in msg for k in cache_markers) and any(
-            k in msg for k in invalid_markers
-        )
+        if not isinstance(err, ClientError):
+            return False
+
+        # Deleted / expired cached content returns 404 NOT_FOUND or
+        # 403 PERMISSION_DENIED
+        return err.code in (403, 404)
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,

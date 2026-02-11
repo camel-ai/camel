@@ -13,12 +13,27 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import pytest
+from google.genai.errors import ClientError
 from pydantic import BaseModel
 
 from camel.configs import GeminiConfig
 from camel.models import GeminiModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
+
+
+def _make_stale_cache_error() -> ClientError:
+    """Create a ClientError that mimics a deleted/expired cached content."""
+    return ClientError(
+        code=403,
+        response_json={
+            "error": {
+                "code": 403,
+                "message": "CachedContent not found (or permission denied)",
+                "status": "PERMISSION_DENIED",
+            }
+        },
+    )
 
 
 @pytest.mark.model_backend
@@ -335,7 +350,7 @@ def test_gemini_cached_content_retries_without_cache_on_stale_error():
         def create(self, **kwargs):
             self.calls.append(kwargs)
             if len(self.calls) == 1:
-                raise Exception("cached_content not found")
+                raise _make_stale_cache_error()
             return {"id": "ok"}
 
     retry_completions = RetryCompletions()
@@ -386,7 +401,7 @@ def test_gemini_parse_path_applies_cached_content_and_retry():
         def parse(self, **kwargs):
             self.calls.append(kwargs)
             if len(self.calls) == 1:
-                raise Exception("cached_content expired")
+                raise _make_stale_cache_error()
             return {"id": "ok"}
 
     retry_parse_completions = RetryParseCompletions()
