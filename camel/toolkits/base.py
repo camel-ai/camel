@@ -13,7 +13,15 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Literal, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+)
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool

@@ -1247,7 +1247,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 to_x=to_x,
                 to_y=to_y,
             )
-            )
             return await self._build_action_response(result, ws_wrapper)
         except Exception as e:
             logger.error(f"Error with mouse drag and drop: {e}")
