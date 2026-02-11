@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -99,9 +99,10 @@ def test_summarize_single_message(mock_model_backend):
     )
     mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
-    summarizer.agent.step = Mock(return_value=mock_response)
-
-    summary = summarizer.summarize([message])
+    with patch.object(
+        summarizer.agent, "step", Mock(return_value=mock_response)
+    ):
+        summary = summarizer.summarize([message])
 
     assert isinstance(summary, MessageSummary)
     assert "User" in summary.participants
@@ -147,9 +148,10 @@ def test_summarize_with_special_characters(mock_model_backend):
     )
     mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
-    summarizer.agent.step = Mock(return_value=mock_response)
-
-    summary = summarizer.summarize(messages)
+    with patch.object(
+        summarizer.agent, "step", Mock(return_value=mock_response)
+    ):
+        summary = summarizer.summarize(messages)
 
     assert isinstance(summary, MessageSummary)
     assert "User" in summary.participants
@@ -191,9 +193,10 @@ def test_message_summarizer_with_custom_model_backend():
     )
     mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
-    summarizer.agent.step = Mock(return_value=mock_response)
-
-    summary = summarizer.summarize([message])
+    with patch.object(
+        summarizer.agent, "step", Mock(return_value=mock_response)
+    ):
+        summary = summarizer.summarize([message])
     assert isinstance(summary, MessageSummary)
 
 
@@ -225,9 +228,10 @@ def test_summarize_messages(
     )
     mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
-    summarizer.agent.step = Mock(return_value=mock_response)
-
-    summary = summarizer.summarize(sample_messages)
+    with patch.object(
+        summarizer.agent, "step", Mock(return_value=mock_response)
+    ):
+        summary = summarizer.summarize(sample_messages)
 
     # Verify the summary structure
     assert isinstance(summary, MessageSummary)

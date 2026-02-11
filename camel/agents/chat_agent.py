@@ -17,6 +17,7 @@ import asyncio
 import atexit
 import base64
 import concurrent.futures
+import contextvars
 import functools
 import hashlib
 import inspect
@@ -30,6 +31,7 @@ import threading
 import time
 import uuid
 import warnings
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -101,9 +103,21 @@ from camel.utils import (
     Constants,
     get_model_encoding,
     model_from_json_schema,
+    update_current_observation,
 )
+from camel.utils.agent_context import set_current_agent_context
 from camel.utils.commons import dependencies_required
 from camel.utils.context_utils import ContextUtility
+from camel.utils.langfuse import (
+    get_current_agent_session_id,
+    get_langfuse_tool_name,
+    is_langfuse_available,
+    serialize_langfuse_model_response_input,
+    serialize_langfuse_model_response_output,
+    serialize_langfuse_step_input,
+    serialize_langfuse_step_output,
+    set_current_agent_session_id,
+)
 from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
@@ -137,19 +151,17 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 # Langfuse decorator setting
+propagate_attributes: Any = None
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
+        from langfuse import observe
+        from langfuse import propagate_attributes as _propagate_attrs
+
+        propagate_attributes = _propagate_attrs
     except ImportError:
         from camel.utils import observe
 else:
     from camel.utils import observe
-
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
@@ -335,6 +347,15 @@ class AsyncStreamingChatAgentResponse:
         # Return a default response if nothing was consumed
         return ChatAgentResponse(msgs=[], terminated=False, info={})
 
+    def _require_finalized_response(self) -> ChatAgentResponse:
+        r"""Return finalized response or raise if stream not yet consumed."""
+        if self._current_response is None:
+            raise RuntimeError(
+                "AsyncStreamingChatAgentResponse is not finalized. "
+                "Await the response first, e.g. `final = await response`."
+            )
+        return self._current_response
+
     def __await__(self):
         r"""Make this object awaitable - returns the final response."""
         return self._get_final_response().__await__()
@@ -358,6 +379,25 @@ class AsyncStreamingChatAgentResponse:
                 self._consumed = True
 
             return _consume_and_yield()
+
+    @property
+    def msgs(self) -> List[BaseMessage]:
+        return self._require_finalized_response().msgs
+
+    @property
+    def terminated(self) -> bool:
+        return self._require_finalized_response().terminated
+
+    @property
+    def info(self) -> Dict[str, Any]:
+        return self._require_finalized_response().info
+
+    @property
+    def msg(self):
+        return self._require_finalized_response().msg
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return self._require_finalized_response().model_dump(*args, **kwargs)
 
 
 @track_agent(name="ChatAgent")
@@ -994,6 +1034,7 @@ class ChatAgent(BaseAgent):
     def _reset_summary_state(self) -> None:
         self._summary_token_count = 0  # Total tokens in summary messages
 
+    @observe(name="get_context")
     def _get_context_with_summarization(
         self,
     ) -> Tuple[List[OpenAIMessage], int]:
@@ -1030,6 +1071,7 @@ class ChatAgent(BaseAgent):
 
         return openai_messages, num_tokens
 
+    @observe(name="get_context_async")
     async def _get_context_with_summarization_async(
         self,
     ) -> Tuple[List[OpenAIMessage], int]:
@@ -1864,7 +1906,7 @@ class ChatAgent(BaseAgent):
             )
 
             # convert structured output to custom markdown if present
-            if structured_output:
+            if isinstance(structured_output, BaseModel):
                 # convert structured output to custom markdown
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
@@ -2311,7 +2353,7 @@ class ChatAgent(BaseAgent):
             )
 
             # convert structured output to custom markdown if present
-            if structured_output:
+            if isinstance(structured_output, BaseModel):
                 # convert structured output to custom markdown
                 # exclude operation_mode and target_workflow_filename
                 # if present (used for workflow save logic, not persisted)
@@ -2790,7 +2832,6 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
-    @observe()
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -2828,11 +2869,13 @@ class ChatAgent(BaseAgent):
 
         # Execute with timeout if configured
         if self.step_timeout is not None:
+            # Preserve ContextVar state across the timeout threadpool worker.
+            ctx = contextvars.copy_context()
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=1
             ) as executor:
                 future = executor.submit(
-                    self._step_impl, input_message, response_format
+                    ctx.run, self._step_impl, input_message, response_format
                 )
                 try:
                     return future.result(timeout=self.step_timeout)
@@ -2844,24 +2887,34 @@ class ChatAgent(BaseAgent):
         else:
             return self._step_impl(input_message, response_format)
 
+    @observe(name="agent_step")
     def _step_impl(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Implementation of non-streaming step logic."""
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
+        set_current_agent_context(
+            self.agent_id, self.role_name, self.role_type.value
+        )
 
-        set_current_agent_id(self.agent_id)
+        # Set Langfuse session_id for trace grouping.
+        # Only set if not already set by a parent agent, so toolkit
+        # agents (web agent, planning agent, etc.) inherit the parent's
+        # session and all traces group together.
+        if is_langfuse_available():
+            existing_session_id = get_current_agent_session_id()
+            if not existing_session_id:
+                set_current_agent_session_id(self.agent_id)
 
-        # Set Langfuse session_id using agent_id for trace grouping
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                name=self._get_langfuse_observation_name("agent_step"),
+                input=serialize_langfuse_step_input(
+                    input_message, response_format
+                ),
+                metadata=self._get_langfuse_observation_metadata("agent_step"),
+            )
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3081,7 +3134,7 @@ class ChatAgent(BaseAgent):
         openai_messages, _ = self.memory.get_context()
         return openai_messages
 
-    @observe()
+    @observe(name="agent_step_async")
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
@@ -3113,17 +3166,26 @@ class ChatAgent(BaseAgent):
             asyncio.TimeoutError: If the step operation exceeds the configured
                 timeout.
         """
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
+        set_current_agent_context(
+            self.agent_id, self.role_name, self.role_type.value
+        )
 
-        set_current_agent_id(self.agent_id)
+        # Only set session_id if not already set by a parent agent
+        if is_langfuse_available():
+            existing_session_id = get_current_agent_session_id()
+            if not existing_session_id:
+                set_current_agent_session_id(self.agent_id)
 
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                name=self._get_langfuse_observation_name("agent_step_async"),
+                input=serialize_langfuse_step_input(
+                    input_message, response_format
+                ),
+                metadata=self._get_langfuse_observation_metadata(
+                    "agent_step_async"
+                ),
+            )
 
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
@@ -3154,17 +3216,14 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
-        # Set agent_id in context-local storage for logging
-        from camel.utils.agent_context import set_current_agent_id
+        set_current_agent_context(
+            self.agent_id, self.role_name, self.role_type.value
+        )
 
-        set_current_agent_id(self.agent_id)
-
-        try:
-            from camel.utils.langfuse import set_current_agent_session_id
-
-            set_current_agent_session_id(self.agent_id)
-        except ImportError:
-            pass  # Langfuse not available
+        if is_langfuse_available():
+            existing_session_id = get_current_agent_session_id()
+            if not existing_session_id:
+                set_current_agent_session_id(self.agent_id)
 
         # Check if this call is from a RegisteredAgentToolkit to prevent tool
         # use
@@ -3429,11 +3488,18 @@ class ChatAgent(BaseAgent):
             external_tool_call_requests,
         )
 
-        return ChatAgentResponse(
+        response_obj = ChatAgentResponse(
             msgs=response.output_messages,
             terminated=self.terminated,
             info=info,
         )
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                output=serialize_langfuse_step_output(
+                    response_obj, tool_call_records
+                )
+            )
+        return response_obj
 
     def _record_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
@@ -3450,7 +3516,7 @@ class ChatAgent(BaseAgent):
                 "Record selected message manually using `record_message()`."
             )
 
-    @observe()
+    @observe(name="get_model_response")
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -3461,12 +3527,22 @@ class ChatAgent(BaseAgent):
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
         last_error = None
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                input=serialize_langfuse_model_response_input(
+                    openai_messages, response_format, tool_schemas
+                ),
+                metadata=self._get_langfuse_observation_metadata(
+                    "get_model_response"
+                ),
+            )
 
         for attempt in range(self.retry_attempts):
             try:
-                response = self.model_backend.run(
-                    openai_messages, response_format, tool_schemas or None
-                )
+                with self._langfuse_propagation_context("get_model_response"):
+                    response = self.model_backend.run(
+                        openai_messages, response_format, tool_schemas or None
+                    )
                 if response:
                     break
             except RateLimitError as e:
@@ -3510,9 +3586,14 @@ class ChatAgent(BaseAgent):
                 f"Expected ChatCompletion, got {type(response).__name__}"
             )
 
-        return self._handle_batch_response(response)
+        model_response = self._handle_batch_response(response)
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                output=serialize_langfuse_model_response_output(model_response)
+            )
+        return model_response
 
-    @observe()
+    @observe(name="get_model_response_async")
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -3523,12 +3604,24 @@ class ChatAgent(BaseAgent):
     ) -> ModelResponse:
         r"""Internal function for agent async step model response."""
         last_error = None
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                input=serialize_langfuse_model_response_input(
+                    openai_messages, response_format, tool_schemas
+                ),
+                metadata=self._get_langfuse_observation_metadata(
+                    "get_model_response_async"
+                ),
+            )
 
         for attempt in range(self.retry_attempts):
             try:
-                response = await self.model_backend.arun(
-                    openai_messages, response_format, tool_schemas or None
-                )
+                with self._langfuse_propagation_context(
+                    "get_model_response_async"
+                ):
+                    response = await self.model_backend.arun(
+                        openai_messages, response_format, tool_schemas or None
+                    )
                 if response:
                     break
             except RateLimitError as e:
@@ -3574,7 +3667,91 @@ class ChatAgent(BaseAgent):
                 f"Expected ChatCompletion, got {type(response).__name__}"
             )
 
-        return self._handle_batch_response(response)
+        model_response = self._handle_batch_response(response)
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                output=serialize_langfuse_model_response_output(model_response)
+            )
+        return model_response
+
+    def _update_langfuse_observation(self, **kwargs: Any) -> None:
+        r"""Update current observation only when Langfuse is enabled."""
+        if not is_langfuse_available():
+            return
+        update_current_observation(**kwargs)
+
+    def _langfuse_propagation_context(self, observation_type: str) -> Any:
+        r"""Return context manager for Langfuse attribute propagation."""
+        if propagate_attributes is None or not is_langfuse_available():
+            return nullcontext()
+        return propagate_attributes(
+            metadata=self._get_langfuse_observation_metadata(observation_type),
+            tags=self._get_langfuse_observation_tags(observation_type),
+        )
+
+    def _get_langfuse_model_name(self) -> Optional[str]:
+        r"""Get the current backend model name for Langfuse metadata."""
+        model_type = getattr(self.model_backend, "model_type", None)
+        if model_type is None:
+            return None
+        if isinstance(model_type, str):
+            return str.__str__(model_type)
+        return str(model_type)
+
+    def _get_langfuse_observation_metadata(
+        self, observation_type: str, **extra: Any
+    ) -> Dict[str, Any]:
+        r"""Build standard metadata for Langfuse observations."""
+        normalized_role_name = (
+            self.role_name.strip().lower()
+            if isinstance(self.role_name, str)
+            else str(self.role_name).lower()
+        )
+        normalized_role_type = str(self.role_type.value).strip().lower()
+        metadata: Dict[str, Any] = {
+            "observation_type": observation_type,
+            "agent_id": self.agent_id,
+            "agent_role_name": normalized_role_name,
+            "agent_role_type": normalized_role_type,
+        }
+        if model_name := self._get_langfuse_model_name():
+            metadata["model_type"] = model_name
+        metadata.update(extra)
+        return metadata
+
+    def _get_langfuse_observation_name(
+        self, base_name: str, suffix: Optional[str] = None
+    ) -> str:
+        r"""Build a visible span name with agent attribution."""
+        normalized_role_name = (
+            self.role_name.strip().lower()
+            if isinstance(self.role_name, str)
+            else str(self.role_name).lower()
+        )
+        parts = [normalized_role_name, self.agent_id, base_name]
+        if suffix:
+            parts.append(suffix)
+        return ":".join(parts)
+
+    def _get_langfuse_observation_tags(
+        self, observation_type: str, **extra: str
+    ) -> List[str]:
+        r"""Build searchable Langfuse tags for current observation scope."""
+        normalized_role_name = (
+            self.role_name.strip().lower()
+            if isinstance(self.role_name, str)
+            else str(self.role_name).lower()
+        )
+        normalized_role_type = str(self.role_type.value).strip().lower()
+        tags = [
+            f"obs:{observation_type}",
+            f"agent_name:{normalized_role_name}",
+            f"agent_role:{normalized_role_type}",
+            f"agent_id:{self.agent_id}",
+        ]
+        for key, value in extra.items():
+            tags.append(f"{key}:{value}")
+        return tags
 
     def _sanitize_messages_for_logging(
         self, messages, prev_num_openai_messages: int
@@ -3890,13 +4067,18 @@ class ChatAgent(BaseAgent):
             tool_calls,
         )
 
-        return ChatAgentResponse(
+        response_obj = ChatAgentResponse(
             msgs=[],
             terminated=self.terminated,
             info=info,
         )
+        if is_langfuse_available():
+            self._update_langfuse_observation(
+                output=serialize_langfuse_step_output(response_obj, tool_calls)
+            )
+        return response_obj
 
-    @observe()
+    @observe(name="execute_tool")
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -3915,6 +4097,31 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+
+        # Ensure tool execution keeps parent Langfuse session context so
+        # nested agents (inside tools) are grouped into the same trace/session.
+        if is_langfuse_available():
+            current_session_id = get_current_agent_session_id()
+            if not current_session_id:
+                set_current_agent_session_id(self.agent_id)
+
+        # Enrich Langfuse observation with tool metadata
+        toolkit_name = get_langfuse_tool_name(tool)
+        self._update_langfuse_observation(
+            name=self._get_langfuse_observation_name(
+                "execute_tool", suffix=func_name
+            ),
+            input={
+                "tool_name": func_name,
+                "toolkit": toolkit_name,
+                "args": {k: str(v)[:200] for k, v in args.items()},
+            },
+            metadata=self._get_langfuse_observation_metadata(
+                "execute_tool",
+                tool_name=func_name,
+                toolkit=toolkit_name,
+            ),
+        )
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -3939,6 +4146,11 @@ class ChatAgent(BaseAgent):
                 result = f"Tool execution failed: {error_msg}"
                 logger.warning(f"{error_msg} with result: {result}")
 
+        # Enrich Langfuse observation with tool result
+        self._update_langfuse_observation(
+            output={"result": str(result)[:500]},
+        )
+
         return self._record_tool_calling(
             func_name,
             args,
@@ -3948,17 +4160,40 @@ class ChatAgent(BaseAgent):
             extra_content=tool_call_request.extra_content,
         )
 
+    @observe(name="execute_tool_async")
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
-        import asyncio
-
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+
+        # Ensure async tool execution keeps parent Langfuse session context.
+        if is_langfuse_available():
+            current_session_id = get_current_agent_session_id()
+            if not current_session_id:
+                set_current_agent_session_id(self.agent_id)
+
+        # Enrich Langfuse observation with tool metadata
+        toolkit_name = get_langfuse_tool_name(tool)
+        self._update_langfuse_observation(
+            name=self._get_langfuse_observation_name(
+                "execute_tool_async", suffix=func_name
+            ),
+            input={
+                "tool_name": func_name,
+                "toolkit": toolkit_name,
+                "args": {k: str(v)[:200] for k, v in args.items()},
+            },
+            metadata=self._get_langfuse_observation_metadata(
+                "execute_tool_async",
+                tool_name=func_name,
+                toolkit=toolkit_name,
+            ),
+        )
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -3986,11 +4221,13 @@ class ChatAgent(BaseAgent):
                     raw_result = await tool(**args)
 
                 else:
-                    # Fallback: synchronous call
-                    # Use functools.partial to properly capture args
+                    # Fallback: synchronous call via executor
+                    # Copy context to preserve Langfuse trace nesting
+                    ctx = contextvars.copy_context()
                     loop = asyncio.get_running_loop()
                     raw_result = await loop.run_in_executor(
-                        None, functools.partial(tool, **args)
+                        None,
+                        functools.partial(ctx.run, tool, **args),
                     )
 
                 if self.mask_tool_output:
@@ -4009,6 +4246,12 @@ class ChatAgent(BaseAgent):
                 error_msg = f"Error executing async tool '{func_name}': {e!s}"
                 result = f"Tool execution failed: {error_msg}"
                 logger.warning(f"{error_msg} with result: {result}")
+
+        # Enrich Langfuse observation with tool result
+        self._update_langfuse_observation(
+            output={"result": str(result)[:500]},
+        )
+
         return self._record_tool_calling(
             func_name,
             args,

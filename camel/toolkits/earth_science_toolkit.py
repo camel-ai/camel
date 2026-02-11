@@ -2911,8 +2911,9 @@ class EarthScienceToolkit(BaseToolkit):
         import numpy as np
 
         values_arr = np.array(values, dtype=np.float32)
-        valid_indices = ~np.isnan(values_arr)
-        valid_values = values_arr[valid_indices]
+        valid_values = [
+            float(v) for v in values_arr.tolist() if not np.isnan(v)
+        ]
         if len(valid_values) < 2:
             if verbose:
                 logger.info(
