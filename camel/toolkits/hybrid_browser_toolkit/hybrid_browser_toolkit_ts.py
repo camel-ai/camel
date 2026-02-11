@@ -31,6 +31,7 @@ from typing_extensions import TypedDict
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.output_processors import SnapshotCleaningProcessor
 from camel.utils.tool_result import ToolResult
 
 from .config_loader import ConfigLoader
@@ -329,43 +330,44 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cdp_url: Optional[str] = None,
         cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
+        clean_snapshots: bool = False,
         download_dir: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
         Args:
             headless (bool): Whether to run browser in headless mode.
-            Defaults to True.
+                Defaults to True.
             user_data_dir (Optional[str]): Directory for user data
-            persistence. Defaults to None.
+                persistence. Defaults to None.
             stealth (bool): Whether to enable stealth mode. Defaults to
             False.
             cache_dir (str): Directory for caching. Defaults to "tmp/".
             enabled_tools (Optional[List[str]]): List of enabled tools.
-            Defaults to None.
+                Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
-            file. Defaults to False.
+                file. Defaults to False.
             log_dir (Optional[str]): Custom directory path for log files.
-            If None, defaults to "browser_log". Defaults to None.
+                If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
-            to "https://google.com/".
+                to "https://google.com/".
             default_timeout (Optional[int]): Default timeout in
-            milliseconds. Defaults to None.
+                milliseconds. Defaults to None.
             short_timeout (Optional[int]): Short timeout in milliseconds.
-            Defaults to None.
+                Defaults to None.
             navigation_timeout (Optional[int]): Navigation timeout in
-            milliseconds. Defaults to None.
+                milliseconds. Defaults to None.
             network_idle_timeout (Optional[int]): Network idle timeout in
-            milliseconds. Defaults to None.
+                milliseconds. Defaults to None.
             screenshot_timeout (Optional[int]): Screenshot timeout in
-            milliseconds. Defaults to None.
+                milliseconds. Defaults to None.
             page_stability_timeout (Optional[int]): Page stability timeout
-            in milliseconds. Defaults to None.
+                in milliseconds. Defaults to None.
             dom_content_loaded_timeout (Optional[int]): DOM content loaded
-            timeout in milliseconds. Defaults to None.
+                timeout in milliseconds. Defaults to None.
             download_timeout (Optional[int]): Download timeout in
-            milliseconds. Defaults to None.
+                milliseconds. Defaults to None.
             viewport_limit (bool): Whether to filter page snapshot
             elements to only those visible in the current viewport.
                 When True, only elements within the current viewport
@@ -373,18 +375,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 When False (default), all elements on the page are
                 included. Defaults to False.
             connect_over_cdp (bool): Whether to connect to an existing
-            browser via Chrome DevTools Protocol. Defaults to False.
+                browser via Chrome DevTools Protocol. Defaults to False.
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
-            connection (e.g., 'ws://localhost:9222/devtools/browser/...').
-            Required when connect_over_cdp is True. Defaults to None.
+                connection (e.g., 'ws://localhost:9222/devtools/browser/...').
+                Required when connect_over_cdp is True. Defaults to None.
             cdp_keep_current_page (bool): When True and using CDP mode,
-            won't create new pages but use the existing one. Defaults to False.
+                won't create new pages but use the existing one. Defaults to
+                False.
             full_visual_mode (bool): When True, browser actions like click,
-            browser_open, visit_page, etc. will not return snapshots.
-            Defaults to False.
+                browser_open, visit_page, etc. will not return snapshots.
+                Defaults to False.
+            clean_snapshots (bool): When True, automatically cleans verbose
+                DOM snapshots to reduce context usage while preserving
+                essential information. Removes redundant markers and references
+                from browser tool outputs. Defaults to False.
             download_dir (Optional[str]): Directory path where downloaded
-            files will be saved when using browser_download_file tool.
-            Defaults to None.
+                files will be saved when using browser_download_file tool.
+                Defaults to None.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -438,6 +445,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
+        self._clean_snapshots = clean_snapshots
 
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
@@ -464,6 +472,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         logger.info(f"Enabled tools: {self.enabled_tools}")
 
+        # Setup snapshot cleaning if enabled
+        if self._clean_snapshots:
+            snapshot_processor = SnapshotCleaningProcessor()
+            self.register_output_processor(snapshot_processor)
+            logger.info(
+                "Snapshot cleaning enabled - DOM snapshots will "
+                "be automatically cleaned"
+            )
+
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
 
@@ -479,6 +496,38 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         if self._ws_wrapper is None:
             raise RuntimeError("Failed to initialize WebSocket wrapper")
         return self._ws_wrapper
+
+    def _clean_snapshot_if_enabled(
+        self, snapshot: str, tool_name: str = "browser_ts"
+    ) -> str:
+        r"""Clean snapshot content if snapshot cleaning is enabled.
+
+        Args:
+            snapshot: The raw snapshot content to clean.
+            tool_name: The name of the tool that generated the snapshot.
+
+        Returns:
+            The cleaned snapshot if cleaning is enabled, otherwise the
+                original snapshot.
+        """
+        if not self._clean_snapshots or not snapshot:
+            return snapshot
+
+        try:
+            # Process through the output manager
+            processed_context = self.process_tool_output(
+                tool_name=tool_name,
+                tool_call_id="snapshot_clean",
+                raw_result=snapshot,
+                agent_id=getattr(self, '_session_id', 'default'),
+            )
+
+            return processed_context.raw_result
+        except Exception as e:
+            logger.warning(
+                f"Failed to clean snapshot: {e}, returning original"
+            )
+            return snapshot
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -561,6 +610,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         # In full_visual_mode, clear the snapshot
         if self._full_visual_mode:
             response["snapshot"] = ""
+        # Clean snapshot if cleaning is enabled
+        elif self._clean_snapshots and "snapshot" in response:
+            response["snapshot"] = self._clean_snapshot_if_enabled(
+                response["snapshot"], "browser_action"
+            )
 
         # Always include note field for consistency (empty if not present)
         if include_note:
@@ -751,7 +805,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            return await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            result = await ws_wrapper.get_page_snapshot(self._viewport_limit)
+            # Clean snapshot if enabled
+            return self._clean_snapshot_if_enabled(
+                result, "browser_get_page_snapshot"
+            )
         except Exception as e:
             logger.error(f"Failed to get page snapshot: {e}")
             return f"Error capturing snapshot: {e}"
@@ -1437,6 +1495,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             result = await ws_wrapper.console_exec(code)
 
             tab_info = await ws_wrapper.get_tab_info()
+
+            # Clean snapshot if enabled
+            if "snapshot" in result:
+                result["snapshot"] = self._clean_snapshot_if_enabled(
+                    result["snapshot"], "browser_console_exec"
+                )
+
             result.update(
                 {
                     "tabs": tab_info,
@@ -2089,6 +2154,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
             viewport_limit=self._viewport_limit,
             full_visual_mode=self._full_visual_mode,
+            clean_snapshots=self._clean_snapshots,
         )
 
     # Tools not available in full_visual_mode (require ref, no pixel alt)

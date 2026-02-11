@@ -13,10 +13,23 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import inspect
-from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+)
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
+from camel.toolkits.output_processors import (
+    ToolOutputContext,
+    ToolOutputManager,
+    ToolOutputProcessor,
+)
 from camel.utils import AgentOpsMeta, Constants, with_timeout
 
 if TYPE_CHECKING:
@@ -75,6 +88,55 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         if timeout is not None and timeout <= 0:
             raise ValueError("Timeout must be a positive number.")
         self.timeout = timeout
+
+        # Initialize output management
+        self.output_manager = ToolOutputManager()
+
+    def register_output_processor(
+        self, processor: ToolOutputProcessor
+    ) -> None:
+        r"""Register an output processor for tool results.
+
+        Args:
+            processor: The output processor to register.
+        """
+        self.output_manager.register_processor(processor)
+
+    def process_tool_output(
+        self,
+        tool_name: str,
+        tool_call_id: str,
+        raw_result: Any,
+        agent_id: str,
+        timestamp: Optional[float] = None,
+    ) -> ToolOutputContext:
+        r"""Process tool output through registered processors.
+
+        Args:
+            tool_name (str): Name of the tool that produced the output.
+            tool_call_id (str): Unique identifier for the tool call.
+            raw_result (Any): Raw output from the tool.
+            agent_id (str): ID of the agent that made the tool call.
+            timestamp (Optional[float]): Timestamp of the tool call.
+
+        Returns:
+            Processed tool output context.
+
+        Raises:
+            ValueError: If required parameters are missing or invalid.
+        """
+        if not tool_name or not tool_call_id or not agent_id:
+            raise ValueError(
+                "tool_name, tool_call_id, and agent_id are required"
+            )
+
+        return self.output_manager.process_tool_output(
+            tool_name=tool_name,
+            tool_call_id=tool_call_id,
+            raw_result=raw_result,
+            agent_id=agent_id,
+            timestamp=timestamp,
+        )
 
     # Add timeout to all callable methods in the toolkit
     def __init_subclass__(cls, **kwargs):

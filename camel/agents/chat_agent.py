@@ -4072,21 +4072,10 @@ class ChatAgent(BaseAgent):
         )
 
         # Record only the tool result message
-        func_records = self.update_memory(
+        self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            return_records=self._enable_snapshot_clean,
         )
-
-        # Register tool output for snapshot cleaning if enabled
-        if self._enable_snapshot_clean and not mask_output and func_records:
-            serialized_result = self._serialize_tool_result(result_for_memory)
-            self._register_tool_output_for_cache(
-                func_name,
-                tool_call_id,
-                serialized_result,
-                cast(List[MemoryRecord], func_records),
-            )
 
         if isinstance(result, ToolResult) and result.images:
             try:
