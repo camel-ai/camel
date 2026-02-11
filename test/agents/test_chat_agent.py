@@ -30,11 +30,16 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
+from camel.agents.chat_agent import (
+    StreamContentAccumulator,
+    ToolCallingRecord,
+    _ToolOutputHistoryEntry,
+)
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.models import AnthropicModel, ModelFactory, OpenAIModel
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
@@ -90,6 +95,18 @@ parametrize = pytest.mark.parametrize(
 )
 
 
+class DummyModel(BaseModelBackend):
+    @property
+    def token_counter(self):
+        return self._token_counter
+
+    def _run(self, messages, response_format=None, tools=None):
+        raise NotImplementedError
+
+    async def _arun(self, messages, response_format=None, tools=None):
+        raise NotImplementedError
+
+
 @parametrize
 def test_chat_agent(model, step_call_count=3):
     model = model
@@ -143,6 +160,55 @@ def test_chat_agent(model, step_call_count=3):
                 assert (
                     response.info['id'] is not None
                 ), f"Error in round {i + 1}"
+
+
+def test_chat_agent_reset_clears_tool_output_history():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        enable_snapshot_clean=True,
+    )
+    assistant._tool_output_history = [
+        _ToolOutputHistoryEntry(
+            tool_name="tool_a",
+            tool_call_id="call_a",
+            result_text="old",
+            record_uuids=["uuid_a"],
+            record_timestamps=[1.0],
+        )
+    ]
+
+    assistant.reset()
+
+    assert assistant._tool_output_history == []
+
+
+def test_clean_snapshot_in_memory_skips_missing_records():
+    model = DummyModel(ModelType.GPT_4O_MINI)
+    assistant = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        enable_snapshot_clean=True,
+    )
+    entry = _ToolOutputHistoryEntry(
+        tool_name="browser_get_page_snapshot",
+        tool_call_id="call_missing",
+        result_text="- button [ref=1]",
+        record_uuids=["missing_uuid"],
+        record_timestamps=[123.0],
+    )
+
+    chat_history_block = getattr(assistant.memory, "_chat_history_block", None)
+    storage = getattr(chat_history_block, "storage", None)
+    assert storage is not None
+    records_before = storage.load()
+
+    assistant._clean_snapshot_in_memory(entry)
+
+    records_after = storage.load()
+    assert records_after == records_before
+    assert entry.cached is True
 
 
 @pytest.mark.model_backend

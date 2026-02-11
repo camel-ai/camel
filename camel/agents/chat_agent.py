@@ -635,6 +635,9 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        # Snapshot-clean cache is per-conversation state and must not survive
+        # agent reuse (e.g. pooled workers across different tasks).
+        self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -1504,10 +1507,29 @@ class ChatAgent(BaseAgent):
                 return
 
             existing_records = storage.load()
+            existing_record_uuids = {
+                str(record.get("uuid"))
+                for record in existing_records
+                if record.get("uuid") is not None
+            }
+            matched_uuids = [
+                record_uuid
+                for record_uuid in entry.record_uuids
+                if record_uuid in existing_record_uuids
+            ]
+
+            if not matched_uuids:
+                # Record no longer exists in current memory (e.g. after reset).
+                # Skip rewriting to avoid injecting orphan tool messages.
+                entry.cached = True
+                entry.record_uuids = []
+                entry.record_timestamps = []
+                return
+
             updated_records = [
                 record
                 for record in existing_records
-                if record["uuid"] not in entry.record_uuids
+                if str(record.get("uuid")) not in matched_uuids
             ]
             new_record = MemoryRecord(
                 message=cleaned_message,
