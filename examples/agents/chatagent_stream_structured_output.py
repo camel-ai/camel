@@ -30,10 +30,14 @@ from camel.types import ModelPlatformType, ModelType
 
 
 class Result(BaseModel):
-    sum_result: str = Field(description="Result of the addition")
-    product_result: str = Field(description="Result of the multiplication")
-    division_result: str = Field(description="Result of the division")
-    capital_result: str = Field(description="Result of the capital search")
+    sum_result: str = Field(description="Only the result of the addition")
+    product_result: str = Field(
+        description="Only the result of the multiplication"
+    )
+    division_result: str = Field(description="Only the result of the division")
+    capital_result: str = Field(
+        description="Only the result of the capital search"
+    )
 
 
 USER_MESSAGE = (
