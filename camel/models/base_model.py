@@ -427,7 +427,47 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         for response in tool_responses_buffer.values():
             formatted_messages.append(response)
 
+        # Normalize tool_call IDs that exceed the maximum length accepted
+        # by stricter APIs (e.g. OpenAI rejects IDs longer than 40 chars).
+        # This prevents errors when chat history produced by one backend
+        # (e.g. vLLM) is replayed against a different, stricter backend.
+        self._normalize_tool_call_ids(formatted_messages)
+
         return formatted_messages
+
+    # OpenAI enforces a maximum of 40 characters for tool_call IDs.
+    # Other providers may be more lenient, but we normalize to this
+    # limit to ensure cross-provider compatibility.
+    _MAX_TOOL_CALL_ID_LEN = 40
+
+    @staticmethod
+    def _normalize_tool_call_ids(
+        messages: List[OpenAIMessage],
+    ) -> None:
+        r"""Truncate tool_call IDs that exceed the maximum allowed length.
+
+        Some model backends (e.g. vLLM) generate tool_call IDs longer than
+        what other providers accept. When chat history produced by one
+        backend is replayed against a stricter backend, the API rejects the
+        request with an error like ``Invalid 'messages[N].tool_calls[0].id':
+        string too long``.
+
+        This truncates all oversized IDs in-place so they are at most
+        :attr:`_MAX_TOOL_CALL_ID_LEN` characters long.
+        """
+        limit = BaseModelBackend._MAX_TOOL_CALL_ID_LEN
+        for msg in messages:
+            # Assistant messages carry tool_calls[].id
+            tool_calls = msg.get("tool_calls")
+            if isinstance(tool_calls, list):
+                for tc in tool_calls:
+                    tc_id = tc.get("id")
+                    if isinstance(tc_id, str) and len(tc_id) > limit:
+                        tc["id"] = tc_id[:limit]
+            # Tool response messages carry tool_call_id
+            tc_id = msg.get("tool_call_id")
+            if isinstance(tc_id, str) and len(tc_id) > limit:
+                msg["tool_call_id"] = tc_id[:limit]
 
     def _log_request(self, messages: List[OpenAIMessage]) -> Optional[str]:
         r"""Log the request messages to a JSON file if logging is enabled.
