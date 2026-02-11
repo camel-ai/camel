@@ -47,7 +47,6 @@ retriever = DefaultGAIARetriever(
 )
 
 benchmark = GAIABenchmark(
-    data_dir="datasets_test",
     processes=1,
     save_to="results.jsonl",
     retriever=retriever,
@@ -100,7 +99,7 @@ with runtime as r:
         tools=tools,
     )
 
-    result = benchmark.run(agent, "valid", level="all", subset=10)
+    result = benchmark.run(agent, subset=10, on="valid", level="all")
     print("correct:", result["correct"])
     print("total:", result["total"])
 

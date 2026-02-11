@@ -29,17 +29,9 @@ if __name__ == '__main__':
         model=ModelFactory.create(**model_config),
     )
 
-    # Create a benchmark instance with output file "report.html"
-    # it samples 2 examples and uses 2 parallel processes for efficiency
-    # set num_example=None in case of running full benchmark.
-    benchmark = BrowseCompBenchmark("report.html", num_examples=2, processes=2)
+    benchmark = BrowseCompBenchmark(processes=2)
+    benchmark.load(num_examples=2)
 
     # This will process each example in parallel using separate agents
     # Pass the agent configuration instead of the agent itself
     benchmark.run(pipeline_template=grader_agent)
-
-    # Validate the results using the configured model
-    # This will generate a report.html file with the evaluation results
-    # The output AGGRECATION METRICS are rates:
-    # {'is_correct': 0.0, 'is_incorrect': 1.0} means is_incorrect=100%
-    benchmark.validate(grader=grader_agent)
