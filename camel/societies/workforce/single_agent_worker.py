@@ -17,14 +17,13 @@ import asyncio
 import datetime
 import time
 from collections import deque
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.logger import get_logger
-from camel.memories.records import MemoryRecord
 from camel.messages.base import BaseMessage
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
@@ -40,19 +39,6 @@ from camel.types import OpenAIBackendRole
 from camel.utils.context_utils import ContextUtility
 
 logger = get_logger(__name__)
-
-
-class ExecutionContext(TypedDict, total=False):
-    r"""Type definition for task execution context used in breakpoint resume.
-
-    Attributes:
-        conversation_history: Serialized conversation history from previous
-            execution attempts.
-        retry_context: Message describing the failure reason for retry.
-    """
-
-    conversation_history: List[Dict[str, Any]]
-    retry_context: str
 
 
 class AgentPool:
@@ -233,11 +219,11 @@ class SingleAgentWorker(Worker):
             conversations from all task executions are accumulated for
             potential workflow saving. Set to True if you plan to call
             save_workflow_memories(). (default: :obj:`False`)
-        enable_breakpoint_resume (bool, optional): Whether to preserve and
-            restore conversation history for retry attempts. When enabled,
-            failed tasks save their conversation history to
-            ``task.additional_info`` and reuse it on retry. (default:
-            :obj:`True`)
+        enable_breakpoint_resume (bool, optional): Whether to retain the agent
+            instance on task failure for reuse on retry. When enabled, the
+            worker keeps the failed agent (with its conversation history
+            intact) and reuses it directly on the next attempt instead of
+            creating a fresh agent. (default: :obj:`True`)
     """
 
     def __init__(
@@ -268,6 +254,7 @@ class SingleAgentWorker(Worker):
         self.use_agent_pool = use_agent_pool
         self.enable_workflow_memory = enable_workflow_memory
         self.enable_breakpoint_resume = enable_breakpoint_resume
+        self._failed_task_agents: Dict[str, ChatAgent] = {}
         self._shared_context_utility = context_utility
         self._context_utility: Optional[ContextUtility] = (
             None  # Will be initialized when needed
@@ -293,57 +280,6 @@ class SingleAgentWorker(Worker):
                 max_size=pool_max_size,
                 auto_scale=auto_scale_pool,
             )
-
-    def _ensure_execution_context(self, task: Task) -> ExecutionContext:
-        r"""Ensure task.execution_context is a mutable dict."""
-        if task.execution_context is None or not isinstance(
-            task.execution_context, dict
-        ):
-            task.execution_context = {}
-        return task.execution_context  # type: ignore[return-value]
-
-    def _serialize_conversation_history(
-        self, agent: ChatAgent
-    ) -> List[Dict[str, Any]]:
-        r"""Serialize agent's conversation history for storage.
-
-        Filters out retry_context messages to avoid duplication on subsequent
-        retries.
-        """
-        records = agent.memory.retrieve()
-        result = []
-        for record in records:
-            meta = record.memory_record.message.meta_dict or {}
-            if meta.get("type") == "retry_context":
-                continue
-            result.append(record.memory_record.to_dict())
-        return result
-
-    def _restore_conversation_history(
-        self, agent: ChatAgent, history: List[Dict[str, Any]]
-    ) -> None:
-        r"""Restore conversation history to agent, skipping system messages."""
-        for record_dict in history:
-            record = MemoryRecord.from_dict(record_dict)
-
-            if record.role_at_backend == OpenAIBackendRole.SYSTEM:
-                continue
-
-            restored_record = MemoryRecord(
-                message=record.message,
-                role_at_backend=record.role_at_backend,
-                timestamp=record.timestamp,
-                agent_id=agent.agent_id,
-                extra_info=record.extra_info,
-            )
-            agent.memory.write_record(restored_record)
-
-    def _save_breakpoint_history(self, task: Task, agent: ChatAgent) -> None:
-        r"""Save conversation history into task.execution_context."""
-        execution_context = self._ensure_execution_context(task)
-        execution_context["conversation_history"] = (
-            self._serialize_conversation_history(agent)
-        )
 
     def _build_retry_message(self, task: Task) -> str:
         r"""Build a concise retry message describing the last failure."""
@@ -439,19 +375,23 @@ class SingleAgentWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
-        # Get agent efficiently (from pool or by cloning)
-        worker_agent = await self._get_worker_agent()
+        # Reuse the failed agent if breakpoint resume is enabled,
+        # otherwise get a fresh agent from pool or by cloning.
+        reusing_agent = False
+        if (
+            self.enable_breakpoint_resume
+            and task.failure_count > 0
+            and task.id in self._failed_task_agents
+        ):
+            worker_agent = self._failed_task_agents.pop(task.id)
+            reusing_agent = True
+        else:
+            worker_agent = await self._get_worker_agent()
         response_content = ""
 
         try:
-            if self.enable_breakpoint_resume and task.failure_count > 0:
-                execution_context = self._ensure_execution_context(task)
-                history = execution_context.get("conversation_history")
-                if history:
-                    self._restore_conversation_history(worker_agent, history)
-
+            if reusing_agent:
                 retry_message = self._build_retry_message(task)
-                execution_context["retry_context"] = retry_message
                 worker_agent.update_memory(
                     BaseMessage.make_user_message(
                         role_name="user",
@@ -592,8 +532,9 @@ class SingleAgentWorker(Worker):
             # Store error information in task result
             task.result = f"{type(e).__name__}: {e!s}"
             if self.enable_breakpoint_resume:
-                self._save_breakpoint_history(task, worker_agent)
-            await self._return_worker_agent(worker_agent)
+                self._failed_task_agents[task.id] = worker_agent
+            else:
+                await self._return_worker_agent(worker_agent)
             return TaskState.FAILED
 
         try:
@@ -663,7 +604,8 @@ class SingleAgentWorker(Worker):
 
             if task_result.failed:  # type: ignore[union-attr]
                 if self.enable_breakpoint_resume:
-                    self._save_breakpoint_history(task, worker_agent)
+                    self._failed_task_agents[task.id] = worker_agent
+                    return TaskState.FAILED
                 return TaskState.FAILED
 
             if is_task_result_insufficient(task):
@@ -672,11 +614,15 @@ class SingleAgentWorker(Worker):
                     f"task marked as failed"
                 )
                 if self.enable_breakpoint_resume:
-                    self._save_breakpoint_history(task, worker_agent)
+                    self._failed_task_agents[task.id] = worker_agent
+                    return TaskState.FAILED
                 return TaskState.FAILED
             return TaskState.DONE
         finally:
-            await self._return_worker_agent(worker_agent)
+            # Only return the agent to the pool if it wasn't retained
+            # for breakpoint resume
+            if task.id not in self._failed_task_agents:
+                await self._return_worker_agent(worker_agent)
 
     async def _listen_to_channel(self):
         r"""Override to start cleanup task when pool is enabled."""

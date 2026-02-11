@@ -239,10 +239,6 @@ class Task(BaseModel):
             (default: :obj:`[]`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
-        execution_context (Optional[Dict[str, Any]]): Internal execution state
-            used by workers for features like breakpoint resume. This stores
-            conversation history and retry context to allow failed tasks to
-            resume from where they left off. (default: :obj:`None`)
         image_list (Optional[List[Union[Image.Image, str]]]): Optional list
             of PIL Image objects or image URLs (strings) associated with the
             task. (default: :obj:`None`)
@@ -277,8 +273,6 @@ class Task(BaseModel):
     dependencies: List["Task"] = []
 
     additional_info: Optional[Dict[str, Any]] = None
-
-    execution_context: Optional[Dict[str, Any]] = None
 
     image_list: Optional[List[Union[Image.Image, str]]] = None
 

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import List
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,84 +23,103 @@ from camel.tasks.task import Task, TaskState
 from camel.types import OpenAIBackendRole
 
 
-class _StubWorker(SingleAgentWorker):
-    def __init__(self, description: str, agents: List[ChatAgent]):
-        super().__init__(
-            description,
-            agents[0],
-            use_agent_pool=False,
-            enable_breakpoint_resume=True,
-            use_structured_output_handler=False,
-        )
-        self._agents = list(agents)
-
-    async def _get_worker_agent(self) -> ChatAgent:
-        return self._agents.pop(0)
-
-    async def _return_worker_agent(self, agent: ChatAgent) -> None:
-        return None
-
-
 @pytest.mark.asyncio
-async def test_breakpoint_resume_restores_history_and_retry_context():
+async def test_breakpoint_resume_reuses_agent_instance():
+    """Verify the worker retains and reuses the same agent on retry."""
     sys_msg = BaseMessage.make_assistant_message(
         role_name="tester",
         content="You are a test agent.",
     )
 
-    agent_first = ChatAgent(sys_msg)
-    agent_second = ChatAgent(sys_msg)
+    agent = ChatAgent(sys_msg)
+    call_count = 0
 
-    async def astep_fail(*_args, **_kwargs):
-        agent_first.update_memory(
-            BaseMessage.make_user_message(
-                role_name="user", content="first attempt context"
-            ),
-            OpenAIBackendRole.USER,
-        )
+    async def astep_toggle(*_args, **_kwargs):
+        nonlocal call_count
+        call_count += 1
+        # Add some context during the first call
+        if call_count == 1:
+            agent.update_memory(
+                BaseMessage.make_user_message(
+                    role_name="user", content="first attempt context"
+                ),
+                OpenAIBackendRole.USER,
+            )
         response = MagicMock()
-        response.msg = MagicMock(
-            parsed=TaskResult(content="failed", failed=True),
-            content="{\"content\":\"failed\",\"failed\":true}",
-        )
+        if call_count == 1:
+            response.msg = MagicMock(
+                parsed=TaskResult(content="failed", failed=True),
+                content='{"content":"failed","failed":true}',
+            )
+        else:
+            response.msg = MagicMock(
+                parsed=TaskResult(content="ok", failed=False),
+                content='{"content":"ok","failed":false}',
+            )
         response.info = {}
         return response
 
-    async def astep_success(*_args, **_kwargs):
-        response = MagicMock()
-        response.msg = MagicMock(
-            parsed=TaskResult(content="ok", failed=False),
-            content="{\"content\":\"ok\",\"failed\":false}",
+    agent.astep = astep_toggle
+
+    worker = SingleAgentWorker(
+        "stub",
+        agent,
+        use_agent_pool=False,
+        enable_breakpoint_resume=True,
+        use_structured_output_handler=False,
+    )
+
+    # Override to provide our test agent initially
+    first_call = True
+
+    async def get_agent():
+        nonlocal first_call
+        if first_call:
+            first_call = False
+            return agent
+        # Should not be called on retry when breakpoint resume is enabled
+        raise AssertionError(
+            "Should reuse retained agent, not request a new one"
         )
-        response.info = {}
-        return response
 
-    agent_first.astep = astep_fail
-    agent_second.astep = astep_success
+    async def return_agent(a):
+        pass
 
-    worker = _StubWorker("stub", [agent_first, agent_second])
+    worker._get_worker_agent = get_agent
+    worker._return_worker_agent = return_agent
+
     task = Task(content="do something", id="task1")
 
+    # First attempt fails
     state_first = await worker._process_task(task, [])
     assert state_first == TaskState.FAILED
 
-    history = task.execution_context.get("conversation_history")
-    assert history is not None
-    assert len(history) >= 1
+    # Agent should be retained in _failed_task_agents
+    assert "task1" in worker._failed_task_agents
 
+    # Second attempt succeeds (reuses the same agent)
     task.failure_count = 1
     state_second = await worker._process_task(task, [])
     assert state_second == TaskState.DONE
 
-    retry_context = task.execution_context.get("retry_context")
-    assert retry_context
+    # Agent should be cleaned up after success
+    assert "task1" not in worker._failed_task_agents
 
+    # Verify first attempt context is still in the agent's memory
     restored_contents = [
         record.memory_record.message.content
-        for record in agent_second.memory.retrieve()
+        for record in agent.memory.retrieve()
     ]
     assert "first attempt context" in restored_contents
-    assert retry_context in restored_contents
+
+    # Verify retry context message was injected
+    retry_messages = [
+        record
+        for record in agent.memory.retrieve()
+        if (record.memory_record.message.meta_dict or {}).get("type")
+        == "retry_context"
+    ]
+    assert len(retry_messages) == 1
 
 
 @pytest.mark.asyncio
@@ -112,61 +130,83 @@ async def test_retry_context_not_duplicated_on_multiple_retries():
         content="You are a test agent.",
     )
 
-    agent1 = ChatAgent(sys_msg)
-    agent2 = ChatAgent(sys_msg)
-    agent3 = ChatAgent(sys_msg)
+    agent = ChatAgent(sys_msg)
+    call_count = 0
 
-    async def astep_fail(*_args, **_kwargs):
+    async def astep_toggle(*_args, **_kwargs):
+        nonlocal call_count
+        call_count += 1
         response = MagicMock()
-        response.msg = MagicMock(
-            parsed=TaskResult(content="failed", failed=True),
-            content="{\"content\":\"failed\",\"failed\":true}",
-        )
+        if call_count <= 2:
+            response.msg = MagicMock(
+                parsed=TaskResult(content="failed", failed=True),
+                content='{"content":"failed","failed":true}',
+            )
+        else:
+            response.msg = MagicMock(
+                parsed=TaskResult(content="ok", failed=False),
+                content='{"content":"ok","failed":false}',
+            )
         response.info = {}
         return response
 
-    async def astep_success(*_args, **_kwargs):
-        response = MagicMock()
-        response.msg = MagicMock(
-            parsed=TaskResult(content="ok", failed=False),
-            content="{\"content\":\"ok\",\"failed\":false}",
+    agent.astep = astep_toggle
+
+    worker = SingleAgentWorker(
+        "stub",
+        agent,
+        use_agent_pool=False,
+        enable_breakpoint_resume=True,
+        use_structured_output_handler=False,
+    )
+
+    first_call = True
+
+    async def get_agent():
+        nonlocal first_call
+        if first_call:
+            first_call = False
+            return agent
+        raise AssertionError(
+            "Should reuse retained agent, not request a new one"
         )
-        response.info = {}
-        return response
 
-    agent1.astep = astep_fail
-    agent2.astep = astep_fail
-    agent3.astep = astep_success
+    async def return_agent(a):
+        pass
 
-    worker = _StubWorker("stub", [agent1, agent2, agent3])
+    worker._get_worker_agent = get_agent
+    worker._return_worker_agent = return_agent
+
     task = Task(content="do something", id="task1")
 
     # First attempt fails
     await worker._process_task(task, [])
-    assert task.execution_context is not None
+    assert "task1" in worker._failed_task_agents
 
     # Second attempt fails
     task.failure_count = 1
     await worker._process_task(task, [])
+    assert "task1" in worker._failed_task_agents
 
     # Third attempt succeeds
     task.failure_count = 2
     state = await worker._process_task(task, [])
     assert state == TaskState.DONE
 
-    # Check that only ONE retry_context message exists in agent3's memory
+    # Check that retry_context messages exist (one per retry)
     retry_messages = [
         record
-        for record in agent3.memory.retrieve()
+        for record in agent.memory.retrieve()
         if (record.memory_record.message.meta_dict or {}).get("type")
         == "retry_context"
     ]
-    assert len(retry_messages) == 1
+    # Two retries = two retry context messages
+    assert len(retry_messages) == 2
 
 
 @pytest.mark.asyncio
 async def test_breakpoint_resume_disabled():
-    """Verify no history is saved/restored when feature is disabled."""
+    """Verify agent is not retained when feature is disabled."""
     sys_msg = BaseMessage.make_assistant_message(
         role_name="tester",
         content="You are a test agent.",
@@ -185,7 +225,7 @@ async def test_breakpoint_resume_disabled():
         response = MagicMock()
         response.msg = MagicMock(
             parsed=TaskResult(content="failed", failed=True),
-            content="{\"content\":\"failed\",\"failed\":true}",
+            content='{"content":"failed","failed":true}',
         )
         response.info = {}
         return response
@@ -194,7 +234,7 @@ async def test_breakpoint_resume_disabled():
         response = MagicMock()
         response.msg = MagicMock(
             parsed=TaskResult(content="ok", failed=False),
-            content="{\"content\":\"ok\",\"failed\":false}",
+            content='{"content":"ok","failed":false}',
         )
         response.info = {}
         return response
@@ -228,17 +268,15 @@ async def test_breakpoint_resume_disabled():
     state_first = await worker._process_task(task, [])
     assert state_first == TaskState.FAILED
 
-    # execution_context should be None or empty (no history saved)
-    assert task.execution_context is None or not task.execution_context.get(
-        "conversation_history"
-    )
+    # No agent should be retained
+    assert "task1" not in worker._failed_task_agents
 
-    # Second attempt succeeds
+    # Second attempt succeeds (uses a fresh agent)
     task.failure_count = 1
     state_second = await worker._process_task(task, [])
     assert state_second == TaskState.DONE
 
-    # Verify "first attempt context" was NOT restored to agent_second
+    # Verify "first attempt context" was NOT in agent_second
     restored_contents = [
         record.memory_record.message.content
         for record in agent_second.memory.retrieve()
