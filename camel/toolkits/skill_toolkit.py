@@ -89,9 +89,9 @@ class SkillToolkit(BaseToolkit):
             "used. Each entry includes a name, description, and file path so "
             "you can open the source for full instructions when using a "
             "specific skill. It also includes additional files in each skill "
-            "folder so other files can be loaded on demand.this function can be "
-            "used to load Skill.md content, for additional files you can use "
-            "other tools to load\n"
+            "folder so other files can be loaded on demand.this function can "
+            "be used to load Skill.md content, for additional files you can "
+            "use other tools to load\n"
             "### Available skills\n"
             f"{available}\n"
             "### How to use skills\n"
@@ -312,7 +312,9 @@ class SkillToolkit(BaseToolkit):
 
         skill_dir = Path(skill["path"]).parent
         lines = [f"Files in {name}:"]
-        for entry in self._list_skill_entries(skill_dir, include_skill_md=True):
+        for entry in self._list_skill_entries(
+            skill_dir, include_skill_md=True
+        ):
             lines.append(f"  - {entry}")
         return "\n".join(lines)
 
@@ -359,7 +361,9 @@ class SkillToolkit(BaseToolkit):
         body = parsed.get("body", "").strip()
 
         # List files in skill directory
-        files_info = [f"  - {entry}" for entry in self._list_skill_entries(base_dir)]
+        files_info = [
+            f"  - {entry}" for entry in self._list_skill_entries(base_dir)
+        ]
 
         output_lines = [
             f"## Skill: {parsed['name']}",
