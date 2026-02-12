@@ -54,7 +54,10 @@ def extract_thinking_from_content(
 
     think_match = re.search(r'<think>(.*?)</think>', content, flags=re.DOTALL)
     if think_match:
-        reasoning_content = think_match.group(1).strip()
+        extracted = think_match.group(1).strip()
+        # Only set reasoning_content if there's actual content
+        if extracted:
+            reasoning_content = extracted
     content = re.sub(
         r'<think>.*?</think>', '', content, flags=re.DOTALL
     ).strip()

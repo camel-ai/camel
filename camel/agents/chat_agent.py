@@ -5617,11 +5617,26 @@ class ChatAgent(BaseAgent):
                     # will handle message recording.
                     final_content = content_accumulator.get_full_content()
                     if final_content.strip() and not accumulated_tool_calls:
+                        final_reasoning = (
+                            content_accumulator.get_full_reasoning_content()
+                            or None
+                        )
+
+                        # Extract <think> tags from accumulated
+                        # streaming content when reasoning_content
+                        # is not already set by the model.
+                        final_content, final_reasoning = (
+                            extract_thinking_from_content(
+                                final_content, final_reasoning
+                            )
+                        )
+
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
+                            reasoning_content=final_reasoning,
                         )
 
                         if response_format:
