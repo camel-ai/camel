@@ -1185,7 +1185,8 @@ MUST use this as the current date.
         content=(
             """
 search 10 different papers related to llm agent and write a html report about
-them.       """
+them.
+            """
         ),
         id='0',
     )

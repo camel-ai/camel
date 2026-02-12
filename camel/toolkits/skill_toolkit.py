@@ -89,7 +89,7 @@ class SkillToolkit(BaseToolkit):
             "used. Each entry includes a name, description, and file path so "
             "you can open the source for full instructions when using a "
             "specific skill. It also includes additional files in each skill "
-            "folder so other files can be loaded on demand.this function can "
+            "folder so other files can be loaded on demand. This function can "
             "be used to load Skill.md content, for additional files you can "
             "use other tools to load\n"
             "### Available skills\n"
