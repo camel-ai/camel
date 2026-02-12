@@ -455,7 +455,7 @@ class TestBaseModelBackend:
             choices=[Choice(index=0, finish_reason='stop', message=msg)],
         )
 
-    def _make_model(self, extract_thinking=True):
+    def _make_model(self, extract_thinking_from_response=True):
         r"""Helper to create a DummyModel for postprocess tests."""
 
         class DummyModel(BaseModelBackend):
@@ -474,7 +474,7 @@ class TestBaseModelBackend:
 
         return DummyModel(
             ModelType.GPT_4O_MINI,
-            extract_thinking_from_response=extract_thinking,
+            extract_thinking_from_response=extract_thinking_from_response,
         )
 
     def test_postprocess_extracts_think_tags(self):
@@ -526,11 +526,13 @@ class TestBaseModelBackend:
         )
         assert result.choices[0].message.reasoning_content == 'already set'
 
-    @pytest.mark.parametrize("extract_thinking", [True, False])
-    def test_think_tags(self, extract_thinking):
+    @pytest.mark.parametrize("extract_thinking_from_response", [True, False])
+    def test_think_tags(self, extract_thinking_from_response):
         r"""Test that extract_thinking_from_response controls both
         preprocessing (input) and postprocessing (output) of think tags."""
-        model = self._make_model(extract_thinking=extract_thinking)
+        model = self._make_model(
+            extract_thinking_from_response=extract_thinking_from_response
+        )
 
         # Test preprocessing
         messages = [
@@ -549,7 +551,7 @@ class TestBaseModelBackend:
         response = self._make_completion('<think>reasoning here</think>\n\n4')
         result = model.postprocess_response(response)
 
-        if extract_thinking:
+        if extract_thinking_from_response:
             # Preprocessing: think tags should be stripped
             assert processed[0]['content'] == 'Response'
             assert processed[1]['content'] == 'Hello  world'
