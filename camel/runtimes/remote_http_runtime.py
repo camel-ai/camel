@@ -65,12 +65,11 @@ class RemoteHttpRuntime(BaseRuntime):
                 *list(self.entrypoint.values()),
             ]
         )
-        atexit.register(self._cleanup)
+        atexit.register(self.cleanup)
         return self
 
-    def _cleanup(self):
-        r"""Clean up the API server when exiting."""
-
+    def cleanup(self) -> None:
+        r"""Stop and release the API server process."""
         if self.process and self.process.poll() is None:
             self.process.terminate()
             self.process.wait()
@@ -175,7 +174,7 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def __del__(self):
         r"""Clean up the API server when the object is deleted."""
-        self._cleanup()
+        self.cleanup()
 
     def stop(self) -> "RemoteHttpRuntime":
         r"""Stop the API server.
@@ -183,7 +182,7 @@ class RemoteHttpRuntime(BaseRuntime):
         Returns:
             RemoteHttpRuntime: The current runtime.
         """
-        self._cleanup()
+        self.cleanup()
         return self
 
     def reset(self) -> "RemoteHttpRuntime":
