@@ -70,6 +70,7 @@ class ModelType(UnifiedModelType, Enum):
     AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
     # ZhipuAI GLM-4.7 series (latest)
+    GLM_5 = "glm-5"
     GLM_4_7 = "glm-4.7"
     GLM_4_7_FLASHX = "glm-4.7-flashx"
     GLM_4_7_FLASH = "glm-4.7-flash"
@@ -525,6 +526,7 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
     # Minimax models
+    MINIMAX_M2_5 = "MiniMax-M2.5"
     MINIMAX_M2_1 = "MiniMax-M2.1"
     MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
@@ -694,6 +696,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH,
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_5,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASHX,
             ModelType.GLM_4_7_FLASH,
@@ -1574,6 +1577,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_5,
             ModelType.GLM_4_7,
             ModelType.GLM_4_7_FLASHX,
             ModelType.GLM_4_7_FLASH,
@@ -1641,6 +1645,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         elif self in {
+            ModelType.MINIMAX_M2_5,
             ModelType.MINIMAX_M2_1,
             ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
