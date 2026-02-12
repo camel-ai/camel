@@ -144,11 +144,13 @@ def __del__(self):
 class ModelBackendMeta(ABCMeta):
 ```
 
-Metaclass that automatically preprocesses messages in run method.
+Metaclass that automatically pre/post-processes the run method.
 
-Automatically wraps the run method of any class inheriting from
-BaseModelBackend to preprocess messages (remove `<think>` tags) before they
-are sent to the model.
+Automatically wraps the run and arun methods of any class inheriting from
+BaseModelBackend to:
+- Preprocess messages (remove `<think>` tags) before sending to the model.
+- Postprocess responses (extract `<think>` tags into reasoning_content)
+after receiving from the model.
 
 <a id="camel.models.base_model.ModelBackendMeta.__new__"></a>
 
@@ -163,7 +165,7 @@ def __new__(
 ):
 ```
 
-Wraps run method with preprocessing if it exists in the class.
+Wraps run/arun methods with pre/post-processing.
 
 <a id="camel.models.base_model.BaseModelBackend"></a>
 
@@ -185,6 +187,7 @@ It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. (default: :obj:`None`)
 - **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
+- **extract_thinking_from_response** (bool, optional): Whether to extract `__INLINE_CODE_0____INLINE_CODE_1____INLINE_CODE_2____INLINE_CODE_3____INLINE_CODE_4____INLINE_CODE_5____INLINE_CODE_6____INLINE_CODE_7____INLINE_CODE_8____INLINE_CODE_9____INLINE_CODE_10____INLINE_CODE_11__True`)
 
 <a id="camel.models.base_model.BaseModelBackend.__init__"></a>
 
@@ -199,7 +202,8 @@ def __init__(
     url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
     timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
-    max_retries: int = 3
+    max_retries: int = 3,
+    extract_thinking_from_response: bool = True
 ):
 ```
 
@@ -258,6 +262,34 @@ detected.
 **Returns:**
 
   List[OpenAIMessage]: Preprocessed messages
+
+<a id="camel.models.base_model.BaseModelBackend.postprocess_response"></a>
+
+### postprocess_response
+
+```python
+def postprocess_response(self, response: Any):
+```
+
+Postprocess model response to extract `__INLINE_CODE_0__` tags.
+
+For non-streaming responses, if the model embeds reasoning in
+`__INLINE_CODE_1__` tags within the response content (and
+`__INLINE_CODE_2__` is not already set), extracts the content
+of the tags into `__INLINE_CODE_3__` and removes them from
+`__INLINE_CODE_4__`.
+
+Streaming responses and other non-ChatCompletion types are
+returned as-is.
+
+**Parameters:**
+
+- **response**: The model response. May be a :obj:`ChatCompletion`, a streaming object, or other types.
+
+**Returns:**
+
+  The response, potentially with `__INLINE_CODE_0__`
+populated and `__INLINE_CODE_1__` cleaned.
 
 <a id="camel.models.base_model.BaseModelBackend._log_request"></a>
 
