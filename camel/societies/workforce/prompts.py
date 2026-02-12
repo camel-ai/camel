@@ -227,8 +227,9 @@ TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhan
 
     In such cases:
     * Treat the task as a single enhanced task.
-    * Rewrite it to be clear, self-contained, and with a well-defined deliverable.
+    * Preserve the original task intent and requirements. Clarify wording if needed, but do NOT add new deliverables or change the scope.
     * Assume the executing worker will load and use the required skill via the SkillToolkit.
+
 These principles aim to reduce overall completion time by maximizing concurrent work and effectively utilizing all available worker capabilities.
 
 You must output all subtasks strictly as individual <task> elements enclosed within a single <tasks> root.

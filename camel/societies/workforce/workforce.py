@@ -3510,35 +3510,25 @@ class Workforce(BaseNode):
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
         skill_names = self._get_single_agent_skill_names(worker)
-        skill_info_inserted = False
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
             tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
+            # Append skill names right after SkillToolkit for clarity
             if toolkit_name == "SkillToolkit" and skill_names:
                 toolkit_info.append(f"skills({', '.join(skill_names)})")
-                skill_info_inserted = True
-        if skill_names and not skill_info_inserted:
-            toolkit_info.append(f"skills({', '.join(skill_names)})")
         return ", ".join(toolkit_info)
 
     def _get_single_agent_skill_names(
         self, worker: 'SingleAgentWorker'
     ) -> List[str]:
         r"""Extract available skill names from SkillToolkit instances."""
-        skill_names: Set[str] = set()
-        seen_toolkits: Set[int] = set()
-
         for tool in worker.worker.tool_dict.values():
             toolkit_instance = getattr(tool.func, "__self__", None)
             if toolkit_instance is None:
                 continue
             if toolkit_instance.__class__.__name__ != "SkillToolkit":
                 continue
-            toolkit_id = id(toolkit_instance)
-            if toolkit_id in seen_toolkits:
-                continue
-            seen_toolkits.add(toolkit_id)
 
             list_skills_fn = getattr(toolkit_instance, "list_skills", None)
             if not callable(list_skills_fn):
@@ -3546,25 +3536,20 @@ class Workforce(BaseNode):
 
             try:
                 skills = list_skills_fn()
+                return sorted(
+                    skill["name"].strip()
+                    for skill in skills
+                    if skill.get("name")
+                )
             except Exception as exc:
                 logger.warning(
                     "Failed to list skills for worker %s: %s",
                     worker.node_id,
                     exc,
                 )
-                continue
+                return []
 
-            if not isinstance(skills, list):
-                continue
-
-            for skill in skills:
-                if not isinstance(skill, dict):
-                    continue
-                name = skill.get("name")
-                if isinstance(name, str) and name.strip():
-                    skill_names.add(name.strip())
-
-        return sorted(skill_names)
+        return []
 
     def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
         r"""Group tools by their parent toolkit class names."""
