@@ -426,3 +426,138 @@ class TestFindJavaHome:
         """Should return None when the directory doesn't exist."""
         result = _find_java_home("/nonexistent/path", "linux")
         assert result is None
+
+
+class TestEnabledRuntimes:
+    """Tests for the enabled_runtimes parameter."""
+
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_java_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_go_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".check_nodejs_availability"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".setup_initial_env_with_uv"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_uv_available"
+    )
+    def test_default_skips_go_java(
+        self,
+        mock_uv,
+        mock_setup,
+        mock_node,
+        mock_go,
+        mock_java,
+        tmp_path,
+    ):
+        """Default enabled_runtimes=None should NOT call Go/Java."""
+        mock_uv.return_value = (True, "/usr/bin/uv")
+        mock_setup.return_value = True
+
+        toolkit = TerminalToolkit(
+            working_directory=str(tmp_path),
+        )
+        try:
+            mock_go.assert_not_called()
+            mock_java.assert_not_called()
+        finally:
+            toolkit.cleanup()
+
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_java_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_go_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".check_nodejs_availability"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".setup_initial_env_with_uv"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_uv_available"
+    )
+    def test_go_enabled_calls_go_only(
+        self,
+        mock_uv,
+        mock_setup,
+        mock_node,
+        mock_go,
+        mock_java,
+        tmp_path,
+    ):
+        """enabled_runtimes=['go'] should call Go but not Java."""
+        mock_uv.return_value = (True, "/usr/bin/uv")
+        mock_setup.return_value = True
+        mock_go.return_value = "/usr/local/go/bin"
+
+        toolkit = TerminalToolkit(
+            working_directory=str(tmp_path),
+            enabled_runtimes=["go"],
+        )
+        try:
+            mock_go.assert_called_once()
+            mock_java.assert_not_called()
+        finally:
+            toolkit.cleanup()
+
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_java_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_go_available"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".check_nodejs_availability"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".setup_initial_env_with_uv"
+    )
+    @patch(
+        "camel.toolkits.terminal_toolkit.terminal_toolkit"
+        ".ensure_uv_available"
+    )
+    def test_both_enabled_calls_both(
+        self,
+        mock_uv,
+        mock_setup,
+        mock_node,
+        mock_go,
+        mock_java,
+        tmp_path,
+    ):
+        """enabled_runtimes=['go', 'java'] should call both."""
+        mock_uv.return_value = (True, "/usr/bin/uv")
+        mock_setup.return_value = True
+        mock_go.return_value = "/usr/local/go/bin"
+        mock_java.return_value = "/usr/lib/jvm/jdk-21"
+
+        toolkit = TerminalToolkit(
+            working_directory=str(tmp_path),
+            enabled_runtimes=["go", "java"],
+        )
+        try:
+            mock_go.assert_called_once()
+            mock_java.assert_called_once()
+        finally:
+            toolkit.cleanup()

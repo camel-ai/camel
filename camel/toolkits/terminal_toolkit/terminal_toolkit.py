@@ -94,6 +94,11 @@ class TerminalToolkit(BaseToolkit):
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries
             to install.
+        enabled_runtimes (Optional[List[str]]): List of additional
+            language runtimes to auto-install. Supported values are
+            ``"go"`` and ``"java"``. If ``None`` (the default), only
+            the Python runtime is configured. Example:
+            ``enabled_runtimes=["go", "java"]``.
     """
 
     def __init__(
@@ -107,6 +112,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
+        enabled_runtimes: Optional[List[str]] = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -171,6 +177,9 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
         self.install_dependencies = install_dependencies or []
+        self.enabled_runtimes: set[str] = set(
+            enabled_runtimes or []
+        )
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -397,11 +406,31 @@ class TerminalToolkit(BaseToolkit):
             # Check Node.js availability
             check_nodejs_availability(update_callback)
 
-            # Check Go availability (auto-install if needed)
-            ensure_go_available(update_callback)
+            # Check Go availability if enabled
+            if "go" in self.enabled_runtimes:
+                go_path = ensure_go_available(update_callback)
+                if go_path:
+                    os.environ["PATH"] = (
+                        go_path
+                        + os.pathsep
+                        + os.environ.get("PATH", "")
+                    )
 
-            # Check Java availability (auto-install if needed)
-            ensure_java_available(update_callback)
+            # Check Java availability if enabled
+            if "java" in self.enabled_runtimes:
+                java_home = ensure_java_available(
+                    update_callback
+                )
+                if java_home:
+                    os.environ["JAVA_HOME"] = java_home
+                    java_bin = os.path.join(
+                        java_home, "bin"
+                    )
+                    os.environ["PATH"] = (
+                        java_bin
+                        + os.pathsep
+                        + os.environ.get("PATH", "")
+                    )
         else:
             logger.info(
                 "[ENV INIT] Failed to create initial environment, "
