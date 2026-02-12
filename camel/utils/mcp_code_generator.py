@@ -23,10 +23,8 @@ better tool composition.
 Based on: https://www.anthropic.com/engineering/code-execution-with-mcp
 """
 
-import json
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import mcp.types as types
 
@@ -157,9 +155,7 @@ async def {safe_tool_name}(
         file_path.write_text(content)
         logger.debug(f"Generated tool file: {file_path}")
 
-    def _generate_argument_collection(
-        self, param_names: List[str]
-    ) -> str:
+    def _generate_argument_collection(self, param_names: List[str]) -> str:
         r"""Generate code to collect arguments into a dictionary.
 
         Args:
@@ -385,7 +381,7 @@ Skills can also include SKILL.md files with metadata and usage instructions.
             lines.append(f"{prefix}{connector}{path.name}")
 
             if path.is_dir():
-                children = sorted(list(path.iterdir()))
+                children = sorted(path.iterdir())
                 for i, child in enumerate(children):
                     is_last_child = i == len(children) - 1
                     extension = "    " if is_last else "│   "

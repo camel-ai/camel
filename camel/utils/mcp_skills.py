@@ -209,16 +209,11 @@ class SkillManager:
                 usage_match = re.search(
                     r"\*\*Usage Count\*\*: (\d+)", md_content
                 )
-                usage_count = (
-                    int(usage_match.group(1)) if usage_match else 0
-                )
+                usage_count = int(usage_match.group(1)) if usage_match else 0
 
                 tags_match = re.search(r"\*\*Tags\*\*: (.+)", md_content)
                 tags = (
-                    [
-                        t.strip()
-                        for t in tags_match.group(1).split(",")
-                    ]
+                    [t.strip() for t in tags_match.group(1).split(",")]
                     if tags_match
                     else []
                 )
@@ -239,6 +234,7 @@ class SkillManager:
                     tree.body
                     and isinstance(tree.body[0], ast.Expr)
                     and isinstance(tree.body[0].value, ast.Constant)
+                    and isinstance(tree.body[0].value.value, str)
                 ):
                     description = tree.body[0].value.value.strip()
             except Exception:
@@ -421,7 +417,9 @@ class SkillManager:
             bool: True if exported successfully, False otherwise.
         """
         try:
-            skills_data = [skill.model_dump() for skill in self.skills.values()]
+            skills_data = [
+                skill.model_dump() for skill in self.skills.values()
+            ]
 
             with open(export_path, "w") as f:
                 json.dump(skills_data, f, indent=2, default=str)
@@ -433,9 +431,7 @@ class SkillManager:
             logger.error(f"Failed to export skills: {e}")
             return False
 
-    def import_skills(
-        self, import_path: str, overwrite: bool = False
-    ) -> int:
+    def import_skills(self, import_path: str, overwrite: bool = False) -> int:
         r"""Import skills from a JSON file.
 
         Args:

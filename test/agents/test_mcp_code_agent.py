@@ -163,8 +163,7 @@ class TestMCPCodeExecutor:
 
 
 @pytest.mark.skipif(
-    not os.getenv("ANTHROPIC_API_KEY")
-    and not os.getenv("OPENAI_API_KEY"),
+    not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("OPENAI_API_KEY"),
     reason="API key not available",
 )
 class TestMCPCodeAgentIntegration:

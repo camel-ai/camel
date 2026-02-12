@@ -39,15 +39,14 @@ from camel.types import ModelPlatformType, ModelType, RoleType
 if TYPE_CHECKING:
     from camel.interpreters.base import BaseInterpreter
     from camel.toolkits.mcp_toolkit import MCPToolkit
-    from camel.utils.mcp_code_executor import MCPCodeExecutor
     from camel.utils.mcp_skills import SkillManager
 
 logger = get_logger(__name__)
 
 # System message for code-based MCP interaction
 CODE_SYSTEM_MESSAGE = """
-You are an AI assistant that interacts with MCP (Model Context Protocol) servers
-by writing Python code instead of making direct tool calls.
+You are an AI assistant that interacts with MCP (Model Context Protocol)
+servers by writing Python code instead of making direct tool calls.
 
 ## Your Capabilities
 
@@ -209,7 +208,7 @@ class MCPCodeAgent(ChatAgent):
             from camel.interpreters import InternalPythonInterpreter
 
             # Create interpreter with MCP-related imports in whitelist
-            self.interpreter = InternalPythonInterpreter(
+            self.interpreter: "BaseInterpreter" = InternalPythonInterpreter(
                 import_white_list=[
                     "servers",
                     "skills",
@@ -341,8 +340,7 @@ class MCPCodeAgent(ChatAgent):
 
                         # Add result to context for final response
                         result_message = (
-                            f"Code execution completed.\n"
-                            f"Result: {result}"
+                            f"Code execution completed.\nResult: {result}"
                         )
 
                         # Get final response with result
@@ -404,7 +402,7 @@ class MCPCodeAgent(ChatAgent):
             wrapped_code = f"""
 async def __async_exec():
     {code.replace(chr(10), chr(10) + '    ')}
-    
+
 __result = asyncio.run(__async_exec())
 """
             exec(wrapped_code, context)
@@ -507,14 +505,10 @@ __result = asyncio.run(__async_exec())
         from camel.toolkits.mcp_toolkit import MCPToolkit
 
         # Create toolkit
-        toolkit = MCPToolkit(
-            config_path=config_path, config_dict=config_dict
-        )
+        toolkit = MCPToolkit(config_path=config_path, config_dict=config_dict)
 
         # Create agent
-        agent = cls(
-            mcp_toolkit=toolkit, workspace_dir=workspace_dir, **kwargs
-        )
+        agent = cls(mcp_toolkit=toolkit, workspace_dir=workspace_dir, **kwargs)
 
         # Connect
         await agent.connect()

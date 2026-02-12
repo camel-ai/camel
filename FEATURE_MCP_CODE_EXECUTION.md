@@ -84,7 +84,7 @@ async def get_document(
         arguments['document_id'] = document_id
     if fields is not None:
         arguments['fields'] = fields
-    
+
     return await call_mcp_tool(
         server_name="google_drive",
         tool_name="get_document",
@@ -235,7 +235,7 @@ async def main():
             }
         }
     }
-    
+
     async with await MCPCodeAgent.create(
         config_dict=config,
         workspace_dir="./workspace"
@@ -257,7 +257,7 @@ response = await agent.astep("""
     2. Extract key information
     3. Update Salesforce record (record_id: xyz789)
     4. Generate summary report
-    
+
     Do this efficiently by keeping intermediate data in variables.
 """)
 ```
@@ -274,7 +274,7 @@ async def csv_to_dict(filepath):
     from servers.filesystem import read_file
     result = await read_file(path=filepath)
     lines = result['result'].split('\\n')
-    return [dict(zip(lines[0].split(','), line.split(','))) 
+    return [dict(zip(lines[0].split(','), line.split(',')))
             for line in lines[1:]]
 """,
     tags=["csv", "data"],

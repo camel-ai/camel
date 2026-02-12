@@ -104,7 +104,7 @@ async def skills_example():
 async def count_files_in_directory(directory_path):
     '''Count the number of files in a directory.'''
     from servers.filesystem import list_directory
-    
+
     result = await list_directory(path=directory_path)
     files = result.get('files', [])
     return len(files)
@@ -215,7 +215,7 @@ async def context_efficiency_example():
         2. Calculate statistics (size, line count, word count)
         3. Keep only the summary statistics, not the full content
         4. Return a JSON report with the statistics
-        
+
         Do this efficiently by processing files in a loop without passing
         full content through context.
         """

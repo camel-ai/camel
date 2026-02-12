@@ -63,9 +63,7 @@ class MCPCodeExecutor:
 
     _instance: Optional["MCPCodeExecutor"] = None
 
-    def __init__(
-        self, mcp_toolkit: "MCPToolkit", workspace_dir: str
-    ) -> None:
+    def __init__(self, mcp_toolkit: "MCPToolkit", workspace_dir: str) -> None:
         self.mcp_toolkit = mcp_toolkit
         self.workspace_dir = Path(workspace_dir)
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
@@ -123,8 +121,7 @@ class MCPCodeExecutor:
             if tools:
                 generator.generate_server_api(server_name, tools)
                 logger.info(
-                    f"Generated API for {server_name} with "
-                    f"{len(tools)} tools"
+                    f"Generated API for {server_name} with {len(tools)} tools"
                 )
 
         # Generate supporting files
