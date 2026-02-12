@@ -62,7 +62,8 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_4_6V_FLASH,
     ],
 )
-def test_zhipuai_model(model_type: ModelType):
+def test_zhipuai_model(model_type: ModelType, monkeypatch):
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     model = ZhipuAIModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == ZhipuAIConfig().as_dict()
@@ -72,8 +73,9 @@ def test_zhipuai_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_thinking_config():
+def test_zhipuai_model_thinking_config(monkeypatch):
     """Test that interleaved_thinking configuration is properly set."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     config = ZhipuAIConfig(interleaved_thinking=True)
     model = ZhipuAIModel(
         ModelType.GLM_4_PLUS,
@@ -84,15 +86,17 @@ def test_zhipuai_model_thinking_config():
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_thinking_disabled():
+def test_zhipuai_model_thinking_disabled(monkeypatch):
     """Test that interleaved_thinking is disabled by default."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     model = ZhipuAIModel(ModelType.GLM_4_PLUS)
     assert model._is_thinking_enabled() is False
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_inject_reasoning_content():
+def test_zhipuai_model_inject_reasoning_content(monkeypatch):
     """Test reasoning_content injection into assistant messages."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     config = ZhipuAIConfig(interleaved_thinking=True)
     model = ZhipuAIModel(
         ModelType.GLM_4_PLUS,
@@ -123,8 +127,9 @@ def test_zhipuai_model_inject_reasoning_content():
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_inject_reasoning_content_disabled():
+def test_zhipuai_model_inject_reasoning_content_disabled(monkeypatch):
     """Test that reasoning_content is not injected when disabled."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     model = ZhipuAIModel(ModelType.GLM_4_PLUS)
 
     messages = [
@@ -146,8 +151,9 @@ def test_zhipuai_model_inject_reasoning_content_disabled():
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_extract_reasoning_content():
+def test_zhipuai_model_extract_reasoning_content(monkeypatch):
     """Test extraction of reasoning_content from response."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     model = ZhipuAIModel(ModelType.GLM_4_PLUS)
 
     # Create a mock response with reasoning_content
@@ -163,8 +169,9 @@ def test_zhipuai_model_extract_reasoning_content():
 
 
 @pytest.mark.model_backend
-def test_zhipuai_model_extract_reasoning_content_none():
+def test_zhipuai_model_extract_reasoning_content_none(monkeypatch):
     """Test extraction returns None when no reasoning_content."""
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "test_key")
     model = ZhipuAIModel(ModelType.GLM_4_PLUS)
 
     # Create a mock response without reasoning_content

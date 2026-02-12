@@ -30,13 +30,14 @@ from camel.types import ModelType
         ModelType.MOONSHOT_V1_32K,
         ModelType.MOONSHOT_V1_128K,
         ModelType.MOONSHOT_KIMI_K2,
-        ModelType.MOONSHOT_KIMI_K2_0905_PREVIEW,
+        ModelType.MOONSHOT_KIMI_K2_5,
         ModelType.MOONSHOT_KIMI_K2_TURBO_PREVIEW,
         ModelType.MOONSHOT_KIMI_K2_THINKING,
         ModelType.MOONSHOT_KIMI_K2_THINKING_TURBO,
     ],
 )
-def test_moonshot_model(model_type: ModelType):
+def test_moonshot_model(model_type: ModelType, monkeypatch):
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     model = MoonshotModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == MoonshotConfig().as_dict()
@@ -45,8 +46,9 @@ def test_moonshot_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_thinking_config():
+def test_moonshot_model_thinking_config(monkeypatch):
     """Test that interleaved_thinking configuration is properly set."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     config = MoonshotConfig(interleaved_thinking=True)
     model = MoonshotModel(
         ModelType.MOONSHOT_KIMI_K2,
@@ -57,15 +59,17 @@ def test_moonshot_model_thinking_config():
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_thinking_disabled():
+def test_moonshot_model_thinking_disabled(monkeypatch):
     """Test that interleaved_thinking is disabled by default."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     model = MoonshotModel(ModelType.MOONSHOT_V1_8K)
     assert model._is_thinking_enabled() is False
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_inject_reasoning_content():
+def test_moonshot_model_inject_reasoning_content(monkeypatch):
     """Test reasoning_content injection into assistant messages."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     config = MoonshotConfig(interleaved_thinking=True)
     model = MoonshotModel(
         ModelType.MOONSHOT_KIMI_K2,
@@ -96,8 +100,9 @@ def test_moonshot_model_inject_reasoning_content():
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_inject_reasoning_content_disabled():
+def test_moonshot_model_inject_reasoning_content_disabled(monkeypatch):
     """Test that reasoning_content is not injected when disabled."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     model = MoonshotModel(ModelType.MOONSHOT_V1_8K)
 
     messages = [
@@ -119,8 +124,9 @@ def test_moonshot_model_inject_reasoning_content_disabled():
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_extract_reasoning_content():
+def test_moonshot_model_extract_reasoning_content(monkeypatch):
     """Test extraction of reasoning_content from response."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     model = MoonshotModel(ModelType.MOONSHOT_KIMI_K2)
 
     # Create a mock response with reasoning_content
@@ -136,8 +142,9 @@ def test_moonshot_model_extract_reasoning_content():
 
 
 @pytest.mark.model_backend
-def test_moonshot_model_extract_reasoning_content_none():
+def test_moonshot_model_extract_reasoning_content_none(monkeypatch):
     """Test extraction returns None when no reasoning_content."""
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test_key")
     model = MoonshotModel(ModelType.MOONSHOT_KIMI_K2)
 
     # Create a mock response without reasoning_content

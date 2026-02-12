@@ -48,9 +48,8 @@ class MoonshotConfig(BaseConfig):
             where the API will stop generating further tokens.
             (default: :obj:`None`)
         interleaved_thinking (Optional[bool], optional): Whether to enable
-            interleaved thinking mode for Kimi K2 thinking models. When
-            enabled, the model performs step-by-step reasoning while
-            dynamically invoking tools.
+            interleaved thinking mode. When enabled, the model performs
+            step-by-step reasoning while dynamically invoking tools.
             (default: :obj:`None`)
     """
 

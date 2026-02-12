@@ -74,10 +74,10 @@ class MinimaxConfig(BaseConfig):
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
         interleaved_thinking (Optional[bool], optional): Whether to enable
-            interleaved thinking mode for MiniMax M2 models. When enabled,
-            the model performs step-by-step reasoning while dynamically
-            invoking tools. This sets `reasoning_split=True` in the API
-            request, which separates reasoning into a `reasoning_details`
+            interleaved thinking mode. When enabled, the model performs
+            step-by-step reasoning while dynamically invoking tools. This sets
+            `reasoning_split=True` in the API request, which separates
+            reasoning into a `reasoning_details`
             field. (default: :obj:`None`)
 
     Note:
