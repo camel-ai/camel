@@ -886,7 +886,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.88"
+version = "0.2.89"
 source = { editable = "." }
 dependencies = [
     { name = "astor" },
@@ -955,7 +955,7 @@ all = [
     { name = "html2text" },
     { name = "httplib2" },
     { name = "ibm-watsonx-ai", version = "1.3.42", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "ibm-watsonx-ai", version = "1.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "ibm-watsonx-ai", version = "1.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
@@ -1225,7 +1225,7 @@ model-platforms = [
     { name = "cohere" },
     { name = "fish-audio-sdk" },
     { name = "ibm-watsonx-ai", version = "1.3.42", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "ibm-watsonx-ai", version = "1.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "ibm-watsonx-ai", version = "1.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "litellm", version = "1.80.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "litellm", version = "1.80.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
     { name = "mistralai" },
@@ -4376,7 +4376,7 @@ wheels = [
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "1.5.1"
+version = "1.5.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -4404,9 +4404,9 @@ dependencies = [
     { name = "tabulate", marker = "python_full_version >= '3.11'" },
     { name = "urllib3", marker = "python_full_version >= '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1c/b4/5d9d54ffd2bfadd35d5f5e1bd25bf94eb33a3b2972cad2449ca1fb6ed4b8/ibm_watsonx_ai-1.5.1.tar.gz", hash = "sha256:b03948afee418c94151c8146c0d8b7b1808c80359dbc58befe12355fffbb4c0d", size = 707589, upload-time = "2026-01-29T09:15:03.531Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/d7/5a4250bc0b4bde2aa9fb44289cd869c8b7df229759098d435ab169bc9eb9/ibm_watsonx_ai-1.5.2.tar.gz", hash = "sha256:c85ccf4eb79a03c8cc27ff891c24c3a9aebcc0da5887baa64bc9bb67d83aaf54", size = 710281, upload-time = "2026-02-12T08:20:37.855Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/fd/556a4229348bd2e8159d565c461b02e93485901eb5f8bc210325ce6a1d53/ibm_watsonx_ai-1.5.1-py3-none-any.whl", hash = "sha256:82072cf542fec58d338ab88c6c2e59564e6258d4eadf3d82d2e83f916dcfc99e", size = 1077190, upload-time = "2026-01-29T09:15:01.973Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/18/06dd0320590189c77283315da5368a361cef6b9807f6e44b9a59773139e9/ibm_watsonx_ai-1.5.2-py3-none-any.whl", hash = "sha256:0b9e80128a726788412ca50d63461dcea22ac23caf2057b8a6e32a0c376da18d", size = 1079661, upload-time = "2026-02-12T08:20:36.223Z" },
 ]
 
 [[package]]
@@ -8337,6 +8337,7 @@ wheels = [
 name = "pymupdf"
 version = "1.27.1"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/0c/40dda0cc4bd2220a2ef75f8c53dd7d8ed1e29681fcb3df75db6ee9677a7e/pymupdf-1.27.1.tar.gz", hash = "sha256:4afbde0769c336717a149ab0de3330dcb75378f795c1a8c5af55c1a628b17d55", size = 85303479, upload-time = "2026-02-12T08:29:17.682Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/19/fde6ea4712a904b65e8f41124a0e4233879b87a770fe6a8ce857964de6d5/pymupdf-1.27.1-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:bee9f95512f9556dbf2cacfd1413c61b29a55baa07fa7f8fc83d221d8419888a", size = 23986707, upload-time = "2026-02-11T15:03:24.025Z" },
     { url = "https://files.pythonhosted.org/packages/75/c2/070dff91ad3f1bc16fd6c6ceff23495601fcce4c92d28be534417596418a/pymupdf-1.27.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:3de95a0889395b0966fafd11b94980b7543a816e89dd1c218597a08543ac3415", size = 23263493, upload-time = "2026-02-11T15:03:45.528Z" },
