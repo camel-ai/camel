@@ -331,7 +331,7 @@ Provide:
 - Quality score (0-100): Objective assessment of result quality
 - Specific issues list: Any problems found in the result
 - Quality sufficient decision rule:
-  * In this system, **quality_score < 60 means quality is insufficient and the 
+  * In this system, **quality_score < 60 means quality is insufficient and the
   task would fail**
   * If quality is insufficient, **recovery_strategy MUST NOT be null**
   * If quality is sufficient, **recovery_strategy MUST be null**
@@ -364,7 +364,7 @@ If a strategy is not in the ENABLED list, you CANNOT use it regardless of the gu
 - No explanations or text outside the JSON structure
 - Ensure all required fields are included
 - Use null for optional fields when not applicable
-- For quality evaluation: if `quality_score < 60`, the task would fail and 
+- For quality evaluation: if `quality_score < 60`, the task would fail and
   `recovery_strategy` MUST be a non-null enabled strategy
 - **MANDATORY: The recovery_strategy MUST be one of the ENABLED strategies listed above. Using a disabled strategy will cause an error.**
 
