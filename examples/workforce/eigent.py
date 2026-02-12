@@ -128,6 +128,7 @@ def developer_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
     web_deploy_toolkit = WebDeployToolkit()
+    skill_toolkit = SkillToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
     skill_toolkit = message_integration.register_toolkits(skill_toolkit)
