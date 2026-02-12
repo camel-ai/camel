@@ -80,6 +80,15 @@ class DeepSeekConfig(BaseConfig):
             position, each with an associated log probability. logprobs
             must be set to true if this parameter is used.
             (default: :obj:`None`)
+        thinking (dict, optional): Controls whether to enable thinking
+            (reasoning) mode. Set to `{"type": "enabled"}` to enable
+            thinking mode on `deepseek-chat` model, which makes the model
+            output reasoning content before the final answer. When using
+            `deepseek-reasoner` model, thinking mode is enabled by default.
+            Note: when thinking mode is enabled, `temperature`, `top_p`,
+            `presence_penalty`, and `frequency_penalty` will not take effect.
+            Reference: https://api-docs.deepseek.com/guides/thinking_mode
+            (default: :obj:`None`)
         include_usage (bool, optional): When streaming, specifies whether to
             include usage information in `stream_options`.
             (default: :obj:`None`)
@@ -98,6 +107,7 @@ class DeepSeekConfig(BaseConfig):
     ] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
+    thinking: Optional[Dict[str, str]] = None
     stream_options: Optional[dict[str, bool]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
