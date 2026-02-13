@@ -1827,7 +1827,7 @@ class Workforce(BaseNode):
                 return True
 
             elif strategy == RecoveryStrategy.CREATE_WORKER:
-                # Release retained agent from old worker before creating new one
+                # Release retained agent before creating new one
                 await self._release_retained_agent(task)
                 assignee = await self._create_worker_node_for_task(task)
                 await self._post_task(task, assignee.node_id)
