@@ -1847,6 +1847,7 @@ class ModelPlatformType(Enum):
 
     OPENAI = "openai"
     AWS_BEDROCK = "aws-bedrock"
+    AWS_BEDROCK_CONVERSE = "aws-bedrock-converse"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
@@ -1906,7 +1907,10 @@ class ModelPlatformType(Enum):
     @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this platform is aws-bedrock."""
-        return self is ModelPlatformType.AWS_BEDROCK
+        return self in (
+            ModelPlatformType.AWS_BEDROCK,
+            ModelPlatformType.AWS_BEDROCK_CONVERSE,
+        )
 
     @property
     def is_azure(self) -> bool:
