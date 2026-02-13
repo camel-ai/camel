@@ -1720,6 +1720,9 @@ class Workforce(BaseNode):
                     f"{old_worker}"
                 )
 
+                # Release retained agent from old worker before reassignment
+                await self._release_retained_agent(task)
+
                 # Find a different worker
                 batch_result = await self._find_assignee([task])
                 assignment = batch_result.assignments[0]
@@ -1770,6 +1773,8 @@ class Workforce(BaseNode):
                     if not recovery_decision.is_quality_evaluation
                     else "quality issues"
                 )
+                # Release retained agent before decomposition
+                await self._release_retained_agent(task)
                 logger.info(
                     f"Task {task.id} will be decomposed due to {reason}"
                 )
@@ -1822,6 +1827,8 @@ class Workforce(BaseNode):
                 return True
 
             elif strategy == RecoveryStrategy.CREATE_WORKER:
+                # Release retained agent before creating new one
+                await self._release_retained_agent(task)
                 assignee = await self._create_worker_node_for_task(task)
                 await self._post_task(task, assignee.node_id)
                 action_taken = (
@@ -2276,6 +2283,18 @@ class Workforce(BaseNode):
         pending_tasks_list = list(self._pending_tasks)
         for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
+                # Discard any retained agent for this task (sync pop,
+                # agent is not returned to pool but will be GC'd)
+                worker_id = (
+                    self._assignees.get(task.id) or task.assigned_worker_id
+                )
+                if worker_id:
+                    for child in self._children:
+                        if child.node_id == worker_id and isinstance(
+                            child, SingleAgentWorker
+                        ):
+                            child.discard_retained_agent(task_id)
+                            break
                 pending_tasks_list.pop(i)
                 self._pending_tasks = deque(pending_tasks_list)
                 logger.info(f"Task {task_id} removed from pending queue.")
@@ -4594,8 +4613,7 @@ class Workforce(BaseNode):
                     f"Task {task.id}: No assignee found in _assignees. "
                     f"This indicates a bug in the task assignment chain."
                 )
-                task.state = TaskState.FAILED
-                self._completed_tasks.append(task)
+                await self._mark_task_permanently_failed(task)
                 return self.failure_handling_config.halt_on_max_retries
 
             # Clean up tracking before recovery
@@ -4619,6 +4637,8 @@ class Workforce(BaseNode):
                     f"task {task.id}: {e}",
                     exc_info=True,
                 )
+                # Release retained agent to avoid memory leak
+                await self._release_retained_agent(task)
                 # If strategy fails, mark task as failed
                 task.state = TaskState.FAILED
                 self._completed_tasks.append(task)
@@ -4672,8 +4692,7 @@ class Workforce(BaseNode):
                 f"Task {task.id}: No assignee found in _assignees. "
                 f"This indicates a bug in the task assignment chain."
             )
-            task.state = TaskState.FAILED
-            self._completed_tasks.append(task)
+            await self._mark_task_permanently_failed(task)
             return self.failure_handling_config.halt_on_max_retries
 
         # Clean up tracking before attempting recovery
@@ -4697,6 +4716,8 @@ class Workforce(BaseNode):
                 f"Recovery strategy failed for task {task.id}: {e}",
                 exc_info=True,
             )
+            # Release retained agent to avoid memory leak
+            await self._release_retained_agent(task)
             # If max retries reached, halt the workforce
             if task.failure_count >= max_retries:
                 self._completed_tasks.append(task)
@@ -4721,6 +4742,21 @@ class Workforce(BaseNode):
         await self._post_ready_tasks()
         return False
 
+    async def _release_retained_agent(self, task: Task) -> None:
+        r"""Release the retained agent for a task from its assigned worker.
+
+        Args:
+            task (Task): The task whose retained agent should be released.
+        """
+        worker_id = self._assignees.get(task.id) or task.assigned_worker_id
+        if worker_id:
+            for child in self._children:
+                if child.node_id == worker_id and isinstance(
+                    child, SingleAgentWorker
+                ):
+                    await child.release_retained_agent(task.id)
+                    return
+
     async def _mark_task_permanently_failed(self, task: Task) -> None:
         r"""Mark a task as permanently failed and clean up tracking.
 
@@ -4730,6 +4766,7 @@ class Workforce(BaseNode):
         Args:
             task (Task): The task to mark as permanently failed.
         """
+        await self._release_retained_agent(task)
         task.state = TaskState.FAILED
         self._cleanup_task_tracking(task.id)
         self._completed_tasks.append(task)
@@ -4982,6 +5019,7 @@ class Workforce(BaseNode):
                     '_needs_decomposition', False
                 ):
                     continue
+                await self._release_retained_agent(task)
                 # Set task state to DONE and add a completion message
                 task.state = TaskState.DONE
                 task.result = "Task marked as completed due to skip request"
@@ -5006,6 +5044,7 @@ class Workforce(BaseNode):
                 )
 
                 for task in in_flight_tasks:
+                    await self._release_retained_agent(task)
                     # Set task state to DONE and add a completion message
                     task.state = TaskState.DONE
                     task.result = (
@@ -5461,8 +5500,9 @@ class Workforce(BaseNode):
                                     f"found in _assignees. This indicates a "
                                     f"bug in the task assignment chain."
                                 )
-                                returned_task.state = TaskState.FAILED
-                                self._completed_tasks.append(returned_task)
+                                await self._mark_task_permanently_failed(
+                                    returned_task
+                                )
                                 continue
 
                             # Clean up tracking before attempting recovery
@@ -5489,6 +5529,10 @@ class Workforce(BaseNode):
                                     f"Error handling quality-failed task "
                                     f"{returned_task.id}: {e}",
                                     exc_info=True,
+                                )
+                                # Release retained agent to avoid memory leak
+                                await self._release_retained_agent(
+                                    returned_task
                                 )
                                 continue
                         else:
