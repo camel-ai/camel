@@ -2290,7 +2290,9 @@ class Workforce(BaseNode):
                 )
                 if worker_id:
                     for child in self._children:
-                        if child.node_id == worker_id:
+                        if child.node_id == worker_id and isinstance(
+                            child, Worker
+                        ):
                             child.discard_retained_agent(task_id)
                             break
                 pending_tasks_list.pop(i)
@@ -4605,10 +4607,7 @@ class Workforce(BaseNode):
                     exc_info=True,
                 )
                 # Release retained agent to avoid memory leak
-                for child in self._children:
-                    if child.node_id == original_assignee:
-                        await child.release_retained_agent(task.id)
-                        break
+                await self._release_retained_agent(task)
                 # If strategy fails, mark task as failed
                 task.state = TaskState.FAILED
                 self._completed_tasks.append(task)
@@ -4687,11 +4686,7 @@ class Workforce(BaseNode):
                 exc_info=True,
             )
             # Release retained agent to avoid memory leak
-            if original_assignee:
-                for child in self._children:
-                    if child.node_id == original_assignee:
-                        await child.release_retained_agent(task.id)
-                        break
+            await self._release_retained_agent(task)
             # If max retries reached, halt the workforce
             if task.failure_count >= max_retries:
                 self._completed_tasks.append(task)
@@ -4725,7 +4720,7 @@ class Workforce(BaseNode):
         worker_id = self._assignees.get(task.id) or task.assigned_worker_id
         if worker_id:
             for child in self._children:
-                if child.node_id == worker_id:
+                if child.node_id == worker_id and isinstance(child, Worker):
                     await child.release_retained_agent(task.id)
                     return
 
@@ -5503,13 +5498,9 @@ class Workforce(BaseNode):
                                     exc_info=True,
                                 )
                                 # Release retained agent to avoid memory leak
-                                if original_assignee:
-                                    for child in self._children:
-                                        if child.node_id == original_assignee:
-                                            await child.release_retained_agent(
-                                                returned_task.id
-                                            )
-                                            break
+                                await self._release_retained_agent(
+                                    returned_task
+                                )
                                 continue
                         else:
                             score = quality_eval.quality_score
