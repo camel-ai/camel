@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import yaml
 
@@ -33,6 +33,7 @@ class SkillToolkit(BaseToolkit):
     def __init__(
         self,
         working_directory: Optional[str] = None,
+        allowed_skills: Optional[Set[str]] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
@@ -42,6 +43,12 @@ class SkillToolkit(BaseToolkit):
             else Path.cwd().resolve()
         )
         self._skills_cache: Optional[Dict[str, Dict[str, str]]] = None
+        self._allowed_skills: Optional[Set[str]] = None
+        self._allowed_skills = (
+            None
+            if allowed_skills is None
+            else {name.strip() for name in allowed_skills if name.strip()}
+        )
 
     def _build_description(self) -> str:
         skills = self._get_skills()
@@ -135,7 +142,13 @@ class SkillToolkit(BaseToolkit):
     def _get_skills(self) -> Dict[str, Dict[str, str]]:
         if self._skills_cache is None:
             self._skills_cache = self._scan_skills()
-        return self._skills_cache
+        if self._allowed_skills is None:
+            return self._skills_cache
+        return {
+            name: skill
+            for name, skill in self._skills_cache.items()
+            if name in self._allowed_skills
+        }
 
     def clear_cache(self) -> None:
         r"""Clear the cached skills to force rescanning on next access."""
