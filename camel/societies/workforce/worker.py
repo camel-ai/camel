@@ -76,25 +76,6 @@ class Worker(BaseNode, ABC):
         result_str = "\n".join(result_lines)
         return result_str
 
-    async def release_retained_agent(self, task_id: str) -> None:
-        r"""Release a retained agent for a task that will not be retried.
-
-        Args:
-            task_id (str): The ID of the task whose retained agent should
-                be released.
-        """
-        pass
-
-    def discard_retained_agent(self, task_id: str) -> None:
-        r"""Synchronously discard a retained agent without returning it to
-        the pool. The agent will be garbage collected.
-
-        Args:
-            task_id (str): The ID of the task whose retained agent should
-                be discarded.
-        """
-        pass
-
     @check_if_running(False)
     def set_channel(self, channel: TaskChannel):
         self._channel = channel

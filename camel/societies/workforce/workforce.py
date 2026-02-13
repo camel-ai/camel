@@ -2291,7 +2291,7 @@ class Workforce(BaseNode):
                 if worker_id:
                     for child in self._children:
                         if child.node_id == worker_id and isinstance(
-                            child, Worker
+                            child, SingleAgentWorker
                         ):
                             child.discard_retained_agent(task_id)
                             break
@@ -4720,7 +4720,9 @@ class Workforce(BaseNode):
         worker_id = self._assignees.get(task.id) or task.assigned_worker_id
         if worker_id:
             for child in self._children:
-                if child.node_id == worker_id and isinstance(child, Worker):
+                if child.node_id == worker_id and isinstance(
+                    child, SingleAgentWorker
+                ):
                     await child.release_retained_agent(task.id)
                     return
 
