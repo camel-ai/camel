@@ -24,7 +24,6 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.logger import get_logger
-from camel.messages.base import BaseMessage
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -35,7 +34,6 @@ from camel.societies.workforce.workflow_memory_manager import (
     WorkflowMemoryManager,
 )
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
-from camel.types import OpenAIBackendRole
 from camel.utils.context_utils import ContextUtility
 
 logger = get_logger(__name__)
@@ -219,11 +217,6 @@ class SingleAgentWorker(Worker):
             conversations from all task executions are accumulated for
             potential workflow saving. Set to True if you plan to call
             save_workflow_memories(). (default: :obj:`False`)
-        enable_breakpoint_resume (bool, optional): Whether to retain the agent
-            instance on task failure for reuse on retry. When enabled, the
-            worker keeps the failed agent (with its conversation history
-            intact) and reuses it directly on the next attempt instead of
-            creating a fresh agent. (default: :obj:`True`)
     """
 
     def __init__(
@@ -237,7 +230,6 @@ class SingleAgentWorker(Worker):
         use_structured_output_handler: bool = True,
         context_utility: Optional[ContextUtility] = None,
         enable_workflow_memory: bool = False,
-        enable_breakpoint_resume: bool = True,
     ) -> None:
         node_id = worker.agent_id
         super().__init__(
@@ -253,7 +245,6 @@ class SingleAgentWorker(Worker):
         self.worker = worker
         self.use_agent_pool = use_agent_pool
         self.enable_workflow_memory = enable_workflow_memory
-        self.enable_breakpoint_resume = enable_breakpoint_resume
         self._failed_task_agents: Dict[str, ChatAgent] = {}
         self._shared_context_utility = context_utility
         self._context_utility: Optional[ContextUtility] = (
@@ -287,7 +278,7 @@ class SingleAgentWorker(Worker):
         if len(failure_reason) > 500:
             failure_reason = f"{failure_reason[:500]}..."
         return (
-            f"Retry attempt {task.failure_count + 1}. "
+            f"Retry attempt {task.failure_count}. "
             f"Previous attempt failed with: {failure_reason}. "
             "Continue from the previous context and address the failure."
         )
@@ -375,34 +366,20 @@ class SingleAgentWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
-        # Reuse the failed agent if breakpoint resume is enabled,
+        # Reuse the failed agent if available,
         # otherwise get a fresh agent from pool or by cloning.
         reusing_agent = False
-        if (
-            self.enable_breakpoint_resume
-            and task.failure_count > 0
-            and task.id in self._failed_task_agents
-        ):
+        if task.failure_count > 0 and task.id in self._failed_task_agents:
             worker_agent = self._failed_task_agents.pop(task.id)
             reusing_agent = True
         else:
             worker_agent = await self._get_worker_agent()
         response_content = ""
+        task_failed = False
 
         try:
-            if reusing_agent:
-                retry_message = self._build_retry_message(task)
-                worker_agent.update_memory(
-                    BaseMessage.make_user_message(
-                        role_name="user",
-                        content=retry_message,
-                        meta_dict={"type": "retry_context"},
-                    ),
-                    OpenAIBackendRole.USER,
-                )
-
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
-            prompt = str(
+            task_prompt = str(
                 PROCESS_TASK_PROMPT.format(
                     content=task.content,
                     parent_task_content=task.parent.content
@@ -412,6 +389,11 @@ class SingleAgentWorker(Worker):
                     additional_info=task.additional_info,
                 )
             )
+            if reusing_agent:
+                retry_message = self._build_retry_message(task)
+                prompt = f"{retry_message}\n\n{task_prompt}"
+            else:
+                prompt = task_prompt
 
             if self.use_structured_output_handler and self.structured_handler:
                 # Use structured output handler for prompt-based extraction
@@ -525,19 +507,6 @@ class SingleAgentWorker(Worker):
                         f"Failed to transfer conversation to accumulator: {e}"
                     )
 
-        except Exception as e:
-            logger.error(
-                f"Error processing task {task.id}: {type(e).__name__}: {e}"
-            )
-            # Store error information in task result
-            task.result = f"{type(e).__name__}: {e!s}"
-            if self.enable_breakpoint_resume:
-                self._failed_task_agents[task.id] = worker_agent
-            else:
-                await self._return_worker_agent(worker_agent)
-            return TaskState.FAILED
-
-        try:
             # Populate additional_info with worker attempt details
             if task.additional_info is None:
                 task.additional_info = {}
@@ -603,9 +572,7 @@ class SingleAgentWorker(Worker):
             task.result = task_result.content  # type: ignore[union-attr]
 
             if task_result.failed:  # type: ignore[union-attr]
-                if self.enable_breakpoint_resume:
-                    self._failed_task_agents[task.id] = worker_agent
-                    return TaskState.FAILED
+                task_failed = True
                 return TaskState.FAILED
 
             if is_task_result_insufficient(task):
@@ -613,15 +580,21 @@ class SingleAgentWorker(Worker):
                     f"Task {task.id}: Content validation failed - "
                     f"task marked as failed"
                 )
-                if self.enable_breakpoint_resume:
-                    self._failed_task_agents[task.id] = worker_agent
-                    return TaskState.FAILED
+                task_failed = True
                 return TaskState.FAILED
             return TaskState.DONE
+        except Exception as e:
+            logger.error(
+                f"Error processing task {task.id}: {type(e).__name__}: {e}"
+            )
+            # Store error information in task result
+            task.result = f"{type(e).__name__}: {e!s}"
+            task_failed = True
+            return TaskState.FAILED
         finally:
-            # Only return the agent to the pool if it wasn't retained
-            # for breakpoint resume
-            if task.id not in self._failed_task_agents:
+            if task_failed:
+                self._failed_task_agents[task.id] = worker_agent
+            else:
                 await self._return_worker_agent(worker_agent)
 
     async def _listen_to_channel(self):
