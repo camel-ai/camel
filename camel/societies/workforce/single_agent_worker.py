@@ -304,9 +304,6 @@ class SingleAgentWorker(Worker):
     async def release_retained_agent(self, task_id: str) -> None:
         r"""Release a retained agent for a task that will not be retried.
 
-        When a task permanently fails, is reassigned, or is decomposed,
-        the retained agent should be released to avoid memory leaks.
-
         Args:
             task_id (str): The ID of the task whose retained agent should
                 be released.
