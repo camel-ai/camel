@@ -65,9 +65,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             names to their corresponding functions or objects. The interpreter
             can only execute functions that are either directly listed in this
             dictionary or are member functions of objects listed in this
-            dictionary. The concept of :obj:`action_space` is derived from
-            EmbodiedAgent, representing the actions that an agent is capable of
-            performing. If `None`, set to empty dict. (default: :obj:`None`)
+            dictionary. The concept of :obj:`action_space` represents the
+            actions that an agent is capable of performing. If `None`, set to
+            empty dict. (default: :obj:`None`)
         import_white_list (List[str], optional): A list that stores
             the Python modules or functions that can be imported in the code.
             All submodules and functions of the modules listed in this list are

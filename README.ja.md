@@ -565,7 +565,7 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 また、プロジェクトの初期ロゴをデザインしてくださったHaya Hammoud氏にも感謝いたします。
 
 私たちは、エージェントを構築、比較、カスタマイズするための他の作品から素晴らしい研究アイデアを実装しました。これらのモジュールを使用する場合は、元の作品を引用してください：
-- `TaskCreationAgent`、`TaskPrioritizationAgent`、`BabyAGI`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。[[例](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+- `TaskCreationAgent`と`TaskPrioritizationAgent`：*Nakajima et al.*から：[Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/)。
 
 - `PersonaHub`：*Tao Ge et al.*から：[Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094)。[[例](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 

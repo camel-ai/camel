@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from .babyagi_playing import BabyAGI
 from .role_playing import RolePlaying
 from .workforce import Workforce
 
 __all__ = [
     'RolePlaying',
-    'BabyAGI',
     'Workforce',
 ]
