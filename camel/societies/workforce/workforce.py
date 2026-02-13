@@ -2286,8 +2286,7 @@ class Workforce(BaseNode):
                 # Discard any retained agent for this task (sync pop,
                 # agent is not returned to pool but will be GC'd)
                 worker_id = (
-                    self._assignees.get(task.id)
-                    or task.assigned_worker_id
+                    self._assignees.get(task.id) or task.assigned_worker_id
                 )
                 if worker_id:
                     for child in self._children:
