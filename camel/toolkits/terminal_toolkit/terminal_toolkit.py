@@ -33,6 +33,7 @@ from camel.toolkits.terminal_toolkit.go_runtime import (
 from camel.toolkits.terminal_toolkit.java_runtime import (
     ensure_java_available,
 )
+from camel.toolkits.terminal_toolkit.runtime_utils import Runtime
 from camel.toolkits.terminal_toolkit.utils import (
     check_nodejs_availability,
     clone_current_environment,
@@ -177,9 +178,9 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
         self.install_dependencies = install_dependencies or []
-        self.enabled_runtimes: set[str] = set(
-            enabled_runtimes or []
-        )
+        self.enabled_runtimes: set[str] = {
+            str(r) for r in (enabled_runtimes or [])
+        }
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -407,7 +408,7 @@ class TerminalToolkit(BaseToolkit):
             check_nodejs_availability(update_callback)
 
             # Check Go availability if enabled
-            if "go" in self.enabled_runtimes:
+            if Runtime.GO in self.enabled_runtimes:
                 go_path = ensure_go_available(update_callback)
                 if go_path:
                     os.environ["PATH"] = (
@@ -417,7 +418,7 @@ class TerminalToolkit(BaseToolkit):
                     )
 
             # Check Java availability if enabled
-            if "java" in self.enabled_runtimes:
+            if Runtime.JAVA in self.enabled_runtimes:
                 java_home = ensure_java_available(
                     update_callback
                 )

@@ -28,6 +28,7 @@ import tempfile
 import urllib.error
 import urllib.request
 import zipfile
+from enum import Enum
 from typing import Callable, Literal, Optional
 
 from camel.logger import get_logger
@@ -40,6 +41,12 @@ SupportedOS = Literal["linux", "darwin", "windows"]
 SupportedArch = Literal["amd64", "arm64"]
 ArchiveType = Literal["tar.gz", "zip"]
 UpdateCallback = Optional[Callable[[str], None]]
+
+
+class Runtime(str, Enum):
+    r"""Supported language runtimes."""
+    GO = "go"
+    JAVA = "java"
 
 # ── Constants ────────────────────────────────────────────────────────
 

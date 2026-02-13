@@ -27,6 +27,7 @@ from camel.toolkits.terminal_toolkit.java_runtime import (
     ensure_java_available,
 )
 from camel.toolkits.terminal_toolkit.runtime_utils import (
+    Runtime,
     get_platform_info,
 )
 
@@ -509,7 +510,7 @@ class TestEnabledRuntimes:
 
         toolkit = TerminalToolkit(
             working_directory=str(tmp_path),
-            enabled_runtimes=["go"],
+            enabled_runtimes=[Runtime.GO],
         )
         try:
             mock_go.assert_called_once()
@@ -554,7 +555,7 @@ class TestEnabledRuntimes:
 
         toolkit = TerminalToolkit(
             working_directory=str(tmp_path),
-            enabled_runtimes=["go", "java"],
+            enabled_runtimes=[Runtime.GO, Runtime.JAVA],
         )
         try:
             mock_go.assert_called_once()
