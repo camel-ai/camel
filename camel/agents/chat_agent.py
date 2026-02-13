@@ -88,7 +88,10 @@ from camel.models._utils import extract_thinking_from_content
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.storages import JsonStorage
-from camel.toolkits import FunctionTool, RegisteredAgentToolkit
+from camel.toolkits import (
+    FunctionTool,
+    RegisteredAgentToolkit,
+)
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -592,6 +595,14 @@ class ChatAgent(BaseAgent):
             ]
         }
 
+        # Generic tool output processor hook - can be installed by toolkits
+        # via register_agent(). The processor is a callable that takes
+        # (tool_name, tool_call_id, output) and returns a dict with "output"
+        # or None to skip processing.
+        self._tool_output_processor: Optional[
+            Callable[[str, str, Any], Optional[Dict[str, Any]]]
+        ] = None
+
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
         if toolkits_to_register_agent:
             for toolkit in toolkits_to_register_agent:
@@ -630,11 +641,13 @@ class ChatAgent(BaseAgent):
         )
         self._last_tool_call_record: Optional[ToolCallingRecord] = None
         self._last_tool_call_signature: Optional[str] = None
+        self._pending_tool_hints: List[str] = []
         self.summary_window_ratio = summary_window_ratio
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
+        self._pending_tool_hints.clear()
         self.init_messages()
         # Snapshot-clean cache is per-conversation state and must not survive
         # agent reuse (e.g. pooled workers across different tasks).
@@ -1265,6 +1278,32 @@ class ChatAgent(BaseAgent):
         )
 
         return notice + truncated, True
+
+    def _enqueue_tool_hint(self, hint_message: Optional[str]) -> None:
+        r"""Queue a tool hint to be emitted after the current tool batch.
+
+        This avoids inserting assistant text between tool results when a model
+        emits multiple tool calls in one assistant turn.
+        """
+        if hint_message and hint_message.strip():
+            self._pending_tool_hints.append(hint_message)
+
+    def _flush_pending_tool_hints(self) -> None:
+        r"""Flush queued tool hints into memory as a single assistant message.
+
+        Hints are emitted after the full internal tool batch is recorded,
+        preserving tool-call/result ordering for strict backends.
+        """
+        if not self._pending_tool_hints:
+            return
+
+        merged_hint = "\n\n".join(self._pending_tool_hints)
+        self._pending_tool_hints.clear()
+        hint_msg = BaseMessage.make_assistant_message(
+            role_name=self.role_name,
+            content=merged_hint,
+        )
+        self.update_memory(hint_msg, OpenAIBackendRole.ASSISTANT)
 
     def _clean_snapshot_line(self, line: str) -> str:
         r"""Clean a single snapshot line by removing prefixes and references.
@@ -3019,6 +3058,9 @@ class ChatAgent(BaseAgent):
                     result = self._execute_tool(tool_call_request)
                     tool_call_records.append(result)
 
+                # Emit post-tool hints only after this tool batch is complete
+                self._flush_pending_tool_hints()
+
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
                     break
@@ -3321,6 +3363,9 @@ class ChatAgent(BaseAgent):
                         tool_call_request
                     )
                     tool_call_records.append(tool_call_record)
+
+                # Emit post-tool hints only after this tool batch is complete
+                self._flush_pending_tool_hints()
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -3938,6 +3983,7 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        extra_assistant_message = None
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -3955,7 +4001,24 @@ class ChatAgent(BaseAgent):
                     )
                     mask_flag = True
                 else:
-                    result = raw_result
+                    # Process with tool output processor if available
+                    if self._tool_output_processor is not None:
+                        processed = self._tool_output_processor(
+                            func_name,
+                            tool_call_id,
+                            raw_result,
+                        )
+                        # None means no hint needed (e.g., output was None)
+                        if processed is None:
+                            result = raw_result
+                            extra_assistant_message = None
+                        else:
+                            result = processed.get("output", raw_result)
+                            extra_assistant_message = processed.get(
+                                "hint_message"
+                            )
+                    else:
+                        result = raw_result
             except Exception as e:
                 # Capture the error message to prevent framework crash
                 error_msg = f"Error executing tool '{func_name}': {e!s}"
@@ -3969,6 +4032,7 @@ class ChatAgent(BaseAgent):
             tool_call_id,
             mask_output=mask_flag,
             extra_content=tool_call_request.extra_content,
+            extra_assistant_message=extra_assistant_message,
         )
 
     async def _aexecute_tool(
@@ -3982,6 +4046,7 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools.get(func_name)
         mask_flag = False
+        extra_assistant_message = None
 
         if tool is None:
             error_msg = f"Tool '{func_name}' not found in registered tools"
@@ -4025,7 +4090,24 @@ class ChatAgent(BaseAgent):
                     )
                     mask_flag = True
                 else:
-                    result = raw_result
+                    # Process with tool output processor if available
+                    if self._tool_output_processor is not None:
+                        processed = self._tool_output_processor(
+                            func_name,
+                            tool_call_id,
+                            raw_result,
+                        )
+                        # None means no hint needed (e.g., output was None)
+                        if processed is None:
+                            result = raw_result
+                            extra_assistant_message = None
+                        else:
+                            result = processed.get("output", raw_result)
+                            extra_assistant_message = processed.get(
+                                "hint_message"
+                            )
+                    else:
+                        result = raw_result
 
             except Exception as e:
                 # Capture the error message to prevent framework crash
@@ -4039,6 +4121,7 @@ class ChatAgent(BaseAgent):
             tool_call_id,
             mask_output=mask_flag,
             extra_content=tool_call_request.extra_content,
+            extra_assistant_message=extra_assistant_message,
         )
 
     def _record_tool_calling(
@@ -4049,6 +4132,7 @@ class ChatAgent(BaseAgent):
         tool_call_id: str,
         mask_output: bool = False,
         extra_content: Optional[Dict[str, Any]] = None,
+        extra_assistant_message: Optional[str] = None,
     ):
         r"""Record the tool result in the memory.
 
@@ -4100,6 +4184,7 @@ class ChatAgent(BaseAgent):
             OpenAIBackendRole.FUNCTION,
             return_records=self._enable_snapshot_clean,
         )
+        self._enqueue_tool_hint(extra_assistant_message)
 
         # Register tool output for snapshot cleaning if enabled
         if self._enable_snapshot_clean and not mask_output and func_records:
