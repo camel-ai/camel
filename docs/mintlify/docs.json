@@ -256,6 +256,7 @@
               "reference/camel.configs.siliconflow_config",
               "reference/camel.configs.togetherai_config",
               "reference/camel.configs.vllm_config",
+              "reference/camel.configs.volcano_config",
               "reference/camel.configs.watsonx_config",
               "reference/camel.configs.yi_config",
               "reference/camel.configs.zhipuai_config"
@@ -303,6 +304,7 @@
           {
             "group": "Models",
             "pages": [
+              "reference/camel.models._interleaved_thinking_mixin",
               "reference/camel.models._utils",
               "reference/camel.models.aihubmix_model",
               "reference/camel.models.aiml_model",

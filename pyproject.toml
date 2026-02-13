@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.86"
+version = "0.2.90a1"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.15"
@@ -52,6 +52,7 @@ dev = [
     "pytest>=7,<8",
     "pytest-cov>=4,<5",
     "pytest-asyncio>=0.23.0,<0.24",
+    "setuptools>=78.1.1,<79",
     "gradio>=3,<4",
     "mock>=5,<6",
     "types-colorama>=0.4.15,<0.5",
@@ -59,7 +60,7 @@ dev = [
     "types-mock>=5.1.0,<6",
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
-    "types-setuptools>=69.2.0,<70",
+    "types-setuptools>=75.8.0,<76",
     "uv>=0.7.0,<0.8",
     "Flask>=2.0",
 ]
@@ -404,10 +405,11 @@ all = [
     "types-mock>=5.1.0,<6",
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
-    "types-setuptools>=69.2.0,<70",
+    "types-setuptools>=75.8.0,<76",
     "pytest>=7,<8",
     "pytest-cov>=4,<5",
     "pytest-asyncio>=0.23.0,<0.24",
+    "setuptools>=78.1.1,<79",
     "gradio>=3,<4",
     "mock>=5,<6",
     "xls2xlsx>=0.2.0",

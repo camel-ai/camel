@@ -39,6 +39,8 @@ description: A test skill for unit testing.
 This is a test skill body content.
 """
         )
+        (skill_dir / "references").mkdir()
+        (skill_dir / "helper.md").write_text("# helper\n")
 
         # Create second skill for multi-skill testing
         skill_dir2 = Path(temp_dir) / ".camel" / "skills" / "another-skill"
@@ -113,6 +115,10 @@ def test_get_tools(skill_toolkit):
     tool_names = [t.func.__name__ for t in tools]
     assert "list_skills" in tool_names
     assert "load_skill" in tool_names
+    load_tool = next(t for t in tools if t.func.__name__ == "load_skill")
+    description = load_tool.get_openai_tool_schema()["function"]["description"]
+    assert "extra files: helper.md, references/" in description
+    assert "<files>helper.md, references/</files>" in description
 
 
 def test_caching(skill_toolkit):
