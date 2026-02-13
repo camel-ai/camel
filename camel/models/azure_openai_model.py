@@ -90,7 +90,7 @@ class AzureOpenAIModel(BaseModelBackend):
             creating a new one. Useful for RL frameworks like AReaL or rLLM
             that provide Azure OpenAI-compatible clients. The client should
             implement the AzureOpenAI client interface with
-            `.chat.completions.create()` and `.beta.chat.completions.parse()`
+            `.chat.completions.create()` and `.chat.completions.parse()`
             methods. (default: :obj:`None`)
         async_client (Optional[Any], optional): A custom asynchronous
             AzureOpenAI client instance. If provided, this client will be
@@ -377,7 +377,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # with structured response
         request_config.pop("stream", None)
 
-        return self._client.beta.chat.completions.parse(
+        return self._client.chat.completions.parse(
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -395,7 +395,7 @@ class AzureOpenAIModel(BaseModelBackend):
         # with structured response
         request_config.pop("stream", None)
 
-        return await self._async_client.beta.chat.completions.parse(
+        return await self._async_client.chat.completions.parse(
             messages=messages,
             model=str(self.model_type),
             **request_config,
@@ -409,14 +409,14 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> ChatCompletionStreamManager[BaseModel]:
         r"""Request streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._client.chat.completions.stream(
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,
@@ -431,14 +431,14 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._async_client.chat.completions.stream(
             messages=messages,
             model=str(self.model_type),
             response_format=response_format,

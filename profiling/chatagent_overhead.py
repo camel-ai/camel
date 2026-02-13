@@ -77,7 +77,7 @@ def run_single_benchmark(
 
     # Patch client to measure API call time
     original_create = client.chat.completions.create
-    original_parse = client.beta.chat.completions.parse
+    original_parse = client.chat.completions.parse
     api_call_times = []
     tool_exec_times = []
 
@@ -94,7 +94,7 @@ def run_single_benchmark(
         return result
 
     client.chat.completions.create = timed_create
-    client.beta.chat.completions.parse = timed_parse
+    client.chat.completions.parse = timed_parse
 
     # Setup tools
     tools = MathToolkit().get_tools() if with_tools else None

@@ -112,7 +112,7 @@ class ZhipuAIModel(OpenAICompatibleModel):
         try_modify_message_with_format(messages[-1], response_format)
         request_config["response_format"] = {"type": "json_object"}
         try:
-            return self._client.beta.chat.completions.parse(
+            return self._client.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -136,7 +136,7 @@ class ZhipuAIModel(OpenAICompatibleModel):
         try_modify_message_with_format(messages[-1], response_format)
         request_config["response_format"] = {"type": "json_object"}
         try:
-            return await self._async_client.beta.chat.completions.parse(
+            return await self._async_client.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **request_config,

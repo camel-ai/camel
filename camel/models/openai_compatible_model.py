@@ -313,7 +313,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         try:
-            return self._client.beta.chat.completions.parse(
+            return self._client.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -326,7 +326,7 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return self._client.beta.chat.completions.parse(
+                return self._client.chat.completions.parse(
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -348,7 +348,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         request_config.pop("stream", None)
 
         try:
-            return await self._async_client.beta.chat.completions.parse(
+            return await self._async_client.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **request_config,
@@ -361,7 +361,7 @@ class OpenAICompatibleModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
             try:
-                return await self._async_client.beta.chat.completions.parse(
+                return await self._async_client.chat.completions.parse(
                     messages=messages,
                     model=self.model_type,
                     **request_config,
@@ -378,14 +378,14 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> ChatCompletionStreamManager[BaseModel]:
         r"""Request streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._client.chat.completions.stream(
             messages=messages,
             model=self.model_type,
             response_format=response_format,
@@ -400,14 +400,14 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
 
-        # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._async_client.chat.completions.stream(
             messages=messages,
             model=self.model_type,
             response_format=response_format,

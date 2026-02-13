@@ -93,7 +93,7 @@ class OpenAIModel(BaseModelBackend):
             creating a new one. Useful for RL frameworks like AReaL or rLLM
             that provide OpenAI-compatible clients. The client should
             implement the OpenAI client interface with
-            `.chat.completions.create()` and `.beta.chat.completions.parse()`
+            `.chat.completions.create()` and `.chat.completions.parse()`
             methods. (default: :obj:`None`)
         async_client (Optional[Any], optional): A custom asynchronous OpenAI
             client instance. If provided, this client will be used instead of
@@ -417,7 +417,7 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         request_config = self._sanitize_config(request_config)
 
-        return self._client.beta.chat.completions.parse(
+        return self._client.chat.completions.parse(
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -436,7 +436,7 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         request_config = self._sanitize_config(request_config)
 
-        return await self._async_client.beta.chat.completions.parse(
+        return await self._async_client.chat.completions.parse(
             messages=messages,
             model=self.model_type,
             **request_config,
@@ -450,15 +450,15 @@ class OpenAIModel(BaseModelBackend):
     ) -> ChatCompletionStreamManager[BaseModel]:
         r"""Request streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
         request_config.pop("stream", None)
         request_config = self._sanitize_config(request_config)
 
-        # Use the beta streaming API for structured outputs
-        return self._client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._client.chat.completions.stream(
             messages=messages,
             model=self.model_type,
             response_format=response_format,
@@ -473,7 +473,7 @@ class OpenAIModel(BaseModelBackend):
     ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
-        Note: This uses OpenAI's beta streaming API for structured outputs.
+        Note: This uses OpenAI's streaming API for structured outputs.
         """
         request_config = self._prepare_request_config(tools)
         # Remove stream from config as it's handled by the stream method
@@ -481,8 +481,8 @@ class OpenAIModel(BaseModelBackend):
 
         request_config = self._sanitize_config(request_config)
 
-        # Use the beta streaming API for structured outputs
-        return self._async_client.beta.chat.completions.stream(
+        # Use the streaming API for structured outputs
+        return self._async_client.chat.completions.stream(
             messages=messages,
             model=self.model_type,
             response_format=response_format,
