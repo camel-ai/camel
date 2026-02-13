@@ -287,6 +287,8 @@ class SingleAgentWorker(Worker):
         r"""Resets the worker to its initial state."""
         super().reset()
         self.worker.reset()
+        # Clear retained failed-task agents
+        self._failed_task_agents.clear()
 
         # Reset agent pool if it exists
         if self.agent_pool:
@@ -298,6 +300,30 @@ class SingleAgentWorker(Worker):
             self.agent_pool = AgentPool(
                 base_agent=self.worker,
             )
+
+    async def release_retained_agent(self, task_id: str) -> None:
+        r"""Release a retained agent for a task that will not be retried.
+
+        When a task permanently fails, is reassigned, or is decomposed,
+        the retained agent should be released to avoid memory leaks.
+
+        Args:
+            task_id (str): The ID of the task whose retained agent should
+                be released.
+        """
+        agent = self._failed_task_agents.pop(task_id, None)
+        if agent is not None:
+            await self._return_worker_agent(agent)
+
+    def discard_retained_agent(self, task_id: str) -> None:
+        r"""Synchronously discard a retained agent without returning it to
+        the pool. The agent will be garbage collected.
+
+        Args:
+            task_id (str): The ID of the task whose retained agent should
+                be discarded.
+        """
+        self._failed_task_agents.pop(task_id, None)
 
     async def _get_worker_agent(self) -> ChatAgent:
         r"""Get a worker agent, either from pool or by cloning."""
