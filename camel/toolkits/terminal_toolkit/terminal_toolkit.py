@@ -95,11 +95,11 @@ class TerminalToolkit(BaseToolkit):
             environment for local execution. Defaults to False.
         install_dependencies (List): A list of user specified libraries
             to install.
-        enabled_runtimes (Optional[List[str]]): List of additional
+        enable_other_runtimes (list[Runtime]): List of additional
             language runtimes to auto-install. Supported values are
-            ``"go"`` and ``"java"``. If ``None`` (the default), only
-            the Python runtime is configured. Example:
-            ``enabled_runtimes=["go", "java"]``.
+            ``Runtime.GO`` and ``Runtime.JAVA``. If empty (the default),
+            only the Python runtime is configured. Example:
+            ``enable_other_runtimes=[Runtime.GO, Runtime.JAVA]``.
     """
 
     def __init__(
@@ -113,7 +113,7 @@ class TerminalToolkit(BaseToolkit):
         allowed_commands: Optional[List[str]] = None,
         clone_current_env: bool = False,
         install_dependencies: Optional[List[str]] = None,
-        enabled_runtimes: Optional[List[str]] = None,
+        enable_other_runtimes: list[Runtime] | None = None,
     ):
         # auto-detect if running inside a CAMEL runtime container
         # when inside a runtime, use local execution (already sandboxed)
@@ -178,9 +178,9 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
         self.install_dependencies = install_dependencies or []
-        self.enabled_runtimes: set[str] = {
-            str(r) for r in (enabled_runtimes or [])
-        }
+        self.enable_other_runtimes: set[Runtime] = set(
+            enable_other_runtimes or []
+        )
 
         self.log_dir = os.path.abspath(
             session_logs_dir or os.path.join(self.working_dir, "terminal_logs")
@@ -408,7 +408,7 @@ class TerminalToolkit(BaseToolkit):
             check_nodejs_availability(update_callback)
 
             # Check Go availability if enabled
-            if Runtime.GO in self.enabled_runtimes:
+            if Runtime.GO in self.enable_other_runtimes:
                 go_path = ensure_go_available(update_callback)
                 if go_path:
                     os.environ["PATH"] = (
@@ -418,7 +418,7 @@ class TerminalToolkit(BaseToolkit):
                     )
 
             # Check Java availability if enabled
-            if Runtime.JAVA in self.enabled_runtimes:
+            if Runtime.JAVA in self.enable_other_runtimes:
                 java_home = ensure_java_available(
                     update_callback
                 )
