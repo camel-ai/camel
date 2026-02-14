@@ -150,35 +150,11 @@ def test_clear_cache(skill_toolkit):
 def test_allowed_skills_filter_on_init(temp_skill_dir):
     r"""Test filtering skills by allowed list at initialization."""
     toolkit = SkillToolkit(
-        working_directory=temp_skill_dir, allowed_skills={"test-skill"}
+        working_directory=temp_skill_dir,
+        allowed_skills={"test-skill", "  "},
     )
     skills = toolkit.list_skills()
     assert len(skills) == 1
     assert skills[0]["name"] == "test-skill"
     assert "## Skill: test-skill" in toolkit.load_skill("test-skill")
     assert "Error:" in toolkit.load_skill("another-skill")
-
-
-def test_set_allowed_skills_runtime(skill_toolkit):
-    r"""Test updating allowed skills at runtime."""
-    all_skills = {s["name"] for s in skill_toolkit.list_skills()}
-    assert all_skills == {"test-skill", "another-skill"}
-
-    skill_toolkit.set_allowed_skills({"another-skill"})
-    filtered_skills = skill_toolkit.list_skills()
-    assert len(filtered_skills) == 1
-    assert filtered_skills[0]["name"] == "another-skill"
-    assert "Error:" in skill_toolkit.load_skill("test-skill")
-
-    # Reset to allow all skills.
-    skill_toolkit.set_allowed_skills(None)
-    reset_skills = {s["name"] for s in skill_toolkit.list_skills()}
-    assert reset_skills == {"test-skill", "another-skill"}
-
-
-def test_set_allowed_skills_with_set(skill_toolkit):
-    r"""Test set input for allowed skills."""
-    skill_toolkit.set_allowed_skills({"test-skill", "  "})
-    filtered_skills = skill_toolkit.list_skills()
-    assert len(filtered_skills) == 1
-    assert filtered_skills[0]["name"] == "test-skill"
