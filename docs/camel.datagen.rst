@@ -9,6 +9,7 @@ Subpackages
 
    camel.datagen.self_instruct
    camel.datagen.source2synth
+   camel.datagen.evol_instruct
 
 Submodules
 ----------

@@ -20,6 +20,14 @@ camel.storages.graph\_storages.graph\_element module
    :undoc-members:
    :show-inheritance:
 
+camel.storages.graph\_storages.nebula\_graph module
+---------------------------------------------------
+
+.. automodule:: camel.storages.graph_storages.nebula_graph
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.storages.graph\_storages.neo4j\_graph module
 --------------------------------------------------
 

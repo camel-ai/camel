@@ -4,6 +4,14 @@ camel.embeddings package
 Submodules
 ----------
 
+camel.embeddings.azure\_embedding module
+-----------------------------------------
+
+.. automodule:: camel.embeddings.azure_embedding
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.embeddings.base module
 ----------------------------
 
@@ -12,10 +20,34 @@ camel.embeddings.base module
    :undoc-members:
    :show-inheritance:
 
+camel.embeddings.gemini\_embedding module
+-----------------------------------------
+
+.. automodule:: camel.embeddings.gemini_embedding
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.embeddings.jina\_embedding module
+---------------------------------------
+
+.. automodule:: camel.embeddings.jina_embedding
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.embeddings.mistral\_embedding module
 ------------------------------------------
 
 .. automodule:: camel.embeddings.mistral_embedding
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.embeddings.openai\_compatible\_embedding module
+-----------------------------------------------------
+
+.. automodule:: camel.embeddings.openai_compatible_embedding
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,6 +64,14 @@ camel.embeddings.sentence\_transformers\_embeddings module
 ----------------------------------------------------------
 
 .. automodule:: camel.embeddings.sentence_transformers_embeddings
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.embeddings.together\_embedding module
+-------------------------------------------
+
+.. automodule:: camel.embeddings.together_embedding
    :members:
    :undoc-members:
    :show-inheritance:

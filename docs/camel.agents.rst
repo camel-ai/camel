@@ -60,6 +60,38 @@ camel.agents.knowledge\_graph\_agent module
    :undoc-members:
    :show-inheritance:
 
+camel.agents.mcp\_agent module
+-------------------------------
+
+.. automodule:: camel.agents.mcp_agent
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.agents.multi\_hop\_generator\_agent module
+------------------------------------------------
+
+.. automodule:: camel.agents.multi_hop_generator_agent
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.agents.programmed\_agent\_instruction module
+--------------------------------------------------
+
+.. automodule:: camel.agents.programmed_agent_instruction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.agents.repo\_agent module
+--------------------------------
+
+.. automodule:: camel.agents.repo_agent
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.agents.role\_assignment\_agent module
 -------------------------------------------
 
