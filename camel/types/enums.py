@@ -69,12 +69,12 @@ class ModelType(UnifiedModelType, Enum):
 
     AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
+    # ZhipuAI GLM-4.7 series (latest)
+    GLM_5 = "glm-5"
     GLM_4_7 = "glm-4.7"
-    GLM_4_7_FLASH = "glm-4.7-flash"
     GLM_4_7_FLASHX = "glm-4.7-flashx"
+    GLM_4_7_FLASH = "glm-4.7-flash"
     GLM_4_6 = "glm-4.6"
-    GLM_4_6V = "glm-4.6v"
-    GLM_4_6V_FLASH = "glm-4.6v-flash"
     GLM_4 = "glm-4"
     GLM_4_5_AIR = "glm-4.5-air"
     GLM_4_5_AIRX = "glm-4.5-airx"
@@ -95,6 +95,12 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4_FLASH_250414 = "glm-4-flash-250414"
     GLM_ZERO_PREVIEW = "glm-zero-preview"
     GLM_3_TURBO = "glm-3-turbo"
+
+    # ZhipuAI GLM Vision models (VLM)
+    GLM_4_6V = "glm-4.6v"
+    GLM_4_6V_FLASHX = "glm-4.6v-flashx"
+    GLM_4_5V = "glm-4.5v"
+    GLM_4_6V_FLASH = "glm-4.6v-flash"
 
     # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
@@ -337,6 +343,9 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_128K = "moonshot-v1-128k"
     MOONSHOT_KIMI_K2 = "kimi-k2-0905-Preview"
     MOONSHOT_KIMI_K2_5 = "kimi-k2.5"
+    MOONSHOT_KIMI_K2_TURBO_PREVIEW = "kimi-k2-turbo-preview"
+    MOONSHOT_KIMI_K2_THINKING = "kimi-k2-thinking"
+    MOONSHOT_KIMI_K2_THINKING_TURBO = "kimi-k2-thinking-turbo"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -516,7 +525,10 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
     CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
-    # Minimax M2 models
+    # Minimax models
+    MINIMAX_M2_5 = "MiniMax-M2.5"
+    MINIMAX_M2_1 = "MiniMax-M2.1"
+    MINIMAX_M2_1_LIGHTNING = "MiniMax-M2.1-lightning"
     MINIMAX_M2 = "MiniMax-M2"
     MINIMAX_M2_STABLE = "MiniMax-M2-Stable"
 
@@ -684,11 +696,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASH,
             ModelType.GLM_4_FLASH_250414,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_5,
             ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASH,
             ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_7_FLASH,
             ModelType.GLM_4_6,
             ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASHX,
+            ModelType.GLM_4_5V,
             ModelType.GLM_4_6V_FLASH,
         }
 
@@ -1030,6 +1045,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_128K,
             ModelType.MOONSHOT_KIMI_K2,
             ModelType.MOONSHOT_KIMI_K2_5,
+            ModelType.MOONSHOT_KIMI_K2_TURBO_PREVIEW,
+            ModelType.MOONSHOT_KIMI_K2_THINKING,
+            ModelType.MOONSHOT_KIMI_K2_THINKING_TURBO,
         }
 
     @property
@@ -1189,9 +1207,7 @@ class ModelType(UnifiedModelType, Enum):
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GLM_4V:
-            return 1024
-        elif self in {
+        if self in {
             ModelType.STUB,
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
@@ -1210,8 +1226,6 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.CEREBRAS_LLAMA_3_1_8B,
             ModelType.GPT_4,
-            ModelType.GLM_3_TURBO,
-            ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
@@ -1381,6 +1395,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.GLM_4_1V_THINKING_FLASHX,
             ModelType.GLM_4_1V_THINKING_FLASH,
+            ModelType.GLM_4_5V,
         }:
             return 64_000
         elif self in {
@@ -1440,7 +1455,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_5_AIR,
             ModelType.GLM_4_5_AIRX,
             ModelType.GLM_4_5_FLASH,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
             ModelType.GLM_4_6V,
+            ModelType.GLM_4_6V_FLASHX,
             ModelType.GLM_4_6V_FLASH,
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
@@ -1497,8 +1515,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_ERNIE_4_5_VL_28B_A3B_THINKING,
             ModelType.ERNIE_5_0_THINKING,
             ModelType.ERNIE_4_5_TURBO_VL,
-            ModelType.GLM_4_6V,
-            ModelType.GLM_4_6V_FLASH,
+            ModelType.GLM_4_5_AIR,
+            ModelType.GLM_4_5_AIRX,
         }:
             return 128_000
         elif self in {
@@ -1559,10 +1577,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
+            ModelType.GLM_5,
             ModelType.GLM_4_7,
-            ModelType.GLM_4_7_FLASH,
             ModelType.GLM_4_7_FLASHX,
+            ModelType.GLM_4_7_FLASH,
             ModelType.GLM_4_6,
+            ModelType.GLM_4_5_FLASH,
         }:
             return 200_000
         elif self in {
@@ -1571,6 +1591,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_HORIZON_ALPHA,
             ModelType.MOONSHOT_KIMI_K2,
             ModelType.MOONSHOT_KIMI_K2_5,
+            ModelType.MOONSHOT_KIMI_K2_TURBO_PREVIEW,
+            ModelType.MOONSHOT_KIMI_K2_THINKING,
+            ModelType.MOONSHOT_KIMI_K2_THINKING_TURBO,
         }:
             return 256_000
 
@@ -1622,10 +1645,13 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         elif self in {
+            ModelType.MINIMAX_M2_5,
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
             ModelType.MINIMAX_M2_STABLE,
         }:
-            return 32_000
+            return 204_800
 
         else:
             logger.warning(
