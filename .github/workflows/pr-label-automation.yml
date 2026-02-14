@@ -22,9 +22,17 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              labels: ['Review Required']
-            })
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['Review Required']
+              })
+            } catch (error) {
+              if (error.status === 403) {
+                console.log('Skipping label addition: Resource not accessible by integration (fork PR)');
+              } else {
+                throw error;
+              }
+            }
