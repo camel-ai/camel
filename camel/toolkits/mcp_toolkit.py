@@ -633,8 +633,8 @@ class MCPToolkit(BaseToolkit):
                 clients.append(client)
             except Exception as e:
                 logger.error(
-                    f"Failed to create client for '{name}': "
-                    f"{type(e).__name__}"
+                    "Failed to create MCP client: %s",
+                    type(e).__name__,
                 )
                 error_msg = (
                     f"Invalid configuration for server '{name}': "
