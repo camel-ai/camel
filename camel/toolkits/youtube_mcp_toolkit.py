@@ -75,12 +75,21 @@ class YouTubeMCPToolkit(BaseToolkit):
                 "the YOUTUBE_API_KEY environment variable"
             )
 
+        # Note: The Toolathlon benchmark uses a locally cloned fork of
+        # ZubeidHendricks/youtube-mcp-server, launched via:
+        #   node ${local_servers_paths}/youtube-mcp-server/dist/index.js
+        # That requires pre-cloning and building the repo locally.
+        #
+        # Here we use @kirbah/mcp-youtube (npm), a public package that
+        # provides equivalent YouTube Data API v3 functionality
+        # (search, video details, transcripts, comments, channels,
+        # trending, categories) without requiring a local build step.
         self._mcp_toolkit = MCPToolkit(
             config_dict={
                 "mcpServers": {
                     "youtube": {
                         "command": "npx",
-                        "args": ["-y", "mcp-youtube"],
+                        "args": ["-y", "@kirbah/mcp-youtube"],
                         "env": {
                             "YOUTUBE_API_KEY": api_key,
                         },

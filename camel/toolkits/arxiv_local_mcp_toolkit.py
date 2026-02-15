@@ -62,9 +62,7 @@ class ArxivLocalMCPToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
 
         if storage_path is None:
-            storage_path = os.path.join(
-                os.getcwd(), "arxiv_local_storage"
-            )
+            storage_path = os.path.join(os.getcwd(), "arxiv_local_storage")
 
         self._mcp_toolkit = MCPToolkit(
             config_dict={

@@ -33,28 +33,69 @@ class GoogleSheetMCPToolkit(BaseToolkit):
     This toolkit enables creating, reading, updating, and managing
     Google Sheets spreadsheets.
 
-    Uses the ``mcp-google-sheets`` Python package. Supports two
-    authentication modes:
+    Uses the ``mcp-google-sheets`` Python package.
 
-    1. **Pre-existing credentials**: Provide paths to OAuth2 credentials
-       and token files directly.
-    2. **Auto-generate from CAMEL OAuth**: Provide ``GOOGLE_CLIENT_ID``
-       and ``GOOGLE_CLIENT_SECRET`` environment variables, and the
-       toolkit will generate the credentials file automatically,
-       reusing the same OAuth pattern as ``GoogleCalendarToolkit``.
+    **Setup & Authentication Flow:**
 
-    Example:
-        # Mode 1: Pre-existing credential files
-        async with GoogleSheetMCPToolkit(
-            credentials_path="/path/to/credentials.json",
-            token_path="/path/to/token.json",
-        ) as toolkit:
-            tools = toolkit.get_tools()
+    This toolkit requires OAuth2 authentication with Google. The full
+    setup process is:
 
-        # Mode 2: Using CAMEL OAuth env vars (auto-generates creds file)
-        # Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
-        async with GoogleSheetMCPToolkit() as toolkit:
-            tools = toolkit.get_tools()
+    Step 1 - Create OAuth2 credentials:
+        Go to Google Cloud Console -> APIs & Services -> Credentials,
+        create an OAuth2 Client ID (type: Desktop App). Download the
+        credentials JSON, or note the Client ID and Client Secret.
+
+    Step 2 - Enable APIs:
+        In the same Google Cloud project, enable both:
+        - Google Sheets API
+        - Google Drive API
+
+    Step 3 - Add test users (if app is in "Testing" mode):
+        Go to OAuth consent screen -> Test users, add the Google
+        account email that will authorize the Sheets access.
+
+    Step 4 - First-time token authorization (one-time, requires browser):
+        Run the following command to trigger the OAuth browser flow
+        and generate a ``token.json`` file::
+
+            CREDENTIALS_PATH=/path/to/credentials.json \
+            TOKEN_PATH=~/.camel/google_sheets_token.json \
+            uvx mcp-google-sheets
+
+        A browser window will open asking you to authorize. After
+        authorizing, the ``token.json`` will be saved. You can then
+        stop the server with Ctrl+C. This is a one-time step.
+
+    Step 5 - Use the toolkit:
+        Now you can use the toolkit with both credential and token
+        files::
+
+            async with GoogleSheetMCPToolkit(
+                credentials_path="/path/to/credentials.json",
+                token_path="~/.camel/google_sheets_token.json",
+            ) as toolkit:
+                tools = toolkit.get_tools()
+
+        Or, set environment variables and let the toolkit auto-generate
+        the credentials file::
+
+            export GOOGLE_CLIENT_ID="your-client-id"
+            export GOOGLE_CLIENT_SECRET="your-client-secret"
+            export GOOGLE_SHEETS_TOKEN_PATH="~/.camel/google_sheets_token.json"
+
+            async with GoogleSheetMCPToolkit() as toolkit:
+                tools = toolkit.get_tools()
+
+    **Authentication Modes:**
+
+    1. **Pre-existing credentials**: Provide ``credentials_path`` and
+       ``token_path`` directly.
+    2. **Auto-generate from CAMEL OAuth env vars**: Set
+       ``GOOGLE_CLIENT_ID`` and ``GOOGLE_CLIENT_SECRET``, and the
+       toolkit auto-generates a ``credentials.json`` at
+       ``~/.camel/google_sheets_credentials.json``. You still need
+       ``token_path`` pointing to a valid token file obtained from
+       Step 4 above.
 
     Environment Variables:
         GOOGLE_SHEETS_CREDENTIALS_PATH: Path to OAuth2 credentials JSON.
@@ -63,7 +104,6 @@ class GoogleSheetMCPToolkit(BaseToolkit):
             new spreadsheets (optional).
         GOOGLE_CLIENT_ID: OAuth2 client ID (for auto-generation).
         GOOGLE_CLIENT_SECRET: OAuth2 client secret (for auto-generation).
-        GOOGLE_REFRESH_TOKEN: OAuth2 refresh token (for auto-generation).
 
     Attributes:
         timeout (Optional[float]): Connection timeout in seconds.
@@ -97,16 +137,28 @@ class GoogleSheetMCPToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
 
+        # --- Resolve credentials_path ---
+        # Priority: parameter > env var > auto-generate from
+        # GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
         if credentials_path is None:
             credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+
+        # --- Resolve token_path ---
+        # The token file contains the OAuth2 access & refresh tokens
+        # obtained from the browser authorization flow (see Step 4 in
+        # the class docstring). Without this file, the MCP server will
+        # attempt to open a browser for authorization, which will hang
+        # in non-interactive environments and cause a connection timeout.
         if token_path is None:
             token_path = os.getenv("GOOGLE_SHEETS_TOKEN_PATH")
-        if drive_folder_id is None:
-            drive_folder_id = os.getenv(
-                "GOOGLE_SHEETS_DRIVE_FOLDER_ID", ""
-            )
 
-        # Auto-generate credentials file from CAMEL OAuth env vars
+        if drive_folder_id is None:
+            drive_folder_id = os.getenv("GOOGLE_SHEETS_DRIVE_FOLDER_ID", "")
+
+        # If no explicit credentials file, try to auto-generate one
+        # from GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET env vars.
+        # This creates ~/.camel/google_sheets_credentials.json with
+        # the standard Google OAuth2 "installed" app format.
         if credentials_path is None:
             credentials_path = self._generate_credentials_file()
 
@@ -117,6 +169,11 @@ class GoogleSheetMCPToolkit(BaseToolkit):
                 "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars"
             )
 
+        # Build env vars for the mcp-google-sheets server process.
+        # CREDENTIALS_PATH: OAuth2 client credentials (client_id/secret)
+        # TOKEN_PATH: authorized token (access_token/refresh_token)
+        # DRIVE_FOLDER_ID: optional, restricts new spreadsheets to a
+        #   specific Google Drive folder
         env: Dict[str, str] = {
             "CREDENTIALS_PATH": credentials_path,
         }
@@ -142,8 +199,31 @@ class GoogleSheetMCPToolkit(BaseToolkit):
         r"""Generate an OAuth2 credentials JSON file from CAMEL-style
         environment variables.
 
-        This reuses the same env var pattern as GoogleCalendarToolkit:
-        GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+        This reuses the same env var pattern as GoogleCalendarToolkit
+        (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) and produces a file
+        in the standard Google "installed" app format that
+        mcp-google-sheets expects.
+
+        The generated file looks like::
+
+            {
+              "installed": {
+                "client_id": "...",
+                "client_secret": "...",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": ["http://localhost"]
+              }
+            }
+
+        This is the same format as downloading the JSON from Google
+        Cloud Console -> Credentials -> OAuth 2.0 Client IDs.
+
+        Note:
+            This only generates the *credentials* file (client identity).
+            You still need a separate *token* file containing the
+            authorized access/refresh tokens. See Step 4 in the class
+            docstring for how to obtain it.
 
         Returns:
             Optional[str]: Path to the generated credentials file,
@@ -155,6 +235,7 @@ class GoogleSheetMCPToolkit(BaseToolkit):
         if not client_id or not client_secret:
             return None
 
+        # Build the standard Google OAuth2 "installed" app credentials
         credentials = {
             "installed": {
                 "client_id": client_id,
@@ -165,14 +246,15 @@ class GoogleSheetMCPToolkit(BaseToolkit):
             }
         }
 
+        # Store under ~/.camel/ alongside other CAMEL credential files
+        # (e.g., gmail_token.json used by GmailToolkit)
         creds_dir = os.path.join(os.path.expanduser("~"), ".camel")
         os.makedirs(creds_dir, exist_ok=True)
-        creds_path = os.path.join(
-            creds_dir, "google_sheets_credentials.json"
-        )
+        creds_path = os.path.join(creds_dir, "google_sheets_credentials.json")
 
         with open(creds_path, "w") as f:
             json.dump(credentials, f)
+        # Restrict permissions: only owner can read/write
         os.chmod(creds_path, 0o600)
 
         logger.info(
