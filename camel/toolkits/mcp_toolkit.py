@@ -632,8 +632,14 @@ class MCPToolkit(BaseToolkit):
                 client = self._create_client_from_config(name, cfg)
                 clients.append(client)
             except Exception as e:
-                logger.error(f"Failed to create client for '{name}': {e}")
-                error_msg = f"Invalid configuration for server '{name}': {e}"
+                logger.error(
+                    f"Failed to create client for '{name}': "
+                    f"{type(e).__name__}"
+                )
+                error_msg = (
+                    f"Invalid configuration for server '{name}': "
+                    f"{type(e).__name__}"
+                )
                 raise ValueError(error_msg) from e
 
         return clients
@@ -656,7 +662,10 @@ class MCPToolkit(BaseToolkit):
             client = create_mcp_client(cfg, **kwargs)
             return client
         except Exception as e:
-            error_msg = f"Failed to create client for server '{name}': {e}"
+            error_msg = (
+                f"Failed to create client for server '{name}': "
+                f"{type(e).__name__}"
+            )
             raise ValueError(error_msg) from e
 
     def _ensure_strict_tool_schema(self, tool: FunctionTool) -> FunctionTool:
