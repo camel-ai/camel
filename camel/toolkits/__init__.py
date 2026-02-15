@@ -102,6 +102,16 @@ from .imap_mail_toolkit import IMAPMailToolkit
 from .microsoft_outlook_mail_toolkit import OutlookMailToolkit
 from .earth_science_toolkit import EarthScienceToolkit
 from .skill_toolkit import SkillToolkit
+from .git_mcp_toolkit import GitMCPToolkit
+from .rail_12306_mcp_toolkit import Rail12306MCPToolkit
+from .word_mcp_toolkit import WordMCPToolkit
+from .youtube_transcript_mcp_toolkit import YouTubeTranscriptMCPToolkit
+from .scholarly_mcp_toolkit import ScholarlyMCPToolkit
+from .wandb_mcp_toolkit import WandBMCPToolkit
+from .youtube_mcp_toolkit import YouTubeMCPToolkit
+from .arxiv_local_mcp_toolkit import ArxivLocalMCPToolkit
+from .google_cloud_mcp_toolkit import GoogleCloudMCPToolkit
+from .google_sheet_mcp_toolkit import GoogleSheetMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -195,4 +205,14 @@ __all__ = [
     "OutlookMailToolkit",
     'EarthScienceToolkit',
     'SkillToolkit',
+    'GitMCPToolkit',
+    'Rail12306MCPToolkit',
+    'WordMCPToolkit',
+    'YouTubeTranscriptMCPToolkit',
+    'ScholarlyMCPToolkit',
+    'WandBMCPToolkit',
+    'YouTubeMCPToolkit',
+    'ArxivLocalMCPToolkit',
+    'GoogleCloudMCPToolkit',
+    'GoogleSheetMCPToolkit',
 ]
