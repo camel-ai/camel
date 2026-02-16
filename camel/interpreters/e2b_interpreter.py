@@ -156,16 +156,63 @@ class E2BInterpreter(BaseInterpreter):
                 code=code, language=self._CODE_TYPE_MAPPING[code_type]
             )
 
+        output_parts = []
+
         if execution.text and execution.text.lower() != "none":
-            return execution.text
+            output_parts.append(execution.text)
+
+        if execution.results:
+            for result in execution.results:
+                if result.is_main_result and output_parts:
+                    continue
+
+                png_data = result._repr_png_()
+                if png_data:
+                    output_parts.append(
+                        f"\n![image](data:image/png;base64,{png_data})\n"
+                    )
+                    continue
+
+                jpeg_data = result._repr_jpeg_()
+                if jpeg_data:
+                    output_parts.append(
+                        f"\n![image](data:image/jpeg;base64,"
+                        f"{jpeg_data})\n"
+                    )
+                    continue
+
+                svg_data = result._repr_svg_()
+                if svg_data:
+                    output_parts.append(f"\n{svg_data}\n")
+                    continue
+
+                html_data = result._repr_html_()
+                if html_data:
+                    output_parts.append(html_data)
+                    continue
+
+                text = str(result)
+                if text and text.lower() != "none":
+                    output_parts.append(text)
 
         if execution.logs:
             if execution.logs.stdout:
-                return ",".join(execution.logs.stdout)
-            elif execution.logs.stderr:
-                return ",".join(execution.logs.stderr)
+                output_parts.append(",".join(execution.logs.stdout))
+            if execution.logs.stderr:
+                stderr_output = ",".join(execution.logs.stderr)
+                if stderr_output:
+                    output_parts.append(f"[stderr] {stderr_output}")
 
-        return str(execution.error)
+        if output_parts:
+            return "\n".join(output_parts)
+
+        if execution.error:
+            return (
+                f"{execution.error.name}: {execution.error.value}\n"
+                f"{execution.error.traceback}"
+            )
+
+        return "Code executed successfully (no output)."
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
