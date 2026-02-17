@@ -162,6 +162,25 @@ List files and directories in a skill folder.
 
   str: Formatted list of files/directories, or error message.
 
+<a id="camel.toolkits.skill_toolkit.SkillToolkit._list_skill_entries"></a>
+
+### _list_skill_entries
+
+```python
+def _list_skill_entries(self, skill_dir: Path, include_skill_md: bool = False):
+```
+
+List direct child entries in a skill directory.
+
+**Parameters:**
+
+- **skill_dir** (Path): The skill directory to inspect.
+- **include_skill_md** (bool): Whether to include `__INLINE_CODE_0__`.
+
+**Returns:**
+
+  List[str]: Sorted entry names. Directories end with `__INLINE_CODE_0__`.
+
 <a id="camel.toolkits.skill_toolkit.SkillToolkit._load_single_skill"></a>
 
 ### _load_single_skill
