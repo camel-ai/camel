@@ -24,11 +24,13 @@ class TestMinimaxModel:
     @pytest.mark.parametrize(
         "model_type",
         [
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
             ModelType.MINIMAX_M2_STABLE,
         ],
     )
-    def test_minimax_m2_model_create(self, model_type: ModelType, monkeypatch):
+    def test_minimax_model_create(self, model_type: ModelType, monkeypatch):
         monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         model = MinimaxModel(model_type)
         assert model.model_type == model_type
@@ -88,12 +90,50 @@ class TestMinimaxModel:
     @pytest.mark.parametrize(
         "model_type",
         [
+            ModelType.MINIMAX_M2_1,
+            ModelType.MINIMAX_M2_1_LIGHTNING,
             ModelType.MINIMAX_M2,
             ModelType.MINIMAX_M2_STABLE,
         ],
     )
-    def test_minimax_m2_model_types_available(self, model_type: ModelType):
-        # Test that all defined Minimax M2 model types are recognized
+    def test_minimax_model_types_available(
+        self, model_type: ModelType, monkeypatch
+    ):
+        # Test that all defined Minimax model types are recognized
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
         assert model_type.is_minimax
         model = MinimaxModel(model_type)
         assert isinstance(model.model_type, ModelType)
+
+    def test_minimax_model_interleaved_thinking_config(self, monkeypatch):
+        # Test interleaved thinking configuration
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
+        config_dict = MinimaxConfig(
+            interleaved_thinking=True,
+        ).as_dict()
+
+        model = MinimaxModel(
+            model_type=ModelType.MINIMAX_M2,
+            model_config_dict=config_dict,
+        )
+
+        assert model._is_thinking_enabled() is True
+        # Verify reasoning_split is added to extra_body
+        request_config = model._prepare_request_config()
+        assert (
+            request_config.get("extra_body", {}).get("reasoning_split") is True
+        )
+        assert "interleaved_thinking" not in request_config
+
+    def test_minimax_model_interleaved_thinking_disabled(self, monkeypatch):
+        # Test that interleaved thinking is disabled by default
+        monkeypatch.setenv("MINIMAX_API_KEY", "test_key")
+
+        model = MinimaxModel(model_type=ModelType.MINIMAX_M2)
+
+        assert model._is_thinking_enabled() is False
+        request_config = model._prepare_request_config()
+        assert (
+            "extra_body" not in request_config
+            or "reasoning_split" not in request_config.get("extra_body", {})
+        )
