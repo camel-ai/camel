@@ -176,8 +176,7 @@ class E2BInterpreter(BaseInterpreter):
                 jpeg_data = result._repr_jpeg_()
                 if jpeg_data:
                     output_parts.append(
-                        f"\n![image](data:image/jpeg;base64,"
-                        f"{jpeg_data})\n"
+                        f"\n![image](data:image/jpeg;base64," f"{jpeg_data})\n"
                     )
                     continue
 
