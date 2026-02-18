@@ -156,16 +156,47 @@ class E2BInterpreter(BaseInterpreter):
                 code=code, language=self._CODE_TYPE_MAPPING[code_type]
             )
 
-        if execution.text and execution.text.lower() != "none":
-            return execution.text
+        outputs: list[str] = []
 
+        # Collect text output
+        if execution.text and execution.text.lower() != "none":
+            outputs.append(execution.text)
+
+        # Collect rich outputs (images, HTML, SVG, etc.)
+        for result in execution.results:
+            if result.png:
+                outputs.append(f"![image](data:image/png;base64,{result.png})")
+            elif result.jpeg:
+                outputs.append(
+                    f"![image](data:image/jpeg;base64,{result.jpeg})"
+                )
+            elif result.svg:
+                outputs.append(result.svg)
+            elif result.html:
+                outputs.append(result.html)
+            elif result.text and result.text not in outputs:
+                outputs.append(result.text)
+
+        # Collect logs
         if execution.logs:
             if execution.logs.stdout:
-                return ",".join(execution.logs.stdout)
-            elif execution.logs.stderr:
-                return ",".join(execution.logs.stderr)
+                outputs.extend(execution.logs.stdout)
+            if execution.logs.stderr:
+                outputs.extend(
+                    f"[stderr] {line}" for line in execution.logs.stderr
+                )
 
-        return str(execution.error)
+        if outputs:
+            return "\n".join(outputs)
+
+        # If there's an error and no other output, report it
+        if execution.error:
+            return (
+                f"{execution.error.name}: {execution.error.value}\n"
+                f"{execution.error.traceback}"
+            )
+
+        return "Code executed successfully (no output)."
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
@@ -173,7 +204,7 @@ class E2BInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError("E2B doesn't support " "`action_space`.")
+        raise RuntimeError("E2B doesn't support `action_space`.")
 
     def execute_command(self, command: str) -> str:
         r"""Execute a command can be used to resolve the dependency of the
