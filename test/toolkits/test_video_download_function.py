@@ -91,7 +91,9 @@ def test_check_ffmpeg_installed_when_present():
 
 
 def test_check_ffmpeg_installed_when_missing():
-    r"""Test that _check_ffmpeg_installed raises RuntimeError when FFmpeg is missing."""
+    r"""Test that _check_ffmpeg_installed raises RuntimeError when FFmpeg is
+    missing.
+    """
     # Mock shutil.which to return None (FFmpeg not installed)
     with patch('shutil.which', return_value=None):
         with pytest.raises(RuntimeError) as exc_info:
@@ -105,7 +107,10 @@ def test_check_ffmpeg_installed_when_missing():
         assert "macOS" in error_msg
         assert "brew install ffmpeg" in error_msg
         assert "Linux" in error_msg
-        assert "apt install ffmpeg" in error_msg or "yum install ffmpeg" in error_msg
+        assert (
+            "apt install ffmpeg" in error_msg
+            or "yum install ffmpeg" in error_msg
+        )
         assert "https://ffmpeg.org/download.html" in error_msg
 
 

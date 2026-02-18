@@ -43,10 +43,13 @@ def _check_ffmpeg_installed() -> None:
         raise RuntimeError(
             "FFmpeg is not installed or not found in your system PATH. "
             "Please install FFmpeg:\n"
-            "  - Windows: 'winget install ffmpeg' or download from https://ffmpeg.org/download.html\n"
+            "  - Windows: 'winget install ffmpeg' or download "
+            "from https://ffmpeg.org/download.html\n"
             "  - macOS: 'brew install ffmpeg'\n"
-            "  - Linux: 'sudo apt install ffmpeg' or 'sudo yum install ffmpeg'\n"
-            "After installation, restart your terminal for the changes to take effect."
+            "  - Linux: 'sudo apt install ffmpeg' or 'sudo "
+            "yum install ffmpeg'\n"
+            "After installation, restart your terminal for the "
+            "changes to take effect."
         )
 
 
