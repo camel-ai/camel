@@ -43,7 +43,6 @@ class SkillToolkit(BaseToolkit):
             else Path.cwd().resolve()
         )
         self._skills_cache: Optional[Dict[str, Dict[str, str]]] = None
-        self._allowed_skills: Optional[Set[str]] = None
         self._allowed_skills = (
             None
             if allowed_skills is None
