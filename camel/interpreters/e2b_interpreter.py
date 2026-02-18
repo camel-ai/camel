@@ -157,15 +157,15 @@ class E2BInterpreter(BaseInterpreter):
             )
 
         output_parts = []
+        has_text_output = bool(
+            execution.text and execution.text.lower() != "none"
+        )
 
-        if execution.text and execution.text.lower() != "none":
+        if has_text_output:
             output_parts.append(execution.text)
 
         if execution.results:
             for result in execution.results:
-                if result.is_main_result and output_parts:
-                    continue
-
                 png_data = result._repr_png_()
                 if png_data:
                     output_parts.append(
@@ -191,9 +191,15 @@ class E2BInterpreter(BaseInterpreter):
                     output_parts.append(html_data)
                     continue
 
+                is_main_result = getattr(result, "is_main_result", False)
                 text = str(result)
                 if text and text.lower() != "none":
-                    output_parts.append(text)
+                    if not (
+                        is_main_result
+                        and has_text_output
+                        and text == execution.text
+                    ):
+                        output_parts.append(text)
 
         if execution.logs:
             if execution.logs.stdout:
