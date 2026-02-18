@@ -48,6 +48,14 @@ class OpenRouterModel(OpenAICompatibleModel):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
+        app_referer (Optional[str], optional): The HTTP-Referer header value
+            for OpenRouter App Attribution. If not provided, defaults to
+            'https://www.camel-ai.org/'. Set to :obj:`None` to disable.
+            (default: :obj:`'https://www.camel-ai.org/'`)
+        app_title (Optional[str], optional): The X-Title header value for
+            OpenRouter App Attribution. If not provided, defaults to
+            'CAMEL-AI'. Set to :obj:`None` to disable.
+            (default: :obj:`'CAMEL-AI'`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -62,6 +70,8 @@ class OpenRouterModel(OpenAICompatibleModel):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
+        app_referer: Optional[str] = 'https://www.camel-ai.org/',
+        app_title: Optional[str] = 'CAMEL-AI',
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
@@ -71,6 +81,20 @@ class OpenRouterModel(OpenAICompatibleModel):
             "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+
+        # Add OpenRouter App Attribution headers
+        # Merge with any existing headers to preserve user-provided headers
+        attribution_headers = {}
+        if app_referer is not None:
+            attribution_headers['HTTP-Referer'] = app_referer
+        if app_title is not None:
+            attribution_headers['X-Title'] = app_title
+
+        kwargs["default_headers"] = {
+            **kwargs.get("default_headers", {}),
+            **attribution_headers,
+        }
+
         super().__init__(
             model_type=model_type,
             model_config_dict=model_config_dict,
