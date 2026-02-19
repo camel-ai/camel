@@ -50,29 +50,6 @@ class SemanticCache(BaseCache):
         cache_enabled (bool): Whether the cache is enabled.
             (default: :obj:`True`)
 
-    Example:
-        >>> from camel.embeddings import OpenAIEmbedding
-        >>> from camel.storages import FaissStorage
-        >>> from camel.caches import SemanticCache
-        >>>
-        >>> # Create embedding model and vector storage
-        >>> embedding = OpenAIEmbedding()
-        >>> vector_dim = embedding.get_output_dim()
-        >>> storage = FaissStorage(vector_dim=vector_dim)
-        >>>
-        >>> # Create semantic cache
-        >>> cache = SemanticCache(
-        ...     embedding_model=embedding,
-        ...     vector_storage=storage,
-        ...     similarity_threshold=0.85,
-        ... )
-        >>>
-        >>> # Store a response
-        >>> cache.set("Capital of France?", "Paris is the capital.")
-        >>>
-        >>> # Retrieve with similar query (semantic match)
-        >>> response = cache.get("Tell me the capital city of France")
-        >>> print(response)  # "Paris is the capital."
     """
 
     # Payload keys for storing cache data
@@ -429,21 +406,21 @@ class SemanticCache(BaseCache):
         logger.debug(f"Cached entry with id={entry_id}")
         return entry_id
 
-    def delete(self, query_id: str) -> bool:
+    def delete(self, entry_id: str) -> bool:
         r"""Delete a specific cache entry by its ID.
 
         Args:
-            query_id (str): The unique ID of the cache entry to delete.
+            entry_id (str): The unique ID of the cache entry to delete.
 
         Returns:
             bool: True if the entry was deleted, False if not found.
         """
         try:
-            self._vector_storage.delete([query_id])
-            logger.debug(f"Deleted cache entry with id={query_id}")
+            self._vector_storage.delete([entry_id])
+            logger.debug(f"Deleted cache entry with id={entry_id}")
             return True
         except Exception as e:
-            logger.warning(f"Failed to delete cache entry {query_id}: {e}")
+            logger.warning(f"Failed to delete cache entry {entry_id}: {e}")
             return False
 
     def clear(self) -> None:
