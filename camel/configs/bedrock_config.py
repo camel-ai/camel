@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -59,6 +59,11 @@ class BedrockConfig(BaseConfig):
             :obj:`o1mini`, :obj:`o1preview`, :obj:`o3mini`). If not provided
             or if the model type does not support it, this parameter is
             ignored. (default: :obj:`None`)
+        cache_control (Optional[Literal["5m", "1h"]], optional): Cache TTL
+            for Bedrock prompt caching. Set to :obj:`"5m"` for 5-minute or
+            :obj:`"1h"` for 1-hour TTL (only supported by some models).
+            Cache checkpoints are inserted on both the system message and
+            the last user message. (default: :obj:`None`)
     """
 
     max_tokens: Optional[int] = None
@@ -70,6 +75,7 @@ class BedrockConfig(BaseConfig):
         Union[Dict[str, Union[str, Dict[str, str]]], str]
     ] = None
     reasoning_effort: Optional[str] = None
+    cache_control: Optional[Literal["5m", "1h"]] = None
 
 
 BEDROCK_API_PARAMS = {param for param in BedrockConfig.model_fields.keys()}
