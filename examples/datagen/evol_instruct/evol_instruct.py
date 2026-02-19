@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
 import logging
@@ -24,7 +24,28 @@ from camel.logger import enable_logging, get_logger, set_log_level
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-os.environ["CAMEL_LOGGING_DISABLED"] = "false"
+
+def save_results(results, path):
+    # select the best result from the last generation for each prompt
+    best_results = []
+    for generations in results:
+        # get the last generation
+        last_generation_key = max(
+            generations.keys()
+        )  # Get the last iteration key
+        last_generation = generations[
+            last_generation_key
+        ]  # Get the candidates from the last iteration
+
+        # Find the candidate with highest total score
+        best_result = max(
+            last_generation,
+            key=lambda x: sum(x["scores"].values()) if x["scores"] else 0,
+        )
+        best_results.append(best_result["instruction"])
+
+    with open(path, mode="w", encoding="utf-8") as file:
+        json.dump(best_results, file, indent=4, ensure_ascii=False)
 
 
 def main():
@@ -33,22 +54,16 @@ def main():
     """
     # Load data
     file_path = "./examples/datagen/evol_instruct/input.json"
+    output_dir = "./examples/datagen/evol_instruct"
     prompts = json.loads(open(file_path, "r", encoding="utf-8").read())
 
-    # Define parameters
+    # Initialize the model and agent
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O,
         model_config_dict={"temperature": 0.7, "max_tokens": 4096},
     )
     agent = ChatAgent(model=model)
-    num_generations = 2
-    evol_spec = [
-        "in-depth",
-        "in-depth",
-        "in-depth",
-        "condense",
-    ]
 
     # Initialize the data generation pipeline with the specified template
     pipeline = EvolInstructPipeline(
@@ -56,21 +71,40 @@ def main():
         templates=MathEvolInstructTemplates,
     )
 
+    # Generate harder math problems
+    num_generations = 3
+    evol_spec = [
+        "in-depth",
+        "condense",
+    ]
+
     # Execute the data generation pipeline
     results = pipeline.generate(
         prompts=prompts,
         evolution_spec=evol_spec,
-        num_iterations=4,
         num_generations=num_generations,
         scorer=MathScorer(),
     )
 
-    # Save the generated results to a file
-    results_path = "./examples/datagen/evol_instruct/results.json"
-    with open(results_path, mode="w", encoding="utf-8") as file:
-        json.dump(results, file, indent=4, ensure_ascii=False)
+    save_results(results, os.path.join(output_dir, "results_iter.json"))
 
-    logger.info(f"Results saved to '{results_path}'.")
+    # Generate even harder math problems
+    evol_spec = [
+        "in-depth",
+        "in-depth",
+        "in-depth",
+        "condense",
+    ]
+
+    # Execute the data generation pipeline
+    results = pipeline.generate(
+        prompts=prompts,
+        evolution_spec=evol_spec,
+        num_generations=num_generations,
+        scorer=MathScorer(),
+    )
+
+    save_results(results, os.path.join(output_dir, "results_iter_harder.json"))
 
 
 if __name__ == "__main__":

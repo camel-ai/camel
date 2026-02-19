@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,9 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 
 class BaseInterpreter(ABC):
@@ -46,4 +46,17 @@ class BaseInterpreter(ABC):
     @abstractmethod
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
+        pass
+
+    @abstractmethod
+    def execute_command(self, command: str) -> Union[str, Tuple[str, str]]:
+        r"""Executes a command in the interpreter.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            Tuple[str, str]: A tuple containing the stdout and stderr of the
+                command execution.
+        """
         pass

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, api_keys_required, dependencies_required
+from camel.utils import (
+    MCPServer,
+    api_keys_required,
+    dependencies_required,
+)
 
 
 @MCPServer()
@@ -126,22 +130,22 @@ class DappierToolkit(BaseToolkit):
             query (str): The user query for retrieving recommendations.
             data_model_id (str, optional): The data model ID to use for
                 recommendations. Data model IDs always start with the prefix
-                "dm_". (default: :obj: `dm_01j0pb465keqmatq9k83dthx34`)
+                "dm_". (default: :obj:`dm_01j0pb465keqmatq9k83dthx34`)
             similarity_top_k (int, optional): The number of top documents to
-                retrieve based on similarity. (default: :obj: `9`)
+                retrieve based on similarity. (default: :obj:`9`)
             ref (Optional[str], optional): The site domain where AI
-                recommendations should be displayed. (default: :obj: `None`)
+                recommendations should be displayed. (default: :obj:`None`)
             num_articles_ref (int, optional): The minimum number of articles
                 to return from the specified reference domain (`ref`). The
                 remaining articles will come from other sites in the RAG
-                model. (default: :obj: `0`)
+                model. (default: :obj:`0`)
             search_algorithm (Literal[
                 "most_recent",
                 "semantic",
                 "most_recent_semantic",
                 "trending",
                 ], optional): The search algorithm to use for retrieving
-                articles. (default: :obj: `most_recent`)
+                articles. (default: :obj:`most_recent`)
 
         Returns:
             List[Dict[str, str]]: A list of recommended articles or content

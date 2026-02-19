@@ -1,0 +1,94 @@
+<a id="camel.toolkits.whatsapp_toolkit"></a>
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit"></a>
+
+## WhatsAppToolkit
+
+```python
+class WhatsAppToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for WhatsApp operations.
+
+This toolkit provides methods to interact with the WhatsApp Business API,
+allowing users to send messages, retrieve message templates, and get
+business profile information.
+
+**Parameters:**
+
+- **retries** (int): Number of retries for API requests in case of failure.
+- **delay** (int): Delay between retries in seconds.
+- **base_url** (str): Base URL for the WhatsApp Business API.
+- **version** (str): API version.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes the WhatsAppToolkit.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.send_message"></a>
+
+### send_message
+
+```python
+def send_message(self, to: str, message: str):
+```
+
+Sends a text message to a specified WhatsApp number.
+
+**Parameters:**
+
+- **to** (str): The recipient's WhatsApp number in international format.
+- **message** (str): The text message to send.
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary containing
+the API response if successful, or an error message string if
+failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_message_templates"></a>
+
+### get_message_templates
+
+```python
+def get_message_templates(self):
+```
+
+**Returns:**
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries containing
+template information if successful, or an error message string
+if failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_business_profile"></a>
+
+### get_business_profile
+
+```python
+def get_business_profile(self):
+```
+
+**Returns:**
+
+  Union[Dict[str, Any], str]: A dictionary containing the business
+profile information if successful, or an error message string
+if failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

@@ -1,0 +1,230 @@
+<a id="camel.loaders.unstructured_io"></a>
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO"></a>
+
+## UnstructuredIO
+
+```python
+class UnstructuredIO:
+```
+
+A class to handle various functionalities provided by the
+Unstructured library, including version checking, parsing, cleaning,
+extracting, staging, chunking data, and integrating with cloud
+services like S3 and Azure for data connection.
+
+References:
+https://docs.unstructured.io/
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.create_element_from_text"></a>
+
+### create_element_from_text
+
+```python
+def create_element_from_text(
+    text: str,
+    element_id: Optional[str] = None,
+    embeddings: Optional[List[float]] = None,
+    filename: Optional[str] = None,
+    file_directory: Optional[str] = None,
+    last_modified: Optional[str] = None,
+    filetype: Optional[str] = None,
+    parent_id: Optional[str] = None
+):
+```
+
+Creates a Text element from a given text input, with optional
+metadata and embeddings.
+
+**Parameters:**
+
+- **text** (str): The text content for the element.
+- **element_id** (Optional[str], optional): Unique identifier for the element. (default: :obj:`None`)
+- **embeddings** (List[float], optional): A list of float numbers representing the text embeddings. (default: :obj:`None`)
+- **filename** (Optional[str], optional): The name of the file the element is associated with. (default: :obj:`None`)
+- **file_directory** (Optional[str], optional): The directory path where the file is located. (default: :obj:`None`)
+- **last_modified** (Optional[str], optional): The last modified date of the file. (default: :obj:`None`)
+- **filetype** (Optional[str], optional): The type of the file. (default: :obj:`None`)
+- **parent_id** (Optional[str], optional): The identifier of the parent element. (default: :obj:`None`)
+
+**Returns:**
+
+  Element: An instance of Text with the provided content and
+metadata.
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.parse_file_or_url"></a>
+
+### parse_file_or_url
+
+```python
+def parse_file_or_url(input_path: str, **kwargs: Any):
+```
+
+Loads a file or a URL and parses its contents into elements.
+
+**Parameters:**
+
+- **input_path** (str): Path to the file or URL to be parsed. **kwargs: Extra kwargs passed to the partition function.
+
+**Returns:**
+
+  Union[List[Element],None]: List of elements after parsing the file
+or URL if success.
+
+**Note:**
+
+Supported file types:
+"csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+"org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+References:
+https://unstructured-io.github.io/unstructured/
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.parse_bytes"></a>
+
+### parse_bytes
+
+```python
+def parse_bytes(file: IO[bytes], **kwargs: Any):
+```
+
+Parses a bytes stream and converts its contents into elements.
+
+**Parameters:**
+
+- **file** (IO[bytes]): The file in bytes format to be parsed. **kwargs: Extra kwargs passed to the partition function.
+
+**Returns:**
+
+  Union[List[Element], None]: List of elements after parsing the file
+if successful, otherwise `None`.
+
+**Note:**
+
+Supported file types:
+"csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+"org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+References:
+https://docs.unstructured.io/open-source/core-functionality/partitioning
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.clean_text_data"></a>
+
+### clean_text_data
+
+```python
+def clean_text_data(
+    text: str,
+    clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None
+):
+```
+
+Cleans text data using a variety of cleaning functions provided by
+the `unstructured` library.
+
+This function applies multiple text cleaning utilities by calling the
+`unstructured` library's cleaning bricks for operations like
+replacing Unicode quotes, removing extra whitespace, dashes, non-ascii
+characters, and more.
+
+If no cleaning options are provided, a default set of cleaning
+operations is applied. These defaults including operations
+"replace_unicode_quotes", "clean_non_ascii_chars",
+"group_broken_paragraphs", and "clean_extra_whitespace".
+
+**Parameters:**
+
+- **text** (str): The text to be cleaned.
+- **clean_options** (dict): A dictionary specifying which cleaning options to apply. The keys should match the names of the cleaning functions, and the values should be dictionaries containing the parameters for each function. Supported types: 'clean_extra_whitespace', 'clean_bullets', 'clean_ordered_bullets', 'clean_postfix', 'clean_prefix', 'clean_dashes', 'clean_trailing_punctuation', 'clean_non_ascii_chars', 'group_broken_paragraphs', 'remove_punctuation', 'replace_unicode_quotes', 'bytes_string_to_string', 'translate_text'.
+
+**Returns:**
+
+  str: The cleaned text.
+
+**Note:**
+
+The 'options' dictionary keys must correspond to valid cleaning
+brick names from the `unstructured` library.
+Each brick's parameters must be provided in a nested dictionary
+as the value for the key.
+
+References:
+https://unstructured-io.github.io/unstructured/
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.extract_data_from_text"></a>
+
+### extract_data_from_text
+
+```python
+def extract_data_from_text(
+    text: str,
+    extract_type: Literal['extract_datetimetz', 'extract_email_address', 'extract_ip_address', 'extract_ip_address_name', 'extract_mapi_id', 'extract_ordered_bullets', 'extract_text_after', 'extract_text_before', 'extract_us_phone_number'],
+    **kwargs
+):
+```
+
+Extracts various types of data from text using functions from
+unstructured.cleaners.extract.
+
+**Parameters:**
+
+- **text** (str): Text to extract data from. extract_type (Literal['extract_datetimetz', 'extract_email_address', 'extract_ip_address', 'extract_ip_address_name', 'extract_mapi_id', 'extract_ordered_bullets', 'extract_text_after', 'extract_text_before', 'extract_us_phone_number']): Type of data to extract. **kwargs: Additional keyword arguments for specific extraction functions.
+
+**Returns:**
+
+  Any: The extracted data, type depends on extract_type.
+
+References:
+https://unstructured-io.github.io/unstructured/
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.stage_elements"></a>
+
+### stage_elements
+
+```python
+def stage_elements(
+    elements: List[Any],
+    stage_type: Literal['convert_to_csv', 'convert_to_dataframe', 'convert_to_dict', 'dict_to_elements', 'stage_csv_for_prodigy', 'stage_for_prodigy', 'stage_for_baseplate', 'stage_for_datasaur', 'stage_for_label_box', 'stage_for_label_studio', 'stage_for_weaviate'],
+    **kwargs
+):
+```
+
+Stages elements for various platforms based on the
+specified staging type.
+
+This function applies multiple staging utilities to format data
+for different NLP annotation and machine learning tools. It uses
+the 'unstructured.staging' module's functions for operations like
+converting to CSV, DataFrame, dictionary, or formatting for
+specific platforms like Prodigy, etc.
+
+**Parameters:**
+
+- **elements** (List[Any]): List of Element objects to be staged. stage_type (Literal['convert_to_csv', 'convert_to_dataframe', 'convert_to_dict', 'dict_to_elements', 'stage_csv_for_prodigy', 'stage_for_prodigy', 'stage_for_baseplate', 'stage_for_datasaur', 'stage_for_label_box', 'stage_for_label_studio', 'stage_for_weaviate']): Type of staging to perform. **kwargs: Additional keyword arguments specific to the staging type.
+
+**Returns:**
+
+  Union[str, List[Dict], Any]: Staged data in the
+format appropriate for the specified staging type.
+
+<a id="camel.loaders.unstructured_io.UnstructuredIO.chunk_elements"></a>
+
+### chunk_elements
+
+```python
+def chunk_elements(elements: List['Element'], chunk_type: str, **kwargs):
+```
+
+Chunks elements by titles.
+
+**Parameters:**
+
+- **elements** (List[Element]): List of Element objects to be chunked.
+- **chunk_type** (str): Type chunk going to apply. Supported types: 'chunk_by_title'. **kwargs: Additional keyword arguments for chunking.
+
+**Returns:**
+
+  List[Dict]: List of chunked sections.
+
+References:
+https://unstructured-io.github.io/unstructured/

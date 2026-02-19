@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,11 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
@@ -82,7 +82,9 @@ class GeminiConfig(BaseConfig):
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 Gemini_API_PARAMS = {param for param in GeminiConfig.model_fields.keys()}

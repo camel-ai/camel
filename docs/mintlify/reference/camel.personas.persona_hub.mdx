@@ -1,0 +1,214 @@
+<a id="camel.personas.persona_hub"></a>
+
+<a id="camel.personas.persona_hub.PersonaHub"></a>
+
+## PersonaHub
+
+```python
+class PersonaHub:
+```
+
+The PersonaHub adapted from ["Scaling Synthetic Data Creation with 1,
+000,000,000 Personas"](https://github.com/tencent-ailab/persona-hub).
+
+PersonaHub proposes a novel persona-driven data synthesis methodology
+that leverages various perspectives within a large language model (LLM) to
+create diverse synthetic data. By showcasing PersonaHub's use cases in
+synthesizing high-quality mathematical and logical reasoning problems,
+instructions (i.e., user prompts), knowledge-rich texts, game NPCs and
+tools (functions) at scale, the authors demonstrate persona-driven data
+synthesis is versatile, scalable, flexible, and easy to use, potentially
+driving a paradigm shift in synthetic data creation and applications in
+practice, which may have a profound impact on LLM research and development.
+Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094.
+
+**Parameters:**
+
+- **model** (BaseModelBackend, optional): The model to use for persona generation and manipulation. (default: :obj:`None`)
+
+<a id="camel.personas.persona_hub.PersonaHub.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model: Optional[BaseModelBackend] = None):
+```
+
+<a id="camel.personas.persona_hub.PersonaHub.__setitem__"></a>
+
+### __setitem__
+
+```python
+def __setitem__(self, persona: Persona):
+```
+
+Add a persona to the group.
+
+**Parameters:**
+
+- **persona** (Persona): The persona to add.
+
+<a id="camel.personas.persona_hub.PersonaHub.__delitem__"></a>
+
+### __delitem__
+
+```python
+def __delitem__(self, persona_id: uuid.UUID):
+```
+
+Remove a persona from the group by ID.
+
+**Parameters:**
+
+- **persona_id** (uuid.UUID): The ID of the persona to remove.
+
+<a id="camel.personas.persona_hub.PersonaHub.__getitem__"></a>
+
+### __getitem__
+
+```python
+def __getitem__(self, persona_id: uuid.UUID):
+```
+
+Get a persona by ID.
+
+**Parameters:**
+
+- **persona_id** (uuid.UUID): The ID of the persona to retrieve.
+
+<a id="camel.personas.persona_hub.PersonaHub.text_to_persona"></a>
+
+### text_to_persona
+
+```python
+def text_to_persona(
+    self,
+    text: str,
+    action: Literal['read', 'write', 'like', 'dislike'] = 'read'
+):
+```
+
+Infers a specific persona who is likely to [read|write|like|dislike
+|...] the given text.
+
+**Parameters:**
+
+- **text** (str): The input text for which to infer a persona.
+- **action** (str): The action associated with the persona (default is "read").
+
+**Returns:**
+
+  Persona: The inferred persona.
+
+<a id="camel.personas.persona_hub.PersonaHub.persona_to_persona"></a>
+
+### persona_to_persona
+
+```python
+def persona_to_persona(self, persona: Persona):
+```
+
+Derives additional personas based on interpersonal relationships
+from this persona.
+
+**Parameters:**
+
+- **persona** (Persona): The persona from which to derive related personas.
+
+**Returns:**
+
+  Dict[uuid.UUID, Persona]: A dictionary of related personas.
+
+<a id="camel.personas.persona_hub.PersonaHub.deduplicate"></a>
+
+### deduplicate
+
+```python
+def deduplicate(
+    self,
+    embedding_model: Optional[BaseEmbedding] = None,
+    similarity_threshold: float = 0.85
+):
+```
+
+Remove similar personas from the group.
+
+**Parameters:**
+
+- **embedding_model** (BaseEmbedding): The embedding model for similarity compairsion. (default is `None`).
+- **similarity_threshold** (float): The similarity threshold for deduplication (default is `0.85`).
+
+<a id="camel.personas.persona_hub.PersonaHub._get_embedding"></a>
+
+### _get_embedding
+
+```python
+def _get_embedding(embedding_model: BaseEmbedding, description: Optional[str]):
+```
+
+Cache embeddings to reduce recomputation.
+
+<a id="camel.personas.persona_hub.PersonaHub._cosine_similarity"></a>
+
+### _cosine_similarity
+
+```python
+def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray):
+```
+
+Copmute the cosine similarity of two vectors.
+
+**Parameters:**
+
+- **vec1** (np.ndarray): Vector 1
+- **vec2** (np.ndarray): Vector 2
+
+<a id="camel.personas.persona_hub.PersonaHub._is_similar"></a>
+
+### _is_similar
+
+```python
+def _is_similar(
+    self,
+    persona1: Persona,
+    persona2: Persona,
+    similarity_threshold: float,
+    embedding_model: BaseEmbedding
+):
+```
+
+Check if two personas are similar by consine similarity
+of the embeddings of their descriptions.
+
+**Parameters:**
+
+- **persona1** (Persona1): A persona.
+- **persona2** (Persona2): The other persona.
+- **similarity_threshold** (float): The threshold on consine similarity to determine whether the two personas are similar.
+- **embedding_model** (BaseEmbedding): The embedding model for similarity compairsion.
+
+<a id="camel.personas.persona_hub.PersonaHub.__len__"></a>
+
+### __len__
+
+```python
+def __len__(self):
+```
+
+<a id="camel.personas.persona_hub.PersonaHub.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
+
+<a id="camel.personas.persona_hub.PersonaHub.get_all_personas"></a>
+
+### get_all_personas
+
+```python
+def get_all_personas(self):
+```
+
+Return a list of all personas.

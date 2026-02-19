@@ -1,0 +1,336 @@
+<a id="camel.memories.agent_memories"></a>
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory"></a>
+
+## ChatHistoryMemory
+
+```python
+class ChatHistoryMemory(AgentMemory):
+```
+
+An agent memory wrapper of :obj:`ChatHistoryBlock`.
+
+**Parameters:**
+
+- **context_creator** (BaseContextCreator): A model context creator.
+- **storage** (BaseKeyValueStorage, optional): A storage backend for storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage` will be used. (default: :obj:`None`)
+- **window_size** (int, optional): The number of recent chat messages to retrieve. If not provided, the entire chat history will be retrieved. (default: :obj:`None`)
+- **agent_id** (str, optional): The ID of the agent associated with the chat history.
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    context_creator: BaseContextCreator,
+    storage: Optional[BaseKeyValueStorage] = None,
+    window_size: Optional[int] = None,
+    agent_id: Optional[str] = None
+):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self, val: Optional[str]):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(self):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.write_records"></a>
+
+### write_records
+
+```python
+def write_records(self, records: List[MemoryRecord]):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.get_context_creator"></a>
+
+### get_context_creator
+
+```python
+def get_context_creator(self):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.clean_tool_calls"></a>
+
+### clean_tool_calls
+
+```python
+def clean_tool_calls(self):
+```
+
+Removes tool call messages from memory.
+This method removes all FUNCTION/TOOL role messages and any ASSISTANT
+messages that contain tool_calls in their meta_dict to save token
+usage.
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes the most recent records from chat history memory.
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from chat history memory.
+
+<a id="camel.memories.agent_memories.VectorDBMemory"></a>
+
+## VectorDBMemory
+
+```python
+class VectorDBMemory(AgentMemory):
+```
+
+An agent memory wrapper of :obj:`VectorDBBlock`. This memory queries
+messages stored in the vector database. Notice that the most recent
+messages will not be added to the context.
+
+**Parameters:**
+
+- **context_creator** (BaseContextCreator): A model context creator.
+- **storage** (BaseVectorStorage, optional): A vector storage storage. If `None`, an :obj:`QdrantStorage` will be used. (default: :obj:`None`)
+- **retrieve_limit** (int, optional): The maximum number of messages to be added into the context. (default: :obj:`3`)
+- **agent_id** (str, optional): The ID of the agent associated with the messages stored in the vector database.
+
+<a id="camel.memories.agent_memories.VectorDBMemory.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    context_creator: BaseContextCreator,
+    storage: Optional[BaseVectorStorage] = None,
+    retrieve_limit: int = 3,
+    agent_id: Optional[str] = None
+):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self, val: Optional[str]):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(self):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.write_records"></a>
+
+### write_records
+
+```python
+def write_records(self, records: List[MemoryRecord]):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.get_context_creator"></a>
+
+### get_context_creator
+
+```python
+def get_context_creator(self):
+```
+
+<a id="camel.memories.agent_memories.VectorDBMemory.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all records from the vector database memory.
+
+<a id="camel.memories.agent_memories.VectorDBMemory.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Rolling back is unsupported for vector database memory.
+
+<a id="camel.memories.agent_memories.VectorDBMemory.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removing by indices is unsupported for vector database memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory"></a>
+
+## LongtermAgentMemory
+
+```python
+class LongtermAgentMemory(AgentMemory):
+```
+
+An implementation of the :obj:`AgentMemory` abstract base class for
+augmenting ChatHistoryMemory with VectorDBMemory.
+
+**Parameters:**
+
+- **context_creator** (BaseContextCreator): A model context creator.
+- **chat_history_block** (Optional[ChatHistoryBlock], optional): A chat history block. If `None`, a :obj:`ChatHistoryBlock` will be used. (default: :obj:`None`)
+- **vector_db_block** (Optional[VectorDBBlock], optional): A vector database block. If `None`, a :obj:`VectorDBBlock` will be used. (default: :obj:`None`)
+- **retrieve_limit** (int, optional): The maximum number of messages to be added into the context. (default: :obj:`3`)
+- **agent_id** (str, optional): The ID of the agent associated with the chat history and the messages stored in the vector database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    context_creator: BaseContextCreator,
+    chat_history_block: Optional[ChatHistoryBlock] = None,
+    vector_db_block: Optional[VectorDBBlock] = None,
+    retrieve_limit: int = 3,
+    agent_id: Optional[str] = None
+):
+```
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self):
+```
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.agent_id"></a>
+
+### agent_id
+
+```python
+def agent_id(self, val: Optional[str]):
+```
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.get_context_creator"></a>
+
+### get_context_creator
+
+```python
+def get_context_creator(self):
+```
+
+**Returns:**
+
+  BaseContextCreator: The context creator used by the memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(self):
+```
+
+**Returns:**
+
+  List[ContextRecord]: A list of context records retrieved from both
+the chat history and the vector database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.write_records"></a>
+
+### write_records
+
+```python
+def write_records(self, records: List[MemoryRecord]):
+```
+
+Converts the provided chat messages into vector representations and
+writes them to the vector database.
+
+**Parameters:**
+
+- **records** (List[MemoryRecord]): Messages to be added to the vector database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Removes all records from the memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes recent chat history records while leaving vector memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from chat history.

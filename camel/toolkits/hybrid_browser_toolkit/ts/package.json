@@ -1,0 +1,33 @@
+{
+  "name": "hybrid-browser-toolkit-ts",
+  "version": "1.0.0",
+  "description": "TypeScript implementation of hybrid browser toolkit with Playwright _snapshotForAI integration",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "dev": "npx tsc --watch",
+    "test": "jest",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "playwright",
+    "browser",
+    "automation",
+    "ai",
+    "snapshot"
+  ],
+  "author": "CAMEL-AI",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "playwright": "^1.57.0",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.1",
+    "@types/ws": "^8.5.0",
+    "jest": "^30.2.0",
+    "typescript": "^5.8.3",
+    "ts-jest": "^29.4.6"
+  }
+}

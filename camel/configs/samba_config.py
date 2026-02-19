@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -63,15 +63,9 @@ class SambaVerseAPIConfig(BaseConfig):
     stop: Optional[Union[str, list[str]]] = None
     stream: Optional[bool] = None
 
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # SambaNova does not support tool calling
-        return config_dict
-
 
 SAMBA_VERSE_API_PARAMS = {
-    param for param in SambaVerseAPIConfig().model_fields.keys()
+    param for param in SambaVerseAPIConfig.model_fields.keys()
 }
 
 
@@ -162,9 +156,11 @@ class SambaCloudAPIConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
 
 
 SAMBA_CLOUD_API_PARAMS = {
-    param for param in SambaCloudAPIConfig().model_fields.keys()
+    param for param in SambaCloudAPIConfig.model_fields.keys()
 }

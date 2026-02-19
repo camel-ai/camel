@@ -1,0 +1,40 @@
+<a id="camel.verifiers.base"></a>
+
+<a id="camel.verifiers.base.BaseVerifier"></a>
+
+## BaseVerifier
+
+```python
+class BaseVerifier(ABC):
+```
+
+<a id="camel.verifiers.base.BaseVerifier.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: Optional[BaseExtractor] = None,
+    max_parallel: Optional[int] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+    initial_batch_size: Optional[int] = None,
+    cpu_threshold: float = 80.0,
+    memory_threshold: float = 85.0,
+    **kwargs
+):
+```
+
+Initialize the verifier with configuration parameters.
+
+**Parameters:**
+
+- **max_parallel**: Maximum number of parallel verifications. If None, determined dynamically based on system resources. (default: :obj:`None`)
+- **timeout**: Timeout in seconds for each verification. (default: :obj:`None`)
+- **max_retries**: Maximum number of retry attempts. (default: :obj:`3`) (default: 3)
+- **retry_delay**: Delay between retries in seconds. (default: :obj:`1.0`)
+- **initial_batch_size**: Initial size for batch processing. If None, defaults to 10. (default: :obj:`None`)
+- **cpu_threshold**: CPU usage percentage threshold for scaling down. (default: :obj:`80.0`)
+- **memory_threshold**: Memory usage percentage threshold for scaling down. (default: :obj:`85.0`) **kwargs: Additional verifier parameters.

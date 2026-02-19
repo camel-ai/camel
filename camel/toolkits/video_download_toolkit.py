@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,9 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
 
 import io
+import shutil
 import tempfile
 from pathlib import Path
 from typing import List, Optional
@@ -23,9 +27,30 @@ from PIL import Image
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
+
+
+def _check_ffmpeg_installed() -> None:
+    r"""Check if FFmpeg is installed and available on the system.
+
+    Raises:
+        RuntimeError: If FFmpeg is not installed or not in the system PATH.
+    """
+    ffmpeg_path = shutil.which('ffmpeg')
+    if ffmpeg_path is None:
+        raise RuntimeError(
+            "FFmpeg is not installed or not found in your system PATH. "
+            "Please install FFmpeg:\n"
+            "  - Windows: 'winget install ffmpeg' or download "
+            "from https://ffmpeg.org/download.html\n"
+            "  - macOS: 'brew install ffmpeg'\n"
+            "  - Linux: 'sudo apt install ffmpeg' or 'sudo "
+            "yum install ffmpeg'\n"
+            "After installation, restart your terminal for the "
+            "changes to take effect."
+        )
 
 
 def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
@@ -39,6 +64,7 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     Returns:
         Image.Image: The captured screenshot in the form of Image.Image.
     """
+    _check_ffmpeg_installed()
     import ffmpeg
 
     try:
@@ -54,13 +80,12 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     return Image.open(io.BytesIO(out))
 
 
-@MCPServer()
 class VideoDownloaderToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.
 
     Args:
-        download_directory (Optional[str], optional): The directory where the
+        working_directory (Optional[str], optional): The directory where the
             video will be downloaded to. If not provided, video will be stored
             in a temporary directory and will be cleaned up after use.
             (default: :obj:`None`)
@@ -71,30 +96,30 @@ class VideoDownloaderToolkit(BaseToolkit):
     @dependencies_required("yt_dlp", "ffmpeg")
     def __init__(
         self,
-        download_directory: Optional[str] = None,
+        working_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
-        self._cleanup = download_directory is None
+        self._cleanup = working_directory is None
         self._cookies_path = cookies_path
 
-        self._download_directory = Path(
-            download_directory or tempfile.mkdtemp()
+        self._working_directory = Path(
+            working_directory or tempfile.mkdtemp()
         ).resolve()
 
         try:
-            self._download_directory.mkdir(parents=True, exist_ok=True)
+            self._working_directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
             raise ValueError(
-                f"{self._download_directory} is not a valid directory."
+                f"{self._working_directory} is not a valid directory."
             )
         except OSError as e:
             raise ValueError(
-                f"Error creating directory {self._download_directory}: {e}"
+                f"Error creating directory {self._working_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded to {self._working_directory}")
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -102,10 +127,17 @@ class VideoDownloaderToolkit(BaseToolkit):
         Cleans up the downloaded video if they are stored in a temporary
         directory.
         """
-        import shutil
-
         if self._cleanup:
-            shutil.rmtree(self._download_directory, ignore_errors=True)
+            try:
+                import sys
+
+                if getattr(sys, 'modules', None) is not None:
+                    import shutil
+
+                    shutil.rmtree(self._working_directory, ignore_errors=True)
+            except (ImportError, AttributeError):
+                # Skip cleanup if interpreter is shutting down
+                pass
 
     def download_video(self, url: str) -> str:
         r"""Download the video and optionally split it into chunks.
@@ -113,12 +145,15 @@ class VideoDownloaderToolkit(BaseToolkit):
         yt-dlp will detect if the video is downloaded automatically so there
         is no need to check if the video exists.
 
+        Args:
+            url (str): The URL of the video to download.
+
         Returns:
             str: The path to the downloaded video file.
         """
         import yt_dlp
 
-        video_template = self._download_directory / "%(title)s.%(ext)s"
+        video_template = self._working_directory / "%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),
@@ -165,12 +200,14 @@ class VideoDownloaderToolkit(BaseToolkit):
         dividing the video into equal parts if an integer is provided.
 
         Args:
-            video_url (str): The URL of the video to take screenshots.
+            video_path (str): The local path or URL of the video to take
+              screenshots.
             amount (int): the amount of evenly split screenshots to capture.
 
         Returns:
             List[Image.Image]: A list of screenshots as Image.Image.
         """
+        _check_ffmpeg_installed()
         import ffmpeg
 
         parsed_url = urlparse(video_path)

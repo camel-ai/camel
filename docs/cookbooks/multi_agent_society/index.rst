@@ -14,3 +14,4 @@ Multi-agent Society
    agents_society
    workforce_judge_committee
    task_generation
+   azure_openai_claude_society

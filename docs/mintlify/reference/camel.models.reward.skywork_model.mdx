@@ -1,0 +1,67 @@
+<a id="camel.models.reward.skywork_model"></a>
+
+<a id="camel.models.reward.skywork_model.SkyworkRewardModel"></a>
+
+## SkyworkRewardModel
+
+```python
+class SkyworkRewardModel(BaseRewardModel):
+```
+
+Reward model based on the transformers, it will download the model
+from huggingface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created.
+- **api_key** (Optional[str], optional): Not used. (default: :obj:`None`)
+- **url** (Optional[str], optional): Not used. (default: :obj:`None`)
+- **device_map** (Optional[str], optional): choose the device map. (default: :obj:`auto`)
+- **attn_implementation** (Optional[str], optional): choose the attention implementation. (default: :obj:`flash_attention_2`)
+- **offload_folder** (Optional[str], optional): choose the offload folder. (default: :obj:`offload`)
+
+<a id="camel.models.reward.skywork_model.SkyworkRewardModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    device_map: Optional[str] = 'auto',
+    attn_implementation: Optional[str] = 'flash_attention_2',
+    offload_folder: Optional[str] = 'offload'
+):
+```
+
+<a id="camel.models.reward.skywork_model.SkyworkRewardModel.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, messages: List[Dict[str, str]]):
+```
+
+Evaluate the messages using the Skywork model.
+
+**Parameters:**
+
+- **messages** (List[Dict[str, str]]): A list of messages.
+
+**Returns:**
+
+  ChatCompletion: A ChatCompletion object with the scores.
+
+<a id="camel.models.reward.skywork_model.SkyworkRewardModel.get_scores_types"></a>
+
+### get_scores_types
+
+```python
+def get_scores_types(self):
+```
+
+**Returns:**
+
+  List[str]: list of scores types

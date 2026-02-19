@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
@@ -90,6 +90,7 @@ class VLLMConfig(BaseConfig):
             most likely tokens to return at each token position, each with an
             associated log probability. `logprobs` must be set to `true` if
             this parameter is used. (default: :obj:`None`)
+        extra_body: Add additional JSON properties to the request. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None  # openai default: 1.0
@@ -105,6 +106,7 @@ class VLLMConfig(BaseConfig):
     user: Optional[str] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
+    extra_body: Optional[dict] = None
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}

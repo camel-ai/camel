@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List, Optional, Union
 
@@ -47,6 +47,10 @@ class MoonshotConfig(BaseConfig):
         stop (Optional[Union[str, List[str]]], optional): Up to 4 sequences
             where the API will stop generating further tokens.
             (default: :obj:`None`)
+        interleaved_thinking (Optional[bool], optional): Whether to enable
+            interleaved thinking mode. When enabled, the model performs
+            step-by-step reasoning while dynamically invoking tools.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -58,6 +62,7 @@ class MoonshotConfig(BaseConfig):
     presence_penalty: Optional[float] = None
     frequency_penalty: Optional[float] = None
     stop: Optional[Union[str, List[str]]] = None
+    interleaved_thinking: Optional[bool] = None
 
 
 MOONSHOT_API_PARAMS = {param for param in MoonshotConfig.model_fields.keys()}

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 from typing import Any, Dict, Tuple
 from unittest.mock import AsyncMock, MagicMock
@@ -20,9 +20,10 @@ import pytest
 from camel.environments import (
     Action,
     Observation,
-    StepResult,
 )
 from camel.environments.multi_step import MultiStepEnv
+
+pytestmark = pytest.mark.heavy_dependency
 
 
 class MockMultiStepEnv(MultiStepEnv):
@@ -65,7 +66,7 @@ async def test_multi_step_env_lifecycle():
     mock_extractor = MagicMock()
     mock_extractor.setup = AsyncMock()
     mock_extractor.cleanup = AsyncMock()
-    mock_extractor.extract = MagicMock(return_value="extracted_answer")
+    mock_extractor.extract = AsyncMock(return_value="extracted_answer")
 
     env = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
     await env.setup()
@@ -77,25 +78,23 @@ async def test_multi_step_env_lifecycle():
     assert observation.question == "Step 0"
 
     # Test first step
-    action1 = Action(index=0, llm_response="Response 1")
+    action1 = Action(llm_response="Response 1")
     # FIXME: index set to 0 temporarily until we have batched MultiStep
-    result1 = await env.step(action1)
-    assert isinstance(result1, StepResult)
-    assert result1.reward == 1.0
-    assert result1.done is False
-    assert result1.observation.question == "Step 1"
+    obs, reward, done, info = await env.step(action1)
+    assert reward == 1.0
+    assert done is False
+    assert obs.question == "Step 1"
     assert env._current_step == 1
     assert env._state["step"] == 1
     mock_extractor.extract.assert_called_once_with("Response 1")
 
     # Test second step
-    action2 = Action(index=0, llm_response="Response 2")
+    action2 = Action(llm_response="Response 2")
     # FIXME: index set to 0 temporarily until we have batched MultiStep
-    result2 = await env.step(action2)
-    assert isinstance(result2, StepResult)
-    assert result2.reward == 1.0
-    assert result2.done is True
-    assert result2.observation.question == "Episode ended"
+    obs2, reward2, done2, info = await env.step(action2)
+    assert reward2 == 1.0
+    assert done2 is True
+    assert obs2.question == "Episode ended"
     assert env._current_step == 2
     assert env._state["step"] == 2
     assert mock_extractor.extract.call_count == 2
@@ -147,7 +146,7 @@ async def test_multi_step_env_error_handling():
 
     # **Test Case 4: Extractor failure**
     # Configure extractor to raise an exception
-    mock_extractor.extract = MagicMock(
+    mock_extractor.extract = AsyncMock(
         side_effect=Exception("Extractor error")
     )
     await env.reset()
@@ -157,17 +156,13 @@ async def test_multi_step_env_error_handling():
     # **Test Case 5: Maximum steps reached**
     # Create a new environment with max_steps=1
     # Reset extractor for Test Case 5
-    mock_extractor.extract = MagicMock(return_value="extracted_answer")
+    mock_extractor.extract = AsyncMock(return_value="extracted_answer")
     env_max_steps = MockMultiStepEnv(extractor=mock_extractor, max_steps=1)
     await env_max_steps.setup()
     await env_max_steps.reset()
     # First step should end the episode due to max_steps
-    result1 = await env_max_steps.step(action)
-    assert (
-        result1.done is True
-    ), "Episode should be done after reaching max_steps"
+    obs, reward, done, info = await env_max_steps.step(action)
+    assert done is True, "Episode should be done after reaching max_steps"
     assert env_max_steps._current_step == 1, "Current step should be 1"
     assert env_max_steps.max_steps == 1, "Max steps should be 1"
-    assert (
-        result1.observation.question == "Episode ended"
-    ), "Should reach terminal observation"
+    assert obs.question == "Episode ended", "Should reach terminal observation"

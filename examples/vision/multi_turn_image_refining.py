@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 from copy import deepcopy
 
@@ -22,7 +22,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.responses import ChatAgentResponse
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -75,7 +75,7 @@ PROMPT: here is the updated prompt!
         self.artist = ChatAgent(
             system_message=self.artist_sys_msg,
             model=model,
-            tools=DalleToolkit().get_tools(),
+            tools=OpenAIImageToolkit().get_tools(),
         )
 
         self.artist.reset()

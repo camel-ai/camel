@@ -1,0 +1,116 @@
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter"></a>
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesToolResponse"></a>
+
+## HermesToolResponse
+
+```python
+class HermesToolResponse(ToolResponse):
+```
+
+Represents a single tool/function call with validation
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesToolCall"></a>
+
+## HermesToolCall
+
+```python
+class HermesToolCall(ToolCall):
+```
+
+Represents a single tool/function call with validation
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter"></a>
+
+## HermesFunctionFormatter
+
+```python
+class HermesFunctionFormatter:
+```
+
+Hermes-style function calling format implementation with validation
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.extract_tool_calls"></a>
+
+### extract_tool_calls
+
+```python
+def extract_tool_calls(self, message: str):
+```
+
+Extracts all tool calls from the provided message string.
+
+**Parameters:**
+
+- **message** (str): The input message string containing potential tool calls.
+
+**Returns:**
+
+  List[HermesToolCall]: A list of parsed HermesToolCall objects.
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.extract_tool_response"></a>
+
+### extract_tool_response
+
+```python
+def extract_tool_response(self, message: str):
+```
+
+Extracts a single tool response from the provided message string.
+
+**Parameters:**
+
+- **message** (str): The input message string containing a potential tool response.
+
+**Returns:**
+
+  Optional[HermesToolResponse]: A parsed HermesToolResponse object,
+or None if no valid response is found.
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.format_tool_call"></a>
+
+### format_tool_call
+
+```python
+def format_tool_call(
+    self,
+    content: str,
+    func_name: str,
+    args: Dict[str, Any]
+):
+```
+
+Formats a tool call message with the given content, function name,
+and arguments.
+
+**Parameters:**
+
+- **content** (str): The content or message to be included in the tool call.
+- **func_name** (str): The name of the function being called.
+- **args** (Dict[str, Any]): A dictionary of arguments to be passed to the function.
+
+**Returns:**
+
+  str: A formatted string representing the tool call in Hermes
+format.
+
+<a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.format_tool_response"></a>
+
+### format_tool_response
+
+```python
+def format_tool_response(self, func_name: str, result: Any):
+```
+
+Formats a tool response message with the given function name and
+result.
+
+**Parameters:**
+
+- **func_name** (str): The name of the function whose result is being returned.
+- **result** (Any): The result to be included in the tool response.
+
+**Returns:**
+
+  str: A formatted string representing the tool response in Hermes
+format.

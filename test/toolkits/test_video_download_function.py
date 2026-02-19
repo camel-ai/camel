@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,14 +10,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Mock the dotenv functionality to prevent the TypeError
 import sys
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
+from camel.toolkits.video_download_toolkit import (
+    VideoDownloaderToolkit,
+    _check_ffmpeg_installed,
+)
 
 sys.modules['dotenv'] = MagicMock()
 sys.modules['dotenv.main'] = MagicMock()
@@ -77,3 +80,68 @@ def test_video_screenshots_download(mock_downloader):
         2,
     )
     assert len(screenshots) == 2
+
+
+def test_check_ffmpeg_installed_when_present():
+    r"""Test that _check_ffmpeg_installed passes when FFmpeg is installed."""
+    # Mock shutil.which to return a path (FFmpeg installed)
+    with patch('shutil.which', return_value='/usr/bin/ffmpeg'):
+        # Should not raise any exception
+        _check_ffmpeg_installed()
+
+
+def test_check_ffmpeg_installed_when_missing():
+    r"""Test that _check_ffmpeg_installed raises RuntimeError when FFmpeg is
+    missing.
+    """
+    # Mock shutil.which to return None (FFmpeg not installed)
+    with patch('shutil.which', return_value=None):
+        with pytest.raises(RuntimeError) as exc_info:
+            _check_ffmpeg_installed()
+
+        error_msg = str(exc_info.value)
+        # Verify the error message contains key information
+        assert "FFmpeg is not installed" in error_msg
+        assert "Windows" in error_msg
+        assert "winget install ffmpeg" in error_msg
+        assert "macOS" in error_msg
+        assert "brew install ffmpeg" in error_msg
+        assert "Linux" in error_msg
+        assert (
+            "apt install ffmpeg" in error_msg
+            or "yum install ffmpeg" in error_msg
+        )
+        assert "https://ffmpeg.org/download.html" in error_msg
+
+
+def test_video_screenshots_raises_error_when_ffmpeg_missing():
+    r"""Test that get_video_screenshots raises error when FFmpeg is missing."""
+    # Mock shutil.which to return None (FFmpeg not installed)
+    # Mock ffmpeg module to avoid import errors
+    with (
+        patch('shutil.which', return_value=None),
+        patch.dict('sys.modules', {'ffmpeg': MagicMock()}),
+    ):
+        toolkit = VideoDownloaderToolkit()
+        with pytest.raises(RuntimeError) as exc_info:
+            toolkit.get_video_screenshots("test.mp4", 2)
+
+        error_msg = str(exc_info.value)
+        assert "FFmpeg is not installed" in error_msg
+
+
+def test_capture_screenshot_raises_error_when_ffmpeg_missing():
+    r"""Test that _capture_screenshot raises error when FFmpeg is missing."""
+    from camel.toolkits.video_download_toolkit import _capture_screenshot
+
+    # Mock shutil.which to return None (FFmpeg not installed)
+    # Mock ffmpeg module to avoid import errors
+    with (
+        patch('shutil.which', return_value=None),
+        patch.dict('sys.modules', {'ffmpeg': MagicMock()}),
+    ):
+        with pytest.raises(RuntimeError) as exc_info:
+            _capture_screenshot("test.mp4", 1.0)
+
+        error_msg = str(exc_info.value)
+        assert "FFmpeg is not installed" in error_msg

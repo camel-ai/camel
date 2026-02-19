@@ -1,0 +1,45 @@
+<a id="camel.bots.discord.discord_installation"></a>
+
+<a id="camel.bots.discord.discord_installation.DiscordInstallation"></a>
+
+## DiscordInstallation
+
+```python
+class DiscordInstallation:
+```
+
+Represents an installation of a Discord application in a
+specific guild (server).
+
+**Parameters:**
+
+- **guild_id** (str): The unique identifier for the Discord guild (server) where the application is installed.
+- **access_token** (str): The access token used to authenticate API requests for the installed application.
+- **refresh_token** (str): The token used to refresh the access token when it expires.
+- **installed_at** (datetime): The timestamp indicating when the application was installed in the guild.
+- **token_expires_at** (Optional[datetime]): The optional timestamp indicating when the access token will expire. Defaults to None if the token does not have an expiration time.
+
+<a id="camel.bots.discord.discord_installation.DiscordInstallation.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    guild_id: str,
+    access_token: str,
+    refresh_token: str,
+    installed_at: datetime,
+    token_expires_at: Optional[datetime] = None
+):
+```
+
+Initialize the DiscordInstallation.
+
+**Parameters:**
+
+- **guild_id** (str): The unique identifier for the Discord guild (server) where the application is installed.
+- **access_token** (str): The access token used to authenticate API requests for the installed application.
+- **refresh_token** (str): The token used to refresh the access token when it expires.
+- **installed_at** (datetime): The timestamp indicating when the application was installed in the guild.
+- **token_expires_at** (Optional[datetime]): The optional timestamp indicating when the access token will expire. Defaults to None if the token does not have an expiration time. (default: :obj:`None`)

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -58,6 +59,7 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
+        timeout: Optional[float] = 180.0,
         **kwargs,
     ) -> None:
         r"""Initialize the SingleStepEnv.
@@ -67,12 +69,15 @@ class SingleStepEnv:
                 problems from.
             verifier (BaseVerifier): Verifier used to evaluate LLM responses
                 against ground-truth answers.
+            timeout (Optional[float], optional): The execution timeout in
+                seconds. (default: :obj:`180.0`)
             **kwargs: Optional metadata or configuration values.
 
         Notes:
             This class assumes all interactions are single-step: one question,
             one LLM response, one reward.
         """
+        self._timeout = timeout
         self.dataset = dataset
         self.verifier = verifier
         self._metadata = kwargs
@@ -200,21 +205,58 @@ class SingleStepEnv:
             self._states_done = [False] * self.current_batch_size
 
             observations = [
-                Observation(question=sample.question, context={}, metadata={})
+                Observation(
+                    question=sample.question,
+                    context={},
+                    metadata=sample.metadata
+                    if sample.metadata is not None
+                    else {},
+                )
                 for sample in self._states
             ]
 
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            self._states = [
-                await self.dataset.async_sample() for _ in range(batch_size)
-            ]
+            # Generate more data if needed
+            if batch_size > len(self.dataset):
+                new_datapoints_needed = batch_size - len(self.dataset)
+                await self.dataset.generate_new(n=new_datapoints_needed)
+
+                # Verify that enough data was generated
+                if len(self.dataset) < batch_size:
+                    raise RuntimeError(
+                        f"Failed to generate enough datapoints. "
+                        f"Requested {batch_size}, but only "
+                        f"{len(self.dataset)} available after generation."
+                    )
+
+            # Choose sampling strategy based on whether seed is provided
+            if seed is not None:
+                # Deterministic random sampling when seed is provided
+                random_indices = rng.sample(
+                    range(len(self.dataset)), batch_size
+                )
+                self._states = [self.dataset[ind] for ind in random_indices]
+            else:
+                # Sequential sampling when no seed (backward compatible)
+                # Use async_sample to maintain sequential behavior
+                self._states = [
+                    await self.dataset.async_sample()
+                    for _ in range(batch_size)
+                ]
+
             self.current_batch_size = batch_size
             self._states_done = [False] * batch_size
 
             observations = [
-                Observation(question=sample.question, context={}, metadata={})
+                Observation(
+                    question=sample.question,
+                    context={},
+                    metadata=sample.metadata
+                    if sample.metadata is not None
+                    else {},
+                )
                 for sample in self._states
             ]
 
@@ -267,6 +309,7 @@ class SingleStepEnv:
                 or if `reset()` has not been called.
             ValueError: If invalid action format, duplicate indices,
                 or out-of-bounds indices are detected.
+            asyncio.TimeoutError: If the step execution exceeds the timeout.
         """
 
         if not self._is_setup:
@@ -295,18 +338,34 @@ class SingleStepEnv:
                 f"total batch size ({self.current_batch_size})"
             )
 
-        indices = [act.index for act in actions]
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = []
-        for idx in indices:
-            ground_truths.append(self._states[idx].final_answer)
+        ground_truths: List[str] = [
+            self._states[idx].final_answer for idx in indices
+        ]
 
         try:
-            verification_results = await self.verifier.verify_batch(
-                solutions=proposed_solutions,
-                reference_answers=ground_truths,  # type: ignore [arg-type]
-                raise_on_error=True,
+            verification_results = await asyncio.wait_for(
+                self.verifier.verify_batch(
+                    solutions=proposed_solutions,
+                    reference_answers=ground_truths,  # type: ignore [arg-type]
+                    raise_on_error=True,
+                ),
+                timeout=self._timeout,
             )
+        except asyncio.TimeoutError as e:
+            logger.error(
+                f"Step verification timed out after {self._timeout}s: {e}"
+            )
+            # Return timeout verification results
+            verification_results = [
+                VerificationResult(
+                    result="",
+                    status=VerificationOutcome.TIMEOUT,
+                    error_message=f"Verification timed out "
+                    f"after {self._timeout}s",
+                )
+                for _ in range(len(proposed_solutions))
+            ]
         except Exception as e:
             logger.error(f"Verification failed: {e}")
             # Return failed verification results with status=FAILURE
@@ -319,9 +378,55 @@ class SingleStepEnv:
                 for _ in range(len(proposed_solutions))
             ]
 
-        total_rewards, rewards_dicts = await self._compute_reward_batch(
-            proposed_solutions, verification_results
-        )
+        # Track which solutions have been processed and which have timed out
+        total_rewards = [0.0] * len(proposed_solutions)
+        rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
+
+        try:
+            # First try to compute all rewards with a timeout
+            computed_rewards, computed_rewards_dicts = await asyncio.wait_for(
+                self._compute_reward_batch(
+                    proposed_solutions, verification_results
+                ),
+                timeout=self._timeout,
+            )
+            # If successful, use all the computed values
+            total_rewards = computed_rewards
+            rewards_dicts = computed_rewards_dicts
+        except asyncio.TimeoutError as e:
+            logger.error(
+                f"Reward computation timed out after {self._timeout}s: {e}"
+            )
+            # Try to compute rewards one by one to identify which ones time out
+            for i, (solution, result) in enumerate(
+                zip(proposed_solutions, verification_results)
+            ):
+                try:
+                    individual_rewards = await asyncio.wait_for(
+                        self._compute_custom_reward(solution, result),
+                        timeout=self._timeout,
+                    )
+                    # If successful, calculate the reward for this solution
+                    correctness_reward = (
+                        self.ACCURACY_REWARD if result.status else 0.0
+                    )
+                    rewards_dict = {
+                        "correctness": correctness_reward,
+                        **individual_rewards,
+                    }
+                    total_rewards[i] = sum(rewards_dict.values())
+                    rewards_dicts[i] = rewards_dict
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Reward computation for solution {i} timed out"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Error computing reward for solution {i}: {e}"
+                    )
+        except Exception as e:
+            logger.error(f"Reward computation failed: {e}")
+
         # Create and return step results in batch
         step_results = [
             StepResult(

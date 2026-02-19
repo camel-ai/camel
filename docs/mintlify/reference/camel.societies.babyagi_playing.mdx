@@ -1,0 +1,119 @@
+<a id="camel.societies.babyagi_playing"></a>
+
+<a id="camel.societies.babyagi_playing.BabyAGI"></a>
+
+## BabyAGI
+
+```python
+class BabyAGI:
+```
+
+The BabyAGI Agent adapted from ["Task-driven Autonomous Agent"](https://github.com/yoheinakajima/babyagi).
+
+**Parameters:**
+
+- **assistant_role_name** (str): The name of the role played by the assistant.
+- **user_role_name** (str): The name of the role played by the user.
+- **task_prompt** (str, optional): A prompt for the task to be performed. (default: :obj:`""`)
+- **task_type** (TaskType, optional): The type of task to perform. (default: :obj:`TaskType.AI_SOCIETY`)
+- **max_task_history** (int): The maximum number of previous tasks information to include in the task agent. (default: :obj:10)
+- **assistant_agent_kwargs** (Dict, optional): Additional arguments to pass to the assistant agent. (default: :obj:`None`)
+- **task_specify_agent_kwargs** (Dict, optional): Additional arguments to pass to the task specify agent. (default: :obj:`None`)
+- **task_creation_agent_kwargs** (Dict, optional): Additional arguments to pass to the task creation agent. (default: :obj:`None`)
+- **task_prioritization_agent_kwargs** (Dict, optional): Additional arguments to pass to the task prioritization agent. (default: :obj:`None`)
+- **sys_msg_generator_kwargs** (Dict, optional): Additional arguments to pass to the system message generator. (default: :obj:`None`)
+- **extend_task_specify_meta_dict** (Dict, optional): A dict to extend the task specify meta dict with. (default: :obj:`None`)
+- **output_language** (str, optional): The language to be output by the agents. (default: :obj:`None`)
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
+
+<a id="camel.societies.babyagi_playing.BabyAGI.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    assistant_role_name: str,
+    user_role_name: str,
+    task_prompt: str = '',
+    task_type: TaskType = TaskType.AI_SOCIETY,
+    max_task_history: int = 10,
+    assistant_agent_kwargs: Optional[Dict] = None,
+    task_specify_agent_kwargs: Optional[Dict] = None,
+    task_creation_agent_kwargs: Optional[Dict] = None,
+    task_prioritization_agent_kwargs: Optional[Dict] = None,
+    sys_msg_generator_kwargs: Optional[Dict] = None,
+    extend_task_specify_meta_dict: Optional[Dict] = None,
+    output_language: Optional[str] = None,
+    message_window_size: Optional[int] = None
+):
+```
+
+<a id="camel.societies.babyagi_playing.BabyAGI.init_specified_task_prompt"></a>
+
+### init_specified_task_prompt
+
+```python
+def init_specified_task_prompt(
+    self,
+    assistant_role_name: str,
+    user_role_name: str,
+    task_specify_agent_kwargs: Optional[Dict],
+    extend_task_specify_meta_dict: Optional[Dict],
+    output_language: Optional[str]
+):
+```
+
+Use a task specify agent to generate a specified task prompt.
+Generated specified task prompt will be used to replace original
+task prompt. If there is no task specify agent, specified task
+prompt will not be generated.
+
+**Parameters:**
+
+- **assistant_role_name** (str): The name of the role played by the assistant.
+- **user_role_name** (str): The name of the role played by the user.
+- **task_specify_agent_kwargs** (Dict, optional): Additional arguments to pass to the task specify agent.
+- **extend_task_specify_meta_dict** (Dict, optional): A dict to extend the task specify meta dict with.
+- **output_language** (str, optional): The language to be output by the agents.
+
+<a id="camel.societies.babyagi_playing.BabyAGI.init_agents"></a>
+
+### init_agents
+
+```python
+def init_agents(
+    self,
+    init_assistant_sys_msg: BaseMessage,
+    assistant_agent_kwargs: Optional[Dict],
+    task_creation_agent_kwargs: Optional[Dict],
+    task_prioritization_agent_kwargs: Optional[Dict],
+    output_language: Optional[str],
+    message_window_size: Optional[int] = None
+):
+```
+
+Initialize assistant and user agents with their system messages.
+
+**Parameters:**
+
+- **init_assistant_sys_msg** (BaseMessage): Assistant agent's initial system message.
+- **assistant_agent_kwargs** (Dict, optional): Additional arguments to pass to the assistant agent.
+- **task_creation_agent_kwargs** (Dict, optional): Additional arguments to pass to the task creation agent.
+- **task_prioritization_agent_kwargs** (Dict, optional): Additional arguments to pass to the task prioritization agent.
+- **output_language** (str, optional): The language to be output by the agents.
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
+
+<a id="camel.societies.babyagi_playing.BabyAGI.step"></a>
+
+### step
+
+```python
+def step(self):
+```
+
+**Returns:**
+
+  ChatAgentResponse: it contains the resulting assistant message,
+whether the assistant agent terminated the conversation,
+and any additional assistant information.

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List
-
-import numpy as np
 
 from camel.loaders import UnstructuredIO
 from camel.retrievers import BaseRetriever
@@ -106,6 +104,7 @@ class BM25Retriever(BaseRetriever):
                 model has not been initialized by calling `process`
                 first.
         """
+        import numpy as np
 
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")

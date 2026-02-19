@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import uuid
 from typing import List, Optional
@@ -83,29 +83,33 @@ def download_file(url: str, cache_dir: str) -> str:
 
 @MCPServer()
 class AudioAnalysisToolkit(BaseToolkit):
-    r"""A toolkit for audio processing and analysis.
-
-    This class provides methods for processing, transcribing, and extracting
-    information from audio data, including direct question answering about
-    audio content.
-
-    Args:
-        cache_dir (Optional[str]): Directory path for caching downloaded audio
-            files. If not provided, 'tmp/' will be used. (default: :obj:`None`)
-        transcribe_model (Optional[BaseAudioModel]): Model used for audio
-            transcription. If not provided, OpenAIAudioModels will be used.
-            (default: :obj:`None`)
-        audio_reasoning_model (Optional[BaseModelBackend]): Model used for
-            audio reasoning and question answering. If not provided, uses the
-            default model from ChatAgent. (default: :obj:`None`)
-    """
-
     def __init__(
         self,
         cache_dir: Optional[str] = None,
         transcribe_model: Optional[BaseAudioModel] = None,
         audio_reasoning_model: Optional[BaseModelBackend] = None,
+        timeout: Optional[float] = None,
     ):
+        r"""A toolkit for audio processing and analysis. This class provides
+        methods for processing, transcribing, and extracting information from
+        audio data, including direct question answering about audio content.
+
+        Args:
+            cache_dir (Optional[str]): Directory path for caching downloaded
+                audio files. If not provided, 'tmp/' will be used.
+                (default: :obj:`None`)
+            transcribe_model (Optional[BaseAudioModel]): Model used for audio
+                transcription. If not provided, OpenAIAudioModels will be used.
+                (default: :obj:`None`)
+            audio_reasoning_model (Optional[BaseModelBackend]): Model used for
+                audio reasoning and question answering.
+                If not provided, uses the default model from ChatAgent.
+                (default: :obj:`None`)
+            timeout (Optional[float]): The timeout value for API requests
+                    in seconds. If None, no timeout is applied.
+                    (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
         self.cache_dir = 'tmp/'
         if cache_dir:
             self.cache_dir = cache_dir
@@ -204,7 +208,7 @@ class AudioAnalysisToolkit(BaseToolkit):
             <speech_transcription_result>{transcript}</
             speech_transcription_result>
 
-            Please answer the following question based on the speech 
+            Please answer the following question based on the speech
             transcription result above:
             <question>{question}</question>
             """

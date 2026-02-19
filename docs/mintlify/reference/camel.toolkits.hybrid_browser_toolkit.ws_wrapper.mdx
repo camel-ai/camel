@@ -1,0 +1,81 @@
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper"></a>
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper._create_memory_aware_error"></a>
+
+## _create_memory_aware_error
+
+```python
+def _create_memory_aware_error(base_msg: str):
+```
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.action_logger"></a>
+
+## action_logger
+
+```python
+def action_logger(func):
+```
+
+Decorator to add logging to action methods.
+
+Skips logging if already inside a high-level action to avoid
+logging internal calls.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.high_level_action"></a>
+
+## high_level_action
+
+```python
+def high_level_action(func):
+```
+
+Decorator for high-level actions that should suppress low-level logging.
+
+When a function is decorated with this, all low-level action_logger
+decorated functions called within it will skip logging. This decorator
+itself will log the high-level action.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper"></a>
+
+## WebSocketBrowserWrapper
+
+```python
+class WebSocketBrowserWrapper:
+```
+
+Python wrapper for the TypeScript hybrid browser
+toolkit implementation using WebSocket.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, config: Optional[Dict[str, Any]] = None):
+```
+
+Initialize the wrapper.
+
+**Parameters:**
+
+- **config**: Configuration dictionary for the browser toolkit
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper._ensure_ref_prefix"></a>
+
+### _ensure_ref_prefix
+
+```python
+def _ensure_ref_prefix(self, ref: str):
+```
+
+Ensure ref has proper prefix
+
+<a id="camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper._process_refs_in_params"></a>
+
+### _process_refs_in_params
+
+```python
+def _process_refs_in_params(self, params: Dict[str, Any]):
+```
+
+Process parameters to ensure all refs have 'e' prefix.

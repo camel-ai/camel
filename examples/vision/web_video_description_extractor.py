@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
@@ -46,8 +46,8 @@ print(response.msgs[0].content)
 ===============================================================================
 Join the delightful adventure of a lovable, chubby bunny as he emerges from
  his cozy burrow to greet the day! Watch as he stretches and yawns, ready to
-explore the vibrant, lush world around him. This heartwarming and beautifully 
-animated scene is sure to bring a smile to your face and brighten your day. 
+explore the vibrant, lush world around him. This heartwarming and beautifully
+animated scene is sure to bring a smile to your face and brighten your day.
 Don't miss out on this charming moment of pure joy and wonder! 🌿🐰✨
 ===============================================================================
 """

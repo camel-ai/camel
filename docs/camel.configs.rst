@@ -20,6 +20,14 @@ camel.configs.base\_config module
    :undoc-members:
    :show-inheritance:
 
+camel.configs.cometapi\_config module
+-------------------------------------
+
+.. automodule:: camel.configs.cometapi_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.configs.gemini\_config module
 -----------------------------------
 

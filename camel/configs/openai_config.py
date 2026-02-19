@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 from typing import Dict, Optional, Sequence, Type, Union
@@ -104,6 +104,11 @@ class ChatGPTConfig(BaseConfig):
         parallel_tool_calls (bool, optional): A parameter specifying whether
             the model should call tools in parallel or not.
             (default: :obj:`None`)
+        prompt_cache_key (str, optional): A key used by the OpenAI Prompt
+            Caching system to identify and reuse cached prompt segments.
+            (default: :obj:`None`)
+        extra_headers: Optional[Dict[str, str]]: Extra headers to use for the
+            model. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -117,9 +122,13 @@ class ChatGPTConfig(BaseConfig):
     frequency_penalty: Optional[float] = None
     logit_bias: Optional[Dict] = None
     user: Optional[str] = None
-    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     reasoning_effort: Optional[str] = None
     parallel_tool_calls: Optional[bool] = None
+    prompt_cache_key: Optional[str] = None
+    extra_headers: Optional[Dict[str, str]] = None
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

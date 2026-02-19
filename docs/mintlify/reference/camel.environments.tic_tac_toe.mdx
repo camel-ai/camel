@@ -1,0 +1,289 @@
+<a id="camel.environments.tic_tac_toe"></a>
+
+<a id="camel.environments.tic_tac_toe.MoveExtractor"></a>
+
+## MoveExtractor
+
+```python
+class MoveExtractor(BaseExtractorStrategy):
+```
+
+A strategy for extracting Tic Tac Toe actions from text.
+
+<a id="camel.environments.tic_tac_toe.Opponent"></a>
+
+## Opponent
+
+```python
+class Opponent:
+```
+
+AI opponent for the Tic Tac Toe game.
+
+This class implements different playing strategies for the AI opponent,
+including an optimal strategy using the minimax algorithm with alpha-beta
+pruning, and a random strategy.
+
+<a id="camel.environments.tic_tac_toe.Opponent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, play_style: Literal['optimal', 'random'] = 'optimal'):
+```
+
+Initialize the opponent with a specific play style.
+
+**Parameters:**
+
+- **play_style** (`Literal["optimal", "random"]`): The strategy to use, either "optimal" or "random". (default: :obj:`"optimal"`)
+
+<a id="camel.environments.tic_tac_toe.Opponent.select_move"></a>
+
+### select_move
+
+```python
+def select_move(self, board: List[str]):
+```
+
+Select a move based on the opponent's play style.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+
+**Returns:**
+
+  Optional[int]: The index of the selected move, or None if no move
+is available.
+
+<a id="camel.environments.tic_tac_toe.Opponent.get_optimal_move"></a>
+
+### get_optimal_move
+
+```python
+def get_optimal_move(self, board: List[str]):
+```
+
+Get the optimal move using the minimax algorithm.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+
+**Returns:**
+
+  Optional[int]: The index of the optimal move, or None if no move
+is available.
+
+<a id="camel.environments.tic_tac_toe.Opponent.minimax"></a>
+
+### minimax
+
+```python
+def minimax(
+    self,
+    board: List[str],
+    is_maximizing: bool,
+    depth: int = 0,
+    alpha: float = -math.inf,
+    beta: float = math.inf
+):
+```
+
+Minimax algorithm with alpha-beta pruning for optimal move
+selection.
+
+Recursively evaluates all possible moves to find the best one.
+Uses alpha-beta pruning to reduce the search space.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+- **is_maximizing** (bool): True if maximizing player (O), False if minimizing (X).
+- **depth** (int): Current depth in the search tree. (default: :obj:`0`) (default: 0)
+- **alpha** (float): Alpha value for pruning. (default: :obj:`-math.inf`) (default: -math.inf)
+- **beta** (float): Beta value for pruning. (default: :obj:`math.inf`) (default: math.inf)
+
+**Returns:**
+
+  Tuple[float, Optional[int]]: A tuple containing:
+- float: The score of the best move (1 for O win, -1 for X
+win, 0 for draw)
+- Optional[int]: The index of the best move, or None if
+terminal state
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv"></a>
+
+## TicTacToeEnv
+
+```python
+class TicTacToeEnv(MultiStepEnv):
+```
+
+A Tic Tac Toe environment for reinforcement learning with LLMs.
+
+This environment implements a standard Tic Tac Toe game where the LLM agent
+plays as 'X' against an AI opponent that plays as 'O'. The opponent can use
+either an optimal strategy (minimax with alpha-beta pruning) or a random
+strategy.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: Optional[BaseExtractor] = None,
+    max_steps: Optional[int] = None,
+    play_style: Literal['optimal', 'random'] = 'optimal',
+    **kwargs
+):
+```
+
+Initialize the Tic Tac Toe environment.
+
+**Parameters:**
+
+- **extractor** (Optional[BaseExtractor]): Extractor to process LLM responses. If None, a default extractor with MoveExtractor will be used. (default: :obj:`None`)
+- **max_steps** (Optional[int]): Maximum steps per episode. (default: :obj:`None`)
+- **play_style** (`Literal["optimal", "random"]`): The strategy for the opponent to use, either "optimal" or "random". (default: :obj:`"optimal"`) **kwargs: Additional environment parameters.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv._get_initial_state"></a>
+
+### _get_initial_state
+
+```python
+def _get_initial_state(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the initial state with an
+empty board, game status flags, and move history.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv._get_next_observation"></a>
+
+### _get_next_observation
+
+```python
+def _get_next_observation(self):
+```
+
+**Returns:**
+
+  Observation: An Observation object containing the game state
+description.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv._get_terminal_observation"></a>
+
+### _get_terminal_observation
+
+```python
+def _get_terminal_observation(self):
+```
+
+**Returns:**
+
+  Observation: An Observation object containing the final game state
+description.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv.evaluate_position_for_x"></a>
+
+### evaluate_position_for_x
+
+```python
+def evaluate_position_for_x(
+    board: List[str],
+    is_x_turn: bool,
+    depth: int = 0,
+    max_depth: int = 10
+):
+```
+
+Evaluate the current board position from X's perspective.
+
+Uses minimax to determine the value of the position.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+- **is_x_turn** (bool): True if it's X's turn to move, False otherwise.
+
+**Returns:**
+
+  float: A float value representing the position evaluation:
+- 1.0 if X has a winning position
+- 0.0 if O has a winning position
+- 0.5 for a draw
+- For ongoing positions, returns the expected outcome with
+perfect play
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv._is_done"></a>
+
+### _is_done
+
+```python
+def _is_done(self):
+```
+
+**Returns:**
+
+  True if the game is over, False otherwise.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv.available_moves"></a>
+
+### available_moves
+
+```python
+def available_moves(board: List[str]):
+```
+
+Get all available moves on the board.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+
+**Returns:**
+
+  List[int]: A list of indices representing empty cells on the board.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv.check_winner"></a>
+
+### check_winner
+
+```python
+def check_winner(board: List[str]):
+```
+
+Check if there is a winner or a draw on the board.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+
+**Returns:**
+
+  Optional[Literal["X", "O", "draw"]]: "X" if X has won, "O" if O
+has won, "draw" if the game is a draw, or None if the game is
+still ongoing.
+
+<a id="camel.environments.tic_tac_toe.TicTacToeEnv.render_board"></a>
+
+### render_board
+
+```python
+def render_board(self, board: List[str]):
+```
+
+Render the board as a string for display.
+
+**Parameters:**
+
+- **board** (List[str]): The current game board as a list of strings.
+
+**Returns:**
+
+  str: A formatted string representation of the board.

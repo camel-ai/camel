@@ -1,0 +1,546 @@
+<a id="camel.toolkits.openbb_toolkit"></a>
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit"></a>
+
+## OpenBBToolkit
+
+```python
+class OpenBBToolkit(BaseToolkit):
+```
+
+A toolkit for accessing financial data and analysis through OpenBB
+Platform.
+
+This toolkit provides methods for retrieving and analyzing financial market
+data, including stocks, ETFs, cryptocurrencies, economic indicators, and
+more through the OpenBB Platform SDK. For credential configuration, please
+refer to the OpenBB documentation
+https://my.openbb.co/app/platform/credentials .
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initialize the OpenBBToolkit.
+
+This method sets up the OpenBB client and initializes the OpenBB
+Hub account system.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit._handle_api_error"></a>
+
+### _handle_api_error
+
+```python
+def _handle_api_error(
+    self,
+    error: Exception,
+    operation: str,
+    log_level: str = 'warning',
+    **format_args
+):
+```
+
+Handle API operation errors consistently.
+
+**Parameters:**
+
+- **error** (Exception): The caught exception.
+- **operation** (str): Description of the failed operation (e.g., "get_historical_data").
+- **log_level** (str): Logging level to use ("warning" or "error").
+- **format_args**: Additional format arguments for the error message .
+
+**Returns:**
+
+  List: List with error message.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.search_equity"></a>
+
+### search_equity
+
+```python
+def search_equity(self, query: str, provider: Literal['intrinio', 'sec'] = 'sec'):
+```
+
+Search for equity symbols and company information.
+
+For SEC provider, an empty query ("") returns the complete list of
+companies sorted by market cap.
+
+**Parameters:**
+
+- **query** (str): Search query (company name or symbol), use "" for complete SEC list.
+- **provider** (`Literal["intrinio", "sec"]`): Data provider. Available
+- **options**: - sec: SEC EDGAR Database (sorted by market cap) - intrinio: Intrinio Financial Data
+
+**Returns:**
+
+  List: Search results.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.search_institution"></a>
+
+### search_institution
+
+```python
+def search_institution(self, query: str):
+```
+
+Search for financial institutions in SEC database.
+
+**Parameters:**
+
+- **query** (str): Institution name to search (e.g., "Berkshire Hathaway").
+
+**Returns:**
+
+  List: Institution search results.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.search_filings"></a>
+
+### search_filings
+
+```python
+def search_filings(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'intrinio', 'sec'] = 'sec',
+    form_type: Optional[str] = None
+):
+```
+
+Search for SEC filings by CIK or ticker symbol.
+
+**Parameters:**
+
+- **symbol** (str): Symbol to get data for (e.g., "MAXD").
+- **provider** (`Literal["fmp", "intrinio", "sec"]`): Data provider. (default: :obj:`sec`)
+- **form_type** (Optional[str]): Filter by form type. Check the data provider for available types. Multiple comma separated items allowed for provider(s): sec. (default: :obj:`None`)
+
+**Returns:**
+
+  List: Filing search results.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.search_etf"></a>
+
+### search_etf
+
+```python
+def search_etf(self, query: str, provider: Literal['fmp', 'intrinio'] = 'fmp'):
+```
+
+Search for ETF information.
+
+**Parameters:**
+
+- **query** (str): Search query (ETF name or symbol).
+- **provider** (`Literal["fmp", "intrinio"]`): Data provider. (default: :obj:`fmp`)
+
+**Returns:**
+
+  List: ETF search results.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.screen_market"></a>
+
+### screen_market
+
+```python
+def screen_market(
+    self,
+    provider: Literal['fmp', 'yfinance'] = 'fmp',
+    country: Optional[str] = None,
+    exchange: Optional[str] = None,
+    sector: Optional[str] = None,
+    industry: Optional[str] = None,
+    mktcap_min: Optional[float] = None,
+    mktcap_max: Optional[float] = None,
+    beta_min: Optional[float] = None,
+    beta_max: Optional[float] = None
+):
+```
+
+Screen stocks based on market and fundamental criteria.
+
+**Parameters:**
+
+- **provider** (`Literal["fmp", "yfinance"]`): Data provider. (default: :obj:`fmp`)
+- **country** (Optional[str]): Two-letter ISO country code (e.g., 'US', 'IN', 'CN'). (default: :obj:`None`)
+- **exchange** (Optional[str]): Stock exchange code (e.g., 'NYSE', 'AMEX', 'NSE'). (default: :obj:`None`)
+- **sector** (Optional[str]): Market sector (e.g., 'Financial Services', 'Healthcare). (default: :obj:`None`)
+- **industry** (Optional[str]): Industry within sector (e.g., 'Banks—Regional','Drug Manufacturers'). (default: :obj:`None`)
+- **mktcap_min** (Optional[float]): Minimum market cap in USD. (default: :obj:`None`)
+- **mktcap_max** (Optional[float]): Maximum market cap in USD. (default: :obj:`None`)
+- **beta_min** (Optional[float]): Minimum beta value. (default: :obj:`None`)
+- **beta_max** (Optional[float]): Maximum beta value. (default: :obj:`None`)
+
+**Returns:**
+
+  List: Screened stocks.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_available_indices"></a>
+
+### get_available_indices
+
+```python
+def get_available_indices(self, provider: Literal['fmp', 'yfinance'] = 'fmp'):
+```
+
+Get list of available market indices.
+
+**Parameters:**
+
+- **provider** (`Literal["fmp", "yfinance"]`): Data provider. (default: :obj:`fmp`)
+
+**Returns:**
+
+  List: Available indices.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_stock_quote"></a>
+
+### get_stock_quote
+
+```python
+def get_stock_quote(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'intrinio', 'yfinance'] = 'fmp'
+):
+```
+
+Get current stock quote for a given symbol.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.)
+- **provider** (`Literal["fmp", "intrinio", "yfinance"]`): Data source. (default: :obj:`fmp`)
+
+**Returns:**
+
+  List: Stock quote data in requested format
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_historical_data"></a>
+
+### get_historical_data
+
+```python
+def get_historical_data(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'polygon', 'tiingo', 'yfinance'] = 'fmp',
+    asset_type: Literal['equity', 'currency', 'crypto'] = 'equity',
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    interval: Literal['1m', '5m', '15m', '30m', '1h', '4h', '1d'] = '1d'
+):
+```
+
+Retrieves historical market data from OpenBB Platform providers.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **provider** (`Literal["fmp", "polygon", "tiingo", "yfinance"]`): Data source. (default: :obj:`fmp`)
+- **asset_type** (`Literal["equity", "currency", "crypto"]`): Asset type. (default: :obj:`equity`)
+- **start_date**: Start date in YYYY-MM-DD format. If None, uses provider's default lookback. (default: :obj:`None`)
+- **end_date**: End date in YYYY-MM-DD format. If None, uses current date. (default: :obj:`None`)
+- **interval**: Data frequency/timeframe. (default: :obj:`1d`) (default: 1d)
+
+**Returns:**
+
+  List: Historical market data.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_market_data"></a>
+
+### get_market_data
+
+```python
+def get_market_data(
+    self,
+    category: Literal['gainers', 'losers', 'active'] = 'active'
+):
+```
+
+Get market movers data.
+
+**Parameters:**
+
+- **category** (`Literal["gainers", "losers", "active"]`): Type of market data. Must be 'gainers', 'losers', or 'active'. (default: :obj:`active`)
+
+**Returns:**
+
+  List: Market movers data.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_earnings_calendar"></a>
+
+### get_earnings_calendar
+
+```python
+def get_earnings_calendar(
+    self,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+```
+
+Get company earnings calendar with filtering and sorting options.
+
+**Parameters:**
+
+- **start_date** (Optional[str]): Start date in YYYY-MM-DD format. (default: :obj:`None`)
+- **end_date** (Optional[str]): End date in YYYY-MM-DD format. (default: :obj:`None`)
+
+**Returns:**
+
+  List: Earnings calendar.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_dividend_calendar"></a>
+
+### get_dividend_calendar
+
+```python
+def get_dividend_calendar(
+    self,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+```
+
+Get dividend calendar with optional yield calculations.
+
+**Parameters:**
+
+- **start_date** (Optional[str]): Start date in YYYY-MM-DD format. (default: :obj:`None`)
+- **end_date** (Optional[str]): End date in YYYY-MM-DD format. (default: :obj:`None`)
+
+**Returns:**
+
+  List: Dividend calendar.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_ipo_calendar"></a>
+
+### get_ipo_calendar
+
+```python
+def get_ipo_calendar(
+    self,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+```
+
+Get IPO/SPO calendar with comprehensive filtering options.
+
+**Parameters:**
+
+- **start_date** (Optional[str]): Start date in YYYY-MM-DD format. (default: :obj:`None`)
+- **end_date** (Optional[str]): End date in YYYY-MM-DD format. (default: :obj:`None`)
+
+**Returns:**
+
+  List: IPO/SPO calendar.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_available_indicators"></a>
+
+### get_available_indicators
+
+```python
+def get_available_indicators(self, provider: Literal['econdb', 'imf'] = 'econdb'):
+```
+
+Get list of available economic indicators.
+
+**Parameters:**
+
+- **provider** (`Literal["econdb", "imf"]`): Data provider. (default: :obj:`econdb`)
+
+**Returns:**
+
+  List: Available indicators.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_indicator_data"></a>
+
+### get_indicator_data
+
+```python
+def get_indicator_data(
+    self,
+    symbol: str,
+    country: str,
+    provider: Literal['econdb', 'imf'] = 'econdb'
+):
+```
+
+Get detailed metadata for an economic indicator.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **country** (str): Country code (e.g., 'US' for United States).
+- **provider** (`Literal["econdb", "imf"]`): Data provider. (default: :obj:`econdb`)
+
+**Returns:**
+
+  List: Indicator data.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_financial_metrics"></a>
+
+### get_financial_metrics
+
+```python
+def get_financial_metrics(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'intrinio', 'yfinance'] = 'fmp',
+    period: Literal['annual', 'quarter'] = 'annual',
+    limit: int = 5
+):
+```
+
+Get company financial metrics and ratios.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **provider** (`Literal["fmp", "intrinio", "yfinance"]`): Data source. (default: :obj:`fmp`)
+- **period** (`Literal["annual", "quarter"]`): Reporting period, "annual": Annual metrics, "quarter": Quarterly metrics. (default: :obj:`annual`)
+- **limit** (int): Number of periods to return. (default: :obj:`5`) (default: 5)
+
+**Returns:**
+
+  List: Financial metric.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_company_profile"></a>
+
+### get_company_profile
+
+```python
+def get_company_profile(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'intrinio', 'yfinance'] = 'fmp'
+):
+```
+
+Get company profile information.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **provider** (`Literal["fmp", "intrinio", "yfinance"]`): Data provider. (default: :obj:`fmp`)
+
+**Returns:**
+
+  List: Company profile.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_financial_statement"></a>
+
+### get_financial_statement
+
+```python
+def get_financial_statement(
+    self,
+    symbol: str,
+    provider: Literal['fmp', 'intrinio', 'polygon', 'yfinance'] = 'fmp',
+    statement_type: Literal['balance', 'income', 'cash'] = 'balance',
+    period: Literal['annual', 'quarter'] = 'annual',
+    limit: int = 5
+):
+```
+
+Get company financial statements.
+
+Access balance sheet, income statement, or cash flow statement data.
+Data availability and field names vary by provider and company type.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **provider** (`Literal["fmp", "intrinio", "polygon", "yfinance"]`): Data provider. (default: :obj:`fmp`)
+- **statement_type** (`Literal["balance", "income", "cash"]`): Type of financial statement, "balance": Balance sheet, "income": Income statement, "cash": Cash flow statement. (default: :obj:`balance`)
+- **period** (`Literal["annual", "quarter"]`): Reporting period, "annual": Annual reports, "quarter": Quarterly reports. (default: :obj:`annual`)
+- **limit** (int): Number of periods to return. (default: :obj:`5`) (default: 5)
+
+**Returns:**
+
+  List: Financial statement data.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_financial_attributes"></a>
+
+### get_financial_attributes
+
+```python
+def get_financial_attributes(
+    self,
+    symbol: str,
+    tag: str,
+    frequency: Literal['daily', 'weekly', 'monthly', 'quarterly', 'yearly'] = 'yearly'
+):
+```
+
+Get historical values for a specific financial attribute.
+
+**Parameters:**
+
+- **symbol** (str): Stock symbol (e.g., 'AAPL' for Apple Inc.).
+- **tag** (str): Financial attribute tag (use search_financial_attributes to find tags). frequency (Literal["daily", "weekly", "monthly", "quarterly", "yearly"]): Data frequency, "daily", "weekly", "monthly", "quarterly", "yearly". (default: :obj:`yearly`)
+
+**Returns:**
+
+  List: Historical values.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.search_financial_attributes"></a>
+
+### search_financial_attributes
+
+```python
+def search_financial_attributes(self, query: str):
+```
+
+Search for available financial attributes/tags.
+
+**Parameters:**
+
+- **query** (str): Search term (e.g., "marketcap", "revenue", "assets").
+
+**Returns:**
+
+  List: Matching attributes.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_economic_calendar"></a>
+
+### get_economic_calendar
+
+```python
+def get_economic_calendar(
+    self,
+    provider: Literal['fmp', 'tradingeconomics'] = 'fmp',
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+```
+
+Get economic calendar events.
+
+**Parameters:**
+
+- **provider** (`Literal["fmp", "tradingeconomics"]`): Data provider. (default: :obj:`fmp`)
+- **start_date** (Optional[str]): Start date in YYYY-MM-DD format. (default: :obj:`None`)
+- **end_date** (Optional[str]): End date in YYYY-MM-DD format. (default: :obj:`None`)
+
+**Returns:**
+
+  List: Economic calendar.
+
+<a id="camel.toolkits.openbb_toolkit.OpenBBToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available tools.

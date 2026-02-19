@@ -1,0 +1,56 @@
+<a id="camel.messages.conversion.sharegpt.function_call_formatter"></a>
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter"></a>
+
+## FunctionCallFormatter
+
+```python
+class FunctionCallFormatter(ABC):
+```
+
+Abstract base class for function calling formats
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.extract_tool_calls"></a>
+
+### extract_tool_calls
+
+```python
+def extract_tool_calls(self, message: str):
+```
+
+Extract function call info from a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.extract_tool_response"></a>
+
+### extract_tool_response
+
+```python
+def extract_tool_response(self, message: str):
+```
+
+Extract function response info from a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.format_tool_call"></a>
+
+### format_tool_call
+
+```python
+def format_tool_call(
+    self,
+    content: str,
+    func_name: str,
+    args: Dict[str, Any]
+):
+```
+
+Format a function call into a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.format_tool_response"></a>
+
+### format_tool_response
+
+```python
+def format_tool_response(self, func_name: str, result: Any):
+```
+
+Format a function response into a message string

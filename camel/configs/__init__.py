@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,23 +10,41 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aihubmix_config import AIHUBMIX_API_PARAMS, AihubMixConfig
 from .aiml_config import AIML_API_PARAMS, AIMLConfig
+from .amd_config import AMD_API_PARAMS, AMDConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
+from .atlascloud_config import ATLASCLOUD_API_PARAMS, AtlasCloudConfig
 from .base_config import BaseConfig
+from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
+from .cerebras_config import CEREBRAS_API_PARAMS, CerebrasConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
+from .cometapi_config import COMETAPI_API_PARAMS, CometAPIConfig
+from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from .function_gemma_config import (
+    FUNCTION_GEMMA_API_PARAMS,
+    FunctionGemmaConfig,
+)
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
+from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
+from .minimax_config import MINIMAX_API_PARAMS, MinimaxConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
+from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
+from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
+from .novita_config import NOVITA_API_PARAMS, NovitaConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
+from .ppio_config import PPIO_API_PARAMS, PPIOConfig
+from .qianfan_config import QIANFAN_API_PARAMS, QianfanConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
@@ -39,6 +57,8 @@ from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
+from .volcano_config import VOLCANO_API_PARAMS, VolcanoConfig
+from .watsonx_config import WATSONX_API_PARAMS, WatsonXConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
@@ -46,12 +66,18 @@ __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
     'OPENAI_API_PARAMS',
+    'AihubMixConfig',
+    'AIHUBMIX_API_PARAMS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
     'GroqConfig',
+    'NEBIUS_API_PARAMS',
+    'NebiusConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'NetmindConfig',
+    'NETMIND_API_PARAMS',
     'NvidiaConfig',
     'NVIDIA_API_PARAMS',
     'OllamaConfig',
@@ -74,24 +100,52 @@ __all__ = [
     'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'CerebrasConfig',
+    'CEREBRAS_API_PARAMS',
     'CohereConfig',
     'COHERE_API_PARAMS',
+    'CometAPIConfig',
+    'COMETAPI_API_PARAMS',
     'YiConfig',
     'YI_API_PARAMS',
     'QwenConfig',
     'QWEN_API_PARAMS',
+    'BedrockConfig',
+    'BEDROCK_API_PARAMS',
     'DeepSeekConfig',
     'DEEPSEEK_API_PARAMS',
+    'PPIOConfig',
+    'PPIO_API_PARAMS',
     'InternLMConfig',
     'INTERNLM_API_PARAMS',
     'MoonshotConfig',
     "MOONSHOT_API_PARAMS",
     'ModelScopeConfig',
     'MODELSCOPE_API_PARAMS',
+    'NovitaConfig',
+    'NOVITA_API_PARAMS',
     'SiliconFlowConfig',
     'SILICONFLOW_API_PARAMS',
     'AIMLConfig',
     'AIML_API_PARAMS',
+    'AMDConfig',
+    'AMD_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
+    'AtlasCloudConfig',
+    'ATLASCLOUD_API_PARAMS',
+    'LMSTUDIO_API_PARAMS',
+    'LMStudioConfig',
+    'MINIMAX_API_PARAMS',
+    'MinimaxConfig',
+    'WatsonXConfig',
+    'WATSONX_API_PARAMS',
+    'QianfanConfig',
+    'QIANFAN_API_PARAMS',
+    'CrynuxConfig',
+    'CRYNUX_API_PARAMS',
+    'FunctionGemmaConfig',
+    'FUNCTION_GEMMA_API_PARAMS',
+    'VolcanoConfig',
+    'VOLCANO_API_PARAMS',
 ]

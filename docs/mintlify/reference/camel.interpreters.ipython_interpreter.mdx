@@ -1,0 +1,136 @@
+<a id="camel.interpreters.ipython_interpreter"></a>
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter"></a>
+
+## JupyterKernelInterpreter
+
+```python
+class JupyterKernelInterpreter(BaseInterpreter):
+```
+
+A class for executing code strings in a Jupyter Kernel.
+
+**Parameters:**
+
+- **require_confirm** (bool, optional): If `True`, prompt user before running code strings for security. Defaults to `True`.
+- **print_stdout** (bool, optional): If `True`, print the standard output of the executed code. Defaults to `False`.
+- **print_stderr** (bool, optional): If `True`, print the standard error of the executed code. Defaults to `True`.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    require_confirm: bool = True,
+    print_stdout: bool = False,
+    print_stderr: bool = True
+):
+```
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Clean up the kernel and client.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter._initialize_if_needed"></a>
+
+### _initialize_if_needed
+
+```python
+def _initialize_if_needed(self):
+```
+
+Initialize the kernel manager and client if they are not already
+initialized.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter._clean_ipython_output"></a>
+
+### _clean_ipython_output
+
+```python
+def _clean_ipython_output(output: str):
+```
+
+Remove ANSI escape sequences from the output.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter._execute"></a>
+
+### _execute
+
+```python
+def _execute(self, code: str, timeout: float):
+```
+
+Execute the code in the Jupyter kernel and return the result.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str = 'python'):
+```
+
+Executes the given code in the Jupyter kernel.
+
+**Parameters:**
+
+- **code** (str): The code string to execute.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
+
+**Returns:**
+
+  str: A string containing the captured result of the
+executed code.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a shell command in the Jupyter kernel.
+
+**Parameters:**
+
+- **command** (str): The shell command to execute.
+
+**Returns:**
+
+  str: A string containing the captured result of the
+executed command.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+**Returns:**
+
+  List[str]: Supported code types.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates the action space for the interpreter.
+
+**Parameters:**
+
+- **action_space** (Dict[str, Any]): A dictionary representing the new or updated action space.

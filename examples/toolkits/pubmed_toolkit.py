@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import PubMedToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -21,15 +20,9 @@ from camel.types import ModelPlatformType, ModelType
 # Initialize PubMed toolkit and get tools
 tools = PubMedToolkit().get_tools()
 
-# Set up model configuration
-model_config_dict = ChatGPTConfig(
-    temperature=0.0,
-).as_dict()
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=model_config_dict,
 )
 
 # Create chat agent
@@ -100,20 +93,20 @@ print(str(response.info['tool_calls'])[:2000])
     result={
         'id': '37840631',
         'title': 'Chinese guideline for lipid management (2023):
-                  a new guideline rich in domestic elements for 
+                  a new guideline rich in domestic elements for
                   controlling dyslipidemia.',
         'authors': 'Li JJ',
         'journal': 'J Geriatr Cardiol',
         'pub_date': '2023 Sep 28',
-        'abstract': '1. J Geriatr Cardiol. 
-                     2023 Sep 28;20(9):618-620. 
+        'abstract': '1. J Geriatr Cardiol.
+                     2023 Sep 28;20(9):618-620.
                      doi: 10.26599/1671-5411.2023.09.007.
                      Chinese guideline for lipid management (2023):
-                     a new guideline rich in domestic elements for 
+                     a new guideline rich in domestic elements for
                      controlling dyslipidemia.Li JJ(1).\Author information:
                      (1)Division of Cardio-Metabolic Center,
-                     State Key Laboratory of Cardiovascular 
-                     Disease, Fu Wai Hospital, National Center 
+                     State Key Laboratory of Cardiovascular
+                     Disease, Fu Wai Hospital, National Center
                      for Cardiovascular Disease, Chinese Academy
                      of Medical Sciences, Peking Union Medical College,
                      Beijing, China.DOI: 10.26599/1671-5411.2023.09.007
@@ -122,8 +115,8 @@ print(str(response.info['tool_calls'])[:2000])
         'keywords': [],
         'mesh_terms': [],
         'publication_types': ['Journal Article'],
-        'references': ['35729555', '34734202', '34404993', 
-                       '31172370', '30586774', '30526649', 
+        'references': ['35729555', '34734202', '34404993',
+                       '31172370', '30586774', '30526649',
                        '29434622', '20350253']
     },
     tool_call_id='call_k8s7oFcRvDBKuEKvk48uoWXZ'
@@ -151,7 +144,7 @@ print(str(response.info['tool_calls'])[:2000])
     result=[
         {'id': '37840631',
          'title': 'Chinese guideline for lipid management (2023):
-                   a new guideline rich in domestic elements for 
+                   a new guideline rich in domestic elements for
                    controlling dyslipidemia.',
          'authors': 'Li JJ',
          'journal': 'J Geriatr Cardiol',
@@ -223,8 +216,8 @@ print(str(response.info['tool_calls'])[:2000])
                       'correlates of protection: Application to the COVE '
                       'RNA-1273 vaccine trial.',
             'authors': (
-                'Hejazi NS, Shen X, Carpp LN, Benkeser D, Follmann D, 
-                Janes HE, Baden LR, El Sahly HM, Deng W, Zhou H, 
+                'Hejazi NS, Shen X, Carpp LN, Benkeser D, Follmann D,
+                Janes HE, Baden LR, El Sahly HM, Deng W, Zhou H,
                 Leav B, Montefiori DC, 'Gilbert PB'
             ),
             'journal': 'Int J Infect Dis',
@@ -252,20 +245,20 @@ print(str(response.info['tool_calls'])[:2000])
         tool_name='get_abstract',
         args={'paper_id': 37840631},
         result='''
-            1. J Geriatr Cardiol. 2023 Sep 28;20(9):618-620. doi: 
+            1. J Geriatr Cardiol. 2023 Sep 28;20(9):618-620. doi:
             10.26599/1671-5411.2023.09.007.
-            
-            Chinese guideline for lipid management (2023):a new guideline 
+
+            Chinese guideline for lipid management (2023):a new guideline
             rich in domestic elements for controlling dyslipidemia.
-            
+
             Li JJ(1).
-            
+
             Author information:
             (1)Division of Cardio-Metabolic Center, State Key Laboratory
-            of Cardiovascular Disease, Fu Wai Hospital, National Center 
+            of Cardiovascular Disease, Fu Wai Hospital, National Center
             for Cardiovascular Disease, Chinese Academy of Medical Sciences,
             Peking Union Medical College, Beijing, China.
-            
+
             DOI: 10.26599/1671-5411.2023.09.007
             PMCID: PMC10568543
             PMID: 37840631

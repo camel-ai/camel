@@ -1,0 +1,159 @@
+<a id="camel.toolkits.google_maps_toolkit"></a>
+
+<a id="camel.toolkits.google_maps_toolkit.handle_googlemaps_exceptions"></a>
+
+## handle_googlemaps_exceptions
+
+```python
+def handle_googlemaps_exceptions(func: Callable[..., Any]):
+```
+
+Decorator to catch and handle exceptions raised by Google Maps API
+calls.
+
+**Parameters:**
+
+- **func** (Callable): The function to be wrapped by the decorator.
+
+**Returns:**
+
+  Callable: A wrapper function that calls the wrapped function and
+handles exceptions.
+
+<a id="camel.toolkits.google_maps_toolkit._format_offset_to_natural_language"></a>
+
+## _format_offset_to_natural_language
+
+```python
+def _format_offset_to_natural_language(offset: int):
+```
+
+Converts a time offset in seconds to a more natural language
+description using hours as the unit, with decimal places to represent
+minutes and seconds.
+
+**Parameters:**
+
+- **offset** (int): The time offset in seconds. Can be positive, negative, or zero.
+
+**Returns:**
+
+  str: A string representing the offset in hours, such as
+"+2.50 hours" or "-3.75 hours".
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit"></a>
+
+## GoogleMapsToolkit
+
+```python
+class GoogleMapsToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for interacting with GoogleMaps API.
+This class provides methods for validating addresses, retrieving elevation,
+and fetching timezone information using the Google Maps API.
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit.get_address_description"></a>
+
+### get_address_description
+
+```python
+def get_address_description(
+    self,
+    address: Union[str, List[str]],
+    region_code: Optional[str] = None,
+    locality: Optional[str] = None
+):
+```
+
+Validates an address via Google Maps API, returns a descriptive
+summary. Validates an address using Google Maps API, returning a
+summary that includes information on address completion, formatted
+address, location coordinates, and metadata types that are true for
+the given address.
+
+**Parameters:**
+
+- **address** (Union[str, List[str]]): The address or components to validate. Can be a single string or a list representing different parts.
+- **region_code** (str, optional): Country code for regional restriction, helps narrow down results. (default: :obj:`None`)
+- **locality** (str, optional): Restricts validation to a specific locality, e.g., "Mountain View". (default: :obj:`None`)
+
+**Returns:**
+
+  str: Summary of the address validation results, including
+information on address completion, formatted address,
+geographical coordinates (latitude and longitude), and metadata
+types true for the address.
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit.get_elevation"></a>
+
+### get_elevation
+
+```python
+def get_elevation(self, lat: float, lng: float):
+```
+
+Retrieves elevation data for a given latitude and longitude.
+Uses the Google Maps API to fetch elevation data for the specified
+latitude and longitude. It handles exceptions gracefully and returns a
+description of the elevation, including its value in meters and the
+data resolution.
+
+**Parameters:**
+
+- **lat** (float): The latitude of the location to query.
+- **lng** (float): The longitude of the location to query.
+
+**Returns:**
+
+  str: A description of the elevation at the specified location(s),
+including the elevation in meters and the data resolution. If
+elevation data is not available, a message indicating this is
+returned.
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit.get_timezone"></a>
+
+### get_timezone
+
+```python
+def get_timezone(self, lat: float, lng: float):
+```
+
+Retrieves timezone information for a given latitude and longitude.
+This function uses the Google Maps Timezone API to fetch timezone
+data for the specified latitude and longitude. It returns a natural
+language description of the timezone, including the timezone ID, name,
+standard time offset, daylight saving time offset, and the total
+offset from Coordinated Universal Time (UTC).
+
+**Parameters:**
+
+- **lat** (float): The latitude of the location to query.
+- **lng** (float): The longitude of the location to query.
+
+**Returns:**
+
+  str: A descriptive string of the timezone information,
+including the timezone ID and name, standard time offset,
+daylight saving time offset, and total offset from UTC.
+
+<a id="camel.toolkits.google_maps_toolkit.GoogleMapsToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

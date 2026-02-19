@@ -1,0 +1,116 @@
+<a id="camel.toolkits.zapier_toolkit"></a>
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit"></a>
+
+## ZapierToolkit
+
+```python
+class ZapierToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for interacting with Zapier's NLA API.
+
+This class provides methods for executing Zapier actions through natural
+language commands, allowing integration with various web services and
+automation of workflows through the Zapier platform.
+
+**Parameters:**
+
+- **api_key** (str): The API key for authenticating with Zapier's API.
+- **base_url** (str): The base URL for Zapier's API endpoints.
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.list_actions"></a>
+
+### list_actions
+
+```python
+def list_actions(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the list of available
+actions.
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.execute_action"></a>
+
+### execute_action
+
+```python
+def execute_action(self, action_id: str, instructions: str):
+```
+
+Execute a specific Zapier action using natural language
+instructions.
+
+**Parameters:**
+
+- **action_id** (str): The ID of the Zapier action to execute.
+- **instructions** (str): Natural language instructions for executing the action. For example: "Send an email to john@example.com with subject 'Hello' and body 'How are you?'"
+
+**Returns:**
+
+  Dict[str, Any]: The result of the action execution, including
+status and any output data.
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.preview_action"></a>
+
+### preview_action
+
+```python
+def preview_action(self, action_id: str, instructions: str):
+```
+
+Preview a specific Zapier action using natural language
+instructions.
+
+**Parameters:**
+
+- **action_id** (str): The ID of the Zapier action to preview.
+- **instructions** (str): Natural language instructions for previewing the action. For example: "Send an email to john@example.com with subject 'Hello' and body 'How are you?'"
+
+**Returns:**
+
+  Dict[str, Any]: The preview result showing what parameters would
+be used if the action were executed.
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.get_execution_result"></a>
+
+### get_execution_result
+
+```python
+def get_execution_result(self, execution_id: str):
+```
+
+Get the execution result of a Zapier action.
+
+**Parameters:**
+
+- **execution_id** (str): The execution ID returned from execute_action.
+
+**Returns:**
+
+  Dict[str, Any]: The execution result containing status, logs,
+and any output data from the action execution.
+
+<a id="camel.toolkits.zapier_toolkit.ZapierToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -61,7 +61,7 @@ class QwenConfig(BaseConfig):
             call. It can contain one or more tool objects. During a function
             call process, the model will select one tool from the array.
             (default: :obj:`None`)
-        extra_body (Optional[Dict[str, str]], optional): Additional parameters
+        extra_body (Optional[Dict[str, Any]], optional): Additional parameters
             to be sent to the Qwen API. If you want to enable internet search,
             you can set this parameter to `{"enable_search": True}`.
             (default: :obj:`None`)
@@ -78,14 +78,7 @@ class QwenConfig(BaseConfig):
     max_tokens: Optional[int] = None
     seed: Optional[int] = None
     stop: Optional[Union[str, List]] = None
-    extra_body: Optional[Dict[str, str]] = None
-
-    def __init__(self, include_usage: bool = True, **kwargs):
-        super().__init__(**kwargs)
-        # Only set stream_options when stream is True
-        # Otherwise, it will raise error when calling the API
-        if self.stream:
-            self.stream_options = {"include_usage": include_usage}
+    extra_body: Optional[Dict[str, Any]] = None
 
 
 QWEN_API_PARAMS = {param for param in QwenConfig.model_fields.keys()}

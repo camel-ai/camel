@@ -1,0 +1,111 @@
+<a id="camel.utils.mcp"></a>
+
+<a id="camel.utils.mcp._is_pydantic_serializable"></a>
+
+## _is_pydantic_serializable
+
+```python
+def _is_pydantic_serializable(type_annotation: Any):
+```
+
+Check if a type annotation is Pydantic serializable.
+
+**Parameters:**
+
+- **type_annotation**: The type annotation to check
+
+**Returns:**
+
+  Tuple[bool, str]: (is_serializable, error_message)
+
+<a id="camel.utils.mcp._validate_function_types"></a>
+
+## _validate_function_types
+
+```python
+def _validate_function_types(func: Callable[..., Any]):
+```
+
+Validate function parameter and return types are Pydantic serializable.
+
+**Parameters:**
+
+- **func** (Callable[..., Any]): The function to validate.
+
+**Returns:**
+
+  List[str]: List of error messages for incompatible types.
+
+<a id="camel.utils.mcp.MCPServer"></a>
+
+## MCPServer
+
+```python
+class MCPServer:
+```
+
+Decorator class for registering functions of a class as tools in an MCP
+(Model Context Protocol) server.
+
+This class is typically used to wrap a toolkit or service class and
+automatically register specified methods (or methods derived from
+`BaseToolkit`) with a FastMCP server.
+
+**Parameters:**
+
+- **function_names** (Optional[list[str]]): A list of method names to expose via the MCP server. If not provided and the class is a subclass of `BaseToolkit`, method names will be inferred from the tools returned by `get_tools()`.
+- **server_name** (Optional[str]): A name for the MCP server. If not provided, the class name of the decorated object is used.
+
+<a id="camel.utils.mcp.MCPServer.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    function_names: Optional[List[str]] = None,
+    server_name: Optional[str] = None
+):
+```
+
+<a id="camel.utils.mcp.MCPServer.make_wrapper"></a>
+
+### make_wrapper
+
+```python
+def make_wrapper(self, func: Callable[..., Any]):
+```
+
+Wraps a function (sync or async) to preserve its signature and
+metadata.
+
+This is used to ensure the MCP server can correctly call and introspect
+the method.
+
+**Parameters:**
+
+- **func** (Callable[..., Any]): The function to wrap.
+
+**Returns:**
+
+  Callable[..., Any]: The wrapped function, with preserved signature
+and async support.
+
+<a id="camel.utils.mcp.MCPServer.__call__"></a>
+
+### __call__
+
+```python
+def __call__(self, cls):
+```
+
+Decorates a class by injecting an MCP server instance and
+registering specified methods.
+
+**Parameters:**
+
+- **cls** (type): The class being decorated.
+
+**Returns:**
+
+  type: The modified class with MCP integration.

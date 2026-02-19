@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -45,13 +45,18 @@ class ModelScopeConfig(BaseConfig):
             while higher values make it more diverse. (default: :obj:`0.3`)
         stream (bool, optional): If True, enables streaming output.
             (default: :obj:`None`)
+        extra_body (dict, optional): Extra body parameters to be passed to
+            the ModelScope API.
     """
 
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[
+        Union[Dict[str, Union[str, Dict[str, str]]], str]
+    ] = None
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None
     temperature: Optional[float] = None
     stream: Optional[bool] = None
+    extra_body: Optional[Dict[str, Any]] = None
 
 
 MODELSCOPE_API_PARAMS = {

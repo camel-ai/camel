@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,15 +10,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
+from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-
-from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
@@ -73,9 +72,8 @@ class MultiStepEnv(ABC):
             logger.error(f'Failed to setup environment: {e}')
             raise
 
-    @abstractmethod
     async def _setup(self) -> None:
-        pass
+        return
 
     async def close(self) -> None:
         r"""Clean up and close all resources used by the environment.
@@ -100,9 +98,8 @@ class MultiStepEnv(ABC):
             logger.error(f'Failed to teardown environment: {e}')
             raise
 
-    @abstractmethod
     async def _close(self) -> None:
-        pass
+        return
 
     async def reset(self) -> Observation:
         r"""Reset the environment to an initial state.
@@ -115,6 +112,9 @@ class MultiStepEnv(ABC):
         """
 
         if not self._is_setup:
+            logger.warning(
+                "reset() called on un-setup environment. Setting up..."
+            )
             await self.setup()
 
         # Reset state
@@ -132,7 +132,9 @@ class MultiStepEnv(ABC):
 
         return observation
 
-    async def step(self, action: Action) -> StepResult:
+    async def step(
+        self, action: Action
+    ) -> Tuple[Observation, float, bool, Dict[str, Any]]:
         r"""Take a step in the environment using the given action.
 
         This method updates the environment state based on the LLM's response,
@@ -157,7 +159,7 @@ class MultiStepEnv(ABC):
                 rewards_dict={},
                 done=True,
                 info={"reason": "max_steps_reached"},
-            )
+            ).as_tuple()
 
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
@@ -196,13 +198,13 @@ class MultiStepEnv(ABC):
             rewards_dict=rewards_dict,
             done=done,
             info={
-                "extraction_result": self.extractor.extract(
+                "extraction_result": await self.extractor.extract(
                     action.llm_response
                 ),
                 "step": self._current_step,
                 "state": self._state,  # Updated state
             },
-        )
+        ).as_tuple()
 
     @abstractmethod
     def _get_initial_state(self) -> Dict[str, Any]:

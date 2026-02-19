@@ -1,0 +1,120 @@
+<a id="camel.toolkits.dalle_toolkit"></a>
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit"></a>
+
+## OpenAIImageToolkit
+
+```python
+class OpenAIImageToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for image generation using OpenAI's
+DALL-E model.
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes a new instance of the OpenAIImageToolkit class.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.base64_to_image"></a>
+
+### base64_to_image
+
+```python
+def base64_to_image(self, base64_string: str):
+```
+
+Converts a base64 encoded string into a PIL Image object.
+
+**Parameters:**
+
+- **base64_string** (str): The base64 encoded string of the image.
+
+**Returns:**
+
+  Optional[Image.Image]: The PIL Image object or None if conversion
+fails.
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.image_path_to_base64"></a>
+
+### image_path_to_base64
+
+```python
+def image_path_to_base64(self, image_path: str):
+```
+
+Converts the file path of an image to a Base64 encoded string.
+
+**Parameters:**
+
+- **image_path** (str): The path to the image file.
+
+**Returns:**
+
+  str: A Base64 encoded string representing the content of the image
+file.
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.image_to_base64"></a>
+
+### image_to_base64
+
+```python
+def image_to_base64(self, image: Image.Image):
+```
+
+Converts an image into a base64-encoded string.
+
+This function takes an image object as input, encodes the image into a
+PNG format base64 string, and returns it.
+If the encoding process encounters an error, it prints the error
+message and returns None.
+
+**Parameters:**
+
+- **image**: The image object to be encoded, supports any image format that can be saved in PNG format.
+
+**Returns:**
+
+  str: A base64-encoded string of the image.
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.get_dalle_img"></a>
+
+### get_dalle_img
+
+```python
+def get_dalle_img(self, prompt: str, image_dir: str = 'img'):
+```
+
+Generate an image using OpenAI's DALL-E model.
+The generated image is saved to the specified directory.
+
+**Parameters:**
+
+- **prompt** (str): The text prompt based on which the image is generated.
+- **image_dir** (str): The directory to save the generated image. Defaults to 'img'.
+
+**Returns:**
+
+  str: The path to the saved image.
+
+<a id="camel.toolkits.dalle_toolkit.OpenAIImageToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 import uuid
 from typing import (
@@ -97,6 +97,7 @@ class AutoRetriever:
                     "URL (database url) and API key required for TiDB storage "
                     "are not provided. Format: "
                     "mysql+pymysql://<username>:<password>@<host>:4000/test"
+                    "You can get the database url from https://tidbcloud.com/console/clusters"
                 )
             return TiDBStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
@@ -128,12 +129,31 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+        import hashlib
+        import os
+
         from unstructured.documents.elements import Element
 
         if isinstance(content, Element):
             content = content.metadata.file_directory or str(uuid.uuid4())
 
-        collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
+        # For file paths, use a combination of directory hash and filename
+        if os.path.isfile(content):
+            # Get directory and filename
+            directory = os.path.dirname(content)
+            filename = os.path.basename(content)
+            # Create a short hash of the directory path
+            dir_hash = hashlib.md5(directory.encode()).hexdigest()[:6]
+            # Get filename without extension and remove special chars
+            base_name = os.path.splitext(filename)[0]
+            clean_name = re.sub(r'[^a-zA-Z0-9]', '', base_name)[:10]
+            # Combine for a unique name
+            collection_name = f"{clean_name}_{dir_hash}"
+        else:
+            # For URL content
+            content_hash = hashlib.md5(content.encode()).hexdigest()[:6]
+            clean_content = re.sub(r'[^a-zA-Z0-9]', '', content)[-10:]
+            collection_name = f"{clean_content}_{content_hash}"
 
         # Ensure the first character is either an underscore or a letter for
         # Milvus

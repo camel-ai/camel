@@ -1,0 +1,91 @@
+<a id="camel.messages.func_message"></a>
+
+<a id="camel.messages.func_message.FunctionCallingMessage"></a>
+
+## FunctionCallingMessage
+
+```python
+class FunctionCallingMessage(BaseMessage):
+```
+
+Class for message objects used specifically for
+function-related messages.
+
+**Parameters:**
+
+- **func_name** (Optional[str]): The name of the function used. (default: :obj:`None`)
+- **args** (Optional[Dict]): The dictionary of arguments passed to the function. (default: :obj:`None`)
+- **result** (Optional[Any]): The result of function execution. (default: :obj:`None`)
+- **tool_call_id** (Optional[str]): The ID of the tool call, if available. (default: :obj:`None`)
+- **mask_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **extra_content** (Optional[Dict[str, Any]]): Additional content associated with the tool call. (default: :obj:`None`)
+
+<a id="camel.messages.func_message.FunctionCallingMessage.to_openai_message"></a>
+
+### to_openai_message
+
+```python
+def to_openai_message(self, role_at_backend: OpenAIBackendRole):
+```
+
+Converts the message to an :obj:`OpenAIMessage` object.
+
+**Parameters:**
+
+- **role_at_backend** (OpenAIBackendRole): The role of the message in OpenAI chat system.
+
+**Returns:**
+
+  OpenAIMessage: The converted :obj:`OpenAIMessage` object.
+
+<a id="camel.messages.func_message.FunctionCallingMessage.to_sharegpt"></a>
+
+### to_sharegpt
+
+```python
+def to_sharegpt(
+    self,
+    function_format: Optional[FunctionCallFormatter[ToolCall, ToolResponse]] = None
+):
+```
+
+Convert FunctionCallingMessage to ShareGPT message.
+
+<a id="camel.messages.func_message.FunctionCallingMessage.to_openai_assistant_message"></a>
+
+### to_openai_assistant_message
+
+```python
+def to_openai_assistant_message(self):
+```
+
+**Returns:**
+
+  OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
+object.
+
+<a id="camel.messages.func_message.FunctionCallingMessage.to_openai_tool_message"></a>
+
+### to_openai_tool_message
+
+```python
+def to_openai_tool_message(self):
+```
+
+**Returns:**
+
+  OpenAIToolMessageParam: The converted
+:obj:`OpenAIToolMessageParam` object with its role being
+"tool".
+
+<a id="camel.messages.func_message.FunctionCallingMessage.to_dict"></a>
+
+### to_dict
+
+```python
+def to_dict(self):
+```
+
+**Returns:**
+
+  dict: The converted dictionary.

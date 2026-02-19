@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
 from camel.extractors.python_strategies import (
@@ -30,6 +30,16 @@ async def test_boxed_strategy():
     text = r"\boxed{test content}"
     result = await strategy.extract(text)
     assert result == "test content"
+
+    # Test not so basic boxed content
+    text = r"\boxed{\dfrac{9}{7}}"
+    result = await strategy.extract(text)
+    assert result == r"\dfrac{9}{7}"
+
+    # Test not so basic boxed content with double backslash
+    text = r"\\boxed{\dfrac{9}{7}}"
+    result = await strategy.extract(text)
+    assert result == r"\dfrac{9}{7}"
 
     # Test nested braces
     text = r"\boxed{nested {braces} test}"

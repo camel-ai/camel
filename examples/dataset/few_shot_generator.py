@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 from pathlib import Path
@@ -27,7 +27,7 @@ from camel.verifiers import PythonVerifier
 logger = get_logger(__name__)
 
 verifier = PythonVerifier(required_packages=["sympy"])
-asyncio.run(verifier.setup())
+asyncio.run(verifier.setup(uv=True))
 
 raw_data2 = [
     {
@@ -84,9 +84,6 @@ generator = FewShotGenerator(
 )
 
 new_data = asyncio.run(generator.generate_new(n=2, max_retries=5))
-
-for dp in new_data:
-    print(dp)
 
 generator.save_to_jsonl(Path("generated_data.jsonl"))
 

@@ -1,0 +1,75 @@
+<a id="camel.loaders.mistral_reader"></a>
+
+<a id="camel.loaders.mistral_reader.MistralReader"></a>
+
+## MistralReader
+
+```python
+class MistralReader:
+```
+
+Mistral Document Loader.
+
+<a id="camel.loaders.mistral_reader.MistralReader.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    model: Optional[str] = 'mistral-ocr-latest'
+):
+```
+
+Initialize the MistralReader.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): The API key for the Mistral API. (default: :obj:`None`)
+- **model** (Optional[str]): The model to use for OCR. (default: :obj:`"mistral-ocr-latest"`)
+
+<a id="camel.loaders.mistral_reader.MistralReader._encode_file"></a>
+
+### _encode_file
+
+```python
+def _encode_file(self, file_path: str):
+```
+
+Encode the pdf to base64.
+
+**Parameters:**
+
+- **file_path** (str): Path to the input file.
+
+**Returns:**
+
+  str: base64 version of the file.
+
+<a id="camel.loaders.mistral_reader.MistralReader.extract_text"></a>
+
+### extract_text
+
+```python
+def extract_text(
+    self,
+    file_path: str,
+    is_image: bool = False,
+    pages: Optional[List[int]] = None,
+    include_image_base64: Optional[bool] = None
+):
+```
+
+Converts the given file to Markdown format.
+
+**Parameters:**
+
+- **file_path** (str): Path to the input file or a remote URL.
+- **is_image** (bool): Whether the file or URL is an image. If True, uses image_url type instead of document_url. (default: :obj:`False`)
+- **pages** (Optional[List[int]]): Specific pages user wants to process in various formats: single number, range, or list of both. Starts from 0. (default: :obj:`None`)
+- **include_image_base64** (Optional[bool]): Whether to include image URLs in response. (default: :obj:`None`)
+
+**Returns:**
+
+  OCRResponse: page wise extractions.

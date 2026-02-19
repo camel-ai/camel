@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.tasks import (
     Task,
@@ -24,15 +23,9 @@ from camel.types import (
     ModelType,
 )
 
-# set up LLM model
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 # set up agent
@@ -63,19 +56,19 @@ for t in new_tasks:
 # ruff: noqa: E501
 """
 ===============================================================================
-Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51 
+Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51
 minutes of babysitting. How much did she earn?
 
-Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate 
-increases by $2 for every additional hour worked beyond the first hour. 
-Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she 
+Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate
+increases by $2 for every additional hour worked beyond the first hour.
+Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she
 earn in total for her babysitting services?
 
 Task 0.0: Convert 51 minutes to hours.
 
 Task 0.1: Calculate the proportion of 51 minutes to an hour.
 
-Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much 
+Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much
 she earned for 51 minutes of babysitting.
 ===============================================================================
 """

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
 from datetime import datetime
 from typing import List
 
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -29,24 +29,24 @@ from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """**You are an advanced data generation assistant.**  
-Your goal is to generate high-quality synthetic data points based on 
-provided examples. Your output must be well-structured, 
-logically sound, and formatted correctly. 
+SYSTEM_PROMPT = """**You are an advanced data generation assistant.**
+Your goal is to generate high-quality synthetic data points based on
+provided examples. Your output must be well-structured,
+logically sound, and formatted correctly.
 
 **Instructions:**
-1. **Follow the Structure**  
-   Each data point must include:  
-   - **Question**: A clear, well-formed query.  
-   - **Rationale**: A step-by-step, executable reasoning process ending 
-   with `print(final_answer)`.  
-   - **Final Answer**: The correct, concise result.  
+1. **Follow the Structure**
+   Each data point must include:
+   - **Question**: A clear, well-formed query.
+   - **Rationale**: A step-by-step, executable reasoning process ending
+   with `print(final_answer)`.
+   - **Final Answer**: The correct, concise result.
 
-2. **Ensure Logical Consistency**  
-   - The `rationale` must be code that runs correctly.  
-   - The `final_answer` should match the printed output.  
+2. **Ensure Logical Consistency**
+   - The `rationale` must be code that runs correctly.
+   - The `final_answer` should match the printed output.
 
-3. **Output Format (Strict)**  
+3. **Output Format (Strict)**
 ```
 Question: [Generated question]
 Rationale: [Code that solves the question, ending in a print statement,
@@ -176,14 +176,30 @@ class FewShotGenerator(BaseGenerator):
                 ]
                 prompt = self._construct_prompt(examples)
 
+                # Create a simplified version of DataPoint that omits metadata
+                # because agent.step's response_format parameter doesn't
+                # support type Dict[str, Any]
+                class DataPointSimplified(BaseModel):
+                    question: str = Field(
+                        description="The primary question or issue to "
+                        "be addressed."
+                    )
+                    final_answer: str = Field(description="The final answer.")
+                    rationale: str = Field(
+                        description="Logical reasoning or explanation "
+                        "behind the answer."
+                    )
+
                 try:
                     agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
+                        self.agent.step(
+                            prompt, response_format=DataPointSimplified
+                        )
                         .msgs[0]
                         .parsed
                     )
 
-                    assert isinstance(agent_output, DataPoint)
+                    assert isinstance(agent_output, DataPointSimplified)
 
                     self.agent.reset()
 
@@ -235,6 +251,7 @@ class FewShotGenerator(BaseGenerator):
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
                             "generator": "few_shot",
+                            "shots": [e.to_dict() for e in examples],
                         },
                     )
                 except ValidationError as e:

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
 from enum import Enum, auto
 from string import Template
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.agents.chat_agent import StreamingChatAgentResponse
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -442,7 +443,7 @@ class RepoAgent(ChatAgent):
 
     def step(
         self, input_message: Union[BaseMessage, str], *args, **kwargs
-    ) -> ChatAgentResponse:
+    ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Overrides `ChatAgent.step()` to first retrieve relevant context
         from the vector store before passing the input to the language model.
         """

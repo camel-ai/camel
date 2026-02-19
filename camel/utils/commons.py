@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import functools
 import importlib
@@ -28,6 +28,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -40,6 +41,9 @@ from typing import (
     TypeVar,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.responses.agent_responses import ChatAgentResponse
 from urllib.parse import urlparse
 
 import pydantic
@@ -51,6 +55,7 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
+T = TypeVar('T', bound=BaseModel)
 
 logger = logging.getLogger(__name__)
 
@@ -311,13 +316,13 @@ def api_keys_required(
 
             key_way = "the official website"
             if env_var_name == 'ANTHROPIC_API_KEY':
-                key_way = (
-                    "https://docs.anthropic.com/zh-CN/api/getting-started"
-                )
+                key_way = "https://platform.claude.com/docs/en/api/overview"
             elif env_var_name == 'AIML_API_KEY':
                 key_way = "https://aimlapi.com/"
             elif env_var_name == 'COHERE_API_KEY':
                 key_way = "https://cohere.com/"
+            elif env_var_name == 'COMETAPI_KEY':
+                key_way = "https://api.cometapi.com/console/token"
             elif env_var_name == 'DEEPSEEK_API_KEY':
                 key_way = "https://www.deepseek.com/"
             elif env_var_name == 'AZURE_OPENAI_API_KEY':
@@ -329,15 +334,15 @@ def api_keys_required(
             elif env_var_name == 'GEMINI_API_KEY':
                 key_way = "https://gemini.google.com/"
             elif env_var_name == 'INTERNLM_API_KEY':
-                key_way = "https://internlm-chat.intern-ai.org.cn/puyu/api/v1"
+                key_way = "https://internlm.intern-ai.org.cn/api/tokens"
             elif env_var_name == 'GROQ_API_KEY':
-                key_way = "https://api.groq.com/openai/v1"
+                key_way = "https://console.groq.com/keys"
             elif env_var_name == 'MISTRAL_API_KEY':
                 key_way = "https://mistral.ai/"
             elif env_var_name == 'MOONSHOT_API_KEY':
-                key_way = "https://api.moonshot.cn/v1"
+                key_way = "platform.moonshot.ai/console"
             elif env_var_name == 'NVIDIA_API_KEY':
-                key_way = "https://integrate.api.nvidia.com/"
+                key_way = "https://build.nvidia.com/settings/api-keys"
             elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
                 key_way = "https://platform.openai.com/docs/overview"
             elif env_var_name == 'QWEN_API_KEY':
@@ -345,13 +350,17 @@ def api_keys_required(
             elif env_var_name == 'REKA_API_KEY':
                 key_way = "https://docs.reka.ai/quick-start"
             elif env_var_name == 'SAMBA_API_KEY':
-                key_way = "https://community.sambanova.ai/t/looking-for-api-key-and-url-for-sambanova/576"
+                key_way = "cloud.sambanova.ai/apis"
             elif env_var_name == 'TOGETHER_API_KEY':
                 key_way = "https://docs.together.ai/docs/quickstart"
             elif env_var_name == 'YI_API_KEY':
                 key_way = "https://platform.lingyiwanwu.com/docs"
             elif env_var_name == 'ZHIPUAI_API_KEY':
                 key_way = "https://www.zhipuai.cn/"
+            elif env_var_name == 'KLAVIS_API_KEY':
+                key_way = "https://www.klavis.ai/docs"
+            elif env_var_name == 'XAI_API_KEY':
+                key_way = "https://docs.x.ai/docs/overview"
 
             if missing_keys:
                 raise ValueError(
@@ -698,7 +707,7 @@ def retry_on_error(
                 except Exception as e:
                     last_exception = e
                     if attempt == max_retries:
-                        logger.error(
+                        logger.warning(
                             f"Failed after {max_retries} retries: {e!s}"
                         )
                         raise
@@ -955,6 +964,65 @@ def generate_prompt_for_structured_output(
     return final_prompt
 
 
+def safe_extract_parsed(
+    response: "ChatAgentResponse",
+    schema: Type[T],
+) -> Optional[T]:
+    r"""Safely extract a parsed structured output from a ChatAgentResponse.
+
+    Handles the common cases where ``response.msg`` is ``None`` (empty or
+    multi-message response) or ``msg.parsed`` is ``None`` (model failed to
+    produce valid structured output). When the parsed value is a dict, it
+    attempts to construct the schema from it.
+
+    Args:
+        response (ChatAgentResponse): The agent response to extract from.
+        schema (Type[T]): The expected Pydantic model class.
+
+    Returns:
+        Optional[T]: The parsed and validated result, or ``None`` if
+            extraction fails for any reason.
+    """
+    msg = response.msg
+    # Empty or multi-message response (len(msgs) != 1)
+    if msg is None:
+        logger.error(
+            f"safe_extract_parsed: response.msg is None "
+            f"(msgs count: {len(response.msgs)}), "
+            f"cannot extract {schema.__name__}"
+        )
+        return None
+    parsed = msg.parsed
+    # Already the expected Pydantic model
+    if isinstance(parsed, schema):
+        return parsed
+    # TODO: Unify backend parsing so parsed is always a model instance,
+    # removing the need for this dict fallback.
+    # LiteLLM or non-OpenAI backends may return raw dict instead of model
+    if isinstance(parsed, dict):
+        try:
+            return schema(**parsed)
+        except Exception as e:
+            logger.error(
+                f"safe_extract_parsed: failed to construct "
+                f"{schema.__name__} from dict: {e}"
+            )
+            return None
+    # Model did not produce structured output
+    if parsed is None:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is None, "
+            f"model did not produce valid {schema.__name__}"
+        )
+    # Unexpected type
+    else:
+        logger.error(
+            f"safe_extract_parsed: msg.parsed is "
+            f"{type(parsed).__name__}, expected {schema.__name__}"
+        )
+    return None
+
+
 def with_timeout(timeout=None):
     r"""Decorator that adds timeout functionality to functions.
 
@@ -1009,14 +1077,32 @@ def with_timeout(timeout=None):
                 if effective_timeout is None:
                     return func(*args, **kwargs)
 
-                # Container to hold the result of the function call
+                # If current thread has a running asyncio event loop, avoid
+                # switching threads to preserve asyncio context (e.g., for
+                # asyncio.create_task). Execute inline without enforcing a
+                # sync timeout to keep event loop semantics intact.
+                try:
+                    asyncio.get_running_loop()
+                    loop_running = True
+                except RuntimeError:
+                    loop_running = False
+
+                if loop_running:
+                    return func(*args, **kwargs)
+
+                # Container to hold the result or exception from the function
+                # call
                 result_container = []
+                exception_container = []
 
                 def target():
-                    result_container.append(func(*args, **kwargs))
+                    try:
+                        result_container.append(func(*args, **kwargs))
+                    except Exception as e:
+                        exception_container.append(e)
 
-                # Start the function in a new thread
-                thread = threading.Thread(target=target)
+                # Start the function in a new daemon thread
+                thread = threading.Thread(target=target, daemon=True)
                 thread.start()
                 thread.join(effective_timeout)
 
@@ -1027,7 +1113,16 @@ def with_timeout(timeout=None):
                         f"exceeded {effective_timeout} seconds."
                     )
                 else:
-                    return result_container[0]
+                    # If an exception occurred, re-raise it
+                    if exception_container:
+                        raise exception_container[0]
+                    # Return result if available
+                    if result_container:
+                        return result_container[0]
+                    raise RuntimeError(
+                        f"Function `{func.__name__}` completed but produced "
+                        "no result or exception."
+                    )
 
         return wrapper
 
@@ -1038,3 +1133,93 @@ def with_timeout(timeout=None):
         return decorator(func)
 
     return decorator
+
+
+def browser_toolkit_save_auth_cookie(
+    cookie_json_path: str, url: str, wait_time: int = 60
+):
+    r"""Saves authentication cookies and browser storage state to a JSON file.
+
+    This function launches a browser window and navigates to the specified URL,
+    allowing the user to manually authenticate (log in) during a 60-second
+    wait period.After authentication, it saves all cookies, localStorage, and
+    sessionStorage data to the specified JSON file path, which can be used
+    later to maintain authenticated sessions without requiring manual login.
+
+    Args:
+        cookie_json_path (str): Path where the authentication cookies and
+            storage state will be saved as a JSON file. If the file already
+            exists, it will be loaded first and then overwritten with updated
+            state. The function checks if this file exists before attempting
+            to use it.
+        url (str): The URL to navigate to for authentication (e.g., a login
+            page).
+        wait_time (int): The time in seconds to wait for the user to manually
+            authenticate.
+
+    Usage:
+        1. The function opens a browser window and navigates to the specified
+            URL
+        2. User manually logs in during the wait_time wait period
+        3. Browser storage state (including auth cookies) is saved to the
+           specified file
+        4. The saved state can be used in subsequent browser sessions to
+           maintain authentication
+
+    Note:
+        The wait_time sleep is intentional to give the user enough time to
+        complete the manual authentication process before the storage state
+        is captured.
+    """
+    from playwright.sync_api import sync_playwright
+
+    playwright = sync_playwright().start()
+
+    # Launch visible browser window using Chromium
+    browser = playwright.chromium.launch(headless=False, channel="chromium")
+
+    # Check if cookie file exists before using it
+    storage_state = (
+        cookie_json_path if os.path.exists(cookie_json_path) else None
+    )
+
+    # Create browser context with proper typing
+    context = browser.new_context(
+        accept_downloads=True, storage_state=storage_state
+    )
+    page = context.new_page()
+    page.goto(url)  # Navigate to the authentication URL
+    # Wait for page to fully load
+    page.wait_for_load_state("load", timeout=1000)
+    time.sleep(wait_time)  # Wait 60 seconds for user to manually authenticate
+    # Save browser storage state (cookies, localStorage, etc.) to JSON file
+    context.storage_state(path=cookie_json_path)
+
+    browser.close()  # Close the browser when finished
+
+
+def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
+    r"""Helper function to run async functions in synchronous context.
+
+    Args:
+        func (Callable[..., Any]): The async function to wrap.
+
+    Returns:
+        Callable[..., Any]: A synchronous wrapper for the async function.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper

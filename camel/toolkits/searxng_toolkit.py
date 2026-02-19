@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import ClassVar, Dict, List, Optional, Union
 from urllib.parse import urlparse
@@ -20,10 +20,12 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class SearxNGToolkit(BaseToolkit):
     r"""A toolkit for performing web searches using SearxNG search engine.
 
@@ -42,6 +44,9 @@ class SearxNGToolkit(BaseToolkit):
             values are "day", "week", "month", "year". (default: :obj:`None`)
         safe_search (int, optional): Safe search level (0: None, 1: Moderate,
             2: Strict). (default: :obj:`1`)
+        timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
 
     Raises:
         ValueError: If searxng_host is not a valid HTTP/HTTPS URL.
@@ -65,7 +70,9 @@ class SearxNGToolkit(BaseToolkit):
         categories: Optional[List[str]] = None,
         time_range: Optional[str] = None,
         safe_search: int = 1,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self._validate_searxng_host(searxng_host)
         self._validate_safe_search(safe_search)
         if time_range is not None:

@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from io import BytesIO
 from typing import List, Optional
@@ -36,7 +36,11 @@ class ImageAnalysisToolkit(BaseToolkit):
     The toolkit uses vision-capable language models to perform these tasks.
     """
 
-    def __init__(self, model: Optional[BaseModelBackend] = None):
+    def __init__(
+        self,
+        model: Optional[BaseModelBackend] = None,
+        timeout: Optional[float] = None,
+    ):
         r"""Initialize the ImageAnalysisToolkit.
 
         Args:
@@ -45,7 +49,11 @@ class ImageAnalysisToolkit(BaseToolkit):
                 images for tasks like image description and visual question
                 answering. If None, a default model will be created using
                 ModelFactory. (default: :obj:`None`)
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         if model:
             self.model = model
         else:
@@ -68,7 +76,7 @@ class ImageAnalysisToolkit(BaseToolkit):
         Returns:
             str: Natural language description of the image.
         """
-        default_content = '''You are an image analysis expert. Provide a 
+        default_content = '''You are an image analysis expert. Provide a
             detailed description including text if present.'''
 
         system_msg = BaseMessage.make_assistant_message(

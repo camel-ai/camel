@@ -1,0 +1,116 @@
+<a id="camel.memories.blocks.chat_history_block"></a>
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock"></a>
+
+## ChatHistoryBlock
+
+```python
+class ChatHistoryBlock(MemoryBlock):
+```
+
+An implementation of the :obj:`MemoryBlock` abstract base class for
+maintaining a record of chat histories.
+
+This memory block helps manage conversation histories with a key-value
+storage backend, either provided by the user or using a default
+in-memory storage. It offers a windowed approach to retrieving chat
+histories, allowing users to specify how many recent messages they'd
+like to fetch.
+
+**Parameters:**
+
+- **storage** (BaseKeyValueStorage, optional): A storage mechanism for storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage` will be used. (default: :obj:`None`)
+- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation. (default: :obj:`0.9`)
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    storage: Optional[BaseKeyValueStorage] = None,
+    keep_rate: float = 0.9
+):
+```
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(self, window_size: Optional[int] = None):
+```
+
+Retrieves records with a proper size for the agent from the memory
+based on the window size or fetches the entire chat history if no
+window size is specified.
+
+**Parameters:**
+
+- **window_size** (int, optional): Specifies the number of recent chat messages to retrieve. If not provided, the entire chat history will be retrieved. (default: :obj:`None`)
+
+**Returns:**
+
+  List[ContextRecord]: A list of retrieved records.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.write_records"></a>
+
+### write_records
+
+```python
+def write_records(self, records: List[MemoryRecord]):
+```
+
+Writes memory records to the memory. Additionally, performs
+validation checks on the messages.
+
+**Parameters:**
+
+- **records** (List[MemoryRecord]): Memory records to be added to the memory.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Clears all chat messages from the memory.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.pop_records"></a>
+
+### pop_records
+
+```python
+def pop_records(self, count: int):
+```
+
+Removes the most recent records from the memory.
+
+**Parameters:**
+
+- **count** (int): Number of records to remove from the end of the conversation history. A value of 0 results in no changes.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in chronological order.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.remove_records_by_indices"></a>
+
+### remove_records_by_indices
+
+```python
+def remove_records_by_indices(self, indices: List[int]):
+```
+
+Removes records at specified indices from the memory.
+
+**Parameters:**
+
+- **indices** (List[int]): List of indices to remove. Indices are positions in the current record list (0-based). System/developer messages at index 0 are protected and will not be removed.
+
+**Returns:**
+
+  List[MemoryRecord]: The removed records in their original order.

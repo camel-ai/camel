@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,10 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2026 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import re
 from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -22,10 +23,7 @@ from camel.toolkits import WeatherToolkit
 
 @pytest.fixture(scope="module")
 def api_key():
-    key = os.environ.get('OPENWEATHERMAP_API_KEY')
-    if not key:
-        pytest.fail("OPENWEATHERMAP_API_KEY environment variable is not set.")
-    return key
+    return "mock_api_key"
 
 
 @pytest.fixture
@@ -33,7 +31,75 @@ def weather_toolkit():
     return WeatherToolkit()
 
 
-def test_weather(api_key, weather_toolkit):
+@patch.dict(os.environ, {'OPENWEATHERMAP_API_KEY': 'mock_api_key'})
+@patch('pyowm.OWM')
+def test_weather(mock_owm_class, api_key, weather_toolkit):
+    # Mock OWM and weather manager
+    mock_owm_instance = MagicMock()
+    mock_owm_class.return_value = mock_owm_instance
+    mock_mgr = MagicMock()
+    mock_owm_instance.weather_manager.return_value = mock_mgr
+
+    # Mock observation and weather
+    mock_observation = MagicMock()
+    mock_weather = MagicMock()
+    mock_observation.weather = mock_weather
+
+    # Configure weather methods to return appropriate data
+    def temperature_side_effect(unit):
+        temps = {
+            'celsius': {
+                'temp': 15.0,
+                'feels_like': 13.0,
+                'temp_max': 17.0,
+                'temp_min': 12.0,
+            },
+            'kelvin': {
+                'temp': 288.0,
+                'feels_like': 286.0,
+                'temp_max': 290.0,
+                'temp_min': 285.0,
+            },
+            'fahrenheit': {
+                'temp': 59.0,
+                'feels_like': 55.0,
+                'temp_max': 63.0,
+                'temp_min': 54.0,
+            },
+        }
+        return temps.get(unit, temps['kelvin'])
+
+    def wind_side_effect(unit):
+        winds = {
+            'meters_sec': {'speed': 5.0, 'deg': 270},
+            'miles_hour': {'speed': 11.0, 'deg': 270},
+            'knots': {'speed': 10.0, 'deg': 270},
+            'beaufort': {'speed': 3.0, 'deg': 270},
+        }
+        return winds.get(unit, winds['meters_sec'])
+
+    mock_weather.temperature = MagicMock(side_effect=temperature_side_effect)
+    mock_weather.wind = MagicMock(side_effect=wind_side_effect)
+    mock_weather.visibility_distance = 10000
+    mock_weather.visibility = MagicMock(return_value=6.2)
+    mock_weather.sunrise_time = MagicMock(
+        side_effect=lambda timeformat: {
+            'unix': '1700000000',
+            'iso': '2023-11-14 05:46:05',
+            'date': '2023-11-14 05:46:05+00:00',
+        }.get(timeformat, '1700000000')
+    )
+    mock_weather.sunset_time = MagicMock(
+        side_effect=lambda timeformat: {
+            'unix': '1700040000',
+            'iso': '2023-11-14 18:42:20',
+            'date': '2023-11-14 18:42:20+00:00',
+        }.get(timeformat, '1700040000')
+    )
+
+    # Set manager to return mock observation
+    mock_mgr.weather_at_place.return_value = mock_observation
+
     # Test temperature in Paris, FR.
     city = "Paris, FR"
     temp_units_options = {
@@ -117,8 +183,7 @@ def test_weather(api_key, weather_toolkit):
         pattern_map = {
             'unix': (r"Sunrise at (\d+), Sunset at (\d+)."),
             'iso': (
-                r"Sunrise at ([\d-]+\s[\d:]+)\+00:00, "
-                r"Sunset at ([\d-]+\s[\d:]+)\+00:00."
+                r"Sunrise at ([\d-]+\s[\d:]+), " r"Sunset at ([\d-]+\s[\d:]+)."
             ),
             'date': (
                 r"Sunrise at ([\d-]+\s[\d:]+\+00:00), "
