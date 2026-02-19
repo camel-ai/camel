@@ -72,6 +72,18 @@ class BaseCache(ABC):
         pass
 
     @abstractmethod
+    def delete(self, entry_id: str) -> bool:
+        r"""Delete a specific cache entry by its ID.
+
+        Args:
+            entry_id (str): The unique ID of the entry to delete.
+
+        Returns:
+            bool: True if the entry was deleted, False otherwise.
+        """
+        pass
+
+    @abstractmethod
     def clear(self) -> None:
         r"""Remove all entries from the cache."""
         pass
